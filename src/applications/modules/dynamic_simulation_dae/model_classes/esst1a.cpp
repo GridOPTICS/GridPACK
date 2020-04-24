@@ -7,10 +7,10 @@
 /**
  * @file   esst1a.cpp
  * @author Shuangshuang Jin 
- * @modified:   10/18/19
- * @Last modified - 04/22/20 Shrirang Abhyankar
+ * @author Shrirang Abhyankar
+ * @Last modified - 04/22/20 
  *  
- * @brief  
+ * @brief ESST1A exciter model implementation 
  *
  *
  */
@@ -67,7 +67,6 @@ Esst1aExc::~Esst1aExc(void)
  */
 void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  data->getValue(BUS_NUMBER, &bid);
   BaseExcModel::load(data,idx); // load parameters in base exciter model
   
   // load parameters for the model type
@@ -220,11 +219,11 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
   Efd = Esst1aExc::getFieldVoltage();
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    // State 1 Vmeas
+    // Vmeas equation
     if(iseq_diff[0]) values[0] = Vmeas - Vmeasprev;
     else values[0] = -Vmeas + Ec;
 
-    // State 2 xLL1
+    // xLL1 equation
     Vf = xf + Kf/Tf*Efd;
     if(iseq_diff[1]) {
       values[1] = xLL1 - xLL1prev;
@@ -234,7 +233,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
       yLL1 = xLL1;
     }
 
-    // State 3 xLL2
+    // xLL2 equation
     if(iseq_diff[2]) {
       values[2] = xLL2 - xLL2prev;
       yLL2 = xLL2 + Tc1/Tb1*yLL1;
@@ -243,20 +242,20 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
       yLL2 = xLL2;
     }
 
-    // State 4 Va
+    // Va equation
     if(iseq_diff[3]) values[3] = Va - Vaprev;
     else values[3] = -Va + Ka*yLL2;
 
-    // State 5 xf
+    // xf equation
     values[4] = xf - xfprev;
 
   } else if(p_mode == RESIDUAL_EVAL) {
 
-    // State 1 Vmeas
+    // Vmeas equation
     if(iseq_diff[0]) values[0] = (-Vmeas + Ec)/Tr - dVmeas;
     else values[0] = -Vmeas + Ec;
 
-    // State 2 xLL1
+    // xLL1 equation
     Vf = xf + Kf/Tf*Efd;
     if(iseq_diff[1]) {
       values[1] = (-xLL1 + (1 - Tc/Tb)*(Vref - Vmeas - Vf))/Tb - dxLL1;
@@ -266,7 +265,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
       yLL1 = xLL1;
     }
 
-    // State 3 xLL2
+    // xLL2 equation
     if(iseq_diff[2]) {
       values[2] = (-xLL2 + (1 - Tc1/Tb1)*yLL1)/Tb1 - dxLL2;
       yLL2 = xLL2 + Tc1/Tb1*yLL1;
@@ -275,13 +274,12 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
       yLL2 = xLL2;
     }
 
-    // State 4 Va
+    // Va equation
     if(iseq_diff[3]) values[3] = (-Va + Ka*yLL2)/Ta - dVa;
     else values[3] = -Va + Ka*yLL2;
 
-    // State 5 xf
+    // xf equation
     values[4] = (-xf - Kf/Tf*Efd)/Tf - dxf;
-    
   }
   
   return true;
@@ -316,7 +314,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
   double dEc_dVQ = VQ/Ec;
 
   if(p_mode == FAULT_EVAL) {
-    // dEq. 1_dX
+    // Partial derivatives of Vmeas equation
     if(iseq_diff[0]) {
       values[Vmeas_idx][Vmeas_idx] = 1.0;
     } else {
@@ -325,7 +323,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
     }
       
-    // dEq.2_dX
+    // Partial derivatives of xLL1 equation
     if(iseq_diff[1]) {
       values[xLL1_idx][xLL1_idx] = 1.0;
       yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);
@@ -340,6 +338,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       dyLL1_dxLL1 = 1.0;
     }
 
+    // Partial derivatives of xLL2 equation
     if(iseq_diff[2]) {
       values[xLL2_idx][xLL2_idx] = 1.0;
       yLL2 = xLL2 + Tc1/Tb1*yLL1;
@@ -359,6 +358,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       dyLL2_dxLL2 = 1.0;
     }
 
+    // Partial derivatives of Va equation
     if(iseq_diff[3]) {
       values[Va_idx][Va_idx] = 1.0;
     } else {
@@ -369,8 +369,11 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
     }
 
+    // Partial derivatives of xf equation
     values[xf_idx][xf_idx] = 1.0;
   } else {
+
+    // Partial derivatives of Vmeas equation
     if(iseq_diff[0]) {
       values[Vmeas_idx][Vmeas_idx] = -1.0/Tr - shift;
       values[VD_idx][Vmeas_idx]    = dEc_dVD/Tr;
@@ -381,7 +384,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
     }
 
-    // Efd derivaritive need to be included
+    // Partial derivatives of xLL1 equation
     if(iseq_diff[1]) {
       values[Vmeas_idx][xLL1_idx] = (1 - Tc/Tb)*-1.0/Tb;
       values[xLL1_idx][xLL1_idx]  = -1.0/Tb - shift;
@@ -399,6 +402,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       dyLL1_dxLL1 = 1.0;
     }
 
+    // Partial derivatives of xLL2 equation
     if(iseq_diff[2]) {
       values[Vmeas_idx][xLL2_idx] =  (1 - Tc1/Tb1)*dyLL1_dVmeas/Tb1;
       values[xLL1_idx][xLL2_idx]  =  (1 - Tc1/Tb1)*dyLL1_dxLL1/Tb1;
@@ -423,6 +427,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       dyLL2_dxLL2 = 1.0;
     }
 
+    // Partial derivatives of Va equation
     if(iseq_diff[3]) {
       values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas/Ta;
       values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1/Ta;
@@ -437,10 +442,8 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
     }
 
-    // Efd derivatives need to be added
+    // Partial derivatives of xf equation
     values[xf_idx][xf_idx] = -1.0/Tf - shift;
-
-
   }
 
   return true;

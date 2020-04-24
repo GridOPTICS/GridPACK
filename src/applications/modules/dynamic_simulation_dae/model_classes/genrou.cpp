@@ -56,8 +56,7 @@ GenrouGen::GenrouGen(void)
   B = 0.0;
   G = 0.0;
 
-  nxgen = 6;
-
+  nxgen = 6; // Number of variables for this model 
 }
 
 GenrouGen::~GenrouGen(void)
@@ -134,6 +133,7 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
     dEfd_dxgen  = (double*)malloc(nxgen*sizeof(double));
   }
 
+  // Set up arrays for generator governor coupling
   if(p_hasGovernor) {
     int nxgov;
     p_governor = getGovernor();
@@ -401,10 +401,16 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
  */
 bool GenrouGen::setJacobian(gridpack::ComplexType **values)
 {
+  // The voltage variables are first two variable in the bus array
   int VD_idx = 0; /* Row/col number for bus voltage VD variable */
   int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
+  // The network current balance equations are the first two in the set
+  // of equations at the bus. Note that DSim orders the reactive current (IQ)
+  // first and then the real current (ID). Hence, IGQ is ordered first and then IGD
   int IGQ_idx = 0; /* Row/col location for IGQ equations */
   int IGD_idx = 1; /* Row/col location for IGD equations */
+
+  // Offsets for variables in the bus variables array
   int delta_idx = offsetb;
   int dw_idx    = offsetb+1;
   int Eqp_idx   = offsetb+2;
@@ -522,14 +528,11 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
 
     // dG_dV
   } else {
-    // Partials of generator variables w.r.t. generator variables dF_dX
-    // F1  values[delta_idx] = dw * OMEGA_S - ddelta;
-    // dF1_dX
+    // Partial derivatives of ddelta_dt equation
     values[delta_idx][delta_idx] = -shift;
     values[dw_idx][delta_idx]    = OMEGA_S;
     
-    // F2  values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; // Pmech can be called from Governor
-    // dF2_dx
+    // Partial derivatives of dw_dt equation
     double const1 = 1/(2*H);
 
     values[delta_idx][dw_idx] = const1*-dTelec_ddelta;
@@ -554,13 +557,8 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
       }
     }
 
-    // F3 values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp;
-    // Field current
-    //  double temp = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl))*(Eqp - Psidp - (Xdp - Xl)*Id);
-    //  double LadIfd = Eqp + (Xd - Xdp)*(Id + temp) +  Psidpp*Sat(Psidpp,Psiqpp)/Psipp;
-    
-    // No saturation considered yet
-
+    // Partial derivatives of dEqp_dt equation
+    // Note: No saturation considered yet
     double const2 =  (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
     double dLadIfd_ddelta =  (Xd - Xdp)*(dId_ddelta + const2*(-(Xdp - Xl)*dId_ddelta));
     double dLadIfd_ddw    =  (Xd - Xdp)*(dId_ddw + const2*(-(Xdp - Xl)*dId_ddw));
@@ -600,7 +598,7 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
       }
     }
 
-    // F4 values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
+    // Partial derivatives of dPsidp_dt equation
     values[delta_idx][Psidp_idx] = -(Xdp - Xl)*dId_ddelta/Tdopp;
     values[dw_idx][Psidp_idx]    = -(Xdp - Xl)*dId_ddw/Tdopp;
     values[Eqp_idx][Psidp_idx]   = (-(Xdp - Xl)*dId_dEqp + 1.0)/Tdopp;
@@ -611,7 +609,7 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
     values[VD_idx][Psidp_idx]    = -(Xdp - Xl)*dId_dVD/Tdopp;
     values[VQ_idx][Psidp_idx]    = -(Xdp - Xl)*dId_dVQ/Tdopp;
 
-    // F5 values[Psiqp_idx] = (-Psiqp + (Xqp - Xl) * Iq + Edp) / Tqopp - dPsiqp;
+    // Partial derivatives of dPsiqp_dt equation
     values[delta_idx][Psiqp_idx] = (Xqp - Xl)*dIq_ddelta/Tqopp;
     values[dw_idx][Psiqp_idx]    = (Xqp - Xl)*dIq_ddw/Tqopp;
     values[Eqp_idx][Psiqp_idx]   = (Xqp - Xl)*dIq_dEqp/Tqopp;
@@ -622,8 +620,7 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
     values[VD_idx][Psiqp_idx]    = (Xqp - Xl)*dIq_dVD/Tqopp;
     values[VQ_idx][Psiqp_idx]    = (Xqp - Xl)*dIq_dVQ/Tqopp;
 
-    // F6 values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)  + (Xq - Xl)/(Xd - Xl)*Psiqpp*Sat(Psidpp,Psiqpp)/Psipp) / Tqop - dEdp; 
-    //    double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (-Psiqp + (Xqp - Xl) * Iq + Edp);
+    // Partial derivatives of dEdp_dt equation
     double const3 = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl));
     values[delta_idx][Edp_idx] = (Xq - Xqp)*(dIq_ddelta - const3*(Xqp - Xl)*dIq_ddelta)/Tqop;
     values[dw_idx][Edp_idx]    = (Xq - Xqp)*(dIq_ddw - const3*(Xqp - Xl)*dIq_ddw)/Tqop;
@@ -636,9 +633,7 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
     values[VQ_idx][Edp_idx]    = (Xq - Xqp)*(dIq_dVQ - const3*(Xqp - Xl)*dIq_dVQ)/Tqop;
   }
    
-  // Partial derivatives of generator currents w.r.t x and V
-  // Generator current injections in the network
-  //    *IGQ =   Id * sin(theta) + Iq * cos(theta);
+  // Partial derivatives of generator currents IGQ and IGD w.r.t x and V
   values[delta_idx][IGQ_idx]  =  dId_ddelta*sin(theta) + Id*cos(theta)
     + dIq_ddelta*cos(theta) + Iq*-sin(theta); 
   values[dw_idx][IGQ_idx]     =  dId_ddw*sin(theta) + dIq_ddw*cos(theta);
@@ -647,11 +642,10 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
   values[Psiqp_idx][IGQ_idx]  =  dId_dPsiqp*sin(theta) + dIq_dPsiqp*cos(theta);
   values[Edp_idx][IGQ_idx]    =  dId_dEdp*sin(theta) + dIq_dEdp*cos(theta);
 
+  // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
   values[VD_idx][IGQ_idx]    +=  dId_dVD*sin(theta) + dIq_dVD*cos(theta);
   values[VQ_idx][IGQ_idx]    +=  dId_dVQ*sin(theta) + dIq_dVQ*cos(theta);
 
-
-  //    *IGD = + Id * cos(theta) - Iq * sin(theta);
   values[delta_idx][IGD_idx] =  dId_ddelta*cos(theta) + Id*-sin(theta)
     - dIq_ddelta*sin(theta) - Iq*cos(theta); 
   values[dw_idx][IGD_idx]    = dId_ddw*cos(theta) - dIq_ddw*sin(theta);
@@ -660,6 +654,7 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
   values[Psiqp_idx][IGD_idx] = dId_dPsiqp*cos(theta) - dIq_dPsiqp*sin(theta);
   values[Edp_idx][IGD_idx]   = dId_dEdp*cos(theta) - dIq_dEdp*sin(theta);
   
+  // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
   values[VD_idx][IGD_idx]    += dId_dVD*cos(theta) - dIq_dVD*sin(theta);
   values[VQ_idx][IGD_idx]    += dId_dVQ*cos(theta) - dIq_dVQ*sin(theta);
 
@@ -738,14 +733,3 @@ double GenrouGen::getFieldCurrent()
 
   return LadIfd;
 }
-
-/*void GenrouGen::setExciter(boost::shared_ptr<BaseExcModel> &exciter)
-{
-  p_exciter = exciter;
-}
-
-boost::shared_ptr<BaseExcModel> GenrouGen::getExciter()
-{
-  return p_exciter;
-}*/
-

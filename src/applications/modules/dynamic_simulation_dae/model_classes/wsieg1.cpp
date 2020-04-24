@@ -8,9 +8,9 @@
  * @file   wsieg1.cpp
  * @author Shuangshuang Jin
  * @author Shrirang Abhyankar
- * @Last modified:   01/02/20
+ * @Last modified:   04/22/20
  *  
- * @brief  
+ * @brief WSIEG1 governor model implementation 
  *
  *
  */
@@ -18,8 +18,6 @@
 #include <wsieg1.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
-
-#define TS_THRESHOLD 1
 
 Wsieg1Gov::Wsieg1Gov(void)
 {
@@ -63,7 +61,7 @@ Wsieg1Gov::Wsieg1Gov(void)
   K8 = 0.0;
   SecondGenExists = false;
 
-  nxgov = 6;
+  nxgov = 6; // Number of variables
 }
 
 Wsieg1Gov::~Wsieg1Gov(void)
@@ -78,7 +76,6 @@ Wsieg1Gov::~Wsieg1Gov(void)
  */
 void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  data->getValue(BUS_NUMBER, &bid);
   BaseGovModel::load(data,idx); // load parameters in base governor model
   
   // load parameters for the model type
@@ -246,26 +243,32 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
 
   // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
+    // xLL equation
     if(iseq_diff[x1_idx]) values[x1_idx] = xLL - xLLprev; 
     else values[x1_idx] = -xLL + K*dw;
     yLL = xLL;
 
+    // xGV equation
     values[x2_idx] = xGV - xGVprev;
 
+    // xT1 equation
     if(iseq_diff[x3_idx]) values[x3_idx] = xT1 - xT1prev;
     else values[x3_idx] = xGV - xT1;
       
+    // xT2 equation
     if(iseq_diff[x4_idx]) values[x4_idx] = xT2 - xT2prev;
     else values[x4_idx] = xT1 - xT2;
 
+    // xT3 equation
     if(iseq_diff[x5_idx]) values[x5_idx] = xT3 - xT3prev;
     else values[x5_idx] = xT2 - xT3;
 
+    // xT4 equation
     if(iseq_diff[x6_idx]) values[x6_idx] = xT4 - xT4prev;
     else values[x6_idx] = xT3 - xT4;
 
   } else if(p_mode == RESIDUAL_EVAL) {
-    // State 1 xLL
+    // xLL equation
     if(iseq_diff[x1_idx]) {
       values[x1_idx] = (-xLL + (1 - T2/T1)*K*dw)/T1 - dxLL;
       yLL = xLL + T2/T1*K*dw;
@@ -274,23 +277,23 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // State 2 xGV ignoring limits Uo, Uc
+    // xGV equation (Note: ignoring limits Uo, Uc)
     //    values[x2_idx] = fmin(fmax(Uc,(Pref - xGV - yLL)/T3),Uo) -dxGV;
     values[x2_idx] = (Pref - xGV - yLL)/T3 - dxGV;
     
-    // State 3 xT1
+    // xT1 equation
     if(iseq_diff[x3_idx]) values[x3_idx] = (xGV - xT1)/T4 - dxT1;
     else values[x3_idx] = xGV - xT1;
 
-    // State 4 xT2
+    // xT2 equation
     if(iseq_diff[x4_idx]) values[x4_idx] = (xT1 - xT2)/T5 - dxT2;
     else values[x4_idx] = xT1 - xT2;
 
-    // State 5 xT3
+    // xT3 equation
     if(iseq_diff[x5_idx]) values[x5_idx] = (xT2 - xT3)/T6 - dxT3;
     else values[x5_idx] = xT2 - xT3;
 
-    // State 6 xT4
+    // xT4 equation
     if(iseq_diff[x6_idx]) values[x6_idx] = (xT3 - xT4)/T7 - dxT4;
     else values[x6_idx] = xT3 - xT4;
         
@@ -320,6 +323,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 
   dw_idx = getGenerator()->getRotorSpeedDeviationLocation();
   if(p_mode == FAULT_EVAL) {
+    // Partial derivatives of xLL equation
     if(iseq_diff[0]) {
       values[xLL_idx][xLL_idx] = 1.0;
     } else {
@@ -328,8 +332,10 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[dw_idx][xLL_idx] = K;
     }
 
+    // Partial derivatives of xGV equation
     values[xGV_idx][xGV_idx] = 1.0;
 
+    // Partial derivatives of xT1 equation
     if(iseq_diff[2]) {
       values[xT1_idx][xT1_idx] = 1.0;
     } else {
@@ -337,6 +343,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[xT1_idx][xT1_idx] = -1.0;
     }
 
+    // Partial derivatives of xT2 equation
     if(iseq_diff[3]) {
       values[xT2_idx][xT2_idx] = 1.0;
     } else {
@@ -344,6 +351,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[xT2_idx][xT2_idx] = -1.0;
     }
 
+    // Partial derivatives of xT3 equation
     if(iseq_diff[4]) {
       values[xT3_idx][xT3_idx] = 1.0;
     } else {
@@ -351,6 +359,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[xT3_idx][xT3_idx] = -1.0;
     }
 
+    // Partial derivatives of xT4 equation
     if(iseq_diff[5]) {
       values[xT4_idx][xT4_idx] = 1.0;
     } else {
@@ -358,6 +367,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[xT4_idx][xT4_idx] = -1.0;
     }
   } else {
+    // Partial derivatives of xLL equation
     if(iseq_diff[0]) {
       values[xLL_idx][xLL_idx] = -1.0/T1 - shift;
 
@@ -371,6 +381,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       dyLL_dxLL = 1.0;
     }
 
+    // Partial derivatives of xGV equation
     values[xLL_idx][xGV_idx] = -dyLL_dxLL/T3;
     values[xGV_idx][xGV_idx] = -1.0/T3 - shift; 
     values[xT1_idx][xGV_idx] = -dyLL_dxT1/T3;
@@ -380,6 +391,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 
     values[dw_idx][xGV_idx] = -dyLL_ddw/T3;
     
+    // Partial derivatives of xT1 equation
     if(iseq_diff[2]) {
       values[xGV_idx][xT1_idx] = 1/T4;
       values[xT1_idx][xT1_idx] = -1/T4 - shift;
@@ -388,6 +400,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[xT1_idx][xT1_idx] = -1.0;
     }
 
+    // Partial derivatives of xT2 equation
     if(iseq_diff[3]) {
       values[xT1_idx][xT2_idx] = 1/T5;
       values[xT2_idx][xT2_idx] = -1/T5 - shift;
@@ -396,6 +409,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[xT2_idx][xT2_idx] = -1.0;
     }
 
+    // Partial derivatives of xT3 equation
     if(iseq_diff[4]) {
       values[xT2_idx][xT3_idx] = 1/T6;
       values[xT3_idx][xT3_idx] = -1/T6 - shift;
@@ -404,6 +418,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
       values[xT3_idx][xT3_idx] = -1.0;
     }
 
+    // Partial derivatives of xT4 equation
     if(iseq_diff[5]) {
       values[xT3_idx][xT4_idx] = 1/T7;
       values[xT4_idx][xT4_idx] = -1/T7 - shift;
@@ -415,7 +430,6 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 
   return true;
 }
-
 
 /**
  * Set the mechanical power parameter inside the governor

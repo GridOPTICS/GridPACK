@@ -7,9 +7,9 @@
 /**
  * @file   base_gen_model.hpp
  * @author Shrirang Abhyankar
- * @Last modified:   02/17/19
+ * @Last modified:   04/24/20
  * 
- * @brief  
+ * @brief  Base generator class header file
  * 
  * 
  */
@@ -100,11 +100,47 @@ public:
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
 
 
-/**
- * Set Jacobian block
- * @param values a 2-d array of Jacobian block for the bus
- */
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
   virtual bool setJacobian(gridpack::ComplexType **values);
+
+  /**
+   * Set the field current parameter inside the exciter
+   * @param fldc value of the field current
+   */
+  virtual double getFieldCurrent(void);
+
+  /**
+   * Return the rotor speed deviation
+   * @param rotor speed deviation 
+   */
+  virtual double getRotorSpeedDeviation();
+
+  /**
+   * Return the location of speed rotor speed deviation variable in the bus array
+   * @param rotor speed deviation location
+   */
+  virtual int getRotorSpeedDeviationLocation();
+
+  /**
+   * Set the offset for first variable for the generator in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
+
+  void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
+
+  boost::shared_ptr<BaseExcModel> getExciter();
+  
+  bool hasExciter();
+
+  void setGovernor(boost::shared_ptr<BaseGovModel> &p_governor);
+
+  boost::shared_ptr<BaseGovModel> getGovernor();
+  
+  bool hasGovernor();
 
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
@@ -145,45 +181,6 @@ to be overwritten by the implementation */
    */
   void setValues(gridpack::ComplexType *values);
 
-  /**
-   * Set the field current parameter inside the exciter
-   * @param fldc value of the field current
-   */
-  virtual double getFieldCurrent(void);
-
-  /**
-   * Return the rotor speed deviation
-   * @param rotor speed deviation 
-   */
-  virtual double getRotorSpeedDeviation();
-
-  /**
-   * Return the location of speed rotor speed deviation variable in the bus array
-   * @param rotor speed deviation location
-   */
-  virtual int getRotorSpeedDeviationLocation();
-
-  /**
-   * Set the offset for first variable for the generator in the array for all bus variables 
-   * @param offset offset
-   */
-  void setBusOffset(int offset) {offsetb = offset;}
-
-  /***************************************/
-
-
-  void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
-
-  boost::shared_ptr<BaseExcModel> getExciter();
-  
-  bool hasExciter();
-
-  void setGovernor(boost::shared_ptr<BaseGovModel> &p_governor);
-
-  boost::shared_ptr<BaseGovModel> getGovernor();
-  
-  bool hasGovernor();
-
  protected:
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */
@@ -207,7 +204,6 @@ to be overwritten by the implementation */
   // Arrays used in coupling blocks between generator and governor. These should be allocated and destroyed by the derived class
   int           *xgov_loc;   // locations for governor variables in the bus variables array
   double        *dPmech_dxgov; // Partial derivatives of mechanical power Pmech w.r.t. governor variables (size = nxgov)
-
 };
 
 #endif

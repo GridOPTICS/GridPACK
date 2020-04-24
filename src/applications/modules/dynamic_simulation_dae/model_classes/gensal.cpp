@@ -7,10 +7,11 @@
 /**
  * @file   genrou.cpp
  * @author Zakaria El Mrabet
+ * @author Shrirang Abhyankar
  * @Created:   10/15/19
- * @Modified:  12/04/19 - Shri
+ * @Modified:  04/24/20
  *  
- * @brief  
+ * @brief GENSAL model implementation 
  *
  *
  */
@@ -50,7 +51,7 @@ GensalGen::GensalGen(void)
   B = 0.0;
   G = 0.0;
 
-  nxgen = 5;
+  nxgen = 5; // Number of variables
 }
 
 GensalGen::~GensalGen(void)
@@ -341,16 +342,22 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
  */
 bool GensalGen::setJacobian(gridpack::ComplexType **values) 
 {
-
+  // The voltage variables are first two variable in the bus array
   int VD_idx = 0; /* Row/col number for bus voltage VD variable */
   int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
+  // The network current balance equations are the first two in the set
+  // of equations at the bus. Note that DSim orders the reactive current (IQ)
+  // first and then the real current (ID). Hence, IGQ is ordered first and then IGD
   int IGQ_idx = 0; /* Row/col location for IGQ equations */
   int IGD_idx = 1; /* Row/col location for IGD equations */
+
+  // Offsets for the variables in the bus variable array
   int delta_idx = offsetb;
   int dw_idx    = offsetb+1;
   int Eqp_idx   = offsetb+2;
   int Psidp_idx = offsetb+3;
   int Psiqpp_idx = offsetb+4;
+
   double Vd,Vq,Vdterm,Vqterm;
   double Id,Iq;
   double Psid,Psiq,Psidpp;
@@ -466,12 +473,12 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
     values[Psidp_idx][dw_idx] = 1.0;
     values[Psiqpp_idx][Psiqpp_idx] = 1.0;
   } else {
-    
+
+    // Partial derivatives for ddelta_dt equation
     values[delta_idx][delta_idx] = -shift;
     values[dw_idx][delta_idx]    = OMEGA_S;
 
-    // F2  values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; // Pmech can be called from Governor
-    // dF2_dx
+    // Partial derivatives for dw_dt equation
     double const1 = 1/(2*H);
     
     values[delta_idx][dw_idx] = const1*-dTelec_ddelta;
@@ -495,6 +502,7 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
       }
     }
     
+    // Partial derivatives for dEqp_dt equation
     double const2 =  (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
     double dLadIfd_ddelta =  (Xd - Xdp)*(dId_ddelta + const2*(-(Xdp - Xl)*dId_ddelta));
     double dLadIfd_ddw    =  (Xd - Xdp)*(dId_ddw + const2*(-(Xdp - Xl)*dId_ddw));
@@ -533,7 +541,7 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
       }
     }
 
-    // State 4
+    // Partial derivatives for dPsidp_dt equation
     values[delta_idx][Psidp_idx] = -(Xdp - Xl)*dId_ddelta/Tdopp;
     values[dw_idx][Psidp_idx]    = -(Xdp - Xl)*dId_ddw/Tdopp;
     values[Eqp_idx][Psidp_idx]   = (1.0 -(Xdp - Xl)*dId_dEqp)/Tdopp;
@@ -543,7 +551,7 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
     values[VD_idx][Psidp_idx] = -(Xdp - Xl)*dId_dVD/Tdopp;
     values[VQ_idx][Psidp_idx] = -(Xdp - Xl)*dId_dVQ/Tdopp;
 
-    // State 5
+    // Partial derivatives for dPsiqpp_dt equation
     values[delta_idx][Psiqpp_idx] = -(Xq - Xdpp)*dIq_ddelta/Tqopp;
     values[dw_idx][Psiqpp_idx]    = -(Xq - Xdpp)*dIq_ddw/Tqopp;
     values[Eqp_idx][Psiqpp_idx]   = -(Xq - Xdpp)*dIq_dEqp/Tqopp;
@@ -554,13 +562,15 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
     values[VQ_idx][Psiqpp_idx]    = -(Xq - Xdpp)*dIq_dVQ/Tqopp;
   }
 
-  // Partial of generator currents w.r.t. x and V
+  // Partial of generator currents IGD and IGQ w.r.t. x and V
   values[delta_idx][IGD_idx]    = dId_ddelta*sin(delta) + Id*cos(delta)
     + dIq_ddelta*cos(delta) - Iq*sin(delta);
   values[dw_idx][IGD_idx]       = dId_ddw*sin(delta) + dIq_ddw*cos(delta);
   values[Eqp_idx][IGD_idx]      = dId_dEqp*sin(delta) + dIq_dEqp*cos(delta);
   values[Psidp_idx][IGD_idx]    = dId_dPsidp*sin(delta) + dIq_dPsidp*cos(delta);
   values[Psiqpp_idx][IGD_idx]   = dId_dPsiqpp*sin(delta) + dIq_dPsiqpp*cos(delta);
+
+  // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
   values[VD_idx][IGD_idx]      += dId_dVD*sin(delta) + dIq_dVD*cos(delta);
   values[VQ_idx][IGD_idx]      += dId_dVQ*sin(delta) + dIq_dVQ*cos(delta);
   
@@ -570,6 +580,8 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
   values[Eqp_idx][IGQ_idx]      = -dId_dEqp*cos(delta) + dIq_dEqp*sin(delta);
   values[Psidp_idx][IGQ_idx]     = -dId_dPsidp*cos(delta) + dIq_dPsidp*sin(delta);
   values[Psiqpp_idx][IGQ_idx]   = -dId_dPsiqpp*cos(delta) + dIq_dPsiqpp*sin(delta);
+
+  // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
   values[VD_idx][IGQ_idx]      += -dId_dVD*cos(delta) + dIq_dVD*sin(delta);
   values[VQ_idx][IGQ_idx]      += -dId_dVQ*cos(delta) + dIq_dVQ*sin(delta);
       
@@ -625,15 +637,6 @@ double GensalGen::getFieldCurrent()
   return LadIfd;
 
 }
-
-/**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indics for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
 
 /**
  * Write out generator state

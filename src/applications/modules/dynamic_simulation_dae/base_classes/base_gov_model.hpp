@@ -8,9 +8,9 @@
  * @file   base_gov_model.hpp
  * @author Shuangshuang Jin 
  * @author Shrirang Abhyankar
- * @Last modified:   01/02/20
+ * @Last modified:   04/24/20
  * 
- * @brief  
+ * @brief  Base governor class header file
  * 
  * 
  */
@@ -84,11 +84,46 @@ public:
    */
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
   
-/**
- * Set Jacobian block
- * @param values a 2-d array of Jacobian block for the bus
- */
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
   virtual bool setJacobian(gridpack::ComplexType **values);
+
+  /**
+   * Set the mechanical power parameter inside the governor
+   * @param pmech value of the mechanical power 
+   */
+  virtual void setInitialMechanicalPower(double pmech);
+
+  /** 
+   * Get the value of the mechanical power parameter
+   * @return value of the mechanical power 
+   */
+  virtual double getMechanicalPower();
+  
+  /**
+   * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+   * @param xgov_loc locations of governor variables
+   * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+   */
+  virtual bool getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov);
+
+  /**
+   * Set the value of the Vcomp
+   * @return value of the Vcomp
+   */
+  virtual void setVcomp(double vtmp);
+  
+  void setGenerator(BaseGenModel* generator);
+
+  BaseGenModel* getGenerator(void);
+
+  /**
+   * Set the offset for first variable for the governor in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
 
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
@@ -128,43 +163,6 @@ to be overwritten by the implementation */
    * @param values values in vector or matrix
    */
   void setValues(gridpack::ComplexType *values);
-
-  /***************************************/
-
-  /**
-   * Set the mechanical power parameter inside the governor
-   * @param pmech value of the mechanical power 
-   */
-  virtual void setInitialMechanicalPower(double pmech);
-
-  /** 
-   * Get the value of the mechanical power parameter
-   * @return value of the mechanical power 
-   */
-  virtual double getMechanicalPower();
-  
-  /**
-   * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
-   * @param xgov_loc locations of governor variables
-   * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
-   */
-  virtual bool getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov);
-
-  /**
-   * Set the value of the Vcomp
-   * @return value of the Vcomp
-   */
-  virtual void setVcomp(double vtmp);
-  
-  void setGenerator(BaseGenModel* generator);
-
-  BaseGenModel* getGenerator(void);
-
-  /**
-   * Set the offset for first variable for the governor in the array for all bus variables 
-   * @param offset offset
-   */
-  void setBusOffset(int offset) {offsetb = offset;}
 
 protected:
   double        VD, VQ;

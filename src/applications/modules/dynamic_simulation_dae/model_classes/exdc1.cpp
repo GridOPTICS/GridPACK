@@ -7,9 +7,9 @@
 /**
  * @file   exdc1.cpp
  * @author Shrirang Abhyankar 
- * @Last modified:   01/02/20
+ * @Last modified:   04/24/20
  *  
- * @brief  
+ * @brief EXDC1 exciter mdoel implementation 
  *
  *
  */
@@ -56,7 +56,6 @@ Exdc1Exc::~Exdc1Exc(void)
  */
 void Exdc1Exc::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  data->getValue(BUS_NUMBER, &bid);
   BaseExcModel::load(data,idx); // load parameters in base exciter model
   if (!data->getValue(EXCITER_TR, &TR, idx)) TR = 0.0; // TR
   if (!data->getValue(EXCITER_KA, &KA, idx)) KA = 0.0; // KA
@@ -194,14 +193,14 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
   
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    // State 1 Vmeas
+    // Vmeas equation
     if(iseq_diff[0]) values[0] = Vmeas - Vmeasprev;
     else values[0] = -Vmeas + Ec;
 
 
     Vf = xf + KF/TF*Efd;
 
-    // State 2 xLL
+    // xLL equation
     if(iseq_diff[1]) {
       values[1] = xLL - xLLprev;
       yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
@@ -210,22 +209,22 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // State 3 VR
+    // VR equation
     if(iseq_diff[2]) values[2] = VR - VRprev;
     else values[2] = -VR + KA*yLL;
 
-    // State 4 Efd
+    // Efd equation
     values[3] = Efd - Efdprev;
 
-    // State 5 xf
+    // xf equation
     values[4] = xf - xfprev;
 
   } else if(p_mode == RESIDUAL_EVAL) {
-    // State 1 Vmeas
+    // Vmeas equation
     if(iseq_diff[0]) values[0] = (-Vmeas + Ec)/TR - dVmeas;
     else values[0] = -Vmeas + Ec;
 
-    // State 2 xLL
+    // xLL equation
     Vf = xf + KF/TF*Efd;
     if(iseq_diff[1]) {
       values[1] = (-xLL + (1 - TC/TB)*(Vref - Vmeas - Vf))/TB - dxLL;
@@ -235,14 +234,14 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // State 3 VR
+    // VR equation
     if(iseq_diff[2]) values[2] = (-VR + KA*yLL)/TA - dVR;
     else values[2] = -VR + KA*yLL;
 
-    // State 4 Efd // Need to add saturation here
+    // Efd equation (Note: Saturation ignored for now)
     values[3] = (VR - KE*Efd)/TE - dEfd;
 
-    // State 5 xf
+    // xf equation
     values[4] = (-xf - KF/TF*Efd)/TF - dxf;    
   }
   
@@ -277,7 +276,7 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
   Vf = xf + KF/TF*Efd;
 
   if(p_mode == FAULT_EVAL) {
-    // dEq.1_dX
+    // Partial derivatives of Vmeas equation
     if(iseq_diff[0]) {
       values[Vmeas_idx][Vmeas_idx] = 1.0;
     } else {
@@ -286,7 +285,7 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
       values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
     }
 
-    // dEq.2_dX
+    // Partial derivatives of xLL equation
     if(iseq_diff[1]) {
       values[xLL_idx][xLL_idx] = 1.0;
       yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
@@ -301,6 +300,7 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
       dyLL_dxLL = 1.0;
     }
 
+    // Partial derivatives of VR equation
     if(iseq_diff[2]) {
       values[VR_idx][VR_idx] = 1.0;
     } else {
@@ -311,10 +311,13 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
       values[xf_idx][VR_idx]    = KA*dyLL_dxf;
     }
     
+    // Partial derivatives of Efd equation
     values[Efd_idx][Efd_idx] = 1.0;
+
+    // Partial derivatives of xf equation
     values[xf_idx][xf_idx]   = 1.0;
   } else {
-    // dEq.1_dX
+    // Partial derivatives of Vmeas equation
     if(iseq_diff[0]) {
       values[Vmeas_idx][Vmeas_idx] = -1.0/TR - shift;
       values[VD_idx][Vmeas_idx]    = dEc_dVD/TR;
@@ -325,7 +328,7 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
       values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
     }
 
-    // dEq.2_dX
+    // Partial derivatives of xLL equation
     if(iseq_diff[1]) {
       values[Vmeas_idx][xLL_idx] = ((1 - TC/TB)*-1.0)/TB;
       values[xLL_idx][xLL_idx] = -1.0/TB - shift;
@@ -344,6 +347,7 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
       dyLL_dxLL = 1.0;
     }
 
+    // Partial derivatives of VR equation
     if(iseq_diff[2]) {
       values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas/TA;
       values[xLL_idx][VR_idx]   = KA*dyLL_dxLL/TA;
@@ -358,9 +362,11 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
       values[xf_idx][VR_idx]    = KA*dyLL_dxf;
     }
     
+    // Partial derivatives of Efd equation
     values[VR_idx][Efd_idx]  = 1/TE;
     values[Efd_idx][Efd_idx] = -KE/TE - shift;
 
+    // Partial derivatives of xf equation
     values[Efd_idx][xf_idx]  = -KF/(TF*TF);
     values[xf_idx][xf_idx]   = -1/TF - shift;
   }
