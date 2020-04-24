@@ -173,6 +173,7 @@ protected:
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
   BaseGenModel* p_gen; // Generator model
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+  int           nxexc;    /** Number of variables for the exciter model */
 
 
 };

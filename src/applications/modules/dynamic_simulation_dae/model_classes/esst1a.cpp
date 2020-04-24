@@ -51,6 +51,8 @@ Esst1aExc::Esst1aExc(void)
   Tf = 0.0;
   Klr = 0.0;
   Ilr = 0.0;    
+
+  nxexc = 5;
 }
 
 Esst1aExc::~Esst1aExc(void)
@@ -167,7 +169,7 @@ void Esst1aExc::write(const char* signal, char* string)
  */
 bool Esst1aExc::vectorSize(int *nvar) const
 {
-  *nvar = 5;
+  *nvar = nxexc;
   return true;
 }
 
@@ -314,8 +316,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
   double dEc_dVQ = VQ/Ec;
 
   if(p_mode == FAULT_EVAL) {
-    //    if(iseq_diff[0]) values[0] = Vmeas - Vmeasprev;
-    //    else values[0] = -Vmeas + Ec;
+    // dEq. 1_dX
     if(iseq_diff[0]) {
       values[Vmeas_idx][Vmeas_idx] = 1.0;
     } else {
@@ -324,7 +325,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
     }
       
-    // Efd derivatives need to be included
+    // dEq.2_dX
     if(iseq_diff[1]) {
       values[xLL1_idx][xLL1_idx] = 1.0;
       yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);

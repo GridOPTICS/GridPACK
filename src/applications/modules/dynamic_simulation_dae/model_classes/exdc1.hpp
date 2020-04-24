@@ -45,6 +45,12 @@ class Exdc1Exc: public BaseExcModel
         data, int idx);
 
     /**
+     * Set Jacobian block
+     * @param values a 2-d array of Jacobian block for the bus
+     */
+    bool setJacobian(gridpack::ComplexType **values);
+
+    /**
      * Initialize exciter model before calculation
      * @param [output] values - array where initialized exciter variables should be set
      */
@@ -93,13 +99,21 @@ class Exdc1Exc: public BaseExcModel
      * Set the initial field voltage (at t = tstart) for the exciter
      * @param fldv value of the field voltage
      */
-    virtual void setInitialFieldVoltage(double fldv);
+    void setInitialFieldVoltage(double fldv);
 
     /** 
      * Get the value of the field voltage parameter
      * @return value of field voltage
      */
-    virtual double getFieldVoltage();
+    double getFieldVoltage();
+
+    /**
+     * Partial derivatives of field voltage Efd w.r.t. exciter variables
+     * @param xexc_loc locations of exciter variables
+     * @param dEfd_dxexc partial derivatives of field voltage w.r.t exciter variables
+     * @param dEfd_dxgen partial derivatives of field voltage Efd w.r.t generator variables
+     */
+    bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
 
   private:
 

@@ -40,6 +40,8 @@ Exdc1Exc::Exdc1Exc(void)
   KF = 0.0;
   TF = 0.0;
   SWITCH = 0;
+
+  nxexc = 5;
 }
 
 Exdc1Exc::~Exdc1Exc(void)
@@ -142,7 +144,7 @@ void Exdc1Exc::write(const char* signal, char* string)
  */
 bool Exdc1Exc::vectorSize(int *nvar) const
 {
-  *nvar = 5;
+  *nvar = nxexc;
   return true;
 }
 
@@ -190,7 +192,6 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
   double Ec,yLL,Vf;
   Ec = sqrt(VD*VD + VQ*VQ);
   
-  Efd = Exdc1Exc::getFieldVoltage();
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     // State 1 Vmeas
@@ -242,10 +243,128 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
     values[3] = (VR - KE*Efd)/TE - dEfd;
 
     // State 5 xf
-    values[4] = (-xf - KF/TF*Efd)/TF - dxf;
-    
+    values[4] = (-xf - KF/TF*Efd)/TF - dxf;    
   }
   
+  return true;
+}
+
+/**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
+{
+  int Vmeas_idx = offsetb;
+  int xLL_idx   = offsetb+1;
+  int VR_idx    = offsetb+2;
+  int Efd_idx   = offsetb+3;
+  int xf_idx    = offsetb+4;
+  int VD_idx    = 0;
+  int VQ_idx    = 1;
+  double dVf_dxf  = 1.0;
+  double dVf_dEfd = KF/TF;
+  double dyLL_dVmeas=0.0,dyLL_dxLL=0.0;
+  double dyLL_dVR=0.0,dyLL_dEfd=0.0;
+  double dyLL_dxf=0.0;
+  double Ec,yLL,Vf;
+
+  Ec = sqrt(VD*VD + VQ*VQ);
+
+  double dEc_dVD = VD/Ec;
+  double dEc_dVQ = VQ/Ec;
+
+  Vf = xf + KF/TF*Efd;
+
+  if(p_mode == FAULT_EVAL) {
+    // dEq.1_dX
+    if(iseq_diff[0]) {
+      values[Vmeas_idx][Vmeas_idx] = 1.0;
+    } else {
+      values[Vmeas_idx][Vmeas_idx] = -1.0;
+      values[VD_idx][Vmeas_idx] = dEc_dVD;
+      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
+    }
+
+    // dEq.2_dX
+    if(iseq_diff[1]) {
+      values[xLL_idx][xLL_idx] = 1.0;
+      yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
+      dyLL_dxLL  = 1.0;
+      dyLL_dVmeas = -TC/TB;
+      dyLL_dxf    = -TC/TB*dVf_dxf;
+    } else {
+      values[Vmeas_idx][xLL_idx] = -1.0;
+      values[xLL_idx][xLL_idx]  = -1.0;
+      values[xf_idx][xLL_idx]    = -dVf_dxf;
+      yLL = xLL;
+      dyLL_dxLL = 1.0;
+    }
+
+    if(iseq_diff[2]) {
+      values[VR_idx][VR_idx] = 1.0;
+    } else {
+      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
+      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
+      values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
+      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
+      values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+    }
+    
+    values[Efd_idx][Efd_idx] = 1.0;
+    values[xf_idx][xf_idx]   = 1.0;
+  } else {
+    // dEq.1_dX
+    if(iseq_diff[0]) {
+      values[Vmeas_idx][Vmeas_idx] = -1.0/TR - shift;
+      values[VD_idx][Vmeas_idx]    = dEc_dVD/TR;
+      values[VQ_idx][Vmeas_idx]    = dEc_dVQ/TR;
+    } else {
+      values[Vmeas_idx][Vmeas_idx] = -1.0;
+      values[VD_idx][Vmeas_idx] = dEc_dVD;
+      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
+    }
+
+    // dEq.2_dX
+    if(iseq_diff[1]) {
+      values[Vmeas_idx][xLL_idx] = ((1 - TC/TB)*-1.0)/TB;
+      values[xLL_idx][xLL_idx] = -1.0/TB - shift;
+      values[Efd_idx][xLL_idx] = ((1 - TC/TB)*-KF/TF)/TB;
+      values[xf_idx][xLL_idx]  = (1 - TC/TB)/TB;
+
+      yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
+      dyLL_dxLL  = 1.0;
+      dyLL_dVmeas = -TC/TB;
+      dyLL_dxf    = -TC/TB*dVf_dxf;
+    } else {
+      values[Vmeas_idx][xLL_idx] = -1.0;
+      values[xLL_idx][xLL_idx]  = -1.0;
+      values[xf_idx][xLL_idx]    = -dVf_dxf;
+      yLL = xLL;
+      dyLL_dxLL = 1.0;
+    }
+
+    if(iseq_diff[2]) {
+      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas/TA;
+      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL/TA;
+      values[VR_idx][VR_idx]    = (-1.0 + KA*dyLL_dVR)/TA - shift;
+      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd/TA;
+      values[xf_idx][VR_idx]    = KA*dyLL_dxf/TA;
+    } else {
+      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
+      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
+      values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
+      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
+      values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+    }
+    
+    values[VR_idx][Efd_idx]  = 1/TE;
+    values[Efd_idx][Efd_idx] = -KE/TE - shift;
+
+    values[Efd_idx][xf_idx]  = -KF/(TF*TF);
+    values[xf_idx][xf_idx]   = -1/TF - shift;
+  }
+
   return true;
 }
 
@@ -266,5 +385,20 @@ void Exdc1Exc::setInitialFieldVoltage(double fldv)
 double Exdc1Exc::getFieldVoltage()
 {
   return Efd;
+}
+
+bool Exdc1Exc::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
+{
+  int i,nxgen;
+
+  for(i=0; i < nxexc; i++) xexc_loc[i] = offsetb+i;
+
+  for(i=0; i < nxexc; i++) dEfd_dxexc[i] = 0.0;
+  dEfd_dxexc[3] = 1.0;
+
+  getGenerator()->vectorSize(&nxgen);
+  for(i=0; i < nxgen; i++) dEfd_dxgen[i] = 0.0;
+
+  return true;
 }
 
