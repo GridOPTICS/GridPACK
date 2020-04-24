@@ -30,6 +30,9 @@
 # Show progress of nonlinear solver during each step
 -dsim_snes_monitor
 
+# Use full Newton step
+-dsim_snes_linesearch_type basic
+
 # Use LU factorization as the linear solver
 -dsim_pc_type lu
 
