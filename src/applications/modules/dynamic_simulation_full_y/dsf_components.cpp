@@ -1054,6 +1054,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         } // end of the judgement if the dynamic load is not CMLDBLU1
       } // end of if (data->getValue(LOAD_MODEL, &model, i))
     } // end of for (i=0; i<p_npowerflow_load; i++)
+		
   } // end of if (data->getValue(LOAD_NUMBER, &p_npowerflow_load))
 
   p_ndyn_load = p_loadmodels.size(); 
@@ -1095,6 +1096,12 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   printf(" Bus %d have remaining static loads for Y-bus: p_pl: %f pu, p_ql: %f pu, \n",
       idx, p_pl, p_ql);
+	  
+  for (i=0; i<p_ndyn_load; i++){
+    // if the dynamic load model is the first AC motor model
+	p_loadmodels[i]->setSameBusStaticLoadPQ(p_pl, p_ql, p_voltage);
+	
+  }
    
    // renke, this is the special code to determine which bus frequency need to be updated for wide area control
   //if (getOriginalIndex() == 34 || getOriginalIndex() == 30){ //renke hardcoded

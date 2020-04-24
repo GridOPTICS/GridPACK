@@ -107,6 +107,11 @@ class BaseLoadModel
      */
     virtual void setVoltage(gridpack::ComplexType voltage);
 	
+    /**
+     * Set same bus static load p and q for load shedding action usage
+     */
+    virtual void setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag);
+	
 	/**
      * get intialized reactive power of the dynamic load model
      */

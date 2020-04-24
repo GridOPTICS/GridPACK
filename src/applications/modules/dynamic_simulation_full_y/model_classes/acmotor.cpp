@@ -108,6 +108,7 @@ gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
   Bstall = 0.0;
   equivY =0.0; // motor base
   equivY_sysMVA =0.0; // system mva base
+  
        
   INorton_sysMVA = 0.0; // system base
        
@@ -146,6 +147,9 @@ gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
   I_conv_factor_M2S = 0.0;
   
   Fonline = 1.0;
+  samebus_static_loadP = 0.0;
+  samebus_static_loadQ = 0.0;
+  samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);
 
 }
 
@@ -405,7 +409,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   setDynLoadQ(getInitReactivePower());
   
   Fonline = 1.0;
- 
+  
 }
 
 /**
@@ -445,7 +449,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::AcmotorLoad::NortonImpedence
 
   equivY = gridpack::ComplexType(Gstall, Bstall); 
 
-  equivY_sysMVA = equivY * MVABase / systemMVABase;
+  equivY_sysMVA = equivY * MVABase / systemMVABase; 
   
   return equivY_sysMVA;
   
@@ -470,7 +474,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor_currentInjection(bool 
   printf("AcmotorLoad::predictor_currentInjection, Imotor_motorBase: %12.6f +j %12.6f\n", real(Imotor_motorBase), imag(Imotor_motorBase));
   printf("AcmotorLoad::predictor_currentInjection, I_conv_factor_M2S: %12.6f \n", I_conv_factor_M2S);
   
-  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S;
+  //INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S; //original one without considering loadshedding of the same bus static load
+  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline);
   p_INorton = INorton_sysMVA; // SJin: Correct? 
 } 
 
@@ -536,7 +541,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor(
 void gridpack::dynamic_simulation::AcmotorLoad::corrector_currentInjection(bool flag)
 {
   gridpack::ComplexType Imotor_motorBase = equivYpq_motorBase * vt_complex;
-  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S;
+  //INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S; //original one without considering loadshedding of the same bus static load
+  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline);
   p_INorton = INorton_sysMVA; // SJin: Correct? 
 }
 
@@ -909,4 +915,17 @@ bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFact
 	printf("----renke debug load shed, AcmotorLoad::changeLoad, the dynamic load at bus %d with ID %s, percentageFactor: %f, remaining Fonline: %f \n", 
 																				p_bus_id, p_loadid.c_str(), percentageFactor, Fonline);
 	return true;
+}
+/**
+ * Set same bus static load p and q for load shedding action usage
+ */
+void gridpack::dynamic_simulation::AcmotorLoad::setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag)
+{
+  samebus_static_loadP = static_pl;
+  samebus_static_loadQ = static_ql;
+  
+  double samebus_static_load_yr = samebus_static_loadP/(mag*mag);
+  double samebus_static_load_yi = (-samebus_static_loadQ)/(mag*mag);
+  samebus_static_equivY_sysMVA = gridpack::ComplexType(samebus_static_load_yr, samebus_static_load_yi);
+  printf("AcmotorLoad::setSameBusStaticLoadPQ, samebus_static_equivY_sysMVA: %12.6f +j %12.6f\n", real(samebus_static_equivY_sysMVA), imag(samebus_static_equivY_sysMVA));
 }
