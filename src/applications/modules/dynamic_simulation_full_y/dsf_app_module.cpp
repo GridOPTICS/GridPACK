@@ -199,9 +199,9 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(void)
   gridpack::parser::PTI23_parser<DSFullNetwork> parser(p_network);
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   std::string filename = cursor->get("generatorParameters","");
-  printf("p[%d] generatorParameters: %s\n",p_comm.rank(),filename.c_str());
+  //printf("p[%d] generatorParameters: %s\n",p_comm.rank(),filename.c_str());
   if (filename.size() > 0) parser.externalParse(filename.c_str());
-  printf("p[%d] finished Generator parameters\n",p_comm.rank());
+  //printf("p[%d] finished Generator parameters\n",p_comm.rank());
 }
 
 /**
@@ -2425,7 +2425,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   Simu_Current_Step = 0;
   p_bDynSimuDone = false;
   
-  printf (" In function solvePreInitialize end, simu_total_steps: %d \n", simu_total_steps);
+  //printf (" In function solvePreInitialize end, simu_total_steps: %d \n", simu_total_steps);
   
 }
 
@@ -2443,7 +2443,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     //sprintf(step_str,"\nIter %d\n", Simu_Current_Step);
     //p_busIO->header(step_str);
     timer->start(t_misc);
-    printf("Step %d\ttime %5.3f sec: \n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
+    //printf("Step %d\ttime %5.3f sec: \n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
     //printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
     ///char step_str[128];
     ///sprintf(step_str, "\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);

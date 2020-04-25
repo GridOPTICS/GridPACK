@@ -182,6 +182,7 @@ class AcmotorLoad : public BaseLoadModel
 	double samebus_static_loadP;  // system base mva pu value
     double samebus_static_loadQ;  // system base mva pu value
 	gridpack::ComplexType samebus_static_equivY_sysMVA;
+	bool bdebugprint;
    
  
     gridpack::ComplexType p_INorton;

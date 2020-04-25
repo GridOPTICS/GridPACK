@@ -104,7 +104,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     //return status;
     return YMBus::matrixDiagValues(values);	
   } else if (p_mode == YL) {
-    printf("DSFullBus::matrixDiagValues, bus %d: p_pl = %f, p_ql = %f, p_voltage = %f\n", getOriginalIndex(), p_pl, p_ql, p_voltage);
+    //printf("DSFullBus::matrixDiagValues, bus %d: p_pl = %f, p_ql = %f, p_voltage = %f\n", getOriginalIndex(), p_pl, p_ql, p_voltage);
     //printf("p_ybusr = %f, p_ybusi = %f\n", p_ybusr, p_ybusi);
     p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
     p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
@@ -123,7 +123,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
       for (int i = 0; i < p_ngen; i++) {
          //printf("!!!!!!!%f, %f\n", p_ybusr, p_ybusi);
          if (p_pg[i] < 0) {
-           printf("================\n");
+           //printf("================\n");
            p_ybusr = p_ybusr+(-p_pg[i])/(p_voltage*p_voltage);
            p_ybusi = p_ybusi+p_qg[i]/(p_voltage*p_voltage);
            gridpack::ComplexType ret(p_ybusr, p_ybusi);
@@ -207,19 +207,19 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
       return false;
     }	  
   }else if (p_mode == YDYNLOAD) {  // Dynamic load model's contribution to Y matrix
-	printf("bus %d entering YDYNLOAD mode: p_ndyn_load: %d \n", getOriginalIndex(), p_ndyn_load);
+	//printf("bus %d entering YDYNLOAD mode: p_ndyn_load: %d \n", getOriginalIndex(), p_ndyn_load);
     if (p_ndyn_load>0) {
 		for (int i = 0; i < p_ndyn_load; i++) {
 
-			printf("DSFullBus::matrixDiagValues, Bus %d here 1\n", getOriginalIndex());
+			//printf("DSFullBus::matrixDiagValues, Bus %d here 1\n", getOriginalIndex());
 			gridpack::ComplexType Y_a
 				= p_loadmodels[i]->NortonImpedence();
-			printf("DSFullBus::matrixDiagValues, here 2 real(Y_a): %f imag(Y_a): %f\n",real(Y_a),imag(Y_a));
+			//printf("DSFullBus::matrixDiagValues, here 2 real(Y_a): %f imag(Y_a): %f\n",real(Y_a),imag(Y_a));
 
 			p_ybusr = p_ybusr + real(Y_a);
 			p_ybusi = p_ybusi + imag(Y_a);
 			gridpack::ComplexType ret(p_ybusr, p_ybusi);
-			printf("DSFullBus::matrixDiagValues, here 3 p_ybusr: %f p_ybusi: %f\n",p_ybusr,p_ybusi);
+			//printf("DSFullBus::matrixDiagValues, here 3 p_ybusr: %f p_ybusi: %f\n",p_ybusr,p_ybusi);
 			values[0] = ret;
 		}
 	}else {
@@ -585,9 +585,9 @@ void gridpack::dynamic_simulation::DSFullBus::corrector(double t_inc, bool flag)
     //printf("INorton= %f + %fi\n", real(p_INorton[i]), imag(p_INorton[i]));
     
     if (!flag) { 
-      printf("%f %f\n", real(p_mac_ang_s0[i]), real(p_mac_spd_s0[i]));
+      //printf("%f %f\n", real(p_mac_ang_s0[i]), real(p_mac_spd_s0[i]));
     } else { 
-      printf("%f %f\n", real(p_mac_ang_s1[i]), real(p_mac_spd_s1[i]));
+      //printf("%f %f\n", real(p_mac_ang_s1[i]), real(p_mac_spd_s1[i]));
     }
   }  
 #else
@@ -984,6 +984,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   }
 
   // add load model
+  bool bdebug_load_model = false;
   double pl, ql, totaldynReactivepower;
   p_powerflowload_p.clear();
   p_powerflowload_p_save.clear();
@@ -992,11 +993,11 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_loadid.clear();
   p_powerflowload_status.clear();
   totaldynReactivepower = 0.0;
-  printf("DSFullBus::load():  entering processing load model \n");
+  if (bdebug_load_model) printf("DSFullBus::load():  entering processing load model \n");
   if (data->getValue(LOAD_NUMBER, &p_npowerflow_load)) {
     std::string loadid;
     int icnt = 0;
-    printf("bus %d has %d power flow loads \n", idx, p_npowerflow_load);
+    if (bdebug_load_model) printf("bus %d has %d power flow loads \n", idx, p_npowerflow_load);
     int istat;
     for (i=0; i<p_npowerflow_load; i++) { 
       data->getValue(LOAD_PL, &pl, i);
@@ -1011,7 +1012,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       p_loadid.push_back(loadid);  
       p_powerflowload_status.push_back(istat);
 
-      printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
+      if (bdebug_load_model) printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
       std::string model;
 
       // check if the this load component is a dynamic load model
@@ -1021,13 +1022,13 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         //p_pl.push_back(pl); // SJIN: p_pl and p_ql are defined double already, do we need array for load model?
         //p_ql.push_back(ql);
         //
-        printf("dynamic load at bus %d, model = %s \n", idx, model.c_str());
+        if (bdebug_load_model) printf("dynamic load at bus %d, model = %s \n", idx, model.c_str());
         bcomputefreq = true;
         if ( model == "CMLDBLU1" ) {  // if the load model at the bus
           // is CMLDBLU,
           // actually this bus does not have any dynamic loads
           // all the dynamic loads will be added to the extended buses
-          printf("pop the powerflow load with ID %s back, as the type is %s !\n",
+          if (bdebug_load_model) printf("pop the powerflow load with ID %s back, as the type is %s !\n",
               loadid.c_str(), model.c_str());
           p_powerflowload_p.pop_back();
           p_powerflowload_q.pop_back();
@@ -1035,7 +1036,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           p_npowerflow_load = 0;
         }else{
           BaseLoadModel *load = loadFactory.createLoadModel(model); 
-          printf("DSFullBus::load(): base load object created!\n");	
+          if (bdebug_load_model) printf("DSFullBus::load(): base load object created!\n");	
 
           if (load) {
             boost::shared_ptr<BaseLoadModel> baseload;
@@ -1068,7 +1069,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
     p_ql+=p_powerflowload_q[i];
   }
 
-  printf(" Bus %d have %d power flow loads, total %f + j%f \n",
+  if (bdebug_load_model) printf(" Bus %d have %d power flow loads, total %f + j%f \n",
       idx, p_npowerflow_load, p_pl, p_ql);
 
   //get total load P and Q for all dynamic loads at this bus
@@ -1088,13 +1089,13 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_pl-=totaldyn_p;
   p_ql-=totaldyn_q;
 
-  printf(" Bus %d have %d dynamic loads, total %f + j%f \n",
+  if (bdebug_load_model) printf(" Bus %d have %d dynamic loads, total %f + j%f \n",
       idx, p_ndyn_load, totaldyn_p, totaldyn_q);
 
   p_pl /= p_sbase;
   p_ql /= p_sbase;
 
-  printf(" Bus %d have remaining static loads for Y-bus: p_pl: %f pu, p_ql: %f pu, \n",
+  if (bdebug_load_model) printf(" Bus %d have remaining static loads for Y-bus: p_pl: %f pu, p_ql: %f pu, \n",
       idx, p_pl, p_ql);
 	  
   for (i=0; i<p_ndyn_load; i++){
@@ -2753,8 +2754,9 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
   p_linerelays.clear();
   p_relaybranchidx.clear();
   p_ckt.clear();
-
-  printf("entering DSFullBranch::load() \n");
+ 
+  bool bdebug_branch_load = false;
+  if (bdebug_branch_load) printf("entering DSFullBranch::load() \n");
 
   /*
   gridpack::dynamic_simulation::DSFullBus *bus1 =
