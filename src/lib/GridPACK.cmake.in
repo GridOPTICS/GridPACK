@@ -46,6 +46,11 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_ENVIRONMENT_LIBRARY
+    NAMES gridpack_environment
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   find_library(GRIDPACK_MATH_LIBRARY
     NAMES gridpack_math
     HINTS ${GRIDPACK_LIB_DIR}
@@ -58,11 +63,6 @@ function(gridpack_setup)
 
   find_library(GRIDPACK_PARTITION_LIBRARY
     NAMES gridpack_partition
-    HINTS ${GRIDPACK_LIB_DIR}
-  )
-
-  find_library(GRIDPACK_ENVIRONMENT_LIBRARY
-    NAMES gridpack_environment
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
@@ -159,6 +159,7 @@ function(gridpack_setup)
     ${GRIDPACK_SEMATRIX_COMPONENTS_LIBRARY}
     ${GRIDPACK_COMPONENTS_LIBRARY}
     ${GRIDPACK_CONFIGURATION_LIBRARY}
+    ${GRIDPACK_ENVIRONMENT_LIBRARY}
     ${GRIDPACK_MATH_LIBRARY}
     ${GRIDPACK_EXPRESSION_LIBRARY}
     ${GRIDPACK_OPTIMIZATION_LIBRARY}
@@ -168,7 +169,6 @@ function(gridpack_setup)
     ${GRIDPACK_STREAM_LIBRARY}
     ${GRIDPACK_ANALYSIS_LIBRARY}
     ${GRIDPACK_PARALLEL_LIBRARY}
-    ${GRIDPACK_ENVIRONMENT_LIBRARY}
   )
 
   if (GRIDPACK_HAVE_PARMETIS)   
