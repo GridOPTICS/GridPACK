@@ -7,9 +7,9 @@
 /**
  * @file   exdc1.cpp
  * @author Shrirang Abhyankar 
- * @Last modified:   01/02/20
+ * @Last modified:   04/24/20
  *  
- * @brief  
+ * @brief EXDC1 exciter mdoel implementation 
  *
  *
  */
@@ -40,6 +40,8 @@ Exdc1Exc::Exdc1Exc(void)
   KF = 0.0;
   TF = 0.0;
   SWITCH = 0;
+
+  nxexc = 5;
 }
 
 Exdc1Exc::~Exdc1Exc(void)
@@ -54,7 +56,6 @@ Exdc1Exc::~Exdc1Exc(void)
  */
 void Exdc1Exc::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  data->getValue(BUS_NUMBER, &bid);
   BaseExcModel::load(data,idx); // load parameters in base exciter model
   if (!data->getValue(EXCITER_TR, &TR, idx)) TR = 0.0; // TR
   if (!data->getValue(EXCITER_KA, &KA, idx)) KA = 0.0; // KA
@@ -142,7 +143,7 @@ void Exdc1Exc::write(const char* signal, char* string)
  */
 bool Exdc1Exc::vectorSize(int *nvar) const
 {
-  *nvar = 5;
+  *nvar = nxexc;
   return true;
 }
 
@@ -190,17 +191,16 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
   double Ec,yLL,Vf;
   Ec = sqrt(VD*VD + VQ*VQ);
   
-  Efd = Exdc1Exc::getFieldVoltage();
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    // State 1 Vmeas
+    // Vmeas equation
     if(iseq_diff[0]) values[0] = Vmeas - Vmeasprev;
     else values[0] = -Vmeas + Ec;
 
 
     Vf = xf + KF/TF*Efd;
 
-    // State 2 xLL
+    // xLL equation
     if(iseq_diff[1]) {
       values[1] = xLL - xLLprev;
       yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
@@ -209,22 +209,22 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // State 3 VR
+    // VR equation
     if(iseq_diff[2]) values[2] = VR - VRprev;
     else values[2] = -VR + KA*yLL;
 
-    // State 4 Efd
+    // Efd equation
     values[3] = Efd - Efdprev;
 
-    // State 5 xf
+    // xf equation
     values[4] = xf - xfprev;
 
   } else if(p_mode == RESIDUAL_EVAL) {
-    // State 1 Vmeas
+    // Vmeas equation
     if(iseq_diff[0]) values[0] = (-Vmeas + Ec)/TR - dVmeas;
     else values[0] = -Vmeas + Ec;
 
-    // State 2 xLL
+    // xLL equation
     Vf = xf + KF/TF*Efd;
     if(iseq_diff[1]) {
       values[1] = (-xLL + (1 - TC/TB)*(Vref - Vmeas - Vf))/TB - dxLL;
@@ -234,70 +234,143 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // State 3 VR
+    // VR equation
     if(iseq_diff[2]) values[2] = (-VR + KA*yLL)/TA - dVR;
     else values[2] = -VR + KA*yLL;
 
-    // State 4 Efd // Need to add saturation here
+    // Efd equation (Note: Saturation ignored for now)
     values[3] = (VR - KE*Efd)/TE - dEfd;
 
-    // State 5 xf
-    values[4] = (-xf - KF/TF*Efd)/TF - dxf;
-    
+    // xf equation
+    values[4] = (-xf - KF/TF*Efd)/TF - dxf;    
   }
   
   return true;
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indics for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
  */
-bool Exdc1Exc::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
+bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
 {
-  int idx = 0;
-  if(p_mode == FAULT_EVAL) { // SJin: put values 1 along diagonals, 0 along off diagonals
-  // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the diagonal matrix entries to 1.0 and all other entries to 0. The residual function values are already set to 0.0 in the vector values function. This results in the equation 1*dx = 0.0 such that dx = 0.0 and hence x does not get changed.
-    row[idx] = 0; col[idx] = 0;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 1; col[idx] = 1;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 2; col[idx] = 2;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 3; col[idx] = 3;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 4; col[idx] = 4;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 5; col[idx] = 5;
-    values[idx] = 1.0;
-    idx++;
-    *nval = idx;
-  } /*else if(p_mode == DIG_DV) { // SJin: Jacobian matrix block Jgy
-    // These are the partial derivatives of the exciter currents (see getCurrent function) w.r.t to the voltage variables VD and VQ
+  int Vmeas_idx = offsetb;
+  int xLL_idx   = offsetb+1;
+  int VR_idx    = offsetb+2;
+  int Efd_idx   = offsetb+3;
+  int xf_idx    = offsetb+4;
+  int VD_idx    = 0;
+  int VQ_idx    = 1;
+  double dVf_dxf  = 1.0;
+  double dVf_dEfd = KF/TF;
+  double dyLL_dVmeas=0.0,dyLL_dxLL=0.0;
+  double dyLL_dVR=0.0,dyLL_dEfd=0.0;
+  double dyLL_dxf=0.0;
+  double Ec,yLL,Vf;
+
+  Ec = sqrt(VD*VD + VQ*VQ);
+
+  double dEc_dVD = VD/Ec;
+  double dEc_dVQ = VQ/Ec;
+
+  Vf = xf + KF/TF*Efd;
+
+  if(p_mode == FAULT_EVAL) {
+    // Partial derivatives of Vmeas equation
+    if(iseq_diff[0]) {
+      values[Vmeas_idx][Vmeas_idx] = 1.0;
+    } else {
+      values[Vmeas_idx][Vmeas_idx] = -1.0;
+      values[VD_idx][Vmeas_idx] = dEc_dVD;
+      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
+    }
+
+    // Partial derivatives of xLL equation
+    if(iseq_diff[1]) {
+      values[xLL_idx][xLL_idx] = 1.0;
+      yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
+      dyLL_dxLL  = 1.0;
+      dyLL_dVmeas = -TC/TB;
+      dyLL_dxf    = -TC/TB*dVf_dxf;
+    } else {
+      values[Vmeas_idx][xLL_idx] = -1.0;
+      values[xLL_idx][xLL_idx]  = -1.0;
+      values[xf_idx][xLL_idx]    = -dVf_dxf;
+      yLL = xLL;
+      dyLL_dxLL = 1.0;
+    }
+
+    // Partial derivatives of VR equation
+    if(iseq_diff[2]) {
+      values[VR_idx][VR_idx] = 1.0;
+    } else {
+      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
+      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
+      values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
+      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
+      values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+    }
     
-    *nval = idx;
-  } else if(p_mode == DFG_DV) {  // SJin: Jacobian matrix block Jfyi
-    // These are the partial derivatives of the exciter equations w.r.t variables VD and VQ  
+    // Partial derivatives of Efd equation
+    values[Efd_idx][Efd_idx] = 1.0;
 
-    *nval = idx;
-  } else if(p_mode == DIG_DX) { // SJin: Jacobian matrix block Jgx
-    // These are the partial derivatives of the exciter currents (see getCurrent) w.r.t exciter variables
+    // Partial derivatives of xf equation
+    values[xf_idx][xf_idx]   = 1.0;
+  } else {
+    // Partial derivatives of Vmeas equation
+    if(iseq_diff[0]) {
+      values[Vmeas_idx][Vmeas_idx] = -1.0/TR - shift;
+      values[VD_idx][Vmeas_idx]    = dEc_dVD/TR;
+      values[VQ_idx][Vmeas_idx]    = dEc_dVQ/TR;
+    } else {
+      values[Vmeas_idx][Vmeas_idx] = -1.0;
+      values[VD_idx][Vmeas_idx] = dEc_dVD;
+      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
+    }
 
-    *nval = idx;
-  } else { // SJin: Jacobin matrix block Jfxi
-    // Partials of exciter equations w.r.t exciter variables
- 
-    *nval = idx;
-  }*/
+    // Partial derivatives of xLL equation
+    if(iseq_diff[1]) {
+      values[Vmeas_idx][xLL_idx] = ((1 - TC/TB)*-1.0)/TB;
+      values[xLL_idx][xLL_idx] = -1.0/TB - shift;
+      values[Efd_idx][xLL_idx] = ((1 - TC/TB)*-KF/TF)/TB;
+      values[xf_idx][xLL_idx]  = (1 - TC/TB)/TB;
+
+      yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
+      dyLL_dxLL  = 1.0;
+      dyLL_dVmeas = -TC/TB;
+      dyLL_dxf    = -TC/TB*dVf_dxf;
+    } else {
+      values[Vmeas_idx][xLL_idx] = -1.0;
+      values[xLL_idx][xLL_idx]  = -1.0;
+      values[xf_idx][xLL_idx]    = -dVf_dxf;
+      yLL = xLL;
+      dyLL_dxLL = 1.0;
+    }
+
+    // Partial derivatives of VR equation
+    if(iseq_diff[2]) {
+      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas/TA;
+      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL/TA;
+      values[VR_idx][VR_idx]    = (-1.0 + KA*dyLL_dVR)/TA - shift;
+      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd/TA;
+      values[xf_idx][VR_idx]    = KA*dyLL_dxf/TA;
+    } else {
+      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
+      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
+      values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
+      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
+      values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+    }
+    
+    // Partial derivatives of Efd equation
+    values[VR_idx][Efd_idx]  = 1/TE;
+    values[Efd_idx][Efd_idx] = -KE/TE - shift;
+
+    // Partial derivatives of xf equation
+    values[Efd_idx][xf_idx]  = -KF/(TF*TF);
+    values[xf_idx][xf_idx]   = -1/TF - shift;
+  }
+
   return true;
 }
 
@@ -318,5 +391,20 @@ void Exdc1Exc::setInitialFieldVoltage(double fldv)
 double Exdc1Exc::getFieldVoltage()
 {
   return Efd;
+}
+
+bool Exdc1Exc::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
+{
+  int i,nxgen;
+
+  for(i=0; i < nxexc; i++) xexc_loc[i] = offsetb+i;
+
+  for(i=0; i < nxexc; i++) dEfd_dxexc[i] = 0.0;
+  dEfd_dxexc[3] = 1.0;
+
+  getGenerator()->vectorSize(&nxgen);
+  for(i=0; i < nxgen; i++) dEfd_dxgen[i] = 0.0;
+
+  return true;
 }
 

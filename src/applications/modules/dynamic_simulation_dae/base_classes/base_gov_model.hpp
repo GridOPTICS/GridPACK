@@ -8,9 +8,9 @@
  * @file   base_gov_model.hpp
  * @author Shuangshuang Jin 
  * @author Shrirang Abhyankar
- * @Last modified:   01/02/20
+ * @Last modified:   04/24/20
  * 
- * @brief  
+ * @brief  Base governor class header file
  * 
  * 
  */
@@ -76,19 +76,6 @@ public:
   void setTSshift(double inshift) {shift = inshift;}
   
   /**
-   * Return the matrix entries
-   * @param [output] nval - number of values set
-   * @param [output] row - row indices for matrix entries
-   * @param [output] col - col indices for matrix entries
-   * @param [output] values - matrix entries
-   * return true when matrix entries set
-
-   Note: It becomes cumbersome to use matrixDiagValues for large matrix blocks. matrixDiagEntries makes this easier by also allowing to set the row and col indices for the entries. Eventually, we would want to move this function to the MatVecInterface and then have the loadXXXData methods in the mapper class call it for setting the matrix values 
-   */
-
-  virtual bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
-
-  /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
 
    * Load data from DataCollection object into corresponding
@@ -97,6 +84,47 @@ public:
    */
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
   
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
+  virtual bool setJacobian(gridpack::ComplexType **values);
+
+  /**
+   * Set the mechanical power parameter inside the governor
+   * @param pmech value of the mechanical power 
+   */
+  virtual void setInitialMechanicalPower(double pmech);
+
+  /** 
+   * Get the value of the mechanical power parameter
+   * @return value of the mechanical power 
+   */
+  virtual double getMechanicalPower();
+  
+  /**
+   * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+   * @param xgov_loc locations of governor variables
+   * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+   */
+  virtual bool getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov);
+
+  /**
+   * Set the value of the Vcomp
+   * @return value of the Vcomp
+   */
+  virtual void setVcomp(double vtmp);
+  
+  void setGenerator(BaseGenModel* generator);
+
+  BaseGenModel* getGenerator(void);
+
+  /**
+   * Set the offset for first variable for the governor in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
+
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
 to be overwritten by the implementation */
@@ -136,35 +164,14 @@ to be overwritten by the implementation */
    */
   void setValues(gridpack::ComplexType *values);
 
-  /***************************************/
-
-  /**
-   * Set the mechanical power parameter inside the governor
-   * @param pmech value of the mechanical power 
-   */
-  virtual void setInitialMechanicalPower(double pmech);
-
-  /** 
-   * Get the value of the mechanical power parameter
-   * @return value of the mechanical power 
-   */
-  virtual double getMechanicalPower();
-  
-  /**
-   * Set the value of the Vcomp
-   * @return value of the Vcomp
-   */
-  virtual void setVcomp(double vtmp);
-  
-  void setGenerator(BaseGenModel* generator);
-
-  BaseGenModel* getGenerator(void);
 protected:
   double        VD, VQ;
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
 
   BaseGenModel *p_gen;
+  int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+  int           nxgov; // Number of variables for the model (set by the derived class)
 };
 
 #endif

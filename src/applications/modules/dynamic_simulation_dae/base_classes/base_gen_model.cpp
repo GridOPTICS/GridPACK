@@ -21,6 +21,15 @@ BaseGenModel::~BaseGenModel(void)
 }
 
 /**
+ * Set Jacobian values
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool BaseGenModel::setJacobian(gridpack::ComplexType **values)
+{
+  return false;
+}
+
+/**
  * Load parameters from DataCollection object into generator model
  * @param data collection of generator parameters from input files
  * @param index of generator on bus
@@ -134,55 +143,44 @@ double BaseGenModel::getRotorSpeedDeviation()
   return 0.0;
 }
 
-
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indices for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool BaseGenModel::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
+ * Return the location of speed rotor speed deviation variable in the bus array
+ * @param rotor speed deviation location
+*/
+int BaseGenModel::getRotorSpeedDeviationLocation()
 {
-  *nval = 0;
-  return false;
+  return 0;
 }
 
-//SJin: add setExciter method
 void BaseGenModel::setExciter(boost::shared_ptr<BaseExcModel> &exciter)
 { 
   p_exciter = exciter;
+  p_hasExciter = true;
 }
 
-//SJin: add getExciter method
+
 boost::shared_ptr<BaseExcModel> BaseGenModel::getExciter()
 {
-  p_hasExciter = true;
   return p_exciter;
 }
 
-//SJin: add getphasExciter method
-bool BaseGenModel::getphasExciter()
+bool BaseGenModel::hasExciter()
 {
     return p_hasExciter;
 }
 
-//SJin: add setGovernor method
 void BaseGenModel::setGovernor(boost::shared_ptr<BaseGovModel> &governor)
 { 
   p_governor = governor;
+  p_hasGovernor = true;
 }
 
-//SJin: add getGovernor method
 boost::shared_ptr<BaseGovModel> BaseGenModel::getGovernor()
 {
-  p_hasGovernor = true;
   return p_governor;
 }
 
-//SJin: add getphasGovernor method
-bool BaseGenModel::getphasGovernor()
+bool BaseGenModel::hasGovernor()
 {
     return p_hasGovernor;
 }

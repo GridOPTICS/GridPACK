@@ -9,8 +9,8 @@
  * @author Shrirang Abhyankar
  * @date   02/09/19
  * @last modified by Shuangshuang Jin on 10/19/2019 to add
- *  detailed generator, exciter and governor models.
- * 
+ *  generator, exciter and governor model instantiation
+ * @last modified by Shrirang Abhyankar - Jacobian evaluation
  * @brief  
  * 
  * 
@@ -126,7 +126,6 @@ void DSimBus::load(const
   double IGD,IGQ; /* D and Q components of generator currents */
 
   p_sbase = DEFAULT_MVABASE; // Default MVA base
-  printf("p_sbase = %f\n", p_sbase);
 
   // Get MVAbase
   data->getValue(CASE_SBASE,&p_sbase);
@@ -162,8 +161,8 @@ void DSimBus::load(const
   p_bl /= p_sbase;
   
   gridpack::utility::StringUtils util;
-  //bool has_ex;
-  //bool has_gv;
+  bool has_ex;
+  bool has_gv;
 
   // Read Generators 
   // Get number of generators incident on this bus
@@ -205,59 +204,64 @@ void DSimBus::load(const
         has_ex = true;
         if (data->getValue(EXCITER_MODEL, &model, i)) {
           type = util.trimQuotes(model);
-          if (type == "EXDC1") { // SJin: newly added EXDC1 exciter model object 
+          if (type == "EXDC1") { 
             Exdc1Exc *e1Exc;
             e1Exc = new Exdc1Exc;
 	    e1Exc->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseExcModel> ex;
             ex.reset(e1Exc);
             p_gen[i]->setExciter(ex);
-            printf("set exciter EXDC1 successfully!\n");
-          } else if (type == "ESST1A") { // SJin: newly added EXDC1 exciter model object 
+          } else if (type == "ESST1A") { 
             Esst1aExc *e1Exc;
             e1Exc = new Esst1aExc;
 	    e1Exc->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseExcModel> ex;
             ex.reset(e1Exc);
             p_gen[i]->setExciter(ex);
-            printf("set exciter ESST1a successfully!\n");
           }
         }
       } 
         
-      // SJin: add governors if there's any
       has_gv = false;
       data->getValue(HAS_GOVERNOR, &has_gv, i);
       if (has_gv) {
         has_gv = true;
         if (data->getValue(GOVERNOR_MODEL, &model, i)) {
           type = util.trimQuotes(model);
-          if (type == "WSIEG1") { // SJin: newly added WSIEG1 governor model object 
+          if (type == "WSIEG1") { 
             Wsieg1Gov *w1Gov;
             w1Gov = new Wsieg1Gov;
 	    w1Gov->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseGovModel> gv;
             gv.reset(w1Gov);
             p_gen[i]->setGovernor(gv);
-            printf("set governor WSIEG1 successfully!\n");
           } 
         }
       } 
 
       // Read generator data stored in data collection objects
       p_gen[i]->load(data,i); // load data
+      has_ex = p_gen[i]->hasExciter();
+      has_gv = p_gen[i]->hasGovernor();
       if (has_ex) p_gen[i]->getExciter()->load(data,i); // load exciter data
       if (has_gv) p_gen[i]->getGovernor()->load(data,i); // load governor model
 
       // Set number of equations for this generator
       p_gen[i]->vectorSize(&p_neqsgen[i]);
-      if (has_ex) p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
-      if (has_gv) p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+      // Set the offset for the first variable in the bus variable array 
+      p_gen[i]->setBusOffset(p_nvar);
+      if (has_ex) {
+	p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
+	p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
+      }
+      if (has_gv) {
+	p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+	p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
+      }
 
       /* Update number of variables for this bus */
-      //p_nvar += p_neqsgen[i];
       p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
-      printf("p_nvar = %d (ngen:%d,nexc:%d,ngov:%d)\n",p_nvar,p_neqsgen[i],p_neqsexc[i],p_neqsgov[i]);
+      //      printf("p_nvar = %d (ngen:%d,nexc:%d,ngov:%d)\n",p_nvar,p_neqsgen[i],p_neqsexc[i],p_neqsgov[i]);
     }
   }
 
@@ -300,20 +304,24 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
   int VD_idx=0; // Location of VD in the solution vector for this bus
   int VQ_idx=1; // Location of VQ in the solution vector for this bus
   double p_VD,p_VQ;
-  int ctr=0;
+  // matvalues is a 2-d representation of the 1-d values array
+  // Note that values is column-major, so each array of matvalues
+  // points a column of the matrix. Hence, we need to store the values
+  // in the transpose of the locations.
+  gridpack::ComplexType *matvalues[p_nvar];
 
   getVoltagesRectangular(&p_VD,&p_VQ);
   
   // Zero out values first in case they haven't been zeroed out.
   for(i=0; i < nvar; i++) {
+    matvalues[i] = values + i*p_nvar;
     for(j=0; j < nvar; j++) {
       values[nvar*i + j] = 0.0;
     }
   }
    
  if(p_isolated) {
-   values[VD_col_start+VD_idx] = values[VQ_col_start+VQ_idx] = 1.0;
-   values[VD_col_start+VQ_idx] = values[VQ_col_start+VD_idx] = 0.0;
+   matvalues[0][0] = matvalues[1][1] = 1.0;
    return true;
  }
  
@@ -331,96 +339,58 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
      /* This bus is the from bus of branch[i] */
      double Gff=0.0,Bff=0.0;
      branch->getForwardSelfAdmittance(&Gff,&Bff);
-     values[VD_col_start + VD_idx] += -Bff;
-     values[VQ_col_start + VD_idx] += -Gff;
-     values[VD_col_start + VQ_idx] += -Gff;
-     values[VQ_col_start + VQ_idx] +=  Bff;
+     matvalues[0][0] += -Bff;
+     matvalues[0][1] += -Gff;
+     matvalues[1][0] += -Gff;
+     matvalues[1][1] +=  Bff;
    } else {
      double Gtt=0.0,Btt=0.0;
      /* This bus is the to bus of branch[i] */
      branch->getReverseSelfAdmittance(&Gtt,&Btt);
-     values[VD_col_start + VD_idx] += -Btt;
-     values[VQ_col_start + VD_idx] += -Gtt;
-     values[VD_col_start + VQ_idx] += -Gtt;
-     values[VQ_col_start + VQ_idx] +=  Btt;
+     matvalues[0][0] += -Btt;
+     matvalues[0][1] += -Gtt;
+     matvalues[1][0] += -Gtt;
+     matvalues[1][1] +=  Btt;
    }
  }
  // Partials of contributions from shunt elements
- values[VD_col_start + VD_idx] += -p_bl;
- values[VQ_col_start + VD_idx] += -p_gl;
- values[VD_col_start + VQ_idx] += -p_gl;
- values[VQ_col_start + VQ_idx] +=  p_bl;
- 
+ matvalues[0][0] += -p_bl;
+ matvalues[0][1] += -p_gl;
+ matvalues[1][0] += -p_gl;
+ matvalues[1][1] +=  p_bl;
+
  // Partials of contributions from load
  // Assuming constant impedance load
  double yp,yq;
  yp = p_pl/(p_Vm0*p_Vm0);
  yq = p_ql/(p_Vm0*p_Vm0);
- values[VD_col_start + VD_idx] +=  yq;
- values[VQ_col_start + VD_idx] += -yp;
- values[VD_col_start + VQ_idx] += -yp;
- values[VQ_col_start + VQ_idx] += -yq;
 
- // Partials of generator equations and contributions to the network<->generator
+ matvalues[0][0] +=  yq;
+ matvalues[0][1] += -yp;
+ matvalues[1][0] += -yp;
+ matvalues[1][1] += -yq;
  
+ // Partials of generator equations and contributions to the network<->generator 
  DSMode dsmode;
  for(i=0; i < p_ngen; i++) {
    if(p_gen[i]->getGenStatus()) {
      p_gen[i]->setMode(p_mode);
      p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
      p_gen[i]->setTSshift(p_TSshift);
-     //gridpack::ComplexType genval[20];
-     gridpack::ComplexType genval[40]; //SJin: better make this dimension an input value to accomodate various size systems! 
-     //int    nval=0,row[20],col[20];
-     int    nval=0,row[40],col[40]; //SJin: better make this dimension an input value to accomodate various size systems!
-     // Derivatives of gen. eqs. w.r.t. state variables
-     p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-     
-     int var_col_start,eq_idx;
-     // Insert the entries in the values array
-     for(int k=0; k < nval; k++) {
-       var_col_start = (2+ctr+col[k])*p_nvar;
-       eq_idx        = 2 + ctr + row[k];
-       values[var_col_start + eq_idx] = genval[k];
+
+     p_gen[i]->setJacobian(matvalues);
+
+     if(p_gen[i]->hasExciter()) {
+       p_gen[i]->getExciter()->setTSshift(p_TSshift);
+       p_gen[i]->getExciter()->setJacobian(matvalues);
      }
 
-     // Derivatives of generator currents w.r.t. VD, VQ
-     p_gen[i]->setMode(DIG_DV);
-     nval = 0;
-     p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-     // Insert the entries in the values array
-     for(int k=0; k < nval; k++) {
-       var_col_start = col[k]*p_nvar;
-       eq_idx        = row[k];
-       values[var_col_start + eq_idx] += genval[k]; // SJin: TBD
-     }
-
-     if(p_mode != FAULT_EVAL) {
-       // Derivatives of generator equations w.r.t. VD, VQ
-       p_gen[i]->setMode(DFG_DV);
-       nval = 0;
-       p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-       // Insert the entries in the values array
-       for(int k=0; k < nval; k++) {
-	 var_col_start = col[k]*p_nvar;
-	 eq_idx        = 2 + ctr + row[k];
-	 values[var_col_start + eq_idx] = genval[k]; // SJin: TBD
-       }
-
-       // Derivatives of generator currents w.r.t. generator variables
-       p_gen[i]->setMode(DIG_DX);
-       nval = 0;
-       p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-       // Insert the entries in the values array
-       for(int k=0; k < nval; k++) {
-	 var_col_start = (2+ctr+col[k])*p_nvar;
-	 eq_idx        = row[k];
-	 values[var_col_start + eq_idx] = genval[k];
-       }
+     if(p_gen[i]->hasGovernor()) {
+       p_gen[i]->getGovernor()->setTSshift(p_TSshift);
+       p_gen[i]->getGovernor()->setJacobian(matvalues);
      }
    }
-   ctr += p_neqsgen[i];
- }  
+ } 
 
  return true;
 }
@@ -448,8 +418,8 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
 {
   gridpack::ComplexType *fbus = values;  // First two locations are for the bus current balance equations.
   gridpack::ComplexType *fgen = values + 2;
+  bool has_ex=false,has_gv=false;
   if(p_mode == INIT_X) { /* Values go in X */
-    //printf("========================================================\n");
     int i;
     if(p_isolated) {
       fbus[0] = p_Vm0*cos(p_Va0); // VD
@@ -468,12 +438,15 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
 	  p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
 	  p_gen[i]->init(fgen);
 	}
-	// SJin: add exciter and governor vector values
+
+	has_ex = p_gen[i]->hasExciter();
 	if (has_ex) {
   	  fgen += p_neqsgen[i];
 	  p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
     	  p_gen[i]->getExciter()->init(fgen);
   	}	
+
+	has_gv = p_gen[i]->hasGovernor();
 	if (has_gv) {
  	  if (has_ex) fgen += p_neqsexc[i];
  	  else fgen += p_neqsgen[i];
@@ -482,7 +455,6 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
       }
     }	  
   } else if(p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) { /* Values go in F */
-    //printf("//////////////////////////////////////////////////////\n");
     int i;
     int VD_idx=0; // Location of VD in the solution vector for this bus
     int VQ_idx=1; // Location of VQ in the solution vector for this bus
@@ -564,49 +536,25 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
 	p_gen[i]->vectorValues(fgen);
         fgen += p_neqsgen[i];
 	p_gen[i]->getCurrent(&IGD,&IGQ);
-        //printf("gen:\n");
-        //for (int j=2; j<p_neqsgen[i]+2;j++)
-        //  printf("values[%d]=%f\n",j,values[j]);
 
-	// SJin: add exciter and governor vector values
+	has_ex = p_gen[i]->hasExciter();
 	if (has_ex) {
 	  p_gen[i]->getExciter()->setMode(p_mode);
 	  p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
 	  p_gen[i]->getExciter()->vectorValues(fgen);
           fgen += p_neqsexc[i];
-          //printf("gen+exc:\n");
-          //for (int j=0; j<p_neqsgen[i]+p_neqsexc[i]+2;j++)
-          //  printf("values[%d]=%f\n",j,values[j]);
   	}	
+
+	has_gv = p_gen[i]->hasGovernor();
 	if (has_gv) {
 	  p_gen[i]->getGovernor()->setMode(p_mode);
 	  p_gen[i]->getGovernor()->vectorValues(fgen);
           fgen += p_neqsgov[i];
-          //printf("gen+exc+gov:\n");
-      	  //for (int j=0; j<p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i]+2;j++)
-          //  printf("values[%d]=%f\n",j,values[j]);
   	}	
 	
 	IgenD += IGD;
 	IgenQ += IGQ;
       }
-
-      //printf("\nvectorValues:\n");
-      //printf("ngen=%d,nexc=%d,ngov=%d\n",p_neqsgen[i],p_neqsexc[i],p_neqsgov[i]);
-      //for (int j=0; j<p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i]+2;j++)
-      //  printf("values[%d]=%f\n",j,values[j]);
-      /*printf("vd,vq:\n");
-      for (int j=0; j<2;j++)
-        printf("values[%d]=%f\n",j,values[j]);
-      printf("gen:\n");
-      for (int j=2; j<p_neqsgen[i]+2;j++)
-        printf("values[%d]=%f\n",j,values[j]);
-      printf("exc:\n");
-      for (int j=p_neqsgen[i]+2;j<p_neqsgen[i]+p_neqsexc[i]+2;j++)
-        printf("values[%d]=%f\n",j,values[j]);
-      printf("gov:\n");
-      for (int j=p_neqsgen[i]+p_neqsexc[i]+2; j<p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i]+2;j++)
-        printf("values[%d]=%f\n",j,values[j]);*/
     }
 
     fbus[VD_idx] = IgenQ - IshuntQ - IbrQ - IloadQ;
@@ -644,10 +592,10 @@ void DSimBus::setXCBuf(void *buf)
  */
 void DSimBus::setValues(gridpack::ComplexType *values)
 {
-  //printf("........................................\n");
   int i,ctr=2;
   gridpack::ComplexType *genvals;
   DSMode mode;
+  bool has_ex=false,has_gv=false;
 
   if(p_isolated) return;
 
@@ -666,24 +614,21 @@ void DSimBus::setValues(gridpack::ComplexType *values)
       p_gen[i]->setValues(genvals);
       genvals += p_neqsgen[i];
 
-      // SJin: add exciter and governor vector values
+      has_ex = p_gen[i]->hasExciter();
       if (has_ex) {
         p_gen[i]->getExciter()->setMode(p_mode);
         p_gen[i]->getExciter()->setValues(genvals);
         genvals += p_neqsexc[i];
       }	
+
+      has_gv = p_gen[i]->hasGovernor();
       if (has_gv) {
         p_gen[i]->getGovernor()->setMode(p_mode);
         p_gen[i]->getGovernor()->setValues(genvals);
         genvals += p_neqsgov[i];
       }	
     }	
- 
-      /*printf("setValues:\n");
-      printf("ngen=%d,nexc=%d,ngov=%d\n",p_neqsgen[i],p_neqsexc[i],p_neqsgov[i]);
-      for (int j=0; j<p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i]+2;j++)
-        printf("values[%d]=%f\n",j,values[j]);*/
-   }
+  }
 }
 
 /**

@@ -43,6 +43,13 @@ class ClassicalGen: public BaseGenModel
     void load(const boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
 
+
+    /**
+     *  Set Jacobian values
+     *  @param values a 2-d array of Jacobian block for the bus
+     */
+    bool setJacobian(gridpack::ComplexType **values);
+
     /**
      * Initialize generator model before calculation
      * @param [output] values - array where initialized generator variables should be set
@@ -96,16 +103,6 @@ class ClassicalGen: public BaseGenModel
      * @param [output] IGQ - imaginary part of the generator current
      */
     void getCurrent(double *IGD, double *IGQ);
-
-    /**
-     * Return the matrix entries
-     * @param [output] nval - number of values set
-     * @param [output] row - row indices for matrix entries
-     * @param [output] col - col indices for matrix entries
-     * @param [output] values - matrix entries
-     * return true when matrix entries set
-     */
-    bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
   private:
     // Machine parameters
