@@ -30,6 +30,7 @@ function(gridpack_setup)
   set(GRIDPACK_HAVE_CPLEX @USE_CPLEX@)
   set(GRIDPACK_HAVE_GLPK @USE_GLPK@)
   set(GRIDPACK_HAVE_GOSS @GOSS_DIR@)
+  set(GRIDPACK_HAVE_APR @APR_DIR@)
 
   find_library(GRIDPACK_COMPONENTS_LIBRARY
     NAMES gridpack_components
@@ -196,6 +197,17 @@ function(gridpack_setup)
     )
     list(APPEND gp_libs
       @GRIDPACK_GA_LIBRARIES@
+    )
+  endif()
+
+  if (GRIDPACK_HAVE_GOSS)
+    list(APPEND gp_include
+      @GRIDPACK_GOSS_INCLUDE_DIRS@
+      @GRIDPACK_APR_INCLUDE_DIRS@
+    )
+    list(APPEND gp_libs
+      @GRIDPACK_GOSS_LIBRARIES@
+      @GRIDPACK_APR_LIBRARIES@
     )
   endif()
 

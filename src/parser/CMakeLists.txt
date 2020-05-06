@@ -33,6 +33,7 @@ set(target_libraries
     gridpack_components
     gridpack_parallel
     gridpack_timer
+    gridpack_stream
     ${target_libraries})
 
 include_directories(AFTER parser_classes)

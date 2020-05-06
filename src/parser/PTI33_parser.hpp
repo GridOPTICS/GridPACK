@@ -81,11 +81,33 @@ class PTI33_parser : public BasePTIParser<_network>
       util.trim(tmpstr);
       std::string ext = this->getExtension(tmpstr);
       if (ext == "raw") {
-        getCase(tmpstr);
-        //brdcst_data();
+        openStream(tmpstr);
+        getCase();
         this->createNetwork(p_busData,p_branchData);
       } else if (ext == "dyr") {
         this->getDS(tmpstr);
+      }
+      p_timer->stop(t_total);
+      p_timer->configTimer(true);
+    }
+
+    /**
+     * parse string vector representing a PSS/E RAW or DYR file
+     * @param fileVec vector of string representing file
+     * @param isRAW flag distinguishing between RAW and DYR files
+     */
+    void parse(const std::vector<std::string> &fileVec, bool isRAW = false)
+    {
+      p_timer = gridpack::utility::CoarseTimer::instance();
+      p_timer->configTimer(false);
+      int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
+      p_timer->start(t_total);
+      openStream(fileVec);
+      if (isRAW) {
+        getCase();
+        this->createNetwork(p_busData,p_branchData);
+      } else {
+        this->getDS(fileVec);
       }
       p_timer->stop(t_total);
       p_timer->configTimer(true);
@@ -124,6 +146,33 @@ class PTI33_parser : public BasePTIParser<_network>
     }
 
   protected:
+    /**
+     * Open in input stream object based on accessing a file
+     */
+    void openStream(const std::string & fileName)
+    {
+      p_istream.openFile(fileName.c_str());
+      if (!p_istream.isOpen()) {
+        char buf[512];
+        sprintf(buf,"Failed to open network configuration file: %s\n\n",
+            fileName.c_str());
+        throw gridpack::Exception(buf);
+      }
+    }
+
+    /**
+     * Open in input stream object based on a vector of strings
+     */
+    void openStream(const std::vector<std::string> & fileVec)
+    {
+      p_istream.openStringVector(fileVec);
+      if (!p_istream.isOpen()) {
+        char buf[512];
+        sprintf(buf,"Failed to open network configuration stream: %s\n\n");
+        throw gridpack::Exception(buf);
+      }
+    }
+
     /*
      * A case is the collection of all data associated with a PTI33 file.
      * Each case is a a vector of data_set objects the contain all the data
@@ -134,7 +183,7 @@ class PTI33_parser : public BasePTIParser<_network>
      * example, each line of the bus partition corresponds to a single
      * DataCollection object.
      */
-    void getCase(const std::string & fileName)
+    void getCase()
     {
       int t_case = p_timer->createCategory("Parser:getCase");
       p_timer->start(t_case);
@@ -147,13 +196,6 @@ class PTI33_parser : public BasePTIParser<_network>
       int me(p_network->communicator().rank());
 
       if (me == 0) {
-        p_istream.openFile(fileName.c_str());
-        if (!p_istream.isOpen()) {
-          char buf[512];
-          sprintf(buf,"Failed to open network configuration file: %s\n\n",
-              fileName.c_str());
-          throw gridpack::Exception(buf);
-        }
         find_case();
       } else {
         p_case_sbase = 0.0;

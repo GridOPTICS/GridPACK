@@ -184,3 +184,27 @@ std::string gridpack::goss::GOSSClient::subscribeFile(const std::string &topic)
 	std::string filecontents = getStringBetweenStrings(wrappedfile, "file_data=","},\"response" );
 	return filecontents;
 }
+
+
+/**
+ * @brief Subscribe to a file as vector of strings from GOSS
+ *
+ * @param topic Topic from which file needs to be subscribed
+ * @return  subscribed file as a string from GOSS. Returned JSON+XML format is malformed,
+ *          so using a substring extract for now.
+ */
+std::vector<std::string> gridpack::goss::GOSSClient::subscribeFileAsVector(const std::string &topic)
+{
+        std::string wrappedfile = subscribe(topic);
+        std::string filecontents = getStringBetweenStrings(wrappedfile, "file_data=","},\"response" );
+
+        std::vector <std::string> v;
+        std::string line;
+        std::istringstream sin(filecontents);
+        while(getline(sin,line)){
+            v.push_back(line);
+        }
+
+        return v;
+}
+
