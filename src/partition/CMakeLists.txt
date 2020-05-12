@@ -16,8 +16,8 @@
 set(gridpack_partition_sources)
 
 set(target_libraries 
-  gridpack_math
   gridpack_environment
+  gridpack_math
   gridpack_timer
   gridpack_parallel 
   ${GA_LIBRARIES} 

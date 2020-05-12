@@ -27,8 +27,8 @@ if (PARMETIS_FOUND)
 endif()
 
 set(target_libraries
-    gridpack_math
     gridpack_environment
+    gridpack_math
     gridpack_partition
     gridpack_components
     gridpack_parallel

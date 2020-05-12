@@ -84,6 +84,11 @@ public:
   /// Destructor
   ~Environment(void);
 
+  /**
+   * return next token after option
+   */
+  const std::string getCmdOption(std::string &option);
+
 protected:
   boost::mpi::environment p_boostEnv;
 

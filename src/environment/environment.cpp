@@ -77,5 +77,13 @@ Environment::~Environment(void)
   GA_Terminate();
 }
 
+  /**
+   *    * return next token after option
+   *       */
+const std::string Environment::getCmdOption(std::string &option)
+{
+  return clparser.getCmdOption(option);
+}
+
 } // namespace gridpack
 

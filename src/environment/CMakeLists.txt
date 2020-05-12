@@ -17,8 +17,13 @@ add_library(gridpack_environment
   environment.cpp
 )
 
-target_link_libraries(gridpack_environment gridpack_math)
-  
+set(target_libraries
+   gridpack_environment
+   gridpack_math
+   ${GA_LIBRARIES}
+   ${MPI_CXX_LIBRARIES}
+)
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
@@ -39,3 +44,13 @@ install(TARGETS
   gridpack_environment
   DESTINATION lib
 )
+
+# -------------------------------------------------------------
+# TEST: env_test
+# A simple program to test the run time options capabilities
+# of the environment module
+# -------------------------------------------------------------
+add_executable(env_test test/env_test.cpp)
+target_link_libraries(env_test ${target_libraries})
+
+gridpack_add_run_test(env_test env_test "-i input -o output")
