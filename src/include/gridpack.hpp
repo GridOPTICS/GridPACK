@@ -49,7 +49,7 @@
 #include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/environment/environment.hpp"
 #ifdef USE_GOSS
-#include "gridpack/serial_io/goss_utils.hpp"
+#include "gridpack/serial_io/goss_client.hpp"
 #endif
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/timer/local_timer.hpp"

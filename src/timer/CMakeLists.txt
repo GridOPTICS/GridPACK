@@ -29,8 +29,8 @@ endif()
 set(target_libraries
     gridpack_timer
     gridpack_parallel
-    gridpack_math
     gridpack_environment
+    gridpack_math
     ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES}

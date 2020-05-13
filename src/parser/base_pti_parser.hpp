@@ -25,6 +25,7 @@
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/stream/input_stream.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/utilities/string_utils.hpp"
@@ -126,22 +127,22 @@ class BasePTIParser : public BaseParser<_network>
         // Only expand bus on process that owns bus. New buses and branches will
         // not have connections to other processors
         if (p_network->getActiveBus(i)) {
-         data = p_network->getBusData(i).get();
-         if (data->getValue(LOAD_NUMBER,&nload)) {
-           for (j=0; j<nload; j++) {
-             if (data->getValue(LOAD_MODEL,&model, j)) {
-               if (model == "CMLDBLU1") {
-                 std::vector<gridpack::component::DataCollection*> buses;
-                 std::vector<gridpack::component::DataCollection*> branches;
-                 Cmldblu1Parser<load_params> parser;
-                 parser.expandModel(data, buses, branches, j);
-                 new_buses.push_back(buses);
-                 new_branches.push_back(branches);
-                 comp_buses.push_back(i);
-               }
-             }
-           }
-         }
+          data = p_network->getBusData(i).get();
+          if (data->getValue(LOAD_NUMBER,&nload)) {
+            for (j=0; j<nload; j++) {
+              if (data->getValue(LOAD_MODEL,&model, j)) {
+                if (model == "CMLDBLU1") {
+                  std::vector<gridpack::component::DataCollection*> buses;
+                  std::vector<gridpack::component::DataCollection*> branches;
+                  Cmldblu1Parser<load_params> parser;
+                  parser.expandModel(data, buses, branches, j);
+                  new_buses.push_back(buses);
+                  new_branches.push_back(branches);
+                  comp_buses.push_back(i);
+                }
+              }
+            }
+          }
         }
       }
       // Check to see if there actually are any buses to expand. If not, quit
@@ -317,14 +318,13 @@ class BasePTIParser : public BaseParser<_network>
       int me(p_network->communicator().rank());
 
       if (me == 0) {
-        std::ifstream input;
-        input.open(fileName.c_str());
-        if (!input.is_open()) {
+        p_input_stream.openFile(fileName);
+        if (!p_input_stream.isOpen()) {
           p_timer->stop(t_ds);
           return;
         }
-        find_ds_par(input);
-        input.close();
+        find_ds_par();
+        p_input_stream.close();
       }
       p_timer->stop(t_ds);
 #if 0
@@ -335,6 +335,24 @@ class BasePTIParser : public BaseParser<_network>
         p_network->getBusData(i)->dump();
       }
 #endif
+    }
+
+    void getDS(const std::vector<std::string> & fileVec)
+    {
+      int t_ds = p_timer->createCategory("Parser:getDS");
+      p_timer->start(t_ds);
+      int me(p_network->communicator().rank());
+
+      if (me == 0) {
+        p_input_stream.openStringVector(fileVec);
+        if (!p_input_stream.isOpen()) {
+          p_timer->stop(t_ds);
+          return;
+        }
+        find_ds_par();
+        p_input_stream.close();
+      }
+      p_timer->stop(t_ds);
     }
 
     // Data structure to hold generator params
@@ -779,15 +797,14 @@ class BasePTIParser : public BaseParser<_network>
       std::vector<branch_relay_params> branch_relay_data;
       std::vector<load_params> load_data;
       if (me == 0) {
-        std::ifstream            input;
-        input.open(fileName.c_str());
-        if (!input.is_open()) {
+        p_input_stream.openFile(fileName);
+        if (!p_input_stream.isOpen()) {
           // p_timer->stop(t_ds);
           return;
         }
-        find_ds_vector(input, &gen_data, &bus_relay_data,
+        find_ds_vector(&gen_data, &bus_relay_data,
             &branch_relay_data, &load_data);
-        input.close();
+        p_input_stream.close();
       }
       int nsize = gen_data.size();
       std::vector<int> buses;
@@ -1000,13 +1017,12 @@ class BasePTIParser : public BaseParser<_network>
 
       std::vector<uc_params> uc_data;
       if (me == 0) {
-        std::ifstream            input;
-        input.open(fileName.c_str());
-        if (!input.is_open()) {
+        p_input_stream.openFile(fileName);
+        if (!p_input_stream.isOpen()) {
           return;
         }
-        find_uc_vector(input, &uc_data);
-        input.close();
+        find_uc_vector(&uc_data);
+        p_input_stream.close();
       }
       int nsize = uc_data.size();
       std::vector<int> buses;
@@ -1211,11 +1227,11 @@ class BasePTIParser : public BaseParser<_network>
       return ret;
     }
 
-    void find_ds_par(std::ifstream & input)
+    void find_ds_par()
     {
       std::string          line;
       gridpack::component::DataCollection *data;
-      while(std::getline(input,line)) {
+      while(p_input_stream.nextLine(line)) {
         // Check to see if line is blank
         int idx = line.find_first_not_of(' ');
         if (idx == std::string::npos) continue;
@@ -1223,7 +1239,7 @@ class BasePTIParser : public BaseParser<_network>
         std::string record = line;
         idx = line.find('/');
         while (idx == std::string::npos) {
-          std::getline(input,line);
+          p_input_stream.nextLine(line);
           idx = line.find('/');
           record.append(line);
         }
@@ -1413,14 +1429,14 @@ class BasePTIParser : public BaseParser<_network>
     }
 
     // Parse file to construct lists of structs representing different devices.
-    void find_ds_vector(std::ifstream & input, std::vector<gen_params> *gen_vector,
+    void find_ds_vector(std::vector<gen_params> *gen_vector,
         std::vector<bus_relay_params> *bus_relay_vector,
         std::vector<branch_relay_params> *branch_relay_vector,
         std::vector<load_params> *load_vector)
     {
       std::string          line;
       gen_vector->clear();
-      while(std::getline(input,line)) {
+      while(p_input_stream.nextLine(line)) {
         // Check to see if line is blank
         int idx = line.find_first_not_of(' ');
         if (idx == std::string::npos) continue;
@@ -1428,7 +1444,7 @@ class BasePTIParser : public BaseParser<_network>
         std::string record = line;
         idx = line.find('/');
         while (idx == std::string::npos) {
-          std::getline(input,line);
+          p_input_stream.nextLine(line);
           idx = line.find('/');
           record.append(line);
         }
@@ -1556,13 +1572,13 @@ class BasePTIParser : public BaseParser<_network>
       }
     }
 
-    void find_uc_vector(std::ifstream & input, std::vector<uc_params> *uc_vector)
+    void find_uc_vector(std::vector<uc_params> *uc_vector)
     {
       std::string          line;
       uc_vector->clear();
       // Ignore first line containing header information
-      std::getline(input,line);
-      while(std::getline(input,line)) {
+      p_input_stream.nextLine(line);
+      while(p_input_stream.nextLine(line)) {
         std::vector<std::string>  split_line;
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
@@ -1686,6 +1702,11 @@ class BasePTIParser : public BaseParser<_network>
      * Data collection object associated with network as a whole
      */
     boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
+
+    /**
+     * Input stream object
+     */
+    gridpack::stream::InputStream p_input_stream;
 }; /* end of PTI base parser */
 
 } /* namespace parser */

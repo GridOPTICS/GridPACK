@@ -7,36 +7,8 @@
 #define _input_stream_h
 
 #include <string>
+#include <vector>
 #include <fstream>
-
-#ifdef USE_GOSS
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include "gridpack/parallel/distributed.hpp"
-#include "gridpack/network/base_network.hpp"
-#include "gridpack/component/base_component.hpp"
-#include "gridpack/utilities/exception.hpp"
-#include <activemq/library/ActiveMQCPP.h>
-#include <decaf/lang/Thread.h>
-#include <decaf/lang/Runnable.h>
-#include <decaf/util/concurrent/CountDownLatch.h>
-#include <decaf/lang/Integer.h>
-#include <decaf/lang/Long.h>
-#include <decaf/lang/System.h>
-#include <activemq/core/ActiveMQConnectionFactory.h>
-#include <activemq/util/Config.h>
-#include <cms/Connection.h>
-#include <cms/Session.h>
-#include <cms/TextMessage.h>
-#include <cms/BytesMessage.h>
-#include <cms/MapMessage.h>
-#include <cms/ExceptionListener.h>
-#include <cms/MessageListener.h>
-using namespace activemq::core;
-using namespace decaf::util::concurrent;
-using namespace decaf::util;
-using namespace decaf::lang;
-using namespace cms;
-#endif
 
 // Simple class to open a stream of data and read lines
 
@@ -63,17 +35,11 @@ public:
    */
   bool openFile(std::string file);
 
-#ifdef USE_GOSS
   /**
-   * Open GOSS channel
-   * @param topic topic that that is used by server
-   * @param URI channel URI
-   * @param username server username
-   * @param passwd server password
+   * Parse a vector of strings representing a file
+   * @param fileVec a vector of strings containing lines in a file
    */
-  bool openChannel(const char *topic, const char *URI, const char *username,
-      const char *passwd);
-#endif
+  bool openStringVector(const std::vector<std::string> &fileVec);
 
   /**
    * Close a file or other input stream
@@ -99,10 +65,13 @@ private:
 
   bool p_srcFile;
 
-  bool p_srcChannel;
+  bool p_srcVector;
 
   bool p_isOpen;
 
+  std::vector<std::string> p_fileVector;
+
+  std::vector<std::string>::iterator p_fileIterator;
 };
 
 

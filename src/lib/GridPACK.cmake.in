@@ -30,6 +30,7 @@ function(gridpack_setup)
   set(GRIDPACK_HAVE_CPLEX @USE_CPLEX@)
   set(GRIDPACK_HAVE_GLPK @USE_GLPK@)
   set(GRIDPACK_HAVE_GOSS @GOSS_DIR@)
+  set(GRIDPACK_HAVE_APR @APR_DIR@)
 
   find_library(GRIDPACK_COMPONENTS_LIBRARY
     NAMES gridpack_components
@@ -46,6 +47,11 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_ENVIRONMENT_LIBRARY
+    NAMES gridpack_environment
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   find_library(GRIDPACK_MATH_LIBRARY
     NAMES gridpack_math
     HINTS ${GRIDPACK_LIB_DIR}
@@ -58,11 +64,6 @@ function(gridpack_setup)
 
   find_library(GRIDPACK_PARTITION_LIBRARY
     NAMES gridpack_partition
-    HINTS ${GRIDPACK_LIB_DIR}
-  )
-
-  find_library(GRIDPACK_ENVIRONMENT_LIBRARY
-    NAMES gridpack_environment
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
@@ -159,6 +160,7 @@ function(gridpack_setup)
     ${GRIDPACK_SEMATRIX_COMPONENTS_LIBRARY}
     ${GRIDPACK_COMPONENTS_LIBRARY}
     ${GRIDPACK_CONFIGURATION_LIBRARY}
+    ${GRIDPACK_ENVIRONMENT_LIBRARY}
     ${GRIDPACK_MATH_LIBRARY}
     ${GRIDPACK_EXPRESSION_LIBRARY}
     ${GRIDPACK_OPTIMIZATION_LIBRARY}
@@ -168,7 +170,6 @@ function(gridpack_setup)
     ${GRIDPACK_STREAM_LIBRARY}
     ${GRIDPACK_ANALYSIS_LIBRARY}
     ${GRIDPACK_PARALLEL_LIBRARY}
-    ${GRIDPACK_ENVIRONMENT_LIBRARY}
   )
 
   if (GRIDPACK_HAVE_PARMETIS)   
@@ -196,6 +197,17 @@ function(gridpack_setup)
     )
     list(APPEND gp_libs
       @GRIDPACK_GA_LIBRARIES@
+    )
+  endif()
+
+  if (GRIDPACK_HAVE_GOSS)
+    list(APPEND gp_include
+      @GRIDPACK_GOSS_INCLUDE_DIRS@
+      @GRIDPACK_APR_INCLUDE_DIRS@
+    )
+    list(APPEND gp_libs
+      @GRIDPACK_GOSS_LIBRARIES@
+      @GRIDPACK_APR_LIBRARIES@
     )
   endif()
 

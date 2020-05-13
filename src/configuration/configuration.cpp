@@ -157,6 +157,61 @@ bool Configuration::open(const std::string & file) {
 	return true;
 }
 
+bool Configuration::openStringFile(std::vector<std::string> & file,
+    gridpack::parallel::Communicator tcomm)
+{
+  int rank = 0;
+  MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
+  MPI_Comm_rank(comm,&rank);
+
+   // This represents some hideously confusing programming. The MPI_Bcast calls
+   // below are matched in the initialize_internal function call so that all
+   // processors actually participate in the collectives.
+	if(rank != 0) {
+		return initialize_internal(comm);
+	}
+	std::string str;
+   std::vector<std::string>::iterator it = file.begin();
+   int n = -1;
+   while (it != file.end()) {
+     str.append(*it);
+     it++;
+     n = 0;
+   }
+
+   if (n >= 0) {
+	  n = str.size();
+   }
+	MPI_Bcast(&n, 1, MPI_INT, rank, comm);
+   if (n > 0) {
+	  MPI_Bcast((void*) str.c_str(), n, MPI_CHAR, rank, comm);
+   } else {
+     std::cout<<"Configure: string file has no lines "<<std::endl;
+     return false;
+   }
+    // Load the XML file into the property tree. If reading fails
+    // (cannot open file, parse error), an exception is thrown.
+	try {
+		pimpl->initialize(str);
+	}
+	catch(...) {
+		if(pimpl->logging != NULL)
+		 (*pimpl->logging) << "Error reading XML vector string " << std::endl;
+		return false;
+	}
+	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration.enableLogging",false))
+		pimpl->logging = & std::cout;
+	if(pimpl->logging != NULL && rank== 0) {
+		try {
+			dump_xml(pimpl->pt, *pimpl->logging);
+		}
+		catch(...) {
+			 (*pimpl->logging) << "Error writing XML log file for vector string " << std::endl;
+		}
+    }
+	return true;
+}
+
 bool ConfigInternals::initialize(const std::string & input) {
 	std::istringstream ss(input);
 	boost::property_tree::ptree pt0;	

@@ -139,6 +139,14 @@ public:
     * @return false if there is an error reading XML file
     */
 	bool initialize(gridpack::parallel::Communicator comm);  // deprecated....
+   /**
+    * open a file represented by a vector of strings. File contents are
+    * available on all ranks on communicator comm
+    * @param file vector of strings corresponding to external configuration file
+    * @param Communicator being used in calculation
+    * @return false if there is an error reading XML
+    */
+	bool openStringFile(std::vector<std::string> & file, gridpack::parallel::Communicator comm);  // on all ranks...
 #else
    /**
     * Open external configuration file

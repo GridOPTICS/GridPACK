@@ -13,8 +13,8 @@
 # Last Change:
 # -------------------------------------------------------------
 set(target_libraries
-  gridpack_math
   gridpack_environment
+  gridpack_math
   gridpack_parallel
 )
 

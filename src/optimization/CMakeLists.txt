@@ -59,6 +59,7 @@ set(target_libraries
   gridpack_expression
   gridpack_parallel
   gridpack_configuration
+  gridpack_stream
   ${optimizer_libraries}
   ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
   ${GA_LIBRARIES} 

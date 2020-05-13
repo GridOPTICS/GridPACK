@@ -13,7 +13,7 @@
 gridpack::stream::InputStream::InputStream()
 {
   p_srcFile = false;
-  p_srcChannel = false;
+  p_srcVector = false;
   p_isOpen = false;
 }
 
@@ -23,12 +23,7 @@ gridpack::stream::InputStream::InputStream()
 gridpack::stream::InputStream::~InputStream()
 {
   if (p_isOpen) {
-    if (p_srcFile) {
-      p_fout.close();
-    } else if (p_srcChannel) {
-#ifdef USE_GOSS
-#endif
-    }
+    p_fout.close();
   }
 }
 
@@ -49,31 +44,30 @@ bool gridpack::stream::InputStream::openFile(std::string file)
   return ret;
 }
 
-#ifdef USE_GOSS
 /**
- * Open GOSS channel
- * @param topic topic that that is used by server
- * @param URI channel URI
- * @param username server username
- * @param passwd server password
+ * Parse a vector of strings representing a file
+ * @param fileVec a vector of strings containing lines in a file
  */
-bool gridpack::stream::InputStream::openChannel(const char *topic,
-    const char *URI, const char *username, const char *passwd)
+bool gridpack::stream::InputStream::openStringVector(const std::vector<std::string> &fileVec)
 {
-  bool ret = false;
-  return ret;
+  if (fileVec.size() == 0) return false;
+  p_fileVector = fileVec;
+  p_srcVector = true;
+  p_isOpen = true;
+  return true;
 }
-#endif
 
 void gridpack::stream::InputStream::close()
 {
   if (p_isOpen) {
     if (p_srcFile) {
       p_fout.close();
-    } else if (p_srcChannel) {
-#ifdef USE_GOSS
-#endif
+      p_srcFile = false;
+    } else if (p_srcVector) {
+      p_fileVector.clear();
+      p_srcVector = false;
     }
+    p_isOpen = false;
   } else {
     std::cout<<"No input stream open when calling close"<<std::endl;
   }
@@ -91,10 +85,16 @@ bool gridpack::stream::InputStream::nextLine(std::string &line)
     if (p_srcFile) {
       ret = std::getline(p_fout, line).good();
     } else {
-#ifdef USE_GOSS
-#endif
+      if (p_fileIterator != p_fileVector.end()) {
+        line = *p_fileIterator;
+        ret = true;
+        p_fileIterator++;
+      } else {
+        line.clear();
+      }
     }
   } else {
+    std::cout<<"No input stream is open when calling nextLine"<<std::endl;
   }
   return ret;
 }
