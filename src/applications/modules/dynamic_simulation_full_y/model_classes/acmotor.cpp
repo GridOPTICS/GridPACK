@@ -314,6 +314,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   PintMW = p_pl;
   systemMVABase = 100.0;
   vt = mag;
+  
+  presentMag = mag;
+  vt_complex = gridpack::ComplexType(mag*cos(ang), mag*sin(ang)); 
 
   if (CompLF ==0.0)
     CompLF = 1.0;
