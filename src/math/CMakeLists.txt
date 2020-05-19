@@ -13,6 +13,7 @@ set(gridpack_math_sources)
 set(target_libraries 
   gridpack_configuration 
   gridpack_environment
+  gridpack_math
   gridpack_parallel 
   gridpack_timer
   ${GA_LIBRARIES}

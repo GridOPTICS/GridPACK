@@ -22,6 +22,8 @@
 #define USE_GOSS
 #endif
 
+#include<vector>
+#include <sstream>
 
 #include "activemq/library/ActiveMQCPP.h"
 #include <decaf/lang/Thread.h>
@@ -84,6 +86,7 @@ public:
 	bool isConnectionValid();
 	std::string subscribe(const std::string &topic);
 	std::string subscribeFile(const std::string &topic);
+        std::vector<std::string> subscribeFileAsVector(const std::string &topic);
 
 
 };

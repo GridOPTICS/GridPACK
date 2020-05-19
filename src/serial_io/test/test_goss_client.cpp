@@ -22,12 +22,16 @@ int main()
    std::string username = "system";
    std::string password = "manager";
    std::string URI = "tcp://constance.pnl.gov:61616?wireFormat=openwire"; //openwire (61616), stomp (61614)
+
    //std::string URI = "tcp://poorva.pnl.gov:61616?wireFormat=openwire"; //openwire (61616), stomp (61614)
-   //std::string URI = "tcp://gridpack2:61616?wireFormat=openwire"; //openwire (61616), stomp (61614)
+   //std::string URI = "tcp://gridpack2:61616?wireFormat=openwire"; //openwire (61616)U, stomp (61614)
+
+   std::cout << "Attempting to connect to " << URI << std::endl;
+
 
    //Step 1: Get authenticated
    GOSSClient client(URI, username, password);
-   std::cout << "GOSS authentication is complete" << std::endl;
+   std::cout << "GOSS authentication is complete. Connected to " << URI << std::endl;
 
    //Step 2: Publish
    std::string topic_list = "topic/goss/gridpack/topic_list";
@@ -46,11 +50,10 @@ int main()
 
    //Step 3: Subscribe
    client.publish("goss.request.data.file", "{ \"simulation_id\": \"temp1234\",    \"file_path\": \"ecp_problem3a/rts_contingencies.xml\"}", "temp1234"  );
-   std::string file_contents = client.subscribeFile("temp1234.reply.goss.request.data.file");
-   std::istringstream file_stream(file_contents);
-   std::string line;
-   while (std::getline(file_stream, line))
-	std::cout << line << std::endl;
+   std::vector<std::string> file_contents = client.subscribeFileAsVector("temp1234.reply.goss.request.data.file");
+ 
+   for (std::vector<std::string>::iterator line = file_contents.begin(); line != file_contents.end(); ++line)
+	std::cout << *line << std::endl;
 
    return 0;
 }
