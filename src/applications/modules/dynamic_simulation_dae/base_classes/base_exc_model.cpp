@@ -8,9 +8,9 @@
  * @file   base_exc_model.cpp
  * @author Shuangshuang Jin 
  * @author Shrirang Abhyankar
- * @Last modified:   01/02/20 - Shri
+ * @Last modified:   04/22/20 - Shri
  *  
- * @brief  
+ * @brief Base exciter model 
  *
  *
  */
@@ -44,16 +44,17 @@ BaseExcModel::~BaseExcModel(void)
 void BaseExcModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx)
 {
-  /*data->getValue(GENERATOR_STAT,&status,idx); // Generator status
-  data->getValue(CASE_SBASE,&sbase); // System MVAbase, used in conversion from machine base to system base.
-  if(status) {
-    data->getValue(GENERATOR_PG,&pg,idx); // Generator real power
-    data->getValue(GENERATOR_QG,&qg,idx); // Generator reactive power
-    data->getValue(GENERATOR_MBASE,&mbase,idx); // Machine base (in MVA)
-  } else {
-    pg = qg = mbase = 0.0;
-  }*/
 }
+
+/**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool BaseExcModel::setJacobian(gridpack::ComplexType **values)
+{
+  return false;
+}
+
 
 /**
  * Initialize exciter model before calculation
@@ -117,25 +118,22 @@ bool BaseExcModel::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indices for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool BaseExcModel::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  *nval = 0;
-  return false;
-}
-
-/**
  * Set the initial field voltage (at t = tstart) parameter for the exciter
  * @param fldv value of the field voltage
  */
 void BaseExcModel::setInitialFieldVoltage(double fldv)
 {
+}
+
+/**
+ * Partial derivatives of field voltage Efd w.r.t. exciter variables
+ * @param xexc_loc locations of exciter variables
+ * @param dEfd_dexc partial derivatives of field voltage w.r.t exciter variables
+ * @param dEfd_dxgen partial derivatives of field voltage w.r.t. generator variables
+ */
+bool BaseExcModel::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
+{
+  return false;
 }
 
 /** 

@@ -7,9 +7,10 @@
 /**
  * @file   wsieg1.hpp
  * @author Shuangshuang Jin 
- * @Last modified:   10/02/19
- * @Last modified:   12/16/19 *Shri
- * @brief  
+ * @author Shrirang Abhyankar
+ * @Last modified:   04/22/20
+ *
+ * @brief WSIEG1 governor model header file  
  * 
  * 
  */
@@ -22,101 +23,104 @@
 
 class Wsieg1Gov: public BaseGovModel
 {
-   public:
-   /**
-     * Basic constructor
+public:
+  /**
+   * Basic constructor
+   */
+  Wsieg1Gov();
+  
+  /**
+   * Basic destructor
      */
-    Wsieg1Gov();
+  ~Wsieg1Gov();
+  
+  /**
+   * Load parameters from DataCollection object into governor model
+   * @param data collection of governor parameters from input files
+   * @param index of governor on bus
+   * TODO: might want to move this functionality to BaseGoviterModel
+   */
+  void load(const boost::shared_ptr<gridpack::component::DataCollection>
+	    data, int idx);
 
-    /**
-     * Basic destructor
-     */
-    ~Wsieg1Gov();
-
-    /**
-     * Load parameters from DataCollection object into governor model
-     * @param data collection of governor parameters from input files
-     * @param index of governor on bus
-     * TODO: might want to move this functionality to BaseGoviterModel
-     */
-    void load(const boost::shared_ptr<gridpack::component::DataCollection>
-        data, int idx);
-
-    /**
-     * Initialize governor model before calculation
-     * @param [output] values - array where initialized governor variables should be set
-     */
-    void init(gridpack::ComplexType *values);
-
-    /**
-     * Write output from governors to a string.
-     * @param string (output) string with information to be printed out
-     * @param bufsize size of string buffer in bytes
-     * @param signal an optional character string to signal to this
-     * routine what about kind of information to write
-     * @return true if bus is contributing string to output, false otherwise
-     */
-    bool serialWrite(char *string, const int bufsize,
-        const char *signal);
-
-    /**
-     * Write out governor state
-     * @param signal character string used to determine behavior
-     * @param string buffer that contains output
-     */
-    void write(const char* signal, char* string);
-
-    /**
-     *  Set the number of variables for this governor model
-     *  @param [output] number of variables for this model
-     */
-    bool vectorSize(int *nvar) const;
-
-    /**
-     * Set the internal values of the voltage magnitude and phase angle. Need this
-     * function to push values from vectors back onto governors
-     * @param values array containing governor state variables
-     */
-     void setValues(gridpack::ComplexType*);
-
-    /**
-     * Return the values of the governor vector block
-     * @param values: pointer to vector values
-     * @return: false if governor does not contribute
-     *        vector element
-     */
-    bool vectorValues(gridpack::ComplexType *values);
-
-    /**
-     * Return the matrix entries
-     * @param [output] nval - number of values set
-     * @param [output] row - row indices for matrix entries
-     * @param [output] col - col indices for matrix entries
-     * @param [output] values - matrix entries
-     * return true when matrix entries set
-     */
-    bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
-
-    /**
-     * Set the mechanical power during initialization inside the governor
-     * @param pmech value of the mechanical power 
-     */
-    virtual void setInitialMechanicalPower(double pmech);
-
-    /** 
-     * Get the value of the mechanical power parameter
-     * @return value of the mechanical power 
-     */
-    virtual double getMechanicalPower();
-
-    /**
-     * Set the value of the Vcomp
-     * @return value of teh Vcomp
-     */
-    virtual void setVcomp(double vtmp);
-
-  private:
-
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
+  bool setJacobian(gridpack::ComplexType **values);
+  
+  /**
+   * Initialize governor model before calculation
+   * @param [output] values - array where initialized governor variables should be set
+   */
+  void init(gridpack::ComplexType *values);
+  
+  /**
+   * Write output from governors to a string.
+   * @param string (output) string with information to be printed out
+   * @param bufsize size of string buffer in bytes
+   * @param signal an optional character string to signal to this
+   * routine what about kind of information to write
+   * @return true if bus is contributing string to output, false otherwise
+   */
+  bool serialWrite(char *string, const int bufsize,
+		   const char *signal);
+  
+  /**
+   * Write out governor state
+   * @param signal character string used to determine behavior
+   * @param string buffer that contains output
+   */
+  void write(const char* signal, char* string);
+  
+  /**
+   *  Set the number of variables for this governor model
+   *  @param [output] number of variables for this model
+   */
+  bool vectorSize(int *nvar) const;
+  
+  /**
+   * Set the internal values of the voltage magnitude and phase angle. Need this
+   * function to push values from vectors back onto governors
+   * @param values array containing governor state variables
+   */
+  void setValues(gridpack::ComplexType*);
+  
+  /**
+   * Return the values of the governor vector block
+   * @param values: pointer to vector values
+   * @return: false if governor does not contribute
+   *        vector element
+   */
+  bool vectorValues(gridpack::ComplexType *values);
+  
+  /**
+   * Set the mechanical power during initialization inside the governor
+   * @param pmech value of the mechanical power 
+   */
+  void setInitialMechanicalPower(double pmech);
+  
+  /** 
+   * Get the value of the mechanical power parameter
+   * @return value of the mechanical power 
+   */
+  double getMechanicalPower();
+  
+  /**
+   * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+   * @param xgov_loc locations of governor variables
+   * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+   */
+  bool getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov);
+  
+  /**
+   * Set the value of the Vcomp
+   * @return value of teh Vcomp
+   */
+  void setVcomp(double vtmp);
+  
+private:
+  
   // Governor WSIEG1 Parameters read from dyr
   double K, T1, T2, T3, Uo, Uc, Pmax, Pmin;
   double T4, K1, K2, T5, K3, K4, T6, K5, K6, T7, K7, K8;
@@ -147,8 +151,6 @@ class Wsieg1Gov: public BaseGovModel
   double Pref;
 
   int iseq_diff[6];   
-
-  int bid; 
 };
 
 #endif

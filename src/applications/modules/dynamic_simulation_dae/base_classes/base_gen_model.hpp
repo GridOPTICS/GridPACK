@@ -7,9 +7,9 @@
 /**
  * @file   base_gen_model.hpp
  * @author Shrirang Abhyankar
- * @Last modified:   02/17/19
+ * @Last modified:   04/24/20
  * 
- * @brief  
+ * @brief  Base generator class header file
  * 
  * 
  */
@@ -91,19 +91,6 @@ public:
   virtual void getCurrent(double *IGD, double *IGQ);
   
   /**
-   * Return the matrix entries
-   * @param [output] nval - number of values set
-   * @param [output] row - row indices for matrix entries
-   * @param [output] col - col indices for matrix entries
-   * @param [output] values - matrix entries
-   * return true when matrix entries set
-
-   Note: It becomes cumbersome to use matrixDiagValues for large matrix blocks. matrixDiagEntries makes this easier by also allowing to set the row and col indices for the entries. Eventually, we would want to move this function to the MatVecInterface and then have the loadXXXData methods in the mapper class call it for setting the matrix values 
-   */
-
-  virtual bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
-
-  /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
 
    * Load data from DataCollection object into corresponding
@@ -111,7 +98,50 @@ public:
    * @param data data collection associated with component
    */
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
+
+
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
+  virtual bool setJacobian(gridpack::ComplexType **values);
+
+  /**
+   * Set the field current parameter inside the exciter
+   * @param fldc value of the field current
+   */
+  virtual double getFieldCurrent(void);
+
+  /**
+   * Return the rotor speed deviation
+   * @param rotor speed deviation 
+   */
+  virtual double getRotorSpeedDeviation();
+
+  /**
+   * Return the location of speed rotor speed deviation variable in the bus array
+   * @param rotor speed deviation location
+   */
+  virtual int getRotorSpeedDeviationLocation();
+
+  /**
+   * Set the offset for first variable for the generator in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
+
+  void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
+
+  boost::shared_ptr<BaseExcModel> getExciter();
   
+  bool hasExciter();
+
+  void setGovernor(boost::shared_ptr<BaseGovModel> &p_governor);
+
+  boost::shared_ptr<BaseGovModel> getGovernor();
+  
+  bool hasGovernor();
+
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
 to be overwritten by the implementation */
@@ -151,33 +181,6 @@ to be overwritten by the implementation */
    */
   void setValues(gridpack::ComplexType *values);
 
-  /**
-   * Set the field current parameter inside the exciter
-   * @param fldc value of the field current
-   */
-  virtual double getFieldCurrent(void);
-
-  /**
-   * Return the rotor speed deviation
-   * @param rotor speed deviation 
-   */
-  virtual double getRotorSpeedDeviation();
-
-  /***************************************/
-
-
-  void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
-
-  boost::shared_ptr<BaseExcModel> getExciter();
-  
-  bool getphasExciter();
-
-  void setGovernor(boost::shared_ptr<BaseGovModel> &p_governor);
-
-  boost::shared_ptr<BaseGovModel> getGovernor();
-  
-  bool getphasGovernor();
-
  protected:
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */
@@ -186,10 +189,21 @@ to be overwritten by the implementation */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
   double        VD, VQ;
-  bool          p_hasExciter;
-  bool          p_hasGovernor;
-  boost::shared_ptr<BaseExcModel> p_exciter; //SJin: new pointer to exciter
-  boost::shared_ptr<BaseGovModel> p_governor; //SJin: new pointer to governor
+  bool          p_hasExciter; // Flag indicating whether this generator has exciter
+  bool          p_hasGovernor; // Flag indicating whether this generator has governor
+  boost::shared_ptr<BaseExcModel> p_exciter; // Exciter
+  boost::shared_ptr<BaseGovModel> p_governor; // Governor
+  int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+  int           nxgen; /* Number of variables for the generator model */
+
+  // Arrays used in coupling blocks between generator and exciter. These should be allocated and destroyed by the derived class
+  int           *xexc_loc;   // locations for exciter variables in the bus variables array
+  double        *dEfd_dxexc; // Partial derivatives of field voltage Efd w.r.t. exciter variables (size = nxexc)
+  double        *dEfd_dxgen; // Partial derivatives of field voltage Efd w.r.t. generator variables (size = nxgen)
+
+  // Arrays used in coupling blocks between generator and governor. These should be allocated and destroyed by the derived class
+  int           *xgov_loc;   // locations for governor variables in the bus variables array
+  double        *dPmech_dxgov; // Partial derivatives of mechanical power Pmech w.r.t. governor variables (size = nxgov)
 };
 
 #endif

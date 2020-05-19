@@ -24,6 +24,9 @@
 \newcommand{\Xdp}{X{'}_d}
 \newcommand{\Ep}{E^{'}}
 \newcommand{\Vref}{V_{REF}}
+\newcommand{\Pm}{P_{mech}}
+\newcommand{\Efd}{E_{fd}}
+\newcommand{\Ifd}{I_{fd}}
 
 \begin{document}
 
@@ -45,7 +48,7 @@ The inputs and outputs for the generator models are given below. These inputs/ou
 the coupling with the bus and the generator controls such as exciters, turbine-governors.
 \subsection{Inputs}
 \begin{enumerate}
-  \item $P_M$: Mechanical power input
+  \item $\Pm$: Mechanical power input
 \end{enumerate}
 
 \subsection{Outputs}
@@ -53,7 +56,7 @@ the coupling with the bus and the generator controls such as exciters, turbine-g
   \item Generator current real and imaginary components, $I_{GR}$ and $I_{GI}$, respectively.
   \item $\delta$ : Rotor angle
   \item $\dw$ : Speed deviation
-  \item Field current $I_{FD}$
+  \item Field current: $\Ifd$
 \end{enumerate}
 
 \subsection{GENCLS\cite{GENCLS}}
@@ -68,7 +71,7 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 \subsubsection{Equations}
 \begin{align}
 \dfrac{1}{\omega_s}\dfrac{d\delta}{dt} &= \dw \\
-2H\dfrac{d\dw}{dt} &= P_M - \dfrac{V_R\Ep\sin(\delta) + V_I\Ep\cos(\delta)}{\Xdp} - D\dw
+2H\dfrac{d\dw}{dt} &= \Pm - \dfrac{V_R\Ep\sin(\delta) + V_I\Ep\cos(\delta)}{\Xdp} - D\dw
 \end{align}
 
 \subsubsection{Outputs}
@@ -83,8 +86,8 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 \subsection{GENROU}
 
 \begin{enumerate}
-	\item $E_{fd}$: Exciter field voltage
-	\item $P_{mech}$: Turbine-governor mechanical power
+	\item $\Efd$: Exciter field voltage
+	\item $\Pm$: Turbine-governor mechanical power
 \end{enumerate}
 
 \subsubsection{Variables}
@@ -100,8 +103,8 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 \subsubsection{Equations}
 \begin{flalign}
 &\frac{1}{\omega_s}\frac{d{\delta}}{dt}={\Delta\omega}&\\
-&\frac{1}{2H}\frac{d{\Delta\omega}}{dt} = \frac{P_{mech}-D*{\Delta\omega}}{1+{\Delta\omega}}-T_{elec}&\\
-&T^{'}_{do}\frac{dE^{'}_q}{dt}= E_{fd} - L_{ad}I_{fd}&\\
+&\frac{1}{2H}\frac{d{\Delta\omega}}{dt} = \frac{\Pm-D*{\Delta\omega}}{1+{\Delta\omega}}-T_{elec}&\\
+&T^{'}_{do}\frac{dE^{'}_q}{dt}= \Efd - L_{ad}\Ifd&\\
 \nonumber  &T^{'}_{qo}\frac{dE^{'}_d}{dt}= (X_q - X^{'}_q)\left( I_q -\frac{X^{'}_q - X^{''}_q}{(X^{'}_q - X_l)^2}(E^{'}_d +(X^{'}_q - X_l)I_q - \psi^{'}_q)\right) -&\\ &\qquad E^{'}_d + \frac{X_q - X_l}{X_d - X_l}\psi^{''}_q\frac{Sat(\sqrt{\psi^{''}_d + \psi^{''2}_q})}{\sqrt{\psi^{''}_d + \psi^{''2}_q}}
 &\\
 &T^{''}_{do}\frac{d\psi^{'}_d}{dt} = E^{'}_q   - \psi^{'}_d  - (X^{'}_{d}-X_{l})I_d&\\
@@ -117,10 +120,10 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 \end{align}
 	\item Field current
 \begin{flalign*}
-L_{ad}I_{fd} = &E^{'}_q + (X_d-X^{'}_{d})\left(I_d + \dfrac{X^{'}_d - X^{"}_d}{(X^{'}_d-X_{l})^2}\left(E^{'}_q - \psi^{'}_d - (X^{'}_d - X_l)I_d\right)\right) + \\ 
+L_{ad}\Ifd = &E^{'}_q + (X_d-X^{'}_{d})\left(I_d + \dfrac{X^{'}_d - X^{"}_d}{(X^{'}_d-X_{l})^2}\left(E^{'}_q - \psi^{'}_d - (X^{'}_d - X_l)I_d\right)\right) + \\ 
 &\psi^{''}_d\frac{Sat(\sqrt{\psi^{''}_d + \psi^{''2}_q})}{\sqrt{\psi^{''}_d + \psi^{''2}_q}}
- %L_{ad}I_{fd} = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left[ \dfrac{X_d - X^{"}_d}{X_d-X_{l}^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right]
- % L_{ad}I_{fd}=E^{'}_q+(X_d-X_{d})*(I_d+T_{empD})&\\
+ %L_{ad}\Ifd = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left[ \dfrac{X_d - X^{"}_d}{X_d-X_{l}^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right]
+ % L_{ad}\Ifd=E^{'}_q+(X_d-X_{d})*(I_d+T_{empD})&\\
 \end{flalign*}
 \end{enumerate}
 
@@ -145,8 +148,8 @@ The intermediate variables used in the above calculations are as follows:
 \subsubsection{Inputs}
 
 \begin{enumerate}
-	\item $E_{fd}$: Exciter field voltage
-	\item $P_{mech}$: Turbine-governor mechanical power
+	\item $\Efd$: Exciter field voltage
+	\item $\Pm$: Turbine-governor mechanical power
 \end{enumerate}
 
 \subsubsection{Variables}
@@ -160,8 +163,8 @@ The intermediate variables used in the above calculations are as follows:
 \subsubsection{Equations}
 \begin{flalign}
 &\frac{1}{\omega_s}\frac{d{\delta}}{dt}={\Delta\omega}&\\
-&\frac{1}{2H}\frac{d{\Delta\omega}}{dt} = \frac{P_{mech}-D*{\Delta\omega}}{1+{\Delta\omega}}-T_{elec}&\\
-&T^{'}_{do}\frac{dE^{'}_q}{dt}= E_{fd} - L_{ad}I_{fd}&\\
+&\frac{1}{2H}\frac{d{\Delta\omega}}{dt} = \frac{\Pm-D*{\Delta\omega}}{1+{\Delta\omega}}-T_{elec}&\\
+&T^{'}_{do}\frac{dE^{'}_q}{dt}= \Efd - L_{ad}\Ifd&\\
 &T^{''}_{do}\frac{d\psi^{'}_d}{dt} = -\psi^{'}_d-(X_{d}'-X_{l})I_d+E^{'}_q&\\
 &{T^{''}_{qo}}\frac{d\psi^{''}_q}{dt} = -\psi^{''}_q-(X_q-X^{''}_{q})I_q&
 \end{flalign}
@@ -175,8 +178,8 @@ The intermediate variables used in the above calculations are as follows:
 \end{align}
 	\item Field current
 \begin{equation}
- L_{ad}I_{fd} = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left( \dfrac{X_d - X^{"}_d}{(X_d-X_{l})^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right)
- % L_{ad}I_{fd}=E^{'}_q+(X_d-X_{d})*(I_d+T_{empD})&\\
+ L_{ad}\Ifd = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left( \dfrac{X_d - X^{"}_d}{(X_d-X_{l})^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right)
+ % L_{ad}\Ifd=E^{'}_q+(X_d-X_{d})*(I_d+T_{empD})&\\
 \end{equation}
 \end{enumerate}
 
@@ -206,7 +209,7 @@ Over/under excitation limiters and stabilizers are not implemented in GridPACK. 
 
 \subsection{Outputs}
 \begin{enumerate}
-  \item $E_{FD}$: Field voltage
+  \item $\Efd$: Field voltage
 \end{enumerate}
 
 \subsection{EXDC1 or ESDC1A \cite{PSSE}}
@@ -216,7 +219,7 @@ Over/under excitation limiters and stabilizers are not implemented in GridPACK. 
   \item $V_{meas}$: Measured terminal voltage
   \item $x_{LL}$: Lead lag block state variable
   \item $V_{R}$: Regulator output
-  \item $E_{fd}$: Exciter output
+  \item $\Efd$: Exciter output
   \item $x_F$: Rate feedback integrator state
 \end{enumerate}
 
@@ -234,8 +237,8 @@ Over/under excitation limiters and stabilizers are not implemented in GridPACK. 
     T_{A}\dfrac{dV_{R}}{dt} = K_Ay_{LL} -V_R,&\text{if}~~T_{A} > 0,\quad V_{RMIN} \le V_R \le V_{MAX} \\
     0 = y_{LL2} - V_{R},&\text{if}~~T_{A} = 0,\quad V_{RMIN} \le V_R \le V_{RMAX}
   \end{cases}& \\
-  &T_E\dfrac{dE_{fd}}{dt} = V_R - V_{FE}& \\
-  &T_F\dfrac{dx_F}{dt} = -\dfrac{K_F}{T_F}E_{fd} - x_F&
+  &T_E\dfrac{d\Efd}{dt} = V_R - V_{FE}& \\
+  &T_F\dfrac{dx_F}{dt} = -\dfrac{K_F}{T_F}\Efd - x_F&
 \end{flalign}
 Here, the intermediate variables used in the calculations are as follows:
 \begin{align*}
@@ -244,14 +247,14 @@ Here, the intermediate variables used in the calculations are as follows:
     y_{LL} = x_{LL} + \dfrac{T_c}{T_b}V_{in},&\text{if}~~T_{b} > 0 \\
     y_{LL} = x_{LL},&\text{if}~~T_{b} = 0
   \end{cases}& \\
-  &V_{FE}  = K_EE_{fd} + E_{fd}S_E(E_{fd})& \\
-  &V_F     = x_F + \dfrac{K_F}{T_F}E_{fd}&   
+  &V_{FE}  = K_E\Efd + \Efd{S_E(\Efd)}& \\
+  &V_F     = x_F + \dfrac{K_F}{T_F}\Efd &   
 \end{align*}
-$S_E(E_{fd})$ is a quadratic saturation function of the form $S_E = B(E_{fd} - A)^2$. The input data provides two operating points for $E_{fd}, S_E(E_{fd})$ from which the constants $A$ and $B$ are calculated.
+$S_E(\Efd)$ is a quadratic saturation function of the form $S_E = B(\Efd - A)^2$. The input data provides two operating points for $\Efd, S_E(\Efd)$ from which the constants $A$ and $B$ are calculated.
 
 \subsection{Outputs}
 \begin{enumerate}
-  \item $E_{FD} = \max(0,E_{fd})$
+  \item $\Efd = \max(0,\Efd)$
 \end{enumerate}
 
 \subsection{ESST1A \cite{ESST1A}}
@@ -296,13 +299,13 @@ Here, the intermediate variables used in the calculations are as follows:
     y_{LL2} = x_{LL2} + \dfrac{T_{c1}}{T_{b1}}y_{LL1},&\text{if}~~T_{b1} > 0 \\
     y_{LL2} = x_{LL2},&\text{if}~~T_{b1} = 0 \\
   \end{cases}& \\
-  &u_{FB}  = V_A - \max(K_{LR}(I_{FD} - I_{LR}),0)& \\
+  &u_{FB}  = V_A - \max(K_{LR}(\Ifd - I_{LR}),0)& \\
   &V_F     = x_F + \dfrac{K_F}{T_F}u_{FB}&   
 \end{align*}
 
 \subsection{Outputs}
 \begin{enumerate}
-  \item $E_{FD} = \min(\max(u_{FB},V_TV_{RMIN}),V_TV_{RMAX} - K_CI_{FD})$
+  \item $\Efd = \min(\max(u_{FB},V_TV_{RMIN}),V_TV_{RMAX} - K_C\Ifd)$
 \end{enumerate}
 
 \section{Turbine governor models}
@@ -366,8 +369,8 @@ P_{GV} = x_{GV}
 
 \subsection{Outputs}
 \begin{enumerate}
-  \item $PMECH_{HP} = K_1x_{T1} + K_3x_{T2} + K_5x_{T3} + K_7x_{T4}$
-  \item $PMECH_{LP} = K_2x_{T1} + K_4x_{T2} + K_6x_{T3} + K_8x_{T4}$
+  \item $P_{mech,HP} = K_1x_{T1} + K_3x_{T2} + K_5x_{T3} + K_7x_{T4}$
+  \item $P_{mech,LP} = K_2x_{T1} + K_4x_{T2} + K_6x_{T3} + K_8x_{T4}$
 \end{enumerate}
 
 \appendices

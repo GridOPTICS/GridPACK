@@ -8,9 +8,9 @@
  * @file   wsieg1.cpp
  * @author Shuangshuang Jin
  * @author Shrirang Abhyankar
- * @Last modified:   01/02/20
+ * @Last modified:   04/22/20
  *  
- * @brief  
+ * @brief WSIEG1 governor model implementation 
  *
  *
  */
@@ -18,8 +18,6 @@
 #include <wsieg1.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
-
-#define TS_THRESHOLD 1
 
 Wsieg1Gov::Wsieg1Gov(void)
 {
@@ -61,7 +59,9 @@ Wsieg1Gov::Wsieg1Gov(void)
   T7 = 0.0;
   K7 = 0.0;
   K8 = 0.0;
-  SecondGenExists = true;
+  SecondGenExists = false;
+
+  nxgov = 6; // Number of variables
 }
 
 Wsieg1Gov::~Wsieg1Gov(void)
@@ -76,7 +76,6 @@ Wsieg1Gov::~Wsieg1Gov(void)
  */
 void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  data->getValue(BUS_NUMBER, &bid);
   BaseGovModel::load(data,idx); // load parameters in base governor model
   
   // load parameters for the model type
@@ -122,7 +121,6 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
 {
   BaseGenModel* gen=getGenerator();
   double dw = gen->getRotorSpeedDeviation();
-  ///printf("wsieg1: Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);
   double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
     PGV = Pmech1 / (K1 + K3 + K5 + K7);
@@ -190,7 +188,7 @@ void Wsieg1Gov::write(const char* signal, char* string)
  */
 bool Wsieg1Gov::vectorSize(int *nvar) const
 {
-  *nvar = 6;
+  *nvar = nxgov;
   return true;
 }
 
@@ -245,30 +243,32 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
 
   // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
+    // xLL equation
     if(iseq_diff[x1_idx]) values[x1_idx] = xLL - xLLprev; 
     else values[x1_idx] = -xLL + K*dw;
     yLL = xLL;
 
+    // xGV equation
     values[x2_idx] = xGV - xGVprev;
 
+    // xT1 equation
     if(iseq_diff[x3_idx]) values[x3_idx] = xT1 - xT1prev;
     else values[x3_idx] = xGV - xT1;
       
+    // xT2 equation
     if(iseq_diff[x4_idx]) values[x4_idx] = xT2 - xT2prev;
     else values[x4_idx] = xT1 - xT2;
 
+    // xT3 equation
     if(iseq_diff[x5_idx]) values[x5_idx] = xT3 - xT3prev;
     else values[x5_idx] = xT2 - xT3;
 
+    // xT4 equation
     if(iseq_diff[x6_idx]) values[x6_idx] = xT4 - xT4prev;
     else values[x6_idx] = xT3 - xT4;
 
   } else if(p_mode == RESIDUAL_EVAL) {
-    //printf("\n wsieg1: what's the initial values for the first iteration?\n");
-    //    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\t%f\n", xLL, xGV, xT1, xT2, xT3, xT4);
-    // Governor equations
-
-    // State 1 xLL
+    // xLL equation
     if(iseq_diff[x1_idx]) {
       values[x1_idx] = (-xLL + (1 - T2/T1)*K*dw)/T1 - dxLL;
       yLL = xLL + T2/T1*K*dw;
@@ -277,22 +277,23 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // State 2 xGV
-    values[x2_idx] = fmin(fmax(Uc,(Pref - xGV - yLL)/T3),Uo) -dxGV;
-
-    // State 3 xT1
+    // xGV equation (Note: ignoring limits Uo, Uc)
+    //    values[x2_idx] = fmin(fmax(Uc,(Pref - xGV - yLL)/T3),Uo) -dxGV;
+    values[x2_idx] = (Pref - xGV - yLL)/T3 - dxGV;
+    
+    // xT1 equation
     if(iseq_diff[x3_idx]) values[x3_idx] = (xGV - xT1)/T4 - dxT1;
     else values[x3_idx] = xGV - xT1;
 
-    // State 4 xT2
+    // xT2 equation
     if(iseq_diff[x4_idx]) values[x4_idx] = (xT1 - xT2)/T5 - dxT2;
     else values[x4_idx] = xT1 - xT2;
 
-    // State 5 xT3
+    // xT3 equation
     if(iseq_diff[x5_idx]) values[x5_idx] = (xT2 - xT3)/T6 - dxT3;
     else values[x5_idx] = xT2 - xT3;
 
-    // State 6 xT4
+    // xT4 equation
     if(iseq_diff[x6_idx]) values[x6_idx] = (xT3 - xT4)/T7 - dxT4;
     else values[x6_idx] = xT3 - xT4;
         
@@ -302,19 +303,131 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indics for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
  */
-bool Wsieg1Gov::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
+bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 {
-  int idx = 0;
-  if(p_mode == FAULT_EVAL) { // SJin: put values 1 along diagonals, 0 along off diagonals
+  int xLL_idx = offsetb;
+  int xGV_idx = offsetb+1;
+  int xT1_idx = offsetb+2;
+  int xT2_idx = offsetb+3;
+  int xT3_idx = offsetb+4;
+  int xT4_idx = offsetb+5;
+  double yLL;
+  double dyLL_dxLL=0.0,dyLL_dxGV=0.0;
+  double dyLL_dxT1=0.0,dyLL_dxT2=0.0;
+  double dyLL_dxT3=0.0,dyLL_dxT4=0.0;
+  double dyLL_ddw=0.0;
+  int    dw_idx;
 
+  dw_idx = getGenerator()->getRotorSpeedDeviationLocation();
+  if(p_mode == FAULT_EVAL) {
+    // Partial derivatives of xLL equation
+    if(iseq_diff[0]) {
+      values[xLL_idx][xLL_idx] = 1.0;
+    } else {
+      values[xLL_idx][xLL_idx] = -1.0;
+      dw_idx = getGenerator()->getRotorSpeedDeviationLocation();
+      values[dw_idx][xLL_idx] = K;
+    }
+
+    // Partial derivatives of xGV equation
+    values[xGV_idx][xGV_idx] = 1.0;
+
+    // Partial derivatives of xT1 equation
+    if(iseq_diff[2]) {
+      values[xT1_idx][xT1_idx] = 1.0;
+    } else {
+      values[xGV_idx][xT1_idx] = 1.0;
+      values[xT1_idx][xT1_idx] = -1.0;
+    }
+
+    // Partial derivatives of xT2 equation
+    if(iseq_diff[3]) {
+      values[xT2_idx][xT2_idx] = 1.0;
+    } else {
+      values[xT1_idx][xT2_idx] = 1.0;
+      values[xT2_idx][xT2_idx] = -1.0;
+    }
+
+    // Partial derivatives of xT3 equation
+    if(iseq_diff[4]) {
+      values[xT3_idx][xT3_idx] = 1.0;
+    } else {
+      values[xT2_idx][xT3_idx] = 1.0;
+      values[xT3_idx][xT3_idx] = -1.0;
+    }
+
+    // Partial derivatives of xT4 equation
+    if(iseq_diff[5]) {
+      values[xT4_idx][xT4_idx] = 1.0;
+    } else {
+      values[xT3_idx][xT4_idx] = 1.0;
+      values[xT4_idx][xT4_idx] = -1.0;
+    }
+  } else {
+    // Partial derivatives of xLL equation
+    if(iseq_diff[0]) {
+      values[xLL_idx][xLL_idx] = -1.0/T1 - shift;
+
+      values[dw_idx][xLL_idx] = (1 - T2/T1)*K/T1;
+      dyLL_dxLL = 1.0;
+      dyLL_ddw  = T2/T1*K;
+    } else {
+      values[xLL_idx][xLL_idx] = -1.0;
+
+      values[dw_idx][xLL_idx] = K;
+      dyLL_dxLL = 1.0;
+    }
+
+    // Partial derivatives of xGV equation
+    values[xLL_idx][xGV_idx] = -dyLL_dxLL/T3;
+    values[xGV_idx][xGV_idx] = -1.0/T3 - shift; 
+    values[xT1_idx][xGV_idx] = -dyLL_dxT1/T3;
+    values[xT2_idx][xGV_idx] = -dyLL_dxT2/T3;
+    values[xT3_idx][xGV_idx] = -dyLL_dxT3/T3;
+    values[xT4_idx][xGV_idx] = -dyLL_dxT4/T3;
+
+    values[dw_idx][xGV_idx] = -dyLL_ddw/T3;
+    
+    // Partial derivatives of xT1 equation
+    if(iseq_diff[2]) {
+      values[xGV_idx][xT1_idx] = 1/T4;
+      values[xT1_idx][xT1_idx] = -1/T4 - shift;
+    } else {
+      values[xGV_idx][xT1_idx] = 1.0;
+      values[xT1_idx][xT1_idx] = -1.0;
+    }
+
+    // Partial derivatives of xT2 equation
+    if(iseq_diff[3]) {
+      values[xT1_idx][xT2_idx] = 1/T5;
+      values[xT2_idx][xT2_idx] = -1/T5 - shift;
+    } else {
+      values[xT1_idx][xT2_idx] = 1.0;
+      values[xT2_idx][xT2_idx] = -1.0;
+    }
+
+    // Partial derivatives of xT3 equation
+    if(iseq_diff[4]) {
+      values[xT2_idx][xT3_idx] = 1/T6;
+      values[xT3_idx][xT3_idx] = -1/T6 - shift;
+    } else {
+      values[xT2_idx][xT3_idx] = 1.0;
+      values[xT3_idx][xT3_idx] = -1.0;
+    }
+
+    // Partial derivatives of xT4 equation
+    if(iseq_diff[5]) {
+      values[xT3_idx][xT4_idx] = 1/T7;
+      values[xT4_idx][xT4_idx] = -1/T7 - shift;
+    } else {
+      values[xT3_idx][xT4_idx] = 1.0;
+      values[xT4_idx][xT4_idx] = -1.0;
+    }
   }
+
   return true;
 }
 
@@ -326,7 +439,6 @@ void Wsieg1Gov::setInitialMechanicalPower(double Pmech0)
 {
   Pmech1 = Pmech0;
   Pmech2 = Pmech0;
-  //printf("Pmech1 in WSIEG1 = %f\n", pmech);
 }
 
 /** 
@@ -339,6 +451,26 @@ double Wsieg1Gov::getMechanicalPower()
   Pmech2 = xT1 * K2 + xT2 * K4 + xT3 * K6 + xT4 * K8;
 
   return Pmech1;
+}
+
+/**
+ * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+ * @param xgov_loc locations of governor variables
+ * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+*/
+bool Wsieg1Gov::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov)
+{
+  int i;
+
+  for(i=0; i < nxgov; i++) xgov_loc[i] = offsetb + i;
+
+  dPmech_dxgov[0] = dPmech_dxgov[1] = 0.0;
+  dPmech_dxgov[2] = K1; 
+  dPmech_dxgov[3] = K3; 
+  dPmech_dxgov[4] = K5; 
+  dPmech_dxgov[5] = K7; 
+
+  return true;
 }
 
 void Wsieg1Gov::setVcomp(double Vcomp)
