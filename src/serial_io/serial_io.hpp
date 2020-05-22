@@ -161,7 +161,6 @@ class SerialBusIO {
     if (p_fout) {
       write(*p_fout, signal);
     } else {
-      std::cout << "Choosing GOSS for the output stream" << std::endl;
       write(std::cout, signal);
     }
   }
@@ -228,19 +227,21 @@ class SerialBusIO {
    */
   void header(const char *str)
   {
-    if (p_fout) 
-    {
-      *p_fout << str;
-    } 
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      if (p_fout) 
+      {
+        *p_fout << str;
+      } 
 #ifdef USE_GOSS
-    else if (m_client.isConnectionValid()) 
-    {
-      std::cout << "Choosing GOSS for the output stream" << std::endl;
-      m_client.publish(m_topic, str);
-    }
+      else if (m_client.isConnectionValid()) 
+      {
+        std::cout << "Choosing GOSS for the output stream" << std::endl;
+        m_client.publish(m_topic, str);
+      }
 #endif
-    else
-      std::cout << str;
+      else
+        std::cout << str;
+    }
 
 
 /*
@@ -1168,19 +1169,21 @@ public:
 
   void header(const char *str)
   {
-    if (p_fout)
-    {
-      *p_fout << str;
-    } 
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      if (p_fout)
+      {
+        *p_fout << str;
+      } 
 #ifdef USE_GOSS
-    else if (m_client.isConnectionValid()) 
-    {
-      std::cout << "Choosing GOSS for the output stream" << std::endl;
-      m_client.publish(m_topic, str);
-    }
+      else if (m_client.isConnectionValid()) 
+      {
+        std::cout << "Choosing GOSS for the output stream" << std::endl;
+        m_client.publish(m_topic, str);
+      }
 #endif
-    else
-      std::cout << str;
+      else
+        std::cout << str;
+    }
 
   }
 
