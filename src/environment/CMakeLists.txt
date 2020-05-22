@@ -10,12 +10,16 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2020-01-07 08:51:33 d3g096
+# Last Change: 2020-05-22 09:01:40 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_environment 
   environment.cpp
-)
+  )
+
+target_link_libraries(gridpack_environment
+  gridpack_math
+  )
 
 set(target_libraries
    gridpack_environment
