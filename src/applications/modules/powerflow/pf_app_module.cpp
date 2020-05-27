@@ -21,6 +21,7 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/MAT_parser.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/math/math.hpp"
@@ -42,7 +43,7 @@ gridpack::powerflow::PFAppModule::~PFAppModule(void)
 {
 }
 
-enum Parser{PTI23, PTI33, GOSS};
+enum Parser{PTI23, PTI33, MAT_POWER, GOSS};
 
 /**
  * Read in and partition the powerflow network. The input file is read
@@ -81,6 +82,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
       filetype = PTI33;
     } else if (cursor->get("networkConfiguration_GOSS",&filename)) {
       filetype = GOSS;
+    } else if (cursor->get("networkConfiguration_mat",&filename)) {
+      filetype = MAT_POWER;
     } else {
       printf("No network configuration file specified\n");
       return;
@@ -108,6 +111,11 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     if (phaseShiftSign == -1.0) {
       parser.changePhaseShiftSign();
     }
+  } else if (filetype == MAT_POWER) {
+    gridpack::parser::MAT_parser<PFNetwork> parser(network);
+    printf("p[%d] Parsing mat power file\n",p_comm.rank());
+    parser.parse(filename.c_str());
+    printf("p[%d] Completed parsing mat power file\n",p_comm.rank());
   } else if (filetype == GOSS) {
     gridpack::parser::GOSS_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
@@ -315,6 +323,7 @@ bool gridpack::powerflow::PFAppModule::solve()
            w.c_str());
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
+    timer->stop(t_total);
 
     return false;
   }
@@ -466,6 +475,8 @@ bool gridpack::powerflow::PFAppModule::nl_solve()
     helper.update(*helper.X);
   } catch (const Exception& e) {
     std::cerr << e.what() << std::endl;
+    timer->stop(t_lsolv);
+    timer->stop(t_total);
     ret = false;
   }
 

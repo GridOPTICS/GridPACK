@@ -103,6 +103,7 @@ install(FILES
   PTI23_parser.hpp
   PTI33_parser.hpp
   GOSS_parser.hpp
+  MAT_parser.hpp
   hash_distr.hpp
   base_parser.hpp
   base_pti_parser.hpp
