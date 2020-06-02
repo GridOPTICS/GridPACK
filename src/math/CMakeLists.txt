@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2020-01-22 08:39:27 d3g096
+# Last Change: 2020-06-02 06:48:10 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -141,8 +141,8 @@ add_dependencies(gridpack_math external_build)
 target_link_libraries(gridpack_math 
   gridpack_configuration
   gridpack_timer
+  gridpack_parallel
   ${PETSC_LIBRARIES}
-  ${Boost_LIBRARIES}
   )
 
 # -------------------------------------------------------------
