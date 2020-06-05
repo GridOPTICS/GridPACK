@@ -52,6 +52,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_save_time_series = false;
   p_monitorGenerators = false;
   p_bDynSimuDone = false;
+  p_suppress_watch_files = false;
   Simu_Current_Step = 0;
 }
 
@@ -440,24 +441,26 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   volt_full.reset(INorton_full->clone());
 
   timer->stop(t_init);
+  if (!p_suppress_watch_files) {
 #ifdef USE_TIMESTAMP
-  if (p_generatorWatch) p_generatorIO->header("t, t_stamp");//bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
-//#  if (p_generatorWatch) p_generatorIO->header("t, t_stamp,bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
-  if (p_generatorWatch) p_generatorIO->write("watch_header");
-  if (p_generatorWatch) p_generatorIO->header("\n");
+    if (p_generatorWatch) p_generatorIO->header("t, t_stamp");//bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
+    //#  if (p_generatorWatch) p_generatorIO->header("t, t_stamp,bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
+    if (p_generatorWatch) p_generatorIO->write("watch_header");
+    if (p_generatorWatch) p_generatorIO->header("\n");
 
-  if (p_loadWatch) p_loadIO->header("t, t_stamp");
-  if (p_loadWatch) p_loadIO->write("load_watch_header");
-  if (p_loadWatch) p_loadIO->header("\n");
+    if (p_loadWatch) p_loadIO->header("t, t_stamp");
+    if (p_loadWatch) p_loadIO->write("load_watch_header");
+    if (p_loadWatch) p_loadIO->header("\n");
 #else
-  if (p_generatorWatch) p_generatorIO->header("t");
-  if (p_generatorWatch) p_generatorIO->write("watch_header");
-  if (p_generatorWatch) p_generatorIO->header("\n");
+    if (p_generatorWatch) p_generatorIO->header("t");
+    if (p_generatorWatch) p_generatorIO->write("watch_header");
+    if (p_generatorWatch) p_generatorIO->header("\n");
 
-  if (p_loadWatch) p_loadIO->header("t");
-  if (p_loadWatch) p_loadIO->write("load_watch_header");
-  if (p_loadWatch) p_loadIO->header("\n");
+    if (p_loadWatch) p_loadIO->header("t");
+    if (p_loadWatch) p_loadIO->write("load_watch_header");
+    if (p_loadWatch) p_loadIO->header("\n");
 #endif
+  }
 #ifdef USEX_GOSS
   if (p_generatorWatch) p_generatorIO->dumpChannel();
   if (p_loadWatch) p_loadIO->dumpChannel();
@@ -1002,25 +1005,27 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     timer->start(t_secure);
     if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) {
       char tbuf[32];
+      if (!p_suppress_watch_files) {
 #ifdef USE_TIMESTAMP
-      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
-          timer->currentTime());
-      if (p_generatorWatch) p_generatorIO->header(tbuf);
-      if (p_generatorWatch) p_generatorIO->write("watch");
-      if (p_generatorWatch) p_generatorIO->header("\n");
+        sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
+            timer->currentTime());
+        if (p_generatorWatch) p_generatorIO->header(tbuf);
+        if (p_generatorWatch) p_generatorIO->write("watch");
+        if (p_generatorWatch) p_generatorIO->header("\n");
 
-//      if (p_generatorWatch) p_generatorIO->write("watch");
+        //      if (p_generatorWatch) p_generatorIO->write("watch");
 
-//      sprintf(tbuf,"%8.4f, %20.4f",mac_ang_s0, mac_spd_s0);
-//      if (p_generatorWatch) p_generatorIO->header(tbuf);
-//      if (p_generatorWatch) p_generatorIO->write("watch");
-//      if (p_generatorWatch) p_generatorIO->header("\n");
+        //      sprintf(tbuf,"%8.4f, %20.4f",mac_ang_s0, mac_spd_s0);
+        //      if (p_generatorWatch) p_generatorIO->header(tbuf);
+        //      if (p_generatorWatch) p_generatorIO->write("watch");
+        //      if (p_generatorWatch) p_generatorIO->header("\n");
 #else
-      sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
-      if (p_generatorWatch) p_generatorIO->header(tbuf);
-      if (p_generatorWatch) p_generatorIO->write("watch");
-      if (p_generatorWatch) p_generatorIO->header("\n");
+        sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
+        if (p_generatorWatch) p_generatorIO->header(tbuf);
+        if (p_generatorWatch) p_generatorIO->write("watch");
+        if (p_generatorWatch) p_generatorIO->header("\n");
 #endif
+      }
 #ifdef USEX_GOSS
       if (p_generatorWatch) p_generatorIO->dumpChannel();
 #endif
@@ -1671,19 +1676,27 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
 #ifndef USEX_GOSS
   std::string filename;
+  std::string flag;
+  cursor->get("suppressWatchFiles", &flag);
+  gridpack::utility::StringUtils util;
+  p_suppress_watch_files = util.getBool(flag.c_str());
   if (!p_internal_watch_file_name) {
-    if (cursor->get("generatorWatchFileName",&filename)) {
-      p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
-            p_network));
-      p_generatorIO->open(filename.c_str());
-    } else {
-      p_busIO->header("No Generator Watch File Name Found\n");
-      p_generatorWatch = false;
+    if (!p_suppress_watch_files) {
+      if (cursor->get("generatorWatchFileName",&filename)) {
+        p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
+              p_network));
+        p_generatorIO->open(filename.c_str());
+      } else {
+        p_busIO->header("No Generator Watch File Name Found\n");
+        p_generatorWatch = false;
+      }
     }
   } else {
-    p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
-          p_network));
-    p_generatorIO->open(p_gen_watch_file.c_str());
+    if (!p_suppress_watch_files) {
+      p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
+            p_network));
+      p_generatorIO->open(p_gen_watch_file.c_str());
+    }
   }
 #else
   std::string topic, URI, username, passwd;
@@ -1718,7 +1731,9 @@ void gridpack::dynamic_simulation::DSFullApp::closeGeneratorWatchFile()
 {
   if (p_generatorWatch) {
 #ifndef USEX_GOSS
-    p_generatorIO->close();
+    if (!p_suppress_watch_files) {
+      p_generatorIO->close();
+    }
 #else
     p_generatorIO->closeChannel();
 #endif
@@ -1734,13 +1749,19 @@ void gridpack::dynamic_simulation::DSFullApp::openLoadWatchFile()
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
 #ifndef USEX_GOSS
   std::string filename;
-  if (cursor->get("loadWatchFileName",&filename)) {
-    p_loadIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
-          p_network));
-    p_loadIO->open(filename.c_str());
-  } else {
-    p_busIO->header("No Load Watch File Name Found\n");
-    p_loadWatch = false;
+  std::string flag;
+  cursor->get("suppressWatchFiles", &flag);
+  gridpack::utility::StringUtils util;
+  p_suppress_watch_files = util.getBool(flag.c_str());
+  if (!p_suppress_watch_files) {
+    if (cursor->get("loadWatchFileName",&filename)) {
+      p_loadIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
+            p_network));
+      p_loadIO->open(filename.c_str());
+    } else {
+      p_busIO->header("No Load Watch File Name Found\n");
+      p_loadWatch = false;
+    }
   }
 #else
   std::string topic, URI, username, passwd;
@@ -1772,7 +1793,9 @@ void gridpack::dynamic_simulation::DSFullApp::closeLoadWatchFile()
 {
   if (p_loadWatch) {
 #ifndef USEX_GOSS
-    p_loadIO->close();
+    if (!p_suppress_watch_files) {
+      p_loadIO->close();
+    }
 #else
     p_loadIO->closeChannel();
 #endif
@@ -2396,24 +2419,26 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   volt_full.reset(INorton_full->clone());
 
   timer->stop(t_init);
+  if (!p_suppress_watch_files) {
 #ifdef USE_TIMESTAMP
-  if (p_generatorWatch) p_generatorIO->header("t, t_stamp");//bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
-//#  if (p_generatorWatch) p_generatorIO->header("t, t_stamp,bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
-  if (p_generatorWatch) p_generatorIO->write("watch_header");
-  if (p_generatorWatch) p_generatorIO->header("\n");
+    if (p_generatorWatch) p_generatorIO->header("t, t_stamp");//bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
+    //#  if (p_generatorWatch) p_generatorIO->header("t, t_stamp,bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
+    if (p_generatorWatch) p_generatorIO->write("watch_header");
+    if (p_generatorWatch) p_generatorIO->header("\n");
 
-  if (p_loadWatch) p_loadIO->header("t, t_stamp");
-  if (p_loadWatch) p_loadIO->write("load_watch_header");
-  if (p_loadWatch) p_loadIO->header("\n");
+    if (p_loadWatch) p_loadIO->header("t, t_stamp");
+    if (p_loadWatch) p_loadIO->write("load_watch_header");
+    if (p_loadWatch) p_loadIO->header("\n");
 #else
-  if (p_generatorWatch) p_generatorIO->header("t");
-  if (p_generatorWatch) p_generatorIO->write("watch_header");
-  if (p_generatorWatch) p_generatorIO->header("\n");
+    if (p_generatorWatch) p_generatorIO->header("t");
+    if (p_generatorWatch) p_generatorIO->write("watch_header");
+    if (p_generatorWatch) p_generatorIO->header("\n");
 
-  if (p_loadWatch) p_loadIO->header("t");
-  if (p_loadWatch) p_loadIO->write("load_watch_header");
-  if (p_loadWatch) p_loadIO->header("\n");
+    if (p_loadWatch) p_loadIO->header("t");
+    if (p_loadWatch) p_loadIO->write("load_watch_header");
+    if (p_loadWatch) p_loadIO->header("\n");
 #endif
+  }
 #ifdef USE_GOSS
   if (p_generatorWatch) p_generatorIO->dumpChannel();
   if (p_loadWatch) p_loadIO->dumpChannel();
@@ -2896,25 +2921,27 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     timer->start(t_secure);
     if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) {
       char tbuf[32];
+      if (!p_suppress_watch_files) {
 #ifdef USE_TIMESTAMP
-      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
-          timer->currentTime());
-      if (p_generatorWatch) p_generatorIO->header(tbuf);
-      if (p_generatorWatch) p_generatorIO->write("watch");
-      if (p_generatorWatch) p_generatorIO->header("\n");
+        sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
+            timer->currentTime());
+        if (p_generatorWatch) p_generatorIO->header(tbuf);
+        if (p_generatorWatch) p_generatorIO->write("watch");
+        if (p_generatorWatch) p_generatorIO->header("\n");
 
-//      if (p_generatorWatch) p_generatorIO->write("watch");
+        //      if (p_generatorWatch) p_generatorIO->write("watch");
 
-//      sprintf(tbuf,"%8.4f, %20.4f",mac_ang_s0, mac_spd_s0);
-//      if (p_generatorWatch) p_generatorIO->header(tbuf);
-//      if (p_generatorWatch) p_generatorIO->write("watch");
-//      if (p_generatorWatch) p_generatorIO->header("\n");
+        //      sprintf(tbuf,"%8.4f, %20.4f",mac_ang_s0, mac_spd_s0);
+        //      if (p_generatorWatch) p_generatorIO->header(tbuf);
+        //      if (p_generatorWatch) p_generatorIO->write("watch");
+        //      if (p_generatorWatch) p_generatorIO->header("\n");
 #else
-      sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
-      if (p_generatorWatch) p_generatorIO->header(tbuf);
-      if (p_generatorWatch) p_generatorIO->write("watch");
-      if (p_generatorWatch) p_generatorIO->header("\n");
+        sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
+        if (p_generatorWatch) p_generatorIO->header(tbuf);
+        if (p_generatorWatch) p_generatorIO->write("watch");
+        if (p_generatorWatch) p_generatorIO->header("\n");
 #endif
+      }
 #ifdef USE_GOSS
       if (p_generatorWatch) p_generatorIO->dumpChannel();
 #endif
@@ -2923,18 +2950,20 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 
     if (p_loadWatch && Simu_Current_Step%p_loadWatchFrequency == 0) {
       char tbuf[32];
+      if (!p_suppress_watch_files) {
 #ifdef USE_TIMESTAMP
-      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
-          timer->currentTime());
-      if (p_loadWatch) p_loadIO->header(tbuf);
-      if (p_loadWatch) p_loadIO->write("load_watch");
-      if (p_loadWatch) p_loadIO->header("\n");
+        sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
+            timer->currentTime());
+        if (p_loadWatch) p_loadIO->header(tbuf);
+        if (p_loadWatch) p_loadIO->write("load_watch");
+        if (p_loadWatch) p_loadIO->header("\n");
 #else
-      sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
-      if (p_loadWatch) p_loadIO->header(tbuf);
-      if (p_loadWatch) p_loadIO->write("load_watch");
-      if (p_loadWatch) p_loadIO->header("\n");
+        sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
+        if (p_loadWatch) p_loadIO->header(tbuf);
+        if (p_loadWatch) p_loadIO->write("load_watch");
+        if (p_loadWatch) p_loadIO->header("\n");
 #endif
+      }
 #ifdef USE_GOSS
       if (p_loadWatch) p_loadIO->dumpChannel();
 #endif

@@ -387,6 +387,9 @@ class DSFullApp
     // file name for generator watch file
     std::string p_gen_watch_file;
 
+    // suppress watch file output but still monitor watched generators
+    bool p_suppress_watch_files;
+
     // flag indicating whether or not to use application supplied generator
     // watch file name or name from input deck
     bool p_internal_watch_file_name;
