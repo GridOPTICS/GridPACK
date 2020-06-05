@@ -176,6 +176,7 @@ elif [ $host == "WE32673" ]; then
     else
         pdir="$prefix/petsc-3.8.4"
         parch="arch-macosx-clang-real-opt"
+        parch="arch-macosx-clang-complex-opt"
         #pdir="$prefix/petsc-3.8.4" 
         #parch="arch-macosx-clang-real-opt-c"
         #pdir="$prefix/petsc-3.9.4" 

@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2015-08-12 06:25:16 d3g096
+ * @date   2019-11-20 09:28:10 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -243,6 +243,14 @@ protected:
   /// Get all of vector elements (on all processes)
   void p_getAllElements(TheType *x) const
   { p_vector_impl->getAllElements(x); }
+
+  /// Get an array of local elements (specialized)
+  TheType *p_getLocalElements(void)
+  { return  p_vector_impl->getLocalElements(); }
+
+  /// Release an array produced by getLocalElements()
+  void p_releaseLocalElements(TheType *array)
+  { p_vector_impl->releaseLocalElements(array); }
 
   /// Make all the elements zero (specialized)
   void p_zero(void)

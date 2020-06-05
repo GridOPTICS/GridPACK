@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2020-05-22 09:33:17 d3g096
+# Last Change: 2020-06-02 06:48:10 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -112,11 +112,14 @@ if (PETSC_FOUND)
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
     ${CMAKE_CURRENT_BINARY_DIR}
 
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/bouncing_ball_test.xml
+    ${CMAKE_CURRENT_BINARY_DIR}
 
     DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/bouncing_ball_test.xml
     ${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml
-    
     )
 
 else()
@@ -325,6 +328,10 @@ gridpack_add_unit_test(real_dae_solver real_dae_solver_test)
 if (PETSC_FOUND)
   add_dependencies(real_dae_solver_test math_test_input)
 endif()
+
+# A simple serial example utilizing DAE events
+add_executable(bouncing_ball_test test/bouncing_ball_test.cpp)
+target_link_libraries(bouncing_ball_test gridpack_math ${target_libraries})
 
 
 # -------------------------------------------------------------
