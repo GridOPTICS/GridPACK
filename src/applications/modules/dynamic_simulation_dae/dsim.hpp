@@ -29,12 +29,12 @@ public:
   
   // Let's try to avoid some typing
   
-  typedef typename gridpack::math::DAESolver DAESolver;
-  typedef typename DAESolver::VectorType VectorType;
-  typedef typename DAESolver::Event Event;
-  typedef typename DAESolver::EventPtr EventPtr;
-  typedef typename DAESolver::EventManager EventManager;
-  typedef typename DAESolver::EventManagerPtr EventManagerPtr;
+  typedef gridpack::math::DAESolver DAESolver;
+  typedef DAESolver::VectorType VectorType;
+  typedef DAESolver::Event Event;
+  typedef DAESolver::EventPtr EventPtr;
+  typedef DAESolver::EventManager EventManager;
+  typedef DAESolver::EventManagerPtr EventManagerPtr;
   
   /**
      Basic Constructor
