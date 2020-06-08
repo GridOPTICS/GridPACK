@@ -8,7 +8,7 @@
 /**
  * @file   hadrec_main.cpp
  * @author Bruce Palmer
- * @date   2016-07-14 14:23:07 d3g096
+ * @date   2020-04-23 13:26:55 d3g096
  *
  * @brief
  */
@@ -50,9 +50,12 @@ int main(int argc, char **argv)
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
+  
+  std::vector<gridpack::dynamic_simulation::Event> BusFaults;
+  BusFaults.clear();
 
   // initialize dynamic simulation
-  hadrec_app_sptr->initializeDynSimu();
+  hadrec_app_sptr->initializeDynSimu(BusFaults);
 
   gridpack::hadrec::HADRECAction loadshedact;
   loadshedact.actiontype = 0;
@@ -60,6 +63,12 @@ int main(int argc, char **argv)
   loadshedact.componentID = "1";
   loadshedact.percentage = -0.2;
 
+  gridpack::hadrec::HADRECAction loadshedact1;
+  loadshedact1.actiontype = 0;
+  loadshedact1.bus_number = 7;
+  loadshedact1.componentID = "1";
+  loadshedact1.percentage = -0.2;
+  
   int isteps = 0;
   bool bApplyAct = true; //false;  // whether apply the action in the simulation steps
   std::vector<double> ob_vals;
@@ -87,6 +96,18 @@ int main(int argc, char **argv)
   }
   printf(" \n");
   
+  printf("-----------ob load bus list, ");
+  for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
+	  printf(" %d, ", obs_loadBus[idxtmp]);
+  }
+  printf(" \n");
+  
+  printf("-----------ob load ID list, ");
+  for (idxtmp=0; idxtmp<obs_loadIDs.size(); idxtmp++){
+	  printf(" %s, ", obs_loadIDs[idxtmp].c_str());
+  }
+  printf(" \n");
+  
   printf("-----------ob bus list, ");
   for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
 	  printf(" %d, ", obs_vBus[idxtmp]);
@@ -96,9 +117,11 @@ int main(int argc, char **argv)
   while(!hadrec_app_sptr->isDynSimuDone()){
     // if the dynamic simulation is not done (hit the end time)
     if ( bApplyAct && (isteps == 2500 || isteps == 3000 ||
-          isteps == 3500 || isteps == 4000 ) ){
+          isteps == 3500 || isteps == 4000 ||
+          isteps == 4500 || isteps == 5000 || isteps == 5500 ) ){
       //apply action
       hadrec_app_sptr->applyAction(loadshedact);
+      hadrec_app_sptr->applyAction(loadshedact1);
       //printf("----renke debug load shed, isteps: %d \n", isteps);
     }
     //execute one dynamic simulation step
@@ -124,6 +147,16 @@ int main(int argc, char **argv)
   // transfer power flow results to dynamic simulation
   bool btest_2dynasimu = true; //true;
   if (btest_2dynasimu) {
+	  
+	gridpack::dynamic_simulation::Event busfault;
+	busfault.start = 10.0;
+	busfault.end = 10.2;
+	busfault.step = 0.005;
+	busfault.isBus = true;
+	busfault.bus_idx = 7;
+    
+	BusFaults.clear();
+	BusFaults.push_back(busfault);
     
     //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
     
@@ -131,7 +164,7 @@ int main(int argc, char **argv)
     hadrec_app_sptr->transferPFtoDS();
 
     // initialize dynamic simulation
-    hadrec_app_sptr->initializeDynSimu();
+    hadrec_app_sptr->initializeDynSimu(BusFaults);
 
     isteps = 0;
     //bApplyAct = true;  // whether apply the action in the simulation steps
@@ -142,6 +175,7 @@ int main(int argc, char **argv)
             isteps == 3500 || isteps == 4000 ) ){
         //apply action
         hadrec_app_sptr->applyAction(loadshedact);
+        hadrec_app_sptr->applyAction(loadshedact1);
         //printf("----renke debug load shed, isteps: %d \n", isteps);
       }
       //execute one dynamic simulation step
@@ -159,6 +193,10 @@ int main(int argc, char **argv)
       isteps++;
     }
   }
+
+  // Make sure we could do it again with a new instance if we wanted to
+  hadrec_app_sptr.reset(new gridpack::hadrec::HADRECAppModule());
+  hadrec_app_sptr.reset();
 
   timer->stop(t_total);
   timer->dump();

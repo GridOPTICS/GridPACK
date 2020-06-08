@@ -38,14 +38,23 @@ enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_rel
 
 // Small utility structure to encapsulate information about fault events
 struct Event{
-  double start,end; // start and end times of fault
-  double step;      // time increment of fault (not used?)
-  char tag[3];      // 2-character identifier of line or generator
-  bool isGenerator; // fault is a generator failure
-  int bus_idx;      // index of bus hosting generator
-  bool isLine;      // fault is a line failure
-  int from_idx;     // "from" bus of line
-  int to_idx;       // "to" bus of line
+  double start;         // start times of fault
+  double end;           // end times of fault
+  double step;          // time increment of fault (not used?)
+  std::string tag;      // 2-character identifier of line or generator
+  bool isGenerator;     // fault is a generator failure
+  bool isBus;           // fault is a bus failure
+  bool isLine;          // fault is a line failure
+  int bus_idx;          // index of fault bus, corresponding to the bus fault
+  int from_idx;         // "from" bus of line
+  int to_idx;           // "to" bus of line
+  Event(void)
+    : start(0.0), end(0.0), step(0.005),
+      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false),
+      bus_idx(-1), from_idx(-1), to_idx(-1)
+  {
+    tag = "1";
+  }
 };
 
 class DSFullBranch;
@@ -753,7 +762,12 @@ class DSFullBranch
      * @return: value of update factor
      */
 	gridpack::ComplexType getBranchRelayTripUpdateFactor(); //renke add
-
+	
+	/**
+	 * Clear fault event from branch
+	*/
+	void clearEvent();
+	
     /**
      * Check to see if an event applies to this branch and set appropriate
      * internal parameters

@@ -33,12 +33,21 @@ add_dependencies(gridpack_parallel external_build)
 gridpack_set_library_version(gridpack_parallel)
 
 # For some reason this is necessary for Mac OS X, but messes things up on Linux
-if (GRIDPACK_LIB_LINK_LIBRARIES)
+message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+if (BUILD_SHARED_LIBS)
   target_link_libraries(gridpack_parallel
    ${Boost_LIBRARIES} 
    ${GA_LIBRARIES} 
    ${MPI_CXX_LIBRARIES}
    )
+else()
+  if (GRIDPACK_LIB_LINK_LIBRARIES)
+    target_link_libraries(gridpack_parallel
+     ${Boost_LIBRARIES} 
+     ${GA_LIBRARIES} 
+     ${MPI_CXX_LIBRARIES}
+     )
+  endif()
 endif()
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})

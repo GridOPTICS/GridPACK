@@ -215,6 +215,12 @@ void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadQ(double ql)
 {
 	dyn_q = ql;
 }
+/**
+  * Set same bus static load p and q for load shedding action usage
+*/
+void gridpack::dynamic_simulation::BaseLoadModel::setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag)
+{
+}
 void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadID(std::string load_id)
 {
 	dyn_load_id = load_id;

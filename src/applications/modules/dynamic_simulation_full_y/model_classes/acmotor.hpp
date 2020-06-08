@@ -103,6 +103,11 @@ class AcmotorLoad : public BaseLoadModel
 	void setVoltage(gridpack::ComplexType voltage);
 	
 	/**
+     * Set same bus static load p and q for load shedding action usage
+     */
+    void setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag);
+	
+	/**
  * Set terminal voltage frequency on each load
  */
 	void setFreq(double dFreq);
@@ -174,6 +179,10 @@ class AcmotorLoad : public BaseLoadModel
     gridpack::ComplexType equivYpq_motorBase;
     double I_conv_factor_M2S;
 	double Fonline;
+	double samebus_static_loadP;  // system base mva pu value
+    double samebus_static_loadQ;  // system base mva pu value
+	gridpack::ComplexType samebus_static_equivY_sysMVA;
+	bool bdebugprint;
    
  
     gridpack::ComplexType p_INorton;
