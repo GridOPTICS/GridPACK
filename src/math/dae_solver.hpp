@@ -42,15 +42,15 @@ class DAESolverT
 {
 public:
 
-  using typename DAESolverInterface<T, I>::VectorType;
-  using typename DAESolverInterface<T, I>::MatrixType;
-  using typename DAESolverInterface<T, I>::JacobianBuilder;
-  using typename DAESolverInterface<T, I>::FunctionBuilder;
-  using typename DAESolverInterface<T, I>::StepFunction;
-  using typename DAESolverInterface<T, I>::EventManagerPtr;
-  using typename DAESolverInterface<T, I>::Event;
-  using typename DAESolverInterface<T, I>::EventPtr;
-
+  typedef typename DAESolverInterface<T, I>::VectorType VectorType;
+  typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
+  typedef typename DAESolverInterface<T, I>::Event Event;
+  typedef typename DAESolverInterface<T, I>::EventPtr EventPtr;
+  
 
   /// Default constructor.
   /** 

@@ -45,12 +45,12 @@ class PETScDAESolverImplementation
 {
 public:
 
-  using typename DAESolverImplementation<T, I>::VectorType;
-  using typename DAESolverImplementation<T, I>::MatrixType;
-  using typename DAESolverImplementation<T, I>::JacobianBuilder;
-  using typename DAESolverImplementation<T, I>::FunctionBuilder;
-  using typename DAESolverImplementation<T, I>::StepFunction;
-  using typename DAESolverImplementation<T, I>::EventManagerPtr;
+  typedef typename DAESolverInterface<T, I>::VectorType VectorType;
+  typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
   /// Default constructor.
   PETScDAESolverImplementation(const parallel::Communicator& comm, 
