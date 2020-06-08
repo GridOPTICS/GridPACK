@@ -51,10 +51,11 @@ enum Parser{PTI23, PTI33, GOSS};
  * @param network pointer to a PFNetwork object. This should not have any
  * buses or branches defined on it.
  * @param config point to open configuration file
+ * @param idx index of configuration to use if set to a non-negative value
  */
 void gridpack::powerflow::PFAppModule::readNetwork(
     boost::shared_ptr<PFNetwork> &network,
-    gridpack::utility::Configuration *config)
+    gridpack::utility::Configuration *config, int idx)
 {
   p_network = network;
   p_comm = network->communicator();
@@ -76,15 +77,39 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   std::string filename;
   int filetype = PTI23;
-  if (!cursor->get("networkConfiguration",&filename)) {
-    if (cursor->get("networkConfiguration_v33",&filename)) {
-      filetype = PTI33;
-    } else if (cursor->get("networkConfiguration_GOSS",&filename)) {
-      filetype = GOSS;
+  if (idx == -1) {
+    if (!cursor->get("networkConfiguration",&filename)) {
+      if (cursor->get("networkConfiguration_v33",&filename)) {
+        filetype = PTI33;
+      } else if (cursor->get("networkConfiguration_GOSS",&filename)) {
+        filetype = GOSS;
+      } else {
+        printf("No network configuration file specified\n");
+        return;
+      }
+    }
+  } else if (idx >= 0) {
+    gridpack::utility::Configuration::CursorPtr network_cursor;
+    network_cursor = config->getCursor(
+        "Configuration.Powerflow.networkFiles");
+    gridpack::utility::Configuration::ChildCursors files;
+    if (network_cursor) network_cursor->children(files);
+    if (idx < files.size()) {
+      if (!files[idx]->get("networkConfiguration",&filename)) {
+        if (files[idx]->get("networkConfiguration_v33",&filename)) {
+          filetype = PTI33;
+        } else {
+          printf("Unknown network configuration file specified\n");
+          return;
+        }
+      }
     } else {
-      printf("No network configuration file specified\n");
+      printf("Unknown file index\n");
       return;
     }
+  } else {
+    printf("No network configuration file specified\n");
+    return;
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);

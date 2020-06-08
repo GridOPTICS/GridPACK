@@ -91,9 +91,11 @@ class PFAppModule
      * @param network pointer to a PFNetwork object. This should not have any
      * buses or branches defined on it.
      * @param config point to open configuration file
+     * @param idx index of configuration to use if set to a non-negative value
      */
     void readNetwork(boost::shared_ptr<PFNetwork> &network,
-                     gridpack::utility::Configuration *config);
+                     gridpack::utility::Configuration *config,
+                     int idx = -1);
 
     /**
      * Set up exchange buffers and other internal parameters and initialize
