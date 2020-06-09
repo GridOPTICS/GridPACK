@@ -54,7 +54,7 @@ class HADRECAppModule
 	/**
 	 * solve power flow before run dynamic simulation 
 	 */
-	void solvePowerFlowBeforeDynSimu(const char *inputfile);
+	void solvePowerFlowBeforeDynSimu(const char *inputfile, int pfcase_idx = -1);
 	
 	/**
 	* transfer data from power flow to dynamic simulation 

@@ -39,7 +39,7 @@ gridpack::hadrec::HADRECAppModule::~HADRECAppModule(void)
  * solve power flow before run dynamic simulation 
  */
 void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
-    const char *inputfile){
+    const char *inputfile, int pfcase_idx){
 	
 	gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -74,7 +74,7 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     pf_network.reset(new gridpack::powerflow::PFNetwork(world));
 
     pf_app_sptr.reset(new gridpack::powerflow::PFAppModule()) ;
-    pf_app_sptr->readNetwork(pf_network, &(*config_sptr) );
+    pf_app_sptr->readNetwork(pf_network, &(*config_sptr), pfcase_idx);
     pf_app_sptr->initialize();
     if (useNonLinear) {
       pf_app_sptr->nl_solve();
