@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-04-16 12:55:04 d3g096
+// Last Change: 2020-06-09 06:43:57 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -235,9 +235,9 @@ PYBIND11_MODULE(gridpack, gpm) {
   // These methods need to be reworked char * args
   hadapp
     .def("solvePowerFlowBeforeDynSimu",
-         [](gph::HADRECAppModule& self, const std::string& s) {
-           self.solvePowerFlowBeforeDynSimu(s.c_str());
-         })
+         [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
+           self.solvePowerFlowBeforeDynSimu(s.c_str(), pfcase_idx);
+         }, py::arg("s") = "", py::arg("pfcase_idx") = -1)
     .def("fullInitializationBeforeDynSimuSteps",
          [](gph::HADRECAppModule& self, const std::string& s,
             const std::vector<gpds::Event>& BusFaults) {
