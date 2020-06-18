@@ -2454,6 +2454,13 @@
 #define GOVERNOR_DM "GOVERNOR_DM"
 
 /**
+ * Governor DT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_DT "GOVERNOR_DT"
+
+/**
  * Governor ROPEN
  * type: real float
  * indexed
