@@ -10,7 +10,7 @@
 /**
  * @file   vector_interface.hpp
  * @author William A. Perkins
- * @date   2015-07-24 08:50:39 d3g096
+ * @date   2019-11-20 09:37:51 d3g096
  * 
  * @brief  
  * 
@@ -275,6 +275,37 @@ public:
     this->p_getAllElements(x);
   }
 
+  /// Get an array of local values
+  /** 
+   * This obtains a plain array of local values from the parallel
+   * vector. It should be used sparingly as it could involve memory
+   * allocation and copying of values.  The array contents may be
+   * modified and those modifications will be returned to the parallel
+   * vector.  
+   * 
+   * returnLocalElements() should be called when the array is no longer
+   * needed. Other operations should be avoided between
+   * getLocalElements() and returnLocalElements().
+   * 
+   * @return plain array with local vector values
+   */
+  T *getLocalElements(void)
+  {
+    return this->p_getLocalElements();
+  }
+
+  /// Release an array produced by getLocalElements()
+  /** 
+   * Values in the local array are copied to the parallel vector. Any
+   * modified values will end up in the parallel vector. Any temporary
+   * memory used is freed.
+   * 
+   * @param array plain array returned by getLocalElements()
+   */
+  void releaseLocalElements(T *array)
+  {
+    this->p_releaseLocalElements(array);
+  }
 
   /// Make all the elements zero
   void zero(void)
@@ -453,6 +484,12 @@ protected:
 
   /// Get all of vector elements (on all processes)
   virtual void p_getAllElements(TheType *x) const = 0;
+
+  /// Get an array of local elements (specialized)
+  virtual TheType *p_getLocalElements(void) = 0;
+
+  /// Release the local elements array produced by getLocalElements() (specialized)
+  virtual void p_releaseLocalElements(TheType *array) = 0;
 
   /// Make all the elements zero (specialized)
   virtual void p_zero(void) = 0;

@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2015-05-07 13:15:37 d3g096
+ * @date   2019-12-05 07:52:33 d3g096
  * 
  * @brief  
  * 
@@ -47,7 +47,10 @@ public:
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
   typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
-
+  typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
+  typedef typename DAESolverInterface<T, I>::Event Event;
+  typedef typename DAESolverInterface<T, I>::EventPtr EventPtr;
+  
 
   /// Default constructor.
   /** 
@@ -63,8 +66,25 @@ public:
   DAESolverT(const parallel::Communicator& comm, 
              const int local_size,
              JacobianBuilder& jbuilder,
-             FunctionBuilder& fbuilder);
+             FunctionBuilder& fbuilder,
+             EventManagerPtr eman);
 
+  /// Constructor used if no events are necessary
+  /** 
+   * 
+   * 
+   * @param comm parallel environment for this instance
+   * @param local_size size of problem owned by this process (rows in Jacobian, elements in solution Vector)
+   * @param jbuilder function/functor to build Jacobian
+   * @param fbuilder function/functor to build function
+   * 
+   * @return 
+   */
+  DAESolverT(const parallel::Communicator& comm, 
+             const int local_size,
+             JacobianBuilder& jbuilder,
+             FunctionBuilder& fbuilder);
+  
   /// Destructor
   ~DAESolverT(void)
   {}
@@ -95,8 +115,8 @@ public:
    * @param maxtime time at which solution is to end (in); actual time
    * at which solution ended (out)
    *
-   * @param maxsteps maximum number of time steps to perform (in);
-   * actual number of time steps performed
+   * @param maxsteps maximum @em cumulative number of time steps to perform (in);
+   * actual number of time steps performed (out)
    *
    * @param solution system solution at @c maxtime (out)
    */
@@ -144,6 +164,18 @@ protected:
   void p_postStep(StepFunction& f)
   {
     p_impl->postStep(f);
+  }
+
+  /// Has the solver been terminated by an event (specialized)
+  bool p_terminated(void) const
+  {
+    return p_impl->terminated();
+  }
+
+  /// Reset solver if it has been terminated by an event, maybe (specialized)
+  void p_terminated(const bool& flag)
+  {
+    p_impl->terminated(flag);
   }
 };
 

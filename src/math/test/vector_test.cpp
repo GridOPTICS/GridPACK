@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2016-12-16 09:29:07 d3g096
+ * @date   2019-11-20 11:51:55 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -219,6 +219,39 @@ BOOST_AUTO_TEST_CASE( set_add_get_range )
 
     TEST_VALUE_CLOSE(2.0*in[i-lo], x1, delta);
     TEST_VALUE_CLOSE(out[i-lo], x1, delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( get_local )
+{
+  gridpack::parallel::Communicator world;
+  int me(world.rank());
+  double p(me + 1);
+
+  if (me == 0) BOOST_TEST_MESSAGE( "Vector get local test:" );
+
+  gridpack::math::VectorT<TestType> v(world, local_size);
+
+  v.fill((double)0.0);
+  if (me == 0) BOOST_TEST_MESSAGE( "Before vector:" );
+  v.print();
+  int lsize(v.localSize());
+  TestType *l = v.getLocalElements();
+
+  for (int i = 0; i < lsize; ++i) {
+    l[i] = p;
+  }
+  v.releaseLocalElements(l);
+  if (me == 0) BOOST_TEST_MESSAGE( "After vector:" );
+  v.print();
+
+  int lo, hi;
+  v.localIndexRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    TestType x, y(p);
+    v.getElement(i, x);
+    TEST_VALUE_CLOSE(x, y, delta);
   }
 }
 
