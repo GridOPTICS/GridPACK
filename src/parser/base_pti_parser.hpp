@@ -40,6 +40,7 @@
 #include "parser_classes/esst1a.hpp"
 #include "parser_classes/esst4b.hpp"
 #include "parser_classes/ggov1.hpp"
+#include "parser_classes/tgov1.hpp"
 #include "parser_classes/wshygp.hpp"
 #include "parser_classes/lvshbl.hpp"
 #include "parser_classes/frqtpat.hpp"
@@ -461,6 +462,7 @@ class BasePTIParser : public BaseParser<_network>
       double kiload;
       double ldref;
       double gv_dm;
+      double gv_dt;
       double ropen;
       double rclose;
       double kimw;
@@ -851,6 +853,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"GGOV1")) {
             Ggov1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"TGOV1")) {
+            Tgov1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"WSHYGP")) {
             WshygpParser<gen_params> parser;
@@ -1305,6 +1310,9 @@ class BasePTIParser : public BaseParser<_network>
             } else if (sval == "GGOV1") {
               Ggov1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
+            } else if (sval == "TGOV1") {
+              Tgov1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
             } else if (sval == "WSHYGP") {
               WshygpParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
@@ -1484,6 +1492,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "GGOV1") {
             Ggov1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "TGOV1") {
+            Tgov1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "WSHYGP") {
             WshygpParser<gen_params> parser;
