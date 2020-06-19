@@ -1167,7 +1167,7 @@ class BasePTIParser : public BaseParser<_network>
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
-          device == "WSHYGP" || device == "PSSSIM") {
+          device == "WSHYGP" || device == "PSSSIM" || device == "TGOV1") {
         ret = true;
       }
       return ret;
