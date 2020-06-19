@@ -6,8 +6,8 @@
 // -----------------------------------------------------------
 /**
  * @file   exdc1.cpp
- * @author Shuangshuang Jin 
- * @Last modified:   June 11, 2015
+ * @author Shuangshuang Jin, Renke Huang
+ * @Last modified:   June 17, 2020
  * 
  * @brief  
  * 
@@ -16,13 +16,14 @@
 
 #include <vector>
 #include <iostream>
+#include <cstdio>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "base_exciter_model.hpp"
 #include "exdc1.hpp"
 
-#define TS_THRESHOLD 1
+#define TS_THRESHOLD 4
 
 /**
  *  Basic constructor
@@ -39,6 +40,7 @@ gridpack::dynamic_simulation::Exdc1Model::Exdc1Model(void)
   dx3_1 = 0;
   dx4_1 = 0;
   dx5_1 = 0;
+  w = 0.0;
 }
 
 /**
@@ -95,7 +97,9 @@ double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
     return B * ( x - A) * (x - A);*/
     double B = log(SE2 / SE1)/(E2 - E1);
     double A = SE1 / exp(B * E1);
-    return A * exp(B * x);
+	double result = 0.0;
+	return result;
+    //return A * exp(B * x);
 }
 
 /**
@@ -109,8 +113,10 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, doub
   ///printf("exdc1: Efd = %f\n", Efd);
   x1 = Efd;
   x4 = Efd * (KE + Sat(Efd));
+  if (x4 >= Vrmax) printf ("----------suspect error in exdc1 init:  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n", x4, Vrmax);
+  if (x4 <= Vrmin) printf ("----------suspect error in exdc1 init:  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n", x4, Vrmin);
   if (TB > (TS_THRESHOLD * ts)) 
-    x3 = (x4 / KA) * (1 - TC / TB); // SJin: x4 is Vr 
+    x3 = (x4 / KA) * (1.0 - TC / TB); // SJin: x4 is Vr 
   else
     x3 = x4 / KA;
   x2 = mag; // SJin: mag is Vterminal 

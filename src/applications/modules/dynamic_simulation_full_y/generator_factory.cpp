@@ -23,6 +23,9 @@
 #include "esst1a.hpp"
 #include "wshygp.hpp"
 #include "psssim.hpp"
+#include "tgov1.hpp"
+
+#include <stdio.h>
 
 /**
  *  Basic constructor
@@ -119,6 +122,12 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
   if (type == "WSIEG1") {
     gridpack::dynamic_simulation::Wsieg1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Wsieg1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "TGOV1") {
+	//printf("----------------!!!!---debug, one TOGV1 model in the dyr file\n");
+    gridpack::dynamic_simulation::Tgov1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Tgov1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "WSHYGP") {

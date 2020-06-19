@@ -131,7 +131,6 @@ double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 	
 	//printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
     //printf("Sat result = %f\n", result); 
-	
     return result; // Scaled Quadratic with 1.7.1 equations
 }
 

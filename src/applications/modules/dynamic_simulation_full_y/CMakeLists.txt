@@ -86,6 +86,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/ieel.cpp
   model_classes/motorw.cpp
   model_classes/psssim.cpp
+  model_classes/tgov1.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -135,6 +136,7 @@ install(FILES
   model_classes/ieel.hpp
   model_classes/motorw.hpp
   model_classes/psssim.hpp
+  model_classes/tgov1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
@@ -167,6 +169,7 @@ install(FILES
   model_classes/ieel.hpp
   model_classes/motorw.hpp
   model_classes/psssim.hpp
+  model_classes/tgov1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 )
 

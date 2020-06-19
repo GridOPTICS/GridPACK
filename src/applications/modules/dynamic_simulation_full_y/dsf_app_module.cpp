@@ -3044,10 +3044,10 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
   //char msg[128];
   //if (p_insecureAt == -1) sprintf(msg, "\nThe system is secure!\n");
   //else sprintf(msg, "\nThe system is insecure from step %d!\n", p_insecureAt);
-  char secureBuf[128];
-  if (p_insecureAt == -1) sprintf(secureBuf,"\nThe system is secure!\n");
-  else sprintf(secureBuf,"\nThe system is insecure from step %d!\n", p_insecureAt);
-  p_busIO->header(secureBuf);
+  //char secureBuf[128];
+  //if (p_insecureAt == -1) sprintf(secureBuf,"\nThe system is secure!\n");
+  //else sprintf(secureBuf,"\nThe system is insecure from step %d!\n", p_insecureAt);
+  //p_busIO->header(secureBuf);
 
 #ifdef MAP_PROFILE
   timer->configTimer(true);

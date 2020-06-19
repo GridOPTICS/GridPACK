@@ -23,7 +23,7 @@
 #include "base_governor_model.hpp"
 #include "wshygp.hpp"
 
-#define TS_THRESHOLD 1
+#define TS_THRESHOLD 4
 
 /**
  *  Basic constructor
