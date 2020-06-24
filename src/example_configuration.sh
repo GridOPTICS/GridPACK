@@ -183,6 +183,8 @@ elif [ $host == "WE32673" ]; then
         #parch="macosx-real-cpp-static"
         # pdir="$prefix/petsc-3.11.3"
         # parch="macosx-complex-c-static"
+        # pdir="$prefix/petsc-3.12.3"
+        # parch="macosx-complex-c-static"
     fi
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
