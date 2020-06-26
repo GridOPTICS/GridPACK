@@ -80,8 +80,9 @@ class DSFullApp
     /**
      * Read generator parameters. These will come from a separate file (most
      * likely). The name of this file comes from the input configuration file.
+     * @param ds_idx index of dyr file if a list of dyr files are provided.
      */
-    void readGenerators(void);
+    void readGenerators(int ds_idx = -1);
 
     /**
      * Set up exchange buffers and other internal parameters and initialize

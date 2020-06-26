@@ -62,15 +62,22 @@ class HADRECAppModule
 	void transferPFtoDS();
 	
 	/**
-     * do initialization only for dynamics simulation
+    * do initialization only for dynamics simulation
+    * @param faults lists of faults that might be simulated
+    * @param dscase_idx index pointing to dyr parameter file that should be used if
+    *                   a list of files is supplied in input deck
      */
-    void initializeDynSimu(std::vector<gridpack::dynamic_simulation::Event> faults);
+    void initializeDynSimu(std::vector<gridpack::dynamic_simulation::Event> faults,
+        int dscase_idx=-1);
 	
 	/**
 	* do a fully initialization before running dynamics simulation
+   * @param case_idx index pointing to network configuration and dyr parameter
+   * file that should be used if a list of files is supplied in input deck
 	*/
 	void fullInitializationBeforeDynSimuSteps(const char *inputfile,
-                                                  const std::vector<gridpack::dynamic_simulation::Event>& BusFaults);
+           const std::vector<gridpack::dynamic_simulation::Event>& BusFaults,
+           int case_idx=-1);
 	
 	/**
 	* Execute only one simulation time step 
@@ -101,7 +108,7 @@ class HADRECAppModule
 	
 
   private:
-    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
+   boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
 	boost::shared_ptr<gridpack::powerflow::PFNetwork> pf_network;
 	boost::shared_ptr<gridpack::powerflow::PFAppModule> pf_app_sptr;
 	

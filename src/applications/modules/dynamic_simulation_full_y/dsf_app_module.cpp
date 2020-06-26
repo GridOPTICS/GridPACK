@@ -191,15 +191,31 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
 /**
  * Read generator parameters. These will come from a separate file (most
  * likely). The name of this file comes from the input configuration file.
+ * @param ds_idx index of dyr file if a list of dyr files are provided.
  */
-void gridpack::dynamic_simulation::DSFullApp::readGenerators(void)
+void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
 {
   int rank = p_network->communicator().rank();
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  std::string filename;
   gridpack::parser::PTI23_parser<DSFullNetwork> parser(p_network);
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-  std::string filename = cursor->get("generatorParameters","");
+  if (ds_idx == -1) {
+    cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+    filename = cursor->get("generatorParameters","");
+  } else if (ds_idx >= 0) {
+    gridpack::utility::Configuration::CursorPtr dyr_cursor;
+    dyr_cursor = p_config->getCursor(
+        "Configuration.Dynamic_simulation.generatorFiles");
+    gridpack::utility::Configuration::ChildCursors files;
+    if (dyr_cursor) dyr_cursor->children(files);
+    if (ds_idx < files.size()) {
+      if (!files[ds_idx]->get("generatorParams",&filename)) {
+        printf("Unknown generator parameter file specified\n");
+        return;
+      }
+    }
+  }
   //printf("p[%d] generatorParameters: %s\n",p_comm.rank(),filename.c_str());
   if (filename.size() > 0) parser.externalParse(filename.c_str());
   //printf("p[%d] finished Generator parameters\n",p_comm.rank());

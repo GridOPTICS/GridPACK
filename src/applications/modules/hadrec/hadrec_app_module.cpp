@@ -131,9 +131,13 @@ void gridpack::hadrec::HADRECAppModule::transferPFtoDS(){
 
 /**
  * do initialization only for dynamics simulation
+ * @param faults lists of faults that might be simulated
+ * @param dscase_idx index pointing to dyr parameter file that should be used if
+ *                   a list of files is supplied in input deck
  */
 void gridpack::hadrec::HADRECAppModule::initializeDynSimu
-(std::vector<gridpack::dynamic_simulation::Event> faults){ 
+(std::vector<gridpack::dynamic_simulation::Event> faults,
+ int dscase_idx){ 
 // the definition of struct Event is at
 // /src/applications/modules/dynamic_simulation_full_y/dsf_components.hpp
 
@@ -149,7 +153,7 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
   // run dynamic simulation
   ds_app_sptr->setNetwork(ds_network, &(*config_sptr));
   //ds_app_sptr->readNetwork(ds_network,config);
-  ds_app_sptr->readGenerators();
+  ds_app_sptr->readGenerators(dscase_idx);
   //printf("ds_app_sptr->initialize:\n");
   ds_app_sptr->initialize();
   ds_app_sptr->setGeneratorWatch();
@@ -172,15 +176,18 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
 
 /**
  * do a fully initialization before running dynamics simulation
+ * @param case_idx index pointing to network configuration and dyr parameter
+ * file that should be used if a list of files is supplied in input deck
  */
 void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(
     const char *inputfile,
-    const std::vector<gridpack::dynamic_simulation::Event>& BusFaults){
+    const std::vector<gridpack::dynamic_simulation::Event>& BusFaults,
+    int case_idx){
 	
-	solvePowerFlowBeforeDynSimu(inputfile);
+	solvePowerFlowBeforeDynSimu(inputfile, case_idx);
 	transferPFtoDS();
 
-	initializeDynSimu(BusFaults);
+	initializeDynSimu(BusFaults, case_idx);
 		
 }
 
