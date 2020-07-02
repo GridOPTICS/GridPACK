@@ -895,12 +895,12 @@ bool gridpack::dynamic_simulation::AcmotorLoad::serialWrite(
 bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFactor)
 {
 	if (percentageFactor < -1.0) {
-		printf("percentageFactor < -1.0, this change will not be applied.  \n");
+		if (bdebugprint) printf("percentageFactor < -1.0, this change will not be applied.  \n");
 		return false;
 	}
 	
 	if (Fonline == 0.0){
-		printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has 0 percent of load and could not be shedding the percentange of %f !!!! \n", 
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has 0 percent of load and could not be shedding the percentange of %f !!!! \n", 
 		                                              p_bus_id, p_loadid.c_str(), percentageFactor);
 		//percentageFactor = 0.0;
 		//Fonline = Fonline + percentageFactor;
@@ -909,7 +909,7 @@ bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFact
 	}
 	
 	if ( (Fonline + percentageFactor) < 0.0 ){
-		printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has %f percent of load and could not be shedding the percentange of %f !!!! \n", 
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has %f percent of load and could not be shedding the percentange of %f !!!! \n", 
 		                                              p_bus_id, p_loadid.c_str(), Fonline, percentageFactor);
 		Fonline = 0.0;
 		if (bdebugprint) printf("----renke debug load shed, AcmotorLoad::changeLoad, Fonline: %f \n", Fonline);
