@@ -70,9 +70,11 @@ int main(int argc, char **argv)
   loadshedact1.percentage = -0.2;
   
   int isteps = 0;
-  bool bApplyAct = true; //false;  // whether apply the action in the simulation steps
+  bool bApplyAct = false;  // whether apply the action in the simulation steps
   std::vector<double> ob_vals;
   int idxtmp;
+  
+  bool debugoutput = false; // whether print out debug staffs
   
   // test getOblist
   std::vector<int> obs_genBus;
@@ -83,36 +85,38 @@ int main(int argc, char **argv)
   hadrec_app_sptr->getObservationLists(obs_genBus, obs_genIDs,
       obs_loadBus, obs_loadIDs, obs_vBus);
   
-  printf("-----------renke debug, getObservationLists------------\n");
-  printf("-----------ob gen bus list, ");
-  for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-	  printf(" %d, ", obs_genBus[idxtmp]);
+  if (debugoutput){
+	printf("-----------renke debug, getObservationLists------------\n");
+	printf("-----------ob gen bus list, ");
+	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+	printf(" %d, ", obs_genBus[idxtmp]);
+	}
+	printf(" \n");
+	
+	printf("-----------ob gen ID list, ");
+	for (idxtmp=0; idxtmp<obs_genIDs.size(); idxtmp++){
+	printf(" %s, ", obs_genIDs[idxtmp].c_str());
+	}
+	printf(" \n");
+	
+	printf("-----------ob load bus list, ");
+	for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
+	printf(" %d, ", obs_loadBus[idxtmp]);
+	}
+	printf(" \n");
+	
+	printf("-----------ob load ID list, ");
+	for (idxtmp=0; idxtmp<obs_loadIDs.size(); idxtmp++){
+	printf(" %s, ", obs_loadIDs[idxtmp].c_str());
+	}
+	printf(" \n");
+	
+	printf("-----------ob bus list, ");
+	for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
+	printf(" %d, ", obs_vBus[idxtmp]);
+	}
+	printf(" \n");
   }
-  printf(" \n");
-  
-  printf("-----------ob gen ID list, ");
-  for (idxtmp=0; idxtmp<obs_genIDs.size(); idxtmp++){
-	  printf(" %s, ", obs_genIDs[idxtmp].c_str());
-  }
-  printf(" \n");
-  
-  printf("-----------ob load bus list, ");
-  for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
-	  printf(" %d, ", obs_loadBus[idxtmp]);
-  }
-  printf(" \n");
-  
-  printf("-----------ob load ID list, ");
-  for (idxtmp=0; idxtmp<obs_loadIDs.size(); idxtmp++){
-	  printf(" %s, ", obs_loadIDs[idxtmp].c_str());
-  }
-  printf(" \n");
-  
-  printf("-----------ob bus list, ");
-  for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
-	  printf(" %d, ", obs_vBus[idxtmp]);
-  }
-  printf(" \n");
 
   while(!hadrec_app_sptr->isDynSimuDone()){
     // if the dynamic simulation is not done (hit the end time)
@@ -130,11 +134,13 @@ int main(int argc, char **argv)
 	ob_vals.clear();
 	ob_vals = hadrec_app_sptr->getObservations();
 	
-    printf("observations, ");
-    for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
-       printf(" %16.12f, ", ob_vals[idxtmp]);
-    }
-    printf(" \n");
+	if (debugoutput) {
+		printf("observations, ");
+		for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
+			printf(" %16.12f, ", ob_vals[idxtmp]);
+		}
+		printf(" \n");
+	}
 
     isteps++;
   }
@@ -145,7 +151,7 @@ int main(int argc, char **argv)
 
   //start the reload and second time dynamic simulation here
   // transfer power flow results to dynamic simulation
-  bool btest_2dynasimu = true; //true;
+  bool btest_2dynasimu = false; //true;
   if (btest_2dynasimu) {
 	  
 	gridpack::dynamic_simulation::Event busfault;
@@ -199,7 +205,7 @@ int main(int argc, char **argv)
   hadrec_app_sptr.reset();
 
   timer->stop(t_total);
-  timer->dump();
+  //timer->dump();
 
   return 0;
 }

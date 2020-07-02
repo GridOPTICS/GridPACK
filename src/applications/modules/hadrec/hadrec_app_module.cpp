@@ -182,12 +182,12 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
 void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(
     const char *inputfile,
     const std::vector<gridpack::dynamic_simulation::Event>& BusFaults,
-    int case_idx){
+    int pfcase_idx, int dscase_idx){
 	
-	solvePowerFlowBeforeDynSimu(inputfile, case_idx);
+	solvePowerFlowBeforeDynSimu(inputfile, pfcase_idx);
 	transferPFtoDS();
 
-	initializeDynSimu(BusFaults, case_idx);
+	initializeDynSimu(BusFaults, dscase_idx);
 		
 }
 
