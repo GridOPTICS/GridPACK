@@ -103,6 +103,7 @@ install(FILES
   PTI23_parser.hpp
   PTI33_parser.hpp
   GOSS_parser.hpp
+  MAT_parser.hpp
   hash_distr.hpp
   base_parser.hpp
   base_pti_parser.hpp
@@ -118,6 +119,7 @@ install(FILES
   parser_classes/esst1a.hpp
   parser_classes/esst4b.hpp
   parser_classes/ggov1.hpp
+  parser_classes/tgov1.hpp
   parser_classes/wshygp.hpp
   parser_classes/lvshbl.hpp
   parser_classes/frqtpat.hpp

@@ -1638,6 +1638,13 @@
 #define GENERATOR_ID "GENERATOR_ID"
 
 /**
+ * Unique global index that runs sequentially over all generators
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_GLOBAL_IDX "GENERATOR_GLOBAL_IDX"
+
+/**
  * Generator active power output, entered in MW	
  * type: real float
  * indexed
@@ -1949,6 +1956,60 @@
  * indexed
  */
 #define GENERATOR_WPF "GENERATOR_WPF"
+
+// GENERATOR COST PARAMETERS
+/**
+ * Generator cost model type:
+ *  1 piecewise linear
+ *  2 polynomial
+ *  type: integer
+ *  indexed
+ */
+#define GENCOST_MODEL_TYPE "GENCOST_MODEL_TYPE"
+
+/**
+ * Startup cost in US dollars
+ * type: real float
+ * indexed
+ */
+#define GENCOST_STARTUP "GENCOST_STARTUP"
+
+/**
+ * Shutdown cost in US dollars
+ * type: real float
+ * indexed
+ */
+#define GENCOST_SHUTDOWN "GENCOST_SHUTDOWN"
+
+/**
+ * Number of parameters in model
+ * type: integer
+ * indexed
+ */
+#define GENCOST_NUM_PARAMS "GENCOST_NUM_PARAMS"
+
+/**
+ * Because the maximum number of parameters is unknown, it is not possible to
+ * predefine these variables. However, they have the format
+ * Model = 1
+ * p0, p1, ..., pN
+ * f0, f1, ..., fN
+ * N is the number parameters in the model, pi signifies the
+ * break/endpoints of the intervals and fi are the corresponding values at pi.
+ * Model = 2
+ * cN, ..., c1, c0
+ * The ci are the coefficients of a polynomial of order N
+ * cN*p**N + ... + c1*p + c0
+ * The parameters are denoted by the labels
+ * GENCOST_PARAM_PN
+ * GENCOST_PARAM_FN
+ * GENCOST_PARAN_CN
+ *
+ * The corresponding cost parameters for reactive power, if included are
+ * GENCOST_PARAM_R_PN
+ * GENCOST_PARAM_R_FN
+ * GENCOST_PARAN_R_CN
+ */
 
 /**
  * Non-blank alphanumeric string to identify model being used for pss	
@@ -2391,6 +2452,13 @@
  * indexed
  */
 #define GOVERNOR_DM "GOVERNOR_DM"
+
+/**
+ * Governor DT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_DT "GOVERNOR_DT"
 
 /**
  * Governor ROPEN
