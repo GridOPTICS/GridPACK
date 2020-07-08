@@ -149,7 +149,7 @@ class RTPRDriver
      * @param argc number of arguments
      * @param argv list of character strings
      */
-    void execute(int argc, char** argv);
+    void execute(int argc, char** argv, gridpack::Environment &env);
 
     /**
      * Run complete set of contingencies

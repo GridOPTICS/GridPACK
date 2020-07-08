@@ -34,6 +34,7 @@
  */
 gridpack::powerflow::PFAppModule::PFAppModule(void)
 {
+  p_no_print = false;
 }
 
 /**
@@ -101,21 +102,46 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   timer->start(t_pti);
   if (filetype == PTI23) {
     gridpack::parser::PTI23_parser<PFNetwork> parser(network);
+#ifdef USE_GOSS
+    char sbuf[256], sbuf2[256];
+    sprintf(sbuf,"{ \"simulation_id\": \"%s\"}",simID.c_str());
+    sprintf(sbuf2,"reply.%s.%s\n",filename.c_str(),p_simID.c_str());
+    p_goss_client.publish(networkFile,sbuf,sbuf2);
+    std::vector<std::string> fileVec = p_goss_client.subscribeFileAsVector(std::string(sbuf2));
+    parser.parse(fileVec);
+#else
     parser.parse(filename.c_str());
+#endif
     if (phaseShiftSign == -1.0) {
       parser.changePhaseShiftSign();
     }
   } else if (filetype == PTI33) {
     gridpack::parser::PTI33_parser<PFNetwork> parser(network);
+#ifdef USE_GOSS
+    char sbuf[256], sbuf2[256];
+    sprintf(sbuf,"{ \"simulation_id\": \"%s\"}",simID.c_str());
+    sprintf(sbuf2,"reply.%s.%s\n",filename.c_str(),p_simID.c_str());
+    p_goss_client.publish(networkFile,sbuf,sbuf2);
+    std::vector<std::string> fileVec = p_goss_client.subscribeFileAsVector(std::string(sbuf2));
+    parser.parse(fileVec);
+#else
     parser.parse(filename.c_str());
+#endif
     if (phaseShiftSign == -1.0) {
       parser.changePhaseShiftSign();
     }
   } else if (filetype == MAT_POWER) {
     gridpack::parser::MAT_parser<PFNetwork> parser(network);
-    printf("p[%d] Parsing mat power file\n",p_comm.rank());
+#ifdef USE_GOSS
+    char sbuf[256], sbuf2[256];
+    sprintf(sbuf,"{ \"simulation_id\": \"%s\"}",simID.c_str());
+    sprintf(sbuf2,"reply.%s.%s\n",filename.c_str(),p_simID.c_str());
+    p_goss_client.publish(networkFile,sbuf,sbuf2);
+    std::vector<std::string> fileVec = p_goss_client.subscribeFileAsVector(std::string(sbuf2));
+    parser.parse(fileVec);
+#else
     parser.parse(filename.c_str());
-    printf("p[%d] Completed parsing mat power file\n",p_comm.rank());
+#endif
   } else if (filetype == GOSS) {
     gridpack::parser::GOSS_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
@@ -129,10 +155,12 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<PFNetwork>(512,network));
   char ioBuf[128];
 
-  sprintf(ioBuf,"\nMaximum number of iterations: %d\n",p_max_iteration);
-  p_busIO->header(ioBuf);
-  sprintf(ioBuf,"\nConvergence tolerance: %f\n",p_tolerance);
-  p_busIO->header(ioBuf);
+  if (!p_no_print) {
+    sprintf(ioBuf,"\nMaximum number of iterations: %d\n",p_max_iteration);
+    p_busIO->header(ioBuf);
+    sprintf(ioBuf,"\nConvergence tolerance: %f\n",p_tolerance);
+    p_busIO->header(ioBuf);
+  }
 
   // partition network
   int t_part = timer->createCategory("Powerflow: Partition");
@@ -216,208 +244,218 @@ bool gridpack::powerflow::PFAppModule::solve()
     iter = 0;
     tol = 2.0*p_tolerance;
     int_repeat ++;
-    printf (" repeat time = %d \n", int_repeat);
+    if (!p_no_print) {
+      printf (" repeat time = %d \n", int_repeat);
+    }
 
-  // set YBus components so that you can create Y matrix
-  int t_fact = timer->createCategory("Powerflow: Factory Operations");
-  timer->start(t_fact);
-  p_factory->setYBus();
-  timer->stop(t_fact);
+    // set YBus components so that you can create Y matrix
+    int t_fact = timer->createCategory("Powerflow: Factory Operations");
+    timer->start(t_fact);
+    p_factory->setYBus();
+    timer->stop(t_fact);
 
-  int t_cmap = timer->createCategory("Powerflow: Create Mappers");
-  timer->start(t_cmap);
-  p_factory->setMode(YBus); 
+    int t_cmap = timer->createCategory("Powerflow: Create Mappers");
+    timer->start(t_cmap);
+    p_factory->setMode(YBus); 
 
 #if 0
-  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
+    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
 #endif
-  timer->stop(t_cmap);
-  int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
-  timer->start(t_mmap);
+    timer->stop(t_cmap);
+    int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
+    timer->start(t_mmap);
 #if 0
-  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  p_busIO->header("\nY-matrix values\n");
-//  Y->print();
-  Y->save("Ybus.m");
+    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
+    boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+    p_busIO->header("\nY-matrix values\n");
+    //  Y->print();
+    Y->save("Ybus.m");
 #endif
-  timer->stop(t_mmap);
+    timer->stop(t_mmap);
 
-  timer->start(t_fact);
-  p_factory->setMode(S_Cal);
-  timer->stop(t_fact);
-  timer->start(t_cmap);
-  gridpack::mapper::BusVectorMap<PFNetwork> vvMap(p_network);
-  timer->stop(t_cmap);
-  int t_vmap = timer->createCategory("Powerflow: Map to Vector");
+    timer->start(t_fact);
+    p_factory->setMode(S_Cal);
+    timer->stop(t_fact);
+    timer->start(t_cmap);
+    gridpack::mapper::BusVectorMap<PFNetwork> vvMap(p_network);
+    timer->stop(t_cmap);
+    int t_vmap = timer->createCategory("Powerflow: Map to Vector");
 
-  // make Sbus components to create S vector
-  timer->start(t_fact);
-  p_factory->setSBus();
-  timer->stop(t_fact);
-//  p_busIO->header("\nIteration 0\n");
+    // make Sbus components to create S vector
+    timer->start(t_fact);
+    p_factory->setSBus();
+    timer->stop(t_fact);
+    //  p_busIO->header("\nIteration 0\n");
 
-  // Set PQ
-  timer->start(t_cmap);
-  p_factory->setMode(RHS); 
-  gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
-  timer->stop(t_cmap);
-  timer->start(t_vmap);
+    // Set PQ
+    timer->start(t_cmap);
+    p_factory->setMode(RHS); 
+    gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
+    timer->stop(t_cmap);
+    timer->start(t_vmap);
 #ifdef USE_REAL_VALUES
-  boost::shared_ptr<gridpack::math::RealVector> PQ = vMap.mapToRealVector();
+    boost::shared_ptr<gridpack::math::RealVector> PQ = vMap.mapToRealVector();
 #else
-  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+    boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
 #endif
-  timer->stop(t_vmap);
-//  PQ->print();
-  timer->start(t_cmap);
-  p_factory->setMode(Jacobian);
-  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
-  timer->stop(t_cmap);
-  timer->start(t_mmap);
+    timer->stop(t_vmap);
+    //  PQ->print();
+    timer->start(t_cmap);
+    p_factory->setMode(Jacobian);
+    gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
+    timer->stop(t_cmap);
+    timer->start(t_mmap);
 #ifdef USE_REAL_VALUES
-  boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
+    boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
 #else
-  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+    boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
 #endif
-  timer->stop(t_mmap);
-//  p_busIO->header("\nJacobian values\n");
-//  J->print();
+    timer->stop(t_mmap);
+    //  p_busIO->header("\nJacobian values\n");
+    //  J->print();
 
-  // Create X vector by cloning PQ
+    // Create X vector by cloning PQ
 #ifdef USE_REAL_VALUES
-  boost::shared_ptr<gridpack::math::RealVector> X(PQ->clone());
+    boost::shared_ptr<gridpack::math::RealVector> X(PQ->clone());
 #else
-  boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+    boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
 #endif
 
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = p_config->getCursor("Configuration.Powerflow");
-  // Create linear solver
-  int t_csolv = timer->createCategory("Powerflow: Create Linear Solver");
-  timer->start(t_csolv);
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = p_config->getCursor("Configuration.Powerflow");
+    // Create linear solver
+    int t_csolv = timer->createCategory("Powerflow: Create Linear Solver");
+    timer->start(t_csolv);
 #ifdef USE_REAL_VALUES
-  gridpack::math::RealLinearSolver solver(*J);
+    gridpack::math::RealLinearSolver solver(*J);
 #else
-  gridpack::math::LinearSolver solver(*J);
+    gridpack::math::LinearSolver solver(*J);
 #endif
-  solver.configure(cursor);
-  timer->stop(t_csolv);
+    solver.configure(cursor);
+    timer->stop(t_csolv);
 
-  // First iteration
-  X->zero(); //might not need to do this
-  //p_busIO->header("\nCalling solver\n");
-  int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
-  timer->start(t_lsolv);
-//    char dbgfile[32];
-//    sprintf(dbgfile,"j0.bin");
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq0.bin");
-//    PQ->saveBinary(dbgfile);
-  try {
-    solver.solve(*PQ, *X);
-  } catch (const gridpack::Exception e) {
-    std::string w(e.what());
-    printf("p[%d] hit exception: %s\n",
-           p_network->communicator().rank(),
-           w.c_str());
-    p_busIO->header("Solver failure\n\n");
+    // First iteration
+    X->zero(); //might not need to do this
+    //p_busIO->header("\nCalling solver\n");
+    int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
+    timer->start(t_lsolv);
+    //    char dbgfile[32];
+    //    sprintf(dbgfile,"j0.bin");
+    //    J->saveBinary(dbgfile);
+    //    sprintf(dbgfile,"pq0.bin");
+    //    PQ->saveBinary(dbgfile);
+    try {
+      solver.solve(*PQ, *X);
+    } catch (const gridpack::Exception e) {
+      std::string w(e.what());
+      if (!p_no_print) {
+        printf("p[%d] hit exception: %s\n",
+            p_network->communicator().rank(),
+            w.c_str());
+        p_busIO->header("Solver failure\n\n");
+      }
+      timer->stop(t_lsolv);
+      timer->stop(t_total);
+
+      return false;
+    }
     timer->stop(t_lsolv);
-    timer->stop(t_total);
+    tol = PQ->normInfinity();
 
-    return false;
-  }
-  timer->stop(t_lsolv);
-  tol = PQ->normInfinity();
+    // Create timer for map to bus
+    int t_bmap = timer->createCategory("Powerflow: Map to Bus");
+    int t_updt = timer->createCategory("Powerflow: Bus Update");
+    char ioBuf[128];
 
-  // Create timer for map to bus
-  int t_bmap = timer->createCategory("Powerflow: Map to Bus");
-  int t_updt = timer->createCategory("Powerflow: Bus Update");
-  char ioBuf[128];
+    while (real(tol) > p_tolerance && iter < p_max_iteration) {
+      // Push current values in X vector back into network components
+      // Need to implement setValues method in PFBus class in order for this to
+      // work
+      timer->start(t_bmap);
+      p_factory->setMode(RHS);
+      vMap.mapToBus(X);
+      timer->stop(t_bmap);
 
-  while (real(tol) > p_tolerance && iter < p_max_iteration) {
-    // Push current values in X vector back into network components
-    // Need to implement setValues method in PFBus class in order for this to
-    // work
+      // Exchange data between ghost buses (I don't think we need to exchange data
+      // between branches)
+      timer->start(t_updt);
+      //  p_factory->checkQlimViolations();
+      p_network->updateBuses();
+      timer->stop(t_updt);
+
+      // Create new versions of Jacobian and PQ vector
+      timer->start(t_vmap);
+#ifdef USE_REAL_VALUES
+      vMap.mapToRealVector(PQ);
+#else
+      vMap.mapToVector(PQ);
+#endif
+      //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
+      //   PQ->print();
+      timer->stop(t_vmap);
+      timer->start(t_mmap);
+      p_factory->setMode(Jacobian);
+#ifdef USE_REAL_VALUES
+      jMap.mapToRealMatrix(J);
+#else
+      jMap.mapToMatrix(J);
+#endif
+      timer->stop(t_mmap);
+
+      // Create linear solver
+      timer->start(t_lsolv);
+      X->zero(); //might not need to do this
+      //    sprintf(dbgfile,"j%d.bin",iter+1);
+      //    J->saveBinary(dbgfile);
+      //    sprintf(dbgfile,"pq%d.bin",iter+1);
+      //    PQ->saveBinary(dbgfile);
+      try {
+        solver.solve(*PQ, *X);
+      } catch (const gridpack::Exception e) {
+        std::string w(e.what());
+        if (!p_no_print) {
+          printf("p[%d] hit exception: %s\n",
+              p_network->communicator().rank(),
+              w.c_str());
+          p_busIO->header("Solver failure\n\n");
+        }
+        timer->stop(t_lsolv);
+        timer->stop(t_total);
+        return false;
+      }
+      timer->stop(t_lsolv);
+
+      tol = PQ->normInfinity();
+      if (!p_no_print) {
+        sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+        p_busIO->header(ioBuf);
+      }
+      iter++;
+    }
+
+    if (iter >= p_max_iteration) ret = false;
+    if (p_qlim == 0) {
+      repeat = false;
+    } else {
+      if (p_factory->checkQlimViolations()) {
+        repeat =false;
+      } else {
+        if (!p_no_print) {
+          printf ("There are Qlim violations at iter =%d\n", iter);
+        }
+      }
+    }
+    // Push final result back onto buses
     timer->start(t_bmap);
     p_factory->setMode(RHS);
     vMap.mapToBus(X);
     timer->stop(t_bmap);
 
-    // Exchange data between ghost buses (I don't think we need to exchange data
-    // between branches)
+    // Make sure that ghost buses have up-to-date values before printing out
+    // results
     timer->start(t_updt);
-  //  p_factory->checkQlimViolations();
     p_network->updateBuses();
     timer->stop(t_updt);
-
-    // Create new versions of Jacobian and PQ vector
-    timer->start(t_vmap);
-#ifdef USE_REAL_VALUES
-    vMap.mapToRealVector(PQ);
-#else
-    vMap.mapToVector(PQ);
-#endif
- //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
- //   PQ->print();
-    timer->stop(t_vmap);
-    timer->start(t_mmap);
-    p_factory->setMode(Jacobian);
-#ifdef USE_REAL_VALUES
-    jMap.mapToRealMatrix(J);
-#else
-    jMap.mapToMatrix(J);
-#endif
-    timer->stop(t_mmap);
-
-    // Create linear solver
-    timer->start(t_lsolv);
-    X->zero(); //might not need to do this
-//    sprintf(dbgfile,"j%d.bin",iter+1);
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq%d.bin",iter+1);
-//    PQ->saveBinary(dbgfile);
-    try {
-      solver.solve(*PQ, *X);
-    } catch (const gridpack::Exception e) {
-      std::string w(e.what());
-      printf("p[%d] hit exception: %s\n",
-             p_network->communicator().rank(),
-             w.c_str());
-      p_busIO->header("Solver failure\n\n");
-      timer->stop(t_lsolv);
-      timer->stop(t_total);
-      return false;
-    }
-    timer->stop(t_lsolv);
-
-    tol = PQ->normInfinity();
-    sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
-    p_busIO->header(ioBuf);
-    iter++;
-  }
-
-  if (iter >= p_max_iteration) ret = false;
-  if (p_qlim == 0) {
-    repeat = false;
-  } else {
-    if (p_factory->checkQlimViolations()) {
-     repeat =false;
-    } else {
-     printf ("There are Qlim violations at iter =%d\n", iter);
-    }
-  }
-  // Push final result back onto buses
-  timer->start(t_bmap);
-  p_factory->setMode(RHS);
-  vMap.mapToBus(X);
-  timer->stop(t_bmap);
-
-  // Make sure that ghost buses have up-to-date values before printing out
-  // results
-  timer->start(t_updt);
-  p_network->updateBuses();
-  timer->stop(t_updt);
   }
     timer->stop(t_total);
   return ret;
@@ -491,6 +529,7 @@ bool gridpack::powerflow::PFAppModule::nl_solve()
  */
 void gridpack::powerflow::PFAppModule::write()
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -517,6 +556,7 @@ void gridpack::powerflow::PFAppModule::write()
 
 void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -531,6 +571,7 @@ void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
 
 void gridpack::powerflow::PFAppModule::writeCABus()
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Contingency: Total Application");
@@ -545,6 +586,7 @@ void gridpack::powerflow::PFAppModule::writeCABus()
 
 void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -559,6 +601,7 @@ void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
 
 void gridpack::powerflow::PFAppModule::writeCABranch()
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Contingency: Total Application");
@@ -604,6 +647,7 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::writeBranchString(
 
 void gridpack::powerflow::PFAppModule::writeHeader(const char *msg)
 {
+  if (p_no_print) return;
   p_busIO->header(msg);
 }
 
@@ -613,12 +657,14 @@ void gridpack::powerflow::PFAppModule::writeHeader(const char *msg)
  */
 void gridpack::powerflow::PFAppModule::open(const char *filename)
 {
+  if (p_no_print) return;
   p_busIO->open(filename);
   p_branchIO->setStream(p_busIO->getStream());
 }
 
 void gridpack::powerflow::PFAppModule::close()
 {
+  if (p_no_print) return;
   p_busIO->close();
   p_branchIO->setStream(p_busIO->getStream());
 }
@@ -630,6 +676,7 @@ void gridpack::powerflow::PFAppModule::close()
  */
 void gridpack::powerflow::PFAppModule::print(const char *buf)
 {
+  if (p_no_print) return;
   p_busIO->header(buf);
 }
 
@@ -639,6 +686,7 @@ void gridpack::powerflow::PFAppModule::print(const char *buf)
  */
 void gridpack::powerflow::PFAppModule::exportPSSE33(std::string &filename)
 {
+  if (p_no_print) return;
   gridpack::expnet::PSSE33Export<PFNetwork> exprt(p_network);
   exprt.writeFile(filename);
 }
@@ -935,6 +983,7 @@ void gridpack::powerflow::PFAppModule::writeRTPRDiagnostics(
     int src_area, int src_zone, int load_area,
     int load_zone, double gen_scale, double load_scale, const char *file)
 {
+  if (p_no_print) return;
   p_factory->setRTPRParams(src_area,src_zone,load_area,load_zone,
       gen_scale,load_scale);
   p_busIO->open(file);
@@ -998,7 +1047,9 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
           violations[i].bus1,violations[i].bus2,violations[i].tag);
       string = sbuf;
     }
-    printf("DEBUG VIOLATION: (%s)\n",string.c_str());
+    if (!p_no_print) {
+      printf("DEBUG VIOLATION: (%s)\n",string.c_str());
+    }
     ret.push_back(string);
   }
   return ret;
@@ -1012,3 +1063,25 @@ void gridpack::powerflow::PFAppModule::useRateB(bool flag)
 {
   p_factory->useRateB(flag);
 }
+
+/**
+ * Suppress all output from power flow module
+ * @param flag if true, suppress printing
+ */
+void gridpack::powerflow::PFAppModule::suppressOutput(bool flag)
+{
+  p_no_print = flag;
+}
+
+#ifdef USE_GOSS
+/**
+ * Set GOSS client if one already exists
+ * @param client pointer to existing GOSS client
+ */
+void gridpack::powerflow::PFAppModule::setGOSSClient(
+    gridpack::goss::GOSSClient &client, std:;string simID)
+{
+  p_goss_client = client;
+  p_simID = simID;
+}
+#endif
