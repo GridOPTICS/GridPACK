@@ -15,6 +15,7 @@
 
 add_library(gridpack_environment 
   environment.cpp
+  no_print.cpp
   )
 
 target_link_libraries(gridpack_environment
@@ -39,6 +40,7 @@ endif()
 # -------------------------------------------------------------
 install(FILES
   environment.hpp
+  no_print.hpp
   DESTINATION include/gridpack/environment
 )
 
