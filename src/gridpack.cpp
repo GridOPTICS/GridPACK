@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-06-09 06:43:57 d3g096
+// Last Change: 2020-07-08 13:44:41 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -240,8 +240,9 @@ PYBIND11_MODULE(gridpack, gpm) {
          }, py::arg("s") = "", py::arg("pfcase_idx") = -1)
     .def("fullInitializationBeforeDynSimuSteps",
          [](gph::HADRECAppModule& self, const std::string& s,
-            const std::vector<gpds::Event>& BusFaults) {
-           self.fullInitializationBeforeDynSimuSteps(s.c_str(), BusFaults);
+            const std::vector<gpds::Event>& BusFaults, int pfcase_idx, int dscase_idx) {
+           self.fullInitializationBeforeDynSimuSteps(s.c_str(), BusFaults,
+                                                     pfcase_idx, dscase_idx);
          })
     ;
 

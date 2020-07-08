@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-06-09 06:44:28 d3g096
+# Last Change: 2020-07-08 13:49:53 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -51,7 +51,7 @@ class GridPACKTester(TestCase):
 
         busfaultlist = gridpack.dynamic_simulation.EventVector()
 
-        hadapp.initializeDynSimu(busfaultlist)
+        hadapp.initializeDynSimu(busfaultlist, -1)
 
         loadshedact = gridpack.hadrec.Action()
         loadshedact.actiontype = 0;
@@ -101,7 +101,7 @@ class GridPACKTester(TestCase):
             busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
 
             hadapp.transferPFtoDS()
-            hadapp.initializeDynSimu(busfaultlist)
+            hadapp.initializeDynSimu(busfaultlist, -1)
 
             while (not hadapp.isDynSimuDone()):
                 if (bApplyAct and
@@ -117,7 +117,7 @@ class GridPACKTester(TestCase):
         hadapp = None
         print ('----renke python debug test---before second time ini hadrec module')
         hadapp = gridpack.hadrec.Module()
-        hadapp.solvePowerFlowBeforeDynSimu(arg) 
+        hadapp.solvePowerFlowBeforeDynSimu(arg, -1) 
         # It's important to force deallocation order here
         hadapp = None
         env = None
