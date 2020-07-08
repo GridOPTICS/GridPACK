@@ -9,7 +9,7 @@
 /**
  * @file   dae_event.hpp
  * @author Perkins
- * @date   2019-12-05 08:03:43 d3g096
+ * @date   2020-07-08 09:27:09 d3g096
  * 
  * @brief  Encapsulate an "Event" that would affect a time integration problem
  * 
@@ -277,8 +277,12 @@ public:
       n = this->size();
       p_values.reset(new T[n]);
     }
+    boost::scoped_array<T> lstate(new T[n]);
 
-    T *lstate = state.getLocalElements();
+    typename VectorT<T, I>::IdxType lo, hi;
+    state.localIndexRange(lo, hi);
+
+    state.getElementRange(lo, hi, &lstate[0]);
 
     n = 0;
     BOOST_FOREACH(const p_EventInfo rec, p_events) {
@@ -288,9 +292,6 @@ public:
         p_values[n++] = v;
       }
     }
-
-    state.releaseLocalElements(lstate);
-    
     return p_values.get();
   }
 
