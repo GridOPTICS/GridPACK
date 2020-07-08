@@ -678,19 +678,59 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
 /**
  * Execute application. argc and argv are standard runtime parameters
  */
-void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
+void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv, gridpack::Environment &env)
 {
   int i, j;
   // Get timer instance for timing entire calculation
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Total Application");
+  bool use_input_file = false;
   timer->start(t_total);
-
-  // Read configuration file (user specified, otherwise assume that it is
-  // call input.xml)
   gridpack::utility::Configuration *config
     = gridpack::utility::Configuration::configuration();
+  gridpack::utility::Configuration::CursorPtr cursor;
+
+#ifdef USE_GOSS
+  std::string URI, username, passwd, simID, input_topic;
+  gridpack::goss::GOSSClient goss_client;
+  std::string option = "-uri";
+  URI = env.getCmdOption(option);
+  option = "-username";
+  username = env.getCmdOption(option);
+  option = "-passwd";
+  passwd = env.getCmdOption(option);
+  option = "-input";
+  input_topic = env.getCmdOption(option);
+  std::vector<std::string> inputFileVec;
+  if (URI.size() == 0 || username.size() == 0 ||
+      passwd.size() == 0 || input_topic.size() == 0) use_input_file = true;
+  if (use_input_file) {
+    char inputfile[256];
+    if (argc > 1 && argv[1] != NULL) {
+      sprintf(inputfile,"%s",argv[1]);
+    } else {
+      sprintf(inputfile,"%s","input.xml");
+    }
+    config->open(inputfile, p_world);
+    cursor = config->getCursor("Configuration.RealTimePathRating");
+    curser->get("channelURI",&URI);
+    curser->get("username",&username);
+    curser->get("password",&passwd);
+    curser->get("simulationID",&simID);
+  } else {
+    goss_client.connect(URI,username, passwd);
+    char sbuf[128];
+    sprintf(sbuf,"{ \"simulation_id\": \"%s\"}",simID.c_str());
+    char sbuf2[128];
+    sprintf(sbuf2,"reply.%s.%s",input_topic.c_str(),simID.c_str());
+    goss_client.publish(input_topic,sbuf,sbuf2);
+    inputFileVec = goss_client.subscribFileAsVector(std::string(sbuf2));
+    config->openStringFile(inputFileVec,p_world);
+  }
+#else
+  // Read configuration file (user specified, otherwise assume that it is
+  // call input.xml)
   if (argc >= 2 && argv[1] != NULL) {
     char inputfile[256];
     sprintf(inputfile,"%s",argv[1]);
@@ -698,18 +738,21 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   } else {
     config->open("input.xml",p_world);
   }
+  cursor = config->getCursor("Configuration.RealTimePathRating");
+#endif
 
   // Get size of group (communicator) that individual contingency calculations
   // will run on and create a task communicator. Each process is part of only
   // one task communicator, even though the world communicator is broken up into
   // many task communicators
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = config->getCursor("Configuration.RealTimePathRating");
   int grp_size;
   // Check to find out if files should be printed for individual power flow
   // calculations
   std::string tmp_bool;
   gridpack::utility::StringUtils util;
+#ifdef USE_GOSS
+    p_print_calcs = false;
+#else
   if (!cursor->get("printCalcFiles",&tmp_bool)) {
     p_print_calcs = true;
   } else {
@@ -720,6 +763,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_print_calcs = true;
     }
   }
+#endif
   if (!cursor->get("groupSize",&grp_size)) {
     grp_size = 1;
   }
