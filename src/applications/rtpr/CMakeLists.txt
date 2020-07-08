@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-08 09:37:40 d3g096
+# Last Change: 2020-07-08 09:39:26 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -24,8 +24,9 @@ set(target_libraries
     gridpack_stream
     gridpack_configuration
     gridpack_timer
-    gridpack_parallel
     gridpack_analysis
+    gridpack_parallel
+    gridpack_environment
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
