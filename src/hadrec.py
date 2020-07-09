@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-07-08 13:51:05 d3g096
+# Last Change: 2020-07-09 06:51:30 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -42,7 +42,7 @@ hadapp.transferPFtoDS()
 
 busfaultlist = gridpack.dynamic_simulation.EventVector()
 
-hadapp.initializeDynSimu(busfaultlist, -1)
+hadapp.initializeDynSimu(busfaultlist)
 
 loadshedact = gridpack.hadrec.Action()
 loadshedact.actiontype = 0;
@@ -92,7 +92,7 @@ if (btest_2dynasimu):
     busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
     
     hadapp.transferPFtoDS()
-    hadapp.initializeDynSimu(busfaultlist, -1)
+    hadapp.initializeDynSimu(busfaultlist)
 
     while (not hadapp.isDynSimuDone()):
         if (bApplyAct and

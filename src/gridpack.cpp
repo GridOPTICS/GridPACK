@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-07-08 13:44:41 d3g096
+// Last Change: 2020-07-09 06:38:18 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -224,7 +224,6 @@ PYBIND11_MODULE(gridpack, gpm) {
   hadapp
     .def(py::init<>())
     .def("transferPFtoDS", &gph::HADRECAppModule::transferPFtoDS)
-    .def("initializeDynSimu", &gph::HADRECAppModule::initializeDynSimu)
     .def("executeDynSimuOneStep", &gph::HADRECAppModule::executeDynSimuOneStep)
     .def("isDynSimuDone",  &gph::HADRECAppModule::isDynSimuDone)
     .def("applyAction", &gph::HADRECAppModule::applyAction)
@@ -232,18 +231,31 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::return_value_policy::copy)
     ;
 
-  // These methods need to be reworked char * args
+  // These methods need to be reworked char * and/or optional args
   hadapp
+    .def("initializeDynSimu",
+         [](gph::HADRECAppModule& self, std::vector< gpds::Event > faults, int dscase_idx) {
+           self.initializeDynSimu(faults, dscase_idx);
+         },
+         py::arg("faults") = std::vector< gpds::Event >(), py::arg("dscase_idx") = -1
+         )
     .def("solvePowerFlowBeforeDynSimu",
          [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
            self.solvePowerFlowBeforeDynSimu(s.c_str(), pfcase_idx);
-         }, py::arg("s") = "", py::arg("pfcase_idx") = -1)
+         },
+         py::arg("s") = "", py::arg("pfcase_idx") = -1
+         )
     .def("fullInitializationBeforeDynSimuSteps",
          [](gph::HADRECAppModule& self, const std::string& s,
             const std::vector<gpds::Event>& BusFaults, int pfcase_idx, int dscase_idx) {
            self.fullInitializationBeforeDynSimuSteps(s.c_str(), BusFaults,
                                                      pfcase_idx, dscase_idx);
-         })
+         },
+         py::arg("s") = "",
+         py::arg("BusFaults") = std::vector<gpds::Event>(),
+         py::arg("pfcase_idx") = -1,
+         py::arg("dscase_idx")
+         )
     ;
 
   // This method returns a tuple containing 3 lists (int, string, int)
