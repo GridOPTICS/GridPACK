@@ -52,6 +52,9 @@ void Initialize(int *argcp,char ***argvp)
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
+  // Uncomment these lines to supress most PETSc output
+  // PETSC_STDOUT = fopen("/dev/null", "w");
+  // PETSC_STDERR = fopen("/dev/null", "w");
   // Print out some information on processor configuration
   int mpi_err, me, nproc;
   mpi_err = MPI_Comm_rank(PETSC_COMM_WORLD, &me);
