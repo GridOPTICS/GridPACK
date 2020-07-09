@@ -315,6 +315,20 @@ class PFAppModule
      */
     void useRateB(bool flag);
 
+    /**
+     * Suppress all output from power flow module
+     * @param flag if true, suppress printing
+     */
+    void suppressOutput(bool flag);
+
+#ifdef USE_GOSS
+    /**
+     * Set GOSS client if one already exists
+     * @param client pointer to existing GOSS client
+     * @param simID simulation ID
+     */
+    void setGOSSClient(gridpack::goss::GOSSClient &client, std::string simID);
+#endif
   private:
 
     // pointer to network
@@ -346,6 +360,15 @@ class PFAppModule
 
     // string containing current contingency name
     std::string p_contingency_name;
+
+    // Flag to suppress all printing to standard out
+    bool p_no_print;
+
+#ifdef USE_GOSS
+    gridpack::goss::GOSSClient p_goss_client;
+
+    std::string p_simID;
+#endif
 };
 
 } // powerflow

@@ -19,32 +19,27 @@
 #include "gridpack/math/math.hpp"
 #include "rtpr_driver.hpp"
 
+#ifdef USE_GOSS
+const char *help = "Real Time Path Rating Application\n"
+                   "Runtime input options:\n"
+                   "-uri: URI parameter for GOSS server\n"
+                   "-username: user name for GOSS server\n"
+                   "-passwd: password for GOSS server\n"
+                   "-input: topic name for initial input\n";
+#else
+const char *help = "Real Time Path Rating Application\n";              
+#endif
+
 // Calling program for the contingency_analysis applications
 
 int
 main(int argc, char **argv)
 {
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
-
-  // Intialize Math libraries
-  gridpack::math::Initialize(&argc,&argv);
+  gridpack::Environment env(argc, argv, help);
 
   {
     gridpack::rtpr::RTPRDriver driver;
-    driver.execute(argc, argv);
+    driver.execute(argc, argv, env);
   }
-
-  // Terminate Math libraries
-  gridpack::math::Finalize();
-
-  GA_Terminate();
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
-  //return ierr;
 }
 
