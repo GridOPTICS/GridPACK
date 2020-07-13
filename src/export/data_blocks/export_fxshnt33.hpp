@@ -79,7 +79,8 @@ class ExportFxShnt33
             data->getValue(SHUNT_BUSNUMBER,&ival,j);
             sprintf(ptr,"%d,",ival);
             ptr += strlen(ptr);
-            data->getValue(SHUNT_ID,&sval,j);
+            sval = "1 ";
+            bool shnt = data->getValue(SHUNT_ID,&sval,j);
             sprintf(ptr," \'%s\',",sval.c_str());
             ptr += strlen(ptr);
             ival = 1;
