@@ -24,6 +24,7 @@ set(target_libraries
 set(target_libraries 
   gridpack_components gridpack_parallel gridpack_math 
   gridpack_configuration
+  gridpack_environment
   ${target_libraries} 
 )
 

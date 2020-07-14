@@ -133,6 +133,11 @@ protected:
   /// Partition the graph (specialized)
   virtual void p_partition(void) = 0;
 
+private:
+
+  /// local variable to suppress printing
+  bool p_no_print;
+
 };
 
 

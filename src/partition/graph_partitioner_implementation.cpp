@@ -28,6 +28,7 @@
 
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
+#include "gridpack/environment/no_print.hpp"
 #include "graph_partitioner_implementation.hpp"
 
 
@@ -48,6 +49,8 @@ GraphPartitionerImplementation::GraphPartitionerImplementation(const parallel::C
     p_node_destinations(),
     p_edge_destinations()
 {
+    gridpack::NoPrint *noprint = gridpack::NoPrint::instance();
+    p_no_print = noprint->status();
   // empty
 }
 
@@ -235,9 +238,11 @@ GraphPartitionerImplementation::partition(void)
     for (Index e = 0; e < static_cast<Index>(locedges); ++e) {
       Index n1, n2;
       p_adjacency_list.edge(e, n1, n2);
-      std::cout << processor_rank() << ": active edge " << e
-                << " (" << n1 << "->" << n2 << "): "
-                << "destination: " << e1dest[e] << std::endl;
+      if (!p_no_print) {
+        std::cout << processor_rank() << ": active edge " << e
+          << " (" << n1 << "->" << n2 << "): "
+          << "destination: " << e1dest[e] << std::endl;
+      }
     }
   }
 
@@ -266,9 +271,11 @@ GraphPartitionerImplementation::partition(void)
     for (Index e = 0; e < static_cast<Index>(locedges); ++e) {
       Index n1, n2;
       p_adjacency_list.edge(e, n1, n2);
-      std::cout << processor_rank() << ": ghost edge " << e
-                << " (" << n1 << "->" << n2 << "): "
-                << "destination: " << e2dest[e] << std::endl;
+      if (!p_no_print) {
+        std::cout << processor_rank() << ": ghost edge " << e
+          << " (" << n1 << "->" << n2 << "): "
+          << "destination: " << e2dest[e] << std::endl;
+      }
     }
   }
 
@@ -411,9 +418,11 @@ GraphPartitionerImplementation::partition(void)
         int n2dest(e2dest[e]);
 
         if (verbose) {
-          std::cout << processor_rank() << ": edge " << e
-                    << " (" << n1 << "->" << n2 << "): "
-                    << "destinations: " << n1dest << ", " << n2dest << std::endl;
+          if (!p_no_print) {
+            std::cout << processor_rank() << ": edge " << e
+              << " (" << n1 << "->" << n2 << "): "
+              << "destinations: " << n1dest << ", " << n2dest << std::endl;
+          }
         }
       
         if (n1dest != n2dest) {
