@@ -44,6 +44,8 @@ BusVectorMap(boost::shared_ptr<_network> network)
 {
   p_Offsets                        = NULL;
   p_ISize                          = NULL;
+  p_LocOffsets                     = NULL;
+  p_LocSize                        = NULL;
   int                     iSize    = 0;
   p_contributingBuses              = NULL;
   p_Indices                        = NULL;
@@ -69,8 +71,8 @@ BusVectorMap(boost::shared_ptr<_network> network)
   if (p_ISize != NULL) delete [] p_ISize;
   if (p_contributingBuses != NULL) delete [] p_contributingBuses;
   if (p_Indices != NULL) delete [] p_Indices;
-  if (p_LocOffsets) delete [] p_LocOffsets;
-  if (p_LocSize) delete [] p_LocSize;
+  if (p_LocOffsets != NULL) delete [] p_LocOffsets;
+  if (p_LocSize != NULL) delete [] p_LocSize;
 }
 
 /**
