@@ -22,6 +22,7 @@
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
 #include <base_gen_model.hpp>
+#include <gridpack/math/dae_solver.hpp>
 
 class BaseGenModel; // Forward declaration for BaseGenModel
 
@@ -80,6 +81,8 @@ public:
    */
   void setTSshift(double inshift) {shift = inshift;}
   
+  virtual void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+
   /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
 

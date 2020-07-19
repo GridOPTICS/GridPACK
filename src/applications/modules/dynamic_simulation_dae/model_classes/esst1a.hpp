@@ -21,7 +21,6 @@
 #include <base_exc_model.hpp>
 #include <gridpack/include/gridpack.hpp>
 
-
 class Esst1aExc: public BaseExcModel
 {
 public:
@@ -73,7 +72,12 @@ public:
    * @param string buffer that contains output
    */
   void write(const char* signal, char* string);
-  
+
+  /**
+   * Set Event 
+   */
+  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+
   /**
    *  Set the number of variables for this exciter model
    *  @param [output] number of variables for this model
@@ -158,6 +162,36 @@ private:
   // Flag to denote whether each equation is algebraic or differential.
   // iseq_diff[i] = 1 if equation is differential, 0 otherwise.
   int iseq_diff[5];
+};
+
+
+// Class for defining events for ESST1a model
+class Esst1aExcEvent
+  :public gridpack::math::DAESolver::Event
+{
+public:
+
+  // Default constructor
+  Esst1aExcEvent(Esst1aExc *exc):gridpack::math::DAESolver::Event(2),p_exc(exc)
+  {
+    std:fill(p_term.begin(),p_term.end(),true);
+
+    std::fill(p_dir.begin(),p_dir.end(),gridpack::math::CrossZeroNegative);
+  }
+
+  // Destructor
+  ~Esst1aExcEvent(void) {}
+protected:
+  Esst1aExc *p_exc;
+
+  void p_update(const double& t, gridpack::ComplexType *state)
+  {
+
+  }
+
+  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+  {
+  }
 };
 
 #endif

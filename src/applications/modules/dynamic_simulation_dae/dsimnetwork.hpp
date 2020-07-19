@@ -25,6 +25,7 @@
 #include <base_classes/base_gen_model.hpp>
 #include <base_classes/base_exc_model.hpp>
 #include <base_classes/base_gov_model.hpp>
+#include <gridpack/math/dae_solver.hpp>
 
 class DSimBus: public gridpack::component::BaseBusComponent 
 {
@@ -150,6 +151,8 @@ public:
   bool isGhost(void) { return p_isghost; }
   
   void setRank(int rank) { p_rank = rank; }
+
+  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
   
 private:
   // Anything declared here should be set in the Archive class in exactly the same order!!

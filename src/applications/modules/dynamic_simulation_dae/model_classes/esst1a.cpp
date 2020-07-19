@@ -154,6 +154,14 @@ bool Esst1aExc::serialWrite(char *string, const int bufsize,const char *signal)
 }
 
 /**
+ * Set event
+ */
+void Esst1aExc::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+
+}
+
+/**
  * Write out exciter state
  * @param signal character string used to determine behavior
  * @param string buffer that contains output

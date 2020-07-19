@@ -29,6 +29,7 @@
 #include <model_classes/exdc1.hpp>
 #include <model_classes/esst1a.hpp>
 #include <model_classes/wsieg1.hpp>
+#include <gridpack/math/dae_solver.hpp>
 
 /**
  *  Simple constructor
@@ -102,6 +103,22 @@ void DSimBus::getVoltagesRectangular(double *VD,double *VQ) const
   *VQ = *(p_VDQptr+1);
 }
 
+/**
+ * Add events
+ * @eman - EventManager pointer
+ */
+void DSimBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+  int i;
+  bool has_ex=false;
+
+  for(i=0; i < p_ngen; i++) {
+    has_ex = p_gen[i]->hasExciter();
+    if(has_ex) {
+      p_gen[i]->getExciter()->setEvent(eman);
+    }
+  }
+}
 
 /**
  * Load values stored in DataCollection object into DSimBus object. The

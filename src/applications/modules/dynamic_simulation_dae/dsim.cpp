@@ -1,4 +1,5 @@
 
+
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
@@ -73,7 +74,7 @@ public:
       p_Gfault(Gfault), p_Bfault(Bfault)
   {
     // A fault requires that the DAE solver be reset. 
-    std::fill(p_term.begin(), p_term.end(), true);
+    std::fill(p_term.begin(), p_term.end(), false);
     
     // The event occurs when the values go from positive to negative.
     std::fill(p_dir.begin(), p_dir.end(),
@@ -212,6 +213,7 @@ void DSim::setup()
   DAESolver::FunctionBuilder daefunction = boost::ref(*this);
   DAESolver::EventManagerPtr eman(new DSimEventManager(this));
 
+  p_factory->setEvents(eman);
   // Read fault parameters, Set up fault events
 
   double faultontime(0.1),faultofftime(0.2);
@@ -269,11 +271,14 @@ void DSim::solve()
   p_configcursor->get("timeStep",&tstep);
   p_configcursor->get("simulationTime",&tmax);
 
+ p_daesolver->initialize(t, tstep, *p_X);
+ p_daesolver->solve(tout, maxsteps);
+
   while (t < tmax) {
     double tout(tmax);
     int maxsteps(10000);
-    p_daesolver->initialize(t, tstep, *p_X);
-    p_daesolver->solve(tout, maxsteps);
+   
+ 
     std::cout << "Time requested = " << tmax << ", "
               << "actual time = " << tout << ", "
               << "Steps = " << maxsteps << std::endl;

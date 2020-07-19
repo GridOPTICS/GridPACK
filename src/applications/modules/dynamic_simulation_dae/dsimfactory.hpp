@@ -22,6 +22,7 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <dsimnetwork.hpp>
+#include <gridpack/math/dae_solver.hpp>
 
 // This example only needs the functionality in the base factory class
 
@@ -57,6 +58,11 @@ class DSimFactory
     Initialize components
   */
   void initialize(void);
+  
+  /**
+   * Set events 
+   */
+  void setEvents(gridpack::math::DAESolver::EventManagerPtr);
 
   private:
   // NetworkPtr is a typedef for boost::shared_ptr<_network> defined in base_factory.hpp
