@@ -42,15 +42,19 @@ void DSimFactory::setTSshift(double shift)
 /** 
  * Add events from buses and branches to the event manager 
 */
-void DSimFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman)
+void DSimFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,gridpack::mapper::BusVectorMap<DSimNetwork> *vecmap)
 {
   int numBuses = p_network->numBuses();
   int i;
+  int offset,size;
+  DSimBus *bus;
   
   for(i=0; i < numBuses; i++) {
-    dynamic_cast<DSimBus*>(p_network->getBus(i).get())->setEvent(eman);
+    bus = dynamic_cast<DSimBus*>(p_network->getBus(i).get());
+    bus->setEvent(eman);
+    vecmap->getLocalOffset(i,&offset,&size);
+    bus->setLocalOffset(offset);
   }
-
 }
 
 /**

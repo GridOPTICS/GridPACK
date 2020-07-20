@@ -52,6 +52,10 @@ Esst1aExc::Esst1aExc(void)
   Klr = 0.0;
   Ilr = 0.0;    
 
+  Efd_at_min = Efd_at_max = false;
+  Vi_at_min  = Vi_at_max = false;
+  Va_at_min = Va_at_max = false;
+
   nxexc = 5;
 }
 
@@ -151,14 +155,6 @@ void Esst1aExc::init(gridpack::ComplexType* values)
 bool Esst1aExc::serialWrite(char *string, const int bufsize,const char *signal)
 {
   return false;
-}
-
-/**
- * Set event
- */
-void Esst1aExc::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
-{
-
 }
 
 /**
@@ -510,4 +506,90 @@ double Esst1aExc::getFieldVoltage()
   fdv = fmin(fmax(Efd,Vmin),Vmax);
 
   return fdv;
+}
+
+/**
+ * Update the event function values
+ */
+void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> > evalues)
+{
+  int offset    = getLocalOffset();
+  int Vmeas_idx = offset;
+  int xLL1_idx  = offset+1;
+  int xLL2_idx  = offset+2;
+  int Va_idx    = offset+3;
+  int xf_idx    = offset+4;
+
+  double Vmeas = real(state[Vmeas_idx]);
+  double xLL1  = real(state[xLL1_idx]);
+  double xLL2  = real(state[xLL2_idx]);
+  double Va    = real(state[Va_idx]);
+  double xf    = real(state[xf_idx]);
+
+  /* Only considering limits on Vi and Va */
+  
+  double Vf,Vi;
+
+  Efd = Esst1aExc::getFieldVoltage();
+  Vf = xf + Kf/Tf*Efd;
+  Vi = Vref - Vmeas - Vf;
+
+  printf("Vi = %f\n",Vi);
+  /* Limits on Vi */
+  if(!Vi_at_min) {
+    evalues[0] = Vi - Vimin;
+  }
+
+  if(!Vi_at_max) {
+    evalues[1] = Vimax - Vi;
+  }
+
+  /* Limits on Va */
+  if(!Va_at_min) {
+    evalues[2] = Va - Vamin;
+  }
+
+  if(!Va_at_max) {
+    evalues[3] = Vamax - Va;
+  }
+} 
+
+/**
+ * Event handler
+ */
+void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  if(triggered[0]) {
+    if(!Vi_at_min) {
+      /* Vi at Vimin */
+    }
+  }
+
+  if(triggered[1]) {
+    if(!Vi_at_max) {
+      /* Vi at Vimax */
+      Vi_at_max = true;
+    }
+  }
+  
+}
+
+/**
+ * Set event
+ */
+void Esst1aExc::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+  gridpack::math::DAESolver::EventPtr e(new Esst1aExcEvent(this));
+
+  eman->add(e);
+}
+
+void Esst1aExcEvent::p_update(const double& t,gridpack::ComplexType *state)
+{
+  p_exc->eventFunction(t,state,p_current);
+}
+
+void Esst1aExcEvent::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  p_exc->eventHandlerFunction(triggered,t,state);
 }

@@ -167,6 +167,16 @@ to be overwritten by the implementation */
    */
   void setValues(gridpack::ComplexType *values);
 
+  void setBusLocalOffset(int offset) {p_busoffset = offset;}
+
+  /**
+   * return offset in the local vector 
+   */
+  int getLocalOffset()
+  {
+    return p_busoffset + offsetb;
+  }
+
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
@@ -174,7 +184,7 @@ protected:
   BaseGenModel* p_gen; // Generator model
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           nxexc;    /** Number of variables for the exciter model */
-
+  int           p_busoffset; /** Starting location for bus variables in the local state vector */
 
 };
 

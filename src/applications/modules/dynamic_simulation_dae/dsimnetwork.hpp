@@ -153,6 +153,8 @@ public:
   void setRank(int rank) { p_rank = rank; }
 
   void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+
+  void setLocalOffset(int offset);
   
 private:
   // Anything declared here should be set in the Archive class in exactly the same order!!
@@ -168,6 +170,7 @@ private:
   DSMode p_mode; // factory mode
   double p_TSshift;  // shift value provided by TSIJacobian. 
   int    p_nvar;      // Number of variables for this bus
+  int    p_offset; // Offset for the starting location for this bus's variables in the state vector (array)
   
   // Variables
   double *p_VDQptr; // Pointer used for exchanging values with ghost buses. Note that this pointer is pointed to the buffer used for exchanging values with ghost buses. Its contents should be updated whenever there is a change in V, e.g., when the values from vector X are being mapped to the buses.
@@ -198,6 +201,7 @@ private:
       & p_mode
       & p_TSshift
       & p_nvar
+      & p_offset
       & p_isghost
       & p_rank;
   }  

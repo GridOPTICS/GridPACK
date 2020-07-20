@@ -118,7 +118,17 @@ public:
    * @param dEfd_dxgen partial derivatives of field voltage Efd w.r.t generator variables
    */
   bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
-  
+
+  /**
+   * Update the event function values
+   */
+  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> > evalues);
+
+  /**
+   * Event handler function 
+   */
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+
 private:
   
   // Exciter esst1a parameters from dyr
@@ -162,6 +172,10 @@ private:
   // Flag to denote whether each equation is algebraic or differential.
   // iseq_diff[i] = 1 if equation is differential, 0 otherwise.
   int iseq_diff[5];
+
+  bool Efd_at_min,Efd_at_max;
+  bool Vi_at_min,Vi_at_max;
+  bool Va_at_min,Va_at_max;
 };
 
 
@@ -172,11 +186,12 @@ class Esst1aExcEvent
 public:
 
   // Default constructor
-  Esst1aExcEvent(Esst1aExc *exc):gridpack::math::DAESolver::Event(2),p_exc(exc)
+  Esst1aExcEvent(Esst1aExc *exc):gridpack::math::DAESolver::Event(4),p_exc(exc)
   {
     std:fill(p_term.begin(),p_term.end(),true);
 
     std::fill(p_dir.begin(),p_dir.end(),gridpack::math::CrossZeroNegative);
+
   }
 
   // Destructor
@@ -184,14 +199,9 @@ public:
 protected:
   Esst1aExc *p_exc;
 
-  void p_update(const double& t, gridpack::ComplexType *state)
-  {
+  void p_update(const double& t, gridpack::ComplexType *state);
 
-  }
-
-  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
-  {
-  }
+  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state);
 };
 
 #endif

@@ -181,6 +181,16 @@ to be overwritten by the implementation */
    */
   void setValues(gridpack::ComplexType *values);
 
+  void setBusLocalOffset(int offset) {p_busoffset = offset;}
+
+  /**
+   * return offset in the local vector 
+   */
+  int getLocalOffset()
+  {
+    return p_busoffset + offsetb;
+  }
+
  protected:
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */
@@ -195,6 +205,7 @@ to be overwritten by the implementation */
   boost::shared_ptr<BaseGovModel> p_governor; // Governor
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           nxgen; /* Number of variables for the generator model */
+  int           p_busoffset; /** Offset for the bus variables in the local vector. Used only for events */
 
   // Arrays used in coupling blocks between generator and exciter. These should be allocated and destroyed by the derived class
   int           *xexc_loc;   // locations for exciter variables in the bus variables array

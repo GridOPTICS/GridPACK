@@ -213,7 +213,7 @@ void DSim::setup()
   DAESolver::FunctionBuilder daefunction = boost::ref(*this);
   DAESolver::EventManagerPtr eman(new DSimEventManager(this));
 
-  p_factory->setEvents(eman);
+  p_factory->setEvents(eman,p_VecMapper);
   // Read fault parameters, Set up fault events
 
   double faultontime(0.1),faultofftime(0.2);
@@ -271,14 +271,12 @@ void DSim::solve()
   p_configcursor->get("timeStep",&tstep);
   p_configcursor->get("simulationTime",&tmax);
 
- p_daesolver->initialize(t, tstep, *p_X);
- p_daesolver->solve(tout, maxsteps);
-
   while (t < tmax) {
     double tout(tmax);
     int maxsteps(10000);
    
- 
+    p_daesolver->initialize(t, tstep, *p_X);
+    p_daesolver->solve(tout, maxsteps);
     std::cout << "Time requested = " << tmax << ", "
               << "actual time = " << tout << ", "
               << "Steps = " << maxsteps << std::endl;
