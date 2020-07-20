@@ -191,6 +191,8 @@ to be overwritten by the implementation */
     return p_busoffset + offsetb;
   }
 
+  virtual void resetEventFlags(void) {}
+
  protected:
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */

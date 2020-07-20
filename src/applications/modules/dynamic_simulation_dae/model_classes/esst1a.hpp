@@ -122,12 +122,17 @@ public:
   /**
    * Update the event function values
    */
-  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> > evalues);
+  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
 
   /**
    * Event handler function 
    */
   void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+
+  /**
+   * Updated limiter flags after event has occured. Only called when the network is resolved
+   */
+  void resetEventFlags(void);
 
 private:
   
@@ -188,7 +193,7 @@ public:
   // Default constructor
   Esst1aExcEvent(Esst1aExc *exc):gridpack::math::DAESolver::Event(4),p_exc(exc)
   {
-    std:fill(p_term.begin(),p_term.end(),true);
+    std:fill(p_term.begin(),p_term.end(),false);
 
     std::fill(p_dir.begin(),p_dir.end(),gridpack::math::CrossZeroNegative);
 

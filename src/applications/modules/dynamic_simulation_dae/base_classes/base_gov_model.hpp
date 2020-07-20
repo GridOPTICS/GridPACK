@@ -174,6 +174,8 @@ to be overwritten by the implementation */
     return p_busoffset + offsetb;
   }
 
+  virtual void resetEventFlags(void) {}
+
 protected:
   double        VD, VQ;
   int           status; /**< Machine status */

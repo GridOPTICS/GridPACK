@@ -44,6 +44,11 @@ protected:
       p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
       // Solve algebraic equations 
       p_sim->p_nlsolver->solve(*(p_sim->p_X));
+
+      // Push the updated solution back to network
+      p_sim->p_factory->setMode(XVECTOBUS);
+      p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
+      p_sim->p_factory->resetEventFlags();
     }
   }
 

@@ -64,6 +64,10 @@ class DSimFactory
    */
   void setEvents(gridpack::math::DAESolver::EventManagerPtr,gridpack::mapper::BusVectorMap<DSimNetwork>*);
 
+  /** 
+   * Reset flags after event is handled
+   */
+  void resetEventFlags();
   private:
   // NetworkPtr is a typedef for boost::shared_ptr<_network> defined in base_factory.hpp
     NetworkPtr p_network;

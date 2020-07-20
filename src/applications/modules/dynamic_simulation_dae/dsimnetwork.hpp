@@ -155,6 +155,8 @@ public:
   void setEvent(gridpack::math::DAESolver::EventManagerPtr);
 
   void setLocalOffset(int offset);
+
+  void resetEventFlags(void);
   
 private:
   // Anything declared here should be set in the Archive class in exactly the same order!!

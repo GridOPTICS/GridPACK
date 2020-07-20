@@ -53,7 +53,8 @@ Esst1aExc::Esst1aExc(void)
   Ilr = 0.0;    
 
   Efd_at_min = Efd_at_max = false;
-  Vi_at_min  = Vi_at_max = false;
+  Vi_at_min  = false;
+  Vi_at_max  = false;
   Va_at_min = Va_at_max = false;
 
   nxexc = 5;
@@ -219,6 +220,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
   int x5_idx = 4;
   double Ec,yLL1,yLL2,Vf;
   Ec = sqrt(VD*VD + VQ*VQ);
+  double Vi;
   
   Efd = Esst1aExc::getFieldVoltage();
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
@@ -229,11 +231,18 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
 
     // xLL1 equation
     Vf = xf + Kf/Tf*Efd;
+    Vi = Vref - Vmeas - Vf;
+    if(Vi_at_max) {
+      Vi = Vimax;
+    } else if(Vi_at_min) {
+      Vi = Vimin;
+    }
+
     if(iseq_diff[1]) {
       values[1] = xLL1 - xLL1prev;
-      yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);
+      yLL1 = xLL1 + Tc/Tb*Vi;
     } else {
-      values[1] = -xLL1 + Vref - Vmeas - Vf;
+      values[1] = -xLL1 + Vi;
       yLL1 = xLL1;
     }
 
@@ -261,11 +270,18 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
 
     // xLL1 equation
     Vf = xf + Kf/Tf*Efd;
+    Vi = Vref - Vmeas - Vf;
+    if(Vi_at_max) {
+      Vi = Vimax;
+    } else if(Vi_at_min) {
+      Vi = Vimin;
+    }
+
     if(iseq_diff[1]) {
-      values[1] = (-xLL1 + (1 - Tc/Tb)*(Vref - Vmeas - Vf))/Tb - dxLL1;
-      yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);
+      values[1] = (-xLL1 + (1 - Tc/Tb)*Vi)/Tb - dxLL1;
+      yLL1 = xLL1 + Tc/Tb*Vi;
     } else {
-      values[1] = -xLL1 + Vref - Vmeas - Vf;
+      values[1] = -xLL1 + Vi;
       yLL1 = xLL1;
     }
 
@@ -311,6 +327,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
   double dyLL1_dxLL1=0.0,dyLL1_dVmeas=0.0;
   double dyLL1_dxLL2=0.0,dyLL1_dVa=0.0;
   double dyLL1_dxf=0.0, dyLL1_dEfd=0.0;
+  double Vi;
 
   Ec = sqrt(VD*VD + VQ*VQ);
 
@@ -327,17 +344,25 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
     }
       
+    Vi = Vref - Vmeas - Vf;
+    if(Vi_at_max) Vi = Vimax;
+    else if(Vi_at_min) Vi = Vimin;
     // Partial derivatives of xLL1 equation
     if(iseq_diff[1]) {
       values[xLL1_idx][xLL1_idx] = 1.0;
-      yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);
+      yLL1 = xLL1 + Tc/Tb*Vi;
       dyLL1_dxLL1  = 1.0;
-      dyLL1_dVmeas = -Tc/Tb;
-      dyLL1_dxf    = -Tc/Tb*dVf_dxf;
+      if(!Vi_at_min && !Vi_at_max) {
+	dyLL1_dVmeas = -Tc/Tb;
+	dyLL1_dxf    = -Tc/Tb*dVf_dxf;
+      }
     } else {
-      values[Vmeas_idx][xLL1_idx] = -1.0;
       values[xLL1_idx][xLL1_idx]  = -1.0;
-      values[xf_idx][xLL1_idx]    = -dVf_dxf;
+
+      if(!Vi_at_min && !Vi_at_max) {
+	values[Vmeas_idx][xLL1_idx] = -1.0;
+	values[xf_idx][xLL1_idx]    = -dVf_dxf;
+      }
       yLL1 = xLL1;
       dyLL1_dxLL1 = 1.0;
     }
@@ -388,20 +413,29 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
       values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
     }
 
+    Vi = Vref - Vmeas - Vf;
+    if(Vi_at_max) Vi = Vimax;
+    else if(Vi_at_min) Vi = Vimin;
     // Partial derivatives of xLL1 equation
     if(iseq_diff[1]) {
-      values[Vmeas_idx][xLL1_idx] = (1 - Tc/Tb)*-1.0/Tb;
       values[xLL1_idx][xLL1_idx]  = -1.0/Tb - shift;
-      values[xf_idx][xLL1_idx]    = (1 - Tc/Tb)*-dVf_dxf/Tb;
-
-      yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);
+      if(!Vi_at_min && !Vi_at_max) {
+	values[Vmeas_idx][xLL1_idx] = (1 - Tc/Tb)*-1.0/Tb;
+	values[xf_idx][xLL1_idx]    = (1 - Tc/Tb)*-dVf_dxf/Tb;
+      }
+      yLL1 = xLL1 + Tc/Tb*Vi;
       dyLL1_dxLL1  = 1.0;
-      dyLL1_dVmeas = -Tc/Tb;
-      dyLL1_dxf    = -Tc/Tb*dVf_dxf;
+
+      if(!Vi_at_min && !Vi_at_max) {
+	dyLL1_dVmeas = -Tc/Tb;
+	dyLL1_dxf    = -Tc/Tb*dVf_dxf;
+      }
     } else {
-      values[Vmeas_idx][xLL1_idx] = -1.0;
       values[xLL1_idx][xLL1_idx]  = -1.0;
-      values[xf_idx][xLL1_idx]    = -dVf_dxf;
+      if(!Vi_at_min && !Vi_at_max) {
+	values[Vmeas_idx][xLL1_idx] = -1.0;
+	values[xf_idx][xLL1_idx]    = -dVf_dxf;
+      }
       yLL1 = xLL1;
       dyLL1_dxLL1 = 1.0;
     }
@@ -511,7 +545,7 @@ double Esst1aExc::getFieldVoltage()
 /**
  * Update the event function values
  */
-void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> > evalues)
+void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
 {
   int offset    = getLocalOffset();
   int Vmeas_idx = offset;
@@ -538,10 +572,14 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
   /* Limits on Vi */
   if(!Vi_at_min) {
     evalues[0] = Vi - Vimin;
+  } else {
+    evalues[0] = Vimin - Vi;
   }
 
   if(!Vi_at_max) {
     evalues[1] = Vimax - Vi;
+  } else {
+    evalues[1] = Vi - Vimax;
   }
 
   /* Limits on Va */
@@ -555,6 +593,33 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
 } 
 
 /**
+ * Reset limiter flags after a network resolve
+ */
+void Esst1aExc::resetEventFlags()
+{
+  /* Note that the states are already pushed onto the network, so we can access these
+     directly
+  */
+  double Vf,Vi;
+
+  Efd = Esst1aExc::getFieldVoltage();
+  Vf = xf + Kf/Tf*Efd;
+  Vi = Vref - Vmeas - Vf;
+
+  if(!Vi_at_min) {
+    if(Vi - Vimin < 0) Vi_at_min = true;
+  } else {
+    if(Vimin - Vi < 0) Vi_at_min = false; /* Release */
+  }
+
+  if(!Vi_at_max) {
+    if(Vimax - Vi < 0) Vi_at_max = true;
+  } else {
+    if(Vi - Vimax < 0) Vi_at_max = false; /* Release */
+  }
+}
+
+/**
  * Event handler
  */
 void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
@@ -562,6 +627,10 @@ void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gri
   if(triggered[0]) {
     if(!Vi_at_min) {
       /* Vi at Vimin */
+      Vi_at_min = true;
+    } else {
+      /* Reset */
+      Vi_at_max = false;
     }
   }
 
@@ -569,6 +638,9 @@ void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gri
     if(!Vi_at_max) {
       /* Vi at Vimax */
       Vi_at_max = true;
+    } else {
+      /* Reset */
+      Vi_at_max = false;
     }
   }
   

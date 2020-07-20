@@ -118,6 +118,29 @@ void DSimBus::setLocalOffset(int offset)
 }
 
 /**
+ * Reset limiter flags after event has occured. Only called when the network
+ * is resolved
+*/
+void DSimBus::resetEventFlags()
+{
+  int i;
+
+  for(i=0; i < p_ngen; i++) {
+    if(p_gen[i]->getGenStatus()) {
+      p_gen[i]->resetEventFlags();
+      
+      if(p_gen[i]->hasExciter()) {
+	p_gen[i]->getExciter()->resetEventFlags();
+      }
+
+      if(p_gen[i]->hasGovernor()) {
+	p_gen[i]->getGovernor()->resetEventFlags();
+      }
+    }
+  }
+}
+
+/**
  * Get voltages in the rectangular form VD, VQ
  * @param double VD - real part of complex voltage at this bus
  * @param double VQ - imaginary part of complex voltage at this bus

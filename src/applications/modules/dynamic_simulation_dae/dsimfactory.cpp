@@ -57,6 +57,22 @@ void DSimFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,grid
   }
 }
 
+/** 
+ * Reset flags after event is handled
+*/
+void DSimFactory::resetEventFlags()
+{
+  int numBuses = p_network->numBuses();
+  int i;
+  int offset,size;
+  DSimBus *bus;
+  
+  for(i=0; i < numBuses; i++) {
+    bus = dynamic_cast<DSimBus*>(p_network->getBus(i).get());
+    bus->resetEventFlags();
+  }
+}
+
 /**
  * Locates the faulted bus and modifies its shunt to insert the bus fault
  */
