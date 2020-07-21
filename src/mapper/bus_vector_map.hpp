@@ -279,6 +279,19 @@ void mapToBus(boost::shared_ptr<gridpack::math::RealVector> &vector)
   mapToBus(*vector);
 }
 
+/**
+ * Get the local offset of the array values and the number of the values
+ * contributed by each bus
+ * @param idx local index of the bus
+ * @param offset local offset of bus values in the vector
+ * @param size number of values contributed by bus
+ */
+void getLocalOffset(int idx, int *offset, int *size)
+{
+  *offset = p_LocOffsets[idx];
+  *size = p_LocSize[idx];
+}
+
 private:
 /**
  * Add block contributions from buses to vector
@@ -464,19 +477,6 @@ void setBusIndexArrays(void)
       icnt++;
     }
   }
-}
-
-/**
- * Get the local offset of the array values and the number of the values
- * contributed by each bus
- * @param idx local index of the bus
- * @param offset local offset of bus values in the vector
- * @param size number of values contributed by bus
- */
-void getLocalOffset(int idx, int *offset, int *size)
-{
-  *offset = p_LocOffsets[idx];
-  *size = p_LocSize[idx];
 }
 
     // GA information
