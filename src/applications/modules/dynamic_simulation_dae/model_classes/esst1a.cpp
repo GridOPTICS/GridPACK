@@ -256,8 +256,14 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     }
 
     // Va equation
-    if(iseq_diff[3]) values[3] = Va - Vaprev;
-    else values[3] = -Va + Ka*yLL2;
+    if(Va_at_min) {
+      values[3] = Va - Vamin;
+    } else if(Va_at_max) {
+      values[3] = Va - Vamax;
+    } else {
+      if(iseq_diff[3]) values[3] = Va - Vaprev;
+      else values[3] = -Va + Ka*yLL2;
+    }
 
     // xf equation
     values[4] = xf - xfprev;
@@ -295,8 +301,14 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     }
 
     // Va equation
-    if(iseq_diff[3]) values[3] = (-Va + Ka*yLL2)/Ta - dVa;
-    else values[3] = -Va + Ka*yLL2;
+    if(Va_at_min) {
+      values[3] = Va - Vamin;
+    } else if(Va_at_max) {
+      values[3] = Va - Vamax;
+    } else {
+      if(iseq_diff[3]) values[3] = (-Va + Ka*yLL2)/Ta - dVa;
+      else values[3] = -Va + Ka*yLL2;
+    }
 
     // xf equation
     values[4] = (-xf - Kf/Tf*Efd)/Tf - dxf;
@@ -388,14 +400,18 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
     }
 
     // Partial derivatives of Va equation
-    if(iseq_diff[3]) {
+    if(Va_at_min || Va_at_max) {
       values[Va_idx][Va_idx] = 1.0;
     } else {
-      values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
-      values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
-      values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
-      values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
-      values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
+      if(iseq_diff[3]) {
+	values[Va_idx][Va_idx] = 1.0;
+      } else {
+	values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
+	values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
+	values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
+	values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
+	values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
+      }
     }
 
     // Partial derivatives of xf equation
@@ -466,18 +482,22 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
     }
 
     // Partial derivatives of Va equation
-    if(iseq_diff[3]) {
-      values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas/Ta;
-      values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1/Ta;
-      values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2/Ta;
-      values[Va_idx][Va_idx]    = (-1.0 + Ka*dyLL2_dVa)/Ta - shift;
-      values[xf_idx][Va_idx]    = Ka*dyLL2_dxf/Ta;
+    if(Va_at_min || Va_at_max) {
+      values[Va_idx][Va_idx] = 1.0;
     } else {
-      values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
-      values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
-      values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
-      values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
-      values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
+      if(iseq_diff[3]) {
+	values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas/Ta;
+	values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1/Ta;
+	values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2/Ta;
+	values[Va_idx][Va_idx]    = (-1.0 + Ka*dyLL2_dVa)/Ta - shift;
+	values[xf_idx][Va_idx]    = Ka*dyLL2_dxf/Ta;
+      } else {
+	values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
+	values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
+	values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
+	values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
+	values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
+      }
     }
 
     // Partial derivatives of xf equation
@@ -568,7 +588,7 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
   Vf = xf + Kf/Tf*Efd;
   Vi = Vref - Vmeas - Vf;
 
-  printf("Vi = %f\n",Vi);
+  printf("Va = %f\n",Va);
   /* Limits on Vi */
   if(!Vi_at_min) {
     evalues[0] = Vi - Vimin;
@@ -582,13 +602,25 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
     evalues[1] = Vi - Vimax;
   }
 
+  double yLL1,yLL2;
+  if(iseq_diff[1]) yLL1 = xLL1 + Tc/Tb*Vi;
+  else yLL1 = xLL1;
+
+  if(iseq_diff[2]) yLL2 = xLL2 + Tc1/Tb1*yLL1;
+  else yLL2 = xLL2;
+
+  double dVa_dt = (-Va + Ka*yLL2)/Ta;
   /* Limits on Va */
   if(!Va_at_min) {
     evalues[2] = Va - Vamin;
+  } else {
+    evalues[2] = -dVa_dt; /* Release when derivative reaches 0 */
   }
 
   if(!Va_at_max) {
     evalues[3] = Vamax - Va;
+  } else {
+    evalues[3] = dVa_dt; /* Release when derivative reaches 0 */
   }
 } 
 
@@ -617,6 +649,27 @@ void Esst1aExc::resetEventFlags()
   } else {
     if(Vi - Vimax < 0) Vi_at_max = false; /* Release */
   }
+
+  double yLL1,yLL2;
+  if(iseq_diff[1]) yLL1 = xLL1 + Tc/Tb*Vi;
+  else yLL1 = xLL1;
+
+  if(iseq_diff[2]) yLL2 = xLL2 + Tc1/Tb1*yLL1;
+  else yLL2 = xLL2;
+
+  double dVa_dt = (-Va + Ka*yLL2)/Ta;
+
+  if(!Va_at_min) {
+    if(Va - Vamin < 0) Va_at_min = true;
+  } else {
+    if(dVa_dt > 0) Va_at_min = false; /* Release */
+  }
+
+  if(!Va_at_max) {
+    if(Vamax - Va < 0) Va_at_max = true;
+  } else {
+    if(dVa_dt < 0) Va_at_max = false; /* Release */
+  }
 }
 
 /**
@@ -626,24 +679,43 @@ void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gri
 {
   if(triggered[0]) {
     if(!Vi_at_min) {
-      /* Vi at Vimin */
+      /* Hold Vi at Vimin */
       Vi_at_min = true;
     } else {
-      /* Reset */
+      /* Release */
       Vi_at_max = false;
     }
   }
 
   if(triggered[1]) {
     if(!Vi_at_max) {
-      /* Vi at Vimax */
+      /* Hold Vi at Vimax */
       Vi_at_max = true;
     } else {
-      /* Reset */
+      /* Release */
       Vi_at_max = false;
     }
   }
-  
+
+  if(triggered[2]) {
+    if(!Va_at_min) {
+      /* Hold Va at Vamin */
+      Va_at_min = true;
+    } else {
+      /* Release */
+      Va_at_min = false;
+    }
+  }
+
+  if(triggered[3]) {
+    if(!Va_at_max) {
+      /* Hold Va at Vamax */
+      Va_at_max = true;
+    } else {
+      /* Release */
+      Va_at_max = false;
+    }
+  }
 }
 
 /**
