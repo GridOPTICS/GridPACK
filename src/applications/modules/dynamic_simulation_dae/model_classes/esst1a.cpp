@@ -574,11 +574,11 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
   int Va_idx    = offset+3;
   int xf_idx    = offset+4;
 
-  double Vmeas = real(state[Vmeas_idx]);
-  double xLL1  = real(state[xLL1_idx]);
-  double xLL2  = real(state[xLL2_idx]);
-  double Va    = real(state[Va_idx]);
-  double xf    = real(state[xf_idx]);
+  Vmeas = real(state[Vmeas_idx]);
+  xLL1  = real(state[xLL1_idx]);
+  xLL2  = real(state[xLL2_idx]);
+  Va    = real(state[Va_idx]);
+  xf    = real(state[xf_idx]);
 
   /* Only considering limits on Vi and Va */
   
@@ -588,7 +588,6 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
   Vf = xf + Kf/Tf*Efd;
   Vi = Vref - Vmeas - Vf;
 
-  printf("Va = %f\n",Va);
   /* Limits on Vi */
   if(!Vi_at_min) {
     evalues[0] = Vi - Vimin;
@@ -619,8 +618,10 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
 
   if(!Va_at_max) {
     evalues[3] = Vamax - Va;
+    //    printf("Va = %f\n", Va);
   } else {
     evalues[3] = dVa_dt; /* Release when derivative reaches 0 */
+    //    printf("Va = %f, dVa_dt = %f\n",Va,dVa_dt);
   }
 } 
 
@@ -677,6 +678,34 @@ void Esst1aExc::resetEventFlags()
  */
 void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
 {
+  int offset    = getLocalOffset();
+  int Vmeas_idx = offset;
+  int xLL1_idx  = offset+1;
+  int xLL2_idx  = offset+2;
+  int Va_idx    = offset+3;
+  int xf_idx    = offset+4;
+
+  Vmeas = real(state[Vmeas_idx]);
+  xLL1  = real(state[xLL1_idx]);
+  xLL2  = real(state[xLL2_idx]);
+  Va    = real(state[Va_idx]);
+  xf    = real(state[xf_idx]);
+
+  double Vf,Vi;
+
+  Efd = Esst1aExc::getFieldVoltage();
+  Vf = xf + Kf/Tf*Efd;
+  Vi = Vref - Vmeas - Vf;
+
+  double yLL1,yLL2;
+  if(iseq_diff[1]) yLL1 = xLL1 + Tc/Tb*Vi;
+  else yLL1 = xLL1;
+
+  if(iseq_diff[2]) yLL2 = xLL2 + Tc1/Tb1*yLL1;
+  else yLL2 = xLL2;
+
+  double dVa_dt = (-Va + Ka*yLL2)/Ta;
+
   if(triggered[0]) {
     if(!Vi_at_min) {
       /* Hold Vi at Vimin */
@@ -698,7 +727,7 @@ void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gri
   }
 
   if(triggered[2]) {
-    if(!Va_at_min) {
+    if(!Va_at_min && dVa_dt < 0) {
       /* Hold Va at Vamin */
       Va_at_min = true;
     } else {
@@ -708,7 +737,7 @@ void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gri
   }
 
   if(triggered[3]) {
-    if(!Va_at_max) {
+    if(!Va_at_max && dVa_dt > 0) {
       /* Hold Va at Vamax */
       Va_at_max = true;
     } else {

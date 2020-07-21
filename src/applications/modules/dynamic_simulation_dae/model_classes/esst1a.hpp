@@ -74,11 +74,6 @@ public:
   void write(const char* signal, char* string);
 
   /**
-   * Set Event 
-   */
-  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
-
-  /**
    *  Set the number of variables for this exciter model
    *  @param [output] number of variables for this model
    */
@@ -118,6 +113,11 @@ public:
    * @param dEfd_dxgen partial derivatives of field voltage Efd w.r.t generator variables
    */
   bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
+
+  /**
+   * Set Event 
+   */
+  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
 
   /**
    * Update the event function values

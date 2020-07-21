@@ -33,6 +33,10 @@ protected:
                         DSim::VectorType& state)
   {
     p_sim->p_resolve = false;
+
+    //    p_sim->p_X->equate(state);
+    //    p_sim->p_factory->setMode(XVECTOBUS);
+    //    p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
   
     DSim::EventManager::p_handle(nevent, eventidx, t, state);
 
@@ -210,6 +214,9 @@ void DSim::setup()
   p_J = p_MatMapper->mapToMatrix();
 
   if(!rank()) printf("DSim:Finished setting up mappers\n");
+
+  // Initialize
+  initialize(); 
 
   // Set up solver
   int lsize = p_X->localSize();
