@@ -18,6 +18,12 @@
 #include <iostream>
 #include <cstdio>
 
+// Yuan added below 2020-6-23
+#include <cstdio>
+#include <cstring>
+#include <string>
+// Yuan added above 2020-6-23
+
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "base_exciter_model.hpp"
@@ -95,11 +101,29 @@ double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
     double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
     double B = S10 / ((1.0 - A) * (1.0 - A));
     return B * ( x - A) * (x - A);*/
-    double B = log(SE2 / SE1)/(E2 - E1);
+	
+	double B = log(SE2 / SE1)/(E2 - E1); // original
     double A = SE1 / exp(B * E1);
-	double result = 0.0;
-	return result;
-    //return A * exp(B * x);
+	
+	/*
+    //double B = log(SE2*E2/E1/SE1)/(E2 - E1);  // Yuan comment: E1 and E2 here are natural log values of field voltages
+    //double A = SE1 / exp(B * E1);
+	if (x >= 0) {
+		result = A * exp(B * abs(x));
+	}else{
+		result = -A * exp(B * abs(x));
+	}
+    */
+	
+	// double B = log(SE2 / SE1)/log(E2 / E1);  // Yuan changed this
+    // double A = SE1 / pow(E1, B);
+	
+    // double result = 0.0;
+	
+	// return result;
+	// return A * pow(x, B); // Yuan changed this
+	return A * exp(B * x); // original
+
 }
 
 /**
@@ -113,12 +137,13 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, doub
   ///printf("exdc1: Efd = %f\n", Efd);
   x1 = Efd;
   x4 = Efd * (KE + Sat(Efd));
-  if (x4 >= Vrmax) printf ("----------suspect error in exdc1 init:  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n", x4, Vrmax);
-  if (x4 <= Vrmin) printf ("----------suspect error in exdc1 init:  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n", x4, Vrmin);
+  if (x4 >= Vrmax) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n",p_bus_id, x4, Vrmax);
+  if (x4 <= Vrmin) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n",p_bus_id, x4, Vrmin);
   if (TB > (TS_THRESHOLD * ts)) 
     x3 = (x4 / KA) * (1.0 - TC / TB); // SJin: x4 is Vr 
   else
-    x3 = x4 / KA;
+    x3 = x4 / KA; // original
+	// x3 = 0.0; // Yuan changed this 2020-6-19
   x2 = mag; // SJin: mag is Vterminal 
   //printf("KF = %f, TF = %f, x1 = %f, ts = %f\n", KF, TF, x1, ts);
   if (TF > (TS_THRESHOLD * ts)) 
@@ -314,4 +339,24 @@ void gridpack::dynamic_simulation::Exdc1Model::setOmega(double omega)
 {
   w = omega;
 }
+
+// Yuan added below 2020-6-23
+/** 
+ * Set the exciter bus number
+ * @return value of exciter bus number
+ */
+void gridpack::dynamic_simulation::Exdc1Model::setExtBusNum(int ExtBusNum)
+{
+	p_bus_id = ExtBusNum;
+}	
+
+/** 
+ * Set the exciter generator id
+ * @return value of generator id
+ */
+void gridpack::dynamic_simulation::Exdc1Model::setExtGenId(std::string ExtGenId)
+{
+	p_ckt = ExtGenId;
+}	
+// Yuan added above 2020-6-23
 

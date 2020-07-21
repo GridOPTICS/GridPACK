@@ -190,7 +190,10 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
 //  printf("esst1a Vcomp= %f\n", gridpack::dynamic_simulation::Esst1aModel::p_exciter->Vcomp);
 	p_exciter->setFieldVoltage(Efd);
 	p_exciter->setFieldCurrent(LadIfd);
+	p_exciter->setExtBusNum(p_bus_id); // Yuan added on 2020-6-23
+	//p_exciter->setExtGenId(p_ckt); // Yuan added on 2020-6-23
 	p_exciter->init(mag, ang, ts);
+
   }
 
   if (p_hasGovernor) {

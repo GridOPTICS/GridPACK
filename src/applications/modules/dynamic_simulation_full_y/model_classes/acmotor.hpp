@@ -179,6 +179,7 @@ class AcmotorLoad : public BaseLoadModel
     gridpack::ComplexType equivYpq_motorBase;
     double I_conv_factor_M2S;
 	double Fonline;
+	double acload_perc; //ac motor load percentage to the total load;
 	double samebus_static_loadP;  // system base mva pu value
     double samebus_static_loadQ;  // system base mva pu value
 	gridpack::ComplexType samebus_static_equivY_sysMVA;
