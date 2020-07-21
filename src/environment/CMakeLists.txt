@@ -10,15 +10,27 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2020-01-07 08:51:33 d3g096
+# Last Change: 2020-05-22 12:12:23 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_environment 
   environment.cpp
+  no_print.cpp
+  )
+
+target_link_libraries(gridpack_environment
+  gridpack_math
+  )
+gridpack_set_library_version(gridpack_environment)
+
+set(target_libraries
+   gridpack_environment
+   gridpack_parallel
+   gridpack_math
+   ${GA_LIBRARIES}
+   ${MPI_CXX_LIBRARIES}
 )
 
-target_link_libraries(gridpack_environment gridpack_math)
-  
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
@@ -29,6 +41,7 @@ endif()
 # -------------------------------------------------------------
 install(FILES
   environment.hpp
+  no_print.hpp
   DESTINATION include/gridpack/environment
 )
 
@@ -39,3 +52,13 @@ install(TARGETS
   gridpack_environment
   DESTINATION lib
 )
+
+# -------------------------------------------------------------
+# TEST: env_test
+# A simple program to test the run time options capabilities
+# of the environment module
+# -------------------------------------------------------------
+add_executable(env_test test/env_test.cpp)
+target_link_libraries(env_test ${target_libraries})
+
+gridpack_add_run_test(env_test env_test "-i input -o output")

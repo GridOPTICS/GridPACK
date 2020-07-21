@@ -38,6 +38,7 @@
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/environment/environment.hpp"
+#include "gridpack/environment/no_print.hpp"
 
 namespace gridpack {
 namespace network {
@@ -309,6 +310,9 @@ explicit BaseNetwork(const parallel::Communicator& comm)
   p_allocatedBus = false;
   p_allocatedBranch = false;
   p_network_data.reset(new gridpack::component::DataCollection);
+
+  gridpack::NoPrint *noprint = gridpack::NoPrint::instance();
+  p_no_print = noprint->status();
 }
 
 /**
@@ -484,8 +488,12 @@ void setReferenceBus(int idx)
   if (idx >= 0 && idx < p_buses.size()) {
     p_buses[idx].p_refFlag = true;
   } else {
-    printf("Illegal bus index specified for reference bus idx: %d size: %d\n",
-        idx,static_cast<int>(p_buses.size()));
+    if (!p_no_print) {
+      if (!p_no_print) {
+        printf("Illegal bus index specified for reference bus idx: %d size: %d\n",
+            idx,static_cast<int>(p_buses.size()));
+      }
+    }
   }
 }
 
@@ -723,7 +731,9 @@ bool getActiveBus(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getActiveBus: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_buses.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
   return false;
@@ -742,7 +752,9 @@ int getOriginalBusIndex(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getOriginalBusIndex: illegal index: %d size: %d\n",
         idx,static_cast<int>(p_buses.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
   return -1;
@@ -761,7 +773,9 @@ int getGlobalBusIndex(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getGlobalBusIndex: illegal index: %d size: %d\n",
         idx,static_cast<int>(p_buses.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
   return -1;
@@ -778,7 +792,9 @@ BusPtr getBus(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getBus: illegal index: %d size: %d\n",
         idx,static_cast<int>(p_buses.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     return p_buses[idx].p_bus;
@@ -800,7 +816,9 @@ bool getActiveBranch(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getActiveBranch: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_branches.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
   return false;
@@ -819,7 +837,9 @@ int getGlobalBranchIndex(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getGlobalBranchIndex: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_branches.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
   return -1;
@@ -836,7 +856,9 @@ BranchPtr getBranch(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getBranch: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_branches.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     return p_branches[idx].p_branch;
@@ -860,7 +882,9 @@ void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
     char buf[256];
     sprintf(buf,"BaseNetwork::getGlobalBranchIndex: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_branches.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
 }
@@ -877,7 +901,9 @@ boost::shared_ptr<component::DataCollection> getBusData(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getBusData: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_buses.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     return p_buses[idx].p_data;
@@ -898,7 +924,9 @@ boost::shared_ptr<component::DataCollection> getBranchData(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getBranchData: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_branches.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     return p_branches[idx].p_data;
@@ -918,7 +946,9 @@ std::vector<int> getConnectedBranches(int idx) const
     char buf[256];
     sprintf(buf,"BaseNetwork::getConnectedBranches: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_buses.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     return p_buses[idx].p_branchNeighbors;
@@ -938,7 +968,9 @@ std::vector<int> getConnectedBuses(int idx) const
     char buf[256];
     sprintf(buf,"BaseNetwork::getConnectedBuses: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_buses.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     std::vector<int> branches = p_buses[idx].p_branchNeighbors;
@@ -973,7 +1005,9 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     char buf[256];
     sprintf(buf,"BaseNetwork::getBranchEndpoints: illegal index: %d size: %d\n",
         idx, static_cast<int>(p_branches.size()));
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     *bus1 = p_branches[idx].p_localBusIndex1;
@@ -1180,11 +1214,13 @@ void partition(void)
   }
   setMap();
 
-  std::cout << me << ": "
-    << "I have " 
-    << p_buses.size() << " buses and "
-    << p_branches.size() << " branches"
-    << std::endl;
+  if (!p_no_print) {
+    std::cout << me << ": "
+      << "I have " 
+      << p_buses.size() << " buses and "
+      << p_branches.size() << " branches"
+      << std::endl;
+  }
 
   if (timer != NULL) timer->stop(t_total);
 }
@@ -1452,8 +1488,10 @@ void resetGlobalIndices(bool flag)
       if (lit != lmap.end()) {
         setGlobalBusIndex(i, lit->second);
       } else {
-        printf("p[%d] No global index found for bus %d\n",
-            me,getOriginalBusIndex(i));
+        if (!p_no_print) {
+          printf("p[%d] No global index found for bus %d\n",
+              me,getOriginalBusIndex(i));
+        }
       }
     }
   }
@@ -1528,7 +1566,9 @@ void resetGlobalIndices(bool flag)
       if (lbit != lbmap.end()) {
         setGlobalBranchIndex(i, lbit->second);
       } else {
-        printf("p[%d] Could not find branch pair (%d,%d)\n",me,idx1,idx2);
+        if (!p_no_print) {
+          printf("p[%d] Could not find branch pair (%d,%d)\n",me,idx1,idx2);
+        }
       }
     }
   }
@@ -1649,7 +1689,9 @@ void allocXCBus(int size)
     char buf[256];
     sprintf(buf,"BaseNetwork::allocXCBus: illegal buffer size: %d\n",
         size);
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
   // Clean out existing buffers if they are allocated
@@ -1748,7 +1790,9 @@ void setXCBusBuffer(int idx, void* ptr)
     } else if (p_busXCBuffers == NULL) {
       sprintf(buf,"BaseNetwork::setXCBusBuffer: buffer already assigned\n");
     }
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
 }
@@ -1764,7 +1808,9 @@ void* getXCBusBuffer(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getXCBusBuffer: illegal index: %d size: %ld\n",
             idx, p_buses.size());
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     return static_cast<void*>(p_busXCBuffers[idx]);
@@ -1782,7 +1828,9 @@ void allocXCBranch(int size)
     char buf[256];
     sprintf(buf,"BaseNetwork::allocXCBranch: illegal size requested: %d\n",
       size);
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
   // Clean out existing buffers if they are allocated
@@ -1846,7 +1894,9 @@ void* getXCBranchBuffer(int idx)
     char buf[256];
     sprintf(buf,"BaseNetwork::getXCBranchBuffer: illegal index: %d size: %ld\n",
       idx, p_branches.size());
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   } else {
     return static_cast<void*>(p_branchXCBuffers[idx]);
@@ -1900,7 +1950,9 @@ void setXCBranchBuffer(int idx, void* ptr)
     } else {
       sprintf(buf,"BaseNetwork::setXCBranchBuffer: buffer already assigned\n");
     }
-    printf("%s",buf);
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
     throw gridpack::Exception(buf);
   }
 }
@@ -2016,7 +2068,9 @@ void initBusUpdate(void)
           char buf[256];
           sprintf(buf,"BaseNetwork::initBusUpdate: illegal index: %d bus total: %d\n",
           idx, p_busTotal);
-          printf("%s",buf);
+          if (!p_no_print) {
+            printf("%s",buf);
+          }
           throw gridpack::Exception(buf);
         }
         lcnt++;
@@ -2027,7 +2081,9 @@ void initBusUpdate(void)
           char buf[256];
           sprintf(buf,"BaseNetwork::initBusUpdate: illegal index: %d bus total: %d\n",
           idx, p_busTotal);
-          printf("%s",buf);
+          if (!p_no_print) {
+            printf("%s",buf);
+          }
           throw gridpack::Exception(buf);
         }
         icnt++;
@@ -2194,7 +2250,9 @@ void initBranchUpdate(void)
           char buf[256];
           sprintf(buf,"BaseNetwork::initBranchUpdate: illegal index: %d bus total: %d\n",
           idx, p_branchTotal);
-          printf("%s",buf);
+          if (!p_no_print) {
+            printf("%s",buf);
+          }
           throw gridpack::Exception(buf);
         }
         lcnt++;
@@ -2205,7 +2263,9 @@ void initBranchUpdate(void)
           char buf[256];
           sprintf(buf,"BaseNetwork::initBranchUpdate: illegal index: %d bus total: %d\n",
           idx, p_branchTotal);
-          printf("%s",buf);
+          if (!p_no_print) {
+            printf("%s",buf);
+          }
           throw gridpack::Exception(buf);
         }
         icnt++;
@@ -2554,6 +2614,11 @@ private:
    * Data collection object associated with network as a whole
    */
   boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
+
+  /**
+   * suppress printing in network
+   */
+  bool p_no_print;
 };
 }  //namespace network
 }  //namespace gridpack

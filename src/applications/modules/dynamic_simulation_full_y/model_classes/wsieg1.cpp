@@ -118,6 +118,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
     PGV = 0;
   if (SecondGenExists && (Pmech2 != 0) && (K2 + K4 + K6 + K8 > 0) && (PGV != 0)) {
     double temp = Pmech2 / PGV * (K2 + K4 + K6 + K8);
+	// double temp = Pmech2 / ( PGV * (K2 + K4 + K6 + K8) );  // Yuan comment 2020-6-19
     K2 = temp * K2;
     K4 = temp * K4;
     K6 = temp * K6;

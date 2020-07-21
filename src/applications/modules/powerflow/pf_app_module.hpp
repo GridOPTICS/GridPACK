@@ -317,6 +317,12 @@ class PFAppModule
      */
     void useRateB(bool flag);
 
+    /**
+     * Suppress all output from power flow module
+     * @param flag if true, suppress printing
+     */
+    void suppressOutput(bool flag);
+
   private:
 
     // pointer to network
@@ -348,6 +354,9 @@ class PFAppModule
 
     // string containing current contingency name
     std::string p_contingency_name;
+
+    // Flag to suppress all printing to standard out
+    bool p_no_print;
 };
 
 } // powerflow

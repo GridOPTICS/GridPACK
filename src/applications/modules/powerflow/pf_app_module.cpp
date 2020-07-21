@@ -33,6 +33,7 @@
  */
 gridpack::powerflow::PFAppModule::PFAppModule(void)
 {
+  p_no_print = false;
 }
 
 /**
@@ -146,10 +147,12 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<PFNetwork>(512,network));
   char ioBuf[128];
 
-  sprintf(ioBuf,"\nMaximum number of iterations: %d\n",p_max_iteration);
-  p_busIO->header(ioBuf);
-  sprintf(ioBuf,"\nConvergence tolerance: %f\n",p_tolerance);
-  p_busIO->header(ioBuf);
+  if (!p_no_print) {
+    sprintf(ioBuf,"\nMaximum number of iterations: %d\n",p_max_iteration);
+    p_busIO->header(ioBuf);
+    sprintf(ioBuf,"\nConvergence tolerance: %f\n",p_tolerance);
+    p_busIO->header(ioBuf);
+  }
 
   // partition network
   int t_part = timer->createCategory("Powerflow: Partition");
@@ -233,7 +236,9 @@ bool gridpack::powerflow::PFAppModule::solve()
     iter = 0;
     tol = 2.0*p_tolerance;
     int_repeat ++;
-    printf (" repeat time = %d \n", int_repeat);
+    if (!p_no_print) {
+      printf (" repeat time = %d \n", int_repeat);
+    }
 
   // set YBus components so that you can create Y matrix
   int t_fact = timer->createCategory("Powerflow: Factory Operations");
@@ -335,10 +340,12 @@ bool gridpack::powerflow::PFAppModule::solve()
     solver.solve(*PQ, *X);
   } catch (const gridpack::Exception e) {
     std::string w(e.what());
-    printf("p[%d] hit exception: %s\n",
-           p_network->communicator().rank(),
-           w.c_str());
-    p_busIO->header("Solver failure\n\n");
+    if (!p_no_print) {
+      printf("p[%d] hit exception: %s\n",
+          p_network->communicator().rank(),
+          w.c_str());
+      p_busIO->header("Solver failure\n\n");
+    }
     timer->stop(t_lsolv);
 
     return false;
@@ -397,10 +404,12 @@ bool gridpack::powerflow::PFAppModule::solve()
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
       std::string w(e.what());
-      printf("p[%d] hit exception: %s\n",
-             p_network->communicator().rank(),
-             w.c_str());
-      p_busIO->header("Solver failure\n\n");
+      if (!p_no_print) {
+        printf("p[%d] hit exception: %s\n",
+            p_network->communicator().rank(),
+            w.c_str());
+        p_busIO->header("Solver failure\n\n");
+      }
       timer->stop(t_lsolv);
       timer->stop(t_total);
       return false;
@@ -408,7 +417,9 @@ bool gridpack::powerflow::PFAppModule::solve()
     timer->stop(t_lsolv);
 
     tol = PQ->normInfinity();
-    sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+    if (!p_no_print) {
+      sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+    }
     p_busIO->header(ioBuf);
     iter++;
   }
@@ -420,7 +431,9 @@ bool gridpack::powerflow::PFAppModule::solve()
     if (p_factory->checkQlimViolations()) {
      repeat =false;
     } else {
-     printf ("There are Qlim violations at iter =%d\n", iter);
+      if (!p_no_print) {
+        printf ("There are Qlim violations at iter =%d\n", iter);
+      }
     }
   }
   // Push final result back onto buses
@@ -505,6 +518,7 @@ bool gridpack::powerflow::PFAppModule::nl_solve()
  */
 void gridpack::powerflow::PFAppModule::write()
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -531,6 +545,7 @@ void gridpack::powerflow::PFAppModule::write()
 
 void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -545,6 +560,7 @@ void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
 
 void gridpack::powerflow::PFAppModule::writeCABus()
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Contingency: Total Application");
@@ -559,6 +575,7 @@ void gridpack::powerflow::PFAppModule::writeCABus()
 
 void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -573,6 +590,7 @@ void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
 
 void gridpack::powerflow::PFAppModule::writeCABranch()
 {
+  if (p_no_print) return;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Contingency: Total Application");
@@ -618,6 +636,7 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::writeBranchString(
 
 void gridpack::powerflow::PFAppModule::writeHeader(const char *msg)
 {
+  if (p_no_print) return;
   p_busIO->header(msg);
 }
 
@@ -627,12 +646,14 @@ void gridpack::powerflow::PFAppModule::writeHeader(const char *msg)
  */
 void gridpack::powerflow::PFAppModule::open(const char *filename)
 {
+  if (p_no_print) return;
   p_busIO->open(filename);
   p_branchIO->setStream(p_busIO->getStream());
 }
 
 void gridpack::powerflow::PFAppModule::close()
 {
+  if (p_no_print) return;
   p_busIO->close();
   p_branchIO->setStream(p_busIO->getStream());
 }
@@ -644,6 +665,7 @@ void gridpack::powerflow::PFAppModule::close()
  */
 void gridpack::powerflow::PFAppModule::print(const char *buf)
 {
+  if (p_no_print) return;
   p_busIO->header(buf);
 }
 
@@ -653,6 +675,7 @@ void gridpack::powerflow::PFAppModule::print(const char *buf)
  */
 void gridpack::powerflow::PFAppModule::exportPSSE33(std::string &filename)
 {
+  if (p_no_print) return;
   gridpack::expnet::PSSE33Export<PFNetwork> exprt(p_network);
   exprt.writeFile(filename);
 }
@@ -949,6 +972,7 @@ void gridpack::powerflow::PFAppModule::writeRTPRDiagnostics(
     int src_area, int src_zone, int load_area,
     int load_zone, double gen_scale, double load_scale, const char *file)
 {
+  if (p_no_print) return;
   p_factory->setRTPRParams(src_area,src_zone,load_area,load_zone,
       gen_scale,load_scale);
   p_busIO->open(file);
@@ -1012,7 +1036,9 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
           violations[i].bus1,violations[i].bus2,violations[i].tag);
       string = sbuf;
     }
-    printf("DEBUG VIOLATION: (%s)\n",string.c_str());
+    if (!p_no_print) {
+      printf("DEBUG VIOLATION: (%s)\n",string.c_str());
+    }
     ret.push_back(string);
   }
   return ret;
@@ -1025,4 +1051,13 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
 void gridpack::powerflow::PFAppModule::useRateB(bool flag)
 {
   p_factory->useRateB(flag);
+}
+
+/**
+ * Suppress all output from power flow module
+ * @param flag if true, suppress printing
+ */
+void gridpack::powerflow::PFAppModule::suppressOutput(bool flag)
+{
+  p_no_print = flag;
 }

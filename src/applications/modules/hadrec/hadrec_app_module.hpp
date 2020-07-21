@@ -77,7 +77,7 @@ class HADRECAppModule
 	*/
 	void fullInitializationBeforeDynSimuSteps(const char *inputfile,
            const std::vector<gridpack::dynamic_simulation::Event>& BusFaults,
-           int case_idx=-1);
+           int pfcase_idx=-1, int dscase_idx=-1);
 	
 	/**
 	* Execute only one simulation time step 

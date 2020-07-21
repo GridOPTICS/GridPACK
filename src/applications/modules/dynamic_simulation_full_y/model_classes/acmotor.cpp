@@ -149,9 +149,12 @@ gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
   I_conv_factor_M2S = 0.0;
   
   Fonline = 1.0;
+  acload_perc = 0.70; //ac motor load percentage to the total load;
   samebus_static_loadP = 0.0;
   samebus_static_loadQ = 0.0;
   samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);
+  
+  
 
 }
 
@@ -322,8 +325,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
     CompLF = 1.0;
 
   // calculate the mva base
-  Pinit = PintMW; //SJin: what is PintMW
+  Pinit = PintMW * acload_perc; // Yuan. please consider the ac motor/ static load percentage here
   MVABase = Pinit / CompLF;
+  
   I_conv_factor_M2S = MVABase / systemMVABase;  // factor for Converting from motor to system base
 
   Gstall = Rstall / (Rstall * Rstall + Xstall * Xstall);
@@ -331,7 +335,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
 
   equivY = gridpack::ComplexType(Gstall, Bstall); 
 
-  equivY_sysMVA = equivY * MVABase / systemMVABase;
+  equivY_sysMVA = equivY * MVABase / systemMVABase;  // Yuan, please modify the equivY_sysMVA based on the static load
+  
+  samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);//Yuan, please modify this equivY to be the value of the corresponding 30% static load at the system MVA
   
   //printf("AcmotorLoad::init: equivY_sysMVA: %12.6f + j %12.6f \n", real(equivY_sysMVA), imag(equivY_sysMVA));
 
@@ -371,7 +377,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   double v = 0.4;
   while (v <= Vbrk) {
     double pst = Gstall * v * v; //renke??
-    double p_comp = P0 + Kp1 * pow(v - Vbrk, Np1);
+    double p_comp = P0 + Kp1 * pow(v - Vbrk, Np1); // original
+	//double p_comp = P0 + Kp2 * pow(v - Vbrk, Np2);  // Yuan changed on 20200709
 
     if (p_comp < pst) {
       Vstallbrk = v;
@@ -411,9 +418,11 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   if (bdebugprint) printf("AcmotorLoad::Init(), Vstall: %12.6f, Vbrk: %12.6f, Vstallbrk: %12.6f  \n", Vstall, Vbrk, Vstallbrk);
   if (bdebugprint) printf("AcmotorLoad::Init(), thEqnA: %12.6f, thEqnB: %12.6f, Vc2off: %12.6f, Vc2on: %12.6f  \n", thEqnA, thEqnB, Vc2off, Vc2on);
   
-  setDynLoadQ(getInitReactivePower());
+  setDynLoadP(Pinit);
+  setDynLoadQ(getInitReactivePower()); // original, 20200714
   
   Fonline = 1.0;
+  //acload_perc = 0.7;
   
 }
 
@@ -445,7 +454,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::AcmotorLoad::NortonImpedence
     CompLF = 1.0;
 
   // calculate the mva base
-  Pinit = PintMW; //SJin: what is PintMW
+  Pinit = PintMW * acload_perc; //SJin: what is PintMW
   MVABase = Pinit / CompLF;
   I_conv_factor_M2S = MVABase / systemMVABase;  // factor for Converting from motor to system base
 
@@ -480,7 +489,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor_currentInjection(bool 
   if (bdebugprint) printf("AcmotorLoad::predictor_currentInjection, I_conv_factor_M2S: %12.6f \n", I_conv_factor_M2S);
   
   //INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S; //original one without considering loadshedding of the same bus static load
-  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline);
+  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline); // original
   p_INorton = INorton_sysMVA; // SJin: Correct? 
 } 
 
@@ -546,8 +555,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor(
 void gridpack::dynamic_simulation::AcmotorLoad::corrector_currentInjection(bool flag)
 {
   gridpack::ComplexType Imotor_motorBase = equivYpq_motorBase * vt_complex;
+  
   //INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S; //original one without considering loadshedding of the same bus static load
-  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline);
+  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline); // original
   p_INorton = INorton_sysMVA; // SJin: Correct? 
 }
 
@@ -661,6 +671,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
     double Frecv =  ( volt_measured -  Vc2on)/( Vc1on -  Vc2on);
      Kcon = 1.0 -  fcon_trip*(1.0- Frecv);  // Kcon = (1 - fcon_trip) + fcon_trip * Frecv, fraction not tripped by contactor
   } 
+  // if (volt_measured > Vc1off and volt_measured < Vc2on) then No change on Kcon
   
   // update timer for AC thermal protection
   if  ( statusA == 1) {
@@ -895,12 +906,12 @@ bool gridpack::dynamic_simulation::AcmotorLoad::serialWrite(
 bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFactor)
 {
 	if (percentageFactor < -1.0) {
-		printf("percentageFactor < -1.0, this change will not be applied.  \n");
+		if (bdebugprint) printf("percentageFactor < -1.0, this change will not be applied.  \n");
 		return false;
 	}
 	
 	if (Fonline == 0.0){
-		printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has 0 percent of load and could not be shedding the percentange of %f !!!! \n", 
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has 0 percent of load and could not be shedding the percentange of %f !!!! \n", 
 		                                              p_bus_id, p_loadid.c_str(), percentageFactor);
 		//percentageFactor = 0.0;
 		//Fonline = Fonline + percentageFactor;
@@ -909,7 +920,7 @@ bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFact
 	}
 	
 	if ( (Fonline + percentageFactor) < 0.0 ){
-		printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has %f percent of load and could not be shedding the percentange of %f !!!! \n", 
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has %f percent of load and could not be shedding the percentange of %f !!!! \n", 
 		                                              p_bus_id, p_loadid.c_str(), Fonline, percentageFactor);
 		Fonline = 0.0;
 		if (bdebugprint) printf("----renke debug load shed, AcmotorLoad::changeLoad, Fonline: %f \n", Fonline);
@@ -917,6 +928,10 @@ bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFact
 	}
 	
 	Fonline = Fonline + percentageFactor;
+	// Yuan added below 20200709
+	if (Fonline < 0.0) Fonline=0.0;
+	// Yuan added above 20200709
+	
 	if (bdebugprint) printf("----renke debug load shed, AcmotorLoad::changeLoad, the dynamic load at bus %d with ID %s, percentageFactor: %f, remaining Fonline: %f \n", 
 																				p_bus_id, p_loadid.c_str(), percentageFactor, Fonline);
 	return true;
@@ -931,6 +946,6 @@ void gridpack::dynamic_simulation::AcmotorLoad::setSameBusStaticLoadPQ(double st
   
   double samebus_static_load_yr = samebus_static_loadP/(mag*mag);
   double samebus_static_load_yi = (-samebus_static_loadQ)/(mag*mag);
-  samebus_static_equivY_sysMVA = gridpack::ComplexType(samebus_static_load_yr, samebus_static_load_yi);
+  samebus_static_equivY_sysMVA = samebus_static_equivY_sysMVA + gridpack::ComplexType(samebus_static_load_yr, samebus_static_load_yi);
   if (bdebugprint) printf("AcmotorLoad::setSameBusStaticLoadPQ, samebus_static_equivY_sysMVA: %12.6f +j %12.6f\n", real(samebus_static_equivY_sysMVA), imag(samebus_static_equivY_sysMVA));
 }

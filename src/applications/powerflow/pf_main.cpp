@@ -50,12 +50,17 @@ int main(int argc, char **argv)
     bool exportPSSE = false;
     std::string filename;
     exportPSSE = cursor->get("exportPSSE_v33",&filename);
+    bool noPrint = false;
+    cursor->get("suppressOutput",&noPrint);
 
     // setup and run powerflow calculation
     boost::shared_ptr<gridpack::powerflow::PFNetwork>
       pf_network(new gridpack::powerflow::PFNetwork(world));
 
     gridpack::powerflow::PFAppModule pf_app;
+    if (noPrint) {
+      pf_app.suppressOutput(noPrint);
+    }
     pf_app.readNetwork(pf_network,config);
     pf_app.initialize();
     if (useNonLinear) {
@@ -69,7 +74,9 @@ int main(int argc, char **argv)
     if (exportPSSE) {
       pf_app.exportPSSE33(filename);
     }
-    timer ->dump();
+    if (!noPrint) {
+      timer ->dump();
+    }
   }
 
   return 0;

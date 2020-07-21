@@ -1703,7 +1703,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
               p_network));
         p_generatorIO->open(filename.c_str());
       } else {
-        p_busIO->header("No Generator Watch File Name Found\n");
+        // p_busIO->header("No Generator Watch File Name Found\n");
         p_generatorWatch = false;
       }
     }

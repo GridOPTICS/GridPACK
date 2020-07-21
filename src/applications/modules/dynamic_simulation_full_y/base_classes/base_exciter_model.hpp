@@ -111,6 +111,20 @@ class BaseExciterModel
 	virtual void setVstab(double Vstab);
 	
 	virtual void setWideAreaFreqforPSS(double freq);	
+	
+	// Yuan added below 2020-6-23
+	/** 
+	 * Set the exciter bus number
+	 * @return value of exciter bus number
+	 */
+	virtual void setExtBusNum(int ExtBusNum);
+	
+	/** 
+	 * Set the exciter generator id
+	 * @return value of generator id
+	 */
+	virtual void setExtGenId(std::string ExtGenId);
+	// Yuan added above 2020-6-23
 
   private:
     
