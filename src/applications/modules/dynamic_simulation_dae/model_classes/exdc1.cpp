@@ -109,7 +109,7 @@ void Exdc1Exc::init(gridpack::ComplexType* values)
   Vmeas    = Ec;
   xf       = -KF/TF*Efd;
 
-  //  if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+  if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
   VR = (SE + KE)*Efd;
 
   yLL     = VR/KA;
@@ -200,7 +200,7 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
   int x3_idx = 2;
   int x4_idx = 3;
   int x5_idx = 4;
-  double Ec,yLL,Vf;
+  double Ec,yLL,Vf,SE=0.0;
   Ec = sqrt(VD*VD + VQ*VQ);
   
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
@@ -261,8 +261,8 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
       else values[2] = -VR + KA*yLL;
     }
 
-    // Efd equation (Note: Saturation ignored for now)
-    values[3] = (VR - KE*Efd)/TE - dEfd;
+    if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+    values[3] = (VR - (SE + KE)*Efd)/TE - dEfd;
 
     // xf equation
     values[4] = (-xf - KF/TF*Efd)/TF - dxf;    
@@ -289,7 +289,7 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
   double dyLL_dVmeas=0.0,dyLL_dxLL=0.0;
   double dyLL_dVR=0.0,dyLL_dEfd=0.0;
   double dyLL_dxf=0.0;
-  double Ec,yLL,Vf;
+  double Ec,yLL,Vf,SE=0.0;
 
   Ec = sqrt(VD*VD + VQ*VQ);
 
@@ -394,8 +394,10 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
     }
     
     // Partial derivatives of Efd equation
+    double dSE_dEfd = 0.0;
+    if(Efd > Efdthresh) dSE_dEfd = 2*satB*(Efd - satA);
     values[VR_idx][Efd_idx]  = 1/TE;
-    values[Efd_idx][Efd_idx] = -KE/TE - shift;
+    values[Efd_idx][Efd_idx] = -(dSE_dEfd + KE)/TE - shift;
 
     // Partial derivatives of xf equation
     values[Efd_idx][xf_idx]  = -KF/(TF*TF);
