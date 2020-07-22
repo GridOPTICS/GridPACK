@@ -19,6 +19,9 @@
 -dsim_ts_atol 1e-2
 -dsim_ts_rtol 1e-2
 
+# Tolerance for event location
+-dsim_ts_event_tol 1e-3
+
 # Min. and max. steps (only used when step adaptivity is on)
 -dsim_ts_adapt_dt_max 0.08
 -dsim_ts_adapt_dt_min 0.01

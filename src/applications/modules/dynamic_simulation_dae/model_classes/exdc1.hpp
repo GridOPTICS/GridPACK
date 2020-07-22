@@ -114,13 +114,33 @@ public:
    * @param dEfd_dxgen partial derivatives of field voltage Efd w.r.t generator variables
    */
   bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
+
+  /**
+   * Set Event 
+   */
+  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+
+  /**
+   * Update the event function values
+   */
+  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
+
+  /**
+   * Event handler function 
+   */
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+
+  /**
+   * Updated limiter flags after event has occured. Only called when the network is resolved
+   */
+  void resetEventFlags(void);
   
 private:
   
   // Exciter exdc1 parameters from dyr
   double TR, VRmax, VRmin, TC, TB;
   double KA, TA, KE, TE;
-  double Vrmax, Vrmin, KF, TF;
+  double KF, TF;
   int    SWITCH;
   
   // EXDC1 state variables
@@ -136,9 +156,15 @@ private:
   // EXDC1 previous step solution
   double Vmeasprev,xLLprev,VRprev,Efdprev,xfprev;
   
-  // Saturation function points
+  // Saturation function data points
   double E1, SE1, E2, SE2;
-  
+
+  // Efd threshold for satuarion (Efd < Efdthresh => SE = 0)
+  double Efdthresh;
+
+  // Saturation function parameters (SE = B*(Efd - A)^2/Efd)
+  double satA, satB;
+
   // EXDC1 inputs
   double Ec; // Terminal voltage
   double Vothsg; // Voltage signal from stabilizer
@@ -152,6 +178,35 @@ private:
   // Flag to denote whether each equation is algebraic or differential.
   // iseq_diff[i] = 1 if equation is differential, 0 otherwise.
   int iseq_diff[5];
+
+  bool VR_at_min,VR_at_max;
+  bool sat_zero; // Saturation function SE is zero
 };
+
+// Class for defining events for Exdc1 model
+class Exdc1ExcEvent
+  :public gridpack::math::DAESolver::Event
+{
+public:
+
+  // Default constructor
+  Exdc1ExcEvent(Exdc1Exc *exc):gridpack::math::DAESolver::Event(2),p_exc(exc)
+  {
+    std:fill(p_term.begin(),p_term.end(),false);
+
+    std::fill(p_dir.begin(),p_dir.end(),gridpack::math::CrossZeroNegative);
+
+  }
+
+  // Destructor
+  ~Exdc1ExcEvent(void) {}
+protected:
+  Exdc1Exc *p_exc;
+
+  void p_update(const double& t, gridpack::ComplexType *state);
+
+  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state);
+};
+
 
 #endif
