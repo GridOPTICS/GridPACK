@@ -52,9 +52,6 @@ int main(int argc, char **argv)
   // Set up dynamic simulation
   dsim->setup();
 
-  // Initialize
-  dsim->initialize(); 
-
   printf("start solving:\n");
 
   // Solve

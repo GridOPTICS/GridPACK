@@ -98,6 +98,14 @@ void BaseExcModel::write(const char* signal, char* string)
 }
 
 /**
+ * Set Event
+ */
+void BaseExcModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+
+}
+
+/**
  * Set the internal values of the voltage magnitude and phase angle. Need this
  * function to push values from vectors back onto exciters
  * @param values array containing exciter state variables

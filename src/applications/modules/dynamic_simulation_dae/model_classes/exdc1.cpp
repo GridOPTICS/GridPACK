@@ -31,8 +31,8 @@ Exdc1Exc::Exdc1Exc(void)
   xf    = 0.0;
   dxf   = 0.0;
   TR = 0.0; 
-  Vrmax = 0.0; 
-  Vrmin = 0.0; 
+  VRmax = 0.0; 
+  VRmin = 0.0; 
   TC = 0.0; 
   TB = 0.0;
   KA = 0.0;
@@ -40,6 +40,10 @@ Exdc1Exc::Exdc1Exc(void)
   KF = 0.0;
   TF = 0.0;
   SWITCH = 0;
+  Efdthresh = 999;
+  satA = satB = 0.0;
+  
+  VR_at_min = VR_at_max = false;
 
   nxexc = 5;
 }
@@ -62,8 +66,8 @@ void Exdc1Exc::load(const boost::shared_ptr<gridpack::component::DataCollection>
   if (!data->getValue(EXCITER_TA, &TA, idx)) TA = 0.0; // TA
   if (!data->getValue(EXCITER_TB, &TB, idx)) TB = 0.0; // TB
   if (!data->getValue(EXCITER_TC, &TC, idx)) TC = 0.0; // TC
-  if (!data->getValue(EXCITER_VRMAX, &Vrmax, idx)) Vrmax = 0.0; // Vrmax
-  if (!data->getValue(EXCITER_VRMIN, &Vrmin, idx)) Vrmin = 0.0; // Vrmin
+  if (!data->getValue(EXCITER_VRMAX, &VRmax, idx)) VRmax = 0.0; // VRmax
+  if (!data->getValue(EXCITER_VRMIN, &VRmin, idx)) VRmin = 0.0; // VRmin
   if (!data->getValue(EXCITER_KE, &KE, idx)) KE = 0.0; // KE
   if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
   if (!data->getValue(EXCITER_KF, &KF, idx)) KF = 0.0; // KF
@@ -80,6 +84,14 @@ void Exdc1Exc::load(const boost::shared_ptr<gridpack::component::DataCollection>
   iseq_diff[2] = (TA == 0)?0:1;
   iseq_diff[3] = 1; // TE is always > 0
   iseq_diff[4] = 1; //TF always > 0
+
+  // Calculate saturation curve parameters
+  if(SE2 != 0 && E2 != 0.0) {
+    double alpha = std::sqrt(SE1*E1/SE2*E2);
+    satA = (alpha*E2 - E1)/(alpha - 1.0);
+    satB = SE1*E1/((E1 - satA)*(E1 - satA));
+    Efdthresh = satA;
+  }
 }
 
 /**
@@ -91,14 +103,14 @@ void Exdc1Exc::init(gridpack::ComplexType* values)
   double Ec = sqrt(VD*VD + VQ*VQ);
   double yLL;
   double Vf=0.0;
+  double SE=0.0;
 
   // Efd is already set by the generator model 
   Vmeas    = Ec;
   xf       = -KF/TF*Efd;
 
-  // Assuming saturation SE(Efd) = 0.0 during initialization
-  if(KE != 0.0) VR  = Efd/KE;
-  else VR = Efd;
+  if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+  VR = (SE + KE)*Efd;
 
   yLL     = VR/KA;
 
@@ -188,7 +200,7 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
   int x3_idx = 2;
   int x4_idx = 3;
   int x5_idx = 4;
-  double Ec,yLL,Vf;
+  double Ec,yLL,Vf,SE=0.0;
   Ec = sqrt(VD*VD + VQ*VQ);
   
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
@@ -210,9 +222,14 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
     }
 
     // VR equation
-    if(iseq_diff[2]) values[2] = VR - VRprev;
-    else values[2] = -VR + KA*yLL;
-
+    if(VR_at_min) {
+      values[2] = VR - VRmin;
+    } else if(VR_at_max) {
+      values[2] = VR - VRmax;
+    } else {
+      if(iseq_diff[2]) values[2] = VR - VRprev;
+      else values[2] = -VR + KA*yLL;
+    }
     // Efd equation
     values[3] = Efd - Efdprev;
 
@@ -235,11 +252,17 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
     }
 
     // VR equation
-    if(iseq_diff[2]) values[2] = (-VR + KA*yLL)/TA - dVR;
-    else values[2] = -VR + KA*yLL;
+    if(VR_at_min) {
+      values[2] = VR - VRmin;
+    } else if(VR_at_max) {
+      values[2] = VR - VRmax;
+    } else {
+      if(iseq_diff[2]) values[2] = (-VR + KA*yLL)/TA - dVR;
+      else values[2] = -VR + KA*yLL;
+    }
 
-    // Efd equation (Note: Saturation ignored for now)
-    values[3] = (VR - KE*Efd)/TE - dEfd;
+    if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+    values[3] = (VR - (SE + KE)*Efd)/TE - dEfd;
 
     // xf equation
     values[4] = (-xf - KF/TF*Efd)/TF - dxf;    
@@ -266,7 +289,7 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
   double dyLL_dVmeas=0.0,dyLL_dxLL=0.0;
   double dyLL_dVR=0.0,dyLL_dEfd=0.0;
   double dyLL_dxf=0.0;
-  double Ec,yLL,Vf;
+  double Ec,yLL,Vf,SE=0.0;
 
   Ec = sqrt(VD*VD + VQ*VQ);
 
@@ -301,14 +324,18 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
     }
 
     // Partial derivatives of VR equation
-    if(iseq_diff[2]) {
+    if(VR_at_min || VR_at_max) {
       values[VR_idx][VR_idx] = 1.0;
     } else {
-      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
-      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
-      values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
-      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
-      values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+      if(iseq_diff[2]) {
+	values[VR_idx][VR_idx] = 1.0;
+      } else {
+	values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
+	values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
+	values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
+	values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
+	values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+      }
     }
     
     // Partial derivatives of Efd equation
@@ -348,23 +375,29 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
     }
 
     // Partial derivatives of VR equation
-    if(iseq_diff[2]) {
-      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas/TA;
-      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL/TA;
-      values[VR_idx][VR_idx]    = (-1.0 + KA*dyLL_dVR)/TA - shift;
-      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd/TA;
-      values[xf_idx][VR_idx]    = KA*dyLL_dxf/TA;
+    if(VR_at_min || VR_at_max) {
+      values[VR_idx][VR_idx] = 1.0;
     } else {
-      values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
-      values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
-      values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
-      values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
-      values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+      if(iseq_diff[2]) {
+	values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas/TA;
+	values[xLL_idx][VR_idx]   = KA*dyLL_dxLL/TA;
+	values[VR_idx][VR_idx]    = (-1.0 + KA*dyLL_dVR)/TA - shift;
+	values[Efd_idx][VR_idx]   = KA*dyLL_dEfd/TA;
+      values[xf_idx][VR_idx]    = KA*dyLL_dxf/TA;
+      } else {
+	values[Vmeas_idx][VR_idx] = KA*dyLL_dVmeas;
+	values[xLL_idx][VR_idx]   = KA*dyLL_dxLL;
+	values[VR_idx][VR_idx]    = -1.0 + KA*dyLL_dVR;
+	values[Efd_idx][VR_idx]   = KA*dyLL_dEfd;
+	values[xf_idx][VR_idx]    = KA*dyLL_dxf;
+      }
     }
     
     // Partial derivatives of Efd equation
+    double dSE_dEfd = 0.0;
+    if(Efd > Efdthresh) dSE_dEfd = 2*satB*(Efd - satA);
     values[VR_idx][Efd_idx]  = 1/TE;
-    values[Efd_idx][Efd_idx] = -KE/TE - shift;
+    values[Efd_idx][Efd_idx] = -(dSE_dEfd + KE)/TE - shift;
 
     // Partial derivatives of xf equation
     values[Efd_idx][xf_idx]  = -KF/(TF*TF);
@@ -381,7 +414,6 @@ bool Exdc1Exc::setJacobian(gridpack::ComplexType **values)
 void Exdc1Exc::setInitialFieldVoltage(double fldv)
 {
   Efd = fldv;
-  //printf("Efd in Exdc1 = %f\n", Efd);
 }
 
 /** 
@@ -408,3 +440,145 @@ bool Exdc1Exc::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxex
   return true;
 }
 
+/**
+ * Update the event function values
+ */
+void Exdc1Exc::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+{
+  int offset    = getLocalOffset();
+  int Vmeas_idx = offset;
+  int xLL_idx   = offset+1;
+  int VR_idx    = offset+2;
+  int Efd_idx   = offset+3;
+  int xf_idx    = offset+4;
+
+  Vmeas = real(state[Vmeas_idx]);
+  xLL   = real(state[xLL_idx]);
+  VR    = real(state[VR_idx]);
+  Efd   = real(state[Efd_idx]);
+  xf    = real(state[xf_idx]);
+
+  /* Only considering limits on VR */
+  double Vf,yLL,dVR_dt;
+  Vf = xf + KF/TF*Efd;
+  if(iseq_diff[1]) {
+    yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
+  } else {
+    yLL = xLL;
+  }
+  dVR_dt = (-VR + KA*yLL)/TA;
+
+  /* Limits on VR */
+  if(!VR_at_min) {
+    evalues[0] = VR - VRmin;
+  } else {
+    evalues[0] = -dVR_dt; /* Release when derivative reaches 0 */
+  }
+
+  if(!VR_at_max) {
+    evalues[1] = VRmax - VR;
+    //    printf("VR = %f\n",VR);
+  } else {
+    evalues[1] = dVR_dt; /* Release when derivative reaches 0 */
+    //    printf("VR = %f, dVR_dt = %f\n",VR,dVR_dt);
+  }
+} 
+
+/**
+ * Reset limiter flags after a network resolve
+ */
+void Exdc1Exc::resetEventFlags()
+{
+  /* Note that the states are already pushed onto the network, so we can access these
+     directly
+  */
+  double Vf,yLL,dVR_dt;
+  Vf = xf + KF/TF*Efd;
+  if(iseq_diff[1]) {
+    yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
+  } else {
+    yLL = xLL;
+  }
+  dVR_dt = (-VR + KA*yLL)/TA;
+
+  if(!VR_at_min) {
+    if(VR - VRmin < 0) VR_at_min = true;
+  } else {
+    if(dVR_dt > 0) VR_at_min = false; /* Release */
+  }
+
+  if(!VR_at_max) {
+    if(VRmax - VR < 0) VR_at_max = true;
+  } else {
+    if(dVR_dt < 0) VR_at_max = false; /* Release */
+  }
+}
+
+/**
+ * Event handler
+ */
+void Exdc1Exc::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  int offset    = getLocalOffset();
+  int Vmeas_idx = offset;
+  int xLL_idx   = offset+1;
+  int VR_idx    = offset+2;
+  int Efd_idx   = offset+3;
+  int xf_idx    = offset+4;
+
+  Vmeas = real(state[Vmeas_idx]);
+  xLL   = real(state[xLL_idx]);
+  VR    = real(state[VR_idx]);
+  Efd   = real(state[Efd_idx]);
+  xf    = real(state[xf_idx]);
+
+  /* Only considering limits on VR */
+  double Vf,yLL,dVR_dt;
+  Vf = xf + KF/TF*Efd;
+  if(iseq_diff[1]) {
+    yLL = xLL + TC/TB*(Vref - Vmeas - Vf);
+  } else {
+    yLL = xLL;
+  }
+  dVR_dt = (-VR + KA*yLL)/TA;
+
+  if(triggered[0]) {
+    if(!VR_at_min && dVR_dt < 0) {
+      /* Hold VR at VRmin */
+      VR_at_min = true;
+    } else {
+      /* Release */
+      VR_at_min = false;
+    }
+  }
+
+  if(triggered[1]) {
+    if(!VR_at_max && dVR_dt > 0) {
+      /* Hold VR at Vamax */
+      VR_at_max = true;
+    } else {
+      /* Release */
+      VR_at_max = false;
+    }
+  }
+}
+
+/**
+ * Set event
+ */
+void Exdc1Exc::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+  gridpack::math::DAESolver::EventPtr e(new Exdc1ExcEvent(this));
+
+  eman->add(e);
+}
+
+void Exdc1ExcEvent::p_update(const double& t,gridpack::ComplexType *state)
+{
+  p_exc->eventFunction(t,state,p_current);
+}
+
+void Exdc1ExcEvent::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  p_exc->eventHandlerFunction(triggered,t,state);
+}

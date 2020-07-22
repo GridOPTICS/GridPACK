@@ -29,6 +29,7 @@
 #include <model_classes/exdc1.hpp>
 #include <model_classes/esst1a.hpp>
 #include <model_classes/wsieg1.hpp>
+#include <gridpack/math/dae_solver.hpp>
 
 /**
  *  Simple constructor
@@ -92,6 +93,54 @@ bool DSimBus::isIsolated(void) const
 }
 
 /**
+ * Set local offset for the bus (starting location of variables for this bus in the state vector)
+   and propogate that to the models on this bus. Used for events 
+*/
+void DSimBus::setLocalOffset(int offset)
+{
+  int i;
+
+  p_offset = offset;
+
+  for(i=0; i < p_ngen; i++) {
+    if(p_gen[i]->getGenStatus()) {
+      p_gen[i]->setBusLocalOffset(offset);
+      
+      if(p_gen[i]->hasExciter()) {
+	p_gen[i]->getExciter()->setBusLocalOffset(offset);
+      }
+
+      if(p_gen[i]->hasGovernor()) {
+	p_gen[i]->getGovernor()->setBusLocalOffset(offset);
+      }
+    }
+  }
+}
+
+/**
+ * Reset limiter flags after event has occured. Only called when the network
+ * is resolved
+*/
+void DSimBus::resetEventFlags()
+{
+  int i;
+
+  for(i=0; i < p_ngen; i++) {
+    if(p_gen[i]->getGenStatus()) {
+      p_gen[i]->resetEventFlags();
+      
+      if(p_gen[i]->hasExciter()) {
+	p_gen[i]->getExciter()->resetEventFlags();
+      }
+
+      if(p_gen[i]->hasGovernor()) {
+	p_gen[i]->getGovernor()->resetEventFlags();
+      }
+    }
+  }
+}
+
+/**
  * Get voltages in the rectangular form VD, VQ
  * @param double VD - real part of complex voltage at this bus
  * @param double VQ - imaginary part of complex voltage at this bus
@@ -102,6 +151,22 @@ void DSimBus::getVoltagesRectangular(double *VD,double *VQ) const
   *VQ = *(p_VDQptr+1);
 }
 
+/**
+ * Add events
+ * @eman - EventManager pointer
+ */
+void DSimBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+  int i;
+  bool has_ex=false;
+
+  for(i=0; i < p_ngen; i++) {
+    has_ex = p_gen[i]->hasExciter();
+    if(has_ex) {
+      p_gen[i]->getExciter()->setEvent(eman);
+    }
+  }
+}
 
 /**
  * Load values stored in DataCollection object into DSimBus object. The

@@ -19,7 +19,7 @@
 #include <gridpack/include/gridpack.hpp>
 #include <dsimnetwork.hpp>
 #include <dsimfactory.hpp>
-
+#include <gridpack/math/dae_solver.hpp>
 
 /**
  * Set shift value provided by TS onto bus components
@@ -36,6 +36,40 @@ void DSimFactory::setTSshift(double shift)
   
   for(i=0; i < numBuses; i++) {
     dynamic_cast<DSimBus*>(p_network->getBus(i).get())->setTSshift(shift);
+  }
+}
+
+/** 
+ * Add events from buses and branches to the event manager 
+*/
+void DSimFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,gridpack::mapper::BusVectorMap<DSimNetwork> *vecmap)
+{
+  int numBuses = p_network->numBuses();
+  int i;
+  int offset,size;
+  DSimBus *bus;
+  
+  for(i=0; i < numBuses; i++) {
+    bus = dynamic_cast<DSimBus*>(p_network->getBus(i).get());
+    bus->setEvent(eman);
+    vecmap->getLocalOffset(i,&offset,&size);
+    bus->setLocalOffset(offset);
+  }
+}
+
+/** 
+ * Reset flags after event is handled
+*/
+void DSimFactory::resetEventFlags()
+{
+  int numBuses = p_network->numBuses();
+  int i;
+  int offset,size;
+  DSimBus *bus;
+  
+  for(i=0; i < numBuses; i++) {
+    bus = dynamic_cast<DSimBus*>(p_network->getBus(i).get());
+    bus->resetEventFlags();
   }
 }
 

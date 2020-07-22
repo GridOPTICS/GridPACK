@@ -1,4 +1,5 @@
 
+
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
@@ -32,6 +33,10 @@ protected:
                         DSim::VectorType& state)
   {
     p_sim->p_resolve = false;
+
+    //    p_sim->p_X->equate(state);
+    //    p_sim->p_factory->setMode(XVECTOBUS);
+    //    p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
   
     DSim::EventManager::p_handle(nevent, eventidx, t, state);
 
@@ -43,6 +48,11 @@ protected:
       p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
       // Solve algebraic equations 
       p_sim->p_nlsolver->solve(*(p_sim->p_X));
+
+      // Push the updated solution back to network
+      p_sim->p_factory->setMode(XVECTOBUS);
+      p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
+      p_sim->p_factory->resetEventFlags();
     }
   }
 
@@ -73,7 +83,7 @@ public:
       p_Gfault(Gfault), p_Bfault(Bfault)
   {
     // A fault requires that the DAE solver be reset. 
-    std::fill(p_term.begin(), p_term.end(), true);
+    std::fill(p_term.begin(), p_term.end(), false);
     
     // The event occurs when the values go from positive to negative.
     std::fill(p_dir.begin(), p_dir.end(),
@@ -205,6 +215,9 @@ void DSim::setup()
 
   if(!rank()) printf("DSim:Finished setting up mappers\n");
 
+  // Initialize
+  initialize(); 
+
   // Set up solver
   int lsize = p_X->localSize();
 
@@ -212,6 +225,7 @@ void DSim::setup()
   DAESolver::FunctionBuilder daefunction = boost::ref(*this);
   DAESolver::EventManagerPtr eman(new DSimEventManager(this));
 
+  p_factory->setEvents(eman,p_VecMapper);
   // Read fault parameters, Set up fault events
 
   double faultontime(0.1),faultofftime(0.2);
@@ -272,6 +286,7 @@ void DSim::solve()
   while (t < tmax) {
     double tout(tmax);
     int maxsteps(10000);
+   
     p_daesolver->initialize(t, tstep, *p_X);
     p_daesolver->solve(tout, maxsteps);
     std::cout << "Time requested = " << tmax << ", "

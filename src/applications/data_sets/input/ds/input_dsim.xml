@@ -2,7 +2,7 @@
 <Configuration>
   <Dynamic_simulation>
     <networkConfiguration> case9.raw </networkConfiguration>
-    <generatorParameters> case9_GENROU_ESST1A_WSIEG1.dyr </generatorParameters>
+    <generatorParameters> case9_GENROU_ESST1A.dyr </generatorParameters>
     <simulationTime>10.0</simulationTime>
     <timeStep>0.01</timeStep>
     <faultbus>1</faultbus>

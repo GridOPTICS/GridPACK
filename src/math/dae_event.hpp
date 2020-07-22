@@ -370,7 +370,7 @@ protected:
       for (int i = 0; i < rec.nval; ++i) {
         int idx(rec.evidx + i);
         if (p_trigger[idx]) {
-          rec.event->handle(&p_trigger[rec.evidx], t, &lstate[rec.evidx]);
+          rec.event->handle(&p_trigger[rec.evidx], t, &lstate[rec.solidx]);
           if (term[idx]) { p_terminated = true; }
           break;
         }

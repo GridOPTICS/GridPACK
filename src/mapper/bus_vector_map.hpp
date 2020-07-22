@@ -44,6 +44,8 @@ BusVectorMap(boost::shared_ptr<_network> network)
 {
   p_Offsets                        = NULL;
   p_ISize                          = NULL;
+  p_LocOffsets                     = NULL;
+  p_LocSize                        = NULL;
   int                     iSize    = 0;
   p_contributingBuses              = NULL;
   p_Indices                        = NULL;
@@ -69,6 +71,8 @@ BusVectorMap(boost::shared_ptr<_network> network)
   if (p_ISize != NULL) delete [] p_ISize;
   if (p_contributingBuses != NULL) delete [] p_contributingBuses;
   if (p_Indices != NULL) delete [] p_Indices;
+  if (p_LocOffsets != NULL) delete [] p_LocOffsets;
+  if (p_LocSize != NULL) delete [] p_LocSize;
 }
 
 /**
@@ -275,6 +279,19 @@ void mapToBus(boost::shared_ptr<gridpack::math::RealVector> &vector)
   mapToBus(*vector);
 }
 
+/**
+ * Get the local offset of the array values and the number of the values
+ * contributed by each bus
+ * @param idx local index of the bus
+ * @param offset local offset of bus values in the vector
+ * @param size number of values contributed by bus
+ */
+void getLocalOffset(int idx, int *offset, int *size)
+{
+  *offset = p_LocOffsets[idx];
+  *size = p_LocSize[idx];
+}
+
 private:
 /**
  * Add block contributions from buses to vector
@@ -390,12 +407,22 @@ void contributions(void)
   int isize;
   p_busContribution = 0;
   p_numValues = 0;
+  p_LocOffsets = new int[p_nBuses];
+  p_LocSize = new int[p_nBuses];
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->vectorSize(&isize)) {
         p_busContribution++;
+        p_LocOffsets[i] = p_numValues;
+        p_LocSize[i] = isize;
         p_numValues += isize;
+      } else {
+        p_LocOffsets[i] = -1;
+        p_LocSize[i] = 0;
       }
+    } else {
+      p_LocOffsets[i] = -1;
+      p_LocSize[i] = 0;
     }
   }
   p_contributingBuses 
@@ -465,6 +492,8 @@ int                         p_busContribution;  // Number of buses contributing 
 int                         p_numValues; // Number of values contributed to vector
 
 int*                        p_Offsets;
+int*                        p_LocOffsets;
+int*                        p_LocSize;
 int*                        p_ISize;
 int*                        p_Indices;
 gridpack::component::BaseBusComponent **p_contributingBuses;
