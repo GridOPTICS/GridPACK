@@ -87,9 +87,9 @@ class ExportLine33
               ival = 1;
               data->getValue(BRANCH_SWITCHED,&ival,j);
               if (ival == 1) {
-                sprintf(ptr,"%d, %d",idx1,idx2);
+                sprintf(ptr,"%d, %d,",idx1,idx2);
               } else {
-                sprintf(ptr,"%d, %d",idx2,idx1);
+                sprintf(ptr,"%d, %d,",idx2,idx1);
               }
               ptr += strlen(ptr);
               sval = " 1",

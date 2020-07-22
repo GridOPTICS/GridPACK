@@ -16,7 +16,7 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
-#include "gridpack/math/math.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "rtpr_driver.hpp"
 
 #ifdef USE_GOSS

@@ -101,6 +101,8 @@ private:
   long int pma_heap;
 
   void PrintHelp(char **argv,const char* help);
+
+  void PrintStatus();
 };
 
 } // namespace gridpack

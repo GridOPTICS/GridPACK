@@ -48,6 +48,7 @@
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/environment/environment.hpp"
+#include "gridpack/environment/no_print.hpp"
 #ifdef USE_GOSS
 #include "gridpack/serial_io/goss_client.hpp"
 #endif

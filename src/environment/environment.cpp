@@ -21,6 +21,8 @@
 #include <ga++.h>
 #include "environment.hpp"
 #include "gridpack/math/math.hpp"
+#include "gridpack/utilities/string_utils.hpp"
+#include "gridpack/environment/no_print.hpp"
 
 namespace gridpack {
 
@@ -34,6 +36,20 @@ void Environment::PrintHelp(char** argv,const char* help)
     exit(1);
   }
 }
+
+void Environment::PrintStatus()
+{
+  gridpack::utility::StringUtils util;
+  std::string option;
+  gridpack::NoPrint* noprint = gridpack::NoPrint::instance();
+  if (clparser.cmdOptionExists("-no-print")) {
+    option = clparser.getCmdOption("-no-print");
+  }
+  if (clparser.cmdOptionExists("-noprint")) {
+    option = clparser.getCmdOption("-noprint");
+  }
+  if (option.size() > 0) noprint->setStatus(util.getBool(option.c_str()));
+}
 // -------------------------------------------------------------
 //  class Environment
 // -------------------------------------------------------------
@@ -43,6 +59,7 @@ Environment::Environment(int argc, char **argv):p_boostEnv(argc,argv),clparser(a
   pma_stack = 200000;
   pma_heap  = 200000;
 
+  PrintStatus();
   GA_Initialize();
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
@@ -54,6 +71,7 @@ Environment::Environment(int argc, char **argv,const char* help): p_boostEnv(arg
   pma_stack = 200000;
   pma_heap  = 200000;
 
+  PrintStatus();
   GA_Initialize();
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
@@ -63,6 +81,7 @@ Environment::Environment(int argc, char **argv,const char* help,const long int& 
 {
   PrintHelp(argv,help);
 
+  PrintStatus();
   GA_Initialize();
   MA_init(C_DBL,ma_stack,ma_heap);
   gridpack::math::Initialize(&argc,&argv);
