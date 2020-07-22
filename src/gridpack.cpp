@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-07-09 06:38:18 d3g096
+// Last Change: 2020-07-22 08:25:09 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -19,6 +19,7 @@ namespace py = pybind11;
 #include <pybind11/stl_bind.h>
 
 #include <gridpack/environment/environment.hpp>
+#include <gridpack/environment/no_print.hpp>
 #include <gridpack/parallel/communicator.hpp>
 #include <gridpack/parallel/task_manager.hpp>
 #include <gridpack/applications/modules/hadrec/hadrec_app_module.hpp>
@@ -60,6 +61,12 @@ stupid_openmpi_hack(void)
 }
 
 #endif
+
+/// A functor to keep smart pointers from deleting their pointer
+struct null_deleter
+{
+  void operator()(void const *) const { }
+};
 
 
 // GridPACK uses Boost smart pointers, so let's use those here
@@ -129,6 +136,18 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def(py::init<>([]()
                     { return boost::shared_ptr<gp::Environment>
                         (new gp::Environment(0, NULL)); }))
+    ;
+
+  // -------------------------------------------------------------
+  // gridpack.NoPrint
+  // -------------------------------------------------------------
+  py::class_<gp::NoPrint, std::unique_ptr<gp::NoPrint, py::nodelete> >(gpm, "NoPrint")
+    .def(py::init([](){
+                    return std::unique_ptr<gp::NoPrint, py::nodelete>
+                      (gp::NoPrint::instance());
+                  }))
+    .def("status", &gp::NoPrint::status)
+    .def("setStatus", &gp::NoPrint::setStatus)
     ;
 
   // -------------------------------------------------------------

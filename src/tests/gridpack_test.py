@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-07-09 06:51:58 d3g096
+# Last Change: 2020-07-22 08:46:17 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -44,6 +44,11 @@ class GridPACKTester(TestCase):
         os.chdir(d)
 
         arg = "input_tamu500_step005.xml"
+
+        np = gridpack.NoPrint()
+        sys.stdout.write("NoPrint status: %r\n" % (np.status()))
+        np.setStatus(True)
+        sys.stdout.write("NoPrint status: %r\n" % (np.status()))
         
         hadapp = gridpack.hadrec.Module()
         hadapp.solvePowerFlowBeforeDynSimu(arg)
