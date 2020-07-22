@@ -158,12 +158,16 @@ void DSimBus::getVoltagesRectangular(double *VD,double *VQ) const
 void DSimBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
 {
   int i;
-  bool has_ex=false;
+  bool has_ex=false,has_gov=false;
 
   for(i=0; i < p_ngen; i++) {
     has_ex = p_gen[i]->hasExciter();
     if(has_ex) {
       p_gen[i]->getExciter()->setEvent(eman);
+    }
+    has_gov = p_gen[i]->getGovernor();
+    if(has_gov) {
+      p_gen[i]->getGovernor()->setEvent(eman);
     }
   }
 }

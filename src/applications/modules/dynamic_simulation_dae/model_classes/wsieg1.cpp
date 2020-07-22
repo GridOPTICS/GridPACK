@@ -6,9 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   wsieg1.cpp
- * @author Shuangshuang Jin
  * @author Shrirang Abhyankar
- * @Last modified:   04/22/20
+ * @Last modified:   07/22/20
  *  
  * @brief WSIEG1 governor model implementation 
  *
@@ -60,6 +59,8 @@ Wsieg1Gov::Wsieg1Gov(void)
   K7 = 0.0;
   K8 = 0.0;
   SecondGenExists = false;
+  uGV_at_min = uGV_at_max = false;
+  xGV_at_min = xGV_at_max = false;
 
   nxgov = 6; // Number of variables
 }
@@ -237,7 +238,7 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
   int x4_idx = 3;
   int x5_idx = 4;
   int x6_idx = 5;
-  double yLL;
+  double yLL,uGV;
   BaseGenModel* gen=getGenerator();
   double dw = gen->getRotorSpeedDeviation();
 
@@ -277,9 +278,14 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // xGV equation (Note: ignoring limits Uo, Uc)
-    //    values[x2_idx] = fmin(fmax(Uc,(Pref - xGV - yLL)/T3),Uo) -dxGV;
-    values[x2_idx] = (Pref - xGV - yLL)/T3 - dxGV;
+    // xGV equation
+    uGV = (Pref - xGV - yLL)/T3;
+    if(uGV_at_min) uGV = Uc;
+    else if(uGV_at_max) uGV = Uo;
+
+    if(xGV_at_min) values[x2_idx] = xGV - Pmin;
+    else if(xGV_at_max) values[x2_idx] = xGV - Pmax;
+    else values[x2_idx] = uGV - dxGV;
     
     // xT1 equation
     if(iseq_diff[x3_idx]) values[x3_idx] = (xGV - xT1)/T4 - dxT1;
@@ -382,15 +388,23 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
     }
 
     // Partial derivatives of xGV equation
-    values[xLL_idx][xGV_idx] = -dyLL_dxLL/T3;
-    values[xGV_idx][xGV_idx] = -1.0/T3 - shift; 
-    values[xT1_idx][xGV_idx] = -dyLL_dxT1/T3;
-    values[xT2_idx][xGV_idx] = -dyLL_dxT2/T3;
-    values[xT3_idx][xGV_idx] = -dyLL_dxT3/T3;
-    values[xT4_idx][xGV_idx] = -dyLL_dxT4/T3;
+    if(xGV_at_min || xGV_at_max) {
+      values[xGV_idx][xGV_idx] = 1.0;
+    } else {
+      if(!uGV_at_min && !uGV_at_max) {
+	values[xLL_idx][xGV_idx] = -dyLL_dxLL/T3;
+	values[xGV_idx][xGV_idx] = -1.0/T3 - shift; 
+	values[xT1_idx][xGV_idx] = -dyLL_dxT1/T3;
+	values[xT2_idx][xGV_idx] = -dyLL_dxT2/T3;
+	values[xT3_idx][xGV_idx] = -dyLL_dxT3/T3;
+	values[xT4_idx][xGV_idx] = -dyLL_dxT4/T3;
+	
+	values[dw_idx][xGV_idx] = -dyLL_ddw/T3;
+      } else {
+	values[xGV_idx][xGV_idx] = -shift;
+      }
+    }
 
-    values[dw_idx][xGV_idx] = -dyLL_ddw/T3;
-    
     // Partial derivatives of xT1 equation
     if(iseq_diff[2]) {
       values[xGV_idx][xT1_idx] = 1/T4;
@@ -475,4 +489,214 @@ bool Wsieg1Gov::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmec
 
 void Wsieg1Gov::setVcomp(double Vcomp)
 {
+}
+
+/**
+ * Update the event function values
+ */
+void Wsieg1Gov::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+{
+  int offset    = getLocalOffset();
+  int xLL_idx = offset;
+  int xGV_idx  = offset+1;
+  int xT1_idx  = offset+2;
+  int xT2_idx  = offset+3;
+  int xT3_idx  = offset+4;
+  int xT4_idx  = offset+5;
+
+  double yLL;
+  BaseGenModel* gen=getGenerator();
+  double dw = gen->getRotorSpeedDeviation();
+  double uGV;
+
+  xLL  = real(state[xLL_idx]);
+  xGV  = real(state[xGV_idx]);
+  xT1  = real(state[xT1_idx]);
+  xT2  = real(state[xT2_idx]);
+  xT3  = real(state[xT3_idx]);
+  xT4  = real(state[xT4_idx]);
+
+  if(iseq_diff[0]) {
+    yLL = xLL + T2/T1*K*dw;
+  } else {
+    yLL = xLL;
+  }
+
+  uGV = (Pref - xGV - yLL)/T3;
+  
+  /* Limits on uGV */
+  if(!uGV_at_min) {
+    evalues[0] = uGV - Uc;
+  } else {
+    evalues[0] = Uc - uGV;
+  }
+
+  if(!uGV_at_max) {
+    evalues[1] = Uo - uGV;
+  } else {
+    evalues[1] = uGV - Uo;
+  }
+
+  double dxGV_dt = uGV;
+
+  /* Limits on xGV */
+  if(!xGV_at_min) {
+    evalues[2] = xGV - Pmin;
+  } else {
+    evalues[2] = -dxGV_dt; /* Release when derivative reaches 0 */
+  }
+
+  if(!xGV_at_max) {
+    evalues[3] = Pmax - xGV;
+
+  } else {
+    evalues[3] = dxGV_dt; /* Release when derivative reaches 0 */
+    //    printf("Va = %f, dVa_dt = %f\n",Va,dVa_dt);
+  }
+  
+  printf("uGV = %f,xGV = %f,dxGV_dT = %f\n",uGV,xGV,dxGV_dt);
+} 
+
+/**
+ * Reset limiter flags after a network resolve
+ */
+void Wsieg1Gov::resetEventFlags()
+{
+  /* Note that the states are already pushed onto the network, so we can access these
+     directly
+  */
+  double yLL;
+  BaseGenModel* gen=getGenerator();
+  double dw = gen->getRotorSpeedDeviation();
+  double uGV;
+
+  if(iseq_diff[0]) {
+    yLL = xLL + T2/T1*K*dw;
+  } else {
+    yLL = xLL;
+  }
+
+  uGV = (Pref - xGV - yLL)/T3;
+
+
+  if(!uGV_at_min) {
+    if(uGV - Uc < 0) uGV_at_min = true;
+  } else {
+    if(Uo - uGV < 0) uGV_at_min = false; /* Release */
+  }
+
+  if(!uGV_at_max) {
+    if(Uo - uGV < 0) uGV_at_max = true;
+  } else {
+    if(uGV - Uo < 0) uGV_at_max = false; /* Release */
+  }
+
+  double dxGV_dt = uGV;
+
+  if(!xGV_at_min) {
+    if(xGV - Pmin < 0) xGV_at_min = true;
+  } else {
+    if(dxGV_dt > 0) xGV_at_min = false; /* Release */
+  }
+
+  if(!xGV_at_max) {
+    if(Pmax - xGV < 0) xGV_at_max = true;
+  } else {
+    if(dxGV_dt < 0) xGV_at_max = false; /* Release */
+  }
+}
+
+/**
+ * Event handler
+ */
+void Wsieg1Gov::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  int offset    = getLocalOffset();
+  int xLL_idx = offset;
+  int xGV_idx  = offset+1;
+  int xT1_idx  = offset+2;
+  int xT2_idx  = offset+3;
+  int xT3_idx  = offset+4;
+  int xT4_idx  = offset+5;
+
+  double yLL;
+  BaseGenModel* gen=getGenerator();
+  double dw = gen->getRotorSpeedDeviation();
+  double uGV;
+
+  xLL  = real(state[xLL_idx]);
+  xGV  = real(state[xGV_idx]);
+  xT1  = real(state[xT1_idx]);
+  xT2  = real(state[xT2_idx]);
+  xT3  = real(state[xT3_idx]);
+  xT4  = real(state[xT4_idx]);
+
+  if(iseq_diff[0]) {
+    yLL = xLL + T2/T1*K*dw;
+  } else {
+    yLL = xLL;
+  }
+
+  uGV = (Pref - xGV - yLL)/T3;
+
+  if(triggered[0]) {
+    if(!uGV_at_min) {
+      /* Hold uGV at Uc */
+      uGV_at_min = true;
+    } else {
+      /* Release */
+      uGV_at_max = false;
+    }
+  }
+
+  if(triggered[1]) {
+    if(!uGV_at_max) {
+      /* Hold uGV at Uo */
+      uGV_at_max = true;
+    } else {
+      /* Release */
+      uGV_at_max = false;
+    }
+  }
+
+  double dxGV_dt = uGV;
+  if(triggered[2]) {
+    if(!xGV_at_min && dxGV_dt < 0) {
+      /* Hold xGV at Pmin */
+      xGV_at_min = true;
+    } else {
+      /* Release */
+      xGV_at_min = false;
+    }
+  }
+
+  if(triggered[3]) {
+    if(!xGV_at_max && dxGV_dt > 0) {
+      /* Hold xGV at Pmax */
+      xGV_at_max = true;
+    } else {
+      /* Release */
+      xGV_at_max = false;
+    }
+  }
+}
+
+/**
+ * Set event
+ */
+void Wsieg1Gov::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+  gridpack::math::DAESolver::EventPtr e(new Wsieg1GovEvent(this));
+
+  eman->add(e);
+}
+
+void Wsieg1GovEvent::p_update(const double& t,gridpack::ComplexType *state)
+{
+  p_gov->eventFunction(t,state,p_current);
+}
+
+void Wsieg1GovEvent::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  p_gov->eventHandlerFunction(triggered,t,state);
 }

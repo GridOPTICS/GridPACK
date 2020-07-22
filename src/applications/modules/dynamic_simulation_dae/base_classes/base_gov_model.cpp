@@ -161,6 +161,14 @@ void BaseGovModel::setVcomp(double Vcomp)
 {
 }
 
+/**
+ * Set Event
+ */
+void BaseGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+}
+
+
 void BaseGovModel::setGenerator(BaseGenModel *generator)
 {
   p_gen = generator;
