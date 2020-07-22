@@ -9,7 +9,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:47:51 d3g096
+# Last Change: 2020-07-15 08:07:52 d3g096
 # -------------------------------------------------------------
 
 
@@ -80,6 +80,7 @@ add_dependencies(gridpack_partition external_build)
 
 target_link_libraries(gridpack_partition 
   gridpack_timer
+  gridpack_environment
   gridpack_parallel
   ${PARMETIS_LIBRARY} ${METIS_LIBRARY}  
   )

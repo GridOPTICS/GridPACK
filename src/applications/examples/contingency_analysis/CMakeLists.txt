@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-08 09:37:40 d3g096
+# Last Change: 2020-07-15 06:41:47 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -20,6 +20,7 @@ set(target_libraries
     gridpack_components
     gridpack_stream
     gridpack_partition
+    gridpack_environment
     gridpack_math
     gridpack_configuration
     gridpack_timer
