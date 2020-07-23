@@ -122,14 +122,14 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   BaseGenModel *gen=getGenerator();
   double LadIfd = gen->getFieldCurrent();
 
-  // Field voltage (Efd) and bus voltage (VD,VQ) are already set 
+  // Field voltage (Efd0) and bus voltage (VD,VQ) are already set 
   // Need to set the initial values for all the state variables
 
   Ec = sqrt(VD*VD + VQ*VQ);
   Vfd = Klr*(LadIfd - Ilr); 
   Vmeas    = Ec;
-  xf       = -Kf/Tf*Efd;
-  Va       = Efd + Vfd;
+  xf       = -Kf/Tf*Efd0;
+  Va       = Efd0 + Vfd;
   yLL2     = Va/Ka;
   yLL1     = yLL2;
   if(iseq_diff[2]) xLL2    = (1 - Tc1/Tb1)*yLL2;
@@ -220,9 +220,11 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
   int x5_idx = 4;
   double Ec,yLL1,yLL2,Vf;
   Ec = sqrt(VD*VD + VQ*VQ);
-  double Vi;
+  double Vi,Efd;
+  BaseGenModel* gen = getGenerator();
+  LadIfd = gen->getFieldCurrent();
   
-  Efd = Esst1aExc::getFieldVoltage();
+  Efd = Va - Klr*(LadIfd - Ilr);
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     // Vmeas equation
@@ -501,6 +503,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
     }
 
     // Partial derivatives of xf equation
+    values[Va_idx][xf_idx] = -Kf/(Tf*Tf);
     values[xf_idx][xf_idx] = -1.0/Tf - shift;
   }
 
@@ -514,7 +517,7 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
  */
 void Esst1aExc::setInitialFieldVoltage(double fldv)
 {
-  Efd = fldv;
+  Efd0 = fldv;
 }
 
 bool Esst1aExc::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
@@ -551,7 +554,7 @@ double Esst1aExc::getFieldVoltage()
   double VT = sqrt(VD*VD + VQ*VQ);
   double Vmin = VT*Vrmin;
   double Vmax;
-  double fdv;
+  double fdv,Efd;
   BaseGenModel* gen = getGenerator();
   LadIfd = gen->getFieldCurrent();
   Vmax = VT*Vrmax - Kc*LadIfd;
@@ -582,9 +585,11 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
 
   /* Only considering limits on Vi and Va */
   
-  double Vf,Vi;
+  double Vf,Vi,Efd;
+  BaseGenModel* gen = getGenerator();
+  LadIfd = gen->getFieldCurrent();
 
-  Efd = Esst1aExc::getFieldVoltage();
+  Efd = Va - Klr*(LadIfd - Ilr);
   Vf = xf + Kf/Tf*Efd;
   Vi = Vref - Vmeas - Vf;
 
@@ -633,9 +638,11 @@ void Esst1aExc::resetEventFlags()
   /* Note that the states are already pushed onto the network, so we can access these
      directly
   */
-  double Vf,Vi;
+  double Vf,Vi,Efd;
+  BaseGenModel* gen = getGenerator();
+  LadIfd = gen->getFieldCurrent();
 
-  Efd = Esst1aExc::getFieldVoltage();
+  Efd = Va - Klr*(LadIfd - Ilr);
   Vf = xf + Kf/Tf*Efd;
   Vi = Vref - Vmeas - Vf;
 
@@ -691,9 +698,11 @@ void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gri
   Va    = real(state[Va_idx]);
   xf    = real(state[xf_idx]);
 
-  double Vf,Vi;
+  double Vf,Vi,Efd;
+  BaseGenModel* gen = getGenerator();
+  LadIfd = gen->getFieldCurrent();
 
-  Efd = Esst1aExc::getFieldVoltage();
+  Efd = Va - Klr*(LadIfd - Ilr);
   Vf = xf + Kf/Tf*Efd;
   Vi = Vref - Vmeas - Vf;
 
