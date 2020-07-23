@@ -163,8 +163,8 @@ private:
   double Voel; // Over excitation limiter voltage
   double Vcomp, Vterm, Vstab;
   
-  // Field Voltage Output
-  double Efd;
+  // Initial Field Voltage (at t= 0)
+  double Efd0;
   
   // Field Current Input
   double LadIfd;
