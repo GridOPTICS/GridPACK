@@ -143,6 +143,9 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   values[2] = xLL2;
   values[3] = Va;
   values[4] = xf;
+
+  //  printf("Vmeas = %f,xLL1 = %f,xLL2 = %f,Va = %f,xf = %f,Vref = %f\n",
+  //	 Vmeas,xLL1,xLL2,Va,xf,Vref);
 }
 
 /**
@@ -315,7 +318,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     // xf equation
     values[4] = (-xf - Kf/Tf*Efd)/Tf - dxf;
   }
-  
+
   return true;
 }
 
@@ -628,6 +631,7 @@ void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::v
     evalues[3] = dVa_dt; /* Release when derivative reaches 0 */
     //    printf("Va = %f, dVa_dt = %f\n",Va,dVa_dt);
   }
+  //  printf("Vi = %f Va = %f, dVa_dt = %f kf = %f tf = %f, Efd=%f,Vref=%f\n",Vi,Va,dVa_dt,Kf,Tf,Efd,Vref);
 } 
 
 /**

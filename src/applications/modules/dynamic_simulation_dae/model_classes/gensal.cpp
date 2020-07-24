@@ -198,6 +198,9 @@ void GensalGen::init(gridpack::ComplexType* values)
   values[3] = Psidp;
   values[4] = Psiqpp;
   
+  //  printf("delta = %f,dw = %f,Eqp = %f,Psidp = %f,Psiqpp = %f,Efd = %f,Pmech = %f,VD = %f,VQ = %f\n",
+  //	 delta,dw,Eqp,Psidp,Psiqpp,Efd,Pmech,VD,VQ);
+
   // Initialize exciters
   if (p_hasExciter) {
     p_exciter = getExciter();
@@ -330,7 +333,6 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp; 
     values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
     values[Psiqpp_idx] = (-Psiqpp - (Xq - Xdpp) * Iq ) / Tqopp - dPsiqpp;
-
   }
 
   return true;
@@ -470,7 +472,7 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
     values[delta_idx][delta_idx] = 1.0;
     values[dw_idx][dw_idx] = 1.0;
     values[Eqp_idx][Eqp_idx] = 1.0;
-    values[Psidp_idx][dw_idx] = 1.0;
+    values[Psidp_idx][Psidp_idx] = 1.0;
     values[Psiqpp_idx][Psiqpp_idx] = 1.0;
   } else {
 
@@ -634,6 +636,7 @@ double GensalGen::getFieldCurrent()
   double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
   double LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
 
+  //  printf("LadIfd = %f\n",LadIfd);
   return LadIfd;
 
 }

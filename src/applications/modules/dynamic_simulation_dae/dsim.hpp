@@ -147,6 +147,7 @@ public:
     p_network->updateBuses();
 
     // Evaluate the fault residual Jacobian
+    J.zero();
     p_factory->setMode(FAULT_EVAL);
     p_MatMapper->mapToMatrix(J);
     

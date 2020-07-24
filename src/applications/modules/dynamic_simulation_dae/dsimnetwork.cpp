@@ -103,16 +103,16 @@ void DSimBus::setLocalOffset(int offset)
   p_offset = offset;
 
   for(i=0; i < p_ngen; i++) {
-    if(p_gen[i]->getGenStatus()) {
-      p_gen[i]->setBusLocalOffset(offset);
-      
-      if(p_gen[i]->hasExciter()) {
-	p_gen[i]->getExciter()->setBusLocalOffset(offset);
-      }
+    if(!p_gen[i]->getGenStatus()) continue;
 
-      if(p_gen[i]->hasGovernor()) {
-	p_gen[i]->getGovernor()->setBusLocalOffset(offset);
-      }
+    p_gen[i]->setBusLocalOffset(offset);
+      
+    if(p_gen[i]->hasExciter()) {
+      p_gen[i]->getExciter()->setBusLocalOffset(offset);
+    }
+    
+    if(p_gen[i]->hasGovernor()) {
+      p_gen[i]->getGovernor()->setBusLocalOffset(offset);
     }
   }
 }
@@ -126,16 +126,16 @@ void DSimBus::resetEventFlags()
   int i;
 
   for(i=0; i < p_ngen; i++) {
-    if(p_gen[i]->getGenStatus()) {
-      p_gen[i]->resetEventFlags();
-      
-      if(p_gen[i]->hasExciter()) {
-	p_gen[i]->getExciter()->resetEventFlags();
-      }
+    if(!p_gen[i]->getGenStatus()) continue;
 
-      if(p_gen[i]->hasGovernor()) {
-	p_gen[i]->getGovernor()->resetEventFlags();
-      }
+    p_gen[i]->resetEventFlags();
+    
+    if(p_gen[i]->hasExciter()) {
+      p_gen[i]->getExciter()->resetEventFlags();
+    }
+    
+    if(p_gen[i]->hasGovernor()) {
+      p_gen[i]->getGovernor()->resetEventFlags();
     }
   }
 }
@@ -161,6 +161,8 @@ void DSimBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
   bool has_ex=false,has_gov=false;
 
   for(i=0; i < p_ngen; i++) {
+    if(!p_gen[i]->getGenStatus()) continue;
+
     has_ex = p_gen[i]->hasExciter();
     if(has_ex) {
       p_gen[i]->getExciter()->setEvent(eman);
@@ -243,6 +245,13 @@ void DSimBus::load(const
     p_neqsgov= (int*)malloc(p_ngen*sizeof(int));
 
     for(i=0; i < p_ngen; i++) {
+      data->getValue(GENERATOR_STAT,&gstatus,i); // Generator status
+      if(!gstatus) {
+	p_gen[i] = new BaseGenModel;
+	p_gen[i]->setGenStatus(0);
+	continue;
+      }
+
       p_gen[i] = NULL;
       p_neqsgen[i] = 0;
       p_neqsexc[i] = 0;
@@ -442,22 +451,24 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
  // Partials of generator equations and contributions to the network<->generator 
  DSMode dsmode;
  for(i=0; i < p_ngen; i++) {
-   if(p_gen[i]->getGenStatus()) {
-     p_gen[i]->setMode(p_mode);
-     p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-     p_gen[i]->setTSshift(p_TSshift);
+   if(!p_gen[i]->getGenStatus()) continue;
 
-     p_gen[i]->setJacobian(matvalues);
+   p_gen[i]->setMode(p_mode);
+   p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+   p_gen[i]->setTSshift(p_TSshift);
 
-     if(p_gen[i]->hasExciter()) {
-       p_gen[i]->getExciter()->setTSshift(p_TSshift);
-       p_gen[i]->getExciter()->setJacobian(matvalues);
-     }
+   p_gen[i]->setJacobian(matvalues);
 
-     if(p_gen[i]->hasGovernor()) {
-       p_gen[i]->getGovernor()->setTSshift(p_TSshift);
-       p_gen[i]->getGovernor()->setJacobian(matvalues);
-     }
+   if(p_gen[i]->hasExciter()) {
+     p_gen[i]->getExciter()->setMode(p_mode);
+     p_gen[i]->getExciter()->setTSshift(p_TSshift);
+     p_gen[i]->getExciter()->setJacobian(matvalues);
+   }
+
+   if(p_gen[i]->hasGovernor()) {
+     p_gen[i]->getGovernor()->setMode(p_mode);
+     p_gen[i]->getGovernor()->setTSshift(p_TSshift);
+     p_gen[i]->getGovernor()->setJacobian(matvalues);
    }
  } 
 
@@ -503,10 +514,10 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
       p_VDQptr[1] = real(values[1]);
 
       for(i=0; i < p_ngen; i++) {
-	if(p_gen[i]->getGenStatus()) {
-	  p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-	  p_gen[i]->init(fgen);
-	}
+	if(!p_gen[i]->getGenStatus()) continue;
+
+	p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+	p_gen[i]->init(fgen);
 
 	has_ex = p_gen[i]->hasExciter();
 	if (has_ex) {
@@ -599,36 +610,35 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
     double IgenD=0.0,IgenQ=0.0;
     for(i=0; i < p_ngen; i++) {
       double IGD=0.0, IGQ=0.0;
-      if(p_gen[i]->getGenStatus()) {
-	p_gen[i]->setMode(p_mode);
-	p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-	p_gen[i]->vectorValues(fgen);
-        fgen += p_neqsgen[i];
-	p_gen[i]->getCurrent(&IGD,&IGQ);
+      if(!p_gen[i]->getGenStatus()) continue;
 
-	has_ex = p_gen[i]->hasExciter();
-	if (has_ex) {
-	  p_gen[i]->getExciter()->setMode(p_mode);
-	  p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-	  p_gen[i]->getExciter()->vectorValues(fgen);
-          fgen += p_neqsexc[i];
-  	}	
+      p_gen[i]->setMode(p_mode);
+      p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+      p_gen[i]->vectorValues(fgen);
+      fgen += p_neqsgen[i];
+      p_gen[i]->getCurrent(&IGD,&IGQ);
 
-	has_gv = p_gen[i]->hasGovernor();
-	if (has_gv) {
-	  p_gen[i]->getGovernor()->setMode(p_mode);
-	  p_gen[i]->getGovernor()->vectorValues(fgen);
-          fgen += p_neqsgov[i];
-  	}	
+      has_ex = p_gen[i]->hasExciter();
+      if (has_ex) {
+	p_gen[i]->getExciter()->setMode(p_mode);
+	p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+	p_gen[i]->getExciter()->vectorValues(fgen);
+	fgen += p_neqsexc[i];
+      }	
+
+      has_gv = p_gen[i]->hasGovernor();
+      if (has_gv) {
+	p_gen[i]->getGovernor()->setMode(p_mode);
+	p_gen[i]->getGovernor()->vectorValues(fgen);
+	fgen += p_neqsgov[i];
+      }	
 	
-	IgenD += IGD;
-	IgenQ += IGQ;
-      }
+      IgenD += IGD;
+      IgenQ += IGQ;
     }
 
     fbus[VD_idx] = IgenQ - IshuntQ - IbrQ - IloadQ;
     fbus[VQ_idx] = IgenD - IshuntD - IbrD - IloadD;
-
   }
   return true;
 }
@@ -677,26 +687,26 @@ void DSimBus::setValues(gridpack::ComplexType *values)
   
   genvals = values + 2;
   for(i=0; i < p_ngen; i++) {
-    if(p_gen[i]->getGenStatus()) {
-      p_gen[i]->setMode(mode);
-      p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-      p_gen[i]->setValues(genvals);
-      genvals += p_neqsgen[i];
+    if(!p_gen[i]->getGenStatus()) continue;
 
-      has_ex = p_gen[i]->hasExciter();
-      if (has_ex) {
-        p_gen[i]->getExciter()->setMode(p_mode);
-        p_gen[i]->getExciter()->setValues(genvals);
-        genvals += p_neqsexc[i];
-      }	
+    p_gen[i]->setMode(mode);
+    p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+    p_gen[i]->setValues(genvals);
+    genvals += p_neqsgen[i];
 
-      has_gv = p_gen[i]->hasGovernor();
-      if (has_gv) {
-        p_gen[i]->getGovernor()->setMode(p_mode);
-        p_gen[i]->getGovernor()->setValues(genvals);
-        genvals += p_neqsgov[i];
-      }	
+    has_ex = p_gen[i]->hasExciter();
+    if (has_ex) {
+      p_gen[i]->getExciter()->setMode(p_mode);
+      p_gen[i]->getExciter()->setValues(genvals);
+      genvals += p_neqsexc[i];
     }	
+    
+    has_gv = p_gen[i]->hasGovernor();
+    if (has_gv) {
+      p_gen[i]->getGovernor()->setMode(p_mode);
+      p_gen[i]->getGovernor()->setValues(genvals);
+      genvals += p_neqsgov[i];
+    }		
   }
 }
 

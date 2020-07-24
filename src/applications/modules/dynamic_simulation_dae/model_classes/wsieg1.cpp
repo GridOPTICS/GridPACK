@@ -105,6 +105,13 @@ void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
+  // Convert governor parameters from machine base to sbase
+  double mult = mbase/sbase;
+  Uo   *= mult;
+  Uc   *= mult;
+  Pmin *= mult;
+  Pmax *= mult;
+
   //Set flags for differential or algebraic equations
   iseq_diff[0] = (T1 == 0 || T2 == 0)?0:1;
   iseq_diff[1] = 1;
@@ -301,8 +308,7 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
 
     // xT4 equation
     if(iseq_diff[x6_idx]) values[x6_idx] = (xT3 - xT4)/T7 - dxT4;
-    else values[x6_idx] = xT3 - xT4;
-        
+    else values[x6_idx] = xT3 - xT4;        
   }
   
   return true;
@@ -523,7 +529,7 @@ void Wsieg1Gov::eventFunction(const double&t,gridpack::ComplexType *state,std::v
   }
 
   uGV = (Pref - xGV - yLL)/T3;
-  
+
   /* Limits on uGV */
   if(!uGV_at_min) {
     evalues[0] = uGV - Uc;
@@ -554,7 +560,7 @@ void Wsieg1Gov::eventFunction(const double&t,gridpack::ComplexType *state,std::v
     //    printf("Va = %f, dVa_dt = %f\n",Va,dVa_dt);
   }
   
-  printf("uGV = %f,xGV = %f,dxGV_dT = %f\n",uGV,xGV,dxGV_dt);
+  //  printf("uGV = %f,xGV = %f,dxGV_dT = %f,Pmin = %f,Pmax = %f\n",uGV,xGV,dxGV_dt,Pmin,Pmax);
 } 
 
 /**
