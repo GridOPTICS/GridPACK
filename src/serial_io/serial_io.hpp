@@ -161,7 +161,6 @@ class SerialBusIO {
     if (p_fout) {
       write(*p_fout, signal);
     } else {
-      std::cout << "Choosing GOSS for the output stream" << std::endl;
       write(std::cout, signal);
     }
   }
