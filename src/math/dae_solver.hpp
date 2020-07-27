@@ -69,6 +69,14 @@ public:
              FunctionBuilder& fbuilder,
              EventManagerPtr eman);
 
+
+  DAESolverT(const parallel::Communicator& comm, 
+             const int local_size,
+	     Matrix* J,
+             JacobianBuilder& jbuilder,
+             FunctionBuilder& fbuilder,
+             EventManagerPtr eman);
+
   /// Constructor used if no events are necessary
   /** 
    * 

@@ -157,7 +157,7 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
   if (Iblock == 2 && Pmax == 0) Pmax = PGV;
   if (Iblock == 3 && Pmin == 0) Pmin = PGV;
   if (Iblock == 3 && Pmax == 0) Pmax = PGV;
-  if (iseq_diff[0]) xLL = K*dw * (1 - T2 / T1);
+  if (iseq_diff[0]) xLL = K*dw * (1.0 - T2 / T1);
   else xLL = K*dw;
 
   values[0] = xLL;
@@ -278,7 +278,7 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
   } else if(p_mode == RESIDUAL_EVAL) {
     // xLL equation
     if(iseq_diff[x1_idx]) {
-      values[x1_idx] = (-xLL + (1 - T2/T1)*K*dw)/T1 - dxLL;
+      values[x1_idx] = (-xLL + (1.0 - T2/T1)*K*dw)/T1 - dxLL;
       yLL = xLL + T2/T1*K*dw;
     } else {
       values[x1_idx] = -xLL + K*dw;
@@ -383,7 +383,7 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
     if(iseq_diff[0]) {
       values[xLL_idx][xLL_idx] = -1.0/T1 - shift;
 
-      values[dw_idx][xLL_idx] = (1 - T2/T1)*K/T1;
+      values[dw_idx][xLL_idx] = (1.0 - T2/T1)*K/T1;
       dyLL_dxLL = 1.0;
       dyLL_ddw  = T2/T1*K;
     } else {
@@ -413,8 +413,8 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 
     // Partial derivatives of xT1 equation
     if(iseq_diff[2]) {
-      values[xGV_idx][xT1_idx] = 1/T4;
-      values[xT1_idx][xT1_idx] = -1/T4 - shift;
+      values[xGV_idx][xT1_idx] = 1.0/T4;
+      values[xT1_idx][xT1_idx] = -1.0/T4 - shift;
     } else {
       values[xGV_idx][xT1_idx] = 1.0;
       values[xT1_idx][xT1_idx] = -1.0;
@@ -422,8 +422,8 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 
     // Partial derivatives of xT2 equation
     if(iseq_diff[3]) {
-      values[xT1_idx][xT2_idx] = 1/T5;
-      values[xT2_idx][xT2_idx] = -1/T5 - shift;
+      values[xT1_idx][xT2_idx] = 1.0/T5;
+      values[xT2_idx][xT2_idx] = -1.0/T5 - shift;
     } else {
       values[xT1_idx][xT2_idx] = 1.0;
       values[xT2_idx][xT2_idx] = -1.0;
@@ -431,8 +431,8 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 
     // Partial derivatives of xT3 equation
     if(iseq_diff[4]) {
-      values[xT2_idx][xT3_idx] = 1/T6;
-      values[xT3_idx][xT3_idx] = -1/T6 - shift;
+      values[xT2_idx][xT3_idx] = 1.0/T6;
+      values[xT3_idx][xT3_idx] = -1.0/T6 - shift;
     } else {
       values[xT2_idx][xT3_idx] = 1.0;
       values[xT3_idx][xT3_idx] = -1.0;
@@ -440,8 +440,8 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 
     // Partial derivatives of xT4 equation
     if(iseq_diff[5]) {
-      values[xT3_idx][xT4_idx] = 1/T7;
-      values[xT4_idx][xT4_idx] = -1/T7 - shift;
+      values[xT3_idx][xT4_idx] = 1.0/T7;
+      values[xT4_idx][xT4_idx] = -1.0/T7 - shift;
     } else {
       values[xT3_idx][xT4_idx] = 1.0;
       values[xT4_idx][xT4_idx] = -1.0;
