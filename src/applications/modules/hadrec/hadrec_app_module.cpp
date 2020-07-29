@@ -26,6 +26,7 @@
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
   : config_sptr(new gridpack::utility::Configuration())
 {
+	bconfig_sptr_set = false;
 }
 
 /**
@@ -56,13 +57,17 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     //gridpack::utility::Configuration *config =
     //  gridpack::utility::Configuration::configuration();
 	  
-//	config_sptr.reset(gridpack::utility::Configuration::configuration());
+    //config_sptr.reset(gridpack::utility::Configuration::configuration());
+	//config_sptr.reset( new gridpack::utility::Configuration() )
 	
-    if (inputfile) {
-      config_sptr->open(inputfile, world);
-    } else {
-      config_sptr->open("input.xml",world);
-    }
+	if (!bconfig_sptr_set){
+		if (inputfile) {
+			config_sptr->open(inputfile, world);
+		} else {
+			config_sptr->open("input.xml",world);
+		}
+		bconfig_sptr_set = true;
+	}
     timer->stop(t_config);
 
     // setup and run powerflow calculation
@@ -70,10 +75,17 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     cursor = config_sptr->getCursor("Configuration.Powerflow");
     bool useNonLinear = false;
     useNonLinear = cursor->get("UseNonLinear", useNonLinear);
-
+	
     pf_network.reset(new gridpack::powerflow::PFNetwork(world));
 
     pf_app_sptr.reset(new gridpack::powerflow::PFAppModule()) ;
+	
+	bool bnoprint = gridpack::NoPrint::instance()->status();
+
+	if (bnoprint) { //if no print flag set to be true, suppress any intermedium output from pf app module
+		pf_app_sptr->suppressOutput(true);
+	}
+	
     pf_app_sptr->readNetwork(pf_network, &(*config_sptr), pfcase_idx);
     pf_app_sptr->initialize();
     if (useNonLinear) {
@@ -81,7 +93,11 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     } else {
       pf_app_sptr->solve();
     }
-    pf_app_sptr->write();
+	
+	if (!bnoprint) { //if no print flag set to be true, do not print the power flow solution
+		pf_app_sptr->write();
+	}
+	
     pf_app_sptr->saveData();
 	
     // setup dynamic simulation network

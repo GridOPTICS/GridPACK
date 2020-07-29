@@ -16,6 +16,8 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
+#include <cstdio>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -28,7 +30,7 @@
 gridpack::dynamic_simulation::Wsieg1Model::Wsieg1Model(void)
 {
   SecondGenExists = false;
-  OptionToModifyLimitsForInitialStateLimitViolation = false;
+  OptionToModifyLimitsForInitialStateLimitViolation = true;
   w = 0.0;
   dx1LL = 0;
   dx2GovOut = 0;
@@ -109,6 +111,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
 void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, double ts)
 {
   ///printf("wsieg1: Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);
+
   double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
     PGV = Pmech1 / (K1 + K3 + K5 + K7);
@@ -131,6 +134,11 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   double GV = GainBlock.YtoX(PGV); // TBD: check GainBlock?
   //printf("GV = %f\n", GV);
   x2GovOut = GV;
+  bool ini_check_print = false;
+  if (ini_check_print) {
+	if (x2GovOut >= Pmax) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x2GovOut value is %12.6f, larger then Pmax: %12.6f \n",p_bus_id, x2GovOut, Pmax);
+	if (x2GovOut <= Pmin) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x2GovOut value is %12.6f, smaller then Pmin: %12.6f \n",p_bus_id, x2GovOut, Pmin);
+  }
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (GV > Pmax) Pmax = GV;
     if (GV < Pmin) Pmin = GV;
@@ -340,3 +348,19 @@ double gridpack::dynamic_simulation::Wsieg1Model::getMechanicalPower()
 {
   return w;
 }*/
+
+/** 
+ * Set the governor generator bus number
+ */
+void gridpack::dynamic_simulation::Wsieg1Model::setExtBusNum(int ExtBusNum)
+{
+	p_bus_id = ExtBusNum;
+}	
+
+/** 
+ * Set the governor generator id
+ */
+void gridpack::dynamic_simulation::Wsieg1Model::setExtGenId(std::string ExtGenId)
+{
+	p_ckt = ExtGenId;
+}	

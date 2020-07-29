@@ -28,8 +28,17 @@ const char* help = "HADREC Test application";
 int main(int argc, char **argv)
 {
   // Initialize libraries (parallel and math)
-  gridpack::Environment env(argc,argv,help);
+  gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
+  noprint_ins->setStatus(true);
+  
+  //bool bnoprint = gridpack::NoPrint::instance()->status();
+  //printf ("------------- hadrec_main function test 1  bnoprint: %d \n", bnoprint);
 
+  gridpack::Environment env(argc,argv,help);
+  
+  //bnoprint = gridpack::NoPrint::instance()->status();
+  //printf ("------------- hadrec_main function test 2  bnoprint: %d \n", bnoprint);
+  
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
@@ -45,8 +54,11 @@ int main(int argc, char **argv)
   } else {
     file = "input.xml";
   }
-
-  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
+  
+  //bnoprint = gridpack::NoPrint::instance()->status();
+  //printf ("------------- hadrec_main function test 3  bnoprint: %d \n", bnoprint);
+  
+  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
@@ -145,18 +157,19 @@ int main(int argc, char **argv)
     isteps++;
   }
 
+  printf("\n----------------finished first round of dynamic simulation----\n ");
   //timer->stop(t_total);
   //timer->dump();
 
 
   //start the reload and second time dynamic simulation here
   // transfer power flow results to dynamic simulation
-  bool btest_2dynasimu = false; //true;
+  bool btest_2dynasimu = true;
   if (btest_2dynasimu) {
 	  
 	gridpack::dynamic_simulation::Event busfault;
-	busfault.start = 10.0;
-	busfault.end = 10.2;
+	busfault.start = 1.0;
+	busfault.end = 1.2;
 	busfault.step = 0.005;
 	busfault.isBus = true;
 	busfault.bus_idx = 7;
@@ -165,8 +178,9 @@ int main(int argc, char **argv)
 	BusFaults.push_back(busfault);
     
     //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
+	hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
     
-    printf("---------------renke debug, hadrec main, second dyn starts----------------\n");
+    printf("\n---------------renke debug, hadrec main, second dyn starts----------------\n");
     hadrec_app_sptr->transferPFtoDS();
 
     // initialize dynamic simulation
@@ -189,17 +203,20 @@ int main(int argc, char **argv)
 	  
 	  ob_vals.clear();
 	  ob_vals = hadrec_app_sptr->getObservations();
-	
-      printf("observations, ");
-      for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
-         printf(" %16.12f, ", ob_vals[idxtmp]);
-      }
-      printf(" \n");
+	  
+	  if (debugoutput){
+		printf("observations, ");
+		for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
+			printf(" %16.12f, ", ob_vals[idxtmp]);
+		}
+		printf(" \n");
+	  }
 	
       isteps++;
     }
   }
 
+  //printf(" ----------------finished \n ");
   // Make sure we could do it again with a new instance if we wanted to
   hadrec_app_sptr.reset(new gridpack::hadrec::HADRECAppModule());
   hadrec_app_sptr.reset();

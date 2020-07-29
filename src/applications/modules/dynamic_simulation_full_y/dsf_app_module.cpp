@@ -1246,6 +1246,7 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
  */
 void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
 {
+  bool noprint = gridpack::NoPrint::instance()->status();														 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
@@ -1258,7 +1259,9 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
   int ncnt = generators.size();
   std::string generator, tag, clean_tag;
   gridpack::dynamic_simulation::DSFullBus *bus;
-  if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+  if (!noprint) {
+	if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+  }
   std::vector<int> buses;
   std::vector<std::string> tags;
   for (i=0; i<ncnt; i++) {
@@ -1295,6 +1298,7 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
     std::vector<int> &buses, std::vector<std::string> &tags, bool writeFile)
 {
   int ncnt = buses.size();
+  bool noprint = gridpack::NoPrint::instance()->status();														 
   if (ncnt != tags.size()) {
     printf("setGeneratorWatch: size mismatch between buses: and tags: vectors\n",
         (int)buses.size(),(int)tags.size());
@@ -1332,13 +1336,17 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
         p_gen_ids.push_back(tag);
       }
     }
-    sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,tag.c_str());
-    p_busIO->header(buf);
+	if (!noprint) {				
+		sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,tag.c_str());
+		p_busIO->header(buf);
+	}
     if (ncnt > 0) {
       p_generators_read_in = true;
       p_generatorWatch = true;
-      sprintf(buf,"Generator Watch Frequency: %d\n",p_generatorWatchFrequency);
-      p_busIO->header(buf);
+	  if (!noprint) {				  
+		sprintf(buf,"Generator Watch Frequency: %d\n",p_generatorWatchFrequency);
+		p_busIO->header(buf);
+	  }
     }
   }
 
@@ -1703,7 +1711,10 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
               p_network));
         p_generatorIO->open(filename.c_str());
       } else {
-        // p_busIO->header("No Generator Watch File Name Found\n");
+		  bool noprint = gridpack::NoPrint::instance()->status();
+		  if (!noprint) {														   	   
+			p_busIO->header("No Generator Watch File Name Found\n");
+		  }
         p_generatorWatch = false;
       }
     }

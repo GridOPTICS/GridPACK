@@ -117,6 +117,8 @@ class HADRECAppModule
 	
     int t_total;
 	int t_config;
+	
+	bool bconfig_sptr_set;
 
    // Observations
    std::vector<int> p_obs_genBus;
