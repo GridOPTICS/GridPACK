@@ -3138,8 +3138,11 @@ bool gridpack::dynamic_simulation::DSFullApp::getGeneratorPower(int bus_id,
   int i;
   for (i=0; i<indices.size(); i++) {
     if (p_network->getActiveBus(indices[i])) {
-      p_network->getBus(indices[i])->getGeneratorPower(gen_id, pg, qg);
-      return true;
+      if (p_network->getBus(indices[i])->getGeneratorPower(gen_id, pg, qg)) {
+        return true;
+      } else {
+        return false;
+      }
     }
   }
   return false;
