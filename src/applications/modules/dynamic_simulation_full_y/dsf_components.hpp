@@ -524,6 +524,24 @@ class DSFullBus
     */
    double getOnlineLoadFraction(int idx);
 
+   /**
+    * return the total load on the bus
+    * @param total_p total real power load on bus
+    * @param total_q total reactive power load on bus
+    */
+    
+    void getTotalLoadPower(double &total_p, double &total_q) const;
+
+    /**
+     * return the real and reactive power produced by the generator indicated by
+     * the tag variable
+     * @param tag 2-character identifier for the generator
+     * @param pg real power produced by generator
+     * @param qg reactive power produced by generator
+     * @return false if no generator corresponds to tag value.
+     */
+    bool getGeneratorPower(std::string tag, double &pg, double &qg) const;
+
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.

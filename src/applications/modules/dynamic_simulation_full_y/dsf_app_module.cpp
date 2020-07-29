@@ -3102,6 +3102,45 @@ void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, 
 		
 }
 
+/**
+ * Return values for total active and reactive load power on bus
+ * @param bus_id original bus index
+ * @param lp active load power
+ * @param lq reactive load power
+ * @return false if bus is not found on this processor
+ */
+bool gridpack::dynamic_simulation::DSFullApp::getBusTotalLoadPower(int bus_id,
+    double &total_p, double &total_q)
+{
+  std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+  int i;
+  for (i=0; i<indices.size(); i++) {
+    if (p_network->getActiveBus(indices[i])) {
+      p_network->getBus(indices[i])->getTotalLoadPower(total_p, total_q);
+      return true;
+    }
+  }
+  return false;
+}
 
-
-
+/**
+ * Return real and reactive power produced by requested generator
+ * @param bus_id original index for bus hosting generator
+ * @param gen_id 2-character identifier for generator
+ * @param pg active power produced by generator
+ * @param qg reactive power produced by generator
+ * @return false if generator is not found on this processor
+ */
+bool gridpack::dynamic_simulation::DSFullApp::getGeneratorPower(int bus_id,
+    std::string gen_id, double &pg, double &qg)
+{
+  std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+  int i;
+  for (i=0; i<indices.size(); i++) {
+    if (p_network->getActiveBus(indices[i])) {
+      p_network->getBus(indices[i])->getGeneratorPower(gen_id, pg, qg);
+      return true;
+    }
+  }
+  return false;
+}

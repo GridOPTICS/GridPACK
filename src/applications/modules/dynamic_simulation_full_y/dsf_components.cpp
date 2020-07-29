@@ -2552,6 +2552,49 @@ double gridpack::dynamic_simulation::DSFullBus::getOnlineLoadFraction(int idx)
   }
   return ret;
 }
+/**
+ * return the total load on the bus
+ * @param total_p total real power load on bus
+ * @param total_q total reactive power load on bus
+ */
+
+void gridpack::dynamic_simulation::DSFullBus::getTotalLoadPower(double &total_p,
+    double &total_q) const
+{
+  total_p = 0.0;
+  total_q = 0.0;
+  int i;
+  for (i=0; i<p_npowerflow_load; i++) {
+    total_p += p_powerflowload_p[i];
+    total_q += p_powerflowload_q[i];
+  }
+}
+
+/**
+ * return the real and reactive power produced by the generator indicated by
+ * the tag variable
+ * @param tag 2-character identifier for the generator
+ * @param pg real power produced by generator
+ * @param qg reactive power produced by generator
+ * @return false if no generator corresponds to tag value.
+ */
+bool gridpack::dynamic_simulation::DSFullBus::getGeneratorPower(std::string tag,
+    double &pg, double &qg) const
+{
+  bool ret = false;
+  int i;
+  pg = 0.0;
+  qg = 0.0;
+  for (i=0; i<p_ngen; i++) {
+    if (tag == p_genid[i]) {
+      ret = true;
+      pg = p_pg[i];
+      qg = p_qg[i];
+      break;
+    }
+  }
+  return ret;
+}
 
 /**
  *  Simple constructor
