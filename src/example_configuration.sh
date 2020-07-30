@@ -95,7 +95,9 @@ if [ $host == "flophouse" ]; then
         # parch="rhel7-gnu48-complex-opt-c"
         parch="rhel7-real-c-static"
         parch="rhel7-complex-c-static"
-        # parch="rhel7-real-c-static-debug"
+        if [ "$build"x = "Debug"x ]; then
+            parch="rhel7-real-c-static-debug"
+        fi
         # pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
     fi
 
