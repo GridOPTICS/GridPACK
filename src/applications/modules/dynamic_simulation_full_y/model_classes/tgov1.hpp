@@ -96,12 +96,12 @@ class Tgov1Model : public BaseGovernorModel
 	/** 
 	 * Set the governor bus number
 	 */
-	void setExtBusNum(int ExtBusNum);
+	//void setExtBusNum(int ExtBusNum);
 	
 	/** 
 	 * Set the governor generator id
 	 */
-	void setExtGenId(std::string ExtGenId);
+	//void setExtGenId(std::string ExtGenId);
 
   private:
 
@@ -121,8 +121,8 @@ class Tgov1Model : public BaseGovernorModel
     double delta_w;
 	bool  bdebugmodel;
 		//Renke added below 2020-7-24
-	std::string p_ckt; // id of the generator where the governor is installed on
-    int p_bus_id;  // bus number of the generator 
+	//std::string p_ckt; // id of the generator where the governor is installed on
+    //int p_bus_id;  // bus number of the generator 
 
 };
 }  // dynamic_simulation

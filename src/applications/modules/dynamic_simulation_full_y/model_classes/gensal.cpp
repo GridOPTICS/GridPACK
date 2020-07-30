@@ -200,7 +200,7 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
 	p_governor = getGovernor();
 	p_governor->setMechanicalPower(Pmech);
 	p_governor->setRotorSpeedDeviation(x2w_0); // set Speed Deviation w for wsieg1 
-	p_governor->setExtBusNum(p_bus_id); // Yuan added on 2020-6-23
+	//p_governor->setExtBusNum(p_bus_id); // Yuan added on 2020-6-23
 	//p_governor->setExtGenId(p_ckt); // Yuan added on 2020-6-23
 	p_governor->init(mag, ang, ts);
   }

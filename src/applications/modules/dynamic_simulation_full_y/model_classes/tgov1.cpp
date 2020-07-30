@@ -286,15 +286,19 @@ double gridpack::dynamic_simulation::Tgov1Model::getMechanicalPower()
 /** 
  * Set the governor generator bus number
  */
+ /**
 void gridpack::dynamic_simulation::Tgov1Model::setExtBusNum(int ExtBusNum)
 {
 	p_bus_id = ExtBusNum;
-}	
+}
+*/	
 
 /** 
  * Set the governor generator id
  */
+ /**
 void gridpack::dynamic_simulation::Tgov1Model::setExtGenId(std::string ExtGenId)
 {
 	p_ckt = ExtGenId;
 }
+*/
