@@ -66,6 +66,9 @@ void transferPFtoDS(
 int
 main(int argc, char **argv)
 {
+  gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
+  noprint_ins->setStatus(true);
+  
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
 
