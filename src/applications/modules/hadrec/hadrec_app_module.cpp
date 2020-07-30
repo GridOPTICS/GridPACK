@@ -302,6 +302,48 @@ bool gridpack::hadrec::HADRECAppModule::isDynSimuDone( ){
 }
 
 /**
+ * Return values for total active and reactive load power on bus
+ * @param bus_id original bus index
+ * @param lp active load power
+ * @param lq reactive load power
+ * @return false if bus is not found on this processor
+ */
+bool gridpack::hadrec::HADRECAppModule::getBusTotalLoadPower(int bus_id,
+    double &total_p, double &total_q)
+{
+	double lp = 0.0;
+	double lq = 0.0;
+	bool flag = false;
+	flag = ds_app_sptr->getBusTotalLoadPower(bus_id, lp, lq);
+    total_p = lp;
+	total_q = lq;
+	
+	return flag;
+}
+
+/**
+ * Return real and reactive power produced by requested generator
+ * @param bus_id original index for bus hosting generator
+ * @param gen_id 2-character identifier for generator
+ * @param pg active power produced by generator
+ * @param qg reactive power produced by generator
+ * @return false if generator is not found on this processor
+ */
+bool gridpack::hadrec::HADRECAppModule::getGeneratorPower(int bus_id,
+    std::string gen_id, double &pg, double &qg)
+{ 
+  	double pgtmp = 0.0;
+	double qgtmp = 0.0;
+	bool flag = false;
+	flag = ds_app_sptr->getGeneratorPower(bus_id, gen_id, pgtmp, qgtmp);
+    pg = pgtmp;
+	qg = qgtmp;
+	
+	return flag;
+}
+
+
+/**
  * apply actions
  */
 void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECAction control_action){

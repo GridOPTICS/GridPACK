@@ -21,6 +21,7 @@
 #include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
 #include <vector>
+#include <string>
 
 
 const char* help = "HADREC Test application";
@@ -68,6 +69,34 @@ int main(int argc, char **argv)
 
   // initialize dynamic simulation
   hadrec_app_sptr->initializeDynSimu(BusFaults);
+  
+  //-----test get load and get generator function-----------
+	double lp, lq, pg, qg;
+	int busno = 5;
+	bool btmp;
+    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 7;
+    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 9;
+    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    
+    busno = 1;
+    std::string genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 2;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 3;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
   gridpack::hadrec::HADRECAction loadshedact;
   loadshedact.actiontype = 0;
@@ -185,6 +214,31 @@ int main(int argc, char **argv)
 
     // initialize dynamic simulation
     hadrec_app_sptr->initializeDynSimu(BusFaults);
+	
+	busno = 5;
+    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 7;
+    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 9;
+    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    
+    busno = 1;
+    std::string genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 2;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 3;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
     isteps = 0;
     //bApplyAct = true;  // whether apply the action in the simulation steps
