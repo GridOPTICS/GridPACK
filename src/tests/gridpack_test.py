@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-07-22 08:46:17 d3g096
+# Last Change: 2020-07-30 12:15:25 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -58,6 +58,17 @@ class GridPACKTester(TestCase):
 
         hadapp.initializeDynSimu(busfaultlist)
 
+        print hadapp.getBusTotalLoadPower(5);
+        print hadapp.getBusTotalLoadPower(7);
+        print hadapp.getBusTotalLoadPower(9);
+        print hadapp.getBusTotalLoadPower(-1); # should be None
+
+        print hadapp.getGeneratorPower(1, "1");
+        print hadapp.getGeneratorPower(2, "1");
+        print hadapp.getGeneratorPower(3, "1");
+        print hadapp.getGeneratorPower(3, "14"); # should be None
+        print hadapp.getGeneratorPower(-1, "1"); # should be None
+
         loadshedact = gridpack.hadrec.Action()
         loadshedact.actiontype = 0;
         loadshedact.bus_number = 5;
@@ -72,11 +83,11 @@ class GridPACKTester(TestCase):
 
         (obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs) = hadapp.getObservationLists()
 
-        print (obs_genBus)
-        print (obs_genIDs)
-        print (obs_loadBuses)
-        print (obs_loadIDs)
-        print (obs_busIDs)
+        print obs_genBus
+        print obs_genIDs
+        print obs_loadBuses
+        print obs_loadIDs
+        print obs_busIDs
 
         bApplyAct = True
         isteps = 0

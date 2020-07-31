@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-07-22 08:25:09 d3g096
+// Last Change: 2020-07-30 12:11:30 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -291,8 +291,33 @@ PYBIND11_MODULE(gridpack, gpm) {
                                       obs_loadBuses, obs_loadIDs, obs_busIDs);
              return py::make_tuple(obs_genBus, obs_genIDs,
                                    obs_loadBuses, obs_loadIDs, obs_busIDs);
-         });
+         })
+    ;
              
-                                  
+  // These methods return a tuple on success or False on failure
+  hadapp
+    .def("getBusTotalLoadPower",
+         [](gph::HADRECAppModule& self, const int& busid) -> py::object {
+           double pg, qg;
+           bool flag;
+           flag = self.getBusTotalLoadPower(busid, pg, qg);
+           if (flag) {
+             return py::make_tuple(pg, qg);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getGeneratorPower",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& genid) -> py::object {
+           double pg, qg;
+           bool flag;
+           flag = self.getGeneratorPower(busid, genid, pg, qg);
+           if (flag) {
+             return py::make_tuple(pg, qg);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         });
+  
 
 }

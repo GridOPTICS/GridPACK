@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-07-22 11:34:26 d3g096
+# Last Change: 2020-07-31 11:37:27 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -40,17 +40,29 @@ comm = gridpack.Communicator()
 
 np = gridpack.NoPrint()
 sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
-np.setStatus(True)
+# np.setStatus(True)
 sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
         
 hadapp = gridpack.hadrec.Module()
-hadapp.solvePowerFlowBeforeDynSimu(inname)
+hadapp.solvePowerFlowBeforeDynSimu(inname, -1)
 hadapp.transferPFtoDS()
 
 busfaultlist = gridpack.dynamic_simulation.EventVector()
 
 hadapp.initializeDynSimu(busfaultlist)
 
+if (not np.status()):
+    print hadapp.getBusTotalLoadPower(5);
+    print hadapp.getBusTotalLoadPower(7);
+    print hadapp.getBusTotalLoadPower(9);
+    print hadapp.getBusTotalLoadPower(-1); # should be None
+
+    print hadapp.getGeneratorPower(1, "1");
+    print hadapp.getGeneratorPower(2, "1");
+    print hadapp.getGeneratorPower(3, "1");
+    print hadapp.getGeneratorPower(3, "14"); # should be None
+    print hadapp.getGeneratorPower(-1, "1"); # should be None
+        
 loadshedact = gridpack.hadrec.Action()
 loadshedact.actiontype = 0;
 loadshedact.bus_number = 5;
