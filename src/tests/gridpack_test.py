@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-07-30 12:15:25 d3g096
+# Last Change: 2020-08-03 06:48:38 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -58,36 +58,36 @@ class GridPACKTester(TestCase):
 
         hadapp.initializeDynSimu(busfaultlist)
 
-        print hadapp.getBusTotalLoadPower(5);
-        print hadapp.getBusTotalLoadPower(7);
-        print hadapp.getBusTotalLoadPower(9);
-        print hadapp.getBusTotalLoadPower(-1); # should be None
+        print (hadapp.getBusTotalLoadPower(5))
+        print (hadapp.getBusTotalLoadPower(7))
+        print (hadapp.getBusTotalLoadPower(9))
+        print (hadapp.getBusTotalLoadPower(-1)) # should be None
 
-        print hadapp.getGeneratorPower(1, "1");
-        print hadapp.getGeneratorPower(2, "1");
-        print hadapp.getGeneratorPower(3, "1");
-        print hadapp.getGeneratorPower(3, "14"); # should be None
-        print hadapp.getGeneratorPower(-1, "1"); # should be None
+        print (hadapp.getGeneratorPower(1, "1"))
+        print (hadapp.getGeneratorPower(2, "1"))
+        print (hadapp.getGeneratorPower(3, "1"))
+        print (hadapp.getGeneratorPower(3, "14")) # should be None
+        print (hadapp.getGeneratorPower(-1, "1")) # should be None
 
         loadshedact = gridpack.hadrec.Action()
-        loadshedact.actiontype = 0;
-        loadshedact.bus_number = 5;
-        loadshedact.componentID = "1";
-        loadshedact.percentage = -0.2;
+        loadshedact.actiontype = 0
+        loadshedact.bus_number = 5
+        loadshedact.componentID = "1"
+        loadshedact.percentage = -0.2
 
         loadshedact1 = gridpack.hadrec.Action()
-        loadshedact1.actiontype = 0;
-        loadshedact1.bus_number = 7;
-        loadshedact1.componentID = "1";
-        loadshedact1.percentage = -0.2;
+        loadshedact1.actiontype = 0
+        loadshedact1.bus_number = 7
+        loadshedact1.componentID = "1"
+        loadshedact1.percentage = -0.2
 
         (obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs) = hadapp.getObservationLists()
 
-        print obs_genBus
-        print obs_genIDs
-        print obs_loadBuses
-        print obs_loadIDs
-        print obs_busIDs
+        print (obs_genBus)
+        print (obs_genIDs)
+        print (obs_loadBuses)
+        print (obs_loadIDs)
+        print (obs_busIDs)
 
         bApplyAct = True
         isteps = 0
@@ -99,7 +99,7 @@ class GridPACKTester(TestCase):
                 hadapp.applyAction(loadshedact)
                 hadapp.applyAction(loadshedact1)
             hadapp.executeDynSimuOneStep()
-            ob_vals = hadapp.getObservations();
+            ob_vals = hadapp.getObservations()
             print (isteps, ob_vals)
             isteps = isteps + 1
 
@@ -108,11 +108,11 @@ class GridPACKTester(TestCase):
         if (btest_2dynasimu):
 
             busfault = gridpack.dynamic_simulation.Event()
-            busfault.start = 10.0;
-            busfault.end = 10.2;
-            busfault.step = 0.005;
-            busfault.isBus = True;
-            busfault.bus_idx = 7;
+            busfault.start = 10.0
+            busfault.end = 10.2
+            busfault.step = 0.005
+            busfault.isBus = True
+            busfault.bus_idx = 7
 
             busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
 
@@ -125,7 +125,7 @@ class GridPACKTester(TestCase):
                       isteps == 3500 or isteps == 4000 )):
                     hadapp.applyAction(loadshedact)
                 hadapp.executeDynSimuOneStep()
-                ob_vals = hadapp.getObservations();
+                ob_vals = hadapp.getObservations()
                 print (isteps, ob_vals)
                 isteps = isteps + 1
 
