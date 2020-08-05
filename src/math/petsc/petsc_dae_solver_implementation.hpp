@@ -439,6 +439,9 @@ protected:
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
       fvalue[i] = equate<PetscScalar, T>(evalues[i]);
     }
+
+    ierr = VecAssemblyBegin(U);
+    ierr = VecAssemblyEnd(U);
     return ierr;
   }
 
