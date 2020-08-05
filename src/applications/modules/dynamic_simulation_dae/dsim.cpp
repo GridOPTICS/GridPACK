@@ -209,9 +209,9 @@ void DSim::setup()
 
   /* Create mappers and vectors, matrices */
   p_VecMapper = new gridpack::mapper::BusVectorMap<DSimNetwork>(p_network);
-  p_MatMapper = new gridpack::mapper::FullMatrixMap<DSimNetwork>(p_network);
-
   p_X = p_VecMapper->mapToVector();
+
+  p_MatMapper = new gridpack::mapper::FullMatrixMap<DSimNetwork>(p_network);
   p_J = p_MatMapper->mapToMatrix();
 
   if(!rank()) printf("DSim:Finished setting up mappers\n");
