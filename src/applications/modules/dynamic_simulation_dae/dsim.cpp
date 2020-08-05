@@ -266,6 +266,7 @@ void DSim::initialize()
 {
   p_factory->setMode(INIT_X);
   p_VecMapper->mapToVector(p_X);
+  p_X->ready();
   
   p_network->updateBuses();
   //p_X->print();

@@ -91,6 +91,7 @@ public:
     //    J.zero();
     p_factory->setMode(RESIDUAL_EVAL);
     p_MatMapper->mapToMatrix(J);
+    J.ready();
   }
 
   /// Build the DAE RHS function
@@ -150,7 +151,7 @@ public:
     J.zero();
     p_factory->setMode(FAULT_EVAL);
     p_MatMapper->mapToMatrix(J);
-    
+    J.ready();
   }
 
   private:

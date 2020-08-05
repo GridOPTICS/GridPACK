@@ -58,12 +58,12 @@ DSimBus::~DSimBus(void)
     for(int i=0; i < p_ngen; i++) {
       if(p_gen[i]) delete(p_gen[i]);
     }
+    free(p_neqsgen);
+    free(p_neqsexc);
+    free(p_neqsgov);
+    free(p_gen);
+    free(p_matvalues);
   }
-  free(p_neqsgen);
-  free(p_neqsexc);
-  free(p_neqsgov);
-  free(p_gen);
-  free(p_matvalues);
 }
 
 /**
