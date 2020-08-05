@@ -132,10 +132,10 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   Va       = Efd0 + Vfd;
   yLL2     = Va/Ka;
   yLL1     = yLL2;
-  if(iseq_diff[2]) xLL2    = (1 - Tc1/Tb1)*yLL2;
+  if(iseq_diff[2]) xLL2    = (1.0 - Tc1/Tb1)*yLL2;
   else xLL2 = yLL2;
   Vref     = yLL1 + Vmeas + Vf;
-  if(iseq_diff[1]) xLL1    = (1 - Tc/Tb)*(Vref - Vmeas - Vf);
+  if(iseq_diff[1]) xLL1    = (1.0 - Tc/Tb)*(Vref - Vmeas - Vf);
   else xLL1 = Vref - Vmeas - Vf;
 
   values[0] = Vmeas;
@@ -289,7 +289,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     }
 
     if(iseq_diff[1]) {
-      values[1] = (-xLL1 + (1 - Tc/Tb)*Vi)/Tb - dxLL1;
+      values[1] = (-xLL1 + (1.0 - Tc/Tb)*Vi)/Tb - dxLL1;
       yLL1 = xLL1 + Tc/Tb*Vi;
     } else {
       values[1] = -xLL1 + Vi;
@@ -298,7 +298,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
 
     // xLL2 equation
     if(iseq_diff[2]) {
-      values[2] = (-xLL2 + (1 - Tc1/Tb1)*yLL1)/Tb1 - dxLL2;
+      values[2] = (-xLL2 + (1.0 - Tc1/Tb1)*yLL1)/Tb1 - dxLL2;
       yLL2 = xLL2 + Tc1/Tb1*yLL1;
     } else {
       values[2] = -xLL2 + yLL1;
@@ -441,8 +441,8 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
     if(iseq_diff[1]) {
       values[xLL1_idx][xLL1_idx]  = -1.0/Tb - shift;
       if(!Vi_at_min && !Vi_at_max) {
-	values[Vmeas_idx][xLL1_idx] = (1 - Tc/Tb)*-1.0/Tb;
-	values[xf_idx][xLL1_idx]    = (1 - Tc/Tb)*-dVf_dxf/Tb;
+	values[Vmeas_idx][xLL1_idx] = (1.0 - Tc/Tb)*-1.0/Tb;
+	values[xf_idx][xLL1_idx]    = (1.0 - Tc/Tb)*-dVf_dxf/Tb;
       }
       yLL1 = xLL1 + Tc/Tb*Vi;
       dyLL1_dxLL1  = 1.0;
@@ -463,11 +463,11 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
 
     // Partial derivatives of xLL2 equation
     if(iseq_diff[2]) {
-      values[Vmeas_idx][xLL2_idx] =  (1 - Tc1/Tb1)*dyLL1_dVmeas/Tb1;
-      values[xLL1_idx][xLL2_idx]  =  (1 - Tc1/Tb1)*dyLL1_dxLL1/Tb1;
-      values[xLL2_idx][xLL2_idx]  =  -1/Tb1 + (1 - Tc1/Tb1)*dyLL1_dxLL1/Tb1 - shift;
-      values[Va_idx][xLL2_idx]    =  (1 - Tc1/Tb1)*dyLL1_dVa/Tb1;
-      values[xf_idx][xLL2_idx]    =  (1 - Tc1/Tb1)*dyLL1_dxf/Tb1;
+      values[Vmeas_idx][xLL2_idx] =  (1.0 - Tc1/Tb1)*dyLL1_dVmeas/Tb1;
+      values[xLL1_idx][xLL2_idx]  =  (1.0 - Tc1/Tb1)*dyLL1_dxLL1/Tb1;
+      values[xLL2_idx][xLL2_idx]  =  -1.0/Tb1 + (1 - Tc1/Tb1)*dyLL1_dxLL1/Tb1 - shift;
+      values[Va_idx][xLL2_idx]    =  (1.0 - Tc1/Tb1)*dyLL1_dVa/Tb1;
+      values[xf_idx][xLL2_idx]    =  (1.0 - Tc1/Tb1)*dyLL1_dxf/Tb1;
 
       yLL2 = xLL2 + Tc1/Tb1*yLL1;
 

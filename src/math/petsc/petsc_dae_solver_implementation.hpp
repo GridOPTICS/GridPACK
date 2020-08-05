@@ -68,6 +68,23 @@ public:
     if (eman) p_eventv.resize(eman->size());
   }
 
+  PETScDAESolverImplementation(const parallel::Communicator& comm, 
+                               const int local_size,
+			       Matrix* J,
+                               JacobianBuilder& jbuilder,
+                               FunctionBuilder& fbuilder,
+                               EventManagerPtr eman)
+    : DAESolverImplementation<T, I>(comm, local_size, J, jbuilder, fbuilder, eman),
+      PETScConfigurable(this->communicator()),
+      p_ts(),
+      p_petsc_J(NULL),
+      p_eventv(),
+      p_termFlag(false)
+  {
+    if (eman) p_eventv.resize(eman->size());
+  }
+
+
   /// Destructor
   ~PETScDAESolverImplementation(void)
   {
@@ -120,7 +137,7 @@ protected:
 
       ierr = TSSetOptionsPrefix(p_ts, option_prefix.c_str()); CHKERRXX(ierr);
 
-      p_petsc_J = PETScMatrix(this->p_J);
+      p_petsc_J = PETScMatrix(*(this->p_J));
       ierr = TSSetIFunction(p_ts, NULL, FormIFunction, this); CHKERRXX(ierr);
       ierr = TSSetIJacobian(p_ts, *p_petsc_J, *p_petsc_J, FormIJacobian, this); CHKERRXX(ierr);
       ierr = TSSetApplicationContext(p_ts, this); CHKERRXX(ierr);
@@ -293,7 +310,7 @@ protected:
       xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false)));
 
     // Call the user-specified function (object) to form the Jacobian
-    (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, solver->p_J);
+    (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, *(solver->p_J));
 
     *flag = SAME_NONZERO_PATTERN;
 
@@ -326,7 +343,7 @@ protected:
       xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false)));
 
     // Call the user-specified function (object) to form the Jacobian
-    (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, solver->p_J);
+    (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, *(solver->p_J));
 
     return ierr;
   
@@ -422,6 +439,9 @@ protected:
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
       fvalue[i] = equate<PetscScalar, T>(evalues[i]);
     }
+
+    ierr = VecAssemblyBegin(U);
+    ierr = VecAssemblyEnd(U);
     return ierr;
   }
 

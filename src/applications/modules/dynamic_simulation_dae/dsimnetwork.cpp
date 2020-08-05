@@ -58,11 +58,12 @@ DSimBus::~DSimBus(void)
     for(int i=0; i < p_ngen; i++) {
       if(p_gen[i]) delete(p_gen[i]);
     }
+    free(p_neqsgen);
+    free(p_neqsexc);
+    free(p_neqsgov);
+    free(p_gen);
+    free(p_matvalues);
   }
-  free(p_neqsgen);
-  free(p_neqsexc);
-  free(p_neqsgov);
-  free(p_gen);
 }
 
 /**
@@ -342,6 +343,7 @@ void DSimBus::load(const
       //      printf("p_nvar = %d (ngen:%d,nexc:%d,ngov:%d)\n",p_nvar,p_neqsgen[i],p_neqsexc[i],p_neqsgov[i]);
     }
   }
+  p_matvalues = (gridpack::ComplexType**)malloc(p_nvar*sizeof(gridpack::ComplexType*));
 
   // Get active and reactive power load
   data->getValue(LOAD_PL,&p_pl);
@@ -386,7 +388,7 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
   // Note that values is column-major, so each array of matvalues
   // points a column of the matrix. Hence, we need to store the values
   // in the transpose of the locations.
-  gridpack::ComplexType *matvalues[p_nvar];
+  gridpack::ComplexType **matvalues = p_matvalues;
 
   getVoltagesRectangular(&p_VD,&p_VQ);
   
@@ -639,6 +641,9 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
 
     fbus[VD_idx] = IgenQ - IshuntQ - IbrQ - IloadQ;
     fbus[VQ_idx] = IgenD - IshuntD - IbrD - IloadD;
+
+    //    printf("Bus\n");
+    //    printf("VD = %f, VQ = %f, fbus[VD_idx] = %f, fbus[VQ_idx] = %f\n",p_VDQptr[0],p_VDQptr[1],real(fbus[VD_idx]),real(fbus[VQ_idx]));
   }
   return true;
 }

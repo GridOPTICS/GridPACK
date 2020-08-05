@@ -44,6 +44,21 @@ DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm,
   p_setImpl(new PETScDAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder, eman));
 }
 
+template <typename T, typename I>
+DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm, 
+                             const int local_size,
+			     Matrix* J,
+                             DAESolverT<T, I>::JacobianBuilder& jbuilder,
+                             DAESolverT<T, I>::FunctionBuilder& fbuilder,
+                             DAESolverT<T, I>::EventManagerPtr eman)
+  : parallel::WrappedDistributed(),
+    utility::WrappedConfigurable(),
+    utility::Uncopyable(),
+    p_impl()
+{
+  p_setImpl(new PETScDAESolverImplementation<T, I>(comm, local_size, J, jbuilder, fbuilder, eman));
+}
+
 
 
 template 
@@ -54,8 +69,24 @@ DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm,
                                     DAESolverT<ComplexType>::EventManagerPtr eman);
 
 template 
+DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm, 
+                                    const int local_size,
+				    gridpack::math::Matrix* J,
+                                    DAESolverT<ComplexType>::JacobianBuilder& jbuilder,
+                                    DAESolverT<ComplexType>::FunctionBuilder& fbuilder,
+                                    DAESolverT<ComplexType>::EventManagerPtr eman);
+
+template 
 DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm, 
                                  const int local_size,
+                                 DAESolverT<RealType>::JacobianBuilder& jbuilder,
+                                 DAESolverT<RealType>::FunctionBuilder& fbuilder,
+                                 DAESolverT<RealType>::EventManagerPtr eman);
+
+template 
+DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm, 
+                                 const int local_size,
+				 Matrix *J,
                                  DAESolverT<RealType>::JacobianBuilder& jbuilder,
                                  DAESolverT<RealType>::FunctionBuilder& fbuilder,
                                  DAESolverT<RealType>::EventManagerPtr eman);
@@ -76,9 +107,10 @@ DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm,
 
 template 
 DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm, 
-                                    const int local_size,
-                                    DAESolverT<ComplexType>::JacobianBuilder& jbuilder,
-                                    DAESolverT<ComplexType>::FunctionBuilder& fbuilder);
+                                 const int local_size,
+                                 DAESolverT<ComplexType>::JacobianBuilder& jbuilder,
+                                 DAESolverT<ComplexType>::FunctionBuilder& fbuilder);
+
 
 template 
 DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm, 
