@@ -12,6 +12,7 @@
 # Numerical integration scheme
 #-dsim_ts_type cn # Implicit trapezoidal
 -dsim_ts_type rosw
+-dsim_ts_rosw_type 2m
 
 # Time-step adaptivity
 -dsim_ts_adapt_type basic # Turned off (Use -dsim_ts_adapt_type basic to turn on adaptivity)
