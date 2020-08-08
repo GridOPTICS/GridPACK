@@ -40,11 +40,17 @@ int main(int argc, char **argv)
   int ierr;
 
   ierr = gridpack_initialize(&argc,&argv);
+    char inputfile[256];
+  if (argc >= 2 && argv[1] != NULL) {
+    sprintf(inputfile,"%s",argv[1]);
+  } else {
+    sprintf(inputfile,"input.xml",argv[1]);
+  }
 
   DSim *dsim = new DSim();
 
   // Set the configuration file
-  dsim->setconfigurationfile("input.xml");
+  dsim->setconfigurationfile(inputfile);
 
   // Read the data. File names given in config file.
   dsim->readnetworkdatafromconfig();
