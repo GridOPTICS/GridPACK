@@ -350,5 +350,15 @@ void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECActi
 	if ( control_action.actiontype == 0 ){
 		return ds_app_sptr->applyLoadShedding(control_action.bus_number, control_action.componentID, control_action.percentage );
 	}
+	
+	if ( control_action.actiontype == 1 ){
+		//if (control_action.brch_from_bus_number > 0 || control_action.brch_to_bus_number > 0){
+			//return ds_app_sptr->setLineTripAction(control_action.brch_from_bus_number, control_action.brch_to_bus_number, control_action.branch_ckt);
+		//}
+		//if (control_action.brch_from_bus_number == -1 && control_action.brch_to_bus_number == -1 && control_action.bus_number > 0){
+		
+			return ds_app_sptr->setLineTripAction(control_action.bus_number);
+		//}
+	}
 
 }

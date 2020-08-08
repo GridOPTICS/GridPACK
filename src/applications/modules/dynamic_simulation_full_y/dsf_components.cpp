@@ -41,6 +41,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
   p_branchrelay_to_flag = false;
+  p_branchtripaction_from_flag = false;
+  p_branchtripaction_to_flag= false;
   p_busrelaytripflag = false; 
   p_branch = NULL;
   p_isolated = false;
@@ -62,6 +64,7 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_pl = 0.0;
   p_ql = 0.0;
   p_relaytrippedbranch = NULL;
+  //p_tripactionbranch.clear();
 }
 
 /**
@@ -80,7 +83,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagSize(int *isize, int *js
 {
   if (YMBus::isIsolated()) return false;
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == YDYNLOAD || p_mode == onFY || p_mode == posFY
-  || p_mode == jxd || p_mode == bus_relay || p_mode == branch_relay) {
+  || p_mode == jxd || p_mode == bus_relay || p_mode == branch_relay || p_mode == branch_trip_action) {
     return YMBus::matrixDiagSize(isize,jsize);
   }  else {
     *isize = 1;
@@ -198,7 +201,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     } else {
       return false;
     }
-  }else if (p_mode == bus_relay) {
+  } else if (p_mode == bus_relay) {
       if (p_busrelaytripflag) {
       gridpack::ComplexType u(p_ybusr, p_ybusi);
       values[0] = u;
@@ -206,7 +209,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     } else {
       return false;
     }	  
-  }else if (p_mode == YDYNLOAD) {  // Dynamic load model's contribution to Y matrix
+  } else if (p_mode == YDYNLOAD) {  // Dynamic load model's contribution to Y matrix
 	//printf("bus %d entering YDYNLOAD mode: p_ndyn_load: %d \n", getOriginalIndex(), p_ndyn_load);
     if (p_ndyn_load>0) {
 		for (int i = 0; i < p_ndyn_load; i++) {
@@ -229,20 +232,41 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     }	
     return true;
   } else if (p_mode == branch_relay) {
-      if (p_branchrelay_from_flag || p_branchrelay_to_flag) {
-	  printf("Bus %d diag element change due to branch relay trip: \n", getOriginalIndex());
-	  if ( p_relaytrippedbranch == NULL ){
-		  printf("Error: in DSFullBus::matrixDiagValues(), the branch relay does not set the branch bus correctly!\n");
-		  return false;
-	  }else{
-		values[0] = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>(p_relaytrippedbranch)->getBranchRelayTripUpdateFactor();
-		printf("changed value: %f + j*%f\n", real(values[0]), imag(values[0]));
-		return true;
-	  }
-    } else {
-      return false;
-    }	  
-  }	 	   
+		if (p_branchrelay_from_flag || p_branchrelay_to_flag) {
+			printf("Bus %d diag element change due to branch relay trip: \n", getOriginalIndex());
+			if ( p_relaytrippedbranch == NULL ){
+				printf("Error: in DSFullBus::matrixDiagValues(), the branch relay does not set the branch bus correctly!\n");
+				return false;
+			}else{
+				values[0] = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>(p_relaytrippedbranch)->getBranchRelayTripUpdateFactor();
+				printf("changed value: %f + j*%f\n", real(values[0]), imag(values[0]));
+				return true;
+			}
+		} else {
+			return false;
+		}	  
+  }	else if (p_mode == branch_trip_action) {
+		if (p_branchtripaction_from_flag || p_branchtripaction_to_flag) {
+			//printf("Bus %d diag element change due to branch relay trip: \n", getOriginalIndex());
+			if ( p_vec_tripactionbranch.empty() ){
+				printf("Error: in DSFullBus::matrixDiagValues(), the branch does not have the branch ckts need to trip\n");
+				return false;
+			}else{
+				gridpack::ComplexType tmp (0.0, 0.0);
+				int nbr, ibr;
+				nbr = p_vec_tripactionbranch.size();
+				for (ibr=0; ibr<nbr; ibr++){
+					tmp += dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>(p_vec_tripactionbranch[ibr])->getBranchTripActionUpdateFactorForBus(getOriginalIndex());
+				}
+				values[0] = tmp;
+				return true;
+			} 
+		}else{
+			return false;
+		}
+  
+  }	// end for  else if (p_mode == branch_trip_action)
+	  
 }
 
 /**
@@ -1924,6 +1948,33 @@ void gridpack::dynamic_simulation::DSFullBus::clearEvent()
   p_branch = NULL;
 }
 
+void gridpack::dynamic_simulation::DSFullBus::setBranchTripAction(int from_idx, int to_idx,
+  gridpack::component::BaseBranchComponent* branch_ptr)
+{
+  if (from_idx == getOriginalIndex()) {
+    p_branchtripaction_from_flag = true;
+  } else {
+    p_branchtripaction_from_flag = false;
+  }
+  if (to_idx == getOriginalIndex()) {
+    p_branchtripaction_to_flag = true;
+  } else {
+    p_branchtripaction_to_flag = false;
+  }
+  
+  if (p_branchtripaction_to_flag || p_branchtripaction_from_flag) {
+    p_vec_tripactionbranch.push_back(branch_ptr);
+  } 
+}
+
+void gridpack::dynamic_simulation::DSFullBus::clearBranchTripAction()
+{
+	p_branchtripaction_from_flag = false;
+	p_branchtripaction_to_flag = false;
+	p_vec_tripactionbranch.clear();
+}
+
+
 void gridpack::dynamic_simulation::DSFullBus::setBranchRelayFromBusStatus(bool sta)
 {
   p_branchrelay_from_flag = sta;
@@ -2612,6 +2663,7 @@ gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)
   p_shunt_admt_b2.clear();
   p_xform.clear();
   p_shunt.clear();
+  p_switched.clear();
   p_branch_status.clear();
   p_elems = 0;
   p_theta = 0.0;
@@ -2619,6 +2671,7 @@ gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)
   p_mode = YBUS;
   p_event = false;
   p_branchrelaytripflag = false;
+  p_branchactiontripflag = false;
   p_bextendedloadbranch = -1;
 }
 
@@ -2637,7 +2690,7 @@ gridpack::dynamic_simulation::DSFullBranch::~DSFullBranch(void)
  */
 bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardSize(int *isize, int *jsize) const
 {
-  if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY
+  if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY || p_mode == branch_trip_action
   || p_mode == jxd || p_mode == YDYNLOAD ||p_mode == bus_relay || p_mode == branch_relay) { 
     return YMBranch::matrixForwardSize(isize,jsize);
   } else {
@@ -2646,7 +2699,7 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardSize(int *isize, i
 }
 bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseSize(int *isize, int *jsize) const
 {
-  if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY
+  if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY || p_mode == branch_trip_action
   || p_mode == jxd || p_mode == YDYNLOAD || p_mode == bus_relay || p_mode == branch_relay) { 
     return YMBranch::matrixReverseSize(isize,jsize);
   } else {
@@ -2691,6 +2744,16 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType
     } else {
       return false;
     } 
+  }else if (p_mode == branch_trip_action) {
+		if (p_branchactiontripflag) {
+			//printf("matrix off diag forward element changes due to branch relay trip!\n");
+			values[0] = -getBranchTripActionUpdateFactorForward();
+			//printf("changed value: %f + j*%f\n", real(values[0]), imag(values[0]));
+	      
+			return true;
+		} else {
+			return false;
+		} 
   }else {
     return false;
   }
@@ -2735,6 +2798,16 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseValues(ComplexType
     } else {
       return false;
     } 
+  }else if (p_mode == branch_trip_action) {
+		if (p_branchactiontripflag) {
+			//printf("matrix off diag forward element changes due to branch relay trip!\n");
+			values[0] = -getBranchTripActionUpdateFactorReverse();
+			//printf("changed value: %f + j*%f\n", real(values[0]), imag(values[0]));
+	      
+			return true;
+		} else {
+			return false;
+		} 
   }else {
     return false;
   }
@@ -2793,6 +2866,7 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
   p_shunt_admt_b2.clear();
   p_xform.clear();
   p_shunt.clear();
+  p_switched.clear();
   p_branch_status.clear();
   p_linerelays.clear();
   p_relaybranchidx.clear();
@@ -2835,6 +2909,7 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
   int ivar;
+  bool lvar;
   double pi = 4.0*atan(1.0);
   p_active = false;
   ok = data->getValue(CASE_SBASE, &p_sbase);
@@ -2870,6 +2945,9 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
     data->getValue(BRANCH_STATUS, &ivar, idx);
     p_branch_status.push_back(ivar);
     if (ivar == 1) p_active = true;
+	ok = data->getValue(BRANCH_SWITCHED, &lvar, idx);
+    if (!ok) lvar = false;
+    p_switched.push_back(lvar);
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
     p_charging.push_back(rvar);
@@ -3188,6 +3266,117 @@ gridpack::dynamic_simulation::DSFullBranch::getBranchRelayTripUpdateFactor()
 }
 
 /**
+ * Return the updating factor that will be applied to the ybus matrix at
+ * the branch trip action
+ * @return: value of update factor
+*/
+gridpack::ComplexType 
+gridpack::dynamic_simulation::DSFullBranch::getBranchTripActionUpdateFactorForBus(int busNo)
+{ 
+	int ibr, idx, ntripbranch;
+	gridpack::ComplexType ret(0.0,0.0);
+  
+	if (!p_vec_tripaction_branchcktidx.empty()) {
+		ntripbranch = p_vec_tripaction_branchcktidx.size();
+		//printf("DSFullBranch::getBranchRelayTripUpdateFactor ntripbranch = %d\n", ntripbranch);
+		for (ibr=0; ibr<ntripbranch; ibr++ ){
+			idx = p_vec_tripaction_branchcktidx[ibr];
+			//printf("DSFullBranch::getBranchRelayTripUpdateFactor idx = %d\n", idx);
+			if (p_branch_status[idx]) {
+				
+				gridpack::ComplexType tmp(p_resistance[idx],p_reactance[idx]);
+				gridpack::ComplexType tmpB(0.0,0.5*p_charging[idx]);
+				tmp = -1.0/tmp;
+				tmp = tmp - tmpB;
+				
+				if (p_xform[idx]){
+					gridpack::ComplexType a(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+					a = p_tap_ratio[idx]*a;
+					if ( (!p_switched[idx] && busNo == dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get())->getOriginalIndex()) ||
+						(p_switched[idx] && busNo == dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get())->getOriginalIndex()) ) {
+						tmp = tmp/(conj(a)*a);
+					} else {
+						// tmp is unchanged
+					}
+	
+				}
+
+				ret += tmp; 
+			}
+
+		}
+	}
+		
+	return ret;
+}
+
+gridpack::ComplexType 
+gridpack::dynamic_simulation::DSFullBranch::getBranchTripActionUpdateFactorForward()
+{ 
+  int ibr, idx, ntripbranch;
+  gridpack::ComplexType ret(0.0,0.0);
+  
+  if (!p_vec_tripaction_branchcktidx.empty()) {
+	  ntripbranch = p_vec_tripaction_branchcktidx.size();
+	  //printf("DSFullBranch::getBranchRelayTripUpdateFactor ntripbranch = %d\n", ntripbranch);
+	  for (ibr=0; ibr<ntripbranch; ibr++ ){
+		  idx = p_vec_tripaction_branchcktidx[ibr];
+		  //printf("DSFullBranch::getBranchRelayTripUpdateFactor idx = %d\n", idx);
+		  if (p_branch_status[idx]) {
+			gridpack::ComplexType tmp(p_resistance[idx], p_reactance[idx]);		  
+			tmp = -1.0 / tmp;
+			// tbd, have not consider the transformer ratio and line shunt capacitance
+			gridpack::ComplexType a(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+			if (p_xform[idx]) a = p_tap_ratio[idx]*a;
+			if (p_switched[idx]) a = conj(a);
+			if (p_xform[idx]) {
+				tmp = tmp/conj(a);
+				
+			}
+			
+			ret += tmp;
+		  }
+ 
+	  }
+  }
+
+  return ret;
+}
+
+gridpack::ComplexType 
+gridpack::dynamic_simulation::DSFullBranch::getBranchTripActionUpdateFactorReverse()
+{ 
+  int ibr, idx, ntripbranch;
+  gridpack::ComplexType ret(0.0,0.0);
+  
+  if (!p_vec_tripaction_branchcktidx.empty()) {
+	  ntripbranch = p_vec_tripaction_branchcktidx.size();
+	  //printf("DSFullBranch::getBranchRelayTripUpdateFactor ntripbranch = %d\n", ntripbranch);
+	  for (ibr=0; ibr<ntripbranch; ibr++ ){
+		  idx = p_vec_tripaction_branchcktidx[ibr];
+		  //printf("DSFullBranch::getBranchRelayTripUpdateFactor idx = %d\n", idx);
+		  if (p_branch_status[idx]) {
+			gridpack::ComplexType tmp(p_resistance[idx], p_reactance[idx]);		  
+			tmp = -1.0 / tmp;
+			// tbd, have not consider the transformer ratio and line shunt capacitance
+			gridpack::ComplexType a(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+			if (p_xform[idx]) a = p_tap_ratio[idx]*a;
+			if (p_switched[idx]) a = conj(a);
+			if (p_xform[idx]) {
+				tmp = tmp/a;
+				
+			}
+			
+			ret += tmp;
+		  }
+ 
+	  }
+  }
+
+  return ret;
+}
+
+/**
  * Clear fault event from branch
  */
 void gridpack::dynamic_simulation::DSFullBranch::clearEvent()
@@ -3235,6 +3424,78 @@ void gridpack::dynamic_simulation::DSFullBranch::setEvent(
         (getBus2().get())->setEvent(idx1,idx2,this);
     }
   }
+}
+
+bool gridpack::dynamic_simulation::DSFullBranch::setBranchTripAction(
+    const std::string ckt_tag)
+{
+	int ickt;
+	for (ickt=0; ickt<p_elems; ickt++) {
+		if (ckt_tag == p_ckt[ickt]  && p_branch_status[ickt] == 1){
+			p_branchactiontripflag = true;
+	
+			p_vec_tripaction_branchcktidx.push_back(ickt);
+	
+			int idx1 = getBus1OriginalIndex();
+			int idx2 = getBus2OriginalIndex();
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+				(getBus1().get())->setBranchTripAction(idx1,idx2,this);
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+				(getBus2().get())->setBranchTripAction(idx1,idx2,this);
+				
+			return true;
+		}
+	}
+	
+	return false;
+
+}
+
+bool gridpack::dynamic_simulation::DSFullBranch::setBranchTripAction( )
+{
+	int ickt;
+	for (ickt=0; ickt<p_elems; ickt++) {
+		if (!p_xform[ickt] && p_branch_status[ickt] == 1){
+			p_branchactiontripflag = true;
+	
+			p_vec_tripaction_branchcktidx.push_back(ickt);
+	
+			int idx1 = getBus1OriginalIndex();
+			int idx2 = getBus2OriginalIndex();
+			
+			//printf("---------testing, DSFullBranch::setBranchTripAction(), Tripped Branch from Bus %d to Bus %d, ckt idx: %d \n", idx1, idx2, ickt);
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+				(getBus1().get())->setBranchTripAction(idx1,idx2,this);
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+				(getBus2().get())->setBranchTripAction(idx1,idx2,this);
+				
+			return true;
+		}
+	}
+	
+	return false;
+
+}
+
+void gridpack::dynamic_simulation::DSFullBranch::clearBranchTripAction()
+{
+	p_branchactiontripflag = false;
+	
+	int ibr, nbr, idx;
+	nbr = p_vec_tripaction_branchcktidx.size();
+	for (ibr=0 ; ibr<nbr ; ibr++){
+		idx = p_vec_tripaction_branchcktidx[ibr];
+		p_branch_status[idx] = 0;
+	}
+	
+	p_vec_tripaction_branchcktidx.clear();
+	
+	int idx1 = getBus1OriginalIndex();
+    int idx2 = getBus2OriginalIndex();
+	dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (getBus1().get())->clearBranchTripAction();
+    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (getBus2().get())->clearBranchTripAction();
 }
 
 /**

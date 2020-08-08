@@ -34,7 +34,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay};
+enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action};
 
 // Small utility structure to encapsulate information about fault events
 struct Event{
@@ -325,6 +325,11 @@ class DSFullBus
      * Clear fault event from bus
      */
     void clearEvent();
+	
+	void setBranchTripAction(int from_idx, int to_idx,
+		gridpack::component::BaseBranchComponent* branch_ptr);
+		
+	void clearBranchTripAction();
 
     /**
      * Write output from buses to standard out
@@ -517,6 +522,7 @@ class DSFullBus
      */
 	void applyLoadShedding(std::string loadid, double percentage);
 
+
    /**
     * return the fraction online from dynamic load model
     * @param idx index of dynamic load model
@@ -579,6 +585,7 @@ class DSFullBus
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
 	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
+	bool p_branchtripaction_from_flag, p_branchtripaction_to_flag;
 	bool p_busrelaytripflag;
 	int p_bextendedloadbus; // whether it is an extended load bus with composite load model
 	                        // -1: normal bus
@@ -616,6 +623,8 @@ class DSFullBus
 
     gridpack::component::BaseBranchComponent* p_branch;
 	gridpack::component::BaseBranchComponent* p_relaytrippedbranch; //renke add
+	std::vector<gridpack::component::BaseBranchComponent*> p_vec_tripactionbranch; // the branch connect to this bus that will be tripped for the branch trip action
+	
 
     //std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseGenerator> >
       //p_generators;
@@ -782,6 +791,16 @@ class DSFullBranch
 	gridpack::ComplexType getBranchRelayTripUpdateFactor(); //renke add
 	
 	/**
+     * Return the updating factor that will be applied to the ybus matrix at
+     * the branch trip action
+     * @return: value of update factor
+     */
+	gridpack::ComplexType getBranchTripActionUpdateFactorForBus(int busNo); //renke add
+	gridpack::ComplexType getBranchTripActionUpdateFactorForward(); //renke add
+	
+	gridpack::ComplexType getBranchTripActionUpdateFactorReverse(); //renke add
+	
+	/**
 	 * Clear fault event from branch
 	*/
 	void clearEvent();
@@ -793,6 +812,10 @@ class DSFullBranch
      * event in a dyanamic simulation
      */
     void setEvent(const Event &event);
+	
+	bool setBranchTripAction(const std::string ckt_tag);
+	bool setBranchTripAction();
+	void clearBranchTripAction();
 	
 	/**
      * update branch current
@@ -832,7 +855,9 @@ class DSFullBranch
     std::vector<double> p_shunt_admt_g2;
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
+	std::vector<bool> p_switched;
 	std::vector<int> p_newtripbranchcktidx;
+	std::vector<int> p_vec_tripaction_branchcktidx;
 	
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
@@ -844,6 +869,7 @@ class DSFullBranch
     bool p_active;
     bool p_event;
 	bool p_branchrelaytripflag;
+	bool p_branchactiontripflag;  // whether this branch will be tripped due to a branch trip action
 	int  p_bextendedloadbranch; //whether this branch is added by composite load model
 								// -1: normal branch
 								//  1: transformer branch added by composite load model

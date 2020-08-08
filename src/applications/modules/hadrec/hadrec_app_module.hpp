@@ -33,6 +33,10 @@ struct HADRECAction
 	int bus_number = -1;
 	std::string componentID = "1";
 	double percentage = 0.0;
+	
+	//int brch_from_bus_number = -1;
+	//int brch_to_bus_number = -1;
+	//std::string branch_ckt = "1";
 	//p_obs_vals.clear();
 	
 };
