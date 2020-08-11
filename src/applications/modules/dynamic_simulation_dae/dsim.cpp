@@ -288,7 +288,9 @@ void DSim::solve()
   p_configcursor->get("simulationTime",&tmax);
 
   p_daesolver->initialize(t,tstep,*(p_X.get()));
+  p_profiler.startsolvetimer();
   p_daesolver->solve(tmax,maxsteps);
+  p_profiler.stopsolvetimer();
   /*
   while (t < tmax) {
     double tout(tmax);
