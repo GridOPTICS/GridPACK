@@ -3147,3 +3147,96 @@ bool gridpack::dynamic_simulation::DSFullApp::getGeneratorPower(int bus_id,
   }
   return false;
 }
+
+/**
+ * Return total active and reactive loads for each area
+ * @param load_p active load for all areas
+ * @param load_q reactive load for all areas
+ */
+void gridpack::dynamic_simulation::DSFullApp::getAreaLoads(std::vector<double> &load_p,
+    std::vector<double> &load_q) const
+{
+  int nbus = p_network->numBuses();
+  int max_zone = -1;
+  int i;
+  // find out how many zones are in system
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+      if (bus->getZone() > max_zone) max_zone = bus->getZone();
+    }
+  }
+  p_network->communicator().max(&max_zone,1);
+  load_p.clear();
+  load_q.clear();
+  load_p.resize(max_zone);
+  load_q.resize(max_zone);
+  for (i=0; i<max_zone; i++) {
+    load_p[i] = 0.0;
+    load_q[i] = 0.0;
+  }
+
+  // get total loads
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+      int iz = bus->getZone()-1;
+      double p, q;
+      bus->getTotalLoadPower(p,q);
+      if (iz < 0) {
+        printf("Invalid zone on bus %d: %d\n",bus->getOriginalIndex(),iz+1);
+      }
+      load_p[iz] += p;
+      load_q[iz] += q;
+    }
+  }
+  p_network->communicator().sum(&load_p[0],max_zone);
+  p_network->communicator().sum(&load_q[0],max_zone);
+}
+
+/**
+ * Return total active and reactive generator power for each area
+ * @param generator_p active generator power for all areas
+ * @param generator_q reactive generator power for all
+ areas
+ */
+void gridpack::dynamic_simulation::DSFullApp::getAreaGeneratorPower(
+    std::vector<double> &generator_p, std::vector<double> &generator_q) const
+{
+  int nbus = p_network->numBuses();
+  int max_zone = -1;
+  int i;
+  // find out how many zones are in system
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+      if (bus->getZone() > max_zone) max_zone = bus->getZone();
+    }
+  }
+  p_network->communicator().max(&max_zone,1);
+  generator_p.clear();
+  generator_q.clear();
+  generator_p.resize(max_zone);
+  generator_q.resize(max_zone);
+  for (i=0; i<max_zone; i++) {
+    generator_p[i] = 0.0;
+    generator_q[i] = 0.0;
+  }
+
+  // get total loads
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+      int iz = bus->getZone()-1;
+      double p, q;
+      bus->getTotalGeneratorPower(p,q);
+      if (iz < 0) {
+        printf("Invalid zone on bus %d: %d\n",bus->getOriginalIndex(),iz+1);
+      }
+      generator_p[iz] += p;
+      generator_q[iz] += q;
+    }
+  }
+  p_network->communicator().sum(&generator_p[0],max_zone);
+  p_network->communicator().sum(&generator_q[0],max_zone);
+}

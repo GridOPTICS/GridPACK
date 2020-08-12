@@ -529,7 +529,6 @@ class DSFullBus
     * @param total_p total real power load on bus
     * @param total_q total reactive power load on bus
     */
-    
     void getTotalLoadPower(double &total_p, double &total_q) const;
 
     /**
@@ -541,6 +540,13 @@ class DSFullBus
      * @return false if no generator corresponds to tag value.
      */
     bool getGeneratorPower(std::string tag, double &pg, double &qg) const;
+
+   /**
+    * return the power generated on the bus
+    * @param total_p total active power generated on bus
+    * @param total_q total reactive power generated on bus
+    */
+    void getTotalGeneratorPower(double &total_p, double &total_q) const;
 
 #ifdef USE_FNCS
     /**

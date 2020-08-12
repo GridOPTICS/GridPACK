@@ -2571,6 +2571,23 @@ void gridpack::dynamic_simulation::DSFullBus::getTotalLoadPower(double &total_p,
 }
 
 /**
+ * return the power generated on the bus
+ * @param total_p total active power generated on bus
+ * @param total_q total reactive power generated on bus
+ */
+void gridpack::dynamic_simulation::DSFullBus::getTotalGeneratorPower(double &total_p,
+    double &total_q) const
+{
+  total_p = 0.0;
+  total_q = 0.0;
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    total_p += p_pg[i];
+    total_q += p_qg[i];
+  }
+}
+
+/**
  * return the real and reactive power produced by the generator indicated by
  * the tag variable
  * @param tag 2-character identifier for the generator

@@ -322,6 +322,21 @@ class DSFullApp
      */
     bool getGeneratorPower(int bus_id, std::string gen_id, double &pg, double &qg);
 
+    /**
+     * Return total active and reactive loads for each area
+     * @param load_p active load for all areas
+     * @param load_q reactive load for all areas
+     */
+    void getAreaLoads(std::vector<double> &load_p, std::vector<double> &load_q) const;
+
+    /**
+     * Return total active and reactive generator power for each area
+     * @param generator_p active generator power for all areas
+     * @param generator_q reactive generator power for all areas
+     */
+    void getAreaGeneratorPower(std::vector<double> &generator_p,
+        std::vector<double> &generator_q) const;
+
   private:
     /**
      * Utility function to convert faults that are in event list into
