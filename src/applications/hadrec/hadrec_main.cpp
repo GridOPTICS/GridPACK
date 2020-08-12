@@ -21,6 +21,7 @@
 #include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
 #include <vector>
+#include <string>
 
 
 const char* help = "HADREC Test application";
@@ -28,8 +29,17 @@ const char* help = "HADREC Test application";
 int main(int argc, char **argv)
 {
   // Initialize libraries (parallel and math)
-  gridpack::Environment env(argc,argv,help);
+  gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
+  noprint_ins->setStatus(true);
+  
+  //bool bnoprint = gridpack::NoPrint::instance()->status();
+  //printf ("------------- hadrec_main function test 1  bnoprint: %d \n", bnoprint);
 
+  gridpack::Environment env(argc,argv,help);
+  
+  //bnoprint = gridpack::NoPrint::instance()->status();
+  //printf ("------------- hadrec_main function test 2  bnoprint: %d \n", bnoprint);
+  
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
@@ -45,8 +55,11 @@ int main(int argc, char **argv)
   } else {
     file = "input.xml";
   }
-
-  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
+  
+  //bnoprint = gridpack::NoPrint::instance()->status();
+  //printf ("------------- hadrec_main function test 3  bnoprint: %d \n", bnoprint);
+  
+  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
@@ -56,6 +69,34 @@ int main(int argc, char **argv)
 
   // initialize dynamic simulation
   hadrec_app_sptr->initializeDynSimu(BusFaults);
+  
+  //-----test get load and get generator function-----------
+	double lp, lq, pg, qg;
+	int busno = 5;
+	bool btmp;
+    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 7;
+    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 9;
+    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    
+    busno = 1;
+    std::string genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 2;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 3;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
   gridpack::hadrec::HADRECAction loadshedact;
   loadshedact.actiontype = 0;
@@ -145,18 +186,19 @@ int main(int argc, char **argv)
     isteps++;
   }
 
+  printf("\n----------------finished first round of dynamic simulation----\n ");
   //timer->stop(t_total);
   //timer->dump();
 
 
   //start the reload and second time dynamic simulation here
   // transfer power flow results to dynamic simulation
-  bool btest_2dynasimu = false; //true;
+  bool btest_2dynasimu = true;
   if (btest_2dynasimu) {
 	  
 	gridpack::dynamic_simulation::Event busfault;
-	busfault.start = 10.0;
-	busfault.end = 10.2;
+	busfault.start = 1.0;
+	busfault.end = 1.2;
 	busfault.step = 0.005;
 	busfault.isBus = true;
 	busfault.bus_idx = 7;
@@ -165,12 +207,38 @@ int main(int argc, char **argv)
 	BusFaults.push_back(busfault);
     
     //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
+	hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
     
-    printf("---------------renke debug, hadrec main, second dyn starts----------------\n");
+    printf("\n---------------renke debug, hadrec main, second dyn starts----------------\n");
     hadrec_app_sptr->transferPFtoDS();
 
     // initialize dynamic simulation
     hadrec_app_sptr->initializeDynSimu(BusFaults);
+	
+	busno = 5;
+    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 7;
+    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    busno = 9;
+    hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    
+    busno = 1;
+    std::string genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 2;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    
+    busno = 3;
+    genid = "1";
+    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
     isteps = 0;
     //bApplyAct = true;  // whether apply the action in the simulation steps
@@ -189,17 +257,20 @@ int main(int argc, char **argv)
 	  
 	  ob_vals.clear();
 	  ob_vals = hadrec_app_sptr->getObservations();
-	
-      printf("observations, ");
-      for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
-         printf(" %16.12f, ", ob_vals[idxtmp]);
-      }
-      printf(" \n");
+	  
+	  if (debugoutput){
+		printf("observations, ");
+		for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
+			printf(" %16.12f, ", ob_vals[idxtmp]);
+		}
+		printf(" \n");
+	  }
 	
       isteps++;
     }
   }
 
+  //printf(" ----------------finished \n ");
   // Make sure we could do it again with a new instance if we wanted to
   hadrec_app_sptr.reset(new gridpack::hadrec::HADRECAppModule());
   hadrec_app_sptr.reset();

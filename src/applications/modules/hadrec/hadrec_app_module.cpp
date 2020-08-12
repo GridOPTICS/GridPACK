@@ -26,6 +26,7 @@
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
   : config_sptr(new gridpack::utility::Configuration())
 {
+	bconfig_sptr_set = false;
 }
 
 /**
@@ -56,13 +57,17 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     //gridpack::utility::Configuration *config =
     //  gridpack::utility::Configuration::configuration();
 	  
-//	config_sptr.reset(gridpack::utility::Configuration::configuration());
+    //config_sptr.reset(gridpack::utility::Configuration::configuration());
+	//config_sptr.reset( new gridpack::utility::Configuration() )
 	
-    if (inputfile) {
-      config_sptr->open(inputfile, world);
-    } else {
-      config_sptr->open("input.xml",world);
-    }
+	if (!bconfig_sptr_set){
+		if (inputfile) {
+			config_sptr->open(inputfile, world);
+		} else {
+			config_sptr->open("input.xml",world);
+		}
+		bconfig_sptr_set = true;
+	}
     timer->stop(t_config);
 
     // setup and run powerflow calculation
@@ -70,10 +75,17 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     cursor = config_sptr->getCursor("Configuration.Powerflow");
     bool useNonLinear = false;
     useNonLinear = cursor->get("UseNonLinear", useNonLinear);
-
+	
     pf_network.reset(new gridpack::powerflow::PFNetwork(world));
 
     pf_app_sptr.reset(new gridpack::powerflow::PFAppModule()) ;
+	
+	bool bnoprint = gridpack::NoPrint::instance()->status();
+
+	if (bnoprint) { //if no print flag set to be true, suppress any intermedium output from pf app module
+		pf_app_sptr->suppressOutput(true);
+	}
+	
     pf_app_sptr->readNetwork(pf_network, &(*config_sptr), pfcase_idx);
     pf_app_sptr->initialize();
     if (useNonLinear) {
@@ -81,7 +93,11 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     } else {
       pf_app_sptr->solve();
     }
-    pf_app_sptr->write();
+	
+	if (!bnoprint) { //if no print flag set to be true, do not print the power flow solution
+		pf_app_sptr->write();
+	}
+	
     pf_app_sptr->saveData();
 	
     // setup dynamic simulation network
@@ -286,11 +302,63 @@ bool gridpack::hadrec::HADRECAppModule::isDynSimuDone( ){
 }
 
 /**
+ * Return values for total active and reactive load power on bus
+ * @param bus_id original bus index
+ * @param lp active load power
+ * @param lq reactive load power
+ * @return false if bus is not found on this processor
+ */
+bool gridpack::hadrec::HADRECAppModule::getBusTotalLoadPower(int bus_id,
+    double &total_p, double &total_q)
+{
+	double lp = 0.0;
+	double lq = 0.0;
+	bool flag = false;
+	flag = ds_app_sptr->getBusTotalLoadPower(bus_id, lp, lq);
+    total_p = lp;
+	total_q = lq;
+	
+	return flag;
+}
+
+/**
+ * Return real and reactive power produced by requested generator
+ * @param bus_id original index for bus hosting generator
+ * @param gen_id 2-character identifier for generator
+ * @param pg active power produced by generator
+ * @param qg reactive power produced by generator
+ * @return false if generator is not found on this processor
+ */
+bool gridpack::hadrec::HADRECAppModule::getGeneratorPower(int bus_id,
+    std::string gen_id, double &pg, double &qg)
+{ 
+  	double pgtmp = 0.0;
+	double qgtmp = 0.0;
+	bool flag = false;
+	flag = ds_app_sptr->getGeneratorPower(bus_id, gen_id, pgtmp, qgtmp);
+    pg = pgtmp;
+	qg = qgtmp;
+	
+	return flag;
+}
+
+
+/**
  * apply actions
  */
 void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECAction control_action){
 	if ( control_action.actiontype == 0 ){
 		return ds_app_sptr->applyLoadShedding(control_action.bus_number, control_action.componentID, control_action.percentage );
+	}
+	
+	if ( control_action.actiontype == 1 ){
+		//if (control_action.brch_from_bus_number > 0 || control_action.brch_to_bus_number > 0){
+			//return ds_app_sptr->setLineTripAction(control_action.brch_from_bus_number, control_action.brch_to_bus_number, control_action.branch_ckt);
+		//}
+		//if (control_action.brch_from_bus_number == -1 && control_action.brch_to_bus_number == -1 && control_action.bus_number > 0){
+		
+			return ds_app_sptr->setLineTripAction(control_action.bus_number);
+		//}
 	}
 
 }

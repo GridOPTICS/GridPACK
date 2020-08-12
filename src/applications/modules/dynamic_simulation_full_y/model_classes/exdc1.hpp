@@ -128,6 +128,7 @@ class Exdc1Model : public BaseExciterModel
   private:
 
     //double S10, S12; 
+	bool OptionToModifyLimitsForInitialStateLimitViolation;
 
     // Exciter EXDC1 parameters from dyr
     double TR, KA, TA, TB, TC, Vrmax, Vrmin;

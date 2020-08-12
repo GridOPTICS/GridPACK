@@ -115,3 +115,19 @@ getRotorSpeedDeviation()
 {
   return 0.0;
 }
+
+// Yuan added below 2020-6-23
+/** 
+ * Set the governor bus number
+ */
+void gridpack::dynamic_simulation::BaseGovernorModel::setExtBusNum(int ExtBusNum)
+{
+}	
+
+/** 
+ * Set the governor generator id
+ */
+void gridpack::dynamic_simulation::BaseGovernorModel::setExtGenId(std::string ExtGenId)
+{
+}	
+// Yuan added above 2020-6-23

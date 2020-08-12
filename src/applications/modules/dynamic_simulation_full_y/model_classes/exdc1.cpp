@@ -19,7 +19,7 @@
 #include <cstdio>
 
 // Yuan added below 2020-6-23
-#include <cstdio>
+//#include <cstdio>
 #include <cstring>
 #include <string>
 // Yuan added above 2020-6-23
@@ -47,6 +47,8 @@ gridpack::dynamic_simulation::Exdc1Model::Exdc1Model(void)
   dx4_1 = 0;
   dx5_1 = 0;
   w = 0.0;
+  
+  OptionToModifyLimitsForInitialStateLimitViolation = true;
 }
 
 /**
@@ -137,8 +139,17 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, doub
   ///printf("exdc1: Efd = %f\n", Efd);
   x1 = Efd;
   x4 = Efd * (KE + Sat(Efd));
-  if (x4 >= Vrmax) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n",p_bus_id, x4, Vrmax);
-  if (x4 <= Vrmin) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n",p_bus_id, x4, Vrmin);
+  bool ini_check_print = false;
+  if (ini_check_print) {
+	if (x4 >= Vrmax) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n",p_bus_id, x4, Vrmax);
+	if (x4 <= Vrmin) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n",p_bus_id, x4, Vrmin);
+  }
+  
+  if (OptionToModifyLimitsForInitialStateLimitViolation){
+	  if (x4 >= Vrmax) Vrmax = x4 + 0.2;
+	  if (x4 <= Vrmin) Vrmin = x4 - 0.2;
+  }
+  
   if (TB > (TS_THRESHOLD * ts)) 
     x3 = (x4 / KA) * (1.0 - TC / TB); // SJin: x4 is Vr 
   else

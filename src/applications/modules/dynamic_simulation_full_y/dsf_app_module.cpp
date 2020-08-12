@@ -24,6 +24,8 @@
 //#include "gridpack/math/math.hpp"
 #include "gridpack/parallel/global_vector.hpp"
 #include "dsf_app_module.hpp"
+//#include "gridpack/component/base_component.hpp"
+//#include "hadrec_app_module.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -54,6 +56,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_bDynSimuDone = false;
   p_suppress_watch_files = false;
   Simu_Current_Step = 0;
+
+  bapplyLineTripAction = false;
 }
 
 /**
@@ -71,6 +75,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_monitorGenerators = false;
   p_bDynSimuDone = false;
   Simu_Current_Step = 0;
+  
+  bapplyLineTripAction = false;
 }
 
 /**
@@ -1246,6 +1252,7 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
  */
 void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
 {
+  bool noprint = gridpack::NoPrint::instance()->status();														 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
@@ -1258,7 +1265,9 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
   int ncnt = generators.size();
   std::string generator, tag, clean_tag;
   gridpack::dynamic_simulation::DSFullBus *bus;
-  if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+  if (!noprint) {
+	if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+  }
   std::vector<int> buses;
   std::vector<std::string> tags;
   for (i=0; i<ncnt; i++) {
@@ -1295,6 +1304,7 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
     std::vector<int> &buses, std::vector<std::string> &tags, bool writeFile)
 {
   int ncnt = buses.size();
+  bool noprint = gridpack::NoPrint::instance()->status();														 
   if (ncnt != tags.size()) {
     printf("setGeneratorWatch: size mismatch between buses: and tags: vectors\n",
         (int)buses.size(),(int)tags.size());
@@ -1332,13 +1342,17 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
         p_gen_ids.push_back(tag);
       }
     }
-    sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,tag.c_str());
-    p_busIO->header(buf);
+	if (!noprint) {				
+		sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,tag.c_str());
+		p_busIO->header(buf);
+	}
     if (ncnt > 0) {
       p_generators_read_in = true;
       p_generatorWatch = true;
-      sprintf(buf,"Generator Watch Frequency: %d\n",p_generatorWatchFrequency);
-      p_busIO->header(buf);
+	  if (!noprint) {				  
+		sprintf(buf,"Generator Watch Frequency: %d\n",p_generatorWatchFrequency);
+		p_busIO->header(buf);
+	  }
     }
   }
 
@@ -1703,7 +1717,10 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
               p_network));
         p_generatorIO->open(filename.c_str());
       } else {
-        // p_busIO->header("No Generator Watch File Name Found\n");
+		  bool noprint = gridpack::NoPrint::instance()->status();
+		  if (!noprint) {														   	   
+			p_busIO->header("No Generator Watch File Name Found\n");
+		  }
         p_generatorWatch = false;
       }
     }
@@ -2275,6 +2292,10 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   t_ybus = timer->createCategory("DS Solve: Make YBus");
   timer->start(t_ybus);
   
+  // set the line trip action related flag to be false and clear the vector
+  bapplyLineTripAction = false;
+  p_vbranches_need_to_trip.clear();
+  
   ybusMap_sptr.reset(new gridpack::mapper::FullMatrixMap<DSFullNetwork> (p_network));
   orgYbus = ybusMap_sptr->mapToMatrix();
   
@@ -2510,7 +2531,30 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
       flagC = 2;
     }
     timer->stop(t_misc);
-    
+	
+	// renke add, if a line trip action is detected, modify the post-fault Ymatrix. 
+	// Here we assume line trip action will only happen AFTER FAULT!!!!!!!
+	if (bapplyLineTripAction){
+		
+		//char sybus[100];
+		//sprintf(sybus, "ybus_%d_before_linetrip.m",Simu_Current_Step );
+		//ybus->save(sybus);
+		
+		p_factory->setMode(branch_trip_action);
+        ybusMap_sptr->incrementMatrix(ybus);  // in the current code, solver_posfy_sptr is linked with ybus, check Bill
+        //ybus->print();
+        
+        //sprintf(sybus, "ybus_%d_linetrip.m",Simu_Current_Step );
+
+        //ybus->save(sybus);
+		
+		// after Y-matrix is modified, we need to clear this line trip action to 
+		// avoid next step still apply the same line trip action
+		bapplyLineTripAction = false;
+		clearLineTripAction();// in this one, need to clear the flag, vector of each branch and set the status of the branches to be 0);  
+
+	}
+   
     if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
       p_factory->predictor_currentInjection(false);
     } else {
@@ -3100,6 +3144,83 @@ void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, 
 	
 	}
 		
+}
+
+/**
+ * set all the necessery flags for the two buses and one branch for the line needs to trip
+ * this function is for single branch flags set-up, may need to be called
+ * multiple times for multiple line tripping 
+ */
+void gridpack::dynamic_simulation::DSFullApp::setLineTripAction
+(int brch_from_bus_number, int brch_to_bus_number, std::string branch_ckt){
+	
+	std::vector<int> vec_branchintidx;
+	vec_branchintidx = p_network->getLocalBranchIndices(brch_from_bus_number, brch_to_bus_number);
+	int ibr, nbr;
+	gridpack::dynamic_simulation::DSFullBranch *pbranch;	
+	nbr = vec_branchintidx.size();
+	for(ibr=0; ibr<nbr; ibr++){
+		pbranch = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>
+			(p_network->getBranch(vec_branchintidx[ibr]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		
+		if (pbranch->setBranchTripAction(branch_ckt)){
+			p_vbranches_need_to_trip.push_back(pbranch);
+			bapplyLineTripAction = true;
+			break;		
+		}	
+	}			
+}
+
+// trip a branch, given a bus number, just find any one of the connected line(not transformer) with the bus, and trip that one
+void gridpack::dynamic_simulation::DSFullApp::setLineTripAction(int bus_number){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > vec_nghbrs;
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+			(p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		
+		bus->getNeighborBranches(vec_nghbrs);
+		
+		int ibr, nbr;
+		nbr = vec_nghbrs.size();
+		gridpack::dynamic_simulation::DSFullBranch *pbranch;
+		for (ibr=0; ibr<nbr; ibr++){
+			
+			pbranch = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>
+			(vec_nghbrs[ibr].get());
+			
+			if (pbranch->setBranchTripAction()){ // if the branch is a non-xmfr branch
+				p_vbranches_need_to_trip.push_back(pbranch);
+				bapplyLineTripAction = true;
+				break;
+				
+			}					
+		}	
+	}				
+}
+
+/**
+ * clear all the necessery flags for the all buses and branches for the lines needs to trip
+ * this function is for all the branches' flags clear-up, just need to be called
+ * once to clear all the tripping lines's flag
+ */
+void gridpack::dynamic_simulation::DSFullApp::clearLineTripAction()
+{
+	//clear the flags and the tripping line pointer vector, as well as the flags in the tripping line
+	bapplyLineTripAction = false;
+	int nbr, ibr;
+	nbr = p_vbranches_need_to_trip.size();
+	for (ibr=0 ; ibr<nbr; ibr++){
+		p_vbranches_need_to_trip[ibr]->clearBranchTripAction();
+	}
+	p_vbranches_need_to_trip.clear();	
 }
 
 /**

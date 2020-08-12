@@ -19,6 +19,8 @@
 #define _dsf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/network/base_network.hpp"
+#include "gridpack/component/base_component.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/parallel/global_vector.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
@@ -26,6 +28,7 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
+//#include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 
 
 namespace gridpack {
@@ -114,6 +117,29 @@ class DSFullApp
      * execute load shedding	 
      */
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);
+	
+	/**
+	* set all the necessery flags for the two buses and one branch for the line needs to trip
+	* this function is for single branch flags set-up, may need to be called
+	* multiple times for multiple line tripping 
+	*/
+	void setLineTripAction(int brch_from_bus_number, int brch_to_bus_number, std::string branch_ckt);
+	
+	/**
+	* set all the necessery flags for the two buses and one branch for the line needs to trip
+	* this function will trip a branch, given a bus number, just find any one of the 
+	* connected line(not transformer) with the bus, and trip that one
+	* this function is for single branch flags set-up, may need to be called
+	* multiple times for multiple line tripping 
+	*/
+	void setLineTripAction(int bus_number);
+	
+	/**
+	* clear all the necessery flags for the all buses and branches for the lines needs to trip
+	* this function is for all the branches' flags clear-up, just need to be called
+	* once to clear all the tripping lines's flag
+	*/
+	void clearLineTripAction();
 	
 	/**
      * Check whether the dynamic simulation is done
@@ -450,6 +476,13 @@ class DSFullApp
 
     // Tags of generators that are being monitors
     std::vector<std::string> p_watch_gen_ids;
+	
+	//branches need to be tripped at a specific dynamic simulation step
+	std::vector<gridpack::dynamic_simulation::DSFullBranch*> p_vbranches_need_to_trip;
+	
+	//flag indicating whether there is/are branches need to be tripped at a specific dynamic simulation step
+	bool bapplyLineTripAction;
+	
 
     // Monitor generators for instability
     bool p_monitorGenerators;
