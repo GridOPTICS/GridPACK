@@ -3149,11 +3149,11 @@ bool gridpack::dynamic_simulation::DSFullApp::getGeneratorPower(int bus_id,
 }
 
 /**
- * Return total active and reactive loads for each area
- * @param load_p active load for all areas
- * @param load_q reactive load for all areas
+ * Return total active and reactive loads for each zone
+ * @param load_p active load for all zones
+ * @param load_q reactive load for all zones
  */
-void gridpack::dynamic_simulation::DSFullApp::getAreaLoads(std::vector<double> &load_p,
+void gridpack::dynamic_simulation::DSFullApp::getZoneLoads(std::vector<double> &load_p,
     std::vector<double> &load_q) const
 {
   int nbus = p_network->numBuses();
@@ -3195,12 +3195,11 @@ void gridpack::dynamic_simulation::DSFullApp::getAreaLoads(std::vector<double> &
 }
 
 /**
- * Return total active and reactive generator power for each area
- * @param generator_p active generator power for all areas
- * @param generator_q reactive generator power for all
- areas
+ * Return total active and reactive generator power for each zone
+ * @param generator_p active generator power for all zones
+ * @param generator_q reactive generator power for all zones
  */
-void gridpack::dynamic_simulation::DSFullApp::getAreaGeneratorPower(
+void gridpack::dynamic_simulation::DSFullApp::getZoneGeneratorPower(
     std::vector<double> &generator_p, std::vector<double> &generator_q) const
 {
   int nbus = p_network->numBuses();
