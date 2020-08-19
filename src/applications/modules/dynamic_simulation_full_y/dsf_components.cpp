@@ -865,6 +865,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       data->getValue(GENERATOR_MODEL, &model, i);
       if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0) {
         p_pg.push_back(pg);
+        p_qg.push_back(qg);
         p_savePg.push_back(pg);
         p_gstatus.push_back(1);
         double pmin, pmax;
@@ -877,7 +878,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           = genFactory.createGeneratorModel(model);
         has_ex = false;
         has_gov = false;
-		has_pss = false;
+        has_pss = false;
         data->getValue(HAS_EXCITER, &has_ex, i);
         data->getValue(HAS_GOVERNOR, &has_gov, i);
 		data->getValue(HAS_PSS, &has_pss, i);
@@ -2632,6 +2633,10 @@ void gridpack::dynamic_simulation::DSFullBus::getTotalGeneratorPower(double &tot
   total_p = 0.0;
   total_q = 0.0;
   int i;
+  if (p_ngen != p_pg.size() || p_ngen != p_qg.size()) {
+    printf("Mismatched generator sizes p_ngen: %d psize: %d qsize: %d\n",
+        p_ngen,p_pg.size(),p_qg.size());
+  }
   for (i=0; i<p_ngen; i++) {
     total_p += p_pg[i];
     total_q += p_qg[i];

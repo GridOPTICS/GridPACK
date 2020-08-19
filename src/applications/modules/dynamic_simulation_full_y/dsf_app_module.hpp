@@ -352,16 +352,19 @@ class DSFullApp
      * Return total active and reactive loads for each zone
      * @param load_p active load for all zones
      * @param load_q reactive load for all zones
+     * @param zone_id label for each zone
      */
-    void getZoneLoads(std::vector<double> &load_p, std::vector<double> &load_q) const;
+    void getZoneLoads(std::vector<double> &load_p, std::vector<double> &load_q,
+        std::vector<int> &zone_id) const;
 
     /**
      * Return total active and reactive generator power for each zone
      * @param generator_p active generator power for all zones
      * @param generator_q reactive generator power for all zones
+     * @param zone_id label for each zone
      */
     void getZoneGeneratorPower(std::vector<double> &generator_p,
-        std::vector<double> &generator_q) const;
+        std::vector<double> &generator_q, std::vector<int> &zone_id) const;
 
   private:
     /**
@@ -413,6 +416,12 @@ class DSFullApp
      * @return true if all watched generators are within acceptable bounds
      */
     bool checkFrequency(double limit);
+
+    /**
+     * Get a list of unique zones in the system
+     * @param zones a complete list of all zones in the network
+     */
+    void getZoneList(std::vector<int> &zones) const;
 
     std::vector<gridpack::dynamic_simulation::Event> p_faults;
 

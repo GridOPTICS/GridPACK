@@ -3270,93 +3270,184 @@ bool gridpack::dynamic_simulation::DSFullApp::getGeneratorPower(int bus_id,
 }
 
 /**
+ * Get a list of unique zones in the system
+ * @param zones a complete list of all zones in the network
+ */
+void gridpack::dynamic_simulation::DSFullApp::getZoneList(
+    std::vector<int> &zones) const
+{
+  int nbus = p_network->numBuses();
+  int i, idx;
+  // find out how many zones are in system and provide a list of zones to each
+  // processor. Start by getting list of zones on this processor
+  std::map<int,int> zmap;
+  idx = 0;
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+      int iz = bus->getZone();
+      if (zmap.find(iz) == zmap.end()) {
+        zmap.insert(std::pair<int,int>(iz,idx));
+        idx++;
+      }
+    }
+  }
+  // exchange zones with each processor. Start by distributing number of zones on
+  // each processor
+  int nsize = zmap.size();
+  int nproc = p_network->communicator().size();
+  int me = p_network->communicator().rank();
+  std::vector<int> sizes(nproc);
+  for (i=0; i<nproc; i++) {
+    sizes[i] = 0;
+  }
+  sizes[me] = nsize;
+  // exchange number of zones found on each process 
+  p_network->communicator().sum(&sizes[0],nproc);
+  std::vector<int> start(nproc);
+  start[0] = 0;
+  int ntot = sizes[0];
+  // calculate offsets
+  for (i=1; i<nproc; i++) {
+    start[i] = start[i-1]+sizes[i-1];
+    ntot += sizes[i];
+  }
+  std::vector<int> allzones(ntot); 
+  for (i=0; i<ntot; i++) {
+    allzones[i] = 0;
+  }
+  std::map<int,int>::iterator it = zmap.begin();
+  idx = 0;
+  while (it != zmap.end()) {
+    allzones[start[me]+idx] = it->first;
+    it++;
+    idx++;
+  }
+  // exchange zones
+  p_network->communicator().sum(&allzones[0],ntot);
+  // create list of unique zones
+  zmap.clear();
+  idx = 0;
+  for (i=0; i<ntot; i++) {
+    if (zmap.find(allzones[i]) == zmap.end()) {
+      zmap.insert(std::pair<int,int>(allzones[i],idx));
+      idx++;
+    }
+  }
+  int nzones = zmap.size();
+  zones.resize(nzones);
+  it = zmap.begin();
+  while (it != zmap.end()) {
+    if (me == 0) {
+      printf("NZONES: %d idx: %d zoneID: %d\n:",nzones,it->second,it->first);
+    }
+    zones[it->second] = it->first;
+    it++;
+  }
+}
+
+
+/**
  * Return total active and reactive loads for each zone
  * @param load_p active load for all zones
  * @param load_q reactive load for all zones
+ * @param zone_id label for each zone
  */
 void gridpack::dynamic_simulation::DSFullApp::getZoneLoads(std::vector<double> &load_p,
-    std::vector<double> &load_q) const
+    std::vector<double> &load_q, std::vector<int> &zone_id) const
 {
   int nbus = p_network->numBuses();
-  int max_zone = -1;
-  int i;
-  // find out how many zones are in system
-  for (i=0; i<nbus; i++) {
-    if (p_network->getActiveBus(i)) {
-      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
-      if (bus->getZone() > max_zone) max_zone = bus->getZone();
-    }
+  int i, idx;
+
+  zone_id.clear();
+  getZoneList(zone_id);
+  // create map of zones
+  std::map<int,int> zones;
+  int nzones = zone_id.size();
+  for (i=0; i<nzones; i++) {
+    zones.insert(std::pair<int,int>(zone_id[i],i));
   }
-  p_network->communicator().max(&max_zone,1);
+
   load_p.clear();
   load_q.clear();
-  load_p.resize(max_zone);
-  load_q.resize(max_zone);
-  for (i=0; i<max_zone; i++) {
+  load_p.resize(nzones);
+  load_q.resize(nzones);
+  for (i=0; i<nzones; i++) {
     load_p[i] = 0.0;
     load_q[i] = 0.0;
   }
-
   // get total loads
+  std::map<int,int>::iterator it;
   for (i=0; i<nbus; i++) {
     if (p_network->getActiveBus(i)) {
       gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
-      int iz = bus->getZone()-1;
+      int iz = bus->getZone();
       double p, q;
       bus->getTotalLoadPower(p,q);
-      if (iz < 0) {
-        printf("Invalid zone on bus %d: %d\n",bus->getOriginalIndex(),iz+1);
+      it = zones.find(iz);
+      if (it != zones.end()) {
+        idx = it->second;
+        load_p[idx] += p;
+        load_q[idx] += q;
+      } else {
+        printf("Unknown zone on bus %d: %d\n",bus->getOriginalIndex(),iz);
       }
-      load_p[iz] += p;
-      load_q[iz] += q;
     }
   }
-  p_network->communicator().sum(&load_p[0],max_zone);
-  p_network->communicator().sum(&load_q[0],max_zone);
+  p_network->communicator().sum(&load_p[0],nzones);
+  p_network->communicator().sum(&load_q[0],nzones);
 }
 
 /**
  * Return total active and reactive generator power for each zone
  * @param generator_p active generator power for all zones
  * @param generator_q reactive generator power for all zones
+ * @param zone_id label for each zone
  */
 void gridpack::dynamic_simulation::DSFullApp::getZoneGeneratorPower(
-    std::vector<double> &generator_p, std::vector<double> &generator_q) const
+    std::vector<double> &generator_p, std::vector<double> &generator_q,
+    std::vector<int> &zone_id) const
 {
   int nbus = p_network->numBuses();
-  int max_zone = -1;
-  int i;
-  // find out how many zones are in system
-  for (i=0; i<nbus; i++) {
-    if (p_network->getActiveBus(i)) {
-      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
-      if (bus->getZone() > max_zone) max_zone = bus->getZone();
-    }
+  int i, idx;
+  int me = p_network->communicator().rank();
+
+  zone_id.clear();
+  getZoneList(zone_id);
+  // create map of zones
+  std::map<int,int> zones;
+  int nzones = zone_id.size();
+  for (i=0; i<nzones; i++) {
+    zones.insert(std::pair<int,int>(zone_id[i],i));
   }
-  p_network->communicator().max(&max_zone,1);
+
   generator_p.clear();
   generator_q.clear();
-  generator_p.resize(max_zone);
-  generator_q.resize(max_zone);
-  for (i=0; i<max_zone; i++) {
+  generator_p.resize(nzones);
+  generator_q.resize(nzones);
+  for (i=0; i<nzones; i++) {
     generator_p[i] = 0.0;
     generator_q[i] = 0.0;
   }
 
-  // get total loads
+  // get total generator power
+  std::map<int,int>::iterator it;
   for (i=0; i<nbus; i++) {
     if (p_network->getActiveBus(i)) {
       gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
-      int iz = bus->getZone()-1;
+      int iz = bus->getZone();
       double p, q;
       bus->getTotalGeneratorPower(p,q);
-      if (iz < 0) {
+      it = zones.find(iz);
+      if (it != zones.end()) {
+        idx = it->second;
+        generator_p[idx] += p;
+        generator_q[idx] += q;
+      } else {
         printf("Invalid zone on bus %d: %d\n",bus->getOriginalIndex(),iz+1);
       }
-      generator_p[iz] += p;
-      generator_q[iz] += q;
     }
   }
-  p_network->communicator().sum(&generator_p[0],max_zone);
-  p_network->communicator().sum(&generator_q[0],max_zone);
+  p_network->communicator().sum(&generator_p[0],nzones);
+  p_network->communicator().sum(&generator_q[0],nzones);
 }
