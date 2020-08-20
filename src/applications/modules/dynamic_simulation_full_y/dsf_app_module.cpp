@@ -3277,7 +3277,7 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneList(
     std::vector<int> &zones) const
 {
   int nbus = p_network->numBuses();
-  int i, idx;
+  int i, j, idx;
   // find out how many zones are in system and provide a list of zones to each
   // processor. Start by getting list of zones on this processor
   std::map<int,int> zmap;
@@ -3339,10 +3339,21 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneList(
   it = zmap.begin();
   while (it != zmap.end()) {
     if (me == 0) {
-      printf("NZONES: %d idx: %d zoneID: %d\n:",nzones,it->second,it->first);
+      printf("NZONES: %d idx: %d zoneID: %d\n",nzones,it->second,it->first);
     }
     zones[it->second] = it->first;
     it++;
+  }
+  // sort zones in ascending order (use simple, but inefficient, bubble sort.
+  // Assume zones list is not long)
+  for (i=0; i<nzones; i++) {
+    for (j=i+1; j<nzones; j++) {
+      if (zones[i] > zones[j]) {
+        int itmp = zones[i];
+        zones[i] = zones[j];
+        zones[j] = itmp;
+      }
+    }
   }
 }
 

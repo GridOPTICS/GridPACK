@@ -2616,10 +2616,15 @@ void gridpack::dynamic_simulation::DSFullBus::getTotalLoadPower(double &total_p,
   total_p = 0.0;
   total_q = 0.0;
   int i;
+#if 0
   for (i=0; i<p_npowerflow_load; i++) {
     total_p += p_powerflowload_p[i];
     total_q += p_powerflowload_q[i];
   }
+#else
+  total_p = p_pl;
+  total_q = p_ql;
+#endif
 }
 
 /**
