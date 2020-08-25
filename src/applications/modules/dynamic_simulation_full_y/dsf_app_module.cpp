@@ -2536,16 +2536,17 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	// Here we assume line trip action will only happen AFTER FAULT!!!!!!!
 	if (bapplyLineTripAction){
 		
-		//char sybus[100];
+		char sybus[100];
+		
 		//sprintf(sybus, "ybus_%d_before_linetrip.m",Simu_Current_Step );
 		//ybus->save(sybus);
 		
 		p_factory->setMode(branch_trip_action);
         ybusMap_sptr->incrementMatrix(ybus);  // in the current code, solver_posfy_sptr is linked with ybus, check Bill
-        //ybus->print();
-        
-        //sprintf(sybus, "ybus_%d_linetrip.m",Simu_Current_Step );
-
+		
+		//printf ("-----------renke debug, line tripping action detected----------");		
+        //ybus->print();       
+        //sprintf(sybus, "ybus_%d_linetrip_test.m",Simu_Current_Step );
         //ybus->save(sybus);
 		
 		// after Y-matrix is modified, we need to clear this line trip action to 
@@ -3159,10 +3160,11 @@ void gridpack::dynamic_simulation::DSFullApp::setLineTripAction
 	int ibr, nbr;
 	gridpack::dynamic_simulation::DSFullBranch *pbranch;	
 	nbr = vec_branchintidx.size();
+	//printf("----renke debug load shed, in dsf full app::setLineTripAction, there are %d branches from bus %d to bus %d \n", nbr, brch_from_bus_number, brch_to_bus_number);
 	for(ibr=0; ibr<nbr; ibr++){
 		pbranch = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>
 			(p_network->getBranch(vec_branchintidx[ibr]).get());
-		//printf("----renke debug load shed, in dsf full app, \n");
+		//printf("----renke debug load shed, in dsf full app::setLineTripAction, from bus:, to bus:\n");
 		
 		if (pbranch->setBranchTripAction(branch_ckt)){
 			p_vbranches_need_to_trip.push_back(pbranch);
@@ -3339,7 +3341,7 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneList(
   it = zmap.begin();
   while (it != zmap.end()) {
     if (me == 0) {
-      printf("NZONES: %d idx: %d zoneID: %d\n",nzones,it->second,it->first);
+      //printf("NZONES: %d idx: %d zoneID: %d\n",nzones,it->second,it->first);
     }
     zones[it->second] = it->first;
     it++;

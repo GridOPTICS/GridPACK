@@ -59,7 +59,9 @@ int main(int argc, char **argv)
   //bnoprint = gridpack::NoPrint::instance()->status();
   //printf ("------------- hadrec_main function test 3  bnoprint: %d \n", bnoprint);
   
-  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
+  //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 2);
+  
+  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
@@ -70,10 +72,15 @@ int main(int argc, char **argv)
   // initialize dynamic simulation
   hadrec_app_sptr->initializeDynSimu(BusFaults);
   
+  bool debugoutput = false; // whether print out debug staffs
+  double lp, lq, pg, qg;
+  int busno = 5;
+  bool btmp;
+  
   //-----test get load and get generator function-----------
-	double lp, lq, pg, qg;
-	int busno = 5;
-	bool btmp;
+  //if (debugoutput){
+
+	busno = 5;
     btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
     printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
     busno = 7;
@@ -84,19 +91,21 @@ int main(int argc, char **argv)
     printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
     
     busno = 1;
-    std::string genid = "1";
+    std::string genid = "1 ";
     btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
     printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
     
     busno = 2;
-    genid = "1";
+    genid = "1 ";
     btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
     printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
     
     busno = 3;
-    genid = "1";
+    genid = "1 ";
     btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
     printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+  //}
+  
 
   gridpack::hadrec::HADRECAction loadshedact;
   loadshedact.actiontype = 0;
@@ -110,12 +119,19 @@ int main(int argc, char **argv)
   loadshedact1.componentID = "1";
   loadshedact1.percentage = -0.2;
   
+  gridpack::hadrec::HADRECAction linetrip;
+  linetrip.actiontype = 1;
+  //linetrip.bus_number = 6;
+  linetrip.brch_from_bus_number = 6;
+  linetrip.brch_to_bus_number = 7;
+  linetrip.branch_ckt = "1 ";
+  
+  
   int isteps = 0;
-  bool bApplyAct = false;  // whether apply the action in the simulation steps
+  bool bApplyAct_LoadShedding = false;  // whether apply the load shedding action in the simulation steps
+  bool bApplyAct_LineTripping = true;  // whether apply the line tripping action in the simulation steps
   std::vector<double> ob_vals;
   int idxtmp;
-  
-  bool debugoutput = false; // whether print out debug staffs
   
   // test getOblist
   std::vector<int> obs_genBus;
@@ -159,9 +175,29 @@ int main(int argc, char **argv)
 	printf(" \n");
   }
 
+  std::vector<int> zone_id;
+  std::vector<double> tmp_p;
+  std::vector<double> tmp_q;
+  
+  hadrec_app_sptr->getZoneLoads(tmp_p, tmp_q, zone_id);
+  printf("\n-------------------get zone load information, total zones: %d \n\n", zone_id.size());
+  for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
+	  
+	  printf(" zone number: %d, total load p: %f, total load q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
+	  
+  }
+  
+  hadrec_app_sptr->getZoneGeneratorPower(tmp_p, tmp_q, zone_id);
+  printf("\n-------------------get zone generation information, total zones: %d \n\n", zone_id.size());
+  for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
+	  
+	  printf(" zone number: %d, total generation p: %f, total generation q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
+	  
+  }
+
   while(!hadrec_app_sptr->isDynSimuDone()){
     // if the dynamic simulation is not done (hit the end time)
-    if ( bApplyAct && (isteps == 2500 || isteps == 3000 ||
+    if ( bApplyAct_LoadShedding && (isteps == 2500 || isteps == 3000 ||
           isteps == 3500 || isteps == 4000 ||
           isteps == 4500 || isteps == 5000 || isteps == 5500 ) ){
       //apply action
@@ -169,6 +205,12 @@ int main(int argc, char **argv)
       hadrec_app_sptr->applyAction(loadshedact1);
       //printf("----renke debug load shed, isteps: %d \n", isteps);
     }
+	
+	if ( bApplyAct_LineTripping && isteps == 400){
+		printf("----renke debug line trip, isteps: %d \n", isteps);
+		hadrec_app_sptr->applyAction(linetrip);
+	}
+	
     //execute one dynamic simulation step
     hadrec_app_sptr->executeDynSimuOneStep();
 	
@@ -193,7 +235,7 @@ int main(int argc, char **argv)
 
   //start the reload and second time dynamic simulation here
   // transfer power flow results to dynamic simulation
-  bool btest_2dynasimu = true;
+  bool btest_2dynasimu = false;
   if (btest_2dynasimu) {
 	  
 	gridpack::dynamic_simulation::Event busfault;
@@ -207,7 +249,8 @@ int main(int argc, char **argv)
 	BusFaults.push_back(busfault);
     
     //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
-	hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
+	//hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
+	hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
     
     printf("\n---------------renke debug, hadrec main, second dyn starts----------------\n");
     hadrec_app_sptr->transferPFtoDS();
@@ -241,11 +284,11 @@ int main(int argc, char **argv)
     printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
     isteps = 0;
-    //bApplyAct = true;  // whether apply the action in the simulation steps
+    //bApplyAct_LoadShedding = true;  // whether apply the action in the simulation steps
 
     while(!hadrec_app_sptr->isDynSimuDone()){
       // if the dynamic simulation is not done (hit the end time)
-      if ( bApplyAct && (isteps == 2500 || isteps == 3000 ||
+      if ( bApplyAct_LoadShedding && (isteps == 2500 || isteps == 3000 ||
             isteps == 3500 || isteps == 4000 ) ){
         //apply action
         hadrec_app_sptr->applyAction(loadshedact);

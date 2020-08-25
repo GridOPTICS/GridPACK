@@ -34,9 +34,9 @@ struct HADRECAction
 	std::string componentID = "1";
 	double percentage = 0.0;
 	
-	//int brch_from_bus_number = -1;
-	//int brch_to_bus_number = -1;
-	//std::string branch_ckt = "1";
+	int brch_from_bus_number = -1;
+	int brch_to_bus_number = -1;
+	std::string branch_ckt = "1";
 	//p_obs_vals.clear();
 	
 };
@@ -128,6 +128,24 @@ class HADRECAppModule
      * @return false if generator is not found on this processor
      */
     bool getGeneratorPower(int bus_id, std::string gen_id, double &pg, double &qg);
+	
+	    /**
+     * Return total active and reactive loads for each zone
+     * @param load_p active load for all zones
+     * @param load_q reactive load for all zones
+     * @param zone_id label for each zone
+     */
+    bool getZoneLoads(std::vector<double> &load_p, std::vector<double> &load_q,
+        std::vector<int> &zone_id) const;
+
+    /**
+     * Return total active and reactive generator power for each zone
+     * @param generator_p active generator power for all zones
+     * @param generator_q reactive generator power for all zones
+     * @param zone_id label for each zone
+     */
+    bool getZoneGeneratorPower(std::vector<double> &generator_p,
+        std::vector<double> &generator_q, std::vector<int> &zone_id) const;
 	
 
   private:

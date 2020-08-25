@@ -751,6 +751,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   YMBus::load(data);
   // This function may be called more than once so clear all vectors
   p_pg.clear();
+  p_qg.clear();
   p_negpg.clear();
   p_negqg.clear();
   p_genid.clear();
@@ -2616,15 +2617,16 @@ void gridpack::dynamic_simulation::DSFullBus::getTotalLoadPower(double &total_p,
   total_p = 0.0;
   total_q = 0.0;
   int i;
-#if 0
+//#if 0
   for (i=0; i<p_npowerflow_load; i++) {
     total_p += p_powerflowload_p[i];
     total_q += p_powerflowload_q[i];
   }
-#else
-  total_p = p_pl;
-  total_q = p_ql;
-#endif
+  
+//#else
+  //total_p = p_pl;
+  //total_q = p_ql;
+//#endif
 }
 
 /**
@@ -2646,6 +2648,10 @@ void gridpack::dynamic_simulation::DSFullBus::getTotalGeneratorPower(double &tot
     total_p += p_pg[i];
     total_q += p_qg[i];
   }
+  
+  total_p *= p_sbase;
+  total_q *= p_sbase;
+  
 }
 
 /**
@@ -2666,8 +2672,8 @@ bool gridpack::dynamic_simulation::DSFullBus::getGeneratorPower(std::string tag,
   for (i=0; i<p_ngen; i++) {
     if (tag == p_genid[i]) {
       ret = true;
-      pg = p_pg[i];
-      qg = p_qg[i];
+      pg = p_pg[i]*p_sbase;
+      qg = p_qg[i]*p_sbase;
       break;
     }
   }
@@ -3457,8 +3463,14 @@ bool gridpack::dynamic_simulation::DSFullBranch::setBranchTripAction(
     const std::string ckt_tag)
 {
 	int ickt;
+	//printf("----renke debug load shed, DSFullBranch::setBranchTripAction, ckt_tag: ,%s, \n", ckt_tag.c_str());
 	for (ickt=0; ickt<p_elems; ickt++) {
+		
+		//printf("----renke debug load shed, DSFullBranch::setBranchTripAction, ickt: %d, p_ckt[ickt]: ,%s, status: %d \n", ickt, p_ckt[ickt].c_str(), p_branch_status[ickt]);
+		
 		if (ckt_tag == p_ckt[ickt]  && p_branch_status[ickt] == 1){
+			//printf("----renke debug load shed, DSFullBranch::setBranchTripAction, find the circuit of the branch!!!! \n");
+			
 			p_branchactiontripflag = true;
 	
 			p_vec_tripaction_branchcktidx.push_back(ickt);
