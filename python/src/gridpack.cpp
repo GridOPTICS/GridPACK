@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-07-30 12:11:30 d3g096
+// Last Change: 2020-08-25 08:02:15 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -234,6 +234,9 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def_readwrite("bus_number", &gph::HADRECAction::bus_number)
     .def_readwrite("componentID", &gph::HADRECAction::componentID)
     .def_readwrite("percentage", &gph::HADRECAction::percentage)
+    .def_readwrite("brch_from_bus_number", &gph::HADRECAction::brch_from_bus_number)
+    .def_readwrite("brch_to_bus_number", &gph::HADRECAction::brch_to_bus_number)
+    .def_readwrite("branch_ckt", &gph::HADRECAction::branch_ckt)
     ;
 
   // -------------------------------------------------------------
@@ -317,7 +320,30 @@ PYBIND11_MODULE(gridpack, gpm) {
            } else {
              return py::cast<py::none>(Py_None);
            }
-         });
+         })
+    .def("getZoneLoads",
+         [](gph::HADRECAppModule& self) -> py::object {
+           std::vector<double> load_p, load_q;
+           std::vector<int> zone_id;
+           bool flag = self.getZoneLoads(load_p, load_q, zone_id);
+           if (flag) {
+             return py::make_tuple(load_p, load_q, zone_id);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getZoneGeneratorPower",
+         [](gph::HADRECAppModule& self) -> py::object {
+           std::vector<double> generator_p, generator_q;
+           std::vector<int> zone_id;
+           bool flag = self.getZoneGeneratorPower(generator_p, generator_q, zone_id);
+           if (flag) {
+             return py::make_tuple(generator_p, generator_q, zone_id);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    ;
   
 
 }

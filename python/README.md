@@ -1,4 +1,8 @@
-# GridPACK HADREC Application Python Wrapper
+# GridPACK Python Wrapper
+
+This provides Python wrappers to a limited set of the
+[GridPACK](https://www.gridpack.org) library.  The HADREC application
+is the main capability currently exposed.
 
 ## Requirements
 
@@ -7,9 +11,9 @@
   * pybind11 >= 2.4
   * Python `setuptools` package
   * Python `nose` package
-  * CMake
+  * CMake used to build GridPACK
   * C++ Compiler used to build GridPACK
-  * MPI installation used to build GridPACK
+  * MPI (and other library) installation used to build GridPACK
 
 ### Pybind11
 

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-08-03 06:48:38 d3g096
+# Last Change: 2020-08-25 08:12:57 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -81,6 +81,12 @@ class GridPACKTester(TestCase):
         loadshedact1.componentID = "1"
         loadshedact1.percentage = -0.2
 
+        linetrip = gridpack.hadrec.Action()
+        linetrip.actiontype = 1;
+        linetrip.brch_from_bus_number = 6;
+        linetrip.brch_to_bus_number = 7;
+        linetrip.branch_ckt = "1 ";
+
         (obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs) = hadapp.getObservationLists()
 
         print (obs_genBus)
@@ -89,15 +95,23 @@ class GridPACKTester(TestCase):
         print (obs_loadIDs)
         print (obs_busIDs)
 
-        bApplyAct = True
+        bApplyAct_LoadShedding = False
+        bApplyAct_LineTripping = True
         isteps = 0
 
         while (not hadapp.isDynSimuDone()):
-            if (bApplyAct and
+            if (bApplyAct_LoadShedding and
                 ( isteps == 2500 or isteps == 3000 or
-                  isteps == 3500 or isteps == 4000 )):
+                  isteps == 3500 or isteps == 4000 or
+                  isteps == 4000 or isteps == 4500 or
+                  isteps == 5000 or isteps == 5500 or
+                  isteps == 5500)):
                 hadapp.applyAction(loadshedact)
                 hadapp.applyAction(loadshedact1)
+
+            if (bApplyAct_LineTripping and isteps == 400):
+                hadapp.applyAction(linetrip)
+                
             hadapp.executeDynSimuOneStep()
             ob_vals = hadapp.getObservations()
             print (isteps, ob_vals)
@@ -120,7 +134,7 @@ class GridPACKTester(TestCase):
             hadapp.initializeDynSimu(busfaultlist)
 
             while (not hadapp.isDynSimuDone()):
-                if (bApplyAct and
+                if (bApplyAct_LoadShedding and
                     ( isteps == 2500 or isteps == 3000 or
                       isteps == 3500 or isteps == 4000 )):
                     hadapp.applyAction(loadshedact)
