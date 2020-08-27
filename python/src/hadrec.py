@@ -42,6 +42,7 @@ np = gridpack.NoPrint()
 sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
 # np.setStatus(True)
 sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
+np.setStatus (True)
         
 hadapp = gridpack.hadrec.Module()
 hadapp.solvePowerFlowBeforeDynSimu(inname, -1)
@@ -83,7 +84,7 @@ linetrip.branch_ckt = "1 ";
 
 (obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs) = hadapp.getObservationLists()
 
-if (not np.status()):
+if ( np.status()):
     print (obs_genBus)
     print (obs_genIDs)
     print (obs_loadBuses)
@@ -151,4 +152,4 @@ env = None
 
 hadapp = gridpack.hadrec.Module()
 
- 
+print('----------gridpack test finished-----------------') 
