@@ -11,7 +11,7 @@
         <!-- -ksp_view -->
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package superlu_dist
+        -pc_factor_mat_solver_package petsc
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
@@ -163,6 +163,7 @@
         -->
         -ksp_type preonly
         -pc_type lu
+        -pc_factor_mat_solver_package petsc
         -pc_factor_mat_ordering_type amd
       </PETScOptions>
     </LinearSolver>
@@ -171,7 +172,7 @@
         These options are used if SuperLU was built into PETSc 
       -->
       <Ordering>nd</Ordering>
-      <Package>superlu_dist</Package>
+      <Package>petsc</Package>
       <Iterations>1</Iterations>
       <Fill>5</Fill>
       <!--<PETScOptions>
