@@ -165,7 +165,7 @@ protected:
           boost::str(boost::format("%d: PETSc KSP converged after %d iterations, reason: %d") % 
                      me % its % reason);
         if (!p_no_print) {
-          std::cerr << msg << std::endl;
+          //std::cerr << msg << std::endl;
         }
       }
     } catch (const PETSC_EXCEPTION_TYPE& e) {
