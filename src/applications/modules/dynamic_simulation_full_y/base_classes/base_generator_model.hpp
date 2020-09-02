@@ -118,6 +118,12 @@ class BaseGeneratorModel
 
     virtual double getAngle();
 	virtual void setWideAreaFreqforPSS(double freq);
+	
+	/**
+	* return true if trip generator successfully
+	* 
+	*/
+    virtual bool tripGenerator();
 
     /**
      * Write out generator state

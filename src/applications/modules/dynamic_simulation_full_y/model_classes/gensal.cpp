@@ -41,6 +41,7 @@ gridpack::dynamic_simulation::GensalGenerator::GensalGenerator(void)
     dx4Psidp_1 = 0;
     dx5Psiqpp_1 = 0;
 	Vstab = 0.0;
+	p_tripped = false;
 }
 
 /**
@@ -211,6 +212,9 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
 	
 	p_pss->init(mag, ang, ts);
 	}
+	
+	p_Norton_Ya = NortonImpedence();
+	//printf("------renke debug in GensalGenerator::init, p_Norton_Ya = %f, %f \n", real(p_Norton_Ya), imag(p_Norton_Ya));
 
   // Initialize other variables 
   /*p_mac_ang_s1 = gridpack::ComplexType(0.0,0.0);
@@ -285,8 +289,11 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor_currentInjection(b
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
+  
   double Vdterm = Vrterm * sin(x1d_0) - Viterm * cos(x1d_0);
   double Vqterm = Vrterm * cos(x1d_0) + Viterm * sin(x1d_0);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
   //printf("x5Psiqpp_0 = %f, x3Eqp_0 = %f, Xl = %f, Xdp = %f, Psidpp = %f\n", x5Psiqpp_0, x3Eqp_0, Xl, Xdp, Psidpp);
   //printf("x2w_0 = %f, Vd = %f, Vq = %f, Vrterm = %f, Viterm = %f, Vdterm = %f, Vqterm = %f, Theta = %f\n", x2w_0, Vd, Vq, Vrterm, Viterm, Vdterm, Vqterm, Theta);
   //DQ Axis
@@ -303,7 +310,11 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor_currentInjection(b
   IiNorton = IiNorton * MVABase / p_sbase; 
   //gridpack::ComplexType INorton(IrNorton, IiNorton);
   if (getGenStatus()){
-	  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);	  
+	  if (p_tripped){
+		  p_INorton = p_Norton_Ya*vt_complex_tmp;
+	  }else{
+		  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);	
+	  }		
   }else {
 	  p_INorton = gridpack::ComplexType(0.0, 0.0);
   }
@@ -400,6 +411,19 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
 	p_governor->predictor(t_inc, flag);
   }
 //  printf("predictor gensal: Efd = %f, Pmech = %f\n", Efd, Pmech); 
+
+	if (p_tripped){
+		x1d_0 = 0.0;
+		x2w_0 = 0.0;
+		x3Eqp_0 = 0.0;
+		x4Psidp_0 = 0.0;
+		x5Psiqpp_0 = 0.0;
+		x1d_1 = 0.0;
+		x2w_1 = 0.0;
+		x3Eqp_1 = 0.0;
+		x4Psidp_1 = 0.0;
+		x5Psiqpp_1 = 0.0;	
+	}
   }else {
 	x1d_0 = 0.0;
     x2w_0 = 0.0;
@@ -439,6 +463,9 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector_currentInjection(b
   double Viterm = Vterm * sin(Theta);
   double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
   double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
+	
   //DQ Axis
   Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
   Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
@@ -452,8 +479,12 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector_currentInjection(b
   IrNorton = IrNorton * MVABase / p_sbase; 
   IiNorton = IiNorton * MVABase / p_sbase; 
   //gridpack::ComplexType INorton(IrNorton, IiNorton);
-  if (getGenStatus()){
-	  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);	 	  
+  if (getGenStatus()){	  
+      if (p_tripped){
+		  p_INorton = p_Norton_Ya*vt_complex_tmp;
+	  }else{
+		  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);		
+	  }	 	  
   }else {
 	  p_INorton = gridpack::ComplexType(0.0, 0.0);
   }
@@ -541,6 +572,19 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
   p_governor->setRotorSpeedDeviation(x2w_0);
   p_governor->corrector(t_inc, flag);
  }
+ 
+ 	if (p_tripped){
+		x1d_0 = 0.0;
+		x2w_0 = 0.0;
+		x3Eqp_0 = 0.0;
+		x4Psidp_0 = 0.0;
+		x5Psiqpp_0 = 0.0;
+		x1d_1 = 0.0;
+		x2w_1 = 0.0;
+		x3Eqp_1 = 0.0;
+		x4Psidp_1 = 0.0;
+		x5Psiqpp_1 = 0.0;	
+	}
 
   //if (p_bus_id == 1)
     //printf("\t%d          %12.6f   %12.6f   %12.6f   %12.6f   %12.6f\n",    
@@ -568,6 +612,13 @@ void gridpack::dynamic_simulation::GensalGenerator::setWideAreaFreqforPSS(double
 		p_pss = getPss();
 		p_pss->setWideAreaFreqforPSS(freq);	
 	}
+}
+
+bool gridpack::dynamic_simulation::GensalGenerator::tripGenerator()
+{
+	p_tripped = true;
+	
+	return true;
 }
 
 /**

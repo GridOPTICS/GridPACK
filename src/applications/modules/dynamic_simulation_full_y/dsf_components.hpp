@@ -521,6 +521,11 @@ class DSFullBus
      * apply load shedding for the loads in this bus
      */
 	void applyLoadShedding(std::string loadid, double percentage);
+	
+     /**
+     * apply generator tripping for the specific generator with genid in this bus
+     */
+	void applyGeneratorTripping(std::string genid);
 
 
    /**

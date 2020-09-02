@@ -2590,6 +2590,21 @@ void gridpack::dynamic_simulation::DSFullBus::applyLoadShedding(std::string load
 }
 
 /**
+ * apply generator tripping for the specific generator with genid in this bus
+ */
+void gridpack::dynamic_simulation::DSFullBus::applyGeneratorTripping(std::string genid){
+	
+	int igen, ngen;
+	ngen = p_generators.size();
+	for (igen=0; igen<ngen; igen++){
+		if (genid == p_genid[igen]){
+			//printf("----------renke debug, DSFullBus::applyGeneratorTripping, find generator at bus %d with genid %s \n", getOriginalIndex(), genid.c_str());
+			p_generators[igen]->tripGenerator();
+		}
+	}
+}
+
+/**
  * return the fraction online from dynamic load model
  * @param idx index of dynamic load model
  * @return fraction of dynamic load that is online

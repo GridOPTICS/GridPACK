@@ -3148,6 +3148,26 @@ void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, 
 }
 
 /**
+ * execute generator tripping
+ */
+void gridpack::dynamic_simulation::DSFullApp::applyGeneratorTripping(int bus_number, std::string genid){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug generator trip, in dsf full app, \n");
+		bus->applyGeneratorTripping(genid);
+	
+	}
+		
+}
+
+/**
  * set all the necessery flags for the two buses and one branch for the line needs to trip
  * this function is for single branch flags set-up, may need to be called
  * multiple times for multiple line tripping 

@@ -118,6 +118,11 @@ class DSFullApp
      */
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);
 	
+    /**
+     * execute generator tripping 
+     */
+    void applyGeneratorTripping(int bus_number, std::string genid);
+	
 	/**
 	* set all the necessery flags for the two buses and one branch for the line needs to trip
 	* this function is for single branch flags set-up, may need to be called
