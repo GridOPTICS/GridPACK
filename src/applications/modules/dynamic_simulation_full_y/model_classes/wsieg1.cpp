@@ -157,6 +157,19 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   if (Iblock == 3 && Pmax == 0) Pmax = GV;
   if (T1 > 4 * ts) x1LL = GV * (1 - T2 / T1);
   else x1LL = GV;
+
+/* 
+  if (ini_check_print) {
+	if (x1LL >= Uo) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x1LL value is %12.6f, larger then Uo: %12.6f \n",p_bus_id, x1LL, Uo);
+	if (x1LL <= Uc) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x1LL value is %12.6f, smaller then Uo: %12.6f \n",p_bus_id, x1LL, Uc);
+  }
+*/
+  
+  
+  if (OptionToModifyLimitsForInitialStateLimitViolation) {
+    if (GV > Uo) Uo = GV;
+    if (GV < Uc) Uc = GV;
+  }
   //printf("T1 = %f, T2 = %f, ts = %f\n", T1, T2, ts);
   ///printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
 }
@@ -189,13 +202,25 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
   // State 2
   // enforce non-windup limits
   double TempIn2;
-  if (x2GovOut > Pmax) x2GovOut = Pmax;
-  else if (x2GovOut < Pmin) x2GovOut = Pmin;
+  if (x2GovOut > Pmax) {
+	  x2GovOut = Pmax;
+	  //printf ("----------suspect error in wsieg1 predictor (gen bus: %d) :  x2GovOut value is %12.6f, larger then Pmax: %12.6f \n",p_bus_id, x2GovOut, Pmax);
+  }
+  else if (x2GovOut < Pmin) {
+	  x2GovOut = Pmin;
+	  //printf ("----------suspect error in wsieg1 predictor (gen bus: %d) :  x2GovOut value is %12.6f, smaller then Pmax: %12.6f \n",p_bus_id, x2GovOut, Pmax);
+  }
   double GV = BackLash.Output(x2GovOut);
   if (T3 < 4 * t_inc) TempIn2 = (+ Pref - TempOut - GV) / (4 * t_inc);
   else TempIn2  = (+ Pref - TempOut - GV) / T3;
-  if (TempIn2 > Uo) TempIn2 = Uo;
-  else if (TempIn2 < Uc) TempIn2 = Uc;
+  if (TempIn2 > Uo){
+        TempIn2 = Uo;
+         //printf ("----------suspect error in wsieg1 predictor (gen bus: %d) :  TempIn2 value is %12.6f, larger then Uo: %12.6f \n",p_bus_id, TempIn2, Uo);
+  }
+  else if (TempIn2 < Uc) {
+        TempIn2 = Uc;
+        //printf ("----------suspect error in wsieg1 predictor (gen bus: %d) :  TempIn2 value is %12.6f, less then Uc: %12.6f \n",p_bus_id, TempIn2, Uc);
+  }
   dx2GovOut = TempIn2;
   //printf("TempIn1 = %f, TempOut = %f, w = %f, TempIn2 = %f\n", TempIn1, TempOut, w, TempIn2);
   // enforce non-windup limits

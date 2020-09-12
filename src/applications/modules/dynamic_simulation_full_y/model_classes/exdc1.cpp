@@ -210,8 +210,14 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
     LeadLagOUT = LeadLagIN;
   // State 4
   //printf("x4 = %f, Vrmax = %f, Vrmin = %f, TA = %f, LeadLagOUT = %f, KA = %f\n", x4, Vrmax, Vrmin, TA, LeadLagOUT, KA);
-  if (x4 > Vrmax) x4 = Vrmax;
-  if (x4 < Vrmin) x4 = Vrmin;
+  if (x4 > Vrmax) {
+	  //printf ("----------suspect error in exdc1 predictor (gen bus: %d) :  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n",p_bus_id, x4, Vrmax);
+	  x4 = Vrmax;
+  }
+  if (x4 < Vrmin) {
+	  x4 = Vrmin;
+	  //printf ("----------suspect error in exdc1 predictor (gen bus: %d) :  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n",p_bus_id, x4, Vrmin);
+  }
   if (TA > (TS_THRESHOLD * t_inc)) 
     dx4 = (LeadLagOUT * KA - x4) / TA;
   else {

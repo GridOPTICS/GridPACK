@@ -91,6 +91,13 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
   //if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.0; // S12
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
   if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 TBD: check parser
+  
+  double tmp = sqrt(p_pg*p_pg +p_qg*p_qg);
+  if ( tmp > MVABase) {
+       //MVABase = tmp*1.3;
+      //printf("-----------generator at bus %d  has P: %f, Q: %f, S: %f, MVABASE: %f  \n", p_bus_id, p_pg, p_qg, tmp, MVABase);
+	  MVABase = tmp*1.2;
+ }
   //printf("load S10 = %f, S12 = %f\n", S10, S12);
   //if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
   
@@ -148,6 +155,7 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
   presentMag = mag;
   Theta = ang;
   presentAng = ang;
+
   double P = p_pg / MVABase;
   double Q = p_qg / MVABase;
   //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
