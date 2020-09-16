@@ -244,7 +244,7 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
 {
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
-  // p_factory->dumpData();
+  p_factory->dumpData();
   p_factory->load();
 
   // set network components using factory
@@ -2117,13 +2117,18 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     for (i=0; i<nbus; i++) {
       std::vector<std::string> tags
         = p_network->getBus(p_obs_LoadIdx[i])->getDynamicLoads();
+      bool found = false;
       for (j=0; j<tags.size(); j++) {
         if (tags[j] == p_obs_lLoadIDs[i]) {
           double frac;
           frac = p_network->getBus(p_obs_LoadIdx[i])->getOnlineLoadFraction(j);
           tfOnline.push_back(frac);
+          found = true;
           break;
         }
+      }
+      if (!found) {
+        tfOnline.push_back(1.0);
       }
     }
     // Check to make sure that local vectors still match
@@ -3338,9 +3343,6 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneList(
   zones.resize(nzones);
   it = zmap.begin();
   while (it != zmap.end()) {
-    if (me == 0) {
-      printf("NZONES: %d idx: %d zoneID: %d\n",nzones,it->second,it->first);
-    }
     zones[it->second] = it->first;
     it++;
   }
