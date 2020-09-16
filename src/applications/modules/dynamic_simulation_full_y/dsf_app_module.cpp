@@ -1947,16 +1947,17 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     std::vector<double> dummy;
     int i, j, k, lidx;
     for (i = 0; i<nbus; i++) {
-      std::vector<int> localIndices;
-      localIndices = p_network->getLocalBusIndices(p_obs_loadBus[i]);
-      bool isLocal = false;
-      p_obs_lActive[i] = 0;
-      // Check to see if load host is active on this processor
-      for (j=0; j<localIndices.size(); j++) {
-        if (p_network->getActiveBus(localIndices[j])) {
+      if (p_network->getActiveBus(p_obs_loadBus[j])) {
+        std::vector<int> localIndices;
+        localIndices = p_network->getLocalBusIndices(p_obs_loadBus[i]);
+        bool isLocal = false;
+        p_obs_lActive[i] = 0;
+        // Check to see if load host is active on this processor
+        for (j=0; j<localIndices.size(); j++) {
+#if 0
           // Check to see if load is on this bus
           std::vector<std::string> tags
-           = p_network->getBus(localIndices[j])->getDynamicLoads();
+            = p_network->getBus(localIndices[j])->getDynamicLoads();
           for (k = 0; k<tags.size(); k++) {
             if (tags[k] == p_obs_loadIDs[i]) {
               lidx = localIndices[j];
@@ -1965,15 +1966,18 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
               break;
             }
           }
+#else
+          isLocal = true;
+#endif
           if (isLocal) break;
         }
-      }
-      if (isLocal) {
-        p_obs_lLoadIdx.push_back(i);
-        p_obs_LoadIdx.push_back(lidx);
-        p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
-        p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
-        dummy.push_back(0.0);
+        if (isLocal) {
+          p_obs_lLoadIdx.push_back(i);
+          p_obs_LoadIdx.push_back(lidx);
+          p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
+          p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
+          dummy.push_back(0.0);
+        }
       }
     }
     p_obs_fOnline->addElements(p_obs_lLoadIdx, dummy);
@@ -3365,12 +3369,9 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneList(
   zones.resize(nzones);
   it = zmap.begin();
   while (it != zmap.end()) {
-<<<<<<< HEAD
-=======
     if (me == 0) {
       //printf("NZONES: %d idx: %d zoneID: %d\n",nzones,it->second,it->first);
     }
->>>>>>> 839c0adc9dbf75cd1d96f435cc32efade13d8542
     zones[it->second] = it->first;
     it++;
   }
