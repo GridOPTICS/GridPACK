@@ -123,6 +123,10 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::setWideAreaFreqforPSS(dou
 	p_wideareafreq = freq;
 }
 
+bool gridpack::dynamic_simulation::BaseGeneratorModel::tripGenerator(){
+	return true;
+}
+
 /**
  * Set voltage on each generator
  */

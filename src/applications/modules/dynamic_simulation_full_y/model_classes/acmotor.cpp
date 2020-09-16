@@ -149,7 +149,7 @@ gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
   I_conv_factor_M2S = 0.0;
   
   Fonline = 1.0;
-  acload_perc = 0.43; //ac motor load percentage to the total load;
+  acload_perc = 0.43; //ac motor load percentage to the total load, default 0.43;
   samebus_static_loadP = 0.0;
   samebus_static_loadQ = 0.0;
   samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);

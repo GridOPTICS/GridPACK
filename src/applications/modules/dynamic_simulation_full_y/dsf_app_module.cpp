@@ -2541,16 +2541,17 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	// Here we assume line trip action will only happen AFTER FAULT!!!!!!!
 	if (bapplyLineTripAction){
 		
-		//char sybus[100];
+		char sybus[100];
+		
 		//sprintf(sybus, "ybus_%d_before_linetrip.m",Simu_Current_Step );
 		//ybus->save(sybus);
 		
 		p_factory->setMode(branch_trip_action);
         ybusMap_sptr->incrementMatrix(ybus);  // in the current code, solver_posfy_sptr is linked with ybus, check Bill
-        //ybus->print();
-        
-        //sprintf(sybus, "ybus_%d_linetrip.m",Simu_Current_Step );
-
+		
+		//printf ("-----------renke debug, line tripping action detected----------");		
+        //ybus->print();       
+        //sprintf(sybus, "ybus_%d_linetrip_test.m",Simu_Current_Step );
         //ybus->save(sybus);
 		
 		// after Y-matrix is modified, we need to clear this line trip action to 
@@ -3152,6 +3153,26 @@ void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, 
 }
 
 /**
+ * execute generator tripping
+ */
+void gridpack::dynamic_simulation::DSFullApp::applyGeneratorTripping(int bus_number, std::string genid){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug generator trip, in dsf full app, \n");
+		bus->applyGeneratorTripping(genid);
+	
+	}
+		
+}
+
+/**
  * set all the necessery flags for the two buses and one branch for the line needs to trip
  * this function is for single branch flags set-up, may need to be called
  * multiple times for multiple line tripping 
@@ -3164,10 +3185,11 @@ void gridpack::dynamic_simulation::DSFullApp::setLineTripAction
 	int ibr, nbr;
 	gridpack::dynamic_simulation::DSFullBranch *pbranch;	
 	nbr = vec_branchintidx.size();
+	//printf("----renke debug load shed, in dsf full app::setLineTripAction, there are %d branches from bus %d to bus %d \n", nbr, brch_from_bus_number, brch_to_bus_number);
 	for(ibr=0; ibr<nbr; ibr++){
 		pbranch = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>
 			(p_network->getBranch(vec_branchintidx[ibr]).get());
-		//printf("----renke debug load shed, in dsf full app, \n");
+		//printf("----renke debug load shed, in dsf full app::setLineTripAction, from bus:, to bus:\n");
 		
 		if (pbranch->setBranchTripAction(branch_ckt)){
 			p_vbranches_need_to_trip.push_back(pbranch);
@@ -3343,6 +3365,12 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneList(
   zones.resize(nzones);
   it = zmap.begin();
   while (it != zmap.end()) {
+<<<<<<< HEAD
+=======
+    if (me == 0) {
+      //printf("NZONES: %d idx: %d zoneID: %d\n",nzones,it->second,it->first);
+    }
+>>>>>>> 839c0adc9dbf75cd1d96f435cc32efade13d8542
     zones[it->second] = it->first;
     it++;
   }

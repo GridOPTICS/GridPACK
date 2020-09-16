@@ -108,6 +108,12 @@ class GensalGenerator : public BaseGeneratorModel
     double getFieldVoltage();
 	
 	void setWideAreaFreqforPSS(double freq);
+	
+	/**
+	* return true if trip generator successfully
+	* 
+	*/
+    bool tripGenerator();
 
     /**
      * Write out generator state
@@ -129,6 +135,7 @@ class GensalGenerator : public BaseGeneratorModel
     double p_sbase;
     double p_pg, p_qg;
     int p_status;
+	bool p_tripped;
     
     double MVABase;
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl;
@@ -149,6 +156,7 @@ class GensalGenerator : public BaseGeneratorModel
     double IrNorton, IiNorton;
     
     gridpack::ComplexType p_INorton;
+	gridpack::ComplexType p_Norton_Ya;
 
     boost::shared_ptr<BaseGovernorModel> p_governor;
     boost::shared_ptr<BaseExciterModel> p_exciter;

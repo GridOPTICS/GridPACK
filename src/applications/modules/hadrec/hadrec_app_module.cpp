@@ -342,6 +342,33 @@ bool gridpack::hadrec::HADRECAppModule::getGeneratorPower(int bus_id,
 	return flag;
 }
 
+/**
+ * Return total active and reactive loads for each zone
+ * @param load_p active load for all zones
+ * @param load_q reactive load for all zones
+ * @param zone_id label for each zone
+ */
+bool gridpack::hadrec::HADRECAppModule::getZoneLoads(std::vector<double> &load_p, std::vector<double> &load_q,
+    std::vector<int> &zone_id) const
+{
+	ds_app_sptr->getZoneLoads(load_p, load_q, zone_id);
+	
+	return true;
+}
+
+/**
+ * Return total active and reactive generator power for each zone
+ * @param generator_p active generator power for all zones
+ * @param generator_q reactive generator power for all zones
+ * @param zone_id label for each zone
+ */
+bool gridpack::hadrec::HADRECAppModule::getZoneGeneratorPower(std::vector<double> &generator_p,
+    std::vector<double> &generator_q, std::vector<int> &zone_id) const
+{
+	ds_app_sptr->getZoneGeneratorPower(generator_p, generator_q, zone_id);
+	
+	return true;
+}
 
 /**
  * apply actions
@@ -351,14 +378,18 @@ void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECActi
 		return ds_app_sptr->applyLoadShedding(control_action.bus_number, control_action.componentID, control_action.percentage );
 	}
 	
+	if ( control_action.actiontype == 2 ){
+		return ds_app_sptr->applyGeneratorTripping(control_action.bus_number, control_action.componentID );
+	}
+	
 	if ( control_action.actiontype == 1 ){
-		//if (control_action.brch_from_bus_number > 0 || control_action.brch_to_bus_number > 0){
-			//return ds_app_sptr->setLineTripAction(control_action.brch_from_bus_number, control_action.brch_to_bus_number, control_action.branch_ckt);
-		//}
-		//if (control_action.brch_from_bus_number == -1 && control_action.brch_to_bus_number == -1 && control_action.bus_number > 0){
+		if (control_action.brch_from_bus_number > 0 || control_action.brch_to_bus_number > 0){
+			return ds_app_sptr->setLineTripAction(control_action.brch_from_bus_number, control_action.brch_to_bus_number, control_action.branch_ckt);
+		}
+		if (control_action.brch_from_bus_number == -1 && control_action.brch_to_bus_number == -1 && control_action.bus_number > 0){
 		
 			return ds_app_sptr->setLineTripAction(control_action.bus_number);
-		//}
+		}
 	}
 
 }
