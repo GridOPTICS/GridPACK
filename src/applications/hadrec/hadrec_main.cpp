@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 {
   // Initialize libraries (parallel and math)
   gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
-  noprint_ins->setStatus(true);
+//  noprint_ins->setStatus(true);
   
   //bool bnoprint = gridpack::NoPrint::instance()->status();
   //printf ("------------- hadrec_main function test 1  bnoprint: %d \n", bnoprint);

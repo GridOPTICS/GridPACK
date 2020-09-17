@@ -244,7 +244,7 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
 {
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
-  p_factory->dumpData();
+  // p_factory->dumpData();
   p_factory->load();
 
   // set network components using factory
@@ -1947,17 +1947,16 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     std::vector<double> dummy;
     int i, j, k, lidx;
     for (i = 0; i<nbus; i++) {
-      if (p_network->getActiveBus(p_obs_loadBus[j])) {
-        std::vector<int> localIndices;
-        localIndices = p_network->getLocalBusIndices(p_obs_loadBus[i]);
-        bool isLocal = false;
-        p_obs_lActive[i] = 0;
-        // Check to see if load host is active on this processor
-        for (j=0; j<localIndices.size(); j++) {
-#if 0
-          // Check to see if load is on this bus
+      std::vector<int> localIndices;
+      localIndices = p_network->getLocalBusIndices(p_obs_loadBus[i]);
+      bool isLocal = false;
+      p_obs_lActive[i] = 0;
+      // Check to see if load host is active on this processor
+      for (j=0; j<localIndices.size(); j++) {
+        if (p_network->getActiveBus(localIndices[j])) {
+          // Check to see if regular load is on this bus
           std::vector<std::string> tags
-            = p_network->getBus(localIndices[j])->getDynamicLoads();
+            = p_network->getBus(localIndices[j])->getLoads();
           for (k = 0; k<tags.size(); k++) {
             if (tags[k] == p_obs_loadIDs[i]) {
               lidx = localIndices[j];
@@ -1966,18 +1965,25 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
               break;
             }
           }
-#else
-          isLocal = true;
-#endif
-          if (isLocal) break;
+          // Check to see if dynamic load is on this bus
+          tags = p_network->getBus(localIndices[j])->getDynamicLoads();
+          for (k = 0; k<tags.size(); k++) {
+            if (tags[k] == p_obs_loadIDs[i]) {
+              lidx = localIndices[j];
+              isLocal = true;
+              p_obs_lActive[i] = 1;
+              break;
+            }
+          }
         }
-        if (isLocal) {
-          p_obs_lLoadIdx.push_back(i);
-          p_obs_LoadIdx.push_back(lidx);
-          p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
-          p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
-          dummy.push_back(0.0);
-        }
+        if (isLocal) break;
+      }
+      if (isLocal) {
+        p_obs_lLoadIdx.push_back(i);
+        p_obs_LoadIdx.push_back(lidx);
+        p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
+        p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
+        dummy.push_back(0.0);
       }
     }
     p_obs_fOnline->addElements(p_obs_lLoadIdx, dummy);
@@ -2543,7 +2549,10 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	
 	// renke add, if a line trip action is detected, modify the post-fault Ymatrix. 
 	// Here we assume line trip action will only happen AFTER FAULT!!!!!!!
-	if (bapplyLineTripAction){
+   int chkTrip = 0;
+   if (bapplyLineTripAction) chkTrip = 1;
+   p_comm.sum(&chkTrip,1);
+	if (chkTrip > 0){
 		
 		char sybus[100];
 		
