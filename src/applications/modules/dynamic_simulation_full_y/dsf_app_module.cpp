@@ -2549,10 +2549,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	
 	// renke add, if a line trip action is detected, modify the post-fault Ymatrix. 
 	// Here we assume line trip action will only happen AFTER FAULT!!!!!!!
-   int chkTrip = 0;
-   if (bapplyLineTripAction) chkTrip = 1;
-   p_comm.sum(&chkTrip,1);
-	if (chkTrip > 0){
+	if (bapplyLineTripAction){
 		
 		char sybus[100];
 		
@@ -2569,10 +2566,10 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 		
 		// after Y-matrix is modified, we need to clear this line trip action to 
 		// avoid next step still apply the same line trip action
-		bapplyLineTripAction = false;
 		clearLineTripAction();// in this one, need to clear the flag, vector of each branch and set the status of the branches to be 0);  
 
 	}
+   bapplyLineTripAction = false;
    
     if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
       p_factory->predictor_currentInjection(false);
@@ -3206,10 +3203,12 @@ void gridpack::dynamic_simulation::DSFullApp::setLineTripAction
 		
 		if (pbranch->setBranchTripAction(branch_ckt)){
 			p_vbranches_need_to_trip.push_back(pbranch);
-			bapplyLineTripAction = true;
+         bapplyLineTripAction = true;
 			break;		
 		}	
 	}			
+   // Check to see if a line trip is occuring somewhere in the system
+   bapplyLineTripAction = p_factory->checkTrueSomewhere(bapplyLineTripAction);
 }
 
 // trip a branch, given a bus number, just find any one of the connected line(not transformer) with the bus, and trip that one
@@ -3238,12 +3237,14 @@ void gridpack::dynamic_simulation::DSFullApp::setLineTripAction(int bus_number){
 			
 			if (pbranch->setBranchTripAction()){ // if the branch is a non-xmfr branch
 				p_vbranches_need_to_trip.push_back(pbranch);
-				bapplyLineTripAction = true;
+            bapplyLineTripAction = true;
 				break;
 				
 			}					
 		}	
 	}				
+   // Check to see if a line trip is occuring somewhere in the system
+   bapplyLineTripAction = p_factory->checkTrueSomewhere(bapplyLineTripAction);
 }
 
 /**

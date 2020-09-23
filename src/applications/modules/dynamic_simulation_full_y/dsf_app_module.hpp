@@ -496,6 +496,10 @@ class DSFullApp
 	
 	//flag indicating whether there is/are branches need to be tripped at a specific dynamic simulation step
 	bool bapplyLineTripAction;
+
+   // flag indicating that a line is being tripped somewhere in the system.
+   // Needed to help manage matrix modications, which is a collective operation
+   bool p_lineTrip;
 	
 
     // Monitor generators for instability
