@@ -156,6 +156,8 @@ class HADRECAppModule
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullApp> ds_app_sptr;
 	
+   gridpack::parallel::Communicator p_comm;
+
     int t_total;
 	int t_config;
 	

@@ -105,6 +105,7 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(world));
 	//pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     //  gridpack::dynamic_simulation::DSFullBranch>(ds_network);
+    p_comm = world;
 	
 }
 

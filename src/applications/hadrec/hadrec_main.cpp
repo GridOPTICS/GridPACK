@@ -28,18 +28,20 @@ const char* help = "HADREC Test application";
 
 int main(int argc, char **argv)
 {
+  gridpack::parallel::Communicator world;
+  int me = world.rank();
   // Initialize libraries (parallel and math)
   gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
-//  noprint_ins->setStatus(true);
-  
+  //  noprint_ins->setStatus(true);
+
   //bool bnoprint = gridpack::NoPrint::instance()->status();
   //printf ("------------- hadrec_main function test 1  bnoprint: %d \n", bnoprint);
 
   gridpack::Environment env(argc,argv,help);
-  
+
   //bnoprint = gridpack::NoPrint::instance()->status();
   //printf ("------------- hadrec_main function test 2  bnoprint: %d \n", bnoprint);
-  
+
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
@@ -55,57 +57,57 @@ int main(int argc, char **argv)
   } else {
     file = "input.xml";
   }
-  
+
   //bnoprint = gridpack::NoPrint::instance()->status();
   //printf ("------------- hadrec_main function test 3  bnoprint: %d \n", bnoprint);
-  
+
   //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 2);
-  
+
   hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
-  
+
   std::vector<gridpack::dynamic_simulation::Event> BusFaults;
   BusFaults.clear();
 
   // initialize dynamic simulation
   hadrec_app_sptr->initializeDynSimu(BusFaults);
-  
+
   bool debugoutput = false; // whether print out debug staffs
   double lp, lq, pg, qg;
   int busno = 5;
   bool btmp;
-  
+
   //-----test get load and get generator function-----------
   //if (debugoutput){
 
-	busno = 5;
-    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-    busno = 7;
-    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-    busno = 9;
-    btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-    
-    busno = 1;
-    std::string genid = "1 ";
-    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-    
-    busno = 2;
-    genid = "1 ";
-    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-    
-    busno = 3;
-    genid = "1 ";
-    btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+  busno = 5;
+  btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+  if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+  busno = 7;
+  btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+  if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+  busno = 9;
+  btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
+  if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+
+  busno = 1;
+  std::string genid = "1 ";
+  btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+  if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+
+  busno = 2;
+  genid = "1 ";
+  btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+  if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+
+  busno = 3;
+  genid = "1 ";
+  btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
+  if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
   //}
-  
+
 
   gridpack::hadrec::HADRECAction loadshedact;
   loadshedact.actiontype = 0;
@@ -118,21 +120,21 @@ int main(int argc, char **argv)
   loadshedact1.bus_number = 7;
   loadshedact1.componentID = "1";
   loadshedact1.percentage = -0.2;
-  
+
   gridpack::hadrec::HADRECAction linetrip;
   linetrip.actiontype = 1;
   //linetrip.bus_number = 6;
   linetrip.brch_from_bus_number = 6;
   linetrip.brch_to_bus_number = 7;
   linetrip.branch_ckt = "1 ";
-  
-  
+
+
   int isteps = 0;
   bool bApplyAct_LoadShedding = false;  // whether apply the load shedding action in the simulation steps
   bool bApplyAct_LineTripping = true;  // whether apply the line tripping action in the simulation steps
   std::vector<double> ob_vals;
   int idxtmp;
-  
+
   // test getOblist
   std::vector<int> obs_genBus;
   std::vector<std::string> obs_genIDs;
@@ -141,58 +143,62 @@ int main(int argc, char **argv)
   std::vector<int> obs_vBus;
   hadrec_app_sptr->getObservationLists(obs_genBus, obs_genIDs,
       obs_loadBus, obs_loadIDs, obs_vBus);
-  
-  if (debugoutput){
-	printf("-----------renke debug, getObservationLists------------\n");
-	printf("-----------ob gen bus list, ");
-	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
-	printf(" %d, ", obs_genBus[idxtmp]);
-	}
-	printf(" \n");
-	
-	printf("-----------ob gen ID list, ");
-	for (idxtmp=0; idxtmp<obs_genIDs.size(); idxtmp++){
-	printf(" %s, ", obs_genIDs[idxtmp].c_str());
-	}
-	printf(" \n");
-	
-	printf("-----------ob load bus list, ");
-	for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
-	printf(" %d, ", obs_loadBus[idxtmp]);
-	}
-	printf(" \n");
-	
-	printf("-----------ob load ID list, ");
-	for (idxtmp=0; idxtmp<obs_loadIDs.size(); idxtmp++){
-	printf(" %s, ", obs_loadIDs[idxtmp].c_str());
-	}
-	printf(" \n");
-	
-	printf("-----------ob bus list, ");
-	for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
-	printf(" %d, ", obs_vBus[idxtmp]);
-	}
-	printf(" \n");
+
+  if (debugoutput && me == 0){
+    printf("-----------renke debug, getObservationLists------------\n");
+    printf("-----------ob gen bus list, ");
+    for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+      printf(" %d, ", obs_genBus[idxtmp]);
+    }
+    printf(" \n");
+
+    printf("-----------ob gen ID list, ");
+    for (idxtmp=0; idxtmp<obs_genIDs.size(); idxtmp++){
+      printf(" %s, ", obs_genIDs[idxtmp].c_str());
+    }
+    printf(" \n");
+
+    printf("-----------ob load bus list, ");
+    for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
+      printf(" %d, ", obs_loadBus[idxtmp]);
+    }
+    printf(" \n");
+
+    printf("-----------ob load ID list, ");
+    for (idxtmp=0; idxtmp<obs_loadIDs.size(); idxtmp++){
+      printf(" %s, ", obs_loadIDs[idxtmp].c_str());
+    }
+    printf(" \n");
+
+    printf("-----------ob bus list, ");
+    for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
+      printf(" %d, ", obs_vBus[idxtmp]);
+    }
+    printf(" \n");
   }
 
   std::vector<int> zone_id;
   std::vector<double> tmp_p;
   std::vector<double> tmp_q;
-  
+
   hadrec_app_sptr->getZoneLoads(tmp_p, tmp_q, zone_id);
-  printf("\n-------------------get zone load information, total zones: %d \n\n", zone_id.size());
-  for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
-	  
-	  printf(" zone number: %d, total load p: %f, total load q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
-	  
+  if (me == 0) {
+    printf("\n-------------------get zone load information, total zones: %d \n\n", zone_id.size());
+    for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
+
+      printf(" zone number: %d, total load p: %f, total load q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
+
+    }
   }
-  
+
   hadrec_app_sptr->getZoneGeneratorPower(tmp_p, tmp_q, zone_id);
-  printf("\n-------------------get zone generation information, total zones: %d \n\n", zone_id.size());
-  for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
-	  
-	  printf(" zone number: %d, total generation p: %f, total generation q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
-	  
+  if (me == 0) {
+    printf("\n-------------------get zone generation information, total zones: %d \n\n", zone_id.size());
+    for (idxtmp=0; idxtmp<zone_id.size(); idxtmp++){
+
+      printf(" zone number: %d, total generation p: %f, total generation q: %f,\n", zone_id[idxtmp], tmp_p[idxtmp], tmp_q[idxtmp]);
+
+    }
   }
 
   while(!hadrec_app_sptr->isDynSimuDone()){
@@ -205,30 +211,30 @@ int main(int argc, char **argv)
       hadrec_app_sptr->applyAction(loadshedact1);
       //printf("----renke debug load shed, isteps: %d \n", isteps);
     }
-	
-	if ( bApplyAct_LineTripping && isteps == 400){
-		printf("----renke debug line trip, isteps: %d \n", isteps);
-		hadrec_app_sptr->applyAction(linetrip);
-	}
-	
+
+    if ( bApplyAct_LineTripping && isteps == 400){
+      if (me == 0) printf("----renke debug line trip, isteps: %d \n", isteps);
+      hadrec_app_sptr->applyAction(linetrip);
+    }
+
     //execute one dynamic simulation step
     hadrec_app_sptr->executeDynSimuOneStep();
-	
-	ob_vals.clear();
-	ob_vals = hadrec_app_sptr->getObservations();
-	
-	if (debugoutput) {
-		printf("observations, ");
-		for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
-			printf(" %16.12f, ", ob_vals[idxtmp]);
-		}
-		printf(" \n");
-	}
+
+    ob_vals.clear();
+    ob_vals = hadrec_app_sptr->getObservations();
+
+    if (debugoutput && me == 0) {
+      printf("observations, ");
+      for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
+        printf(" %16.12f, ", ob_vals[idxtmp]);
+      }
+      printf(" \n");
+    }
 
     isteps++;
   }
 
-  printf("\n----------------finished first round of dynamic simulation----\n ");
+  if (me == 0) printf("\n----------------finished first round of dynamic simulation----\n ");
   //timer->stop(t_total);
   //timer->dump();
 
@@ -237,51 +243,51 @@ int main(int argc, char **argv)
   // transfer power flow results to dynamic simulation
   bool btest_2dynasimu = false;
   if (btest_2dynasimu) {
-	  
-	gridpack::dynamic_simulation::Event busfault;
-	busfault.start = 1.0;
-	busfault.end = 1.2;
-	busfault.step = 0.005;
-	busfault.isBus = true;
-	busfault.bus_idx = 7;
-    
-	BusFaults.clear();
-	BusFaults.push_back(busfault);
-    
+
+    gridpack::dynamic_simulation::Event busfault;
+    busfault.start = 1.0;
+    busfault.end = 1.2;
+    busfault.step = 0.005;
+    busfault.isBus = true;
+    busfault.bus_idx = 7;
+
+    BusFaults.clear();
+    BusFaults.push_back(busfault);
+
     //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
-	//hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
-	hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
-    
-    printf("\n---------------renke debug, hadrec main, second dyn starts----------------\n");
+    //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()), 1);
+    hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
+
+    if (me == 0) printf("\n---------------renke debug, hadrec main, second dyn starts----------------\n");
     hadrec_app_sptr->transferPFtoDS();
 
     // initialize dynamic simulation
     hadrec_app_sptr->initializeDynSimu(BusFaults);
-	
-	busno = 5;
+
+    busno = 5;
     hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    if (me == 0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
     busno = 7;
     hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+    if (me == 0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
     busno = 9;
     hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
-    printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
-    
+    if (me == 0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+
     busno = 1;
     std::string genid = "1";
     btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-    
+    if (me == 0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+
     busno = 2;
     genid = "1";
     btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-    
+    if (me == 0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+
     busno = 3;
     genid = "1";
     btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-    printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
+    if (me == 0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
     isteps = 0;
     //bApplyAct_LoadShedding = true;  // whether apply the action in the simulation steps
@@ -297,18 +303,18 @@ int main(int argc, char **argv)
       }
       //execute one dynamic simulation step
       hadrec_app_sptr->executeDynSimuOneStep();
-	  
-	  ob_vals.clear();
-	  ob_vals = hadrec_app_sptr->getObservations();
-	  
-	  if (debugoutput){
-		printf("observations, ");
-		for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
-			printf(" %16.12f, ", ob_vals[idxtmp]);
-		}
-		printf(" \n");
-	  }
-	
+
+      ob_vals.clear();
+      ob_vals = hadrec_app_sptr->getObservations();
+
+      if (debugoutput && me == 0){
+        printf("observations, ");
+        for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
+          printf(" %16.12f, ", ob_vals[idxtmp]);
+        }
+        printf(" \n");
+      }
+
       isteps++;
     }
   }
