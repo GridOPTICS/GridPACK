@@ -63,6 +63,14 @@ template <class _data_struct> class GenrouParser
         data->setValue(GENERATOR_TDOPP, data_struct.tdopp, g_id);
       }
 
+      // GENERATOR_TQOP
+      if (!data->getValue(GENERATOR_TQOP,&rval,g_id)) {
+        data->addValue(GENERATOR_TQOP,
+            data_struct.tqopp, g_id);
+      } else {
+        data->setValue(GENERATOR_TQOP, data_struct.tqopp, g_id);
+      }
+
       // GENERATOR_TQOPP
       if (!data->getValue(GENERATOR_TQOPP,&rval,g_id)) {
         data->addValue(GENERATOR_TQOPP,
@@ -110,6 +118,13 @@ template <class _data_struct> class GenrouParser
         data->setValue(GENERATOR_XDP, data_struct.xdp, g_id);
       }
 
+      // GENERATOR_XQP
+      if (!data->getValue(GENERATOR_XQP,&rval,g_id)) {
+        data->addValue(GENERATOR_XQP, data_struct.xqp, g_id);
+      } else {
+        data->setValue(GENERATOR_XQP, data_struct.xqp, g_id);
+      }
+
       // GENERATOR_XDPP
       if (!data->getValue(GENERATOR_XDPP,&rval,g_id)) {
         data->addValue(GENERATOR_XDPP, data_struct.xdpp, g_id);
@@ -128,14 +143,14 @@ template <class _data_struct> class GenrouParser
 
       // GENERATOR_S1
       if (!data->getValue(GENERATOR_S1,&rval,g_id)) {
-        data->addValue(GENERATOR_XL, data_struct.gn_s1, g_id);
+        data->addValue(GENERATOR_S1, data_struct.gn_s1, g_id);
       } else {
         data->setValue(GENERATOR_S1, data_struct.gn_s1, g_id);
       }
 
       // GENERATOR_S12
       if (!data->getValue(GENERATOR_S12,&rval,g_id)) {
-        data->addValue(GENERATOR_XL, data_struct.s12, g_id);
+        data->addValue(GENERATOR_S12, data_struct.s12, g_id);
       } else {
         data->setValue(GENERATOR_S12, data_struct.s12, g_id);
       }
@@ -314,7 +329,7 @@ template <class _data_struct> class GenrouParser
       // GENERATOR_S1
       if (nstr > 15) {
         if (!data->getValue(GENERATOR_S1,&rval,g_id)) {
-          data->addValue(GENERATOR_XL,
+          data->addValue(GENERATOR_S1,
               atof(split_line[15].c_str()), g_id);
         } else {
           data->setValue(GENERATOR_S1,
@@ -325,7 +340,7 @@ template <class _data_struct> class GenrouParser
       // GENERATOR_S12
       if (nstr > 16) {
         if (!data->getValue(GENERATOR_S12,&rval,g_id)) {
-          data->addValue(GENERATOR_XL,
+          data->addValue(GENERATOR_S12,
               atof(split_line[16].c_str()), g_id);
         } else {
           data->setValue(GENERATOR_S12,
