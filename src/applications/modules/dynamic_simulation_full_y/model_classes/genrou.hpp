@@ -96,6 +96,12 @@ class GenrouGenerator : public BaseGeneratorModel
      */
     void corrector_currentInjection(bool flag);
 
+	/**
+	* return true if trip generator successfully
+	* 
+	*/
+    bool tripGenerator();
+	
     /**
      * Set voltage on each generator
      */
@@ -112,7 +118,17 @@ class GenrouGenerator : public BaseGeneratorModel
      * @param signal character string used to determine behavior
      * @param string buffer that contains output
      */
-    void write(const char* signal, char* string);
+	 // Yuan commented below 20201011
+    //void write(const char* signal, char* string);
+	// Yuan commend end
+	
+	/**
+     * Write out generator state
+     * @param string buffer that contains output
+     * @param bufsize size of string buffer
+     * @param signal character string used to determine behavior
+     */
+    bool serialWrite(char* string, const int bufsize, const char* signal);
 
     /**
      * return a vector containing any generator values that are being
@@ -126,10 +142,11 @@ class GenrouGenerator : public BaseGeneratorModel
     double p_sbase;
     double p_pg, p_qg;
     int p_status;
+	bool p_tripped;
     
     double MVABase;
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
-    double Tdop, Tdopp, Tqopp, S10, S12;
+    double Tdop, Tdopp, Tqopp, Tqop, S10, S12;
     
     double Vterm, Theta, Ir, Ii;
     
@@ -152,7 +169,9 @@ class GenrouGenerator : public BaseGeneratorModel
 
     double presentMag, presentAng;
 
-    //double Efdinit, Pmechinit;
+    double Efdinit, Pmechinit;
+	
+	bool enableSat, printFlag;
             
     ////////////////////////////////////////////////////
 
