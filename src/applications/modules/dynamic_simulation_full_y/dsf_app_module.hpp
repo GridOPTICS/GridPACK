@@ -496,10 +496,6 @@ class DSFullApp
 	
 	//flag indicating whether there is/are branches need to be tripped at a specific dynamic simulation step
 	bool bapplyLineTripAction;
-
-   // flag indicating that a line is being tripped somewhere in the system.
-   // Needed to help manage matrix modications, which is a collective operation
-   bool p_lineTrip;
 	
 
     // Monitor generators for instability
@@ -611,6 +607,8 @@ class DSFullApp
    //timer for record the excution time for each main modules
    //gridpack::utility::CoarseTimer *timer;
    int t_solve;
+   int t_execute_steps;
+   int t_presolve;
    int t_misc;
    int t_mode;
    int t_ybus;
