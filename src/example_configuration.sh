@@ -95,7 +95,9 @@ if [ $host == "flophouse" ]; then
         # parch="rhel7-gnu48-complex-opt-c"
         parch="rhel7-real-c-static"
         parch="rhel7-complex-c-static"
-        # parch="rhel7-real-c-static-debug"
+        if [ "$build"x = "Debug"x ]; then
+            parch="rhel7-real-c-static-debug"
+        fi
         # pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
     fi
 
@@ -182,6 +184,8 @@ elif [ $host == "WE32673" ]; then
         #pdir="$prefix/petsc-3.9.4" 
         #parch="macosx-real-cpp-static"
         # pdir="$prefix/petsc-3.11.3"
+        # parch="macosx-complex-c-static"
+        # pdir="$prefix/petsc-3.12.3"
         # parch="macosx-complex-c-static"
     fi
     cmake $options \
