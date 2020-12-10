@@ -2287,13 +2287,14 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
 
-  t_solve = timer->createCategory("DS Solve: Total");
   t_misc = timer->createCategory("DS Solve: Miscellaneous");
+  t_presolve = timer->createCategory("DS App: solvePreInitialize");
 #ifdef MAP_PROFILE
   timer->configTimer(false);
 #endif
-  timer->start(t_solve);
+
   timer->start(t_misc);
+  timer->start(t_presolve);
 
   // Get cursor for setting solver options
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -2502,6 +2503,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   Simu_Current_Step = 0;
   p_bDynSimuDone = false;
   
+  timer->stop(t_presolve);
   //printf (" In function solvePreInitialize end, simu_total_steps: %d \n", simu_total_steps);
   
 }
@@ -2513,6 +2515,9 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	
     gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
+
+    t_execute_steps = timer->createCategory("DS Solve: execute steps");
+	timer->start(t_execute_steps);
 	
   //for (Simu_Current_Step = 0; Simu_Current_Step < simu_total_steps - 1; Simu_Current_Step++) {
   //for (Simu_Current_Step = 0; Simu_Current_Step < 200; Simu_Current_Step++) {
@@ -3128,7 +3133,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 #ifdef MAP_PROFILE
   timer->configTimer(true);
 #endif
-  timer->stop(t_solve);
+  timer->stop(t_execute_steps);
   //timer->dump(); 
   
 }
