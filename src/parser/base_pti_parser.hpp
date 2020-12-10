@@ -35,6 +35,7 @@
 #include "parser_classes/gencls.hpp"
 #include "parser_classes/gensal.hpp"
 #include "parser_classes/genrou.hpp"
+#include "parser_classes/gdform.hpp"
 #include "parser_classes/wsieg1.hpp"
 #include "parser_classes/exdc1.hpp"
 #include "parser_classes/esst1a.hpp"
@@ -359,6 +360,16 @@ class BasePTIParser : public BaseParser<_network>
       double gn_xl;
       double gn_s1;
       double s12;
+      double vset;
+      double mq;
+      double kpv;
+      double kiv;
+      double emax;
+      double emin;
+      double mp;
+      double kppmax;
+      double kipmax;
+      double pset;
       // Exciter parameters
       bool has_exciter;
       double ex_tr;
@@ -838,6 +849,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"GENROU")) {
             GenrouParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"GDFORM")) {
+            GdformParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"WSIEG1")) {
             Wsieg1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1149,6 +1163,7 @@ class BasePTIParser : public BaseParser<_network>
     bool onGenerator(std::string &device) {
       bool ret = false;
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
+          device == "GDFORM" ||
           device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
           device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM") {
@@ -1294,6 +1309,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "GENROU") {
               GenrouParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "GDFORM") {
+              GdformParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "WSIEG1") {
               Wsieg1Parser<gen_params> parser;
@@ -1477,6 +1495,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "GENROU") {
             GenrouParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "GDFORM") {
+            GdformParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "WSIEG1") {
             Wsieg1Parser<gen_params> parser;

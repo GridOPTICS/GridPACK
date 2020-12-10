@@ -27,12 +27,13 @@ if (PARMETIS_FOUND)
 endif()
 
 set(target_libraries
-    gridpack_math
     gridpack_environment
+    gridpack_math
     gridpack_partition
     gridpack_components
     gridpack_parallel
     gridpack_timer
+    gridpack_stream
     ${target_libraries})
 
 include_directories(AFTER parser_classes)
@@ -102,6 +103,7 @@ install(FILES
   PTI23_parser.hpp
   PTI33_parser.hpp
   GOSS_parser.hpp
+  MAT_parser.hpp
   hash_distr.hpp
   base_parser.hpp
   base_pti_parser.hpp
@@ -112,6 +114,7 @@ install(FILES
   parser_classes/gencls.hpp
   parser_classes/gensal.hpp
   parser_classes/genrou.hpp
+  parser_classes/gdform.hpp
   parser_classes/wsieg1.hpp
   parser_classes/exdc1.hpp
   parser_classes/esst1a.hpp
