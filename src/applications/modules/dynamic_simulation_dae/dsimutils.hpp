@@ -64,6 +64,18 @@ class DSimProfiler
     p_timer->stop(p_tsetup);
   }
 
+  void startsolvetimer(void) 
+  {
+    p_tsolve = p_timer->createCategory("Dynamic Simulation: Solve");
+    p_timer->start(p_tsolve);
+  }
+
+  void stopsolvetimer(void) 
+  {
+    p_timer->stop(p_tsolve);
+  }
+
+
   ~DSimProfiler()
   {
     p_timer->stop(p_ttotal);
