@@ -18,6 +18,7 @@
 #include "classical.hpp"
 #include "gensal.hpp"
 #include "genrou.hpp"
+#include "gdform.hpp"
 #include "wsieg1.hpp"
 #include "exdc1.hpp"
 #include "esst1a.hpp"
@@ -67,6 +68,11 @@ gridpack::dynamic_simulation::BaseGeneratorModel*
   } else if (type == "GENROU") {
     gridpack::dynamic_simulation::GenrouGenerator *tmp;
     tmp =  new gridpack::dynamic_simulation::GenrouGenerator;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+  } else if (type == "GDFORM") {
+    gridpack::dynamic_simulation::GridFormingGenerator *tmp;
+    tmp =  new gridpack::dynamic_simulation::GridFormingGenerator;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
   } else {

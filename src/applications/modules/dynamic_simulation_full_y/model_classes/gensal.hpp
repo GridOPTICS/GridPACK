@@ -149,7 +149,7 @@ class GensalGenerator : public BaseGeneratorModel
     double dx1d_1, dx2w_1, dx3Eqp_1, dx4Psidp_1, dx5Psiqpp_1;
     double Id, Iq;
     
-    double Efd, LadIfd, Pmech, Vstab;
+    double Efd, LadIfd, Pmech, Vstab, genP, genQ;
     
     double B, G;
 

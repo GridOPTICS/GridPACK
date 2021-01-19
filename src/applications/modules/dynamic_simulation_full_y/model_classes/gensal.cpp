@@ -158,6 +158,10 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
 
   double P = p_pg / MVABase;
   double Q = p_qg / MVABase;
+  
+  genP = P;
+  genQ = Q;
+  
   //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
   //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
   double Vrterm = Vterm * cos(Theta);
@@ -312,6 +316,10 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor_currentInjection(b
   //Network
   Ir = + Id * sin(x1d_0) + Iq * cos(x1d_0);
   Ii = - Id * cos(x1d_0) + Iq * sin(x1d_0);
+  
+  genP = Vrterm*Ir + Viterm*Ii;
+  genQ = Viterm*Ir - Vrterm*Ii;
+  
   IrNorton = + Idnorton * sin(x1d_0) + Iqnorton * cos(x1d_0);
   IiNorton = - Idnorton * cos(x1d_0) + Iqnorton * sin(x1d_0);
   IrNorton = IrNorton * MVABase / p_sbase; 
@@ -482,6 +490,10 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector_currentInjection(b
   //Network
   Ir = + Id * sin(x1d_1) + Iq * cos(x1d_1);
   Ii = - Id * cos(x1d_1) + Iq * sin(x1d_1);
+  
+  genP = Vrterm*Ir + Viterm*Ii;
+  genQ = Viterm*Ir - Vrterm*Ii;
+  
   IrNorton = + Idnorton * sin(x1d_1) + Iqnorton * cos(x1d_1);
   IiNorton = - Idnorton * cos(x1d_1) + Iqnorton * sin(x1d_1); 
   IrNorton = IrNorton * MVABase / p_sbase; 
@@ -671,9 +683,12 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
     return true;
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
-      char buf[128];
+      char buf[256];
 //    sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
-      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,",
+//      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f",
+//          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm, Efd, LadIfd, genP, genQ);
+		  
+	  sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f",
           p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm, Efd, LadIfd);
       return true;
 /*      if (strlen(buf) <= bufsize) {
