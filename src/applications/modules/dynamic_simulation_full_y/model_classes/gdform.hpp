@@ -14,6 +14,7 @@
  * 
  */
 
+
 #ifndef _gdform_h_
 #define _gdform_h_
 
@@ -43,8 +44,7 @@ class GridFormingGenerator : public BaseGeneratorModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
-
-    
+   
     /**
      * Initialize generator model before calculation
      * @param mag voltage magnitude
@@ -126,17 +126,20 @@ class GridFormingGenerator : public BaseGeneratorModel
 	bool bmodel_debug;
     
     double MVABase;
-    double XL, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin;
+    double XL, Ts, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin;
     double fset, Ra;
+	double delta_omega_lim;
     
     //double Vterm, Theta, Ir, Ii;
     
-    double x1E_0, x2d_0, x3_0, x4_0;
-    double x1E_1, x2d_1, x3_1, x4_1;
-    double dx1E_0, dx2d_0, dx3_0, dx4_0;
-    double dx1E_1, dx2d_1, dx3_1, dx4_1;
+    double x1E_0, x2d_0, x3_0, x4_0, xvterm_0, xp_0, xq_0;
+    double x1E_1, x2d_1, x3_1, x4_1, xvterm_1, xp_1, xq_1;
+    double dx1E_0, dx2d_0, dx3_0, dx4_0, dxvterm_0, dxp_0, dxq_0;
+    double dx1E_1, dx2d_1, dx3_1, dx4_1, dxvterm_1, dxp_1, dxq_1;
 
     double E_term, IrNorton, IiNorton, omega, genP, genQ;
+	double Poutctrl;
+	double Vterm_delay, genP_delay, genQ_delay;
     
     gridpack::ComplexType p_INorton;
 	gridpack::ComplexType p_Norton_Ya;

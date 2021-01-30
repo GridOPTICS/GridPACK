@@ -24,7 +24,6 @@
 #include "base_generator_model.hpp"
 #include "gdform.hpp"
 
-
 /**
  *  Basic constructor
  */
@@ -34,25 +33,42 @@ gridpack::dynamic_simulation::GridFormingGenerator::GridFormingGenerator(void)
 	x2d_0 = 0.0;
 	x3_0 = 0.0;
 	x4_0 = 0.0;
+	xvterm_0= 0.0;
+    xp_0= 0.0; 
+	xq_0= 0.0;
+	
 	x1E_1 = 0.0;
 	x2d_1 = 0.0;
 	x3_1 = 0.0;
 	x4_1 = 0.0;
+	xvterm_1= 0.0;
+    xp_1= 0.0; 
+	xq_1= 0.0;
 	
 	dx1E_0 = 0.0;
 	dx2d_0 = 0.0;
 	dx3_0 = 0.0;
 	dx4_0 = 0.0;
+	dxvterm_0= 0.0;
+    dxp_0= 0.0; 
+	dxq_0= 0.0;
+	
 	dx1E_1 = 0.0;
 	dx2d_1 = 0.0;
 	dx3_1 = 0.0;
 	dx4_1 = 0.0;
+	dxvterm_1= 0.0;
+    dxp_1= 0.0; 
+	dxq_1= 0.00;
 	
 	presentMag = 1.0;
 	presentAng = 0.0;
 	fset = 60.0;
 	Ra = 0.0;
 	omega = 1.0;
+	delta_omega_lim = 999.0;
+	Poutctrl = 0.0;
+	Ts = 0.01;
 	
 	p_tripped = false;
 	bmodel_debug = false;
@@ -91,7 +107,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
 
   if (!data->getValue(GENERATOR_MBASE, &MVABase, idx)) MVABase = 1000.0; // MVABase
   if (!data->getValue(GENERATOR_XL  , &XL, idx)) XL = 0.075; 
-  if (!data->getValue(GENERATOR_VSET, &Vset, idx)) Vset = 1.0; // D
+  if (!data->getValue(GENERATOR_VSET, &Ts, idx)) Ts = 0.01666; // D
   if (!data->getValue(GENERATOR_MQ, &mq, idx)) mq=0.05; // 
   if (!data->getValue(GENERATOR_KPV, &kpv, idx)) kpv=0.0; // 
   if (!data->getValue(GENERATOR_KIV, &kiv, idx)) kiv=5.86; // 
@@ -112,7 +128,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
   }
 
   if (bmodel_debug){
-	printf("\n--------gdform parameters: MVABase = %12.6f, XL = %12.6f, Vset = %12.6f, mq = %12.6f, kpv = %12.6f, kiv = %12.6f, Emax = %12.6f, Emin = %12.6f, mp = %12.6f, kppmax = %12.6f, kipmax = %12.6f, Pset = %12.6f, Pmax = %12.6f, Pmin = %12.6f  \n", MVABase, XL, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin);
+	printf("\n--------gdform parameters: MVABase = %12.6f, XL = %12.6f, Ts = %12.6f, mq = %12.6f, kpv = %12.6f, kiv = %12.6f, Emax = %12.6f, Emin = %12.6f, mp = %12.6f, kppmax = %12.6f, kipmax = %12.6f, Pset = %12.6f, Pmax = %12.6f, Pmin = %12.6f  \n", MVABase, XL, Ts, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin);
   }
   
 }
@@ -153,6 +169,12 @@ void gridpack::dynamic_simulation::GridFormingGenerator::init(double mag,
   E_term = x1E_0;
   x2d_0 = atan2(Etermi, Etermr);  // from -pi to pi, rads
   x2d_1 = x2d_0;
+  xvterm_0 = Vterm;
+  xp_0 = genP;
+  xq_0 = genQ;
+  xvterm_1 = Vterm;
+  xp_1 = genP;
+  xq_1 = genQ;
   
   if (bmodel_debug){
     printf("Ir = %f, Ii = %f\n", Ir, Ii);
@@ -219,6 +241,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor_currentInject
     x2d_0 = x2d_1;
     x3_0 = x3_1;
     x4_0 = x4_1;
+	xvterm_0 = xvterm_1;
+	xp_0=xp_1;
+	xq_0=xq_1;
 
   }  
   // Calculate INorton_full
@@ -278,6 +303,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	x2d_0 = x2d_1;
 	x3_0 = x3_1;
 	x4_0 = x4_1;
+	xvterm_0 = xvterm_1;
+	xp_0=xp_1;
+	xq_0=xq_1;
 	}  
 	
 	//compute generator P and Q first 
@@ -303,7 +331,29 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 		printf("------renke debug in GridFormingGenerator::predictor, presentMag, presentAng = %12.6f, %12.6f \n", presentMag, presentAng);
     }
 	
-	double tmpin = -mq*genQ - Vterm + Vset;
+	//--------------add delay function here for genP, genQ, and Vterm----------------
+	if (Ts< 4*t_inc){
+		dxvterm_0 = 0.0;
+		dxp_0 = 0.0;
+		dxq_0 = 0.0;
+		Vterm_delay = Vterm;
+		genP_delay = genP;
+		genQ_delay = genQ;
+		xvterm_0 = Vterm;
+		xp_0 = genP;
+		xq_0 = genQ;
+	}else{
+		
+		dxvterm_0 = (Vterm-xvterm_0)/Ts;
+		dxp_0 = (genP-xp_0)/Ts;
+		dxq_0 = (genQ-xq_0)/Ts;
+		
+		Vterm_delay = xvterm_0;
+		genP_delay = xp_0;
+		genQ_delay = xq_0;
+	}
+	
+	double tmpin = -mq*genQ_delay - Vterm_delay + Vset;
 	double tmpmax = Emax - kpv*tmpin;
 	double tmpmin = Emin - kpv*tmpin;
 	
@@ -315,21 +365,71 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	if( dx1E_0>0.0 && x1E_0>=tmpmax ) dx1E_0 = 0.0;
 	if( dx1E_0<0.0 && x1E_0<=tmpmin ) dx1E_0 = 0.0;
 	
-	double Poutctrl = 0.0;
+	Poutctrl = 0.0;
+	double out3 = 0.0;
+	double out4 = 0.0;
+	//compute s3
+	if ( genP_delay>Pmax ){
+		tmpin = Pmax - genP_delay;
+		tmpmax = 0.0 - kppmax*tmpin;
+		tmpmin = -delta_omega_lim - kppmax*tmpin;
+		
+		if (x3_0 > tmpmax) x3_0 = tmpmax;
+		if (x3_0 < tmpmin) x3_0 = tmpmin;
+		
+		dx3_0 = kipmax*tmpin;
+		
+		if( dx3_0>0.0 && x3_0>=tmpmax ) dx3_0 = 0.0;
+		if( dx3_0<0.0 && x3_0<=tmpmin ) dx3_0 = 0.0;
+		out3 = kipmax * tmpin + x3_0;
+		if (out3 > 0.0) out3 = 0.0;
+		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
+	}else{
+		 x3_0 = 0.0;
+		dx3_0 = 0.0;
+	}
 	
+    //compute s4
+	if ( genP_delay<Pmin ){
+		tmpin = Pmin - genP_delay;
+		tmpmax = delta_omega_lim - kppmax*tmpin;
+		tmpmin = 0.0 - kppmax*tmpin;
+		
+		if (x4_0 > tmpmax) x4_0 = tmpmax;
+		if (x4_0 < tmpmin) x4_0 = tmpmin;
+		
+		dx4_0 = kipmax*tmpin;
+		
+		if( dx4_0>0.0 && x4_0>=tmpmax ) dx4_0 = 0.0;
+		if( dx4_0<0.0 && x4_0<=tmpmin ) dx4_0 = 0.0;
+		
+		out4 = kipmax * tmpin + x4_0;
+		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
+		if (out4 < 0.0) out4 = 0.0;
+	}else{
+		 x4_0 = 0.0;
+		dx4_0 = 0.0;
+	}
 	
+	Poutctrl = out3 + out4;
+	
+	if (bmodel_debug){
+		printf("---gdform predictor x3x4 debug, pbusid, %d,  x3_0, %12.6f, x4_0, %12.6f, dx3_0, %12.6f, dx4_0, %12.6f, out3, %12.6f, out4, %12.6f, Poutctrl, %12.6f, \n", p_bus_id, x3_0, x4_0, dx3_0, dx4_0, out3, out4, Poutctrl);
+	}
 	// compute s2
 	double pi = 4.0*atan(1.0);
-	tmpin = (Pset-genP)*mp + Poutctrl;
+	tmpin = (Pset-genP_delay)*mp + Poutctrl;
 	tmpin = tmpin + 2*pi*fset - 2*pi*60.0;
 	dx2d_0 = tmpin/1.0;
 	omega = tmpin/(2*pi*60.0)+1.0;
-	
 	
 	x1E_1 = x1E_0 + dx1E_0 * t_inc;
 	x2d_1 = x2d_0 + dx2d_0 * t_inc;
 	x3_1 = x3_0 + dx3_0 * t_inc;
 	x4_1 = x4_0 + dx4_0 * t_inc;
+	xvterm_1 = xvterm_0 + dxvterm_0 * t_inc;
+	xp_1 = xp_0 + dxp_0 * t_inc;
+	xq_1 = xq_0 + dxq_0 * t_inc;
 	
 	E_term = tmpin*kpv + x1E_1;
 	
@@ -348,10 +448,17 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	x2d_0 = 0.0;
 	x3_0 = 0.0;
 	x4_0 = 0.0;
+	xvterm_0 = 0.0;
+	xp_0 = 0.0;
+	xq_0 = 0.0;
+	
 	x1E_1 = 0.0;
 	x2d_1 = 0.0;
 	x3_1 = 0.0;
 	x4_1 = 0.0;
+	xvterm_1 = 0.0;
+	xp_1 = 0.0;
+	xq_1 = 0.0;
 	}
 	
   }else {
@@ -359,10 +466,17 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	x2d_0 = 0.0;
 	x3_0 = 0.0;
 	x4_0 = 0.0;
+	xvterm_0 = 0.0;
+	xp_0 = 0.0;
+	xq_0 = 0.0;
+	
 	x1E_1 = 0.0;
 	x2d_1 = 0.0;
 	x3_1 = 0.0;
 	x4_1 = 0.0;
+	xvterm_1 = 0.0;
+	xp_1 = 0.0;
+	xq_1 = 0.0;
   }//pair with getGenStatus()
 
 }
@@ -449,7 +563,29 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 		printf("------renke debug in GridFormingGenerator::corrector, genP = %f, genQ = %f, Vterm = %f, x1E_1 = %f\n", genP, genQ, Vterm, x1E_1);
     }
 	
-	double tmpin = -mq*genQ - Vterm + Vset;
+	//--------------add delay function here for genP, genQ, and Vterm----------------
+	if (Ts< 4*t_inc){
+		dxvterm_1 = 0.0;
+		dxp_1 = 0.0;
+		dxq_1 = 0.0;
+		Vterm_delay = Vterm;
+		genP_delay = genP;
+		genQ_delay = genQ;
+		xvterm_1 = Vterm;
+		xp_1 = genP;
+		xq_1 = genQ;
+	}else{
+		
+		dxvterm_1 = (Vterm-xvterm_1)/Ts;
+		dxp_1 = (genP-xp_1)/Ts;
+		dxq_1 = (genQ-xq_1)/Ts;
+		
+		Vterm_delay = xvterm_1;
+		genP_delay = xp_1;
+		genQ_delay = xq_1;
+	}
+	
+	double tmpin = -mq*genQ_delay - Vterm_delay + Vset;
 	double tmpmax = Emax - kpv*tmpin;
 	double tmpmin = Emin - kpv*tmpin;
 	
@@ -468,11 +604,62 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	if( dx1E_1>0.0 && x1E_1>=tmpmax ) dx1E_1 = 0.0;
 	if( dx1E_1<0.0 && x1E_1<=tmpmin ) dx1E_1 = 0.0;
 	
-	double Poutctrl = 0.0;
+	Poutctrl = 0.0;
+	double out3 = 0.0;
+	double out4 = 0.0;
+	
+	//compute s3
+	if (genP_delay > Pmax){
+		tmpin = Pmax - genP_delay;
+		tmpmax = 0.0 - kppmax*tmpin;
+		tmpmin = -delta_omega_lim - kppmax*tmpin;
+		
+		if (x3_1 > tmpmax) x3_1 = tmpmax;
+		if (x3_1 < tmpmin) x3_1 = tmpmin;
+		
+		dx3_1 = kipmax*tmpin;
+		
+		if( dx3_1>0.0 && x3_1>=tmpmax ) dx3_1 = 0.0;
+		if( dx3_1<0.0 && x3_1<=tmpmin ) dx3_1 = 0.0;
+		double out3 = kipmax * tmpin + x3_1;
+		if (out3 > 0.0) out3 = 0.0;
+		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
+	}else{
+		 x3_1 = 0.0;
+		dx3_1 = 0.0;
+	}
+	
+    //compute s4
+	if (genP_delay < Pmin){
+		tmpin = Pmin - genP_delay;
+		tmpmax = delta_omega_lim - kppmax*tmpin;
+		tmpmin = 0.0 - kppmax*tmpin;
+		
+		if (x4_1 > tmpmax) x4_1 = tmpmax;
+		if (x4_1 < tmpmin) x4_1 = tmpmin;
+		
+		dx4_1 = kipmax*tmpin;
+		
+		if( dx4_1>0.0 && x4_1>=tmpmax ) dx4_1 = 0.0;
+		if( dx4_1<0.0 && x4_1<=tmpmin ) dx4_1 = 0.0;
+		
+		double out4 = kipmax * tmpin + x4_1;
+		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
+		if (out4 < 0.0) out4 = 0.0;
+	}else{
+		 x4_1 = 0.0;
+		dx4_1 = 0.0;
+	}
+	
+	Poutctrl = out3 + out4;
+	
+	if (bmodel_debug){
+		printf("---gdform corrector x3x4 debug, pbusid, %d,  x3_1, %12.6f, x4_1, %12.6f, dx3_1, %12.6f, dx4_1, %12.6f, out3, %12.6f, out4, %12.6f, Poutctrl, %12.6f, \n", p_bus_id, x3_1, x4_1, dx3_1, dx4_1, out3, out4, Poutctrl);
+	}
 	
 	// compute s2
 	double pi = 4.0*atan(1.0);
-	tmpin = (Pset-genP)*mp + Poutctrl;
+	tmpin = (Pset-genP_delay)*mp + Poutctrl;
 	tmpin = tmpin + 2*pi*fset - 2*pi*60.0;
 	dx2d_1 = tmpin/1.0;
 	omega = tmpin/(2*pi*60.0)+1.0;
@@ -487,6 +674,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	x2d_1 = x2d_0 + (dx2d_0+dx2d_1)/2.0 * t_inc;
 	x3_1 = x3_0 + (dx3_0+dx3_1)/2.0 * t_inc;
 	x4_1 = x4_0 + (dx4_0+dx4_1)/2.0 * t_inc;
+	xvterm_1 = xvterm_0 + (dxvterm_0+dxvterm_1)/2.0 * t_inc;
+	xp_1 = xp_0 + (dxp_0+dxp_1)/2.0 * t_inc;
+	xq_1 = xq_0 + (dxq_0+dxq_1)/2.0 * t_inc;
 	
 	E_term = tmpin*kpv + x1E_1;
 	
@@ -504,10 +694,16 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	x2d_0 = 0.0;
 	x3_0 = 0.0;
 	x4_0 = 0.0;
+	xvterm_0 = 0.0;
+	xp_0 = 0.0;
+	xq_0 = 0.0;
 	x1E_1 = 0.0;
 	x2d_1 = 0.0;
 	x3_1 = 0.0;
 	x4_1 = 0.0;
+	xvterm_1 = 0.0;
+	xp_1 = 0.0;
+	xq_1 = 0.0;
 	}
 	
   }else {
@@ -515,10 +711,16 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	x2d_0 = 0.0;
 	x3_0 = 0.0;
 	x4_0 = 0.0;
+	xvterm_0 = 0.0;
+	xp_0 = 0.0;
+	xq_0 = 0.0;
 	x1E_1 = 0.0;
 	x2d_1 = 0.0;
 	x3_1 = 0.0;
 	x4_1 = 0.0;
+	xvterm_1 = 0.0;
+	xp_1 = 0.0;
+	xq_1 = 0.0;
   }//pair with getGenStatus()
   
 }
@@ -566,7 +768,7 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
       char buf[256];
 //    sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
       sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f ",
-          p_bus_id, p_ckt.c_str(), x1E_1, x2d_1, E_term, omega, presentMag, presentAng, genP, genQ);
+          p_bus_id, p_ckt.c_str(), x3_1, x4_1, E_term, omega, presentMag, presentAng, genP, genQ);
       return true;
 /*      if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
@@ -593,6 +795,6 @@ void gridpack::dynamic_simulation::GridFormingGenerator::getWatchValues(
     std::vector<double> &vals)
 {
   vals.clear();
-  vals.push_back(x1E_1);
+  vals.push_back(x2d_1);
   vals.push_back(omega);
 }
