@@ -125,7 +125,8 @@ open(RAW,"$rawfile");
 open(CONTINGENCY,">$filename");
 print CONTINGENCY "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
 print CONTINGENCY "<ContingencyList>\n";
-print CONTINGENCY "  <Contingencies>\n";
+print CONTINGENCY "  <Contingency_analysis>\n";
+print CONTINGENCY "    <Contingencies>\n";
 $is_gen = 0;
 $is_branch = 0;
 $is_bus = 0;
@@ -199,12 +200,12 @@ while (<RAW>) {
     $active =~ s/\s*$//;
     if ($active > 0) {
       if ($allGC == 1 || ($count_gc < $maxGC)) {
-        print CONTINGENCY "    <Contingency>\n";
-        print CONTINGENCY "      <contingencyType> Generator <\/contingencyType>\n";
-        print CONTINGENCY "      <contingencyName> CTG$count <\/contingencyName>\n";
-        print CONTINGENCY "      <contingencyBuses> $busid <\/contingencyBuses>\n";
-        print CONTINGENCY "      <contingencyGenerators> $tag <\/contingencyGenerators>\n";
-        print CONTINGENCY "    <\/Contingency>\n";
+        print CONTINGENCY "      <Contingency>\n";
+        print CONTINGENCY "        <contingencyType> Generator <\/contingencyType>\n";
+        print CONTINGENCY "        <contingencyName> CTG$count <\/contingencyName>\n";
+        print CONTINGENCY "        <contingencyBuses> $busid <\/contingencyBuses>\n";
+        print CONTINGENCY "        <contingencyGenerators> $tag <\/contingencyGenerators>\n";
+        print CONTINGENCY "      <\/Contingency>\n";
         $contingency = "GENERATOR\_$busid\_$tag";
         $nminus2[$count2] = $contingency;
         $count++;
@@ -363,18 +364,22 @@ for ($iline = 0; $iline < $lcnt; $iline++) {
         $found[$ibus] = 0;
       }
 #
-#  Find first bus
+#  Find first bus that is not at either end of inactive line
 #
       $ifirst = 0;
       $fbus = $busmap{$bus1};
       $tbus = $busmap{$bus2};
-      while ($ifirst+1 == $fbus || $ifirst+1 == $tbus) {
+      while ($ifirst == $fbus || $ifirst == $tbus) {
         $ifirst++;
       }
       $found[$ifirst] = 1;
       $bcnt = 1;
       $nbus = 0;
       $ibus = $top[$ifirst];
+#
+#  Neither end of inactive line is first bus so don't need to check if neighbors
+#  are attached
+#
       while ($ibus >= 0) {
         $j = $nghbrs[$ibus];
         $newbus[$nbus] = $j;
@@ -391,10 +396,10 @@ for ($iline = 0; $iline < $lcnt; $iline++) {
         for ($i=0; $i<$nbus; $i++) {
           $j = $top[$oldbus[$i]];
           while ($j >= 0) {
-            if (!(($oldbus[$i]+1 == $fbus && $nghbrs[$j]+1 == $tbus && $nghbrtag[$j] == $tag)
-              || ($oldbus[$i]+1 == $tbus && $nghbrs[$j]+1 == $fbus && $nghbrtag[$j] == $tag))) {
-              $ob = $oldbus[$i]+1;
-              $nb = $nghbrs[$j]+1;
+            if (!(($oldbus[$i] == $fbus && $nghbrs[$j] == $tbus && $nghbrtag[$j] == $tag)
+              || ($oldbus[$i] == $tbus && $nghbrs[$j] == $fbus && $nghbrtag[$j] == $tag))) {
+              $ob = $oldbus[$i];
+              $nb = $nghbrs[$j];
               if ($found[$nghbrs[$j]] == 0) {
                 $bcnt++;
                 $found[$nghbrs[$j]] = 1;
@@ -408,12 +413,12 @@ for ($iline = 0; $iline < $lcnt; $iline++) {
         $nbus = $newcnt;
       }
       if ($bcnt == $buscnt) {
-        print CONTINGENCY "    <Contingency>\n";
-        print CONTINGENCY "      <contingencyType> Line <\/contingencyType>\n";
-        print CONTINGENCY "      <contingencyName> CTG$count <\/contingencyName>\n";
-        print CONTINGENCY "      <contingencyLineBuses> $bus1 $bus2 <\/contingencyLineBuses>\n";
-        print CONTINGENCY "      <contingencyLineNames> $tag <\/contingencyLineNames>\n";
-        print CONTINGENCY "    <\/Contingency>\n";
+        print CONTINGENCY "      <Contingency>\n";
+        print CONTINGENCY "        <contingencyType> Line <\/contingencyType>\n";
+        print CONTINGENCY "        <contingencyName> CTG$count <\/contingencyName>\n";
+        print CONTINGENCY "        <contingencyLineBuses> $bus1 $bus2 <\/contingencyLineBuses>\n";
+        print CONTINGENCY "        <contingencyLineNames> $tag <\/contingencyLineNames>\n";
+        print CONTINGENCY "      <\/Contingency>\n";
         $contingency = "LINE\_$bus1\_$bus2\_$tag";
         $nminus2[$count2] = $contingency;
         $count_lc++;
@@ -483,42 +488,43 @@ for ($i=0; $i<$ncont; $i++) {
     }
     if ($type eq "GG") {
       if ($allGGC == 1 || $ngg < $maxGGC) {
-        print CONTINGENCY "    <Contingency>\n";
-        print CONTINGENCY "      <contingencyType> Generator-Generator <\/contingencyType>\n";
-        print CONTINGENCY "      <contingencyName> CTG$count <\/contingencyName>\n";
-        print CONTINGENCY "      <contingencyBuses> $buses[0] $buses[1] <\/contingencyBuses>\n";
-        print CONTINGENCY "      <contingencyGenerators> $gtags[0] $gtags[1] <\/contingencyGenerators>\n";
-        print CONTINGENCY "    <\/Contingency>\n";
+        print CONTINGENCY "      <Contingency>\n";
+        print CONTINGENCY "        <contingencyType> Generator-Generator <\/contingencyType>\n";
+        print CONTINGENCY "        <contingencyName> CTG$count <\/contingencyName>\n";
+        print CONTINGENCY "        <contingencyBuses> $buses[0] $buses[1] <\/contingencyBuses>\n";
+        print CONTINGENCY "        <contingencyGenerators> $gtags[0] $gtags[1] <\/contingencyGenerators>\n";
+        print CONTINGENCY "      <\/Contingency>\n";
         $count++;
         $ngg++;
       }
     } elsif ($type eq "GL") {
       if ($allGLC == 1 || $ngl < $maxGLC) {
-        print CONTINGENCY "    <Contingency>\n";
-        print CONTINGENCY "      <contingencyType> Generator-Line <\/contingencyType>\n";
-        print CONTINGENCY "      <contingencyName> CTG$count <\/contingencyName>\n";
-        print CONTINGENCY "      <contingencyBuses> $buses[0] <\/contingencyBuses>\n";
-        print CONTINGENCY "      <contingencyGenerators> $gtags[0] <\/contingencyGenerators>\n";
-        print CONTINGENCY "      <contingencyLineBuses> $buses[1] $buses[2] <\/contingencyLineBuses>\n";
-        print CONTINGENCY "      <contingencyLineNames> $ltags[0] <\/contingencyLineNames>\n";
-        print CONTINGENCY "    <\/Contingency>\n";
+        print CONTINGENCY "      <Contingency>\n";
+        print CONTINGENCY "        <contingencyType> Generator-Line <\/contingencyType>\n";
+        print CONTINGENCY "        <contingencyName> CTG$count <\/contingencyName>\n";
+        print CONTINGENCY "        <contingencyBuses> $buses[0] <\/contingencyBuses>\n";
+        print CONTINGENCY "        <contingencyGenerators> $gtags[0] <\/contingencyGenerators>\n";
+        print CONTINGENCY "        <contingencyLineBuses> $buses[1] $buses[2] <\/contingencyLineBuses>\n";
+        print CONTINGENCY "        <contingencyLineNames> $ltags[0] <\/contingencyLineNames>\n";
+        print CONTINGENCY "      <\/Contingency>\n";
         $count++;
         $ngl++;
       }
     } elsif ($type eq "LL") {
       if ($allLLC == 1 || $nll < $maxLLC) {
-        print CONTINGENCY "    <Contingency>\n";
-        print CONTINGENCY "      <contingencyType> Line-Line <\/contingencyType>\n";
-        print CONTINGENCY "      <contingencyName> CTG$count <\/contingencyName>\n";
-        print CONTINGENCY "      <contingencyLineBuses> $buses[0] $buses[1] $buses[2] $buses[3] <\/contingencyLineBuses>\n";
-        print CONTINGENCY "      <contingencyLineNames> $ltags[0]  $ltags[1] <\/contingencyLineNames>\n";
-        print CONTINGENCY "    <\/Contingency>\n";
+        print CONTINGENCY "      <Contingency>\n";
+        print CONTINGENCY "        <contingencyType> Line-Line <\/contingencyType>\n";
+        print CONTINGENCY "        <contingencyName> CTG$count <\/contingencyName>\n";
+        print CONTINGENCY "        <contingencyLineBuses> $buses[0] $buses[1] $buses[2] $buses[3] <\/contingencyLineBuses>\n";
+        print CONTINGENCY "        <contingencyLineNames> $ltags[0]  $ltags[1] <\/contingencyLineNames>\n";
+        print CONTINGENCY "      <\/Contingency>\n";
         $count++;
         $nll++;
       }
     }
   }
 }
-print CONTINGENCY "  <\/Contingencies>\n";
+print CONTINGENCY "    <\/Contingencies>\n";
+print CONTINGENCY "  </Contingency_analysis>\n";
 print CONTINGENCY "<\/ContingencyList>\n";
 close(CONTINGENCY);
