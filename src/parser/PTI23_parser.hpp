@@ -76,6 +76,7 @@ class PTI23_parser : public BasePTIParser<_network>
       std::string tmpstr = fileName;
       util.trim(tmpstr);
       std::string ext = this->getExtension(tmpstr);
+      p_check_v23 = true;
       if (ext == "raw") {
         getCase(tmpstr);
         //brdcst_data();
@@ -245,6 +246,7 @@ class PTI23_parser : public BasePTIParser<_network>
         boost::shared_ptr<gridpack::component::DataCollection>
           data(new gridpack::component::DataCollection);
         int nstr = split_line.size();
+        if (nstr > 12) p_check_v23 = false;
 
         // BUS_I               "I"                   integer
         o_idx = atoi(split_line[0].c_str());
@@ -329,6 +331,10 @@ class PTI23_parser : public BasePTIParser<_network>
         index++;
         std::getline(input, line);
       }
+      if (!p_check_v23) {
+        std::cout<<"Anomolies detected in parsing RAW file."
+          <<" This may not be a PSS/E v23 format file."<<std::endl;
+      }
     }
 
     void find_generators(std::ifstream & input, std::string &oldline, bool &parsed)
@@ -357,6 +363,7 @@ class PTI23_parser : public BasePTIParser<_network>
           std::getline(input, line);
           continue;
         }
+        if (nstr < 18) p_check_v23 = false;
 
         // Find out how many generators are already on bus
         int ngen;
@@ -473,6 +480,10 @@ class PTI23_parser : public BasePTIParser<_network>
         }
 
         std::getline(input, line);
+      }
+      if (!p_check_v23) {
+        std::cout<<"Anomolies detected in parsing RAW file."
+          <<" This may not be a PSS/E v23 format file."<<std::endl;
       }
     }
 
@@ -1507,6 +1518,11 @@ class PTI23_parser : public BasePTIParser<_network>
      * Data collection object associated with network as a whole
      */
     boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
+
+    /**
+     * Check that file appears to be version 33 format
+     */
+    bool p_check_v23;
 };
 
 } /* namespace parser */
