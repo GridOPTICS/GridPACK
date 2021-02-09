@@ -361,7 +361,8 @@ void gridpack::powerflow::PFBus::setValues(gridpack::RealType *values)
   double at = p_a;
   p_a -= values[0];
 #ifdef LARGE_MATRIX
-  p_v -= real(values[1]);
+  //p_v -= real(values[1]);
+  p_v -= values[1];
 #else
   if (!p_isPV) {
     p_v -= values[1];
@@ -1846,7 +1847,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       return true;
     }
   } else if (p_mode == YBus) {
-    return YMBranch::matrixForwardValues(values);
+    return YMBranch::matrixReverseValues(values);
   }
   return false;
 }
