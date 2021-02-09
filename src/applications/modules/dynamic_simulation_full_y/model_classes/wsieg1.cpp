@@ -134,16 +134,17 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   double GV = GainBlock.YtoX(PGV); // TBD: check GainBlock?
   //printf("GV = %f\n", GV);
   x2GovOut = GV;
-  //bool ini_check_print = false;
+  //bool ini_check_print = true;
   /*
   if (ini_check_print) {
 	if (x2GovOut >= Pmax) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x2GovOut value is %12.6f, larger then Pmax: %12.6f \n",p_bus_id, x2GovOut, Pmax);
 	if (x2GovOut <= Pmin) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x2GovOut value is %12.6f, smaller then Pmin: %12.6f \n",p_bus_id, x2GovOut, Pmin);
   }
   */
+  
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (GV > Pmax) Pmax = GV;
-    if (GV < Pmin) Pmin = GV;
+    if (GV > Pmax) Pmax = GV+0.1;
+    if (GV < Pmin) Pmin = GV-0.1;
   }
   Pref = GV;
   // Initialize the Backlash
@@ -158,17 +159,18 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   if (T1 > 4 * ts) x1LL = GV * (1 - T2 / T1);
   else x1LL = GV;
 
-/* 
+/*
   if (ini_check_print) {
 	if (x1LL >= Uo) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x1LL value is %12.6f, larger then Uo: %12.6f \n",p_bus_id, x1LL, Uo);
 	if (x1LL <= Uc) printf ("----------suspect error in wsieg1 init (gen bus: %d) :  x1LL value is %12.6f, smaller then Uo: %12.6f \n",p_bus_id, x1LL, Uc);
   }
-*/
+  */
+
   
   
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (GV > Uo) Uo = GV;
-    if (GV < Uc) Uc = GV;
+    if (GV > Uo) Uo = GV+0.1;
+    if (GV < Uc) Uc = GV-0.1;
   }
   //printf("T1 = %f, T2 = %f, ts = %f\n", T1, T2, ts);
   ///printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
