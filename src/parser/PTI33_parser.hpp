@@ -432,7 +432,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
         // LOAD_YQ            "YQ"                integer
         if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ,
-            atoi(split_line[10].c_str()), nld);
+            atof(split_line[10].c_str()), nld);
 
         // TODO: add variables OWNER, SCALE, INTRPT
 
