@@ -474,7 +474,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
         // LOAD_YQ            "YQ"                integer
         if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ,
-            atoi(split_line[10].c_str()), nld);
+            atof(split_line[10].c_str()), nld);
 
         // TODO: add variables OWNER, SCALE, INTRPT
 
@@ -1442,6 +1442,7 @@ class PTI33_parser : public BasePTIParser<_network>
            * type: float
            * BRANCH_TAP: This is the ratio of WINDV1 and WINDV2
            */
+          ntoken = split_line3.size();
           double windv1 = atof(split_line3[0].c_str());
           double windv2 = atof(split_line4[0].c_str());
           double tap = windv1/windv2;
@@ -1546,8 +1547,10 @@ class PTI33_parser : public BasePTIParser<_network>
            * type: float
            * TRANSFORMER_CNXA
            */
+          if (ntoken > 16) {
           p_branchData[l_idx]->addValue(TRANSFORMER_CNXA,
               atof(split_line3[16].c_str()),nelems);
+          }
 
           nelems++;
           p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
