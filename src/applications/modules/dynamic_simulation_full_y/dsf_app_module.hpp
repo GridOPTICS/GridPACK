@@ -118,6 +118,18 @@ class DSFullApp
      */
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);
 	
+	/**
+     * execute Constant Y load P change	 
+     */
+    void applyConstYLoad_Change_P(int bus_number, double loadPChangeMW);
+	void clearConstYLoad_Change_P();
+	
+	/**
+     * execute Constant Y load Q change	 
+     */
+    void applyConstYLoad_Change_Q(int bus_number, double loadPChangeMVAR);
+	void clearConstYLoad_Change_Q();
+	
     /**
      * execute generator tripping 
      */
@@ -497,6 +509,13 @@ class DSFullApp
 	//flag indicating whether there is/are branches need to be tripped at a specific dynamic simulation step
 	bool bapplyLineTripAction;
 	
+	//flag indicating whether there is/are bus load P or Q change at a specific dynamic simulation step
+	bool bapplyLoadChangeP;
+	bool bapplyLoadChangeQ;
+	
+	std::vector<gridpack::dynamic_simulation::DSFullBus*> p_vbus_need_to_changeP;
+	std::vector<gridpack::dynamic_simulation::DSFullBus*>p_vbus_need_to_changeQ;
+
 
     // Monitor generators for instability
     bool p_monitorGenerators;

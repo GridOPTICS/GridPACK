@@ -34,7 +34,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action};
+enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q};
 
 // Small utility structure to encapsulate information about fault events
 struct Event{
@@ -330,6 +330,11 @@ class DSFullBus
 		gridpack::component::BaseBranchComponent* branch_ptr);
 		
 	void clearBranchTripAction();
+	
+	void applyConstYLoad_Change_P(double loadPChangeMW);
+	void applyConstYLoad_Change_Q(double loadPChangeMVAR);
+	void clearConstYLoad_Change_P();
+	void clearConstYLoad_Change_Q();
 
     /**
      * Write output from buses to standard out
@@ -581,6 +586,8 @@ class DSFullBus
     bool p_load;
     double p_pl, p_ql;
 	double p_loadimpedancer, p_loadimpedancei;
+	double p_Yload_change_r, p_Yload_change_i; // renke add, to enable constant-Y load changes during the dynamic simulation
+	                                           // per unit value based on system MVA 100, increase 500 MW load, p_Yload_change_r = 5.0
     double p_sbase;
     bool p_isGen;
     int p_area;
@@ -595,6 +602,7 @@ class DSFullBus
     int p_type;
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
+	bool p_Yload_change_P_flag, p_Yload_change_Q_flag; // renke add, indicating whether this bus has constant-Y load P or Q change,to enable constant-Y load change during dyn. simu.
 	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
 	bool p_branchtripaction_from_flag, p_branchtripaction_to_flag;
 	bool p_busrelaytripflag;
@@ -827,7 +835,7 @@ class DSFullBranch
 	bool setBranchTripAction(const std::string ckt_tag);
 	bool setBranchTripAction();
 	void clearBranchTripAction();
-	
+		
 	/**
      * update branch current
      */

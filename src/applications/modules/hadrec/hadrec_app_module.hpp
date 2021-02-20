@@ -29,7 +29,7 @@ namespace hadrec {
 
 struct HADRECAction
 {
-	int actiontype = 0;  // 0: load shedding
+	int actiontype = 0;  // 0: load shedding; 1: line tripping; 2: generator tripping; 3: Constant-Y load P change; 4: Constant-Y load Q change
 	int bus_number = -1;
 	std::string componentID = "1";
 	double percentage = 0.0;

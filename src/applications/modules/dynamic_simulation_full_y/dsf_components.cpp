@@ -38,6 +38,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_ngen = 0;
   p_negngen = 0;
   p_from_flag = false;
+  p_Yload_change_P_flag = false;
+  p_Yload_change_Q_flag = false;
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
   p_branchrelay_to_flag = false;
@@ -64,6 +66,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_pl = 0.0;
   p_ql = 0.0;
   p_relaytrippedbranch = NULL;
+  p_Yload_change_r = 0.0;
+  p_Yload_change_i = 0.0;
   //p_tripactionbranch.clear();
 }
 
@@ -83,7 +87,8 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagSize(int *isize, int *js
 {
   if (YMBus::isIsolated()) return false;
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == YDYNLOAD || p_mode == onFY || p_mode == posFY
-  || p_mode == jxd || p_mode == bus_relay || p_mode == branch_relay || p_mode == branch_trip_action) {
+  || p_mode == jxd || p_mode == bus_relay || p_mode == branch_relay || p_mode == branch_trip_action
+  || p_mode == bus_Yload_change_P || p_mode == bus_Yload_change_Q) {
     return YMBus::matrixDiagSize(isize,jsize);
   }  else {
     *isize = 1;
@@ -187,6 +192,33 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
       //gridpack::ComplexType ret(0.0, -1.0e5);
 	  double tmp1 = p_ybusr;
       double tmp2 = p_ybusi - 1.0e5;
+      gridpack::ComplexType ret(tmp1, tmp2);
+	  
+      values[0] = ret;
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == bus_Yload_change_P) {
+    if (p_Yload_change_P_flag) {
+      //gridpack::ComplexType ret(0.0, -1.0e5);
+	  double tmp1 = p_Yload_change_r; //p_ybusr + p_Yload_change_r;
+      double tmp2 = 0.0; //p_ybusi;
+      gridpack::ComplexType ret(tmp1, tmp2);
+	  
+      values[0] = ret;
+	  
+	  //printf("-----Ybus change at bus idx due to load change: %d Real: %f Imag: %f\n",getOriginalIndex(), real(values[0]), imag(values[0]) );
+	  
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == bus_Yload_change_Q) {
+    if (p_Yload_change_Q_flag) {
+      //gridpack::ComplexType ret(0.0, -1.0e5);
+	  double tmp1 = 0.0; //p_ybusr;
+      double tmp2 = - p_Yload_change_i; //_ybusi - p_Yload_change_i;
       gridpack::ComplexType ret(tmp1, tmp2);
 	  
       values[0] = ret;
@@ -1976,6 +2008,33 @@ void gridpack::dynamic_simulation::DSFullBus::clearBranchTripAction()
 	p_vec_tripactionbranch.clear();
 }
 
+void gridpack::dynamic_simulation::DSFullBus::applyConstYLoad_Change_P(double loadPChangeMW)
+ {
+	 p_Yload_change_P_flag = true;
+	 p_Yload_change_r = loadPChangeMW/100.0;
+	  
+ }
+ 
+ void gridpack::dynamic_simulation::DSFullBus::applyConstYLoad_Change_Q(double loadPChangeMVAR)
+ {
+	 p_Yload_change_Q_flag = true;
+	 p_Yload_change_i = loadPChangeMVAR/100.0;
+	  
+ }
+
+void gridpack::dynamic_simulation::DSFullBus::clearConstYLoad_Change_P()
+ {
+	 p_Yload_change_P_flag = false;
+	 p_Yload_change_r = 0.0;
+	  
+ }
+ 
+ void gridpack::dynamic_simulation::DSFullBus::clearConstYLoad_Change_Q()
+ {
+	 p_Yload_change_Q_flag = false;
+	 p_Yload_change_i = 0.0;
+	  
+ }
 
 void gridpack::dynamic_simulation::DSFullBus::setBranchRelayFromBusStatus(bool sta)
 {

@@ -58,6 +58,9 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   Simu_Current_Step = 0;
 
   bapplyLineTripAction = false;
+  bapplyLoadChangeP = false;
+  bapplyLoadChangeQ = false;
+  
 }
 
 /**
@@ -77,6 +80,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   Simu_Current_Step = 0;
   
   bapplyLineTripAction = false;
+  bapplyLoadChangeP = false;
+  bapplyLoadChangeQ = false;
 }
 
 /**
@@ -2312,6 +2317,12 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   bapplyLineTripAction = false;
   p_vbranches_need_to_trip.clear();
   
+  // set the load P and Q change related flag to be false and clear the vector
+  bapplyLoadChangeP = false;
+  bapplyLoadChangeQ = false;
+  p_vbus_need_to_changeP.clear();
+  p_vbus_need_to_changeQ.clear();
+  
   ybusMap_sptr.reset(new gridpack::mapper::FullMatrixMap<DSFullNetwork> (p_network));
   orgYbus = ybusMap_sptr->mapToMatrix();
   
@@ -2575,6 +2586,56 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 
 	}
    bapplyLineTripAction = false;
+   
+   
+   	// renke add, if a load change P action is detected, modify the post-fault Ymatrix. 
+	// Here we assume line trip action will only happen AFTER FAULT!!!!!!!
+	if (bapplyLoadChangeP){
+		
+		char sybus[100];
+		
+		//sprintf(sybus, "ybus_%d_before_linetrip.m",Simu_Current_Step );
+		//ybus->save(sybus);
+		
+		p_factory->setMode(bus_Yload_change_P);
+        ybusMap_sptr->incrementMatrix(ybus);  // in the current code, solver_posfy_sptr is linked with ybus, check Bill
+		
+		//printf ("-----------renke debug, line tripping action detected----------");		
+        //ybus->print();       
+        //sprintf(sybus, "ybus_%d_linetrip_test.m",Simu_Current_Step );
+        //ybus->save(sybus);
+		
+		// after Y-matrix is modified, we need to clear this line trip action to 
+		// avoid next step still apply the same line trip action
+		clearConstYLoad_Change_P();// in this one, need to clear the flag, vector of each branch and set the status of the branches to be 0);  
+
+	}
+   bapplyLoadChangeP = false;
+   
+      	// renke add, if a load change Q action is detected, modify the post-fault Ymatrix. 
+	// Here we assume line trip action will only happen AFTER FAULT!!!!!!!
+	if (bapplyLoadChangeQ){
+		
+		char sybus[100];
+		
+		//sprintf(sybus, "ybus_%d_before_linetrip.m",Simu_Current_Step );
+		//ybus->save(sybus);
+		
+		p_factory->setMode(bus_Yload_change_Q);
+        ybusMap_sptr->incrementMatrix(ybus);  // in the current code, solver_posfy_sptr is linked with ybus, check Bill
+		
+		//printf ("-----------renke debug, line tripping action detected----------");		
+        //ybus->print();       
+        //sprintf(sybus, "ybus_%d_linetrip_test.m",Simu_Current_Step );
+        //ybus->save(sybus);
+		
+		// after Y-matrix is modified, we need to clear this line trip action to 
+		// avoid next step still apply the same line trip action
+		clearConstYLoad_Change_Q();// in this one, need to clear the flag, vector of each branch and set the status of the branches to be 0);  
+
+	}
+   bapplyLoadChangeQ = false;
+   
    
     if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
       p_factory->predictor_currentInjection(false);
@@ -3166,6 +3227,80 @@ void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, 
 	}
 		
 }
+
+
+/**
+ * execute constant Y load P change	 
+ */
+void gridpack::dynamic_simulation::DSFullApp::applyConstYLoad_Change_P(int bus_number, double loadPChangeMW ){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		bus->applyConstYLoad_Change_P(loadPChangeMW);
+		bapplyLoadChangeP = true;
+		p_vbus_need_to_changeP.push_back(bus);
+	}
+	
+   // Check to see if a load change P is occuring somewhere in the system
+   bapplyLoadChangeP = p_factory->checkTrueSomewhere(bapplyLoadChangeP);
+		
+}
+
+void gridpack::dynamic_simulation::DSFullApp::clearConstYLoad_Change_P()
+{
+	//clear the flags and the tripping line pointer vector, as well as the flags in the tripping line
+	bapplyLoadChangeP = false;
+	int ibus, nbus;
+	nbus = p_vbus_need_to_changeP.size();
+	for (ibus=0 ; ibus<nbus; ibus++){
+		p_vbus_need_to_changeP[ibus]->clearConstYLoad_Change_P();
+	}
+	p_vbus_need_to_changeP.clear();	
+}
+
+/**
+ * execute constant Y load Q change	 
+ */
+void gridpack::dynamic_simulation::DSFullApp::applyConstYLoad_Change_Q(int bus_number, double loadPChangeMVAR ){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		bus->applyConstYLoad_Change_Q(loadPChangeMVAR);
+		bapplyLoadChangeQ = true;
+		p_vbus_need_to_changeQ.push_back(bus);
+	}
+	
+	// Check to see if a load change Q is occuring somewhere in the system
+   bapplyLoadChangeQ = p_factory->checkTrueSomewhere(bapplyLoadChangeQ);
+		
+}
+
+void gridpack::dynamic_simulation::DSFullApp::clearConstYLoad_Change_Q()
+{
+	//clear the flags and the tripping line pointer vector, as well as the flags in the tripping line
+	bapplyLoadChangeQ = false;
+	int ibus, nbus;
+	nbus = p_vbus_need_to_changeQ.size();
+	for (ibus=0 ; ibus<nbus; ibus++){
+		p_vbus_need_to_changeQ[ibus]->clearConstYLoad_Change_Q();
+	}
+	p_vbus_need_to_changeQ.clear();	
+}
+
 
 /**
  * execute generator tripping

@@ -383,6 +383,14 @@ void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECActi
 		return ds_app_sptr->applyGeneratorTripping(control_action.bus_number, control_action.componentID );
 	}
 	
+	if ( control_action.actiontype == 3 ){
+		return ds_app_sptr->applyConstYLoad_Change_P(control_action.bus_number, control_action.percentage );
+	}
+	
+	if ( control_action.actiontype == 4 ){
+		return ds_app_sptr->applyConstYLoad_Change_Q(control_action.bus_number, control_action.percentage );
+	}
+	
 	if ( control_action.actiontype == 1 ){
 		if (control_action.brch_from_bus_number > 0 || control_action.brch_to_bus_number > 0){
 			return ds_app_sptr->setLineTripAction(control_action.brch_from_bus_number, control_action.brch_to_bus_number, control_action.branch_ckt);
