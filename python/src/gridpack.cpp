@@ -267,6 +267,14 @@ PYBIND11_MODULE(gridpack, gpm) {
          },
          py::arg("s") = "", py::arg("pfcase_idx") = -1
          )
+	.def("solvePowerFlowBeforeDynSimu_withFlag",
+         [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
+		   bool flag;
+           flag = self.solvePowerFlowBeforeDynSimu_withFlag(s.c_str(), pfcase_idx);
+		   return flag;
+         },
+         py::arg("s") = "", py::arg("pfcase_idx") = -1
+         )
     .def("fullInitializationBeforeDynSimuSteps",
          [](gph::HADRECAppModule& self, const std::string& s,
             const std::vector<gpds::Event>& BusFaults, int pfcase_idx, int dscase_idx) {

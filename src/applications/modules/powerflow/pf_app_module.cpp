@@ -291,6 +291,8 @@ bool gridpack::powerflow::PFAppModule::solve()
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
 #endif
   timer->stop(t_vmap);
+  gridpack::ComplexType  tol_org = PQ->normInfinity();
+  if (!p_no_print) printf ("\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
 //  PQ->print();
   timer->start(t_cmap);
   p_factory->setMode(Jacobian);
@@ -422,6 +424,11 @@ bool gridpack::powerflow::PFAppModule::solve()
     }
     p_busIO->header(ioBuf);
     iter++;
+    if (real(tol)> 100.0*real(tol_org)){
+       ret = false;
+       if (!p_no_print) printf ("\n-------------current iteration tol bigger than 100 times of original tol, power flow diverge\n");
+       break;
+    }										
   }
 
   if (iter >= p_max_iteration) ret = false;

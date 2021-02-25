@@ -61,6 +61,11 @@ class HADRECAppModule
 	void solvePowerFlowBeforeDynSimu(const char *inputfile, int pfcase_idx = -1);
 	
 	/**
+	 * solve power flow before run dynamic simulation, return the flag whether the power flow is solved successfully
+	 */
+	bool solvePowerFlowBeforeDynSimu_withFlag(const char *inputfile, int pfcase_idx = -1);
+	
+	/**
 	* transfer data from power flow to dynamic simulation 
 	*/
 	void transferPFtoDS();
