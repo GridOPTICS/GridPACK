@@ -411,8 +411,10 @@ class DSFullBus
      * @param idx index of generator
      * @param speed generator rotor speed
      * @param angle generator rotor angle
+	 * @param speed generator real power
+     * @param angle generator reactive power
      */
-    void getWatchedValues(int idx, double *speed, double *angle);
+    void getWatchedValues(int idx, double *speed, double *angle, double *genP, double *genQ);
 
     /**
      * Check generators for frequency violations

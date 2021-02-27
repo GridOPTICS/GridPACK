@@ -2357,14 +2357,19 @@ std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
  * @param idx index of generator
  * @param speed generator rotor speed
  * @param angle generator rotor angle
+ * @param speed generator real power
+ * @param angle generator reactive power
  */
 void gridpack::dynamic_simulation::DSFullBus::getWatchedValues(int idx,
-    double *speed, double *angle)
+    double *speed, double *angle, double *genP, double *genQ)
 {
   std::vector<double> vals;
   p_generators[idx]->getWatchValues(vals);
   *angle = vals[0];
   *speed = vals[1];
+  *genP = vals[2];
+  *genQ = vals[3];
+  
 }
 
 

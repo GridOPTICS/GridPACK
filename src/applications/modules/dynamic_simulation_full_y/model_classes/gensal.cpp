@@ -163,7 +163,7 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
   genQ = Q;
   
   //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
-  //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
+  ////printf("Gensal at bus %d, Vterm = %f, Theta = %f, genP = %f, genQ = %f\n", p_bus_id, Vterm, Theta, genP, genQ);
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
@@ -718,4 +718,6 @@ void gridpack::dynamic_simulation::GensalGenerator::getWatchValues(
   vals.clear();
   vals.push_back(x1d_1);
   vals.push_back(x2w_1+1.0);
+  vals.push_back(genP*MVABase/p_sbase);  //output at system mva base
+  vals.push_back(genQ*MVABase/p_sbase);   //output at system mva base
 }

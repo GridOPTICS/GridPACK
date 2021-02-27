@@ -84,6 +84,9 @@ void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
 { 
   p_pg *= p_sbase; // p_pg *= p_sbase if ds2 read network from powerflow solution!
   p_qg *= p_sbase; // p_qg *= p_sbase if ds2 read network from powerflow solution!
+  genP = p_pg/p_mva;
+  genQ = p_qg/p_mva;
+  
   p_mva = p_sbase / p_mva;
   p_d0 = p_d0 / p_mva;
   p_h = p_h / p_mva;
@@ -233,6 +236,10 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor(
   //imag(curr) = -imag(curr);
   curr = conj(curr);
   p_pelect = real(p_eprime_s0 * curr);
+  
+  genP = real(p_volt*curr);
+  genQ = imag(p_volt*curr);
+  
   // dmac_ang:
   //printf("classical gen  predictor p_mac_ang_s0 and p_mac_spd_s0: %12.9f, %12.9f \n",p_mac_ang_s0, p_mac_spd_s0);
   p_dmac_ang_s0 = (p_mac_spd_s0 - 1.0) * basrad;
@@ -287,6 +294,10 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector(
   //imag(curr) = -imag(curr);
   curr = conj(curr);
   p_pelect = real(p_eprime_s1 * curr);
+  
+  genP = real(p_volt*curr);
+  genQ = imag(p_volt*curr);
+  
   // dmac_ang:
   //printf("classical gen  corrector p_mac_ang_s1 and p_mac_spd_s1: %12.9f, %12.9f \n",p_mac_ang_s1, p_mac_spd_s1);
   p_dmac_ang_s1 = (p_mac_spd_s1 - 1.0) * basrad;
@@ -407,4 +418,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::getWatchValues(
   vals.clear();
   vals.push_back(real(p_mac_ang_s1));
   vals.push_back(real(p_mac_spd_s1));
+  vals.push_back(genP*p_mva/p_sbase); //output at system mva base
+  vals.push_back(genQ*p_mva/p_sbase); //output at system mva base
 }

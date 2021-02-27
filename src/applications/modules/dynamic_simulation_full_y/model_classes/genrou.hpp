@@ -147,6 +147,7 @@ class GenrouGenerator : public BaseGeneratorModel
     double MVABase;
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
     double Tdop, Tdopp, Tqopp, Tqop, S10, S12;
+	double genP, genQ;
     
     double Vterm, Theta, Ir, Ii;
     

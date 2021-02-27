@@ -797,4 +797,6 @@ void gridpack::dynamic_simulation::GridFormingGenerator::getWatchValues(
   vals.clear();
   vals.push_back(x2d_1);
   vals.push_back(omega);
+  vals.push_back(genP*MVABase/p_sbase); //output at system mva base
+  vals.push_back(genQ*MVABase/p_sbase); //output at system mva base
 }

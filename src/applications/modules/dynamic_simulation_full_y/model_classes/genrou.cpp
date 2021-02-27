@@ -170,6 +170,9 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   presentAng = ang;
   double P = p_pg / MVABase;
   double Q = p_qg / MVABase;
+  genP = P;
+  genQ = Q;
+  
   //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
   //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
   double Vrterm = Vterm * cos(Theta);
@@ -304,6 +307,10 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   //Network
   Ir = + Id * sin(x1d) + Iq * cos(x1d);
   Ii = - Id * cos(x1d) + Iq * sin(x1d);
+  
+  genP = Vrterm*Ir + Viterm*Ii;
+  genQ = Viterm*Ir - Vrterm*Ii;
+  
   IrNorton = + Idnorton * sin(x1d) + Iqnorton * cos(x1d);
   IiNorton = - Idnorton * cos(x1d) + Iqnorton * sin(x1d);
   IrNorton = IrNorton * MVABase / p_sbase; 
@@ -425,6 +432,10 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   //Network
   Ir = + Id * sin(x1d_1) + Iq * cos(x1d_1);
   Ii = - Id * cos(x1d_1) + Iq * sin(x1d_1);
+    
+  genP = Vrterm*Ir + Viterm*Ii;
+  genQ = Viterm*Ir - Vrterm*Ii;
+  
   IrNorton = + Idnorton * sin(x1d_1) + Iqnorton * cos(x1d_1);
   IiNorton = - Idnorton * cos(x1d_1) + Iqnorton * sin(x1d_1); 
   IrNorton = IrNorton * MVABase / p_sbase; 
@@ -601,4 +612,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::getWatchValues(
   vals.clear();
   vals.push_back(x1d_1);
   vals.push_back(x2w_1+1.0);
+  vals.push_back(genP*MVABase/p_sbase);  //output at system mva base
+  vals.push_back(genQ*MVABase/p_sbase);  //output at system mva base
 }

@@ -325,8 +325,8 @@ void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(){
 
 std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
 	
-	std::vector<double> rSpd, rAng, vMag, vAng, fOnline;
-	ds_app_sptr->getObservations(vMag, vAng, rSpd, rAng, fOnline);
+	std::vector<double> rSpd, rAng, genP, genQ, vMag, vAng, fOnline;
+	ds_app_sptr->getObservations(vMag, vAng, rSpd, rAng, genP, genQ, fOnline);
 	
 	std::vector<double> obs_vals;
 	obs_vals.clear();
@@ -338,6 +338,14 @@ std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
 	
 	for (i=0; i<rAng.size(); i++){
 		obs_vals.push_back(rAng[i]);
+	}
+	
+	for (i=0; i<genP.size(); i++){
+		obs_vals.push_back(genP[i]);
+	}
+	
+	for (i=0; i<genQ.size(); i++){
+		obs_vals.push_back(genQ[i]);
 	}
 
 	for (i=0; i<vMag.size(); i++){

@@ -1898,6 +1898,8 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
   p_obs_vAng.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
   p_obs_rSpd.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
   p_obs_rAng.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
+  p_obs_genP.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
+  p_obs_genQ.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
   p_obs_fOnline.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
   if (p_obs_genBus.size() > 0) {
     int nbus = p_obs_genBus.size();
@@ -1941,6 +1943,10 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     p_obs_rSpd->upload();
     p_obs_rAng->addElements(p_obs_lGenIdx, dummy);
     p_obs_rAng->upload();
+	p_obs_genP->addElements(p_obs_lGenIdx, dummy);
+    p_obs_genP->upload();
+	p_obs_genQ->addElements(p_obs_lGenIdx, dummy);
+    p_obs_genQ->upload();
     p_comm.sum(&p_obs_gActive[0],p_comm.size());
   }
   if (p_obs_loadBus.size() > 0) {
@@ -2075,22 +2081,29 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
  * @param vAng voltage angle for observed buses
  * @param rSpd rotor speed on observed generators
  * @param rAng rotor angle on observed generators
+ * @param genP real power on observed generators
+ * @param genQ reactive power on observed generators
  * @param fOnline fraction of load shed
  */
 void gridpack::dynamic_simulation::DSFullApp::getObservations(
     std::vector<double> &vMag, std::vector<double> &vAng,
     std::vector<double> &rSpd, std::vector<double> &rAng,
+	std::vector<double> &genP, std::vector<double> &genQ,
     std::vector<double> &fOnline)
 {
   vMag.clear(); 
   vAng.clear(); 
   rSpd.clear(); 
   rAng.clear(); 
+  genP.clear(); 
+  genQ.clear();
   fOnline.clear(); 
   std::vector<double> tvMag;
   std::vector<double> tvAng;
   std::vector<double> trSpd;
   std::vector<double> trAng;
+  std::vector<double> tgenP;
+  std::vector<double> tgenQ;
   std::vector<double> tfOnline;
   if (p_obs_genBus.size()) {
     int i, j;
@@ -2100,10 +2113,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
         = p_network->getBus(p_obs_GenIdx[i])->getGenerators();
       for (j=0; j<tags.size(); j++) {
         if (tags[j] == p_obs_lGenIDs[i]) {
-          double speed, angle;
-          p_network->getBus(p_obs_GenIdx[i])->getWatchedValues(j,&speed,&angle);
+          double speed, angle, gPtmp, gQtmp;
+          p_network->getBus(p_obs_GenIdx[i])->getWatchedValues(j,&speed,&angle, &gPtmp, &gQtmp);
           trSpd.push_back(speed);
           trAng.push_back(angle);
+		  tgenP.push_back(gPtmp);
+          tgenQ.push_back(gQtmp);
           break;
         }
       }
@@ -2118,11 +2133,22 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     p_obs_rAng->resetElements(p_obs_lGenIdx, trAng);
     p_obs_rAng->reload();
     p_obs_rAng->getAllData(trAng);
+	
+	p_obs_genP->resetElements(p_obs_lGenIdx, tgenP);
+    p_obs_genP->reload();
+    p_obs_genP->getAllData(tgenP);
+	p_obs_genQ->resetElements(p_obs_lGenIdx, tgenQ);
+    p_obs_genQ->reload();
+    p_obs_genQ->getAllData(tgenQ);
+	
     nbus = trSpd.size();
     for (i=0; i<nbus; i++) {
       if (p_obs_gActive[i] != 0) {
         rSpd.push_back(trSpd[i]);
         rAng.push_back(trAng[i]);
+		genP.push_back(tgenP[i]);
+		genQ.push_back(tgenQ[i]);
+		
       }
     }
   }

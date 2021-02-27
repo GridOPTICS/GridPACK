@@ -28,8 +28,6 @@ const char* help = "HADREC Test application";
 
 int main(int argc, char **argv)
 {
-  gridpack::parallel::Communicator world;
-  int me = world.rank();
   // Initialize libraries (parallel and math)
   gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
   //  noprint_ins->setStatus(true);
@@ -38,6 +36,9 @@ int main(int argc, char **argv)
   //printf ("------------- hadrec_main function test 1  bnoprint: %d \n", bnoprint);
 
   gridpack::Environment env(argc,argv,help);
+  
+  gridpack::parallel::Communicator world;
+  int me = world.rank();
 
   //bnoprint = gridpack::NoPrint::instance()->status();
   //printf ("------------- hadrec_main function test 2  bnoprint: %d \n", bnoprint);
@@ -80,8 +81,9 @@ int main(int argc, char **argv)
   bool btmp;
 
   //-----test get load and get generator function-----------
-  //if (debugoutput){
+if (debugoutput){
 
+/*
   busno = 5;
   btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
   if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
@@ -91,22 +93,19 @@ int main(int argc, char **argv)
   busno = 9;
   btmp = hadrec_app_sptr->getBusTotalLoadPower(busno, lp, lq);
   if (me==0) printf("------------test hadrec_main, load at bus %d, has P: %f, Q: %f\n", busno, lp, lq);
+*/
 
-  busno = 1;
+  busno = 36;
   std::string genid = "1 ";
   btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
   if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
-  busno = 2;
-  genid = "1 ";
+  busno = 36;
+  genid = "1";
   btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
   if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
 
-  busno = 3;
-  genid = "1 ";
-  btmp = hadrec_app_sptr->getGeneratorPower(busno, genid, pg, qg);
-  if (me==0) printf("------------test hadrec_main, %d find generator at bus %d, has P: %f, Q: %f\n", btmp, busno, pg, qg);
-  //}
+}
 
 
   gridpack::hadrec::HADRECAction loadshedact;
@@ -131,7 +130,7 @@ int main(int argc, char **argv)
 
   int isteps = 0;
   bool bApplyAct_LoadShedding = false;  // whether apply the load shedding action in the simulation steps
-  bool bApplyAct_LineTripping = true;  // whether apply the line tripping action in the simulation steps
+  bool bApplyAct_LineTripping = false;  // whether apply the line tripping action in the simulation steps
   std::vector<double> ob_vals;
   int idxtmp;
 

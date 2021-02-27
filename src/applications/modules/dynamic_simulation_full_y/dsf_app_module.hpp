@@ -340,10 +340,13 @@ class DSFullApp
      * @param vAng voltage angle for observed buses
      * @param rSpd rotor speed on observed generators
      * @param rAng rotor angle on observed generators
+	 * @param genP real power on observed generators
+     * @param genQ reactive power on observed generators
      * @param fOnline fraction of load shed
      */
     void getObservations(std::vector<double> &vMag, std::vector<double> &vAng,
         std::vector<double> &rSpd, std::vector<double> &rAng,
+		std::vector<double> &genP, std::vector<double> &genQ,
         std::vector<double> &fOnline);
 
     /**
@@ -584,6 +587,8 @@ class DSFullApp
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vAng;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rSpd;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rAng;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_genP;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_genQ;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_fOnline;
    
    // below are all variables originally defined the solve function, now define them as class private members
