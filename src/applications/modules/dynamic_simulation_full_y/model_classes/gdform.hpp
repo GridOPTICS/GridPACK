@@ -101,6 +101,14 @@ class GridFormingGenerator : public BaseGeneratorModel
 	* 
 	*/
     bool tripGenerator();
+	
+	/**
+	* return true if modify the generator parameters successfully
+	* input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid 
+    * input newParValScaletoOrg:  GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+	* 
+	*/
+    bool applyGeneratorParAdjustment(int controlType, double newParValScaletoOrg);
 
     /**
      * Write out generator state
@@ -129,6 +137,7 @@ class GridFormingGenerator : public BaseGeneratorModel
     double XL, Ts, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin;
     double fset, Ra;
 	double delta_omega_lim;
+	double mp_org, mq_org, Vset_org, Pset_org;
     
     //double Vterm, Theta, Ir, Ii;
     

@@ -119,6 +119,15 @@ class DSFullApp
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);
 	
 	/**
+     * execute Grid Forming Inverter control parameters adjustment
+	 * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
+	 * input bus_number: GFI bus number
+	 * input bus_number: GFI gen ID
+	 * input newParValScaletoOrg: GFI new parameter scale value to the very intial value at the begining of dynamic simulation
+     */
+    void applyGFIAdjustment(int controlType, int bus_number, std::string genid, double newParValScaletoOrg);
+	
+	/**
      * execute Constant Y load P change	 
      */
     void applyConstYLoad_Change_P(int bus_number, double loadPChangeMW);

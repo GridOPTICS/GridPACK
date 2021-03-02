@@ -232,6 +232,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
 	  p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
 	  p_governor->init(mag, ang, ts);
    }
+   
+   p_Norton_Ya = NortonImpedence();
 
 }
 
@@ -298,6 +300,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   double Viterm = Vterm * sin(Theta);
   double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
   double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
   //printf("x2w = %f, Vd = %f, Vq = %f, Vrterm = %f, Viterm = %f, Vdterm = %f, Vqterm = %f, Theta = %f\n", x2w, Vd, Vq, Vrterm, Viterm, Vdterm, Vqterm, Theta);
   //DQ Axis
   Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
@@ -316,7 +320,18 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   IrNorton = IrNorton * MVABase / p_sbase; 
   IiNorton = IiNorton * MVABase / p_sbase; 
   //gridpack::ComplexType INorton(IrNorton, IiNorton);
-  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
+  //p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
+  
+  if (getGenStatus()){
+	  if (p_tripped){
+		  p_INorton = p_Norton_Ya*vt_complex_tmp;
+	  }else{
+		  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);	
+	  }		
+  }else {
+	  p_INorton = gridpack::ComplexType(0.0, 0.0);
+  }
+  
 } 
 
 /**
@@ -328,6 +343,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     double t_inc, bool flag)
 {
 
+  if (getGenStatus()){
+	  
   if (p_hasExciter) {
 	p_exciter = getExciter();
 	Efd = p_exciter->getFieldVoltage();
@@ -400,6 +417,41 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
 	  p_governor->setRotorSpeedDeviation(x2w);
 	  p_governor->predictor(t_inc, flag);
   }
+  
+  	if (p_tripped){
+		x1d = 0.0;
+		x2w = 0.0;
+		x3Eqp = 0.0;
+		x4Psidp = 0.0;
+		x5Psiqp = 0.0;
+		x6Edp = 0.0;
+		x1d_1 = 0.0;
+		x2w_1 = 0.0;
+		x3Eqp_1 = 0.0;
+		x4Psidp_1 = 0.0;
+		x5Psiqp_1 = 0.0;	
+		x6Edp_1 = 0.0;
+		genP = 0.0;
+		genQ = 0.0;
+	}
+  }else {
+	x1d = 0.0;
+    x2w = 0.0;
+    x3Eqp = 0.0;
+    x4Psidp = 0.0;
+    x5Psiqp = 0.0;
+	x6Edp = 0.0;
+	x1d_1 = 0.0;
+    x2w_1 = 0.0;
+    x3Eqp_1 = 0.0;
+    x4Psidp_1 = 0.0;
+    x5Psiqp_1 = 0.0;
+	x6Edp_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
+  
+  }
+  
 }
 
 /**
@@ -424,6 +476,9 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   double Viterm = Vterm * sin(Theta);
   double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
   double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
+  
   //DQ Axis
   Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
   Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
@@ -441,7 +496,17 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   IrNorton = IrNorton * MVABase / p_sbase; 
   IiNorton = IiNorton * MVABase / p_sbase; 
   //gridpack::ComplexType INorton(IrNorton, IiNorton);
-  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
+  //p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
+  
+  if (getGenStatus()){	  
+      if (p_tripped){
+		  p_INorton = p_Norton_Ya*vt_complex_tmp;
+	  }else{
+		  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);		
+	  }	 	  
+  }else {
+	  p_INorton = gridpack::ComplexType(0.0, 0.0);
+  }
 }
 
 /**
@@ -453,7 +518,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     double t_inc, bool flag)
 {
  
-
+  if (getGenStatus()){
+	  
   if (p_hasExciter) {
 	p_exciter = getExciter();
 	Efd = p_exciter->getFieldVoltage();
@@ -521,6 +587,41 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
   //if (p_bus_id == 1)
     //printf("\t%d          %12.6f   %12.6f   %12.6f   %12.6f   %12.6f	%12.6f\n",    
      //     p_bus_id, x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
+
+ 	if (p_tripped){
+		x1d = 0.0;
+		x2w = 0.0;
+		x3Eqp = 0.0;
+		x4Psidp = 0.0;
+		x5Psiqp = 0.0;
+		x6Edp = 0.0;
+		x1d_1 = 0.0;
+		x2w_1 = 0.0;
+		x3Eqp_1 = 0.0;
+		x4Psidp_1 = 0.0;
+		x5Psiqp_1 = 0.0;
+		x6Edp_1 = 0.0;
+		genP = 0.0;
+		genQ = 0.0;	
+	}
+
+  }else {
+	x1d = 0.0;
+    x2w = 0.0;
+    x3Eqp = 0.0;
+    x4Psidp = 0.0;
+    x5Psiqp = 0.0;
+	x6Edp = 0.0;
+	x1d_1 = 0.0;
+    x2w_1 = 0.0;
+    x3Eqp_1 = 0.0;
+    x4Psidp_1 = 0.0;
+    x5Psiqp_1 = 0.0;
+	x6Edp_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0; 
+  }
+  
 }
 
 bool gridpack::dynamic_simulation::GenrouGenerator::tripGenerator()

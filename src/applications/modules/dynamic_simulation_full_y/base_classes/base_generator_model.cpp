@@ -128,6 +128,16 @@ bool gridpack::dynamic_simulation::BaseGeneratorModel::tripGenerator(){
 }
 
 /**
+	* return true if modify the generator parameters successfully
+	* input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid 
+    * input newParValScaletoOrg:  GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+	* 
+	*/
+bool gridpack::dynamic_simulation::BaseGeneratorModel::applyGeneratorParAdjustment(int controlType, double newParValScaletoOrg){
+	return false;
+}
+
+/**
  * Set voltage on each generator
  */
 void gridpack::dynamic_simulation::BaseGeneratorModel::setVoltage(

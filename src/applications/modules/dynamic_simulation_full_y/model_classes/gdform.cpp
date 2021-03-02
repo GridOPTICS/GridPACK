@@ -120,6 +120,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
   if (!data->getValue(GENERATOR_PMAX, &Pmax, idx)) Pmax=1.0; // 
   if (!data->getValue(GENERATOR_PMIN, &Pmin, idx)) Pmin=0.0; // 
   
+  mp_org = mp;
+  mq_org = mq; 
+  
   double tmp = sqrt(p_pg*p_pg +p_qg*p_qg);
   if ( tmp > MVABase) {
        //MVABase = tmp*1.3;
@@ -184,6 +187,11 @@ void gridpack::dynamic_simulation::GridFormingGenerator::init(double mag,
   
   Vset = Vterm + Q*mq;
   Pset = P;
+  
+  mp_org = mp;
+  mq_org = mq;
+  Vset_org = Vset;
+  Pset_org = Pset;
   
   if (bmodel_debug){
 	 printf("Vset = %f, Pset = %f\n", Vset, Pset);
@@ -459,6 +467,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	xvterm_1 = 0.0;
 	xp_1 = 0.0;
 	xq_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
+	omega= 1.0;
 	}
 	
   }else {
@@ -477,6 +488,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	xvterm_1 = 0.0;
 	xp_1 = 0.0;
 	xq_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
+	omega= 1.0;
   }//pair with getGenStatus()
 
 }
@@ -704,6 +718,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	xvterm_1 = 0.0;
 	xp_1 = 0.0;
 	xq_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
+	omega= 1.0;
 	}
 	
   }else {
@@ -721,6 +738,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	xvterm_1 = 0.0;
 	xp_1 = 0.0;
 	xq_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
+	omega= 1.0;
   }//pair with getGenStatus()
   
 }
@@ -730,6 +750,39 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::tripGenerator()
 	p_tripped = true;
 	
 	return true;
+}
+
+/**
+* return true if modify the generator parameters successfully
+* input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid 
+* input newParValScaletoOrg:  GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+* 
+*/
+bool gridpack::dynamic_simulation::GridFormingGenerator::applyGeneratorParAdjustment(int controlType, double newParValScaletoOrg){
+	
+	if ( controlType == 0){
+		mp = mp_org * newParValScaletoOrg;
+		//printf ("GFI at bus %d, apply newParValScaletoOrg %f to mp, org mp value %f, new mp value %f \n", p_bus_id, newParValScaletoOrg, mp_org, mp);
+		return true;
+	}else if(controlType == 1){
+		mq = mq_org * newParValScaletoOrg;
+		//printf ("GFI at bus %d, apply newParValScaletoOrg %f to mq, org mq value %f, new mq value %f \n", p_bus_id, newParValScaletoOrg, mq_org, mq);
+		return true;
+	}else if(controlType == 2) {
+		Pset = Pset_org  * newParValScaletoOrg;
+		//printf ("GFI at bus %d, apply newParValScaletoOrg %f to Pset, org Pset value %f, new Pset value %f \n", p_bus_id, newParValScaletoOrg, Pset_org, Pset);
+		return true;
+	}else if(controlType == 3) {
+		Vset = Vset_org  * newParValScaletoOrg;
+		//printf ("GFI at bus %d, apply newParValScaletoOrg %f to Vset, org Vset value %f, new Vset value %f \n", p_bus_id, newParValScaletoOrg, Vset_org, Vset);
+		return true;
+	}else{
+		
+		//printf ("GFI controlType %d not defined correctly:  \n", controlType);
+		return false;
+		
+	}
+	
 }
 
 /**

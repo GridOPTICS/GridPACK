@@ -124,6 +124,14 @@ class BaseGeneratorModel
 	* 
 	*/
     virtual bool tripGenerator();
+	
+	/**
+	* return true if modify the generator parameters successfully
+	* input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid 
+    * input newParValScaletoOrg:  GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+	* 
+	*/
+    virtual bool applyGeneratorParAdjustment(int controlType, double newParValScaletoOrg);
 
     /**
      * Write out generator state

@@ -164,6 +164,7 @@ class GenrouGenerator : public BaseGeneratorModel
     double IrNorton, IiNorton;
     
     gridpack::ComplexType p_INorton;
+	gridpack::ComplexType p_Norton_Ya;
 
     boost::shared_ptr<BaseGovernorModel> p_governor;
     boost::shared_ptr<BaseExciterModel> p_exciter;

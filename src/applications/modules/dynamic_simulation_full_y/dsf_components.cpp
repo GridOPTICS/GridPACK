@@ -24,6 +24,7 @@
 #include "gridpack/parser/dictionary.hpp"
 #include "dsf_components.hpp"
 #include "lvshbl.hpp"
+#include "gridpack/utilities/string_utils.hpp"
 
 
 /**
@@ -2654,14 +2655,43 @@ void gridpack::dynamic_simulation::DSFullBus::applyLoadShedding(std::string load
 }
 
 /**
+ * execute Grid Forming Inverter control parameters adjustment at this bus
+ * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
+ * input bus_number: GFI gen ID
+ * input newParValScaletoOrg: GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+ */
+void gridpack::dynamic_simulation::DSFullBus::applyGFIAdjustment(int controlType, std::string genid, double newParValScaletoOrg){
+	
+	int igen, ngen;
+	gridpack::utility::StringUtils util;
+	std::string clean_genid;
+	ngen = p_generators.size();
+	for (igen=0; igen<ngen; igen++){
+		
+		clean_genid = util.clean2Char(genid);
+		//printf("----------renke debug, DSFullBus::applyGFIAdjustment, generator at bus %d with p_genid---%s---, search genid ---%s--, clean_genid --%s---\n", getOriginalIndex(), p_genid[igen].c_str(), genid.c_str(),clean_genid.c_str());
+		if (clean_genid == p_genid[igen]){
+			//first check whether this generator is GFI?????
+			//printf("----------renke debug, DSFullBus::applyGeneratorTripping, find generator at bus %d with genid %s \n", getOriginalIndex(), genid.c_str());
+			p_generators[igen]->applyGeneratorParAdjustment(controlType, newParValScaletoOrg);
+		}
+	}
+	
+}
+
+/**
  * apply generator tripping for the specific generator with genid in this bus
  */
 void gridpack::dynamic_simulation::DSFullBus::applyGeneratorTripping(std::string genid){
 	
 	int igen, ngen;
+	gridpack::utility::StringUtils util;
+	std::string clean_genid;
 	ngen = p_generators.size();
 	for (igen=0; igen<ngen; igen++){
-		if (genid == p_genid[igen]){
+		clean_genid = util.clean2Char(genid);
+		if (clean_genid == p_genid[igen]){
+			
 			//printf("----------renke debug, DSFullBus::applyGeneratorTripping, find generator at bus %d with genid %s \n", getOriginalIndex(), genid.c_str());
 			p_generators[igen]->tripGenerator();
 		}

@@ -476,6 +476,10 @@ void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECActi
 		return ds_app_sptr->applyConstYLoad_Change_Q(control_action.bus_number, control_action.percentage );
 	}
 	
+	if ( control_action.actiontype == 5 || control_action.actiontype == 6 || control_action.actiontype == 7 || control_action.actiontype == 8){
+		return ds_app_sptr->applyGFIAdjustment(control_action.actiontype-5, control_action.bus_number, control_action.componentID, control_action.percentage );
+	}
+	
 	if ( control_action.actiontype == 1 ){
 		if (control_action.brch_from_bus_number > 0 || control_action.brch_to_bus_number > 0){
 			return ds_app_sptr->setLineTripAction(control_action.brch_from_bus_number, control_action.brch_to_bus_number, control_action.branch_ckt);

@@ -529,6 +529,14 @@ class DSFullBus
      */
 	void applyLoadShedding(std::string loadid, double percentage);
 	
+	/**
+     * execute Grid Forming Inverter control parameters adjustment at this bus
+	 * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
+	 * input bus_number: GFI gen ID
+	 * input newParValScaletoOrg: GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+     */
+    void applyGFIAdjustment(int controlType, std::string genid, double newParValScaletoOrg);
+	
      /**
      * apply generator tripping for the specific generator with genid in this bus
      */

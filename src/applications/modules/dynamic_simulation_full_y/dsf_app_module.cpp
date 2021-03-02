@@ -3254,6 +3254,30 @@ void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, 
 		
 }
 
+/**
+ * execute Grid Forming Inverter control parameters adjustment
+ * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
+ * input bus_number: GFI bus number
+ * input bus_number: GFI gen ID
+ * input newParValScaletoOrg:  GFI new parameter scale value to the very intial value at the begining of dynamic simulation
+ */
+void gridpack::dynamic_simulation::DSFullApp::applyGFIAdjustment(int controlType, int bus_number, std::string genid, double newParValScaletoOrg){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug GFI Par adjustment, in dsf full app, \n");
+		bus->applyGFIAdjustment(controlType, genid, newParValScaletoOrg);
+	
+	}
+	
+}
+
 
 /**
  * execute constant Y load P change	 

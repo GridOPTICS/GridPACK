@@ -439,6 +439,8 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
 		x3Eqp_1 = 0.0;
 		x4Psidp_1 = 0.0;
 		x5Psiqpp_1 = 0.0;	
+		genP = 0.0;
+		genQ = 0.0;
 	}
   }else {
 	x1d_0 = 0.0;
@@ -451,6 +453,8 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqpp_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
   
   }
 
@@ -603,7 +607,9 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
 		x2w_1 = 0.0;
 		x3Eqp_1 = 0.0;
 		x4Psidp_1 = 0.0;
-		x5Psiqpp_1 = 0.0;	
+		x5Psiqpp_1 = 0.0;
+		genP = 0.0;
+		genQ = 0.0;		
 	}
 
   //if (p_bus_id == 1)
@@ -620,6 +626,8 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqpp_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
   
   }
 }
