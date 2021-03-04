@@ -342,6 +342,20 @@ class DSFullApp
     void getObservationLists(std::vector<int> &genBuses,
         std::vector<std::string> &genIDs,  std::vector<int> &loadBuses,
         std::vector<std::string> &loadIDs, std::vector<int> &busIDs);
+		
+	/**
+	* Get bus and generator IDs for all observations including bus frequency ob
+	* @param genBuses host IDs for all observed generators
+	* @param genIDs character identifiers for all observed generators
+	* @param loadBuses host IDs for all observed dynamic loads
+	* @param loadIDs character identifiers for all observed dynamic loads
+	* @param busIDs bus IDs for all observed buses
+	* @param busfreqIDs bus IDs for all observed buses for bus frequency
+	*/
+	void getObservationLists_withBusFreq(
+		std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+		std::vector<int> &loadBuses, std::vector<std::string> &loadIDs,
+		std::vector<int> &busIDs, std::vector<int> &busfreqIDs);
 
     /**
      * Get current values of observations
@@ -357,6 +371,23 @@ class DSFullApp
         std::vector<double> &rSpd, std::vector<double> &rAng,
 		std::vector<double> &genP, std::vector<double> &genQ,
         std::vector<double> &fOnline);
+		
+	/**
+	* Get current values of observations including bus frequency ob
+	* @param vMag voltage magnitude for observed buses
+	* @param vAng voltage angle for observed buses
+	* @param rSpd rotor speed on observed generators
+	* @param rAng rotor angle on observed generators
+	* @param genP real power on observed generators
+	* @param genQ reactive power on observed generators
+	* @param fOnline fraction of load shed
+	* @param busfreq frequency of the buses in ob list
+	*/
+	void getObservations_withBusFreq(
+		std::vector<double> &vMag, std::vector<double> &vAng,
+		std::vector<double> &rSpd, std::vector<double> &rAng,
+		std::vector<double> &genP, std::vector<double> &genQ,
+		std::vector<double> &fOnline, std::vector<double> &busfreq);
 
     /**
      * Return values for total active and reactive load power on bus
@@ -574,6 +605,7 @@ class DSFullApp
    std::vector<int> p_obs_loadBus;
    std::vector<std::string> p_obs_loadIDs;
    std::vector<int> p_obs_vBus;
+   std::vector<int> p_obs_vBusfreq;
 
    std::vector<int> p_obs_lGenIdx;
    std::vector<int> p_obs_GenIdx;
@@ -591,9 +623,15 @@ class DSFullApp
    std::vector<int> p_obs_VIdx;
    std::vector<int> p_obs_lVBus;
    std::vector<int> p_obs_vActive;
+   
+   std::vector<int> p_obs_lVIdxfreq;
+   std::vector<int> p_obs_VIdxfreq;
+   std::vector<int> p_obs_lVBusfreq;
+   std::vector<int> p_obs_vActivefreq;
 
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vMag;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vAng;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vBusfreqVal;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rSpd;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rAng;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_genP;

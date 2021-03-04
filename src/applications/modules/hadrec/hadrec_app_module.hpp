@@ -117,6 +117,15 @@ class HADRECAppModule
        std::vector<std::string> &loadIDs, std::vector<int> &busIDs);
 	   
 	/**
+	 * return observations list with bus frequency as observations
+	 */
+
+	void getObservationLists_withBusFreq(
+		std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+		std::vector<int> &loadBuses, std::vector<std::string> &loadIDs,
+		std::vector<int> &busIDs, std::vector<int> &busfreqIDs);
+	   
+	/**
      * Return values for total active and reactive load power on bus
      * @param bus_id original bus index
      * @param lp active load power

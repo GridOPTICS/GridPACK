@@ -325,8 +325,11 @@ void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(){
 
 std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
 	
-	std::vector<double> rSpd, rAng, genP, genQ, vMag, vAng, fOnline;
-	ds_app_sptr->getObservations(vMag, vAng, rSpd, rAng, genP, genQ, fOnline);
+	std::vector<double> rSpd, rAng, genP, genQ, vMag, vAng, fOnline; 
+	//ds_app_sptr->getObservations(vMag, vAng, rSpd, rAng, genP, genQ, fOnline);
+	
+	std::vector<double> busfreq;
+	ds_app_sptr->getObservations_withBusFreq(vMag, vAng, rSpd, rAng, genP, genQ, fOnline, busfreq);
 	
 	std::vector<double> obs_vals;
 	obs_vals.clear();
@@ -360,6 +363,10 @@ std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
 		obs_vals.push_back(fOnline[i]);
 	}	
 	
+	for (i=0; i<busfreq.size(); i++){
+		obs_vals.push_back(busfreq[i]);
+	}
+	
 	return obs_vals;
 	
 }
@@ -375,6 +382,20 @@ void gridpack::hadrec::HADRECAppModule::getObservationLists(
 	
 	ds_app_sptr->getObservationLists(genBuses, genIDs, loadBuses,
        loadIDs, busIDs);
+	
+}
+
+/**
+ * return observations list with bus frequency as observations
+ */
+
+void gridpack::hadrec::HADRECAppModule::getObservationLists_withBusFreq(
+    std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+    std::vector<int> &loadBuses, std::vector<std::string> &loadIDs,
+    std::vector<int> &busIDs, std::vector<int> &busfreqIDs){
+	
+	ds_app_sptr->getObservationLists_withBusFreq(genBuses, genIDs, loadBuses,
+       loadIDs, busIDs, busfreqIDs);
 	
 }
 

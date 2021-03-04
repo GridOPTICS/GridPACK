@@ -1804,6 +1804,7 @@ double gridpack::dynamic_simulation::DSFullBus::getBusVolFrequency(void) //renke
  */
 void gridpack::dynamic_simulation::DSFullBus::setBusVolFrequencyFlag(bool flag) //renke add
 {
+	 printf("---rk debug, DSFullBus::setBusVolFrequencyFlag, bus %d set flag as %d\n", getOriginalIndex(), flag);
 	 bcomputefreq = flag;
 }
 

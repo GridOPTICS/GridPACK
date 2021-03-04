@@ -303,6 +303,19 @@ PYBIND11_MODULE(gridpack, gpm) {
              return py::make_tuple(obs_genBus, obs_genIDs,
                                    obs_loadBuses, obs_loadIDs, obs_busIDs);
          })
+    .def("getObservationLists_withBusFreq",
+         [](gph::HADRECAppModule& self) {
+             std::vector<int> obs_genBus;
+             std::vector<std::string> obs_genIDs;
+             std::vector<int> obs_loadBuses;
+             std::vector<std::string> obs_loadIDs;
+             std::vector<int> obs_busIDs;
+			 std::vector<int> busfreqIDs;
+             self.getObservationLists_withBusFreq(obs_genBus, obs_genIDs,
+                                      obs_loadBuses, obs_loadIDs, obs_busIDs, busfreqIDs);
+             return py::make_tuple(obs_genBus, obs_genIDs,
+                                   obs_loadBuses, obs_loadIDs, obs_busIDs, busfreqIDs);
+         })
     ;
              
   // These methods return a tuple on success or False on failure
