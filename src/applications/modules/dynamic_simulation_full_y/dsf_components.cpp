@@ -38,6 +38,7 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   setReferenceBus(false);
   p_ngen = 0;
   p_negngen = 0;
+  p_ngen_nodynmodel = 0;
   p_from_flag = false;
   p_Yload_change_P_flag = false;
   p_Yload_change_Q_flag = false;
@@ -155,6 +156,19 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
         values[0] = ret;
       }
     }
+	if (p_ngen_nodynmodel > 0) {
+      for (int i = 0; i < p_ngen_nodynmodel; i++) {
+		  
+		//printf("----at bus %d, before add no dynamic model gen, p_ybusr: %f p_ybusi: %f\n", getOriginalIndex(), p_ybusr, p_ybusi);
+		//printf("----at bus %d, before add no dynamic model gen, p_genpg_nodynmodel: %f,  p_genqg_nodynmodel: %f, p_voltage; %f \n", getOriginalIndex(), p_genpg_nodynmodel[i], p_genqg_nodynmodel[i], p_voltage);
+        p_ybusr = p_ybusr+(-p_genpg_nodynmodel[i])/(p_voltage*p_voltage);
+        p_ybusi = p_ybusi+p_genqg_nodynmodel[i]/(p_voltage*p_voltage);
+        gridpack::ComplexType ret(p_ybusr, p_ybusi);
+		
+		//printf("----at bus %d, after add no dynamic model gen, p_ybusr: %f p_ybusi: %f\n", getOriginalIndex(), p_ybusr, p_ybusi);
+        values[0] = ret;
+      }
+    }
     return true;
   } else if (p_mode == jxd) {
     if (p_ngen > 0) {
@@ -171,7 +185,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
         //printf("Bus %d here 1\n", getOriginalIndex());
         gridpack::ComplexType Y_a
           = p_generators[i]->NortonImpedence();
-        //printf("here 2 real(Y_a): %f imag(Y_a): %f\n",real(Y_a),imag(Y_a));
+        //printf("----at bus %d, here 2 real(Y_a): %f imag(Y_a): %f\n", getOriginalIndex(), real(Y_a),imag(Y_a));
 #endif
         p_ybusr = p_ybusr + real(Y_a);
         p_ybusi = p_ybusi + imag(Y_a);
@@ -787,6 +801,8 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_qg.clear();
   p_negpg.clear();
   p_negqg.clear();
+  p_genpg_nodynmodel.clear();
+  p_genqg_nodynmodel.clear();
   p_genid.clear();
   p_loadid.clear();
   p_generators.clear();
@@ -897,7 +913,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       // TBD: if (data->getValue(GENERATOR_MODEL, &model, i)
       //            && stat == 1 && GENERATOR_PG >= 0) 
       data->getValue(GENERATOR_MODEL, &model, i);
-      if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0) {
+      if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0.0) {
         p_pg.push_back(pg);
         p_qg.push_back(qg);
         p_savePg.push_back(pg);
@@ -996,10 +1012,18 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         if (has_ex) p_generators[icnt]->getExciter()->load(data,i);	
 		if (has_pss) p_generators[icnt]->getPss()->load(data,i);	
         icnt++;
-      } else if (stat == 1 && pg < 0) {
+      } else if (!data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0.0){ 
+	    // handle the generators having no dynamic model, need to convert to negative load
+		p_genpg_nodynmodel.push_back(pg);
+		p_genqg_nodynmodel.push_back(qg);
+		p_ngen_nodynmodel++;
+		//printf ("----at bus %d, pg %f added to p_genpg_nodynmodel vector \n", getOriginalIndex(), pg);
+		
+	  } else if (stat == 1 && pg < 0.0) {
         p_negpg.push_back(pg);
         p_negqg.push_back(qg);
         p_negngen++;
+		
         // Evaluate correction to Y-bus
         /*  p_pl = p_pl - pg;
             p_ql = p_ql - qg;
@@ -1804,7 +1828,7 @@ double gridpack::dynamic_simulation::DSFullBus::getBusVolFrequency(void) //renke
  */
 void gridpack::dynamic_simulation::DSFullBus::setBusVolFrequencyFlag(bool flag) //renke add
 {
-	 printf("---rk debug, DSFullBus::setBusVolFrequencyFlag, bus %d set flag as %d\n", getOriginalIndex(), flag);
+	 //printf("---rk debug, DSFullBus::setBusVolFrequencyFlag, bus %d set flag as %d\n", getOriginalIndex(), flag);
 	 bcomputefreq = flag;
 }
 
