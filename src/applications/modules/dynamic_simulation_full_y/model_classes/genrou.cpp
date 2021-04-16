@@ -41,7 +41,9 @@ gridpack::dynamic_simulation::GenrouGenerator::GenrouGenerator(void)
     dx3Eqp_1 = 0;
     dx4Psidp_1 = 0;
     dx5Psiqp_1 = 0;;
-    dx6Edp_1 = 0;;
+    dx6Edp_1 = 0;
+
+    p_tripped = false;
 }
 
 /**

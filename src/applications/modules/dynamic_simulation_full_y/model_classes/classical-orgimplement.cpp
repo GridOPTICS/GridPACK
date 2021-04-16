@@ -39,7 +39,6 @@ gridpack::dynamic_simulation::ClassicalGenerator::~ClassicalGenerator(void)
 {
 }
 
-
 /**
  * Load parameters from DataCollection object into generator model
  * @param data collection of generator parameters from input files
@@ -60,11 +59,8 @@ void gridpack::dynamic_simulation::ClassicalGenerator::load(
   if (!data->getValue(GENERATOR_PG, &p_pg,idx)) p_pg = 0.0;
   if (!data->getValue(GENERATOR_QG, &p_qg,idx)) p_qg = 0.0;
   if (!data->getValue(GENERATOR_STAT, &p_status,idx)) p_status = 0;
-  
-  //printf("---classical gen load p_pg = %f, p_qg = %f\n", p_pg, p_qg);
-  
-  //p_pg /= p_sbase;
-  //p_qg /= p_sbase;
+  p_pg /= p_sbase;
+  p_qg /= p_sbase;
 
   if (!data->getValue(GENERATOR_MBASE, &p_mva, idx)) p_mva = 0.0;
   if (!data->getValue(GENERATOR_RESISTANCE, &p_r, idx)) p_r=0.0; // r
@@ -75,8 +71,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::load(
   p_dtr = imag(zsrc);
   if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &p_h, idx)) p_h = 0.0; // h
   if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &p_d0, idx)) p_d0 = 0.0; // d0
-  
-  //printf("---classical gen load p_h = %f, p_d0 = %f\n", p_h, p_d0);
 }
 
 /**
@@ -88,17 +82,15 @@ void gridpack::dynamic_simulation::ClassicalGenerator::load(
 void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
     double ang, double ts) 
 { 
-  p_pg = p_pg*p_sbase/p_mva; // p_pg *= p_sbase if ds2 read network from powerflow solution!
-  p_qg = p_qg*p_sbase/p_mva; // p_qg *= p_sbase if ds2 read network from powerflow solution!
-  genP = p_pg;
-  genQ = p_qg;
+  p_pg *= p_sbase; // p_pg *= p_sbase if ds2 read network from powerflow solution!
+  p_qg *= p_sbase; // p_qg *= p_sbase if ds2 read network from powerflow solution!
+  genP = p_pg/p_mva;
+  genQ = p_qg/p_mva;
   
-  //printf("---classical gen init p_pg = %f, p_qg = %f\n", p_pg, p_qg);
-  
-  //p_mva = p_sbase / p_mva;
-  p_d0 = p_d0 ;
-  p_h = p_h ;
-  p_dtr = p_dtr;
+  p_mva = p_sbase / p_mva;
+  p_d0 = p_d0 / p_mva;
+  p_h = p_h / p_mva;
+  p_dtr = p_dtr * p_mva;
   p_pelect = p_pg;
   double eterm = mag;
   double vi = ang;
@@ -129,7 +121,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
   // mac_ang_s0
   temp = atan2(imag(p_eprime_s0), real(p_eprime_s0));
   p_mac_ang_s0 = temp;
-  //printf("mac_ang_s0 = %f degree\n", p_mac_ang_s0*180.0/p_PI);
+  //printf("mac_ang_s0 = %f\n", p_mac_ang_s0);
   // mac_spd_s0
   p_mac_spd_s0 = gridpack::ComplexType(1.0,0.0);
   //printf("mac_spd_s0 = %f\n", p_mac_spd_s0);
@@ -180,14 +172,13 @@ gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::INorton(
  */
 gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::NortonImpedence()
 {
-  double ra = p_r * p_sbase / p_mva; // * p_sbase / p_mva;
+  double ra = p_r * p_sbase / p_mva;
   double xd;
   if (p_dstr == 0.0) {
-    xd = p_dtr * p_sbase / p_mva; // * p_sbase / p_mva;
+    xd = p_dtr * p_sbase / p_mva;
   }
-  //printf("---------classical generator model :: NortonImpedence() p_r = %f, ra = %f, xd = %f, p_dstr = %f, p_dtr = %f \n", p_r, ra, xd, p_dstr, p_dtr);
+  //printf("classical generator model :: NortonImpedence() p_r = %f, ra = %f, xd = %f, p_dstr = %f, p_dtr = %f \n", p_r, ra, xd, p_dstr, p_dtr);
   gridpack::ComplexType Y_a(ra, xd);
-  
   Y_a = 1.0 / Y_a;
   return Y_a;
 }
@@ -207,8 +198,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor_currentInjectio
   gridpack::ComplexType jay(0.0, 1.0);
   // Calculate INorton_full
   p_INorton = p_eprime_s0 / (p_dtr * jay);
-  
-  p_INorton = p_INorton * p_mva / p_sbase; 
  
   /*double Idnorton = real(p_INorton);
   double Iqnorton = imag(p_INorton); 
@@ -274,8 +263,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector_currentInjectio
 {
   gridpack::ComplexType jay(0.0, 1.0);
   p_INorton = p_eprime_s1 / (p_dtr * jay);
-  
-  p_INorton = p_INorton * p_mva / p_sbase; 
 
   /*double Idnorton = real(p_INorton);
   double Iqnorton = imag(p_INorton); 
@@ -393,8 +380,8 @@ serialWrite(char *string, const int bufsize, const char *signal)
     }
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
-      char buf[256];
-      sprintf(buf,", %8d, %2s, %f, %f, %f",p_bus_id, p_ckt.c_str(), real(p_mac_ang_s1),real(p_mac_spd_s1), real(p_eqprime));
+      char buf[128];
+      sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
