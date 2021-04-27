@@ -42,6 +42,7 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_from_flag = false;
   p_Yload_change_P_flag = false;
   p_Yload_change_Q_flag = false;
+  p_bscatterinjload_flag = false;
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
   p_branchrelay_to_flag = false;
@@ -55,6 +56,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   bcomputefreq = false;  //renke add
   p_loadimpedancer = 0.0;
   p_loadimpedancei = 0.0;
+  p_scatterinjload_p = 0.0;
+  p_scatterinjload_q = 0.0;
   p_ndyn_load = 0;
   p_npowerflow_load = 0;
   p_bextendedloadbus = -1;
@@ -369,6 +372,23 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 		  
 		  ComplexType tmp = p_loadmodels[i]->INorton();
 		  //printf("DSFullBus::vectorValues, bus %d, dynamic load Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
+	  }
+	  
+	  // INorton contribution from the scattered injection load
+	  if (p_bscatterinjload_flag){
+		  
+		  double p_pl_inj_tmp, p_ql_inj_tmp;
+		  gridpack::ComplexType bus_inj_S, tmp, bus_scatterload_inj_cur;
+		  
+		  p_pl_inj_tmp = p_pl - p_scatterinjload_p;
+		  p_ql_inj_tmp = p_ql - p_scatterinjload_q;
+		  
+		  bus_inj_S = gridpack::ComplexType(p_pl_inj_tmp,p_ql_inj_tmp);
+		  tmp = bus_inj_S/p_volt_full;
+		  bus_scatterload_inj_cur = conj(tmp);
+      
+		  values[0] -= bus_scatterload_inj_cur;
+  
 	  }
 	  
       //printf("bus id = %d, values[0] = %f, %f\n", getOriginalIndex(), real(values[0]), imag(values[0])); 
@@ -1177,6 +1197,10 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   p_pl /= p_sbase;
   p_ql /= p_sbase;
+  
+  p_scatterinjload_p = p_pl;
+  p_scatterinjload_q = p_ql;
+  
 
   if (bdebug_load_model) printf(" Bus %d have remaining static loads for Y-bus: p_pl: %f pu, p_ql: %f pu, \n",
       idx, p_pl, p_ql);
@@ -2665,6 +2689,17 @@ int gridpack::dynamic_simulation::DSFullBus::getArea()
 int gridpack::dynamic_simulation::DSFullBus::getZone()
 {
   return p_zone;
+}
+
+/**
+ * execute load scattering, the P and Q values of the STATIC load at certain buses will be changed to the values of 
+ * the loadP and loadQ
+*/
+void gridpack::dynamic_simulation::DSFullBus::scatterInjectionLoad(double loadP, double loadQ){
+	p_bscatterinjload_flag = true;
+	p_scatterinjload_p = loadP;
+	p_scatterinjload_q = loadQ;
+	
 }
 
 /**

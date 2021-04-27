@@ -114,6 +114,12 @@ class DSFullApp
     void executeOneSimuStep();
 	
 	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ
+	*/
+	void scatterInjectionLoad(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
+	
+	/**
      * execute load shedding	 
      */
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);
