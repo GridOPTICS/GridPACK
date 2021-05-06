@@ -525,6 +525,12 @@ class DSFullBus
     void setScale(double scale);
 	
 	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses will be changed to the values of 
+	 * the loadP and loadQ
+	*/
+	void scatterInjectionLoad(double loadP, double loadQ);
+	
+	/**
      * apply load shedding for the loads in this bus
      */
 	void applyLoadShedding(std::string loadid, double percentage);
@@ -594,10 +600,12 @@ class DSFullBus
     double p_angle, p_voltage;
 	double p_busvolfreq, pbusvolfreq_old; //renke add, bus voltage frequency at current and previous timesteps
     bool p_load;
-    double p_pl, p_ql;
+    double p_pl, p_ql; //static loads for Y-bus formation, check the ::load() function for more info.
 	double p_loadimpedancer, p_loadimpedancei;
 	double p_Yload_change_r, p_Yload_change_i; // renke add, to enable constant-Y load changes during the dynamic simulation
 	                                           // per unit value based on system MVA 100, increase 500 MW load, p_Yload_change_r = 5.0
+	bool p_bscatterinjload_flag; //renke add, whether the static load of the bus could be modified at each time step 
+	double p_scatterinjload_p, p_scatterinjload_q; //renke add, the value of the static load of the bus modified at each time step
     double p_sbase;
     bool p_isGen;
     int p_area;

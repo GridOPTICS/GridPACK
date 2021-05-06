@@ -3598,6 +3598,33 @@ bool gridpack::dynamic_simulation::DSFullApp::isDynSimuDone( ){
 }
 
 /**
+ * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+ * the vector  vloadP and vloadQ
+ */
+ 
+void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoad(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ){
+	
+	std::vector<int> vec_busintidx;
+	int ival, nvals, ibus, nbus, bus_number;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+
+	nvals = vbusNum.size();	
+	for (ival=0; ival<=nvals; ival++){
+		bus_number = vbusNum[ival];
+		vec_busintidx = p_network->getLocalBusIndices(bus_number);
+		nbus = vec_busintidx.size();
+		for(ibus=0; ibus<nbus; ibus++){
+			bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+			(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
+			//printf("----renke debug scatterInjectionLoad, in dsf full app, \n");
+			bus->scatterInjectionLoad(vloadP[ival], vloadQ[ival]);
+		
+		}
+	}
+		
+}
+
+/**
  * execute load shedding	 
  */
 void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, std::string loadid, double percentage){

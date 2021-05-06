@@ -512,3 +512,13 @@ void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECActi
 	}
 
 }
+
+/**
+ * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+ * the vector  vloadP and vloadQ
+ */
+void gridpack::hadrec::HADRECAppModule::scatterInjectionLoad(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ){
+	
+	ds_app_sptr->scatterInjectionLoad(vbusNum, vloadP, vloadQ);
+	
+}
