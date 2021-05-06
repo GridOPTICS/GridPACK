@@ -599,6 +599,10 @@ class DSFullApp
    // Record bus ID where frequency violation occured
    std::vector<int> p_violations;
 
+   // Report observations even if the corresponding network elements do not
+   // exist
+   bool p_report_dummy_obs;
+
    // Observation data structures
    std::vector<int> p_obs_genBus;
    std::vector<std::string> p_obs_genIDs;
@@ -612,22 +616,26 @@ class DSFullApp
    std::vector<int> p_obs_lGenBus;
    std::vector<std::string> p_obs_lGenIDs;
    std::vector<int> p_obs_gActive;
+   std::vector<int> p_obs_gUse;
 
    std::vector<int> p_obs_lLoadIdx;
    std::vector<int> p_obs_LoadIdx;
    std::vector<int> p_obs_lLoadBus;
    std::vector<std::string> p_obs_lLoadIDs;
    std::vector<int> p_obs_lActive;
+   std::vector<int> p_obs_lUse;
 
    std::vector<int> p_obs_lVIdx;
    std::vector<int> p_obs_VIdx;
    std::vector<int> p_obs_lVBus;
    std::vector<int> p_obs_vActive;
+   std::vector<int> p_obs_vUse;
    
    std::vector<int> p_obs_lVIdxfreq;
    std::vector<int> p_obs_VIdxfreq;
    std::vector<int> p_obs_lVBusfreq;
    std::vector<int> p_obs_vActivefreq;
+   std::vector<int> p_obs_vUsefreq;
 
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vMag;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vAng;

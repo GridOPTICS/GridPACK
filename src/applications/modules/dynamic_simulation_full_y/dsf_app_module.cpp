@@ -60,6 +60,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   bapplyLineTripAction = false;
   bapplyLoadChangeP = false;
   bapplyLoadChangeQ = false;
+  p_report_dummy_obs = false;
   
 }
 
@@ -82,6 +83,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   bapplyLineTripAction = false;
   bapplyLoadChangeP = false;
   bapplyLoadChangeQ = false;
+  p_report_dummy_obs = false;
 }
 
 /**
@@ -139,6 +141,7 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
 
   // Monitor generators for frequency violations
   p_monitorGenerators = cursor->get("monitorGenerators",false);
+  p_report_dummy_obs = cursor->get("reportNonExistingElements",false);
   p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
 
   // load input file
@@ -193,6 +196,11 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   if (p_time_step == 0.0) {
     // TODO: some kind of error
   }
+
+  // Monitor generators for frequency violations
+  p_monitorGenerators = cursor->get("monitorGenerators",false);
+  p_report_dummy_obs = cursor->get("reportNonExistingElements",false);
+  p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
 
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512, network));
@@ -1856,10 +1864,15 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
   p_obs_vBusfreq.clear();
   gridpack::utility::StringUtils util;
   // Parser observation block
+  std::vector<int> foundGen;
+  std::vector<int> foundBus;
+  std::vector<int> foundBusfreq;
+  std::vector<int> foundLoad;
+  int idx;
   if (list) {
     list->children(observations);
     int size = observations.size();
-    int idx;
+    // Find out which observations actually correspond to elements that exist
     for (idx=0; idx<size; idx++) {
       std::string type;
       if (!observations[idx]->get("type",&type)) continue;
@@ -1873,16 +1886,19 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
           tID = util.clean2Char(genID);
           p_obs_genBus.push_back(bus);
           p_obs_genIDs.push_back(tID);
+          foundGen.push_back(0);
         }
       } else if (type == "bus") {
         int bus;
         if (observations[idx]->get("busID",&bus)) {
           p_obs_vBus.push_back(bus);
+          foundBus.push_back(0);
         }
       }else if (type == "busfrequency") {
         int bus;
         if (observations[idx]->get("busID",&bus)) {
           p_obs_vBusfreq.push_back(bus);
+          foundBusfreq.push_back(0);
         }
       }
 	  else if (type == "load") {
@@ -1893,6 +1909,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
           tID = util.clean2Char(loadID);
           p_obs_loadBus.push_back(bus);
           p_obs_loadIDs.push_back(tID);
+          foundLoad.push_back(0);
         }
       } else {
         printf("Unknown observation type: %s\n",type.c_str());
@@ -1915,7 +1932,9 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     p_obs_lGenBus.clear();
     p_obs_lGenIDs.clear();
     p_obs_lGenIdx.clear();
-    std::vector<double> dummy;
+    p_obs_gUse.clear();
+    std::vector<double> zeros;
+    std::vector<double> ones;
     int i, j, k, lidx;
     for (i = 0; i<nbus; i++) {
       std::vector<int> localIndices;
@@ -1927,7 +1946,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         if (p_network->getActiveBus(localIndices[j])) {
           // Check to see if generator is on this bus
           std::vector<std::string> tags
-           = p_network->getBus(localIndices[j])->getGenerators();
+            = p_network->getBus(localIndices[j])->getGenerators();
           for (k = 0; k<tags.size(); k++) {
             if (tags[k] == p_obs_genIDs[i]) {
               lidx = localIndices[j];
@@ -1940,20 +1959,40 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         }
       }
       if (isLocal) {
+        foundGen[i] = 1;
         p_obs_lGenIdx.push_back(i);
         p_obs_GenIdx.push_back(lidx);
         p_obs_lGenBus.push_back(p_obs_genBus[i]);
         p_obs_lGenIDs.push_back(p_obs_genIDs[i]);
-        dummy.push_back(0.0);
+        p_obs_gUse.push_back(1);
+        zeros.push_back(0.0);
+        ones.push_back(1.0);
       }
     }
-    p_obs_rSpd->addElements(p_obs_lGenIdx, dummy);
+    // Sum foundGen vector over all processors to find out if any observations
+    // do not correspond to existing elements
+    p_network->communicator().sum(&foundGen[0],foundGen.size());
+    // Add observations not found on any processors to observations on process 0
+    if (p_comm.rank() == 0 && p_report_dummy_obs) {
+      for (i = 0; i<foundGen.size(); i++) {
+        if (!foundGen[i]) {
+          p_obs_lGenIdx.push_back(i);
+          p_obs_GenIdx.push_back(-1);
+          p_obs_lGenBus.push_back(p_obs_genBus[i]);
+          p_obs_lGenIDs.push_back(p_obs_genIDs[i]);
+          p_obs_gUse.push_back(1);
+          zeros.push_back(0.0);
+          ones.push_back(1.0);
+        }
+      }
+    }
+    p_obs_rSpd->addElements(p_obs_lGenIdx, ones);
     p_obs_rSpd->upload();
-    p_obs_rAng->addElements(p_obs_lGenIdx, dummy);
+    p_obs_rAng->addElements(p_obs_lGenIdx, zeros);
     p_obs_rAng->upload();
-	p_obs_genP->addElements(p_obs_lGenIdx, dummy);
+    p_obs_genP->addElements(p_obs_lGenIdx, zeros);
     p_obs_genP->upload();
-	p_obs_genQ->addElements(p_obs_lGenIdx, dummy);
+    p_obs_genQ->addElements(p_obs_lGenIdx, zeros);
     p_obs_genQ->upload();
     p_comm.sum(&p_obs_gActive[0],p_comm.size());
   }
@@ -1963,7 +2002,8 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     p_obs_lLoadBus.clear();
     p_obs_lLoadIDs.clear();
     p_obs_lLoadIdx.clear();
-    std::vector<double> dummy;
+    p_obs_lUse.clear();
+    std::vector<double> ones;
     int i, j, k, lidx;
     for (i = 0; i<nbus; i++) {
       std::vector<int> localIndices;
@@ -1998,14 +2038,32 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         if (isLocal) break;
       }
       if (isLocal) {
+        foundLoad[i] = 1;
         p_obs_lLoadIdx.push_back(i);
         p_obs_LoadIdx.push_back(lidx);
         p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
         p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
-        dummy.push_back(0.0);
+        p_obs_lUse.push_back(1);
+        ones.push_back(1.0);
       }
     }
-    p_obs_fOnline->addElements(p_obs_lLoadIdx, dummy);
+    // Sum foundLoad vector over all processors to find out if any observations
+    // do not correspond to existing elements
+    p_network->communicator().sum(&foundLoad[0],foundLoad.size());
+    // Add observations not found on any processors to observations on process 0
+    if (p_comm.rank() == 0 && p_report_dummy_obs) {
+      for (i = 0; i<foundLoad.size(); i++) {
+        if (!foundLoad[i]) {
+          p_obs_lLoadIdx.push_back(i);
+          p_obs_LoadIdx.push_back(-1);
+          p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
+          p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
+          p_obs_lUse.push_back(1);
+          ones.push_back(1.0);
+        }
+      }
+    }
+    p_obs_fOnline->addElements(p_obs_lLoadIdx, ones);
     p_obs_fOnline->upload();
     p_comm.sum(&p_obs_lActive[0],p_comm.size());
   }
@@ -2014,7 +2072,9 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     p_obs_vActive.resize(nbus);
     p_obs_lVBus.clear();
     p_obs_lVIdx.clear();
-    std::vector<double> dummy;
+    p_obs_vUse.clear();
+    std::vector<double> zeros;
+    std::vector<double> ones;
     int i, j, lidx;
     for (i = 0; i<nbus; i++) {
       std::vector<int> localIndices;
@@ -2030,15 +2090,34 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         }
       }
       if (isLocal) {
+        foundBus[i] = 1;
         p_obs_lVIdx.push_back(i);
         p_obs_VIdx.push_back(lidx);
         p_obs_lVBus.push_back(p_obs_vBus[i]);
-        dummy.push_back(0.0);
+        p_obs_vUse.push_back(1);
+        zeros.push_back(0.0);
+        ones.push_back(1.0);
       }
     }
-    p_obs_vMag->addElements(p_obs_lVIdx, dummy);
+    // Sum foundBus vector over all processors to find out if any observations
+    // do not correspond to existing elements
+    p_network->communicator().sum(&foundBus[0],foundBus.size());
+    // Add observations not found on any processors to observations on process 0
+    if (p_comm.rank() == 0 && p_report_dummy_obs) {
+      for (i = 0; i<foundBus.size(); i++) {
+        if (!foundBus[i]) {
+          p_obs_lVIdx.push_back(i);
+          p_obs_VIdx.push_back(-1);
+          p_obs_lVBus.push_back(p_obs_vBus[i]);
+          p_obs_vUse.push_back(1);
+          zeros.push_back(0.0);
+          ones.push_back(1.0);
+        }
+      }
+    }
+    p_obs_vMag->addElements(p_obs_lVIdx, ones);
     p_obs_vMag->upload();
-    p_obs_vAng->addElements(p_obs_lVIdx, dummy);
+    p_obs_vAng->addElements(p_obs_lVIdx, zeros);
     p_obs_vAng->upload();
     p_comm.sum(&p_obs_vActive[0],p_comm.size());
   }
@@ -2047,7 +2126,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     p_obs_vActivefreq.resize(nbusfreq);
     p_obs_lVBusfreq.clear();
     p_obs_lVIdxfreq.clear();
-    std::vector<double> dummy;
+    std::vector<double> ones;
     int i, j, lidx;
     for (i = 0; i<nbusfreq; i++) {
       std::vector<int> localIndicesfreq;
@@ -2063,17 +2142,32 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         }
       }
       if (isLocalfreq) {
+        foundBusfreq[i] = 1;
         p_obs_lVIdxfreq.push_back(i);
         p_obs_VIdxfreq.push_back(lidx);
         p_obs_lVBusfreq.push_back(p_obs_vBus[i]);
-        dummy.push_back(0.0);
-		
-		//need to setup Busfreq computation flag for this specific bus  here!!!!!!!!!!!!!!
-		p_network->getBus(lidx)->setBusVolFrequencyFlag(true);
+        ones.push_back(1.0);
+
+        //need to setup Busfreq computation flag for this specific bus  here!!!!!!!!!!!!!!
+        p_network->getBus(lidx)->setBusVolFrequencyFlag(true);
 		
       }
     }
-    p_obs_vBusfreqVal->addElements(p_obs_lVIdxfreq, dummy);
+    // Sum foundBusfreq vector over all processors to find out if any observations
+    // do not correspond to existing elements
+    p_network->communicator().sum(&foundBusfreq[0],foundBusfreq.size());
+    // Add observations not found on any processors to observations on process 0
+    if (p_comm.rank() == 0 && p_report_dummy_obs) {
+      for (i = 0; i<foundBusfreq.size(); i++) {
+        if (!foundBusfreq[i]) {
+          p_obs_lVIdxfreq.push_back(i);
+          p_obs_VIdxfreq.push_back(-1);
+          p_obs_lVBusfreq.push_back(p_obs_vBus[i]);
+          ones.push_back(1.0);
+        }
+      }
+    }
+    p_obs_vBusfreqVal->addElements(p_obs_lVIdxfreq, ones);
     p_obs_vBusfreqVal->upload();
     p_comm.sum(&p_obs_vActivefreq[0],p_comm.size());
   } //bus frequency ob ends here
@@ -2099,21 +2193,21 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
   int i;
   int nbus = p_obs_genBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_gActive[i])) {
+    if (static_cast<bool>(p_obs_gActive[i]) || static_cast<bool>(p_obs_gUse[i])) {
       genBuses.push_back(p_obs_genBus[i]);
       genIDs.push_back(p_obs_genIDs[i]);
     }
   }
   nbus = p_obs_loadBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_lActive[i])) {
+    if (static_cast<bool>(p_obs_lActive[i]) || static_cast<bool>(p_obs_lUse[i])) {
       loadBuses.push_back(p_obs_loadBus[i]);
       loadIDs.push_back(p_obs_loadIDs[i]);
     }
   }
   nbus = p_obs_vBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_vActive[i])) {
+    if (static_cast<bool>(p_obs_vActive[i]) || static_cast<bool>(p_obs_vUse[i])) {
       busIDs.push_back(p_obs_vBus[i]);
     }
   }
@@ -2140,28 +2234,28 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists_withBusFreq(
   int i;
   int nbus = p_obs_genBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_gActive[i])) {
+    if (static_cast<bool>(p_obs_gActive[i]) || static_cast<bool>(p_obs_gUse[i])) {
       genBuses.push_back(p_obs_genBus[i]);
       genIDs.push_back(p_obs_genIDs[i]);
     }
   }
   nbus = p_obs_loadBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_lActive[i])) {
+    if (static_cast<bool>(p_obs_lActive[i]) || static_cast<bool>(p_obs_lUse[i])) {
       loadBuses.push_back(p_obs_loadBus[i]);
       loadIDs.push_back(p_obs_loadIDs[i]);
     }
   }
   nbus = p_obs_vBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_vActive[i])) {
+    if (static_cast<bool>(p_obs_vActive[i]) || static_cast<bool>(p_obs_vUse[i])) {
       busIDs.push_back(p_obs_vBus[i]);
     }
   }
   
   nbus = p_obs_vBusfreq.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_vActivefreq[i])) {
+    if (static_cast<bool>(p_obs_vActivefreq[i]) || static_cast<bool>(p_obs_vUsefreq[i])) {
       busfreqIDs.push_back(p_obs_vBusfreq[i]);
     }
   }
