@@ -1964,7 +1964,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         p_obs_GenIdx.push_back(lidx);
         p_obs_lGenBus.push_back(p_obs_genBus[i]);
         p_obs_lGenIDs.push_back(p_obs_genIDs[i]);
-        p_obs_gUse.push_back(1);
+        p_obs_gUse.push_back(0);
         zeros.push_back(0.0);
         ones.push_back(1.0);
       }
@@ -2043,7 +2043,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         p_obs_LoadIdx.push_back(lidx);
         p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
         p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
-        p_obs_lUse.push_back(1);
+        p_obs_lUse.push_back(0);
         ones.push_back(1.0);
       }
     }
@@ -2094,7 +2094,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         p_obs_lVIdx.push_back(i);
         p_obs_VIdx.push_back(lidx);
         p_obs_lVBus.push_back(p_obs_vBus[i]);
-        p_obs_vUse.push_back(1);
+        p_obs_vUse.push_back(0);
         zeros.push_back(0.0);
         ones.push_back(1.0);
       }
@@ -2146,6 +2146,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         p_obs_lVIdxfreq.push_back(i);
         p_obs_VIdxfreq.push_back(lidx);
         p_obs_lVBusfreq.push_back(p_obs_vBus[i]);
+        p_obs_vUsefreq.push_back(0);
         ones.push_back(1.0);
 
         //need to setup Busfreq computation flag for this specific bus  here!!!!!!!!!!!!!!
@@ -2163,6 +2164,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
           p_obs_lVIdxfreq.push_back(i);
           p_obs_VIdxfreq.push_back(-1);
           p_obs_lVBusfreq.push_back(p_obs_vBus[i]);
+          p_obs_vUsefreq.push_back(1);
           ones.push_back(1.0);
         }
       }
@@ -2192,22 +2194,38 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
   busIDs.clear();
   int i;
   int nbus = p_obs_genBus.size();
+  bool use;
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_gActive[i]) || static_cast<bool>(p_obs_gUse[i])) {
+    if (p_report_dummy_obs) {
+      use = true;
+    } else {
+      use = static_cast<bool>(p_obs_gActive[i]);
+    }
+    if (use) {
       genBuses.push_back(p_obs_genBus[i]);
       genIDs.push_back(p_obs_genIDs[i]);
     }
   }
   nbus = p_obs_loadBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_lActive[i]) || static_cast<bool>(p_obs_lUse[i])) {
+    if (p_report_dummy_obs) {
+      use = true;
+    } else {
+      use = static_cast<bool>(p_obs_gActive[i]);
+    }
+    if (use) {
       loadBuses.push_back(p_obs_loadBus[i]);
       loadIDs.push_back(p_obs_loadIDs[i]);
     }
   }
   nbus = p_obs_vBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_vActive[i]) || static_cast<bool>(p_obs_vUse[i])) {
+    if (p_report_dummy_obs) {
+      use = true;
+    } else {
+      use = static_cast<bool>(p_obs_gActive[i]);
+    }
+    if (use) {
       busIDs.push_back(p_obs_vBus[i]);
     }
   }
@@ -2233,29 +2251,50 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists_withBusFreq(
   busfreqIDs.clear();
   int i;
   int nbus = p_obs_genBus.size();
+  bool use;
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_gActive[i]) || static_cast<bool>(p_obs_gUse[i])) {
+    if (p_report_dummy_obs) {
+      use = true;
+    } else {
+      use = static_cast<bool>(p_obs_gActive[i]);
+    }
+    if (use) {
       genBuses.push_back(p_obs_genBus[i]);
       genIDs.push_back(p_obs_genIDs[i]);
     }
   }
   nbus = p_obs_loadBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_lActive[i]) || static_cast<bool>(p_obs_lUse[i])) {
+    if (p_report_dummy_obs) {
+      use = true;
+    } else {
+      use = static_cast<bool>(p_obs_lActive[i]);
+    }
+    if (use) {
       loadBuses.push_back(p_obs_loadBus[i]);
       loadIDs.push_back(p_obs_loadIDs[i]);
     }
   }
   nbus = p_obs_vBus.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_vActive[i]) || static_cast<bool>(p_obs_vUse[i])) {
+    if (p_report_dummy_obs) {
+      use = true;
+    } else {
+      use = static_cast<bool>(p_obs_vActive[i]);
+    }
+    if (use) {
       busIDs.push_back(p_obs_vBus[i]);
     }
   }
   
   nbus = p_obs_vBusfreq.size();
   for (i=0; i<nbus; i++) {
-    if (static_cast<bool>(p_obs_vActivefreq[i]) || static_cast<bool>(p_obs_vUsefreq[i])) {
+    if (p_report_dummy_obs) {
+      use = true;
+    } else {
+      use = static_cast<bool>(p_obs_vActivefreq[i]);
+    }
+    if (use) {
       busfreqIDs.push_back(p_obs_vBusfreq[i]);
     }
   }
@@ -2295,18 +2334,25 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     int i, j;
     int nbus =  p_obs_lGenBus.size();
     for (i=0; i<nbus; i++) {
-      std::vector<std::string> tags
-        = p_network->getBus(p_obs_GenIdx[i])->getGenerators();
-      for (j=0; j<tags.size(); j++) {
-        if (tags[j] == p_obs_lGenIDs[i]) {
-          double speed, angle, gPtmp, gQtmp;
-          p_network->getBus(p_obs_GenIdx[i])->getWatchedValues(j,&speed,&angle, &gPtmp, &gQtmp);
-          trSpd.push_back(speed);
-          trAng.push_back(angle);
-		  tgenP.push_back(gPtmp);
-          tgenQ.push_back(gQtmp);
-          break;
+      if (!static_cast<bool>(p_obs_gUse[i])) {
+        std::vector<std::string> tags
+          = p_network->getBus(p_obs_GenIdx[i])->getGenerators();
+        for (j=0; j<tags.size(); j++) {
+          if (tags[j] == p_obs_lGenIDs[i]) {
+            double speed, angle, gPtmp, gQtmp;
+            p_network->getBus(p_obs_GenIdx[i])->getWatchedValues(j,&speed,&angle, &gPtmp, &gQtmp);
+            trSpd.push_back(speed);
+            trAng.push_back(angle);
+            tgenP.push_back(gPtmp);
+            tgenQ.push_back(gQtmp);
+            break;
+          }
         }
+      } else {
+        trSpd.push_back(1.0);
+        trAng.push_back(0.0);
+        tgenP.push_back(0.0);
+        tgenQ.push_back(0.0);
       }
     }
     // Check to make sure that local vectors still match
@@ -2342,17 +2388,22 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     int i, j;
     int nbus =  p_obs_lLoadBus.size();
     for (i=0; i<nbus; i++) {
-      std::vector<std::string> tags
-        = p_network->getBus(p_obs_LoadIdx[i])->getDynamicLoads();
       bool found = false;
-      for (j=0; j<tags.size(); j++) {
-        if (tags[j] == p_obs_lLoadIDs[i]) {
-          double frac;
-          frac = p_network->getBus(p_obs_LoadIdx[i])->getOnlineLoadFraction(j);
-          tfOnline.push_back(frac);
-          found = true;
-          break;
+      if (!static_cast<bool>(p_obs_lUse[i])) {
+        std::vector<std::string> tags
+          = p_network->getBus(p_obs_LoadIdx[i])->getDynamicLoads();
+        for (j=0; j<tags.size(); j++) {
+          if (tags[j] == p_obs_lLoadIDs[i]) {
+            double frac;
+            frac = p_network->getBus(p_obs_LoadIdx[i])->getOnlineLoadFraction(j);
+            tfOnline.push_back(frac);
+            found = true;
+            break;
+          }
         }
+      } else {
+        tfOnline.push_back(1.0);
+        found = true;
       }
       if (!found) {
         tfOnline.push_back(1.0);
@@ -2376,17 +2427,22 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     int i, j;
     int nbus =  p_obs_lVBus.size();
     for (i=0; i<nbus; i++) {
-      gridpack::ComplexType voltage =
+      if (!static_cast<bool>(p_obs_vUse[i])) {
+        gridpack::ComplexType voltage =
           p_network->getBus(p_obs_VIdx[i])->getComplexVoltage();
-      double rV = real(voltage);
-      double iV = imag(voltage);
-      double V = sqrt(rV*rV+iV*iV);
-      double Ang = acos(rV/V);
-      if (iV < 0) {
-        Ang = -Ang;
+        double rV = real(voltage);
+        double iV = imag(voltage);
+        double V = sqrt(rV*rV+iV*iV);
+        double Ang = acos(rV/V);
+        if (iV < 0) {
+          Ang = -Ang;
+        }
+        tvMag.push_back(V);
+        tvAng.push_back(Ang);
+      } else {
+        tvMag.push_back(1.0);
+        tvAng.push_back(0.0);
       }
-      tvMag.push_back(V);
-      tvAng.push_back(Ang);
     }
     // Check to make sure that local vectors still match
     if (p_obs_lVIdx.size() != tvMag.size()) {
@@ -2445,18 +2501,25 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
     int i, j;
     int nbus =  p_obs_lGenBus.size();
     for (i=0; i<nbus; i++) {
-      std::vector<std::string> tags
-        = p_network->getBus(p_obs_GenIdx[i])->getGenerators();
-      for (j=0; j<tags.size(); j++) {
-        if (tags[j] == p_obs_lGenIDs[i]) {
-          double speed, angle, gPtmp, gQtmp;
-          p_network->getBus(p_obs_GenIdx[i])->getWatchedValues(j,&speed,&angle, &gPtmp, &gQtmp);
-          trSpd.push_back(speed);
-          trAng.push_back(angle);
-		  tgenP.push_back(gPtmp);
-          tgenQ.push_back(gQtmp);
-          break;
+      if (!static_cast<bool>(p_obs_gUse[i])) {
+        std::vector<std::string> tags
+          = p_network->getBus(p_obs_GenIdx[i])->getGenerators();
+        for (j=0; j<tags.size(); j++) {
+          if (tags[j] == p_obs_lGenIDs[i]) {
+            double speed, angle, gPtmp, gQtmp;
+            p_network->getBus(p_obs_GenIdx[i])->getWatchedValues(j,&speed,&angle, &gPtmp, &gQtmp);
+            trSpd.push_back(speed);
+            trAng.push_back(angle);
+            tgenP.push_back(gPtmp);
+            tgenQ.push_back(gQtmp);
+            break;
+          }
         }
+      } else {
+        trSpd.push_back(1.0);
+        trAng.push_back(0.0);
+        tgenP.push_back(0.0);
+        tgenQ.push_back(0.0);
       }
     }
     // Check to make sure that local vectors still match
@@ -2492,17 +2555,22 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
     int i, j;
     int nbus =  p_obs_lLoadBus.size();
     for (i=0; i<nbus; i++) {
-      std::vector<std::string> tags
-        = p_network->getBus(p_obs_LoadIdx[i])->getDynamicLoads();
       bool found = false;
-      for (j=0; j<tags.size(); j++) {
-        if (tags[j] == p_obs_lLoadIDs[i]) {
-          double frac;
-          frac = p_network->getBus(p_obs_LoadIdx[i])->getOnlineLoadFraction(j);
-          tfOnline.push_back(frac);
-          found = true;
-          break;
+      if (!static_cast<bool>(p_obs_lUse[i])) {
+        std::vector<std::string> tags
+          = p_network->getBus(p_obs_LoadIdx[i])->getDynamicLoads();
+        for (j=0; j<tags.size(); j++) {
+          if (tags[j] == p_obs_lLoadIDs[i]) {
+            double frac;
+            frac = p_network->getBus(p_obs_LoadIdx[i])->getOnlineLoadFraction(j);
+            tfOnline.push_back(frac);
+            found = true;
+            break;
+          }
         }
+      } else {
+        tfOnline.push_back(1.0);
+        found = true;
       }
       if (!found) {
         tfOnline.push_back(1.0);
@@ -2527,17 +2595,22 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
     int i, j;
     int nbus =  p_obs_lVBus.size();
     for (i=0; i<nbus; i++) {
-      gridpack::ComplexType voltage =
+      if (!static_cast<bool>(p_obs_vUse[i])) {
+        gridpack::ComplexType voltage =
           p_network->getBus(p_obs_VIdx[i])->getComplexVoltage();
-      double rV = real(voltage);
-      double iV = imag(voltage);
-      double V = sqrt(rV*rV+iV*iV);
-      double Ang = acos(rV/V);
-      if (iV < 0) {
-        Ang = -Ang;
+        double rV = real(voltage);
+        double iV = imag(voltage);
+        double V = sqrt(rV*rV+iV*iV);
+        double Ang = acos(rV/V);
+        if (iV < 0) {
+          Ang = -Ang;
+        }
+        tvMag.push_back(V);
+        tvAng.push_back(Ang);
+      } else {
+        tvMag.push_back(1.0);
+        tvAng.push_back(0.0);
       }
-      tvMag.push_back(V);
-      tvAng.push_back(Ang);
     }
     // Check to make sure that local vectors still match
     if (p_obs_lVIdx.size() != tvMag.size()) {
@@ -2563,8 +2636,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
     int nbusfreq =  p_obs_lVBusfreq.size();
 	double dbusfreqtmp;
     for (i=0; i<nbusfreq; i++) {
-      dbusfreqtmp = p_network->getBus(p_obs_VIdxfreq[i])->getBusVolFrequency();
-      tbusfreq.push_back(dbusfreqtmp);
+      if (!static_cast<bool>(p_obs_vUsefreq[i])) {
+        dbusfreqtmp = p_network->getBus(p_obs_VIdxfreq[i])->getBusVolFrequency();
+        tbusfreq.push_back(dbusfreqtmp);
+      } else {
+        tbusfreq.push_back(0.0);
+      }
     }
     // Check to make sure that local vectors still match
     if (p_obs_lVIdxfreq.size() != tbusfreq.size()) {
