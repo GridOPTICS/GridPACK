@@ -154,32 +154,43 @@ public:
     int GAgrp = p_comm.getGroup();
     GA_Set_pgroup(g_idx, GAgrp);
     GA_Allocate(g_idx);
-    int *iarr = new int[p_index.size()];
-    int **iptr = new int*[p_index.size()];
-    int *ival = new int[p_index.size()];
+    int *iarr;
+    int **iptr;
+    int *ival;
+    if (p_index.size() > 0) {
+      iarr = new int[p_index.size()];
+      iptr = new int*[p_index.size()];
+      ival = new int[p_index.size()];
+    }
     GA_Zero(g_idx);
     for (i=0; i<p_index.size(); i++) {
       iarr[i] = p_index[i];
       iptr[i] = &iarr[i];
       ival[i] = one;
     }
-    NGA_Scatter_acc(g_idx,ival,iptr,p_index.size(),&one);
-    delete [] ival;
+    if (p_index.size() > 0) {
+      NGA_Scatter_acc(g_idx,ival,iptr,p_index.size(),&one);
+    }
+    if (p_index.size() > 0) {
+      delete [] ival;
+    }
     int ilo, ihi, ld;
     int *lptr;
     NGA_Distribution(g_idx,p_me,&ilo,&ihi);
-    NGA_Access(g_idx,&ilo,&ihi,&lptr,&ld);
     ld = ihi-ilo+1; 
-    for (i=0; i<ld; i++) {
-      if (lptr[i] > 1) {
-        char buf[256];
-        sprintf(buf,"GlobalVector::upload Multiple elements for index %d on process %d\n",
-            i+ilo,p_me);
-        printf("%s",buf);
-        throw gridpack::Exception(buf);
+    if (ld > 0) {
+      NGA_Access(g_idx,&ilo,&ihi,&lptr,&ld);
+      for (i=0; i<ld; i++) {
+        if (lptr[i] > 1) {
+          char buf[256];
+          sprintf(buf,"GlobalVector::upload Multiple elements for index %d on process %d\n",
+              i+ilo,p_me);
+          printf("%s",buf);
+          throw gridpack::Exception(buf);
+        }
       }
+      NGA_Release(g_idx,&ilo,&ihi);
     }
-    NGA_Release(g_idx,&ilo,&ihi);
     GA_Destroy(g_idx);
 
     // Create a GA to hold data
@@ -192,20 +203,29 @@ public:
     // Make sure that vector is zeroed out
     _data_type *dptr;
     NGA_Distribution(p_GA,p_me,&ilo,&ihi);
-    NGA_Access(p_GA,&ilo,&ihi,&dptr,&ld);
     ld = ihi-ilo+1;
-    memset(dptr,'\0',ld*p_datasize);
-    NGA_Release(p_GA,&ilo,&ihi);
+    if (ld > 0) {
+      NGA_Access(p_GA,&ilo,&ihi,&dptr,&ld);
+      memset(dptr,'\0',ld*p_datasize);
+      NGA_Release(p_GA,&ilo,&ihi);
+    }
 
     // Copy data to GA
-    _data_type *data = new _data_type[p_index.size()];
+    _data_type *data;
+    if (p_index.size() > 0) {
+      data = new _data_type[p_index.size()];
+    }
     for (i=0; i<p_index.size(); i++) {
       data[i] = p_data[i];
     }
-    NGA_Scatter(p_GA,data,iptr,p_index.size());
-    delete [] iarr;
-    delete [] iptr;
-    delete [] data;
+    if (p_index.size() > 0) {
+      NGA_Scatter(p_GA,data,iptr,p_index.size());
+    }
+    if (p_index.size() > 0) {
+      delete [] iarr;
+      delete [] iptr;
+      delete [] data;
+    }
     p_data.clear();
     p_index.clear();
     p_uploaded = true;
@@ -222,21 +242,28 @@ public:
       return;
     }
     int i;
-    int **iptr = new int*[p_index.size()];
-    int *ival = new int[p_index.size()];
+    int **iptr; 
+    int *ival;
+    if (p_index.size() > 0) {
+      iptr = new int*[p_index.size()];
+      ival = new int[p_index.size()];
+    }
     for (i=0; i<p_index.size(); i++) {
       ival[i] = p_index[i];
       iptr[i] = &ival[i];
     }
     // Copy data to GA
-    _data_type *data = new _data_type[p_index.size()];
-    for (i=0; i<p_index.size(); i++) {
-      data[i] = p_data[i];
+    _data_type *data;
+    if (p_index.size() > 0) {
+      data = new _data_type[p_index.size()];
+      for (i=0; i<p_index.size(); i++) {
+        data[i] = p_data[i];
+      }
+      NGA_Scatter(p_GA,data,iptr,p_index.size());
+      delete [] ival;
+      delete [] iptr;
+      delete [] data;
     }
-    NGA_Scatter(p_GA,data,iptr,p_index.size());
-    delete [] ival;
-    delete [] iptr;
-    delete [] data;
     p_data.clear();
     p_index.clear();
     GA_Pgroup_sync(p_comm.getGroup());
