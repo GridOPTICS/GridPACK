@@ -13,6 +13,7 @@
 # Last Change: 2019-08-16 13:45:12 d3g096
 # -------------------------------------------------------------
 
+
 set(target_libraries
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
@@ -74,6 +75,10 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/GainBlockClass.cpp
   model_classes/BackLashClass.cpp
   model_classes/DBIntClass.cpp
+  model_classes/PIBlockwithLimit.cpp
+  model_classes/DelayBlockwithLimit.cpp
+  model_classes/LeadLagBlock.cpp
+  model_classes/DelayBlock.cpp
   model_classes/genrou.cpp
   model_classes/esst4b.cpp
   model_classes/esst1a.cpp
@@ -123,6 +128,10 @@ install(FILES
   model_classes/DBIntClass.hpp
   model_classes/exdc1.hpp
   model_classes/GainBlockClass.hpp
+  model_classes/PIBlockwithLimit.hpp
+  model_classes/DelayBlockwithLimit.hpp
+  model_classes/LeadLagBlock.hpp
+  model_classes/DelayBlock.hpp
   model_classes/gensal.hpp
   model_classes/wsieg1.hpp
   model_classes/genrou.hpp
@@ -157,6 +166,10 @@ install(FILES
   model_classes/DBIntClass.hpp
   model_classes/exdc1.hpp
   model_classes/GainBlockClass.hpp
+  model_classes/PIBlockwithLimit.hpp
+  model_classes/DelayBlockwithLimit.hpp
+  model_classes/LeadLagBlock.hpp
+  model_classes/DelayBlock.hpp
   model_classes/gensal.hpp
   model_classes/wsieg1.hpp
   model_classes/genrou.hpp
