@@ -115,6 +115,9 @@ install(FILES
   parser_classes/gensal.hpp
   parser_classes/genrou.hpp
   parser_classes/gdform.hpp
+  parser_classes/regca1.hpp
+  parser_classes/reeca1.hpp
+  parser_classes/repca1.hpp
   parser_classes/wsieg1.hpp
   parser_classes/exdc1.hpp
   parser_classes/esst1a.hpp
