@@ -2211,7 +2211,7 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
     if (p_report_dummy_obs) {
       use = true;
     } else {
-      use = static_cast<bool>(p_obs_gActive[i]);
+      use = static_cast<bool>(p_obs_lActive[i]);
     }
     if (use) {
       loadBuses.push_back(p_obs_loadBus[i]);
@@ -2223,7 +2223,7 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
     if (p_report_dummy_obs) {
       use = true;
     } else {
-      use = static_cast<bool>(p_obs_gActive[i]);
+      use = static_cast<bool>(p_obs_vActive[i]);
     }
     if (use) {
       busIDs.push_back(p_obs_vBus[i]);
