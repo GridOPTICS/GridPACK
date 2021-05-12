@@ -2330,6 +2330,7 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
   std::vector<double> tgenP;
   std::vector<double> tgenQ;
   std::vector<double> tfOnline;
+  bool use;
   if (p_obs_genBus.size()) {
     int i, j;
     int nbus =  p_obs_lGenBus.size();
@@ -2375,12 +2376,17 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
 	
     nbus = trSpd.size();
     for (i=0; i<nbus; i++) {
-      if (p_obs_gActive[i] != 0) {
+      if (p_report_dummy_obs) {
+        use = true;
+      } else {
+        use = static_cast<bool>(p_obs_gActive[i]);
+      }
+      if (use) {
         rSpd.push_back(trSpd[i]);
         rAng.push_back(trAng[i]);
-		genP.push_back(tgenP[i]);
-		genQ.push_back(tgenQ[i]);
-		
+        genP.push_back(tgenP[i]);
+        genQ.push_back(tgenQ[i]);
+
       }
     }
   }
@@ -2418,7 +2424,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     p_obs_fOnline->getAllData(tfOnline);
     nbus = tfOnline.size();
     for (i=0; i<nbus; i++) {
-      if (p_obs_lActive[i] != 0) {
+      if (p_report_dummy_obs) {
+        use = true;
+      } else {
+        use = static_cast<bool>(p_obs_lActive[i]);
+      }
+      if (use) {
         fOnline.push_back(tfOnline[i]);
       }
     }
@@ -2456,7 +2467,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     p_obs_vAng->getAllData(tvAng);
     nbus = tvMag.size();
     for (i=0; i<nbus; i++) {
-      if (p_obs_vActive[i] != 0) {
+      if (p_report_dummy_obs) {
+        use = true;
+      } else {
+        use = static_cast<bool>(p_obs_vActive[i]);
+      }
+      if (use) {
         vMag.push_back(tvMag[i]);
         vAng.push_back(tvAng[i]);
       }
@@ -2497,6 +2513,7 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
   std::vector<double> tgenQ;
   std::vector<double> tfOnline;
   std::vector<double> tbusfreq;
+  bool use;
   if (p_obs_genBus.size()) {
     int i, j;
     int nbus =  p_obs_lGenBus.size();
@@ -2542,7 +2559,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
 	
     nbus = trSpd.size();
     for (i=0; i<nbus; i++) {
-      if (p_obs_gActive[i] != 0 || p_obs_gUse[i] == 1) {
+      if (p_report_dummy_obs) {
+        use = true;
+      } else {
+        use = static_cast<bool>(p_obs_gActive[i]);
+      }
+      if (use) {
         rSpd.push_back(trSpd[i]);
         rAng.push_back(trAng[i]);
 		genP.push_back(tgenP[i]);
@@ -2585,7 +2607,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
     p_obs_fOnline->getAllData(tfOnline);
     nbus = tfOnline.size();
     for (i=0; i<nbus; i++) {
-      if (p_obs_lActive[i] != 0 || p_obs_lUse[i] == 1 ) {
+      if (p_report_dummy_obs) {
+        use = true;
+      } else {
+        use = static_cast<bool>(p_obs_lActive[i]);
+      }
+      if (use) {
         fOnline.push_back(tfOnline[i]);
       }
     }
@@ -2624,7 +2651,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
     p_obs_vAng->getAllData(tvAng);
     nbus = tvMag.size();
     for (i=0; i<nbus; i++) {
-      if (p_obs_vActive[i] != 0 || p_obs_vUse[i] == 1) {
+      if (p_report_dummy_obs) {
+        use = true;
+      } else {
+        use = static_cast<bool>(p_obs_vActive[i]);
+      }
+      if (use) {
         vMag.push_back(tvMag[i]);
         vAng.push_back(tvAng[i]);
       }
@@ -2653,7 +2685,12 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
 	
     nbusfreq = tbusfreq.size();
     for (i=0; i<nbusfreq; i++) {
-      if (p_obs_vActivefreq[i] != 0 || p_obs_vUsefreq[i] == 1) {
+      if (p_report_dummy_obs) {
+        use = true;
+      } else {
+        use = static_cast<bool>(p_obs_vActivefreq[i]);
+      }
+      if (use) {
         busfreq.push_back(tbusfreq[i]);
       }
     }
