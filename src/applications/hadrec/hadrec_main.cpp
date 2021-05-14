@@ -208,13 +208,33 @@ if (debugoutput){
     printf("observations,  ");
 	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
       printf("gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+	 
+    }
+	
+	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+      //printf("gen-at-bus-%d-ID-%s-speed,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
 	  printf("gen-at-bus-%d-ID-%s-angle,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+
+    }
+	
+	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+
 	  printf("gen-at-bus-%d-ID-%s-P,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
+
+    }
+	
+	for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+
 	  printf("gen-at-bus-%d-ID-%s-Q,  ", obs_genBus[idxtmp], obs_genIDs[idxtmp].c_str());
     }
 	
     for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
       printf("bus-%d-magnitude, ", obs_vBus[idxtmp]);
+	  //printf("bus-%d-angle, ", obs_vBus[idxtmp]);
+    }
+	
+	for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
+      //printf("bus-%d-magnitude, ", obs_vBus[idxtmp]);
 	  printf("bus-%d-angle, ", obs_vBus[idxtmp]);
     }
 
