@@ -41,12 +41,21 @@ template <class _data_struct> class Repca1Parser
         gridpack::component::DataCollection *data, int g_id)
     {
       double rval;
-      // GENERATOR_MODEL              "MODEL"        string
-      std::string stmp;
-      if (!data->getValue(GENERATOR_MODEL,&stmp,g_id)) {
-        data->addValue(GENERATOR_MODEL, data_struct.model, g_id);
+      bool bval;
+
+      // HAS_PLANT_CONTROLLER
+      if (!data->getValue(HAS_PLANT_CONTROLLER,&bval,g_id)) {
+        data->addValue(HAS_PLANT_CONTROLLER, true, g_id);
       } else {
-        data->setValue(GENERATOR_MODEL, data_struct.model, g_id);
+        data->setValue(HAS_PLANT_CONTROLLER, true, g_id);
+      }
+	  
+      // PLANT_CONTROLLER_MODEL              "MODEL"        string
+      std::string stmp;
+      if (!data->getValue(PLANT_CONTROLLER_MODEL,&stmp,g_id)) {
+        data->addValue(PLANT_CONTROLLER_MODEL, data_struct.model, g_id);
+      } else {
+        data->setValue(PLANT_CONTROLLER_MODEL, data_struct.model, g_id);
       }
 	  
 	  int ival;
@@ -269,16 +278,24 @@ template <class _data_struct> class Repca1Parser
         gridpack::component::DataCollection *data, int g_id)
     {
       double rval;
+      bool bval;
       int nstr = split_line.size();
-      // GENERATOR_MODEL              "MODEL"                  string
+      // HAS_PLANT_CONTROLLER
+      if (!data->getValue(HAS_PLANT_CONTROLLER,&bval,g_id)) {
+        data->addValue(HAS_PLANT_CONTROLLER, true, g_id);
+      } else {
+        data->setValue(HAS_PLANT_CONTROLLER, true, g_id);
+      }
+	  
+      // PLANT_CONTROLLER_MODEL              "MODEL"                  string
       std::string stmp, model;
       gridpack::utility::StringUtils util;
       model = util.trimQuotes(split_line[1]);
       util.toUpper(model);
-      if (!data->getValue(GENERATOR_MODEL, &stmp, g_id)) {
-        data->addValue(GENERATOR_MODEL, model.c_str(), g_id);
+      if (!data->getValue(PLANT_CONTROLLER_MODEL, &stmp, g_id)) {
+        data->addValue(PLANT_CONTROLLER_MODEL, model.c_str(), g_id);
       } else {
-        data->setValue(GENERATOR_MODEL, model.c_str(), g_id);
+        data->setValue(PLANT_CONTROLLER_MODEL, model.c_str(), g_id);
       }
 
       int ival;

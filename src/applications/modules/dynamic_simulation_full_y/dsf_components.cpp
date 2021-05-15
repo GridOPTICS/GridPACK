@@ -792,6 +792,11 @@ void gridpack::dynamic_simulation::DSFullBus::updateFreq (double delta_t){
 			p_loadmodels[i]->setFreq(dbusvoltfreq/60.0);
 		}
 		
+		for (int i = 0; i < p_ngen; i++) {
+			p_generators[i]->setFreq(dbusvoltfreq/60.0);
+			
+		}
+		
 	}
 	
 }
@@ -894,7 +899,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   std::string relay_genid; //renke add
   double pg, qg, mva, r, dstr, dtr;
   double h, d0;
-  bool has_ex, has_gov, has_pss;
+  bool has_ex, has_gov, has_pss, has_plantcontroller;
   GeneratorFactory genFactory;
   RelayFactory relayFactory;
   LoadFactory loadFactory;
@@ -946,12 +951,18 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         //std::cout << "generator: " << model << std::endl;
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
+		if (model == "REGCA1"){
+			bcomputefreq = true;
+			printf ("----------renke debug in fullbus::load(), set bus bcomputefreq as true due to REGCA1 \n\n");
+		}
         has_ex = false;
         has_gov = false;
         has_pss = false;
+		has_plantcontroller = false;
         data->getValue(HAS_EXCITER, &has_ex, i);
         data->getValue(HAS_GOVERNOR, &has_gov, i);
 		data->getValue(HAS_PSS, &has_pss, i);
+		data->getValue(HAS_PLANT_CONTROLLER, &has_plantcontroller, i);
         if (generator) {
           //boost::shared_ptr<BaseGeneratorModel> tmp;
           //tmp.reset(generator);
@@ -996,6 +1007,17 @@ void gridpack::dynamic_simulation::DSFullBus::load(
               p_generators[icnt]->setPss(pss);
             }
           }
+		  if (has_plantcontroller) {
+			//printf("---------renkedebug: bus %d: has pss", idx);
+            if (data->getValue(PLANT_CONTROLLER_MODEL, &model, i)) {
+			  //p_generators[icnt]->p_hasPss = true;
+              BasePlantControllerModel *plantctrlmodel
+                = genFactory.createPlantControllerModel(model);
+              boost::shared_ptr<BasePlantControllerModel> plantctrl;
+              plantctrl.reset(plantctrlmodel);
+              p_generators[icnt]->setPlantController(plantctrl);
+            }
+          }
 
           // create relay objective associate with the generator, Renke Add
           // get the number of relay associate with the generator, Renke add
@@ -1031,6 +1053,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         if (has_gov) p_generators[icnt]->getGovernor()->load(data,i);
         if (has_ex) p_generators[icnt]->getExciter()->load(data,i);	
 		if (has_pss) p_generators[icnt]->getPss()->load(data,i);	
+		if (has_plantcontroller) p_generators[icnt]->getPlantController()->load(data,i);
         icnt++;
       } else if (!data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0.0){ 
 	    // handle the generators having no dynamic model, need to convert to negative load

@@ -119,6 +119,15 @@ class BaseExciterModel
 	 */
 	virtual void setExtBusNum(int ExtBusNum);
 	
+	virtual void setIpcmdIqcmd(double ipcmd, double iqcmd); 
+	
+	virtual void setPrefQext(double pref, double qext); 
+	
+	virtual double getPref();
+	virtual double getQext();
+	virtual double getIpcmd();
+	virtual double getIqcmd();
+
 	/** 
 	 * Set the exciter generator id
 	 * @return value of generator id

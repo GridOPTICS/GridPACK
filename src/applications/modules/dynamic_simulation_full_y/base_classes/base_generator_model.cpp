@@ -145,6 +145,14 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::setVoltage(
 {
 }
 
+/**
+ * Set terminal voltage frequency on each generator
+ */
+void gridpack::dynamic_simulation::BaseGeneratorModel::setFreq(double dFreq){
+	
+}
+
+
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage
@@ -201,6 +209,13 @@ gridpack::dynamic_simulation::BaseGeneratorModel::setExciter(boost::shared_ptr<B
   p_hasExciter = true;
 }
 
+void 
+gridpack::dynamic_simulation::BaseGeneratorModel::setPlantController(boost::shared_ptr<BasePlantControllerModel> &plant)
+{
+	p_plant = plant;
+    p_hasPlantController = true;
+}
+
 void
 gridpack::dynamic_simulation::BaseGeneratorModel::setPss(boost::shared_ptr<BasePssModel>
     &pss)
@@ -246,6 +261,12 @@ boost::shared_ptr<gridpack::dynamic_simulation::BasePssModel>
 gridpack::dynamic_simulation::BaseGeneratorModel::getPss()
 {
   return p_pss;
+}
+
+boost::shared_ptr<gridpack::dynamic_simulation::BasePlantControllerModel>
+gridpack::dynamic_simulation::BaseGeneratorModel::getPlantController()
+{
+  return p_plant;
 }
 
 

@@ -22,6 +22,7 @@
 #include "base_governor_model.hpp"
 #include "base_exciter_model.hpp"
 #include "base_pss_model.hpp"
+#include "base_plant_model.hpp"
 #include "base_relay_model.hpp" //renke add
 
 namespace gridpack {
@@ -98,6 +99,11 @@ class BaseGeneratorModel
      * Set voltage on each generator
      */
     virtual void setVoltage(gridpack::ComplexType voltage);
+	
+	/**
+	 * Set terminal voltage frequency on each generator
+	 */
+	virtual void setFreq(double dFreq);
 
     /**
      * Write output from generators to a string.
@@ -146,6 +152,8 @@ class BaseGeneratorModel
 	
 	void setPss(boost::shared_ptr<BasePssModel> &p_pss);
 	
+	void setPlantController(boost::shared_ptr<BasePlantControllerModel> &p_plant);
+	
     void AddRelay(boost::shared_ptr<BaseRelayModel> &p_relay);  // renke add, add relay
     void ClearRelay();  // renke add, clear relay vector
 
@@ -154,6 +162,8 @@ class BaseGeneratorModel
     boost::shared_ptr<BaseExciterModel> getExciter();
 	
 	boost::shared_ptr<BasePssModel> getPss();
+	
+	boost::shared_ptr<BasePlantControllerModel> getPlantController();
 	
     boost::shared_ptr<BaseRelayModel> getRelay( int iRelay); //renke add
     void getRelayNumber( int &nrelay ); //renke add
@@ -184,6 +194,7 @@ class BaseGeneratorModel
     bool p_hasExciter;
     bool p_hasGovernor;
 	bool p_hasPss;
+	bool p_hasPlantController;
 	double p_wideareafreq;
 
   private:
@@ -191,6 +202,7 @@ class BaseGeneratorModel
     boost::shared_ptr<BaseGovernorModel> p_governor;
     boost::shared_ptr<BaseExciterModel> p_exciter;
 	boost::shared_ptr<BasePssModel> p_pss;
+	boost::shared_ptr<BasePlantControllerModel> p_plant;
     bool p_watch;
 	bool bStatus;
     std::vector< boost::shared_ptr<BaseRelayModel> > vp_relay;  //renke add, relay vector

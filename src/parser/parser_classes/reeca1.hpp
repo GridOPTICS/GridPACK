@@ -41,12 +41,20 @@ template <class _data_struct> class Reeca1Parser
         gridpack::component::DataCollection *data, int g_id)
     {
       double rval;
-      // GENERATOR_MODEL              "MODEL"        string
-      std::string stmp;
-      if (!data->getValue(GENERATOR_MODEL,&stmp,g_id)) {
-        data->addValue(GENERATOR_MODEL, data_struct.model, g_id);
+      bool bval;
+      // HAS_EXCITER
+      if (!data->getValue(HAS_EXCITER,&bval,g_id)) {
+        data->addValue(HAS_EXCITER, true, g_id);
       } else {
-        data->setValue(GENERATOR_MODEL, data_struct.model, g_id);
+        data->setValue(HAS_EXCITER, true, g_id);
+      }
+	  
+      // EXCITER_MODEL              "MODEL"        string
+      std::string stmp;
+      if (!data->getValue(EXCITER_MODEL,&stmp,g_id)) {
+        data->addValue(EXCITER_MODEL, data_struct.model, g_id);
+      } else {
+        data->setValue(EXCITER_MODEL, data_struct.model, g_id);
       }
 	  
 	  int ival;
@@ -373,16 +381,24 @@ template <class _data_struct> class Reeca1Parser
         gridpack::component::DataCollection *data, int g_id)
     {
       double rval;
+      bool bval;
       int nstr = split_line.size();
-      // GENERATOR_MODEL              "MODEL"                  string
+      // HAS_EXCITER
+      if (!data->getValue(HAS_EXCITER,&bval,g_id)) {
+        data->addValue(HAS_EXCITER, true, g_id);
+      } else {
+        data->setValue(HAS_EXCITER, true, g_id);
+      }
+	  
+      // EXCITER_MODEL              "MODEL"                  string
       std::string stmp, model;
       gridpack::utility::StringUtils util;
       model = util.trimQuotes(split_line[1]);
       util.toUpper(model);
-      if (!data->getValue(GENERATOR_MODEL, &stmp, g_id)) {
-        data->addValue(GENERATOR_MODEL, model.c_str(), g_id);
+      if (!data->getValue(EXCITER_MODEL, &stmp, g_id)) {
+        data->addValue(EXCITER_MODEL, model.c_str(), g_id);
       } else {
-        data->setValue(GENERATOR_MODEL, model.c_str(), g_id);
+        data->setValue(EXCITER_MODEL, model.c_str(), g_id);
       }
 
       int ival;

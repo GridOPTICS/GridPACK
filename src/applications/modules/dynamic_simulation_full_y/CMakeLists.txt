@@ -65,6 +65,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   base_classes/base_generator_model.cpp
   base_classes/base_exciter_model.cpp
   base_classes/base_pss_model.cpp
+  base_classes/base_plant_model.cpp
   base_classes/base_governor_model.cpp
   base_classes/base_relay_model.cpp
   base_classes/base_load_model.cpp
@@ -93,6 +94,9 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/psssim.cpp
   model_classes/tgov1.cpp
   model_classes/gdform.cpp
+  model_classes/regca1.cpp
+  model_classes/reeca1.cpp
+  model_classes/repca1.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -121,6 +125,7 @@ install(FILES
   base_classes/base_generator_model.hpp
   base_classes/base_exciter_model.hpp
   base_classes/base_pss_model.hpp
+  base_classes/base_plant_model.hpp
   base_classes/base_governor_model.hpp
   base_classes/base_relay_model.hpp
   base_classes/base_load_model.hpp
@@ -148,6 +153,9 @@ install(FILES
   model_classes/psssim.hpp
   model_classes/tgov1.hpp
   model_classes/gdform.hpp
+  model_classes/regca1.hpp
+  model_classes/reeca1.hpp
+  model_classes/repca1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
@@ -155,6 +163,7 @@ install(FILES
   base_classes/base_generator_model.hpp
   base_classes/base_exciter_model.hpp
   base_classes/base_pss_model.hpp
+  base_classes/base_plant_model.hpp
   base_classes/base_governor_model.hpp
   base_classes/base_relay_model.hpp
   base_classes/base_load_model.hpp
@@ -186,6 +195,9 @@ install(FILES
   model_classes/psssim.hpp
   model_classes/tgov1.hpp
   model_classes/gdform.hpp
+  model_classes/regca1.hpp
+  model_classes/reeca1.hpp
+  model_classes/repca1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 )
 

@@ -165,4 +165,31 @@ void gridpack::dynamic_simulation::BaseExciterModel::setExtBusNum(int ExtBusNum)
 void gridpack::dynamic_simulation::BaseExciterModel::setExtGenId(std::string ExtGenId)
 {
 }	
+
+void gridpack::dynamic_simulation::BaseExciterModel::setIpcmdIqcmd(double ipcmd, double iqcmd)
+{
+}
+
+void gridpack::dynamic_simulation::BaseExciterModel::setPrefQext(double pref, double qext)
+{
+}
+
+
+double gridpack::dynamic_simulation::BaseExciterModel::getPref(){
+	return 0.0;
+}
+
+double gridpack::dynamic_simulation::BaseExciterModel::getQext(){
+	return 0.0;
+}
+
+double gridpack::dynamic_simulation::BaseExciterModel::getIpcmd(){
+	return 0.0;
+}
+
+double gridpack::dynamic_simulation::BaseExciterModel::getIqcmd(){
+	return 0.0;
+}
+
+
 // Yuan added above 2020-6-23
