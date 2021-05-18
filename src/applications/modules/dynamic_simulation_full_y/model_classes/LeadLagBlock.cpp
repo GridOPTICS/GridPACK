@@ -33,15 +33,15 @@ gridpack::dynamic_simulation::LeadLagBlock::~LeadLagBlock(void)
 {
 }
 
-double gridpack::dynamic_simulation::LeadLagBlock::init(double dOut, double T1, double T2, double t_inc)
+double gridpack::dynamic_simulation::LeadLagBlock::init(double dOut, double T11, double T21, double t_inc1)
 {
-	T1 = T1;
-	T2 = T2;
+	T1 = T11;
+	T2 = T21;
 	double dIn;
 	
 	dIn = dOut;
 	
-	if (T1<4.0*t_inc){
+	if (T1<4.0*t_inc1){
 		x0 = 0.0;
 	}else{
 		x0 = dOut*(1.0 - T2/T1);

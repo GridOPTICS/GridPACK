@@ -696,8 +696,8 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
 //      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f",
 //          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm, Efd, LadIfd, genP, genQ);
 		  
-	  sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f",
-          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm, Efd, LadIfd);
+	  sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f",
+          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, Vterm, Efd, LadIfd, genP, genQ);
       return true;
 /*      if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);

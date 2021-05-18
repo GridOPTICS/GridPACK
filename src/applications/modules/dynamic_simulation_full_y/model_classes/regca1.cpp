@@ -85,7 +85,7 @@ void gridpack::dynamic_simulation::Regca1Generator::load(
   p_pg *= p_sbase;
   p_qg *= p_sbase;
 
-  if (!data->getValue(GENERATOR_MBASE, &MVABase, idx)) MVABase = 1000.0; // MVABase
+  if (!data->getValue(GENERATOR_MBASE, &MVABase, idx)) MVABase = 100.0; // MVABase
   if (!data->getValue(GENERATOR_REGCA_LVPLSW , &lvplsw, idx)) lvplsw = 0; 
   if (!data->getValue(GENERATOR_REGCA_TG  ,    &tg, idx))     tg = 0.02; 
   if (!data->getValue(GENERATOR_REGCA_RRPWR  , &rrpwr, idx))  rrpwr = 10.0; 
@@ -97,7 +97,7 @@ void gridpack::dynamic_simulation::Regca1Generator::load(
   if (!data->getValue(GENERATOR_REGCA_LVPNT0 , &lvpnt0, idx)) lvpnt0 = 0.4; 
   if (!data->getValue(GENERATOR_REGCA_LOLIM  , &lolim, idx))  lolim = -1.3; 
   if (!data->getValue(GENERATOR_REGCA_TFLTR  , &tfltr, idx))  tfltr = 0.02; 
-  if (!data->getValue(GENERATOR_REGCA_KHV  ,   &khv, idx))    khv = 0.01; 
+  if (!data->getValue(GENERATOR_REGCA_KHV  ,   &khv, idx))    khv = 0.0; 
   if (!data->getValue(GENERATOR_REGCA_LQRMAX , &iqrmax, idx)) iqrmax = 999.0; 
   if (!data->getValue(GENERATOR_REGCA_LQRMIN , &iqrmin, idx)) iqrmin = -999.0; 
   if (!data->getValue(GENERATOR_REGCA_ACCEL  , &accel, idx))  accel = 0.7; 
@@ -141,19 +141,21 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double mag,
   }
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
-  ip = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
-  iq = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
-
   
+  //ip = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
+  //iq = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
+  ip = genP/Vterm;
+  iq = genQ/Vterm;
+
   //initialize x2iq block
-  ipcmd = delayblocklimit_x2iq.init( iq, tg, iqrmax, iqrmin);
+  iqcmd = delayblocklimit_x2iq.init( iq, tg, iqrmax, iqrmin);
 
   //initialize x3vmeas block
   double lvpl;
   lvpl = delayblock_x3vmeas.init(Vterm, tfltr);
   
   //initialize x1ip block
-  ipcmd = delayblocklimit_x1ip.init(ip, tg, lvpl, -9999.0);
+  ipcmd = delayblocklimit_x1ip.init(ip, tg, rrpwr, -9999.0);
   
   //initialize the REEC and REPC model here---------------
   if (p_hasExciter){
@@ -188,7 +190,7 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double mag,
 	x3vmeas_1 = x3vmeas_0;
   
   if (bmodel_debug){
-    printf("Regca1Generator Ip = %f, Iq = %f\n", ip, iq);
+    printf("Regca1Generator Ip = %f, Iq = %f, Ipcmd = %f, Iqcmd = %f, pref = %f, qext = %f\n", ip, iq, ipcmd, iqcmd, pref, qext);
 	printf("Regca1Generator x1ip_0 = %f, x2iq_0 = %f, x3vmeas_0 = %f, \n", x1ip_0, x2iq_0, x3vmeas_0);
   }
   
@@ -252,8 +254,13 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor_currentInjection(b
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
   
-  IrNorton = ip;
-  IiNorton = iq;
+  //note, need to convert current to system mva base!!!!!!!!!!
+  double Ireal = ip * MVABase / p_sbase;
+  double Iimag = -iq * MVABase / p_sbase;  /// important, here Iimag has a minus sign!!!!!!
+  
+  // need to rotate the current by Theta to go to the system common reference frame!!!!!!!!!!!!!!
+  IrNorton = Ireal*cos(Theta) - Iimag*sin(Theta);
+  IiNorton = Ireal*sin(Theta) + Iimag*cos(Theta);
   
   gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
   
@@ -268,6 +275,7 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor_currentInjection(b
   }
   //printf("Regca1Generator::predictor_currentInjection: presentMag = %f, presentAng = %f \n", presentMag, presentAng);
   if (bmodel_debug){
+	printf("Regca1Generator::predictor_currentInjection: presentMag = %f, presentAng = %f, ip = %f, iq = %f, Ireal = %f, Iimag = %f \n", presentMag, presentAng, ip, iq, Ireal, Iimag);
 	printf("Regca1Generator::predictor_currentInjuction: p_INorton = %f, %f \n", real(p_INorton), imag(p_INorton));
   }
 } 
@@ -295,8 +303,11 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
 	double Vrterm = Vterm * cos(Theta);
 	double Viterm = Vterm * sin(Theta);
 	
-	genP = Vrterm*ip + Viterm*iq;
-	genQ = Viterm*ip - Vrterm*iq;
+	//genP = Vrterm*ip + Viterm*iq;
+	//genQ = Viterm*ip - Vrterm*iq;
+	
+	genP = Vterm*ip;
+	genQ = Vterm*iq;
 	
 	if (bmodel_debug){
 		printf("------renke debug in Regca1Generator::predictor, Vterm = %f, Theta = %f, Vrterm= %f, Viterm= %f, Ip= %f, Iq= %f\n", Vterm, Theta, Vrterm, Viterm, ip, iq);
@@ -388,8 +399,13 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector_currentInjection(b
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
   
-  IrNorton = ip;
-  IiNorton = iq;
+  //note, need to convert current to system mva base!!!!!!!!!!
+  double Ireal = ip * MVABase / p_sbase;
+  double Iimag = -iq * MVABase / p_sbase;  /// important, here Iimag has a minus sign!!!!!!
+  
+  // need to rotate the current by Theta to go to the system common reference frame!!!!!!!!!!!!!!
+  IrNorton = Ireal*cos(Theta) - Iimag*sin(Theta);
+  IiNorton = Ireal*sin(Theta) + Iimag*cos(Theta);
   
   gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm);   
   
@@ -426,8 +442,11 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector(
 	double Vrterm = Vterm * cos(Theta);
 	double Viterm = Vterm * sin(Theta);
 	
-	genP = Vrterm*ip + Viterm*iq;
-	genQ = Viterm*ip - Vrterm*iq;
+	//genP = Vrterm*ip + Viterm*iq;
+	//genQ = Viterm*ip - Vrterm*iq;
+	
+	genP = Vterm*ip;
+	genQ = Vterm*iq;
 	
 	if (bmodel_debug){
 		printf("------renke debug in Regca1Generator::corrector, Vterm = %f, Theta = %f, Vrterm= %f, Viterm= %f, Ip= %f, Iq= %f\n", Vterm, Theta, Vrterm, Viterm, ip, iq);
@@ -599,8 +618,8 @@ void gridpack::dynamic_simulation::Regca1Generator::getWatchValues(
     std::vector<double> &vals)
 {
   vals.clear();
-  vals.push_back(0.0);
-  vals.push_back(1.0);
+  vals.push_back(delayblocklimit_x1ip.x1);
+  vals.push_back(delayblocklimit_x2iq.x1);
   vals.push_back(genP*MVABase/p_sbase); //output at system mva base
   vals.push_back(genQ*MVABase/p_sbase); //output at system mva base
 }

@@ -71,9 +71,13 @@ int main(int argc, char **argv)
 
   std::vector<gridpack::dynamic_simulation::Event> BusFaults;
   BusFaults.clear();
+  
+  //printf ("------------- hadrec_main function before initializeDynSimu \n");
 
   // initialize dynamic simulation
   hadrec_app_sptr->initializeDynSimu(BusFaults);
+  
+  //printf ("------------- hadrec_main function after initializeDynSimu \n");
 
   bool debugoutput = false; // whether print out debug staffs
   bool boutputob = true;
@@ -127,11 +131,17 @@ if (debugoutput){
   linetrip.brch_from_bus_number = 6;
   linetrip.brch_to_bus_number = 7;
   linetrip.branch_ckt = "1 ";
+  
+  gridpack::hadrec::HADRECAction loadpchange;
+  loadpchange.actiontype = 3;
+  loadpchange.bus_number = 501;
+  loadpchange.percentage = 200.0;
 
 
   int isteps = 0;
   bool bApplyAct_LoadShedding = false;  // whether apply the load shedding action in the simulation steps
   bool bApplyAct_LineTripping = false;  // whether apply the line tripping action in the simulation steps
+  bool bApplyAct_LoadPchange = false;  // apply a sudden load P change, could mimic fault
   std::vector<double> ob_vals;
   int idxtmp;
 
@@ -255,6 +265,10 @@ if (debugoutput){
       hadrec_app_sptr->applyAction(loadshedact1);
       //printf("----renke debug load shed, isteps: %d \n", isteps);
     }
+	
+	if ( bApplyAct_LoadPchange && isteps == 400){  // apply a load change with 1000 MW, mimic fault
+		hadrec_app_sptr->applyAction(loadpchange);
+	}
 
     if ( bApplyAct_LineTripping && isteps == 400){
       if (me == 0) printf("----renke debug line trip, isteps: %d \n", isteps);

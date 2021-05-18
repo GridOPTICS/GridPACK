@@ -57,19 +57,19 @@ void gridpack::dynamic_simulation::Reeca1Model::load(
   data->getValue(BUS_NUMBER,&p_bus_id);
   data->getValue(GENERATOR_ID,&p_ckt,idx);
 
-  if (!data->getValue(GENERATOR_MBASE, &MVABase, idx)) MVABase = 1000.0; // MVABase
-  if (!data->getValue(GENERATOR_REECA_TRV , &trv, idx))     trv = 0; 
+  if (!data->getValue(GENERATOR_MBASE, &MVABase, idx)) MVABase = 100.0; // MVABase
+  if (!data->getValue(GENERATOR_REECA_TRV , &trv, idx))     trv = 0.02; 
   if (!data->getValue(GENERATOR_REECA_DBD1 ,    &dbd1, idx))    dbd1 = -0.05; 
   if (!data->getValue(GENERATOR_REECA_DBD2 , &dbd2, idx))    dbd2 = 0.05; 
-  if (!data->getValue(GENERATOR_REECA_VDIP , &vdip, idx))    vdip = 0.6; 
-  if (!data->getValue(GENERATOR_REECA_VUP , &vup, idx))     vup = 1.3; 
-  if (!data->getValue(GENERATOR_REECA_KQV , &kqv, idx))     kqv = 2.0; 
+  if (!data->getValue(GENERATOR_REECA_VDIP , &vdip, idx))    vdip = -99.0; 
+  if (!data->getValue(GENERATOR_REECA_VUP , &vup, idx))     vup = 99.0; 
+  if (!data->getValue(GENERATOR_REECA_KQV , &kqv, idx))     kqv = 0.0; 
   if (!data->getValue(GENERATOR_REECA_IMAX , &imax, idx))    imax = 2.0; 
   if (!data->getValue(GENERATOR_REECA_TIQ , &tiq, idx))     tiq = 0.02; 
   if (!data->getValue(GENERATOR_REECA_DPMAX , &dpmax, idx))   dpmax = 999.0; 
   if (!data->getValue(GENERATOR_REECA_DPMIN , &dpmin, idx))   dpmin = -999.0; 
   if (!data->getValue(GENERATOR_REECA_PMAX , &pmax, idx))    pmax = 1.5; 
-  if (!data->getValue(GENERATOR_REECA_PMIN ,   &pmin, idx))    pmin = 0.0; 
+  if (!data->getValue(GENERATOR_REECA_PMIN ,   &pmin, idx))    pmin = 0.04; 
   if (!data->getValue(GENERATOR_REECA_TPORD , &tpord, idx))  tpord = 0.02; 
   ipmax = imax;
   ipmin = -imax;
@@ -104,7 +104,10 @@ void gridpack::dynamic_simulation::Reeca1Model::init(double mag,
     qext = iqtmp * vfilt;
     
     double pordtmp = ipcmd*vfilt;
+	//if (bmodel_debug) printf ("Reeca1Model::init, test 1 tpord: %f, pmax: %f, pmin: %f \n", tpord, pmax, pmin);
     pref = delayblocklimit_x2pord.init(pordtmp, tpord, pmax, pmin);
+	
+	//if (bmodel_debug) printf ("Reeca1Model::init, test 2 tpord: %f, pmax: %f, pmin: %f \n", delayblocklimit_x2pord.Ts, delayblocklimit_x2pord.Max, delayblocklimit_x2pord.Min);
   
     x1vfilt_0 = delayblock_x1vfilt.x0;
 	x2pord_0 = delayblocklimit_x2pord.x0;
@@ -151,9 +154,16 @@ void gridpack::dynamic_simulation::Reeca1Model::predictor(
 	//-----------P path--------------------------
 	
 	//-----------later add the P ramping up and down limit
+	//printf ("----!!!!repc debug Reeca1Model predictor test 0: delayblocklimit_x2pord.x0:  %15.11f,  \n", delayblocklimit_x2pord.x0);
 	
 	double tmppord = delayblocklimit_x2pord.predictor(pref, t_inc, flag);
+	
+	//printf ("----!!!!repc debug Reeca1Model predictor test 1: delayblocklimit_x2pord.x0:  %15.11f,  \n", delayblocklimit_x2pord.x0),
+	
 	ipcmd = tmppord/vfilt_clip;
+	
+	//printf ("----!!!!repc debug Reeca1Model predictor test 2: pref:  %15.11f, tmppord:  %15.11f, vfilt_clip: %15.11f, ipcmd, %15.11f, ipmax: %15.11f,, ipmin: %15.11f, \n", 
+	//pref, tmppord, vfilt_clip, ipcmd, ipmax, ipmin);
 	
 	if (ipcmd > ipmax) ipcmd = ipmax;
 	if (ipcmd < ipmin) ipcmd = ipmin;

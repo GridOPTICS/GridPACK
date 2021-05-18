@@ -953,7 +953,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           = genFactory.createGeneratorModel(model);
 		if (model == "REGCA1"){
 			bcomputefreq = true;
-			printf ("----------renke debug in fullbus::load(), set bus bcomputefreq as true due to REGCA1 \n\n");
+			//printf ("----------renke debug in fullbus::load(), set bus bcomputefreq as true due to REGCA1 \n\n");
 		}
         has_ex = false;
         has_gov = false;

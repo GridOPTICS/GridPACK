@@ -32,9 +32,9 @@ gridpack::dynamic_simulation::DelayBlock::~DelayBlock(void)
 {
 }
 
-double gridpack::dynamic_simulation::DelayBlock::init(double dOut, double Ts)
+double gridpack::dynamic_simulation::DelayBlock::init(double dOut, double Ts1)
 {
-	Ts = Ts;
+	Ts = Ts1;
 	double dIn;
 	dIn = dOut;
 	x0 = dOut;

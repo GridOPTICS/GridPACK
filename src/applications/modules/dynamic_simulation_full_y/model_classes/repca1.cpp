@@ -30,7 +30,7 @@
  */
 gridpack::dynamic_simulation::Repca1Model::Repca1Model(void)
 {
-  bmodel_debug = true;
+  bmodel_debug = false;
 }
 
 /**
@@ -52,31 +52,31 @@ void gridpack::dynamic_simulation::Repca1Model::load(
     data, int idx)
 {
 
-  if (!data->getValue(GENERATOR_REPCA_KC,    &kc     ,idx))   kc =    0.01;
+  if (!data->getValue(GENERATOR_REPCA_KC,    &kc     ,idx))   kc =    0.02;
   if (!data->getValue(GENERATOR_REPCA_TFLTR, &tfltr  ,idx))   tfltr = 0.02;
-  if (!data->getValue(GENERATOR_REPCA_DBD1,  &dbd1   , idx))  dbd1 =  -0.05;
-  if (!data->getValue(GENERATOR_REPCA_DBD2,  &dbd2   , idx))  dbd2  = 0.05;
-  if (!data->getValue(GENERATOR_REPCA_EMAX,  &emax   , idx))  emax  = 999.0;
-  if (!data->getValue(GENERATOR_REPCA_EMIN,  &emin   , idx))  emin   = -999.0;
+  if (!data->getValue(GENERATOR_REPCA_DBD1,  &dbd1   , idx))  dbd1 =  -0.0;
+  if (!data->getValue(GENERATOR_REPCA_DBD2,  &dbd2   , idx))  dbd2  = 0.0;
+  if (!data->getValue(GENERATOR_REPCA_EMAX,  &emax   , idx))  emax  = 0.3;
+  if (!data->getValue(GENERATOR_REPCA_EMIN,  &emin   , idx))  emin   = -0.3;
   if (!data->getValue(GENERATOR_REPCA_QMAX,  &qmax   , idx))  qmax  = 0.56;
   if (!data->getValue(GENERATOR_REPCA_QMIN,  &qmin   , idx))  qmin  = -0.56;
-  if (!data->getValue(GENERATOR_REPCA_KP,    &kp     , idx))  kp   =  0.5;
-  if (!data->getValue(GENERATOR_REPCA_KI,    &ki     , idx))  ki    = 2.0;
-  if (!data->getValue(GENERATOR_REPCA_TFT,   &tft    , idx))  tft    = 0.09;
-  if (!data->getValue(GENERATOR_REPCA_TFV,   &tfv    , idx))  tfv    = 0.1;
-  if (!data->getValue(GENERATOR_REPCA_FDBD1, &fdbd1   , idx)) fdbd1  = -0.005;
-  if (!data->getValue(GENERATOR_REPCA_FDBD2, &fdbd2   , idx)) fdbd2  = 0.005;
+  if (!data->getValue(GENERATOR_REPCA_KP,    &kp     , idx))  kp   =  18.0;
+  if (!data->getValue(GENERATOR_REPCA_KI,    &ki     , idx))  ki    = 5.0;
+  if (!data->getValue(GENERATOR_REPCA_TFT,   &tft    , idx))  tft    = 0.0;
+  if (!data->getValue(GENERATOR_REPCA_TFV,   &tfv    , idx))  tfv    = 0.05;
+  if (!data->getValue(GENERATOR_REPCA_FDBD1, &fdbd1   , idx)) fdbd1  = 0.0;
+  if (!data->getValue(GENERATOR_REPCA_FDBD2, &fdbd2   , idx)) fdbd2  = 0.0;
 												               
   if (!data->getValue(GENERATOR_REPCA_DDN,   &ddn    , idx))  ddn    = 20.0;
-  if (!data->getValue(GENERATOR_REPCA_DUP,   &dup    , idx))  dup    =  20.0;
-  if (!data->getValue(GENERATOR_REPCA_TP,    &tp     , idx))  tp     = 0.02;
+  if (!data->getValue(GENERATOR_REPCA_DUP,   &dup    , idx))  dup    =  -10.0;
+  if (!data->getValue(GENERATOR_REPCA_TP,    &tp     , idx))  tp     = 0.05;
   if (!data->getValue(GENERATOR_REPCA_FEMAX, &femax   , idx)) femax  = 999.0;
   if (!data->getValue(GENERATOR_REPCA_FEMIN, &femin   , idx)) femin  = -999.0;
-  if (!data->getValue(GENERATOR_REPCA_KPG,   &kpg    , idx))  kpg    = 0.5; 
-  if (!data->getValue(GENERATOR_REPCA_KIG,   &kig    , idx))  kig    = 2.0;
+  if (!data->getValue(GENERATOR_REPCA_KPG,   &kpg    , idx))  kpg    = 0.1; 
+  if (!data->getValue(GENERATOR_REPCA_KIG,   &kig    , idx))  kig    = 0.05;
   if (!data->getValue(GENERATOR_REPCA_PMAX,  &pmax   , idx))  pmax   = 1.5;
   if (!data->getValue(GENERATOR_REPCA_PMIN,  &pmin   , idx))  pmin   =  -1.5;
-  if (!data->getValue(GENERATOR_REPCA_TG,    &tg     , idx))  tg     = 0.02;
+  if (!data->getValue(GENERATOR_REPCA_TG,    &tg     , idx))  tg     = 0.1;
   
   if (bmodel_debug){
 	printf("----!!renke debug:  repca1 model load() function: bus, %d,  kc=%12.6f, tfltr=%12.6f, dbd1=%12.6f, dbd2=%12.6f, emax=%12.6f, emin=%12.6f, qmax=%12.6f, qmin=%12.6f, kp=%12.6f, ki=%12.6f, tft=%12.6f, tfv =%12.6f \n", p_bus_id, kc, tfltr, dbd1, dbd2, emax, emin, qmax, qmin, kp, ki, tft, tfv);
@@ -97,7 +97,9 @@ void gridpack::dynamic_simulation::Repca1Model::init(double mag, double ang, dou
   //
   double tmpout;
   tmpout = delayblock_x7pref.init(pref, tg);
+  //printf ("----!!!!repc debug init test 1: tmpout: %f, kpg: %f, kig: %f, pmax: %f, pmin: %f\n", tmpout, kpg, kig, pmax, pmin);
   tmpout = piblock_x6ppi.init(tmpout, kpg, kig, pmax, pmin);
+  //printf ("----!!!!repc debug init test 2: tmpout: %f, piblock_x6ppi.x0: %f\n", tmpout, piblock_x6ppi.x0);
   
   double pdelaytmp = delayblock_x5pmeas.init(genP, tp);
   plant_pref   = tmpout+ pdelaytmp;
@@ -113,7 +115,8 @@ void gridpack::dynamic_simulation::Repca1Model::init(double mag, double ang, dou
   vref = tmpout + qdelaytmp;
   
   if (bmodel_debug){
-	printf("----renke debug: Repca1Model init states:  bus, %d, %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", p_bus_id, delayblock_x1vmeas.x0, piblock_x3qpi.x0, leadlagblock_x4qext.x0, 
+	printf("----renke debug: Repca1Model init states:  bus, %d, x1vmeas: %12.6f,  piblock_x3qpi: %12.6f,  leadlagblock_x4qext: %12.6f,  delayblock_x5pmeas: %12.6f,  piblock_x6ppi: %12.6f,  delayblock_x7pref: %12.6f \n", 
+	p_bus_id, delayblock_x1vmeas.x0, piblock_x3qpi.x0, leadlagblock_x4qext.x0, 
 	      delayblock_x5pmeas.x0, piblock_x6ppi.x0, delayblock_x7pref.x0); 
 		  
     printf("----renke debug: Repca1Model init states:  bus, %d, pref, %12.6f, qext, %12.6f, vref, %12.6f, freqref, %12.6f, plant_pref, %12.6f, genP, %12.6f, genQ, %2.6f, Vterm, %12.6f \n", 
@@ -137,10 +140,16 @@ void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool fla
 	*/
 	
 	//-----Qexit flow path-------------------
+	
 	double tmpin = genQ*kc + Vterm;
+	//printf ("----!!!!repc debug Repca1Model predictor test 1: genQ: %f, kc: %15.11f, Vterm: %15.11f tmpin: %15.11f\n", genQ, kc, Vterm, tmpin);
+	
 	double tmpout;
 	tmpout = delayblock_x1vmeas.predictor(tmpin, t_inc, flag);
+	//printf ("----!!!!repc debug Repca1Model predictor test 2: tmpout:  %15.11f \n", tmpout);
+	
 	tmpout = vref - tmpout;
+	//printf ("----!!!!repc debug Repca1Model predictor test 3: vref: %15.11f, tmpout:  %15.11f \n", vref, tmpout);
 	
 	//----------pass the deadband ---------add later
 	
@@ -148,6 +157,8 @@ void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool fla
 	if (tmpout<emin) tmpout = emin;
 	
 	tmpout = piblock_x3qpi.predictor(tmpout, t_inc, flag);
+	
+	//printf ("----!!!!repc debug Repca1Model predictor test 4: tmpout:  %15.11f \n",  tmpout);
 	
 	qext = leadlagblock_x4qext.predictor(tmpout, t_inc, flag);
 	
@@ -157,10 +168,10 @@ void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool fla
 	//----------pass the deadband ---------add later
 		
 	if (tmpin >= 0.0){
-		tmpin = ddn*tmpin;
+		tmpin = dup*tmpin;
 	}else
 	{
-		tmpin = dup*tmpin;
+		tmpin = ddn*tmpin;
 	}
 	
 	double pouttmp = delayblock_x5pmeas.predictor(genP, t_inc, flag);
@@ -173,7 +184,8 @@ void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool fla
 	pref = delayblock_x7pref.predictor(tmpout, t_inc, flag);
 	
 	if (bmodel_debug){
-		printf("----renke debug: repca1 predictor dx:  bus, %d, %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", p_bus_id, delayblock_x1vmeas.dx0, piblock_x3qpi.dx0, leadlagblock_x4qext.dx0, 
+		printf("----renke debug: repca1 predictor dx:  bus, %d, delayblock_x1vmeas %12.6f,  piblock_x3qpi %12.6f,  leadlagblock_x4qext %12.6f,  delayblock_x5pmeas %12.6f,  piblock_x6ppi %12.6f,  delayblock_x7pref %12.6f \n", 
+		p_bus_id, delayblock_x1vmeas.dx0, piblock_x3qpi.dx0, leadlagblock_x4qext.dx0, 
 	      delayblock_x5pmeas.dx0, piblock_x6ppi.dx0, delayblock_x7pref.dx0); 
 		 
 		printf("----renke debug: repca1 predictor other:  bus, %d, pref = %12.6f, qext = %12.6f, genP = %12.6f, genQ = %12.6f, busfreq = %12.6f, Vterm = %12.6f, \n", 
@@ -225,7 +237,7 @@ void gridpack::dynamic_simulation::Repca1Model::corrector(double t_inc, bool fla
 	pref = delayblock_x7pref.corrector(tmpout, t_inc, flag);
 	
 	if (bmodel_debug){
-		printf("----renke debug: repca1 corrector dx:  bus, %d, %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", 
+		printf("----renke debug: repca1 corrector dx:  bus, %d, delayblock_x1vmeas %12.6f,  piblock_x3qpi %12.6f,  leadlagblock_x4qext %12.6f,  delayblock_x5pmeas %12.6f,  piblock_x6ppi %12.6f,  delayblock_x7pref %12.6f \n", 
 		p_bus_id, delayblock_x1vmeas.dx1, piblock_x3qpi.dx1, leadlagblock_x4qext.dx1, 
 	    delayblock_x5pmeas.dx1, piblock_x6ppi.dx1, delayblock_x7pref.dx1); 
 		 
@@ -249,7 +261,7 @@ void gridpack::dynamic_simulation::Repca1Model::setBusFreq(double freq)
 void gridpack::dynamic_simulation::Repca1Model::setPrefQext(double Pref, double Qext)
 {
 	pref = Pref;
-	qext = qext;
+	qext = Qext;
 }
 
 double gridpack::dynamic_simulation::Repca1Model::getPref( )

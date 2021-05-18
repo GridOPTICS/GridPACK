@@ -37,17 +37,20 @@ gridpack::dynamic_simulation::PIBlockwithLimit::~PIBlockwithLimit(void)
 {
 }
 
-double gridpack::dynamic_simulation::PIBlockwithLimit::init(double dOut, double Kp, double Ki, double Max, double Min)
+double gridpack::dynamic_simulation::PIBlockwithLimit::init(double dOut, double Kp1, double Ki1, double Max1, double Min1)
 {
-	Kp = Kp;
-	Ki = Ki;
-	Max = Max;
-	Min = Min;
+	Kp = Kp1;
+	Ki = Ki1;
+	Max = Max1;
+	Min = Min1;
 	double dIn;
-	if (abs(Ki) > 0.000000001){
+	//printf ("---rk debug PIBlockwithLimit::init, Ki: %f, Kp: %f, abs of Ki: %f \n", Ki, Kp, abs(Ki));
+	if ( Ki > 0.00001 ){
+		
 		x0 = dOut;
 		dIn = 0.0;
 	}else{
+		//printf ("---rk debug PIBlockwithLimit::init, entering the Ki == 0, Ki: %f, Kp: %f, abs of Ki: %f\n", Ki, Kp, abs(Ki));
 		x0 = 0.0;
 		dIn = dOut/Kp;
 	}
@@ -65,7 +68,7 @@ double gridpack::dynamic_simulation::PIBlockwithLimit::predictor(double In, doub
 		x0 = x1;
 	}  
 	
-	if (abs(Ki) < 0.000000001){
+	if (Ki < 0.00001){
 		dx0 = 0.0;
 	}else{
 		double TempMax = Max - Kp*In;
@@ -106,7 +109,7 @@ double gridpack::dynamic_simulation::PIBlockwithLimit::predictor(double In, doub
 
 double gridpack::dynamic_simulation::PIBlockwithLimit::corrector(double In, double t_inc, bool flag)
 {
-	if (abs(Ki) < 0.000000001){
+	if (Ki < 0.00001){
 		dx1 = 0.0;
 	}else{
 		double TempMax = Max - Kp*In;
