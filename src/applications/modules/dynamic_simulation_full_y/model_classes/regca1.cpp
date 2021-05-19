@@ -360,8 +360,10 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
 	
 	if (bmodel_debug){
 		printf("------renke debug in Regca1Generator::predictor, presentMag, presentAng = %12.6f, %12.6f \n", presentMag, presentAng);
-		printf("------------predictor output results: %8d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f  \n",
+		printf("------Regca1Generator test 1 predictor output x results: %8d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f  \n",
           p_bus_id,  delayblocklimit_x1ip.x0, delayblocklimit_x2iq.x0, delayblock_x3vmeas.x0,  Vterm, Theta, genP, genQ);
+		printf("------Regca1Generator test 2 predictor other: %8d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,\n",
+          p_bus_id,  ipcmd,  ip, iqcmd, iq, Vterm);
 	}
 	
 	if (p_tripped){

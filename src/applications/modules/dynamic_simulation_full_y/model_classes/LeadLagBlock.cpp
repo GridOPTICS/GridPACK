@@ -17,6 +17,7 @@
 
 //#include "boost/smart_ptr/shared_ptr.hpp"
 #include "LeadLagBlock.hpp"
+#include <cstdio>
 
 /**
  * Basic constructor
@@ -59,6 +60,8 @@ double gridpack::dynamic_simulation::LeadLagBlock::predictor(double In, double t
     if (!flag) {
 		x0 = x1;
 	}  
+	
+	//printf("--- debug LeadLagBlock predictor test 1: In = %f, x = %f, T2 = %f, T1 = %f \n", In, x0, T2, T1);
 	
 	if (T1<4.0*t_inc){
 		dx0 = 0.0;

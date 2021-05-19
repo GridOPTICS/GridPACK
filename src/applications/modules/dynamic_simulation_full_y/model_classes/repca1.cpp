@@ -156,11 +156,15 @@ void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool fla
 	if (tmpout>emax) tmpout = emax;
 	if (tmpout<emin) tmpout = emin;
 	
+	//printf ("----!!!!repc debug Repca1Model predictor test 31: tmpout:  %15.11f, emax:  %15.11f, emin:  %15.11f \n", tmpout, emax, emin);
+	
 	tmpout = piblock_x3qpi.predictor(tmpout, t_inc, flag);
 	
 	//printf ("----!!!!repc debug Repca1Model predictor test 4: tmpout:  %15.11f \n",  tmpout);
 	
 	qext = leadlagblock_x4qext.predictor(tmpout, t_inc, flag);
+	
+	//printf ("----!!!!repc debug Repca1Model predictor test 5: tmpout:  %15.11f \n",  qext);
 	
 	//----Pref flow path---------------
 	tmpin = freqref - busfreq;
@@ -187,8 +191,15 @@ void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool fla
 		printf("----renke debug: repca1 predictor dx:  bus, %d, delayblock_x1vmeas %12.6f,  piblock_x3qpi %12.6f,  leadlagblock_x4qext %12.6f,  delayblock_x5pmeas %12.6f,  piblock_x6ppi %12.6f,  delayblock_x7pref %12.6f \n", 
 		p_bus_id, delayblock_x1vmeas.dx0, piblock_x3qpi.dx0, leadlagblock_x4qext.dx0, 
 	      delayblock_x5pmeas.dx0, piblock_x6ppi.dx0, delayblock_x7pref.dx0); 
+		  
+		printf("----renke debug test 1: repca1 predictor x:  bus, %d,  %12.6f,   %12.6f,   %12.6f,   %12.6f,   %12.6f,   %12.6f \n", 
+		p_bus_id, delayblock_x1vmeas.x0, piblock_x3qpi.x0, leadlagblock_x4qext.x0, 
+	      delayblock_x5pmeas.x0, piblock_x6ppi.x0, delayblock_x7pref.x0); 
 		 
 		printf("----renke debug: repca1 predictor other:  bus, %d, pref = %12.6f, qext = %12.6f, genP = %12.6f, genQ = %12.6f, busfreq = %12.6f, Vterm = %12.6f, \n", 
+		p_bus_id, pref, qext, genP, genQ, busfreq, Vterm);
+		
+		printf("----renke debug test 2: repca1 predictor other:  bus, %d,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f, \n", 
 		p_bus_id, pref, qext, genP, genQ, busfreq, Vterm);
 	}
 }
@@ -240,6 +251,10 @@ void gridpack::dynamic_simulation::Repca1Model::corrector(double t_inc, bool fla
 		printf("----renke debug: repca1 corrector dx:  bus, %d, delayblock_x1vmeas %12.6f,  piblock_x3qpi %12.6f,  leadlagblock_x4qext %12.6f,  delayblock_x5pmeas %12.6f,  piblock_x6ppi %12.6f,  delayblock_x7pref %12.6f \n", 
 		p_bus_id, delayblock_x1vmeas.dx1, piblock_x3qpi.dx1, leadlagblock_x4qext.dx1, 
 	    delayblock_x5pmeas.dx1, piblock_x6ppi.dx1, delayblock_x7pref.dx1); 
+		
+		printf("----renke debug test 1: repca1 corrector x:  bus, %d,  %12.6f,   %12.6f,   %12.6f,   %12.6f,   %12.6f,   %12.6f \n", 
+		p_bus_id, delayblock_x1vmeas.x1, piblock_x3qpi.x1, leadlagblock_x4qext.x1, 
+	      delayblock_x5pmeas.x1, piblock_x6ppi.x1, delayblock_x7pref.x1);
 		 
 		printf("----renke debug: repca1 corrector other:  bus, %d, pref = %12.6f, qext = %12.6f, genP = %12.6f, genQ = %12.6f, busfreq = %12.6f, Vterm = %12.6f, \n", 
 		p_bus_id, pref, qext, genP, genQ, busfreq, Vterm);

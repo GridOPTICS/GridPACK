@@ -175,7 +175,9 @@ void gridpack::dynamic_simulation::Reeca1Model::predictor(
 	if (bmodel_debug){
 		printf("------renke debug in Reeca1Model::predictor other, pref = %12.6f, qext = %12.6f, vfilt_clip = %12.6f, ipcmd = %12.6f, iqcmd = %12.6f, \n", 
 		pref, qext, vfilt_clip, ipcmd, iqcmd);
-		printf("------Reeca1Model::predictor states: bus, %8d, %12.6f, %12.6f, %12.6f  \n",
+		printf("------Reeca1Model debug test 1::predictor other, %12.6f,  %12.6f,  %12.6f, %12.6f,  %12.6f,  %12.6f, \n", 
+		pref, qext, Vterm, vfilt_clip, ipcmd, iqcmd);
+		printf("------Reeca1Model debug test 2::predictor states: bus, %8d, %12.6f, %12.6f, %12.6f  \n",
           p_bus_id,  delayblock_x1vfilt.x0, delayblocklimit_x2pord.x0, delayblock_x3qv.x0);
 	}
 	

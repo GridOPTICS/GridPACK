@@ -81,7 +81,7 @@ double gridpack::dynamic_simulation::DelayBlockwithLimit::predictor(double In, d
 	//printf ("----delayblock test 5: dx0: %15.11f  \n", dx0);
 	
 	if ( dx0 > 0.0 && x0 >= Max) dx0 = 0.0;
-	if ( dx0 < 0.0 && x0 >= Min) dx0 = 0.0;
+	if ( dx0 < 0.0 && x0 <= Min) dx0 = 0.0;
 	
 	//printf ("----delayblock test 6: dx0: %15.11f  \n", dx0);
 	// finished dx compuatation
@@ -119,7 +119,7 @@ double gridpack::dynamic_simulation::DelayBlockwithLimit::corrector(double In, d
 	}
 	
 	if ( dx1 > 0.0 && x1 >= Max) dx1 = 0.0;
-	if ( dx1 < 0.0 && x1 >= Min) dx1 = 0.0;
+	if ( dx1 < 0.0 && x1 <= Min) dx1 = 0.0;
 	// finished dx compuatation
 	
 	//compute output
