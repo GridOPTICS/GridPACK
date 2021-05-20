@@ -175,6 +175,8 @@ elif [ $host == "WE32673" ]; then
     if [ "$shared"x = "ON"x ]; then
         pdir="$prefix/petsc-3.8.4" 
         parch="arch-macosx-clang-real-shared-c" 
+        pdir="$prefix/petsc.gitlab"
+        parch="macosx-real-cpp-static"
     else
         pdir="$prefix/petsc-3.8.4"
         parch="arch-macosx-clang-real-opt"
@@ -187,6 +189,8 @@ elif [ $host == "WE32673" ]; then
         # parch="macosx-complex-c-static"
         # pdir="$prefix/petsc-3.12.3"
         # parch="macosx-complex-c-static"
+        pdir="$prefix/petsc.gitlab"
+        parch="macosx-real-cpp-shared"
     fi
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
