@@ -1824,7 +1824,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::DSFullBus::getComplexVoltage
 void gridpack::dynamic_simulation::DSFullBus::computeBusVolFrequency( double timestep ) //renke add
 {
 	const double dFREQ_SYS = 60.0;
-	const double dTf = 0.05;
+	const double dTf = 0.1;
 	const double pi = 4.0*atan(1.0);
 	const double dw0 = 2.0*dFREQ_SYS*pi;
 	

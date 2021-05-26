@@ -489,9 +489,10 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   //Network
   Ir = + Id * sin(x1d_1) + Iq * cos(x1d_1);
   Ii = - Id * cos(x1d_1) + Iq * sin(x1d_1);
-    
-  genP = Vrterm*Ir + Viterm*Ii;
-  genQ = Viterm*Ir - Vrterm*Ii;
+   
+  //genP and genQ should not be updated here to output values, as here the states values are from the predictor, is not accurate enough
+  //genP = Vrterm*Ir + Viterm*Ii;
+  //genQ = Viterm*Ir - Vrterm*Ii;
   
   IrNorton = + Idnorton * sin(x1d_1) + Iqnorton * cos(x1d_1);
   IiNorton = - Idnorton * cos(x1d_1) + Iqnorton * sin(x1d_1); 
@@ -582,7 +583,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
   }
 
   if (p_hasGovernor) {
-	  p_governor->setRotorSpeedDeviation(x2w);
+	  p_governor->setRotorSpeedDeviation(x2w_1);
 	  p_governor->corrector(t_inc, flag);
   }
 

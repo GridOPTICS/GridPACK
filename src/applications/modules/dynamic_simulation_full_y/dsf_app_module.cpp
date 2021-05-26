@@ -62,6 +62,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   bapplyLoadChangeQ = false;
   p_report_dummy_obs = false;
   
+  p_biterative_solve_network = false;
+  
 }
 
 /**
@@ -3169,10 +3171,19 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     timer->start(t_psolve);
     //boost::shared_ptr<gridpack::math::Vector> volt_full(INorton_full->clone());
     volt_full->zero();
-#if 0
-    bool flag_chk = true;
+	
+//!!!!!!!!!!iteratively solve or not, rk!!!!
+ double ITER_TOL = 1.0e-7;
+ int MAX_ITR_NO = 8;
+ bool flag_chk;
+ int iter_num_record;
+ bool iter_debug = false;
+ if (p_biterative_solve_network){
+    flag_chk = true;
+	iter_num_record = 0;
+	if (iter_debug) printf ("--------------------------in iterative predictor current injection, Simu_Current_Step: %d------------------- \n", Simu_Current_Step);
     while (flag_chk == true ) {
-		
+
 			volt_full->zero();
 			
 			if (flagP == 0) {
@@ -3184,12 +3195,12 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 			}
 			
 
-			printf("1: itr test:----previous predictor_INorton_full:\n");
-			INorton_full->print();
+			//printf("1: itr test:----previous predictor_INorton_full:\n");
+			//INorton_full->print();
 
 			INorton_full_chk->equate(*INorton_full);
-			printf("2: itr test:----predictor_INorton_full_chk:\n");
-			INorton_full_chk->print();
+			//printf("2: itr test:----predictor_INorton_full_chk:\n");
+			//INorton_full_chk->print();
 
 			nbusMap_sptr->mapToBus(volt_full);
 			p_factory->setVolt(false);
@@ -3211,25 +3222,25 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 			p_factory->setMode(make_INorton_full);
 			nbusMap_sptr->mapToVector(INorton_full);
 			
-			printf("5: itr test:----predictor_INorton_full:\n");
-			INorton_full->print();
+			//printf("5: itr test:----predictor_INorton_full:\n");
+			//INorton_full->print();
 			
 			//multiply(*ybus_fy, *volt_full, *INorton_full_chk);
 			INorton_full_chk->add(*INorton_full, -1.0);
 			max_INorton_full=abs(INorton_full_chk->normInfinity());
 			
-			if (max_INorton_full <1.0e-8) {
+			if (max_INorton_full < ITER_TOL || iter_num_record >= MAX_ITR_NO) {
 				flag_chk = false;
 			} else {
-				
-				printf("max_INorton_full = %8.4f \n", max_INorton_full);
+				iter_num_record += 1;
+				if (iter_debug) printf("              predictor iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
 				//printf("-----INorton_full : \n");
 				//INorton_full->print();
 				//printf("-----INorton_full_chk - INorton_full : \n");
 				//INorton_full_chk->print();
 			}
-    }
-#else
+    }// end of while
+ }else {// p_biterative_solve_network = false
     if (flagP == 0) {
       solver_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 1) {
@@ -3237,7 +3248,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     } else if (flagP == 2) {
       solver_posfy_sptr->solve(*INorton_full, *volt_full);
     }
-#endif
+  } // end of if (p_biterative_solve_network)
     timer->stop(t_psolve);
 
 #ifdef MAP_PROFILE
@@ -3447,8 +3458,10 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     timer->start(t_csolve);
     volt_full->zero();
 
-#if 0
+//!!!!!!!!!!iteratively solve or not, rk!!!!
+  if (p_biterative_solve_network){
     flag_chk = true;
+	iter_num_record = 0;
     while (flag_chk == true ) {
 		
 			volt_full->zero();
@@ -3470,30 +3483,31 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 			}
 			
 			INorton_full_chk->equate(*INorton_full);
-			printf("itr test:----corrector_INorton_full_chk:\n");
-			INorton_full_chk->print();
+			//printf("itr test:----corrector_INorton_full_chk:\n");
+			//INorton_full_chk->print();
 			
 			p_factory->setMode(make_INorton_full);
 			nbusMap_sptr->mapToVector(INorton_full);
 			
-			printf("itr test:----corrector_INorton_full:\n");
-			INorton_full->print();
+			//printf("itr test:----corrector_INorton_full:\n");
+			//INorton_full->print();
 			
 			//multiply(*ybus_fy, *volt_full, *INorton_full_chk);
 			INorton_full_chk->add(*INorton_full, -1.0);
 			max_INorton_full=abs(INorton_full_chk->normInfinity());
 			
-			if (max_INorton_full <1.0e-8) {
+			if (max_INorton_full < ITER_TOL || iter_num_record>= MAX_ITR_NO ) {
 				flag_chk = false;
 			} else {
-				printf("max_INorton_full = %8.4f \n", max_INorton_full);
+				iter_num_record += 1;
+				if (iter_debug)  printf("                corrector: iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
 				//printf("-----INorton_full : \n");
 				//INorton_full->print();
 				//printf("-----INorton_full_chk - INorton_full : \n");
 				//INorton_full_chk->print();
 			}
-    }
-#else
+    }// end of while
+  }else{ // p_biterative_solve_network = false
     if (flagP == 0) {
       solver_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 1) {
@@ -3501,7 +3515,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     } else if (flagP == 2) {
       solver_posfy_sptr->solve(*INorton_full, *volt_full);
     }
-#endif
+  } //p_biterative_solve_network end here
 
     timer->stop(t_csolve);
 

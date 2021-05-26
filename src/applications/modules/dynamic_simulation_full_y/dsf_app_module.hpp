@@ -499,6 +499,9 @@ class DSFullApp
 
     // pointer to factory
     boost::shared_ptr<DSFullFactory> p_factory;
+	
+	// whether iteratively solve the network interface 
+	bool p_biterative_solve_network;
 
     // Simulation time
     double p_sim_time;

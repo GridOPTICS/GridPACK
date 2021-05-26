@@ -213,18 +213,26 @@ void gridpack::dynamic_simulation::Repca1Model::corrector(double t_inc, bool fla
 {
     //-----Qexit flow path-------------------
 	double tmpin = genQ*kc + Vterm;
+	if (bmodel_debug) printf ("----!!!!repc debug Repca1Model predictor test 1: genQ: %f, kc: %15.11f, Vterm: %15.11f tmpin: %15.11f\n", genQ, kc, Vterm, tmpin);
+		
 	double tmpout;
 	tmpout = delayblock_x1vmeas.corrector(tmpin, t_inc, flag);
+	if (bmodel_debug) printf ("----!!!!repc debug Repca1Model predictor test 2: tmpout:  %15.11f \n", tmpout);
+		
 	tmpout = vref - tmpout;
+	if (bmodel_debug) printf ("----!!!!repc debug Repca1Model predictor test 3: vref: %15.11f, tmpout:  %15.11f \n", vref, tmpout);
 	
 	//----------pass the deadband ---------add later
 	
 	if (tmpout>emax) tmpout = emax;
 	if (tmpout<emin) tmpout = emin;
-	
+	if (bmodel_debug) printf ("----!!!!repc debug Repca1Model predictor test 31: tmpout:  %15.11f, emax:  %15.11f, emin:  %15.11f \n", tmpout, emax, emin);
+		
 	tmpout = piblock_x3qpi.corrector(tmpout, t_inc, flag);
+	if (bmodel_debug) printf ("----!!!!repc debug Repca1Model predictor test 4: tmpout:  %15.11f \n",  tmpout);
 	
 	qext = leadlagblock_x4qext.corrector(tmpout, t_inc, flag);
+	if (bmodel_debug) printf ("----!!!!repc debug Repca1Model predictor test 5: tmpout:  %15.11f \n",  qext);
 	
 	//----Pref flow path---------------
 	tmpin = freqref - busfreq;
