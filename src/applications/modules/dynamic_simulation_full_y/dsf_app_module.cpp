@@ -3990,7 +3990,14 @@ bool gridpack::dynamic_simulation::DSFullApp::getBusTotalLoadPower(int bus_id,
       return true;
     }
   }
-  return false;
+  if (p_report_dummy_obs){
+	  total_p = 0.0;
+	  total_q = 0.0;
+	  return true;
+	
+  }else{
+	 return false; 
+  }
 }
 
 /**
@@ -4011,11 +4018,26 @@ bool gridpack::dynamic_simulation::DSFullApp::getGeneratorPower(int bus_id,
       if (p_network->getBus(indices[i])->getGeneratorPower(gen_id, pg, qg)) {
         return true;
       } else {
-        return false;
+			if (p_report_dummy_obs){
+				pg = 0.0;
+				qg = 0.0;
+				return true;
+			}else{
+				return false; 
+			} 
+        //return false;
       }
     }
   }
-  return false;
+  if (p_report_dummy_obs){
+	  pg = 0.0;
+	  qg = 0.0;
+	  return true;
+	
+  }else{
+	 return false; 
+  }
+  //return false;
 }
 
 /**
