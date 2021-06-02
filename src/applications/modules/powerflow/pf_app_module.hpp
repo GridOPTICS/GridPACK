@@ -154,6 +154,15 @@ class PFAppModule
      * Save results of powerflow calculation to data collection objects
      */
     void saveData();
+	
+	/**
+	* get the power flow solution for the specific bus, vmag and v angle
+	* @param bus original number, bus solution vmag and v angle
+	* @return false if location of bus is not found in
+	* network
+	*/
+
+	bool getPFSolutionSingleBus(int bus_number, double &bus_mag, double &bus_angle);
 
     /**
      * Export final configuration to PSS/E formatted file

@@ -247,14 +247,18 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
   // run dynamic simulation
   ds_app_sptr->setNetwork(ds_network, &(*config_sptr));
   //ds_app_sptr->readNetwork(ds_network,config);
+  
+  printf("ds_app_sptr->readGenerators:\n");
   ds_app_sptr->readGenerators(dscase_idx);
-  //printf("ds_app_sptr->initialize:\n");
+  printf("ds_app_sptr->initialize:\n");
   ds_app_sptr->initialize();
+  printf("ds_app_sptr->setGeneratorWatch:\n");
   ds_app_sptr->setGeneratorWatch();
   //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
   //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
   //printf("ds_app_sptr->solve:\n");
   //ds_app_sptr->solve(faults[0]);
+
   ds_app_sptr->setObservations(cursor);
   p_obs_genBus.clear();
   p_obs_genIDs.clear();
@@ -262,9 +266,10 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
   p_obs_loadIDs.clear();
   p_obs_vBus.clear();
   //p_obs_vals.clear();
+
   ds_app_sptr->getObservationLists(p_obs_genBus, p_obs_genIDs,
       p_obs_loadBus, p_obs_loadIDs, p_obs_vBus);
-
+  
   ds_app_sptr->solvePreInitialize(faults[0]);
 }
 
@@ -521,4 +526,25 @@ void gridpack::hadrec::HADRECAppModule::scatterInjectionLoad(const std::vector<i
 	
 	ds_app_sptr->scatterInjectionLoad(vbusNum, vloadP, vloadQ);
 	
+}
+
+/**
+ * get the power flow solution for the specific bus, vmag and v angle
+ * @param bus original number, bus solution vmag and v angle
+ * @return false if location of bus is not found in
+ * network
+ */
+
+bool gridpack::hadrec::HADRECAppModule::getPFSolutionSingleBus(
+    int bus_number, double &bus_mag, double &bus_angle){
+	
+	double Vmag = 1.0;
+	double Vangle = 0.0;
+	
+	bool ret = pf_app_sptr->getPFSolutionSingleBus(bus_number, Vmag, Vangle);
+	
+	bus_mag = Vmag;
+	bus_angle = Vangle;
+	
+	return ret;
 }

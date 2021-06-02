@@ -696,6 +696,37 @@ void gridpack::powerflow::PFAppModule::saveData()
 }
 
 /**
+ * get the power flow solution for the specific bus, vmag and v angle
+ * @param bus original number, bus solution vmag and v angle
+ * @return false if location of bus is not found in
+ * network
+ */
+
+bool gridpack::powerflow::PFAppModule::getPFSolutionSingleBus(
+    int bus_number, double &bus_mag, double &bus_angle)
+{
+	bool ret = true;
+	std::vector<int> vec_busintidx;
+	int ibus, nbus;
+	gridpack::powerflow::PFBus *bus;
+	
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	nbus = vec_busintidx.size();
+	if (nbus == 0) ret = false;
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::powerflow::PFBus*>
+		(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
+		//printf("----renke debug PFAppModule::getPFSolutionSingleBus, \n");
+		bus_mag=bus->getVoltage();
+		double anglerads = bus->getPhase();
+		double pi = 4.0*atan(1.0);
+		bus_angle = 180.0*anglerads/pi;	
+	}
+	
+	return ret;
+}
+
+/**
  * Set a contingency
  * @param event data describing location and type of contingency
  * @return false if location of contingency is not found in

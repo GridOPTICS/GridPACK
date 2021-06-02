@@ -348,6 +348,17 @@ PYBIND11_MODULE(gridpack, gpm) {
              return py::cast<py::none>(Py_None);
            }
          })
+	.def("getPFSolutionSingleBus",
+         [](gph::HADRECAppModule& self, const int& busid) -> py::object {
+           double vmag, vangle;
+           bool flag;
+           flag = self.getPFSolutionSingleBus(busid, vmag, vangle);
+           if (flag) {
+             return py::make_tuple(vmag, vangle);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
     .def("getZoneLoads",
          [](gph::HADRECAppModule& self) -> py::object {
            std::vector<double> load_p, load_q;
