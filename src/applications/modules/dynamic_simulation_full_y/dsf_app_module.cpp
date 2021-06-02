@@ -61,8 +61,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   bapplyLoadChangeP = false;
   bapplyLoadChangeQ = false;
   p_report_dummy_obs = false;
-  
   p_biterative_solve_network = false;
+  p_iterative_network_debug = false;
   
 }
 
@@ -80,12 +80,16 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_save_time_series = false;
   p_monitorGenerators = false;
   p_bDynSimuDone = false;
+  p_suppress_watch_files = false;
   Simu_Current_Step = 0;
   
   bapplyLineTripAction = false;
   bapplyLoadChangeP = false;
   bapplyLoadChangeQ = false;
   p_report_dummy_obs = false;
+  p_biterative_solve_network = false;
+  p_iterative_network_debug = false;
+  
 }
 
 /**
@@ -140,6 +144,10 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   if (p_time_step == 0.0) {
     // TODO: some kind of error
   }
+  
+  //--------------whether iteratively compute network current-----------
+  p_biterative_solve_network = cursor->get("iterativeNetworkInterface",false);
+  p_iterative_network_debug = cursor->get("iterativeNetworkInterfaceDebugPrint",false);
 
   // Monitor generators for frequency violations
   p_monitorGenerators = cursor->get("monitorGenerators",false);
@@ -198,6 +206,10 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   if (p_time_step == 0.0) {
     // TODO: some kind of error
   }
+  
+  //--------------whether iteratively compute network current-----------
+  p_biterative_solve_network = cursor->get("iterativeNetworkInterface",false);
+  p_iterative_network_debug = cursor->get("iterativeNetworkInterfaceDebugPrint",false);
 
   // Monitor generators for frequency violations
   p_monitorGenerators = cursor->get("monitorGenerators",false);
@@ -3177,11 +3189,11 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
  int MAX_ITR_NO = 8;
  bool flag_chk;
  int iter_num_record;
- bool iter_debug = false;
+ //bool p_iterative_network_debug = false;
  if (p_biterative_solve_network){
     flag_chk = true;
 	iter_num_record = 0;
-	if (iter_debug) printf ("--------------------------in iterative predictor current injection, Simu_Current_Step: %d------------------- \n", Simu_Current_Step);
+	if (p_iterative_network_debug) printf ("--------------------------in iterative predictor current injection, Simu_Current_Step: %d------------------- \n", Simu_Current_Step);
     while (flag_chk == true ) {
 
 			volt_full->zero();
@@ -3233,7 +3245,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 				flag_chk = false;
 			} else {
 				iter_num_record += 1;
-				if (iter_debug) printf("              predictor iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
+				if (p_iterative_network_debug) printf("              predictor iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
 				//printf("-----INorton_full : \n");
 				//INorton_full->print();
 				//printf("-----INorton_full_chk - INorton_full : \n");
@@ -3500,7 +3512,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 				flag_chk = false;
 			} else {
 				iter_num_record += 1;
-				if (iter_debug)  printf("                corrector: iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
+				if (p_iterative_network_debug)  printf("                corrector: iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
 				//printf("-----INorton_full : \n");
 				//INorton_full->print();
 				//printf("-----INorton_full_chk - INorton_full : \n");

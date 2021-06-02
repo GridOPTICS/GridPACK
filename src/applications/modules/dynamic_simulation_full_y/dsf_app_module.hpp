@@ -502,6 +502,9 @@ class DSFullApp
 	
 	// whether iteratively solve the network interface 
 	bool p_biterative_solve_network;
+	
+	// whether print out debug information for iteratively solve the network interface 
+	bool p_iterative_network_debug;
 
     // Simulation time
     double p_sim_time;
