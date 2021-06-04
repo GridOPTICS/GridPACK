@@ -4245,3 +4245,62 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneGeneratorPower(
   p_network->communicator().sum(&generator_p[0],nzones);
   p_network->communicator().sum(&generator_q[0],nzones);
 }
+
+/**
+ * Modify generator parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param gen_id two character token specifying generator on bus
+ * @param genParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, double value)
+{
+  return p_modifyDataCollectionGenParam<double>(bus_id,gen_id,genParam,value);
+}
+bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, int value)
+{
+  return p_modifyDataCollectionGenParam<int>(bus_id,gen_id,genParam,value);
+}
+
+/**
+ * Modify load parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param load_id two character token specifying load on bus
+ * @param loadParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, double value)
+{
+  return p_modifyDataCollectionLoadParam<double>(bus_id,load_id,loadParam,value);
+}
+bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, int value)
+{
+  return p_modifyDataCollectionLoadParam<int>(bus_id,load_id,loadParam,value);
+}
+
+/**
+ * Modify parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param busParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, double value)
+{
+  return p_modifyDataCollectionBusParam<double>(bus_id,busParam,value);
+}
+bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, int value)
+{
+  return p_modifyDataCollectionBusParam<int>(bus_id,busParam,value);
+}
