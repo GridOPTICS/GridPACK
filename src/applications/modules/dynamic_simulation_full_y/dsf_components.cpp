@@ -3661,6 +3661,8 @@ bool gridpack::dynamic_simulation::DSFullBranch::setBranchTripAction(
 		//printf("----renke debug load shed, DSFullBranch::setBranchTripAction, ickt: %d, p_ckt[ickt]: ,%s, status: %d \n", ickt, p_ckt[ickt].c_str(), p_branch_status[ickt]);
 		
 		if (ckt_tag == p_ckt[ickt]  && p_branch_status[ickt] == 1){
+			//printf("----renke debug load shed, DSFullBranch::setBranchTripAction, ckt_tag: ,%s, \n", ckt_tag.c_str());
+			//printf("----renke debug load shed, DSFullBranch::setBranchTripAction, ickt: %d, p_ckt[ickt]: ,%s, status: %d \n", ickt, p_ckt[ickt].c_str(), p_branch_status[ickt]);
 			//printf("----renke debug load shed, DSFullBranch::setBranchTripAction, find the circuit of the branch!!!! \n");
 			
 			p_branchactiontripflag = true;
