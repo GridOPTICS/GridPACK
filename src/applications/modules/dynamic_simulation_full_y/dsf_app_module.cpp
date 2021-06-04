@@ -29,6 +29,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "gridpack/utilities/string_utils.hpp"
 
 using namespace std;
 
@@ -3910,6 +3911,8 @@ void gridpack::dynamic_simulation::DSFullApp::applyGeneratorTripping(int bus_num
 void gridpack::dynamic_simulation::DSFullApp::setLineTripAction
 (int brch_from_bus_number, int brch_to_bus_number, std::string branch_ckt){
 	
+	gridpack::utility::StringUtils util;
+	std::string clean_brkckt;
 	std::vector<int> vec_branchintidx;
 	vec_branchintidx = p_network->getLocalBranchIndices(brch_from_bus_number, brch_to_bus_number);
 	int ibr, nbr;
@@ -3920,8 +3923,9 @@ void gridpack::dynamic_simulation::DSFullApp::setLineTripAction
 		pbranch = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>
 			(p_network->getBranch(vec_branchintidx[ibr]).get());
 		//printf("----renke debug load shed, in dsf full app::setLineTripAction, from bus:, to bus:\n");
+		clean_brkckt = util.clean2Char(branch_ckt);
 		
-		if (pbranch->setBranchTripAction(branch_ckt)){
+		if (pbranch->setBranchTripAction(clean_brkckt)){
 			p_vbranches_need_to_trip.push_back(pbranch);
          bapplyLineTripAction = true;
 			break;		

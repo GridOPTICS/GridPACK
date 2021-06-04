@@ -248,11 +248,11 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
   ds_app_sptr->setNetwork(ds_network, &(*config_sptr));
   //ds_app_sptr->readNetwork(ds_network,config);
   
-  printf("ds_app_sptr->readGenerators:\n");
+  //printf("ds_app_sptr->readGenerators:\n");
   ds_app_sptr->readGenerators(dscase_idx);
-  printf("ds_app_sptr->initialize:\n");
+  //printf("ds_app_sptr->initialize:\n");
   ds_app_sptr->initialize();
-  printf("ds_app_sptr->setGeneratorWatch:\n");
+  //printf("ds_app_sptr->setGeneratorWatch:\n");
   ds_app_sptr->setGeneratorWatch();
   //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
   //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
