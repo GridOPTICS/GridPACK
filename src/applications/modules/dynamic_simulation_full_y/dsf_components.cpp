@@ -387,7 +387,7 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 		  tmp = bus_inj_S/p_volt_full;
 		  bus_scatterload_inj_cur = conj(tmp);
       
-		  values[0] -= bus_scatterload_inj_cur;
+		  values[0] += bus_scatterload_inj_cur;
   
 	  }
 	  
