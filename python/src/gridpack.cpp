@@ -281,6 +281,61 @@ PYBIND11_MODULE(gridpack, gpm) {
          },
          py::arg("s") = "", py::arg("pfcase_idx") = -1
          )
+	.def("readPowerFlowData",
+         [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
+           self.readPowerFlowData(s.c_str(), pfcase_idx);
+         },
+         py::arg("s") = "", py::arg("pfcase_idx") = -1
+         )
+	.def("solvePowerFlow",
+         [](gph::HADRECAppModule& self) {
+		   bool flag;
+           flag = self.solvePowerFlow();
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionGenParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionGenParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionLoadParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionLoadParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBusParam(bus_no, par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBusParam(bus_no, par.c_str(), modvalue);
+		   return flag;
+         }
+         )
     .def("fullInitializationBeforeDynSimuSteps",
          [](gph::HADRECAppModule& self, const std::string& s,
             const std::vector<gpds::Event>& BusFaults, int pfcase_idx, int dscase_idx) {

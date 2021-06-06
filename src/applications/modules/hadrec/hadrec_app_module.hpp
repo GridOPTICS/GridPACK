@@ -66,6 +66,16 @@ class HADRECAppModule
 	 */
 	bool solvePowerFlowBeforeDynSimu_withFlag(const char *inputfile, int pfcase_idx = -1);
 	
+    /**
+	 * read in power flow data 
+	 */
+	void readPowerFlowData(const char *inputfile, int pfcase_idx);
+	
+	/**
+	 * solve power flow
+	 */
+	bool solvePowerFlow();
+	
 	/**
 	* transfer data from power flow to dynamic simulation 
 	*/
@@ -177,6 +187,47 @@ class HADRECAppModule
 
 	bool getPFSolutionSingleBus(int bus_number, double &bus_mag, double &bus_angle);
 	
+	/**
+     * Modify generator parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param gen_id two character token specifying generator on bus
+     * @param genParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, double value);
+    bool modifyDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, int value);
+
+    /**
+     * Modify load parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param load_id two character token specifying load on bus
+     * @param loadParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, double value);
+    bool modifyDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, int value);
+
+    /**
+     * Modify parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param busParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionBusParam(int bus_id,
+        std::string busParam, double value);
+    bool modifyDataCollectionBusParam(int bus_id,
+        std::string busParam, int value);
+	
 
   private:
    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
@@ -192,6 +243,7 @@ class HADRECAppModule
 	int t_config;
 	
 	bool bconfig_sptr_set;
+	bool p_PFuseNonLinear;
 
    // Observations
    std::vector<int> p_obs_genBus;

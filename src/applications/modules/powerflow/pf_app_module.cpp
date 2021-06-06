@@ -25,6 +25,7 @@
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
+#include "gridpack/utilities/string_utils.hpp"
 
 #define USE_REAL_VALUES
 
@@ -1099,3 +1100,71 @@ void gridpack::powerflow::PFAppModule::suppressOutput(bool flag)
 {
   p_no_print = flag;
 }
+
+/**
+ * Modify generator parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param gen_id two character token specifying generator on bus
+ * @param genParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, double value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_gen_id = util.clean2Char(gen_id);
+  return p_modifyDataCollectionGenParam<double>(bus_id,clean_gen_id,genParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, int value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_gen_id = util.clean2Char(gen_id);
+  return p_modifyDataCollectionGenParam<int>(bus_id,clean_gen_id,genParam,value);
+}
+
+/**
+ * Modify load parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param load_id two character token specifying load on bus
+ * @param loadParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, double value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_load_id = util.clean2Char(load_id);
+  return p_modifyDataCollectionLoadParam<double>(bus_id,clean_load_id,loadParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, int value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_load_id = util.clean2Char(load_id);
+  return p_modifyDataCollectionLoadParam<int>(bus_id,clean_load_id,loadParam,value);
+}
+
+/**
+ * Modify parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param busParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, double value)
+{
+  return p_modifyDataCollectionBusParam<double>(bus_id,busParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, int value)
+{
+  return p_modifyDataCollectionBusParam<int>(bus_id,busParam,value);
+}
+

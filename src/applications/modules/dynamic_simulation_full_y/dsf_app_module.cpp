@@ -4262,12 +4262,16 @@ void gridpack::dynamic_simulation::DSFullApp::getZoneGeneratorPower(
 bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionGenParam(
     int bus_id, std::string gen_id, std::string genParam, double value)
 {
-  return p_modifyDataCollectionGenParam<double>(bus_id,gen_id,genParam,value);
+  gridpack::utility::StringUtils util;
+  std::string clean_gen_id = util.clean2Char(gen_id);
+  return p_modifyDataCollectionGenParam<double>(bus_id,clean_gen_id,genParam,value);
 }
 bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionGenParam(
     int bus_id, std::string gen_id, std::string genParam, int value)
 {
-  return p_modifyDataCollectionGenParam<int>(bus_id,gen_id,genParam,value);
+  gridpack::utility::StringUtils util;
+  std::string clean_gen_id = util.clean2Char(gen_id);
+  return p_modifyDataCollectionGenParam<int>(bus_id,clean_gen_id,genParam,value);
 }
 
 /**
@@ -4282,12 +4286,16 @@ bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionGenParam(
 bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionLoadParam(
     int bus_id, std::string load_id, std::string loadParam, double value)
 {
-  return p_modifyDataCollectionLoadParam<double>(bus_id,load_id,loadParam,value);
+  gridpack::utility::StringUtils util;
+  std::string clean_load_id = util.clean2Char(load_id);
+  return p_modifyDataCollectionLoadParam<double>(bus_id,clean_load_id,loadParam,value);
 }
 bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionLoadParam(
     int bus_id, std::string load_id, std::string loadParam, int value)
 {
-  return p_modifyDataCollectionLoadParam<int>(bus_id,load_id,loadParam,value);
+  gridpack::utility::StringUtils util;
+  std::string clean_load_id = util.clean2Char(load_id);
+  return p_modifyDataCollectionLoadParam<int>(bus_id,clean_load_id,loadParam,value);
 }
 
 /**

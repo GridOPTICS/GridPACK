@@ -27,6 +27,7 @@ gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
   : config_sptr(new gridpack::utility::Configuration())
 {
 	bconfig_sptr_set = false;
+	p_PFuseNonLinear = false;
 }
 
 /**
@@ -170,7 +171,7 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu_withFlag(
     }
 	
 	if (!bnoprint) { //if no print flag set to be true, do not print the power flow solution
-		//pf_app_sptr->write();
+		pf_app_sptr->write();
 	}
 	
     pf_app_sptr->saveData();
@@ -181,6 +182,93 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu_withFlag(
 	//pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     //  gridpack::dynamic_simulation::DSFullBranch>(ds_network);
     p_comm = world;
+	
+	return pf_succ_flag;
+	
+}
+
+/**
+ * read in power flow data 
+ */
+void gridpack::hadrec::HADRECAppModule::readPowerFlowData(
+    const char *inputfile, int pfcase_idx){
+			
+	gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+    //t_total = timer->createCategory("Dynamic Simulation: Total Application");
+    //timer->start(t_total);
+
+    gridpack::parallel::Communicator world;
+	//world.reset(new gridpack::parallel::Communicator() );
+
+    // read configuration file 
+    t_config = timer->createCategory("Dynamic Simulation: Config");
+    timer->start(t_config);
+	
+    //gridpack::utility::Configuration *config =
+    //  gridpack::utility::Configuration::configuration();
+	  
+    //config_sptr.reset(gridpack::utility::Configuration::configuration());
+	//config_sptr.reset( new gridpack::utility::Configuration() )
+	
+	if (!bconfig_sptr_set){
+		if (inputfile) {
+			config_sptr->open(inputfile, world);
+		} else {
+			config_sptr->open("input.xml",world);
+		}
+		bconfig_sptr_set = true;
+	}
+    timer->stop(t_config);
+
+    // setup and run powerflow calculation
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config_sptr->getCursor("Configuration.Powerflow");
+    //bool useNonLinear = false;
+    p_PFuseNonLinear = cursor->get("UseNonLinear", p_PFuseNonLinear);
+	
+    pf_network.reset(new gridpack::powerflow::PFNetwork(world));
+
+    pf_app_sptr.reset(new gridpack::powerflow::PFAppModule()) ;
+	
+	bool bnoprint = gridpack::NoPrint::instance()->status();
+
+	if (bnoprint) { //if no print flag set to be true, suppress any intermedium output from pf app module
+		pf_app_sptr->suppressOutput(true);
+	}
+	
+    pf_app_sptr->readNetwork(pf_network, &(*config_sptr), pfcase_idx);
+	
+	// setup dynamic simulation network
+   
+    ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(world));
+	//pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
+    //  gridpack::dynamic_simulation::DSFullBranch>(ds_network);
+    p_comm = world;
+	
+}
+
+/**
+ * solve power flow
+ */
+bool gridpack::hadrec::HADRECAppModule::solvePowerFlow(){
+	
+	pf_app_sptr->initialize();
+	
+	bool pf_succ_flag;
+    if (p_PFuseNonLinear) {
+      pf_succ_flag = pf_app_sptr->nl_solve();
+    } else {
+      pf_succ_flag = pf_app_sptr->solve();
+    }
+	
+	bool bnoprint = gridpack::NoPrint::instance()->status();
+	
+	if (!bnoprint) { //if no print flag set to be true, do not print the power flow solution
+		pf_app_sptr->write();
+	}
+	
+    pf_app_sptr->saveData();
 	
 	return pf_succ_flag;
 	
@@ -547,4 +635,64 @@ bool gridpack::hadrec::HADRECAppModule::getPFSolutionSingleBus(
 	bus_angle = Vangle;
 	
 	return ret;
+}
+
+
+/**
+ * Modify generator parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param gen_id two character token specifying generator on bus
+ * @param genParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, double value)
+{
+    return pf_app_sptr->modifyDataCollectionGenParam(bus_id, gen_id,genParam,value);
+}
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, int value)
+{
+    return pf_app_sptr->modifyDataCollectionGenParam(bus_id, gen_id,genParam,value);
+}
+
+/**
+ * Modify load parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param load_id two character token specifying load on bus
+ * @param loadParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, double value)
+{
+    return pf_app_sptr->modifyDataCollectionLoadParam(bus_id, load_id,loadParam,value);
+}
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, int value)
+{
+    return pf_app_sptr->modifyDataCollectionLoadParam(bus_id, load_id,loadParam,value);
+}
+
+/**
+ * Modify parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param busParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, double value)
+{
+  return pf_app_sptr->modifyDataCollectionBusParam(bus_id, busParam,value);
+}
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, int value)
+{
+  return pf_app_sptr->modifyDataCollectionBusParam(bus_id, busParam,value);
 }
