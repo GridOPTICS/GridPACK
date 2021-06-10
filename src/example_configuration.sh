@@ -31,10 +31,12 @@ for o in $*; do
             shared="ON"
             shift
             ;;
-        -G) buildGA="ON"
+        -G)
+            buildGA="ON"
             shift
             ;;
-        -B) buildBoost="ON"
+        -B)
+            buildBoost="ON"
             shift
             ;;
         --)

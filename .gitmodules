@@ -2,8 +2,7 @@
 	path = cmake-jedbrown
 	url = https://github.com/wperkins/cmake-modules.git
 	branch = master
-
 [submodule "src/ga"]
 	path = src/ga
 	url = https://github.com/wperkins/ga.git
-        branch = for-gridpack
+	branch = for_gridpack

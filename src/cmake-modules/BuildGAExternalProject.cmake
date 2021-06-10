@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-10-29 13:23:08 d3g096
+# Last Change: 2021-06-09 14:53:34 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -78,7 +78,7 @@ function(BuildGAExternalProject)
 
   set(GA_FOUND TRUE PARENT_SCOPE)
 
-  set(GA_INCLUDE_DIRS ${INSTALL_DIR}/include PARENT_SCOPE)
+  set(GA_INCLUDE_DIRS ${INSTALL_DIR}/include ${INSTALL_DIR}/include/ga PARENT_SCOPE)
   set(GA_INSTALLED_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/include PARENT_SCOPE)
 
   set(GA_LIBRARIES "")
