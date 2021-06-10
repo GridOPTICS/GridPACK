@@ -10,11 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2021-06-09 11:49:26 d3g096
+# Last Change: 2021-06-10 07:07:20 d3g096
 # -------------------------------------------------------------
 
 # 
-cmake_minimum_required (VERSION 3.6.0)
+cmake_minimum_required (VERSION 3.5.0)
 
 # This allows the use of LOCATION(target)
 if (POLICY CMP0026)
