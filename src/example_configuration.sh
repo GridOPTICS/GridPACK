@@ -160,7 +160,6 @@ elif [ $host == "WE32673" ]; then
     #   boost @1.66.0_3+clang60+mpich+no_single+no_static+python27
     #   glpk @4.65_0
     #   doxygen @1.8.13_2+qt4+wizard
-    # Global Arrays 5.7 built by hand
     # PETSc 3.8.4 w/ ParMETIS, SuperLU, etc., built by hand
     # Need to make sure the compiler set and MPI are selected, i.e.
     #   sudo port select clang mp-clang-6.0
@@ -192,7 +191,7 @@ elif [ $host == "WE32673" ]; then
         # pdir="$prefix/petsc-3.12.3"
         # parch="macosx-complex-c-static"
         pdir="$prefix/petsc.gitlab"
-        parch="macosx-real-cpp-shared"
+        parch="macosx-complex-cpp-static-3.8.4"
     fi
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
