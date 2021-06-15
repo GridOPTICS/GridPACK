@@ -121,6 +121,14 @@ class DSFullApp
 	void scatterInjectionLoad(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
 	
 	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original load from y-maxtrix, 
+     * and model the entire load change as injection current
+	*/
+	void scatterInjectionLoadNew(const std::vector<int>& vbusNum, const std::vector<double>& vOrgloadP, const std::vector<double>& vOrgloadQ,
+								const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
+	
+	/**
      * execute load shedding	 
      */
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);

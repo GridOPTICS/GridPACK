@@ -220,7 +220,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
   } else if (p_mode == bus_Yload_change_P) {
     if (p_Yload_change_P_flag) {
       //gridpack::ComplexType ret(0.0, -1.0e5);
-	  double tmp1 = p_Yload_change_r; //p_ybusr + p_Yload_change_r;
+	  double tmp1 = p_Yload_change_r/(p_voltage*p_voltage); //p_ybusr + p_Yload_change_r;
       double tmp2 = 0.0; //p_ybusi;
       gridpack::ComplexType ret(tmp1, tmp2);
 	  
@@ -236,7 +236,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     if (p_Yload_change_Q_flag) {
       //gridpack::ComplexType ret(0.0, -1.0e5);
 	  double tmp1 = 0.0; //p_ybusr;
-      double tmp2 = - p_Yload_change_i; //_ybusi - p_Yload_change_i;
+      double tmp2 = - p_Yload_change_i/(p_voltage*p_voltage); //_ybusi - p_Yload_change_i;
       gridpack::ComplexType ret(tmp1, tmp2);
 	  
       values[0] = ret;
@@ -380,14 +380,27 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 		  double p_pl_inj_tmp, p_ql_inj_tmp;
 		  gridpack::ComplexType bus_inj_S, tmp, bus_scatterload_inj_cur;
 		  
-		  p_pl_inj_tmp = p_pl - p_scatterinjload_p;
-		  p_ql_inj_tmp = p_ql - p_scatterinjload_q;
+		  //p_pl_inj_tmp = p_pl - p_scatterinjload_p;
+		  //p_ql_inj_tmp = p_ql - p_scatterinjload_q;
+		  
+		  p_pl_inj_tmp = 0.0 - p_scatterinjload_p;
+		  p_ql_inj_tmp = 0.0 - p_scatterinjload_q;
 		  
 		  bus_inj_S = gridpack::ComplexType(p_pl_inj_tmp,p_ql_inj_tmp);
 		  tmp = bus_inj_S/p_volt_full;
 		  bus_scatterload_inj_cur = conj(tmp);
       
 		  values[0] += bus_scatterload_inj_cur;
+		  /*
+		  printf("rkdebugInjectionCur, DSFullBus::vectorValues, bus %d, Inorton: %12.6f + j %12.6f \n", 
+					getOriginalIndex(),real(bus_scatterload_inj_cur), imag(bus_scatterload_inj_cur));
+					
+		  printf("rkdebugpq, DSFullBus::vectorValues, bus %d, PQ: %12.6f + j %12.6f \n", 
+					getOriginalIndex(), p_pl_inj_tmp, p_ql_inj_tmp);
+					
+		  printf("rkdebugpq, DSFullBus::vectorValues, bus %d, voltage: %12.6f + j %12.6f \n", 
+					getOriginalIndex(), real(p_volt_full), imag(p_volt_full));
+		  */
   
 	  }
 	  
