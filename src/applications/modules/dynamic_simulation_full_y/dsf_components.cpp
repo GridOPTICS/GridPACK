@@ -42,6 +42,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_from_flag = false;
   p_Yload_change_P_flag = false;
   p_Yload_change_Q_flag = false;
+  p_bConstYLoadSettoZero_P = false;
+  p_bConstYLoadSettoZero_Q = false;
   p_bscatterinjload_flag = false;
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
@@ -2105,6 +2107,36 @@ void gridpack::dynamic_simulation::DSFullBus::applyConstYLoad_Change_P(double lo
  {
 	 p_Yload_change_Q_flag = true;
 	 p_Yload_change_i = loadPChangeMVAR/100.0;
+	  
+ }
+ 
+ bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoZero_P( )
+ {
+	 if (!p_bConstYLoadSettoZero_P){
+		p_Yload_change_P_flag = true;
+		p_Yload_change_r = -p_pl;
+		p_bConstYLoadSettoZero_P = true;
+		return true;
+	 }else{
+		p_Yload_change_P_flag = false;
+		p_Yload_change_r = 0.0; 
+		return false;
+	 }
+	  
+ }
+ 
+ bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoZero_Q( )
+ {
+	 if (!p_bConstYLoadSettoZero_Q){
+		p_Yload_change_Q_flag = true;
+		p_Yload_change_i = -p_ql;
+		p_bConstYLoadSettoZero_Q = true;
+		return true;
+	 }else{
+		p_Yload_change_Q_flag = false;
+		p_Yload_change_i = 0.0; 
+		return false;
+	 }
 	  
  }
 

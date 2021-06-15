@@ -335,6 +335,9 @@ class DSFullBus
 	void applyConstYLoad_Change_Q(double loadPChangeMVAR);
 	void clearConstYLoad_Change_P();
 	void clearConstYLoad_Change_Q();
+	
+	bool setConstYLoadtoZero_P( );
+	bool setConstYLoadtoZero_Q( );
 
     /**
      * Write output from buses to standard out
@@ -621,6 +624,8 @@ class DSFullBus
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
 	bool p_Yload_change_P_flag, p_Yload_change_Q_flag; // renke add, indicating whether this bus has constant-Y load P or Q change,to enable constant-Y load change during dyn. simu.
+	bool p_bConstYLoadSettoZero_P, p_bConstYLoadSettoZero_Q; // renke add, indicating whether this bus's constant-Y load P or Q has been already set to zero, check the function
+															 // setConstYLoadtoZero_P to see the usage
 	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
 	bool p_branchtripaction_from_flag, p_branchtripaction_to_flag;
 	bool p_busrelaytripflag;

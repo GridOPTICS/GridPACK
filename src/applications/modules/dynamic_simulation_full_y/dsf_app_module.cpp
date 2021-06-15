@@ -3768,31 +3768,27 @@ void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoad(const std::ve
 
 /**
  * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
- * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original load from y-maxtrix, 
+ * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
  * and model the entire load change as injection current
  */
  
-void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoadNew(const std::vector<int>& vbusNum, const std::vector<double>& vOrgloadP, const std::vector<double>& vOrgloadQ,
-	const std::vector<double>& vloadP, const std::vector<double>& vloadQ){
+void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoadNew(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ){
 		
 	std::vector<int> vec_busintidx;
 	int ival, nvals, ibus, nbus, bus_number;
 	gridpack::dynamic_simulation::DSFullBus *bus;
 	double orgp, orgq;
 	
-	//first modify the original values of the load P and Q to zero, 
+	//first modify the original values of the Contant Y load P and Q to zero, 
 	// note: only the first time receive the command of scatter InjectionLoadNew needs to do the clear of the original load values!!!!!!
 	nvals = vbusNum.size();	
 	for (ival=0; ival<=nvals; ival++){
 		bus_number = vbusNum[ival];
-		orgp = vOrgloadP[ival];
-		orgq = vOrgloadQ[ival];
-		applyConstYLoad_Change_P(bus_number, orgp);
-		applyConstYLoad_Change_Q(bus_number, orgq);
+		setConstYLoadtoZero_P(bus_number);
+		setConstYLoadtoZero_Q(bus_number);
 	}
 	
 	// treat the new load p and q as current source
-
 	nvals = vbusNum.size();	
 	for (ival=0; ival<=nvals; ival++){
 		bus_number = vbusNum[ival];
@@ -3890,6 +3886,33 @@ void gridpack::dynamic_simulation::DSFullApp::clearConstYLoad_Change_P()
 }
 
 /**
+ * set constant Y load P to zero for a specific bus	 
+ */
+void gridpack::dynamic_simulation::DSFullApp::setConstYLoadtoZero_P(int bus_number){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	bool ret;
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		ret = bus->setConstYLoadtoZero_P( );
+		if (ret){
+			bapplyLoadChangeP = true;
+			p_vbus_need_to_changeP.push_back(bus);
+		}
+	}
+	
+   // Check to see if a load change P is occuring somewhere in the system
+   bapplyLoadChangeP = p_factory->checkTrueSomewhere(bapplyLoadChangeP);
+		
+}
+
+/**
  * execute constant Y load Q change	 
  */
 void gridpack::dynamic_simulation::DSFullApp::applyConstYLoad_Change_Q(int bus_number, double loadPChangeMVAR ){
@@ -3923,6 +3946,33 @@ void gridpack::dynamic_simulation::DSFullApp::clearConstYLoad_Change_Q()
 		p_vbus_need_to_changeQ[ibus]->clearConstYLoad_Change_Q();
 	}
 	p_vbus_need_to_changeQ.clear();	
+}
+
+/**
+ * set constant Y load Q to zero for a specific bus	 
+ */
+void gridpack::dynamic_simulation::DSFullApp::setConstYLoadtoZero_Q(int bus_number){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	bool ret;
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		ret = bus->setConstYLoadtoZero_Q();
+		if (ret){
+			bapplyLoadChangeQ = true;
+			p_vbus_need_to_changeQ.push_back(bus);
+		}
+	}
+	
+	// Check to see if a load change Q is occuring somewhere in the system
+   bapplyLoadChangeQ = p_factory->checkTrueSomewhere(bapplyLoadChangeQ);
+		
 }
 
 
