@@ -534,6 +534,12 @@ class DSFullBus
 	void scatterInjectionLoad(double loadP, double loadQ);
 	
 	/**
+	* execute load scattering, the current values of the STATIC load at certain buses will be changed to the values of 
+	* the curR and curI
+	*/
+	void scatterInjectionLoadConstCurrent(double curR, double curI);
+	
+	/**
      * apply load shedding for the loads in this bus
      */
 	void applyLoadShedding(std::string loadid, double percentage);
@@ -609,6 +615,8 @@ class DSFullBus
 	                                           // per unit value based on system MVA 100, increase 500 MW load, p_Yload_change_r = 5.0
 	bool p_bscatterinjload_flag; //renke add, whether the static load of the bus could be modified at each time step 
 	double p_scatterinjload_p, p_scatterinjload_q; //renke add, the value of the static load of the bus modified at each time step
+	bool p_bscatterinjloadconstcur_flag; //renke add, whether the static load of the bus could be modified at each time step as constant current load
+	double p_scatterinjload_constcur_r, p_scatterinjload_constcur_i; //renke add, the value of the static load of the bus modified at each time step as constant current load
     double p_sbase;
     bool p_isGen;
     int p_area;

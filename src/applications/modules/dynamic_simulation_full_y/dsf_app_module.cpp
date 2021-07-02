@@ -64,6 +64,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_report_dummy_obs = false;
   p_biterative_solve_network = false;
   p_iterative_network_debug = false;
+  ITER_TOL = 1.0e-7;
+  MAX_ITR_NO = 8;
   
 }
 
@@ -90,6 +92,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_report_dummy_obs = false;
   p_biterative_solve_network = false;
   p_iterative_network_debug = false;
+  ITER_TOL = 1.0e-7;
+  MAX_ITR_NO = 8;
   
 }
 
@@ -149,6 +153,11 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   //--------------whether iteratively compute network current-----------
   p_biterative_solve_network = cursor->get("iterativeNetworkInterface",false);
   p_iterative_network_debug = cursor->get("iterativeNetworkInterfaceDebugPrint",false);
+  
+  ITER_TOL = cursor->get("iterativeNetworkInterfaceTol", 1.0e-7);
+  MAX_ITR_NO = cursor->get("iterativeNetworkInterfaceMaxItrNo", 8);
+  
+  //printf ("-----rk debug in gridpack::dynamic_simulation::DSFullApp::readNetwork( ): ITER_TOL: %15.12f, MAX_ITR_NO: %d \n\n", ITER_TOL, MAX_ITR_NO);
 
   // Monitor generators for frequency violations
   p_monitorGenerators = cursor->get("monitorGenerators",false);
@@ -211,6 +220,11 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   //--------------whether iteratively compute network current-----------
   p_biterative_solve_network = cursor->get("iterativeNetworkInterface",false);
   p_iterative_network_debug = cursor->get("iterativeNetworkInterfaceDebugPrint",false);
+  
+  ITER_TOL = cursor->get("iterativeNetworkInterfaceTol", 1.0e-7);
+  MAX_ITR_NO =  cursor->get("iterativeNetworkInterfaceMaxItrNo", 8);
+  
+  //printf ("-----rk debug in gridpack::dynamic_simulation::DSFullApp::setNetwork( ): ITER_TOL: %15.12f, MAX_ITR_NO: %d \n\n", ITER_TOL, MAX_ITR_NO);
 
   // Monitor generators for frequency violations
   p_monitorGenerators = cursor->get("monitorGenerators",false);
@@ -3186,8 +3200,10 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     volt_full->zero();
 	
 //!!!!!!!!!!iteratively solve or not, rk!!!!
- double ITER_TOL = 1.0e-7;
- int MAX_ITR_NO = 8;
+ //double ITER_TOL = 1.0e-7;
+ //int MAX_ITR_NO = 8;
+ 
+ //printf ("-----rk debug in gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ): ITER_TOL: %15.12f, MAX_ITR_NO: %d \n\n", ITER_TOL, MAX_ITR_NO);
  bool flag_chk;
  int iter_num_record;
  //bool p_iterative_network_debug = false;
@@ -3799,6 +3815,44 @@ void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoadNew(const std:
 			(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
 			//printf("----renke debug scatterInjectionLoad, in dsf full app, \n");
 			bus->scatterInjectionLoad(vloadP[ival], vloadQ[ival]);
+		
+		}
+	}
+		
+}
+
+/**
+ * execute load scattering with constant current load , the values of the STATIC load current at certain buses vbusNum will be changed to the values of 
+ * the vector  vCurR and vCurI - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+ * and model the entire load change as injection current
+ */
+ 
+void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoadNewConstCur(const std::vector<int>& vbusNum, const std::vector<double>& vCurR, const std::vector<double>& vCurI){
+		
+	std::vector<int> vec_busintidx;
+	int ival, nvals, ibus, nbus, bus_number;
+	gridpack::dynamic_simulation::DSFullBus *bus;
+	
+	//first modify the original values of the Contant Y load P and Q to zero, 
+	// note: only the first time receive the command of scatter InjectionLoadNew needs to do the clear of the original load values!!!!!!
+	nvals = vbusNum.size();	
+	for (ival=0; ival<=nvals; ival++){
+		bus_number = vbusNum[ival];
+		setConstYLoadtoZero_P(bus_number);
+		setConstYLoadtoZero_Q(bus_number);
+	}
+	
+	// treat the new load p and q as constant current source
+	nvals = vbusNum.size();	
+	for (ival=0; ival<=nvals; ival++){
+		bus_number = vbusNum[ival];
+		vec_busintidx = p_network->getLocalBusIndices(bus_number);
+		nbus = vec_busintidx.size();
+		for(ibus=0; ibus<nbus; ibus++){
+			bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+			(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
+			//printf("----renke debug scatterInjectionLoad, in dsf full app, \n");
+			bus->scatterInjectionLoadConstCurrent(vCurR[ival], vCurI[ival]);
 		
 		}
 	}

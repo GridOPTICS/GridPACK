@@ -125,6 +125,7 @@ class MotorwLoad : public BaseLoadModel
     double p_sbase;
     double p_pl, p_ql;
     int p_status;
+	bool bdebug;
 	
     // parameters
     double loadFactor, Pul, rs, lls, lm, lmr, rr1, llr1, rr2, llr2;

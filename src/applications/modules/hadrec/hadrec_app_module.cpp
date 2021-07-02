@@ -628,6 +628,17 @@ void gridpack::hadrec::HADRECAppModule::scatterInjectionLoadNew(const std::vecto
 }
 
 /**
+* execute load scattering, the values of the STATIC load current at certain buses vbusNum will be changed to the values of 
+* the vector  vCurR and vCurI - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+* and model the entire load change as injection current
+*/
+void gridpack::hadrec::HADRECAppModule::scatterInjectionLoadNewConstCur(const std::vector<int>& vbusNum, const std::vector<double>& vCurR, const std::vector<double>& vCurI){
+	
+	ds_app_sptr->scatterInjectionLoadNewConstCur(vbusNum, vCurR, vCurI);
+	
+}
+
+/**
  * get the power flow solution for the specific bus, vmag and v angle
  * @param bus original number, bus solution vmag and v angle
  * @return false if location of bus is not found in

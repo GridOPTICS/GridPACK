@@ -267,6 +267,12 @@ PYBIND11_MODULE(gridpack, gpm) {
          },
          py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >()
          )
+	.def("scatterInjectionLoadNewConstCur",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vCurR, const std::vector<double>& vCurI) {
+           self.scatterInjectionLoadNewConstCur(vbusNum, vCurR, vCurI);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vCurR") = std::vector< double >(), py::arg("vCurI") = std::vector< double >()
+         )
     .def("initializeDynSimu",
          [](gph::HADRECAppModule& self, std::vector< gpds::Event > faults, int dscase_idx) {
            self.initializeDynSimu(faults, dscase_idx);
