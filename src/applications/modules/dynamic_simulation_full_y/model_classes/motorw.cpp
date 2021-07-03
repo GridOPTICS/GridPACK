@@ -108,7 +108,7 @@ gridpack::dynamic_simulation::MotorwLoad::MotorwLoad(void)
   bdebugprint = false;
   
   Fonline = 1.0;
-  motorwload_perc = 0.7; //motor w load percentage to the total load, default 0.3;
+  motorwload_perc = 1.0; //motor w load percentage to the total load, default 0.3;
   samebus_static_loadP = 0.0;
   samebus_static_loadQ = 0.0;
   samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);
@@ -183,6 +183,10 @@ void gridpack::dynamic_simulation::MotorwLoad::load(
 	if (!data->getValue(LOAD_D, &D, idx)) D = 0.0;
 	if (!data->getValue(LOAD_E, &E, idx)) E = 0.0;
 	
+	if (!data->getValue(LOAD_DYN_PERC, &motorwload_perc, idx)) motorwload_perc = 1.0;
+	
+	if (motorwload_perc< 0.01) motorwload_perc = 1.0; //if the LOAD_DYN_PERC is not defined in the dyr file, as the normal PSS/E dyr file
+	
 	//tmp code please remove this
 	llr1 = 0.08;
 	
@@ -216,6 +220,9 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
 
   Pini = p_pl;
   Pini = Pini*motorwload_perc;
+  
+  if (bdebugprint) printf ("------- MotorwLoad::init(), motorw with CIM6BL at bus %d , ID: %s, motorwload_perc value is %f \n", p_bus_id, p_loadid.c_str(), motorwload_perc);
+  
   wt = 2.0*60.0*pi;
   w0 = wt;
   systemMVABase = 100.0;
