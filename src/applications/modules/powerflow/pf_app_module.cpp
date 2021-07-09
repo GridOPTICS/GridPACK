@@ -23,6 +23,7 @@
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/parser/MAT_parser.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
+#include "gridpack/export/PSSE23Export.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
@@ -681,13 +682,24 @@ void gridpack::powerflow::PFAppModule::print(const char *buf)
 }
 
 /**
- * Export final configuration to PSS/E formatted file
+ * Export final configuration to PSS/E v33 formatted file
  * @param filename name of file to store network configuration
  */
 void gridpack::powerflow::PFAppModule::exportPSSE33(std::string &filename)
 {
   if (p_no_print) return;
   gridpack::expnet::PSSE33Export<PFNetwork> exprt(p_network);
+  exprt.writeFile(filename);
+}
+
+/**
+ * Export final configuration to PSS/E v23 formatted file
+ * @param filename name of file to store network configuration
+ */
+void gridpack::powerflow::PFAppModule::exportPSSE23(std::string &filename)
+{
+  if (p_no_print) return;
+  gridpack::expnet::PSSE23Export<PFNetwork> exprt(p_network);
   exprt.writeFile(filename);
 }
 

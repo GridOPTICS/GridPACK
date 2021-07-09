@@ -154,10 +154,16 @@ class PFAppModule
     void saveData();
 
     /**
-     * Export final configuration to PSS/E formatted file
+     * Export final configuration to PSS/E v33 formatted file
      * @param filename name of file to store network configuration
      */
     void exportPSSE33(std::string &filename);
+    
+    /**
+     * Export final configuration to PSS/E v23 formatted file
+     * @param filename name of file to store network configuration
+     */
+    void exportPSSE23(std::string &filename);
     
     /**
      * Set a contingency
