@@ -92,7 +92,7 @@ class ExportLine33
                 sprintf(ptr,"%d, %d,",idx2,idx1);
               }
               ptr += strlen(ptr);
-              sval = " 1",
+              sval = " 1";
               data->getValue(BRANCH_CKT,&sval,j);
               sprintf(ptr," \'%s\',",sval.c_str());
               ptr += strlen(ptr);
