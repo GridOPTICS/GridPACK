@@ -45,6 +45,7 @@ endif()
 install(FILES 
   base_export.hpp
   PSSE33Export.hpp
+  PSSE23Export.hpp
   DESTINATION include/gridpack/export
 )
 install(FILES 
@@ -65,5 +66,12 @@ install(FILES
   data_blocks/export_vscline33.hpp
   data_blocks/export_xform33.hpp
   data_blocks/export_zone33.hpp
+  data_blocks/export_2term23.hpp
+  data_blocks/export_area23.hpp
+  data_blocks/export_bus23.hpp
+  data_blocks/export_gen23.hpp
+  data_blocks/export_line23.hpp
+  data_blocks/export_swshnt23.hpp
+  data_blocks/export_xform23.hpp
   DESTINATION include/gridpack/export/data_blocks
 )
