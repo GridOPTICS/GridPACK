@@ -1126,6 +1126,13 @@
 #define LOAD_ETRQA "LOAD_ETRQA"
 
 /**
+ * Load DYN_PERC
+ * type: float
+ * indexed
+ */
+#define LOAD_DYN_PERC "LOAD_DYN_PERC"
+
+/**
  * Load VTR1A
  * type: float
  * indexed

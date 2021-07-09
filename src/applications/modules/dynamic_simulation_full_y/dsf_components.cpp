@@ -42,7 +42,10 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_from_flag = false;
   p_Yload_change_P_flag = false;
   p_Yload_change_Q_flag = false;
+  p_bConstYLoadSettoZero_P = false;
+  p_bConstYLoadSettoZero_Q = false;
   p_bscatterinjload_flag = false;
+  p_bscatterinjloadconstcur_flag = false;
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
   p_branchrelay_to_flag = false;
@@ -58,6 +61,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_loadimpedancei = 0.0;
   p_scatterinjload_p = 0.0;
   p_scatterinjload_q = 0.0;
+  p_scatterinjload_constcur_r = 0.0;
+  p_scatterinjload_constcur_i = 0.0;
   p_ndyn_load = 0;
   p_npowerflow_load = 0;
   p_bextendedloadbus = -1;
@@ -220,7 +225,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
   } else if (p_mode == bus_Yload_change_P) {
     if (p_Yload_change_P_flag) {
       //gridpack::ComplexType ret(0.0, -1.0e5);
-	  double tmp1 = p_Yload_change_r; //p_ybusr + p_Yload_change_r;
+	  double tmp1 = p_Yload_change_r/(p_voltage*p_voltage); //p_ybusr + p_Yload_change_r;
       double tmp2 = 0.0; //p_ybusi;
       gridpack::ComplexType ret(tmp1, tmp2);
 	  
@@ -236,7 +241,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     if (p_Yload_change_Q_flag) {
       //gridpack::ComplexType ret(0.0, -1.0e5);
 	  double tmp1 = 0.0; //p_ybusr;
-      double tmp2 = - p_Yload_change_i; //_ybusi - p_Yload_change_i;
+      double tmp2 = - p_Yload_change_i/(p_voltage*p_voltage); //_ybusi - p_Yload_change_i;
       gridpack::ComplexType ret(tmp1, tmp2);
 	  
       values[0] = ret;
@@ -380,14 +385,51 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 		  double p_pl_inj_tmp, p_ql_inj_tmp;
 		  gridpack::ComplexType bus_inj_S, tmp, bus_scatterload_inj_cur;
 		  
-		  p_pl_inj_tmp = p_pl - p_scatterinjload_p;
-		  p_ql_inj_tmp = p_ql - p_scatterinjload_q;
+		  //p_pl_inj_tmp = p_pl - p_scatterinjload_p;
+		  //p_ql_inj_tmp = p_ql - p_scatterinjload_q;
+		  
+		  p_pl_inj_tmp = 0.0 - p_scatterinjload_p;
+		  p_ql_inj_tmp = 0.0 - p_scatterinjload_q;
 		  
 		  bus_inj_S = gridpack::ComplexType(p_pl_inj_tmp,p_ql_inj_tmp);
 		  tmp = bus_inj_S/p_volt_full;
 		  bus_scatterload_inj_cur = conj(tmp);
       
 		  values[0] += bus_scatterload_inj_cur;
+		  /*
+		  printf("rkdebugInjectionCur, DSFullBus::vectorValues, bus %d, Inorton: %12.6f + j %12.6f \n", 
+					getOriginalIndex(),real(bus_scatterload_inj_cur), imag(bus_scatterload_inj_cur));
+					
+		  printf("rkdebugpq, DSFullBus::vectorValues, bus %d, PQ: %12.6f + j %12.6f \n", 
+					getOriginalIndex(), p_pl_inj_tmp, p_ql_inj_tmp);
+					
+		  printf("rkdebugpq, DSFullBus::vectorValues, bus %d, voltage: %12.6f + j %12.6f \n", 
+					getOriginalIndex(), real(p_volt_full), imag(p_volt_full));
+		  */
+  
+	  }
+	  
+	  	  // INorton contribution from the scattered injection load as constant current load
+	  if (p_bscatterinjloadconstcur_flag){
+		  
+		  gridpack::ComplexType tmp, bus_scatterload_inj_cur;
+		  
+		  bus_scatterload_inj_cur = gridpack::ComplexType(p_scatterinjload_constcur_r, p_scatterinjload_constcur_i);
+		  
+		  bus_scatterload_inj_cur = bus_scatterload_inj_cur/p_volt_full*abs(p_volt_full); //just rotate the voltage angle, keep the current magnitude unchange
+		  bus_scatterload_inj_cur = conj(bus_scatterload_inj_cur);
+      
+		  values[0] -= bus_scatterload_inj_cur;
+		  
+		/*  
+		  printf("rkdebugInjectionCur, DSFullBus::vectorValues, bus %d, Inorton: %12.6f + j %12.6f \n", 
+					getOriginalIndex(),real(bus_scatterload_inj_cur), imag(bus_scatterload_inj_cur));
+					
+		  printf("rkdebugpq, DSFullBus::vectorValues, bus %d, voltage: %12.6f + j %12.6f \n", 
+					getOriginalIndex(), real(p_volt_full), imag(p_volt_full));
+					
+		*/
+		  
   
 	  }
 	  
@@ -1221,8 +1263,8 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_pl /= p_sbase;
   p_ql /= p_sbase;
   
-  p_scatterinjload_p = p_pl;
-  p_scatterinjload_q = p_ql;
+  //p_scatterinjload_p = p_pl;
+  //p_scatterinjload_q = p_ql;
   
 
   if (bdebug_load_model) printf(" Bus %d have remaining static loads for Y-bus: p_pl: %f pu, p_ql: %f pu, \n",
@@ -2094,6 +2136,36 @@ void gridpack::dynamic_simulation::DSFullBus::applyConstYLoad_Change_P(double lo
 	 p_Yload_change_i = loadPChangeMVAR/100.0;
 	  
  }
+ 
+ bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoZero_P( )
+ {
+	 if (!p_bConstYLoadSettoZero_P){
+		p_Yload_change_P_flag = true;
+		p_Yload_change_r = -p_pl;
+		p_bConstYLoadSettoZero_P = true;
+		return true;
+	 }else{
+		p_Yload_change_P_flag = false;
+		p_Yload_change_r = 0.0; 
+		return false;
+	 }
+	  
+ }
+ 
+ bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoZero_Q( )
+ {
+	 if (!p_bConstYLoadSettoZero_Q){
+		p_Yload_change_Q_flag = true;
+		p_Yload_change_i = -p_ql;
+		p_bConstYLoadSettoZero_Q = true;
+		return true;
+	 }else{
+		p_Yload_change_Q_flag = false;
+		p_Yload_change_i = 0.0; 
+		return false;
+	 }
+	  
+ }
 
 void gridpack::dynamic_simulation::DSFullBus::clearConstYLoad_Change_P()
  {
@@ -2722,6 +2794,17 @@ void gridpack::dynamic_simulation::DSFullBus::scatterInjectionLoad(double loadP,
 	p_bscatterinjload_flag = true;
 	p_scatterinjload_p = loadP;
 	p_scatterinjload_q = loadQ;
+	
+}
+
+/**
+ * execute load scattering, the current values of the STATIC load at certain buses will be changed to the values of 
+ * the curR and curI
+*/
+void gridpack::dynamic_simulation::DSFullBus::scatterInjectionLoadConstCurrent(double curR, double curI){
+	p_bscatterinjloadconstcur_flag = true;
+	p_scatterinjload_constcur_r = curR;
+	p_scatterinjload_constcur_i = curI;
 	
 }
 

@@ -121,6 +121,23 @@ class DSFullApp
 	void scatterInjectionLoad(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
 	
 	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+     * and model the entire load change as injection current
+	*/
+	void scatterInjectionLoadNew(const std::vector<int>& vbusNum, 
+								const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
+								
+	/**
+	 * execute load scattering with constant current load , the values of the STATIC load current at certain buses vbusNum will be changed to the values of 
+     * the vector  vCurR and vCurI - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+     * and model the entire load change as injection current
+    */
+ 
+    void scatterInjectionLoadNewConstCur(const std::vector<int>& vbusNum, 
+										const std::vector<double>& vCurR, const std::vector<double>& vCurI);
+	
+	/**
      * execute load shedding	 
      */
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);
@@ -145,6 +162,9 @@ class DSFullApp
      */
     void applyConstYLoad_Change_Q(int bus_number, double loadPChangeMVAR);
 	void clearConstYLoad_Change_Q();
+	
+	void setConstYLoadtoZero_P(int bus_number);
+	void setConstYLoadtoZero_Q(int bus_number);
 	
     /**
      * execute generator tripping 
@@ -669,6 +689,8 @@ class DSFullApp
 	
 	// whether iteratively solve the network interface 
 	bool p_biterative_solve_network;
+	double ITER_TOL;  // iteratively solve the network interface tolerance, defined in xml file
+	int MAX_ITR_NO;   // iteratively solve the network interface max iteration number, defined in xml file
 	
 	// whether print out debug information for iteratively solve the network interface 
 	bool p_iterative_network_debug;

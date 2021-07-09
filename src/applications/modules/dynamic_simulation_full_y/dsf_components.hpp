@@ -335,6 +335,9 @@ class DSFullBus
 	void applyConstYLoad_Change_Q(double loadPChangeMVAR);
 	void clearConstYLoad_Change_P();
 	void clearConstYLoad_Change_Q();
+	
+	bool setConstYLoadtoZero_P( );
+	bool setConstYLoadtoZero_Q( );
 
     /**
      * Write output from buses to standard out
@@ -531,6 +534,12 @@ class DSFullBus
 	void scatterInjectionLoad(double loadP, double loadQ);
 	
 	/**
+	* execute load scattering, the current values of the STATIC load at certain buses will be changed to the values of 
+	* the curR and curI
+	*/
+	void scatterInjectionLoadConstCurrent(double curR, double curI);
+	
+	/**
      * apply load shedding for the loads in this bus
      */
 	void applyLoadShedding(std::string loadid, double percentage);
@@ -606,6 +615,8 @@ class DSFullBus
 	                                           // per unit value based on system MVA 100, increase 500 MW load, p_Yload_change_r = 5.0
 	bool p_bscatterinjload_flag; //renke add, whether the static load of the bus could be modified at each time step 
 	double p_scatterinjload_p, p_scatterinjload_q; //renke add, the value of the static load of the bus modified at each time step
+	bool p_bscatterinjloadconstcur_flag; //renke add, whether the static load of the bus could be modified at each time step as constant current load
+	double p_scatterinjload_constcur_r, p_scatterinjload_constcur_i; //renke add, the value of the static load of the bus modified at each time step as constant current load
     double p_sbase;
     bool p_isGen;
     int p_area;
@@ -621,6 +632,8 @@ class DSFullBus
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
 	bool p_Yload_change_P_flag, p_Yload_change_Q_flag; // renke add, indicating whether this bus has constant-Y load P or Q change,to enable constant-Y load change during dyn. simu.
+	bool p_bConstYLoadSettoZero_P, p_bConstYLoadSettoZero_Q; // renke add, indicating whether this bus's constant-Y load P or Q has been already set to zero, check the function
+															 // setConstYLoadtoZero_P to see the usage
 	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
 	bool p_branchtripaction_from_flag, p_branchtripaction_to_flag;
 	bool p_busrelaytripflag;

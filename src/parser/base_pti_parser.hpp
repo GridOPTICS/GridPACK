@@ -727,6 +727,7 @@ class BasePTIParser : public BaseParser<_network>
       double e;
       double c0;
       double tnom;
+	  double dynload_perc;
 
       double tstall;
       double trestart;
