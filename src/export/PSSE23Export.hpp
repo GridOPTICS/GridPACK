@@ -69,13 +69,21 @@ class PSSE23Export
       branches.writeLineBlock(fout);
       ExportXform23<_network> xforms(p_network);
       xforms.writeXformBlock(fout);
-      ExportArea23<_network> areas(p_network);
-      areas.writeAreaBlock(fout);
-      Export2Term23<_network> terms(p_network);
-      terms.write2TermBlock(fout);
+      
       if (me == 0) {
+		fout << "0 / END OF TRANSFORMER ADJUSTMENT DATA, BEGIN AREA DATA" << std::endl;
+		fout << "0 / END OF AREA DATA, BEGIN TWO-TERMINAL DC DATA" << std::endl;
+		fout << "0 / END OF TWO-TERMINAL DC DATA, BEGIN SWITCHED SHUNT DATA" << std::endl;
+		fout << "0 / END OF SWITCHED SHUNT DATA, BEGIN IMPEDANCE CORRECTION DATA" << std::endl;
+		fout << "0 / END OF IMPEDANCE CORRECTION DATA, BEGIN MULTI-TERMINAL DC DATA" << std::endl;
+		fout << "0 / END OF MULTI-TERMINAL DC DATA, BEGIN MULTI-SECTION LINE DATA" << std::endl;
+		fout << "0 / END OF MULTI-SECTION LINE DATA, BEGIN ZONE DATA" << std::endl;
+		fout << "0 / END OF ZONE DATA, BEGIN INTER-AREA TRANSFER DATA" << std::endl;
+		fout << "0 / END OF INTER-AREA TRANSFER DATA, BEGIN OWNER DATA" << std::endl;
+		fout << "0 / END OF OWNER DATA, BEGIN FACTS DEVICE DATA" << std::endl;
+
         // Write closing 'Q'
-        fout << "Q" << std::endl;
+        // fout << "Q" << std::endl;
         fout.close();
       }
     }

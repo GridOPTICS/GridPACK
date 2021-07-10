@@ -22,6 +22,7 @@
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
+#include "gridpack/export/PSSE23Export.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
@@ -689,11 +690,32 @@ void gridpack::powerflow::PFAppModule::exportPSSE33(std::string &filename)
 }
 
 /**
+ * Export final configuration to PSS/E formatted file, version 23
+ * @param filename name of file to store network configuration
+ */
+void gridpack::powerflow::PFAppModule::exportPSSE23(std::string &filename)
+{
+  //if (p_no_print) return;
+  gridpack::expnet::PSSE23Export<PFNetwork> exprt(p_network);
+  exprt.writeFile(filename);
+}
+
+/**
  * Save results of powerflow calculation to data collection objects
  */
 void gridpack::powerflow::PFAppModule::saveData()
 {
   p_factory->saveData();
+}
+
+/**
+ * Save results of powerflow calculation to data collection objects
+ * added by Renke, also modify the original bus mag, ang, 
+ * and the original generator PG QG in the datacollection
+ */
+void gridpack::powerflow::PFAppModule::saveDataAlsotoOrg()
+{
+  p_factory->saveDataAlsotoOrg();
 }
 
 /**

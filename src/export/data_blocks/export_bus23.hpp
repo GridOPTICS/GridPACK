@@ -112,13 +112,13 @@ class ExportBus23
           if (!data->getValue("BUS_PF_VMAG",&rval)) {
             data->getValue(BUS_VOLTAGE_MAG,&rval);
           }
-          sprintf(ptr," %16.12f,",rval);
+          sprintf(ptr," %21.16f,",rval);
           ptr += strlen(ptr);
           rval = 0.0;
           if (!data->getValue("BUS_PF_VANG",&rval)) {
             data->getValue(BUS_VOLTAGE_ANG,&rval);
           }
-          sprintf(ptr," %16.12f,",rval);
+          sprintf(ptr," %21.16f,",rval);
           ptr += strlen(ptr);
           data->getValue(BUS_NAME,&sval);
           if (sval[0] == '\'') {

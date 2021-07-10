@@ -268,7 +268,7 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlow(){
 		pf_app_sptr->write();
 	}
 	
-    pf_app_sptr->saveData();
+    pf_app_sptr->saveDataAlsotoOrg();
 	
 	return pf_succ_flag;
 	
@@ -718,3 +718,12 @@ bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionBusParam(
 {
   return pf_app_sptr->modifyDataCollectionBusParam(bus_id, busParam,value);
 }
+/**
+ * Export final solved power flow to PSS/E formatted file, version 23
+ * @param filename name of file to store network configuration
+ */
+void gridpack::hadrec::HADRECAppModule::exportPSSE23(std::string filename)
+{
+	pf_app_sptr->exportPSSE23(filename);
+}
+

@@ -261,6 +261,16 @@ class PFBus
      */
     void saveData(boost::shared_ptr<gridpack::component::DataCollection>
           data);
+		  
+	/**
+	 * Save state variables inside the component to a DataCollection object.
+	 * This can be used as a way of moving data in a way that is useful for
+	 * creating output or for copying state data from one network to another.
+	 * @param data data collection object into which new values are inserted
+	 * added by Renke, also modify the original bus mag, ang, 
+	 * and the original generator PG QG in the datacollection
+	 */
+	void saveDataAlsotoOrg(boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Modify parameters inside the bus module. This is designed to be
