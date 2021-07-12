@@ -243,6 +243,12 @@ class HADRECAppModule
     bool modifyDataCollectionBusParam(int bus_id,
         std::string busParam, int value);
 	
+	/**
+     * Export final solved power flow to PSS/E formatted file, version 23
+     * @param filename name of file to store network configuration
+     */
+	void exportPSSE23(std::string filename);
+	
 
   private:
    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;

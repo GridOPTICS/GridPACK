@@ -157,6 +157,13 @@ class PFAppModule
     void saveData();
 	
 	/**
+	 * Save results of powerflow calculation to data collection objects
+	 * added by Renke, also modify the original bus mag, ang, 
+	 * and the original generator PG QG in the datacollection
+	*/
+	void saveDataAlsotoOrg();
+	
+	/**
 	* get the power flow solution for the specific bus, vmag and v angle
 	* @param bus original number, bus solution vmag and v angle
 	* @return false if location of bus is not found in
@@ -170,6 +177,12 @@ class PFAppModule
      * @param filename name of file to store network configuration
      */
     void exportPSSE33(std::string &filename);
+	
+	/**
+     * Export final configuration to PSS/E formatted file, version 23
+     * @param filename name of file to store network configuration
+     */
+    void exportPSSE23(std::string &filename);
     
     /**
      * Set a contingency

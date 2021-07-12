@@ -285,6 +285,12 @@ PYBIND11_MODULE(gridpack, gpm) {
          },
          py::arg("s") = "", py::arg("pfcase_idx") = -1
          )
+	.def("exportPSSE23",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE23(s.c_str());
+         },
+         py::arg("s") = ""
+         )
 	.def("solvePowerFlowBeforeDynSimu_withFlag",
          [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
 		   bool flag;

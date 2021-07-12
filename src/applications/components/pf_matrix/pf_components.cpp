@@ -1191,6 +1191,85 @@ void gridpack::powerflow::PFBus::saveData(
 }
 
 /**
+ * Save state variables inside the component to a DataCollection object.
+ * This can be used as a way of moving data in a way that is useful for
+ * creating output or for copying state data from one network to another.
+ * @param data data collection object into which new values are inserted
+ * added by Renke, also modify the original bus mag, ang, 
+ * and the original generator PG QG in the datacollection
+ */
+void gridpack::powerflow::PFBus::saveDataAlsotoOrg(
+    boost::shared_ptr<gridpack::component::DataCollection> data)
+{
+  double rval;
+  int i;
+  if (!data->setValue("BUS_PF_VMAG",*p_vMag_ptr)) {
+    data->addValue("BUS_PF_VMAG",*p_vMag_ptr);
+  }
+  data->setValue(BUS_VOLTAGE_MAG,*p_vMag_ptr);  //also modify the original BUS_VOLTAGE_MAG 
+  
+  rval = *p_vAng_ptr;
+  double pi = 4.0*atan(1.0);
+  rval = 180.0*rval/pi;
+  if (!data->setValue("BUS_PF_VANG",rval)) {
+    data->addValue("BUS_PF_VANG",rval);
+  }
+  data->setValue(BUS_VOLTAGE_ANG,rval); //also modify the original BUS_VOLTAGE_ANG 
+  
+  
+  if (!data->setValue("BUS_TYPE",p_type)) {
+    data->addValue("BUS_TYPE",p_type);
+  }
+  int ngen=p_pFac.size();
+  // Evalate p_Pinj and p_Qinj if bus is reference bus. This is skipped when
+  // evaluating matrix elements.
+#ifndef LARGE_MATRIX
+  if (getReferenceBus() || isIsolated()) {
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    double P, Q, p, q;
+    P = 0.0;
+    Q = 0.0;
+    for (i=0; i<size; i++) {
+      gridpack::powerflow::PFBranch *branch
+        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+      branch->getPQ(this, &p, &q);
+      P += p;
+      Q += q;
+    }
+    // Also add bus i's own Pi, Qi
+    P += p_v*p_v*p_ybusr;
+    Q += p_v*p_v*(-p_ybusi);
+    p_Pinj = P;
+    p_Qinj = Q;
+  }
+#endif
+  double pl=0.0;
+  double ql=0.0;
+  for (i=0; i<p_pl.size(); i++) {
+    if (p_lstatus[i] == 1) {
+      pl += p_pl[i];
+      ql += p_ql[i];
+    }
+  }
+  for (i=0; i<ngen; i++) {
+    rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
+    if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
+      data->addValue("GENERATOR_PF_PGEN",rval,i);
+    }
+	data->setValue(GENERATOR_PG,rval*100.0,i); //also modify the original GENERATOR_PG 
+	
+    rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+    if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
+      data->addValue("GENERATOR_PF_QGEN",rval,i);
+    }
+	data->setValue(GENERATOR_QG,rval*100.0,i); //also modify the original GENERATOR_QG 
+	
+  }
+}
+
+/**
  * Modify parameters inside the bus module. This is designed to be
  * extensible
  * @param name character string describing parameter to be modified
