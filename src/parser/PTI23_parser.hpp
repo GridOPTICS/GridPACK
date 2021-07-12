@@ -257,6 +257,10 @@ class PTI23_parser : public BasePTIParser<_network>
         data->addValue(CASE_ID, p_case_id);
 
         // BUS_NAME             "NAME"                 string
+        if (split_line[9].find_first_of('\'',0) != std::string::npos) {
+          gridpack::utility::StringUtils util;
+          util.trim(split_line[9]);
+        }
         if (nstr > 9) data->addValue(BUS_NAME, split_line[9].c_str());
 
         // BUS_BASEKV           "BASKV"               float
