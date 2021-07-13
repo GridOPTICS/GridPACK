@@ -121,7 +121,7 @@ class ExportBus23
           sprintf(ptr," %21.16f,",rval);
           ptr += strlen(ptr);
           data->getValue(BUS_NAME,&sval);
-          if (sval[0] == '\'') {
+          if (sval.find_first_of('\'') != std::string::npos) {
             sprintf(ptr," %s,",sval.c_str());
           } else {
             sprintf(ptr," \'%s\',",sval.c_str());
