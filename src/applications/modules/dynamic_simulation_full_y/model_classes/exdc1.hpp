@@ -111,6 +111,8 @@ class Exdc1Model : public BaseExciterModel
      */
     void setOmega(double omega);
 	
+	void setVstab(double vstab);
+	
 	// Yuan added below 2020-6-23
 	/** 
 	 * Set the exciter bus number
@@ -146,7 +148,7 @@ class Exdc1Model : public BaseExciterModel
     double Efd;
 
     // Field Current Output
-    double LadIfd;
+    double LadIfd, Vstab;
 
     double Vref;
 

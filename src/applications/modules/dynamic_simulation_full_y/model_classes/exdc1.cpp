@@ -165,6 +165,7 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, doub
   Vref = mag + x4 / KA;
   //printf("Vref = %f\n", Vref);
   ///printf("exdc1 init:  %f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5); 
+  Vstab = 0.0;
 }
 
 /**
@@ -198,7 +199,7 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
   }
   //printf("TF = %f, t_inc = %f, x5 = %f, dx5 = %f\n", TF, t_inc, x5, dx5);
   // State 3
-  double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
+  //double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
   double LeadLagIN = Vref - x2 + Vstab - Feedback;
   //printf("Vref = %f, TB = %f, TC = %f\n", Vref, TB, TC); 
   double LeadLagOUT;
@@ -266,7 +267,7 @@ void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag
     Feedback = 0;
   }
   // State 3
-  double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
+  //double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
   double LeadLagIN = Vref - x2_1 + Vstab - Feedback;  
   double LeadLagOUT;
   //printf("LeadLagIN = %f, TC = %f, TB = %f, x3 = %f\n", LeadLagIN, TC, TB, x3);
@@ -356,6 +357,12 @@ void gridpack::dynamic_simulation::Exdc1Model::setOmega(double omega)
 {
   w = omega;
 }
+
+void gridpack::dynamic_simulation::Exdc1Model::setVstab(double vtmp)
+{
+  Vstab = vtmp;
+}
+
 
 // Yuan added below 2020-6-23
 /** 
