@@ -1190,3 +1190,109 @@ bool gridpack::powerflow::PFAppModule::modifyDataCollectionBusParam(
   return p_modifyDataCollectionBusParam<int>(bus_id,busParam,value);
 }
 
+/**
+ * Modify parameters in data collection for specified branch
+ * @param bus1, bus2 bus IDs for from and to bus
+ * @param ckt two character token specifying branch
+ * @param branchParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, double value)
+{
+  return p_modifyDataCollectionBranchParam<double>(bus1,bus2,ckt,branchParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, int value)
+{
+  return p_modifyDataCollectionBranchParam<int>(bus1,bus2,ckt,branchParam,value);
+}
+
+/**
+ * Get generator parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param gen_id two character token specifying generator on bus
+ * @param genParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionGenParam(
+    int bus_id, std::string gen_id,
+    std::string genParam, double *value)
+{
+  return p_getDataCollectionGenParam<double>(bus_id, gen_id, genParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionGenParam(
+    int bus_id, std::string gen_id,
+    std::string genParam, int *value)
+{
+  return p_getDataCollectionGenParam<int>(bus_id, gen_id, genParam, value);
+}
+
+/**
+ * Get load parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param load_id two character token specifying load on bus
+ * @param loadParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionLoadParam(
+    int bus_id, std::string load_id,
+    std::string loadParam, double *value)
+{
+  return p_getDataCollectionLoadParam<double>(bus_id, load_id, loadParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionLoadParam(
+    int bus_id, std::string load_id,
+    std::string loadParam, int *value)
+{
+  return p_getDataCollectionLoadParam<int>(bus_id, load_id, loadParam, value);
+}
+
+/**
+ * Get parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param busParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionBusParam(
+    int bus_id, std::string busParam, double *value)
+{
+  return p_getDataCollectionBusParam<double>(bus_id, busParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionBusParam(
+    int bus_id, std::string busParam, int *value)
+{
+  return p_getDataCollectionBusParam<int>(bus_id, busParam, value);
+}
+
+/**
+ * Get parameters in data collection for specified branch
+ * @param bus1, bus2 bus IDs for from and to bus
+ * @param ckt two character token specifying branch
+ * @param branchParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, double *value)
+{
+  return p_getDataCollectionBranchParam<double>(bus1, bus2, ckt, branchParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, int *value)
+{
+  return p_getDataCollectionBranchParam<int>(bus1, bus2, ckt, branchParam, value);
+}

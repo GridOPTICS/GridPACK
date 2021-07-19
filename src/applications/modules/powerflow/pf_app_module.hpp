@@ -387,6 +387,75 @@ class PFAppModule
     bool modifyDataCollectionBusParam(int bus_id,
         std::string busParam, int value);
 
+    /**
+     * Modify parameters in data collection for specified branch
+     * @param bus1, bus2 bus IDs for from and to bus
+     * @param ckt two character token specifying branch
+     * @param branchParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, double value);
+    bool modifyDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, int value);
+
+	/**
+     * Get generator parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param gen_id two character token specifying generator on bus
+     * @param genParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, double *value);
+    bool getDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, int *value);
+
+    /**
+     * Get load parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param load_id two character token specifying load on bus
+     * @param loadParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, double *value);
+    bool getDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, int *value);
+
+    /**
+     * Get parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param busParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionBusParam(int bus_id,
+        std::string busParam, double *value);
+    bool getDataCollectionBusParam(int bus_id,
+        std::string busParam, int *value);
+
+    /**
+     * Get parameters in data collection for specified branch
+     * @param bus1, bus2 bus IDs for from and to bus
+     * @param ckt two character token specifying branch
+     * @param branchParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, double *value);
+    bool getDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, int *value);
+
   private:
 
     /**
@@ -507,6 +576,233 @@ class PFAppModule
           T tval;
           if (data->setValue(busParam.c_str(),value)) {
             ret = true;
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
+    /**
+     * Template function for modifying parameters in data collection for
+     * specified branch
+     * @param bus1, bus2 bus IDs for from and to bus defining branch
+     * @param ckt two-character branch identifier
+     * @param branch_par string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_modifyDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, T value)
+    {
+      std::vector<int> indices = p_network->getLocalBranchIndices(bus1, bus2);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          boost::shared_ptr<gridpack::component::DataCollection> data =
+            p_network->getBranchData(indices[i]);
+          int nbranch;
+          if (data->getValue(BRANCH_NUM_ELEMENTS, &nbranch)) {
+            int ibr = -1;
+            T tval;
+            int j;
+            std::string brID;
+            for (j=0; j<nbranch; j++) {
+              if (data->getValue(BRANCH_CKT,&brID,j)) {
+                if (ckt == brID) {
+                  ibr = j;
+                  break;
+                }
+              }
+            }
+            if (ibr >= 0) {
+              if (data->setValue(branchParam.c_str(),value,ibr)) {
+                ret = true;
+              }
+            }
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
+    /**
+     * Template function get generator parameters in data collection
+     * for specified bus
+     * @param bus_id bus ID
+     * @param gen_id two character token specifying generator on bus
+     * @param gen_par string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_getDataCollectionGenParam(
+        int bus_id, std::string gen_id, std::string genParam, T *value)
+    {
+      std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          if (p_network->getActiveBus(indices[i])) {
+            boost::shared_ptr<gridpack::component::DataCollection> data =
+              p_network->getBusData(indices[i]);
+            int ngen;
+            if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+              int igen = -1;
+              T tval;
+              int j;
+              std::string gID;
+              for (j = 0; j<ngen; j++) {
+                // Get index of generator
+                if (data->getValue(GENERATOR_ID,&gID,j)) {
+                  if (gID == gen_id) {
+                    igen = j;
+                    break;
+                  }
+                }
+              }
+              if (igen >= 0) {
+                if (data->getValue(genParam.c_str(),value,igen)) {
+                  ret = true;
+                }
+              }
+            }
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
+    /**
+     * Template function to get load parameters in data collection for
+     * specified bus
+     * @param bus_id bus ID
+     * @param load_id two character token specifying load on bus
+     * @param load_par string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_getDataCollectionLoadParam(int bus_id, std::string load_id,
+          std::string loadParam, T *value)
+    {
+      std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          if (p_network->getActiveBus(indices[i])) {
+            boost::shared_ptr<gridpack::component::DataCollection> data =
+              p_network->getBusData(indices[i]);
+            int nload;
+            if (data->getValue(LOAD_NUMBER, &nload)) {
+              int iload = -1;
+              T tval;
+              int j;
+              std::string lID;
+              for (j = 0; j<nload; j++) {
+                if (data->getValue(LOAD_ID,&lID,j)) {
+                  if (lID == load_id) {
+                    iload = j;
+                    break;
+                  }
+                }
+              }
+              if (iload >= 0) {
+                if (data->getValue(loadParam.c_str(),value,iload)) {
+                  ret = true;
+                }
+              }
+            }
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
+    /**
+     * Template function to get parameters in data collection for
+     * specified bus
+     * @param bus_id bus ID
+     * @param bus_par string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_getDataCollectionBusParam(int bus_id, std::string busParam, 
+        T *value)
+    {
+      std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          if (p_network->getActiveBus(indices[i])) {
+            boost::shared_ptr<gridpack::component::DataCollection> data =
+              p_network->getBusData(indices[i]);
+            T tval;
+            if (data->getValue(busParam.c_str(),value)) {
+              ret = true;
+            }
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
+    /**
+     * Template function to get parameters in data collection for
+     * specified branch
+     * @param bus1, bus2 bus IDs for from and to bus defining branch
+     * @param ckt two-character branch identifier
+     * @param branch_par string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_getDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, T *value)
+    {
+      std::vector<int> indices = p_network->getLocalBranchIndices(bus1, bus2);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          if (p_network->getActiveBranch(indices[i])) {
+            boost::shared_ptr<gridpack::component::DataCollection> data =
+              p_network->getBranchData(indices[i]);
+            int nbranch;
+            if (data->getValue(BRANCH_NUM_ELEMENTS, &nbranch)) {
+              int ibr = -1;
+              T tval;
+              int j;
+              std::string brID;
+              for (j=0; j<nbranch; j++) {
+                if (data->getValue(BRANCH_CKT,&brID,j)) {
+                  if (ckt == brID) {
+                    ibr = j;
+                    break;
+                  }
+                }
+              }
+              if (ibr >= 0) {
+                if (data->getValue(branchParam.c_str(),value,ibr)) {
+                  ret = true;
+                }
+              }
+            }
           }
         }
         return ret;
