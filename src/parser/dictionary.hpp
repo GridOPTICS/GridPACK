@@ -1182,6 +1182,13 @@
 #define LOAD_TTR2A "LOAD_TTR2A"
 
 /**
+ * LOAD_AC_PERC, ac motor load percentage
+ * type: float
+ * indexed
+ */
+#define LOAD_AC_PERC "LOAD_AC_PERC"
+
+/**
  * Load FTR2A
  * type: float
  * indexed

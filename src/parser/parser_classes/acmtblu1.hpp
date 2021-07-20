@@ -295,6 +295,13 @@ template <class _data_struct> class Acmtblu1Parser
       } else {
         data->setValue(LOAD_TTR2, data_struct.ttr2, l_id);
       }
+	  
+	  // LOAD_AC_PERC
+      if (!data->getValue(LOAD_AC_PERC,&rval,l_id)) {
+        data->addValue(LOAD_AC_PERC, data_struct.load_ac_perc, l_id);
+      } else {
+        data->setValue(LOAD_AC_PERC, data_struct.load_ac_perc, l_id);
+      }
     }
 
     /**
@@ -636,6 +643,16 @@ template <class _data_struct> class Acmtblu1Parser
           data->setValue(LOAD_TTR2, atof(split_line[45].c_str()), l_id);
         }
       }
+	  
+	  // LOAD_AC_PERC
+      if (nstr > 46) {
+        if (!data->getValue(LOAD_AC_PERC,&rval,l_id)) {
+          data->addValue(LOAD_AC_PERC, atof(split_line[46].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_AC_PERC, atof(split_line[46].c_str()), l_id);
+        }
+      }
+	  
     }
 
     /**
@@ -834,6 +851,12 @@ template <class _data_struct> class Acmtblu1Parser
       if (nstr > 45) {
         data.ttr2 = atof(split_line[45].c_str());
       }
+	  
+	  // LOAD_AC_PERC
+      if (nstr > 46) {
+        data.load_ac_perc = atof(split_line[46].c_str());
+      }
+	  
     }
 };
 }  // parser

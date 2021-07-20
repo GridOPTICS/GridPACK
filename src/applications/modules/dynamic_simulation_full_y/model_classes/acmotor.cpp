@@ -294,7 +294,12 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
   if (!data->getValue(LOAD_TTR1, &Ttr1 , idx))  Ttr1 	= 0.2;
   if (!data->getValue(LOAD_UVTR2, &Uvtr2, idx))  Uvtr2 	= 0.9;
   if (!data->getValue(LOAD_TTR2, &Ttr2 , idx))  Ttr2 	= 5.0;
- 
+  if (!data->getValue(LOAD_AC_PERC, &acload_perc, idx)) acload_perc = 0.43;
+  //printf("-------rkde,  ac motor acload_perc: %.2f\n", acload_perc);
+  
+  if (acload_perc< 0.01) acload_perc = 0.43; //if the LOAD_AC_PERC is not defined in the dyr file, as the normal PSS/E dyr file
+  //printf("-------rkde after mod,  ac motor acload_perc: %.2f\n", acload_perc);
+  
     if (bdebugprint) printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
     if (bdebugprint) printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
     if (bdebugprint) printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);

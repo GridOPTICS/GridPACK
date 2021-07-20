@@ -764,6 +764,7 @@ class BasePTIParser : public BaseParser<_network>
       double ttr1;
       double uvtr2;
       double ttr2;
+	  double load_ac_perc;
 
       double a1;
       double a2;
