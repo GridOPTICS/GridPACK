@@ -470,12 +470,12 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
 
 	if (p_tripped){
 		x1d_0 = 0.0;
-		x2w_0 = 0.0;
+		x2w_0 = -1.0;
 		x3Eqp_0 = 0.0;
 		x4Psidp_0 = 0.0;
 		x5Psiqpp_0 = 0.0;
 		x1d_1 = 0.0;
-		x2w_1 = 0.0;
+		x2w_1 = -1.0;
 		x3Eqp_1 = 0.0;
 		x4Psidp_1 = 0.0;
 		x5Psiqpp_1 = 0.0;	
@@ -484,12 +484,12 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
 	}
   }else {
 	x1d_0 = 0.0;
-    x2w_0 = 0.0;
+    x2w_0 = -1.0;
     x3Eqp_0 = 0.0;
     x4Psidp_0 = 0.0;
     x5Psiqpp_0 = 0.0;
 	x1d_1 = 0.0;
-    x2w_1 = 0.0;
+    x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqpp_1 = 0.0;
@@ -679,12 +679,12 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
  
  	if (p_tripped){
 		x1d_0 = 0.0;
-		x2w_0 = 0.0;
+		x2w_0 = -1.0;
 		x3Eqp_0 = 0.0;
 		x4Psidp_0 = 0.0;
 		x5Psiqpp_0 = 0.0;
 		x1d_1 = 0.0;
-		x2w_1 = 0.0;
+		x2w_1 = -1.0;
 		x3Eqp_1 = 0.0;
 		x4Psidp_1 = 0.0;
 		x5Psiqpp_1 = 0.0;
@@ -697,12 +697,12 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
      //     p_bus_id, x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1);
   }else {
 	x1d_0 = 0.0;
-    x2w_0 = 0.0;
+    x2w_0 = -1.0;
     x3Eqp_0 = 0.0;
     x4Psidp_0 = 0.0;
     x5Psiqpp_0 = 0.0;
 	x1d_1 = 0.0;
-    x2w_1 = 0.0;
+    x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqpp_1 = 0.0;

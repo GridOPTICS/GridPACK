@@ -422,13 +422,13 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
   
   	if (p_tripped){
 		x1d = 0.0;
-		x2w = 0.0;
+		x2w = -1.0;
 		x3Eqp = 0.0;
 		x4Psidp = 0.0;
 		x5Psiqp = 0.0;
 		x6Edp = 0.0;
 		x1d_1 = 0.0;
-		x2w_1 = 0.0;
+		x2w_1 = -1.0;
 		x3Eqp_1 = 0.0;
 		x4Psidp_1 = 0.0;
 		x5Psiqp_1 = 0.0;	
@@ -438,13 +438,13 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
 	}
   }else {
 	x1d = 0.0;
-    x2w = 0.0;
+    x2w = -1.0;
     x3Eqp = 0.0;
     x4Psidp = 0.0;
     x5Psiqp = 0.0;
 	x6Edp = 0.0;
 	x1d_1 = 0.0;
-    x2w_1 = 0.0;
+    x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqp_1 = 0.0;
@@ -593,13 +593,13 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
 
  	if (p_tripped){
 		x1d = 0.0;
-		x2w = 0.0;
+		x2w = -1.0;
 		x3Eqp = 0.0;
 		x4Psidp = 0.0;
 		x5Psiqp = 0.0;
 		x6Edp = 0.0;
 		x1d_1 = 0.0;
-		x2w_1 = 0.0;
+		x2w_1 = -1.0;
 		x3Eqp_1 = 0.0;
 		x4Psidp_1 = 0.0;
 		x5Psiqp_1 = 0.0;
@@ -610,13 +610,13 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
 
   }else {
 	x1d = 0.0;
-    x2w = 0.0;
+    x2w = -1.0;
     x3Eqp = 0.0;
     x4Psidp = 0.0;
     x5Psiqp = 0.0;
 	x6Edp = 0.0;
 	x1d_1 = 0.0;
-    x2w_1 = 0.0;
+    x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqp_1 = 0.0;

@@ -2015,7 +2015,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         }
       }
     }
-    p_obs_rSpd->addElements(p_obs_lGenIdx, ones);
+    p_obs_rSpd->addElements(p_obs_lGenIdx, zeros);
     p_obs_rSpd->upload();
     p_obs_rAng->addElements(p_obs_lGenIdx, zeros);
     p_obs_rAng->upload();
@@ -2379,7 +2379,7 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
           }
         }
       } else {
-        trSpd.push_back(1.0);
+        trSpd.push_back(0.0);
         trAng.push_back(0.0);
         tgenP.push_back(0.0);
         tgenQ.push_back(0.0);
@@ -2562,7 +2562,7 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations_withBusFreq(
           }
         }
       } else {
-        trSpd.push_back(1.0);
+        trSpd.push_back(0.0);
         trAng.push_back(0.0);
         tgenP.push_back(0.0);
         tgenQ.push_back(0.0);
@@ -4176,9 +4176,13 @@ bool gridpack::dynamic_simulation::DSFullApp::getGeneratorPower(int bus_id,
 {
   std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
   int i;
+  gridpack::utility::StringUtils util;
+  std::string clean_genid;
+  clean_genid = util.clean2Char(gen_id);
+  
   for (i=0; i<indices.size(); i++) {
     if (p_network->getActiveBus(indices[i])) {
-      if (p_network->getBus(indices[i])->getGeneratorPower(gen_id, pg, qg)) {
+      if (p_network->getBus(indices[i])->getGeneratorPower(clean_genid, pg, qg)) {
         return true;
       } else {
 			if (p_report_dummy_obs){

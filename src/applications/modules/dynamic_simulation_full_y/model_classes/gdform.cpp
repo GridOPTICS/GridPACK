@@ -469,7 +469,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	xq_1 = 0.0;
 	genP = 0.0;
 	genQ = 0.0;
-	omega= 1.0;
+	omega= 0.0;
 	}
 	
   }else {
@@ -490,7 +490,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	xq_1 = 0.0;
 	genP = 0.0;
 	genQ = 0.0;
-	omega= 1.0;
+	omega= 0.0;
   }//pair with getGenStatus()
 
 }
@@ -720,7 +720,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	xq_1 = 0.0;
 	genP = 0.0;
 	genQ = 0.0;
-	omega= 1.0;
+	omega= 0.0;
 	}
 	
   }else {
@@ -740,7 +740,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	xq_1 = 0.0;
 	genP = 0.0;
 	genQ = 0.0;
-	omega= 1.0;
+	omega= 0.0;
   }//pair with getGenStatus()
   
 }
