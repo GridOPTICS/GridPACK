@@ -64,6 +64,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_report_dummy_obs = false;
   p_biterative_solve_network = false;
   p_iterative_network_debug = false;
+  p_generator_observationpower_systembase = true;
   ITER_TOL = 1.0e-7;
   MAX_ITR_NO = 8;
   
@@ -220,6 +221,7 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   //--------------whether iteratively compute network current-----------
   p_biterative_solve_network = cursor->get("iterativeNetworkInterface",false);
   p_iterative_network_debug = cursor->get("iterativeNetworkInterfaceDebugPrint",false);
+  p_generator_observationpower_systembase = cursor->get("generatorObservationPowerSystemBase",true);
   
   ITER_TOL = cursor->get("iterativeNetworkInterfaceTol", 1.0e-7);
   MAX_ITR_NO =  cursor->get("iterativeNetworkInterfaceMaxItrNo", 8);
@@ -463,6 +465,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   
   // Initialize vectors for integration 
   p_factory->initDSVect(p_time_step);
+  
+  p_factory->setGeneratorObPowerBaseFlag(p_generator_observationpower_systembase);
   //exit(0);
 
   ngenMap_sptr.reset(new gridpack::mapper::BusVectorMap<DSFullNetwork> (p_network));
@@ -2973,6 +2977,8 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   
   // Initialize vectors for integration 
   p_factory->initDSVect(p_time_step);
+  
+  p_factory->setGeneratorObPowerBaseFlag(p_generator_observationpower_systembase);
   //exit(0);
 
   ngenMap_sptr.reset(new gridpack::mapper::BusVectorMap<DSFullNetwork> (p_network));

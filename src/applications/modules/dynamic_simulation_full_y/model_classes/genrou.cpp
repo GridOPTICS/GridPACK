@@ -716,6 +716,13 @@ void gridpack::dynamic_simulation::GenrouGenerator::getWatchValues(
   vals.clear();
   vals.push_back(x1d_1);
   vals.push_back(x2w_1+1.0);
-  vals.push_back(genP*MVABase/p_sbase);  //output at system mva base
-  vals.push_back(genQ*MVABase/p_sbase);  //output at system mva base
+  if (p_generatorObservationPowerSystemBase){
+	vals.push_back(genP*MVABase/p_sbase);  //output at system mva base
+	vals.push_back(genQ*MVABase/p_sbase);  //output at system mva base
+  }else{
+	vals.push_back(genP);  //output at generator mva base
+	vals.push_back(genQ);  //output at generator mva base
+  }
+  
+  
 }

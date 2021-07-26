@@ -30,6 +30,7 @@ gridpack::dynamic_simulation::BaseGeneratorModel::BaseGeneratorModel(void)
   p_hasGovernor = false;
   p_hasPss = false;
   bStatus = true;
+  p_generatorObservationPowerSystemBase = true;
   p_wideareafreq = 0.0;
 }
 
@@ -306,4 +307,9 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::getWatchValues(
     std::vector<double> &vals)
 {
   vals.clear();
+}
+
+void gridpack::dynamic_simulation::BaseGeneratorModel::setGeneratorObPowerBaseFlag(bool generatorObservationPowerSystemBase)
+{
+	p_generatorObservationPowerSystemBase = generatorObservationPowerSystemBase;
 }

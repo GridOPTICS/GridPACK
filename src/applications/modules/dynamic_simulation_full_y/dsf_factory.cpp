@@ -187,6 +187,15 @@ void gridpack::dynamic_simulation::DSFullFactory::initDSVect(double ts)
   }
 }
 
+void gridpack::dynamic_simulation::DSFullFactory::setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase)
+{
+  int i;
+
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->setGeneratorObPowerBaseFlag(generator_observationpower_systembase);
+  }
+}
+
 /**
  * Update vectors in each integration time step (Predictor)
  */

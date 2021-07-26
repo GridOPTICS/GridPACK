@@ -694,6 +694,9 @@ class DSFullApp
 	
 	// whether print out debug information for iteratively solve the network interface 
 	bool p_iterative_network_debug;
+	
+	//for the generator observations, output the generator power based on system base or generator base
+	bool p_generator_observationpower_systembase;
 
     // Simulation time
     double p_sim_time;

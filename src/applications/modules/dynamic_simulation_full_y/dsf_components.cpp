@@ -464,6 +464,15 @@ void gridpack::dynamic_simulation::DSFullBus::setYBus(void)
   p_ybusi = imag(ret);
 }
 
+void gridpack::dynamic_simulation::DSFullBus::setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase)
+{
+	if (p_ngen > 0) {
+		for (int i = 0; i < p_ngen; i++) {
+			p_generators[i]->setGeneratorObPowerBaseFlag(generator_observationpower_systembase);
+		}
+	}
+}
+
 /**
  * Set initial values of vectors for integration. 
  * These can then be used in subsequent calculations

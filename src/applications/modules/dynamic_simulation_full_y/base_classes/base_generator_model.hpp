@@ -171,6 +171,8 @@ class BaseGeneratorModel
     void setWatch(bool flag);
 
     bool getWatch();
+	
+	void setGeneratorObPowerBaseFlag(bool generatorObservationPowerSystemBase);
 
     /**
      * return the bolean indicating whether the gen is tripped by a relay
@@ -195,6 +197,7 @@ class BaseGeneratorModel
     bool p_hasGovernor;
 	bool p_hasPss;
 	bool p_hasPlantController;
+	bool p_generatorObservationPowerSystemBase;
 	double p_wideareafreq;
 
   private:

@@ -132,6 +132,8 @@ class DSFullBus
      * @param ts time step
      */
     void initDSVect(double ts);
+	
+	void setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase);
 
     /**
      * Update values for vectors in each integration time step (Predictor)
