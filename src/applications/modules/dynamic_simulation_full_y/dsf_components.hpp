@@ -547,6 +547,12 @@ class DSFullBus
 	void applyLoadShedding(std::string loadid, double percentage);
 	
 	/**
+	 * execute constant Y load shedding 	 
+	 * percentage: float load shed percentage, for example -0.2 means shed 20%
+	 */
+	void applyConstYLoadShedding(double percentage );
+	
+	/**
      * execute Grid Forming Inverter control parameters adjustment at this bus
 	 * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
 	 * input bus_number: GFI gen ID
@@ -615,6 +621,8 @@ class DSFullBus
 	double p_loadimpedancer, p_loadimpedancei;
 	double p_Yload_change_r, p_Yload_change_i; // renke add, to enable constant-Y load changes during the dynamic simulation
 	                                           // per unit value based on system MVA 100, increase 500 MW load, p_Yload_change_r = 5.0
+	bool p_bconstYLoadSheddingFlag; //renke add, whether the static constant Y load of the bus has been shedding, true: has been shed
+    double 	remainConstYLoadPerc; // renke add, remaining percent of the static constant Y load of the bus
 	bool p_bscatterinjload_flag; //renke add, whether the static load of the bus could be modified at each time step 
 	double p_scatterinjload_p, p_scatterinjload_q; //renke add, the value of the static load of the bus modified at each time step
 	bool p_bscatterinjloadconstcur_flag; //renke add, whether the static load of the bus could be modified at each time step as constant current load

@@ -143,6 +143,13 @@ class DSFullApp
     void applyLoadShedding(int bus_number, std::string loadid, double percentage);
 	
 	/**
+	 * execute constant Y load shedding at a curtain bus	 
+	 * bus number
+	 * percentage: float load shed percentage, for example -0.2 means shed 20%
+	 */
+	void applyConstYLoadShedding(int bus_number, double percentage );
+	
+	/**
      * execute Grid Forming Inverter control parameters adjustment
 	 * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
 	 * input bus_number: GFI bus number

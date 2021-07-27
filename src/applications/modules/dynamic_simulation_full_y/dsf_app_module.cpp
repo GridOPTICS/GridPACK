@@ -3908,6 +3908,27 @@ void gridpack::dynamic_simulation::DSFullApp::applyGFIAdjustment(int controlType
 	
 }
 
+/**
+ * execute constant Y load shedding at a curtain bus	 
+ * bus number
+ * percentage: float load shed percentage, for example -0.2 means shed 20%
+ */
+void gridpack::dynamic_simulation::DSFullApp::applyConstYLoadShedding(int bus_number, double percentage ){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	//printf("----renke debug applyConstYLoadShedding, in dsf full app, bus_number: %d, nbus: %d\n", bus_number, nbus);
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug applyConstYLoadShedding, in dsf full app, percentage: %f \n", percentage);
+		bus->applyConstYLoadShedding(percentage);
+	}		
+}
+
 
 /**
  * execute constant Y load P change	 

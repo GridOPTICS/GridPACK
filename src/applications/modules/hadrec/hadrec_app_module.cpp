@@ -574,6 +574,7 @@ bool gridpack::hadrec::HADRECAppModule::getZoneGeneratorPower(std::vector<double
  * apply actions
  */
 void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECAction control_action){
+	
 	if ( control_action.actiontype == 0 ){
 		return ds_app_sptr->applyLoadShedding(control_action.bus_number, control_action.componentID, control_action.percentage );
 	}
@@ -592,6 +593,10 @@ void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECActi
 	
 	if ( control_action.actiontype == 5 || control_action.actiontype == 6 || control_action.actiontype == 7 || control_action.actiontype == 8){
 		return ds_app_sptr->applyGFIAdjustment(control_action.actiontype-5, control_action.bus_number, control_action.componentID, control_action.percentage );
+	}
+	
+	if ( control_action.actiontype == 9 ){
+		return ds_app_sptr->applyConstYLoadShedding(control_action.bus_number, control_action.percentage );
 	}
 	
 	if ( control_action.actiontype == 1 ){

@@ -44,6 +44,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_Yload_change_Q_flag = false;
   p_bConstYLoadSettoZero_P = false;
   p_bConstYLoadSettoZero_Q = false;
+  p_bconstYLoadSheddingFlag = false;
+  remainConstYLoadPerc = 1.0;
   p_bscatterinjload_flag = false;
   p_bscatterinjloadconstcur_flag = false;
   p_to_flag = false;
@@ -379,6 +381,22 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 		  //printf("DSFullBus::vectorValues, bus %d, dynamic load Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
 	  }
 	  
+	  // INorton contribution from the sheded constant Y load
+	  if (p_bconstYLoadSheddingFlag){
+		  
+		  double inj_constY_P, inj_constY_Q;
+		  gridpack::ComplexType inj_constY_S, inj_constY_cur_tmp;
+		  
+		  inj_constY_P = p_loadimpedancer*(p_voltage*p_voltage)*(1.0-remainConstYLoadPerc);
+		  inj_constY_Q = -p_loadimpedancei*(p_voltage*p_voltage)*(1.0-remainConstYLoadPerc);
+		  inj_constY_S = gridpack::ComplexType(inj_constY_P, inj_constY_Q);
+		  inj_constY_cur_tmp = inj_constY_S/p_volt_full;
+		  inj_constY_cur_tmp = conj(inj_constY_cur_tmp);
+		  
+		  values[0] += inj_constY_cur_tmp;
+		  
+	  }
+	  	  
 	  // INorton contribution from the scattered injection load
 	  if (p_bscatterinjload_flag){
 		  
@@ -2827,6 +2845,22 @@ void gridpack::dynamic_simulation::DSFullBus::applyLoadShedding(std::string load
 	for (iload=0; iload<nload; iload++){
 		p_loadmodels[iload]->changeLoad(percentage);
 	}
+}
+
+/**
+ * execute constant Y load shedding 	 
+ * percentage: float load shed percentage, for example -0.2 means shed 20%
+ */
+void gridpack::dynamic_simulation::DSFullBus::applyConstYLoadShedding(double percentage ){
+	p_bconstYLoadSheddingFlag = true;
+	remainConstYLoadPerc = remainConstYLoadPerc + percentage;
+	if (remainConstYLoadPerc<= 0.0){
+		remainConstYLoadPerc = 0.0;
+	}
+	
+	//printf("----------renke debug, DSFullBus::applyConstYLoadShedding, bus %d remaining load perc: %f, p_loadimpedancer: %f, p_loadimpedancei: %f\n", 
+	//getOriginalIndex(), remainConstYLoadPerc, p_loadimpedancer, p_loadimpedancei);
+	
 }
 
 /**
