@@ -242,6 +242,75 @@ class HADRECAppModule
         std::string busParam, double value);
     bool modifyDataCollectionBusParam(int bus_id,
         std::string busParam, int value);
+		
+	    /**
+     * Modify parameters in data collection for specified branch
+     * @param bus1, bus2 bus IDs for from and to bus
+     * @param ckt two character token specifying branch
+     * @param branchParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, double value);
+    bool modifyDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, int value);
+
+	/**
+     * Get generator parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param gen_id two character token specifying generator on bus
+     * @param genParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, double &value);
+    bool getDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, int &value);
+
+    /**
+     * Get load parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param load_id two character token specifying load on bus
+     * @param loadParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, double &value);
+    bool getDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, int &value);
+
+    /**
+     * Get parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param busParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionBusParam(int bus_id,
+        std::string busParam, double &value);
+    bool getDataCollectionBusParam(int bus_id,
+        std::string busParam, int &value);
+
+    /**
+     * Get parameters in data collection for specified branch
+     * @param bus1, bus2 bus IDs for from and to bus
+     * @param ckt two character token specifying branch
+     * @param branchParam string representing dictionary name of data element
+     *                to be modified
+     * @param value value of parameter
+     * @return return false if parameter is not found
+     */
+    bool getDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, double &value);
+    bool getDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
+        std::string branchParam, int &value);
 	
 	/**
      * Export final solved power flow to PSS/E formatted file, version 23

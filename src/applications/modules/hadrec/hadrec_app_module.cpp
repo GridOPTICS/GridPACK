@@ -723,6 +723,122 @@ bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionBusParam(
 {
   return pf_app_sptr->modifyDataCollectionBusParam(bus_id, busParam,value);
 }
+
+/**
+ * Modify parameters in data collection for specified branch
+ * @param bus1, bus2 bus IDs for from and to bus
+ * @param ckt two character token specifying branch
+ * @param branchParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, double value)
+{
+  return pf_app_sptr->modifyDataCollectionBranchParam(bus1,bus2,ckt,branchParam,value);
+}
+bool gridpack::hadrec::HADRECAppModule::modifyDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, int value)
+{
+  return pf_app_sptr->modifyDataCollectionBranchParam(bus1,bus2,ckt,branchParam,value);
+}
+
+/**
+ * Get generator parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param gen_id two character token specifying generator on bus
+ * @param genParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionGenParam(
+    int bus_id, std::string gen_id,
+    std::string genParam, double &value)
+{ 
+  double *pvalue = &value;
+  return pf_app_sptr->getDataCollectionGenParam(bus_id, gen_id, genParam, pvalue);
+}
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionGenParam(
+    int bus_id, std::string gen_id,
+    std::string genParam, int &value)
+{
+	int *pvalue = &value;
+  return pf_app_sptr->getDataCollectionGenParam(bus_id, gen_id, genParam, pvalue);
+}
+
+/**
+ * Get load parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param load_id two character token specifying load on bus
+ * @param loadParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionLoadParam(
+    int bus_id, std::string load_id,
+    std::string loadParam, double &value)
+{
+  double *pvalue = &value;
+  return pf_app_sptr->getDataCollectionLoadParam(bus_id, load_id, loadParam, pvalue);
+}
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionLoadParam(
+    int bus_id, std::string load_id,
+    std::string loadParam, int &value)
+{
+	int *pvalue = &value;
+  return pf_app_sptr->getDataCollectionLoadParam(bus_id, load_id, loadParam, pvalue);
+}
+
+/**
+ * Get parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param busParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionBusParam(
+    int bus_id, std::string busParam, double &value)
+{
+	double *pvalue = &value;
+  return pf_app_sptr->getDataCollectionBusParam(bus_id, busParam, pvalue);
+}
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionBusParam(
+    int bus_id, std::string busParam, int &value)
+{
+	int *pvalue = &value;
+  return pf_app_sptr->getDataCollectionBusParam(bus_id, busParam, pvalue);
+}
+
+/**
+ * Get parameters in data collection for specified branch
+ * @param bus1, bus2 bus IDs for from and to bus
+ * @param ckt two character token specifying branch
+ * @param branchParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, double &value)
+{
+	double *pvalue = &value;
+  return pf_app_sptr->getDataCollectionBranchParam(bus1, bus2, ckt, branchParam, pvalue);
+}
+bool gridpack::hadrec::HADRECAppModule::getDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, int &value)
+{
+	int *pvalue = &value;
+  return pf_app_sptr->getDataCollectionBranchParam(bus1, bus2, ckt, branchParam, pvalue);
+}
+
 /**
  * Export final solved power flow to PSS/E formatted file, version 23
  * @param filename name of file to store network configuration

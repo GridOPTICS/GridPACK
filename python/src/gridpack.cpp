@@ -354,6 +354,20 @@ PYBIND11_MODULE(gridpack, gpm) {
 		   return flag;
          }
          )
+	.def("modifyDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, int bus1, int bus2, const std::string& s, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBranchParam(bus1, bus2, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )		 
+	.def("modifyDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, int bus1, int bus2, const std::string& s, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBranchParam(bus1, bus2, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
     .def("fullInitializationBeforeDynSimuSteps",
          [](gph::HADRECAppModule& self, const std::string& s,
             const std::vector<gpds::Event>& BusFaults, int pfcase_idx, int dscase_idx) {
@@ -428,6 +442,94 @@ PYBIND11_MODULE(gridpack, gpm) {
            flag = self.getPFSolutionSingleBus(busid, vmag, vangle);
            if (flag) {
              return py::make_tuple(vmag, vangle);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& genid, const std::string& genparam) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionGenParam(busid, genid, genparam, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& genid, const std::string& genparam) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionGenParam(busid, genid, genparam, value);
+           if (flag) {
+             return py::int_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& loadid, const std::string& loadparam) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionLoadParam(busid, loadid, loadparam, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& loadid, const std::string& loadparam) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionLoadParam(busid, loadid, loadparam, value);
+           if (flag) {
+             return py::int_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& param) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionBusParam(busid, param, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& param) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionBusParam(busid, param, value);
+           if (flag) {
+             return py::int_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, const int& busid1, const int& busid2, const std::string& ckt, const std::string& param) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionBranchParam(busid1, busid2, ckt, param, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, const int& busid1, const int& busid2, const std::string& ckt, const std::string& param) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionBranchParam(busid1, busid2, ckt, param, value);
+           if (flag) {
+             return py::int_(value);
            } else {
              return py::cast<py::none>(Py_None);
            }
