@@ -3787,6 +3787,36 @@ void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoad(const std::ve
 		
 }
 
+/**
+ * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+ * the vector  vloadP and vloadQ - this implemnetation keeps the Y load component of the bus still at the bus, 
+ * while only compenstates the difference
+ */
+ 
+void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoadNew_compensateY(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ){
+		
+	std::vector<int> vec_busintidx;
+	int ival, nvals, ibus, nbus, bus_number;
+	gridpack::dynamic_simulation::DSFullBus *bus;
+	double orgp, orgq;
+	
+	// treat the new load p and q as current source
+	nvals = vbusNum.size();	
+	for (ival=0; ival<=nvals; ival++){
+		bus_number = vbusNum[ival];
+		vec_busintidx = p_network->getLocalBusIndices(bus_number);
+		nbus = vec_busintidx.size();
+		for(ibus=0; ibus<nbus; ibus++){
+			bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+			(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
+			//printf("----renke debug scatterInjectionLoad, in dsf full app, \n");
+			bus->scatterInjectionLoad_compensateY(vloadP[ival], vloadQ[ival]);
+		
+		}
+	}
+		
+}
+
 
 /**
  * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 

@@ -633,6 +633,17 @@ void gridpack::hadrec::HADRECAppModule::scatterInjectionLoadNew(const std::vecto
 }
 
 /**
+* execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+* the vector  vloadP and vloadQ - this implemnetation keeps the Y load component of the bus still at the bus, 
+* while only compenstates the difference
+*/
+void gridpack::hadrec::HADRECAppModule::scatterInjectionLoadNew_compensateY(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ){
+	
+	ds_app_sptr->scatterInjectionLoadNew_compensateY(vbusNum, vloadP, vloadQ);
+	
+}
+
+/**
 * execute load scattering, the values of the STATIC load current at certain buses vbusNum will be changed to the values of 
 * the vector  vCurR and vCurI - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
 * and model the entire load change as injection current

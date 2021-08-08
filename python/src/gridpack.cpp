@@ -39,6 +39,7 @@ namespace gpds = gridpack::dynamic_simulation;
 
 #include <dlfcn.h>
 
+
 // -------------------------------------------------------------
 // stupid_openmpi_hack
 // from https://github.com/baidu-research/tensorflow-allreduce/issues/4
@@ -264,6 +265,12 @@ PYBIND11_MODULE(gridpack, gpm) {
 	.def("scatterInjectionLoadNew",
          [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ) {
            self.scatterInjectionLoadNew(vbusNum, vloadP, vloadQ);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >()
+         )
+	.def("scatterInjectionLoadNew_compensateY",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ) {
+           self.scatterInjectionLoadNew_compensateY(vbusNum, vloadP, vloadQ);
          },
          py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >()
          )

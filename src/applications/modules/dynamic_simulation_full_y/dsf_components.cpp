@@ -47,6 +47,7 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_bconstYLoadSheddingFlag = false;
   remainConstYLoadPerc = 1.0;
   p_bscatterinjload_flag = false;
+  p_bscatterinjload_flag_compensateY = false;
   p_bscatterinjloadconstcur_flag = false;
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
@@ -408,6 +409,40 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 		  
 		  p_pl_inj_tmp = 0.0 - p_scatterinjload_p;
 		  p_ql_inj_tmp = 0.0 - p_scatterinjload_q;
+		  
+		  bus_inj_S = gridpack::ComplexType(p_pl_inj_tmp,p_ql_inj_tmp);
+		  tmp = bus_inj_S/p_volt_full;
+		  bus_scatterload_inj_cur = conj(tmp);
+      
+		  values[0] += bus_scatterload_inj_cur;
+		  /*
+		  printf("rkdebugInjectionCur, DSFullBus::vectorValues, bus %d, Inorton: %12.6f + j %12.6f \n", 
+					getOriginalIndex(),real(bus_scatterload_inj_cur), imag(bus_scatterload_inj_cur));
+					
+		  printf("rkdebugpq, DSFullBus::vectorValues, bus %d, PQ: %12.6f + j %12.6f \n", 
+					getOriginalIndex(), p_pl_inj_tmp, p_ql_inj_tmp);
+					
+		  printf("rkdebugpq, DSFullBus::vectorValues, bus %d, voltage: %12.6f + j %12.6f \n", 
+					getOriginalIndex(), real(p_volt_full), imag(p_volt_full));
+		  */
+  
+	  }
+	  
+	  // INorton contribution from the scattered injection load, keep the 
+	  // Y load component still at the bus, while only compenstate the difference
+	  if (p_bscatterinjload_flag_compensateY){
+		  
+		  double p_pl_inj_tmp, p_ql_inj_tmp, inj_constY_P, inj_constY_Q;
+		  gridpack::ComplexType bus_inj_S, tmp, bus_scatterload_inj_cur;
+		  
+		  //p_pl_inj_tmp = p_pl - p_scatterinjload_p;
+		  //p_ql_inj_tmp = p_ql - p_scatterinjload_q;
+		  double voltagemagtmp = abs(p_volt_full);
+		  inj_constY_P = p_loadimpedancer*(voltagemagtmp*voltagemagtmp);
+		  inj_constY_Q = -p_loadimpedancei*(voltagemagtmp*voltagemagtmp);
+		  
+		  p_pl_inj_tmp = inj_constY_P - p_scatterinjload_p;
+		  p_ql_inj_tmp = inj_constY_Q - p_scatterinjload_q;
 		  
 		  bus_inj_S = gridpack::ComplexType(p_pl_inj_tmp,p_ql_inj_tmp);
 		  tmp = bus_inj_S/p_volt_full;
@@ -2819,6 +2854,17 @@ int gridpack::dynamic_simulation::DSFullBus::getZone()
 */
 void gridpack::dynamic_simulation::DSFullBus::scatterInjectionLoad(double loadP, double loadQ){
 	p_bscatterinjload_flag = true;
+	p_scatterinjload_p = loadP;
+	p_scatterinjload_q = loadQ;
+	
+}
+
+/**
+ * execute load scattering, the P and Q values of the STATIC load at certain buses will be changed to the values of 
+ * the loadP and loadQ, this function keeps the Y load component of the bus still at the bus, while only compenstates the difference
+*/
+void gridpack::dynamic_simulation::DSFullBus::scatterInjectionLoad_compensateY(double loadP, double loadQ){
+	p_bscatterinjload_flag_compensateY = true;
 	p_scatterinjload_p = loadP;
 	p_scatterinjload_q = loadQ;
 	

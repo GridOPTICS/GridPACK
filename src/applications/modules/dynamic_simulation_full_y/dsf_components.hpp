@@ -536,6 +536,12 @@ class DSFullBus
 	void scatterInjectionLoad(double loadP, double loadQ);
 	
 	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses will be changed to the values of 
+	 * the loadP and loadQ, this function keeps the Y load component of the bus still at the bus, while only compenstates the difference
+	*/
+	void scatterInjectionLoad_compensateY(double loadP, double loadQ);
+	
+	/**
 	* execute load scattering, the current values of the STATIC load at certain buses will be changed to the values of 
 	* the curR and curI
 	*/
@@ -624,6 +630,9 @@ class DSFullBus
 	bool p_bconstYLoadSheddingFlag; //renke add, whether the static constant Y load of the bus has been shedding, true: has been shed
     double 	remainConstYLoadPerc; // renke add, remaining percent of the static constant Y load of the bus
 	bool p_bscatterinjload_flag; //renke add, whether the static load of the bus could be modified at each time step 
+	bool p_bscatterinjload_flag_compensateY; //renke add, whether the static load of the bus could be modified at each time step, this flag is corresponding to the
+											 // scatterInjectionLoad_compensateY function, 
+											 // which keep the Y load component still at the bus, while only compenstate the difference
 	double p_scatterinjload_p, p_scatterinjload_q; //renke add, the value of the static load of the bus modified at each time step
 	bool p_bscatterinjloadconstcur_flag; //renke add, whether the static load of the bus could be modified at each time step as constant current load
 	double p_scatterinjload_constcur_r, p_scatterinjload_constcur_i; //renke add, the value of the static load of the bus modified at each time step as constant current load
