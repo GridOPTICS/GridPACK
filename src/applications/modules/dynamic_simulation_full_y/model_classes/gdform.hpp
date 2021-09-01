@@ -132,9 +132,10 @@ class GridFormingGenerator : public BaseGeneratorModel
     int p_status;
 	bool p_tripped;
 	bool bmodel_debug;
+	bool bCurrentLimitFlag;
     
     double MVABase;
-    double XL, Ts, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin;
+    double XL, Ts, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin, Imax;
     double fset, Ra;
 	double delta_omega_lim;
 	double mp_org, mq_org, Vset_org, Pset_org;
@@ -154,7 +155,7 @@ class GridFormingGenerator : public BaseGeneratorModel
 	gridpack::ComplexType p_Norton_Ya;
 
     double presentMag, presentAng;
-	double Ir, Ii, Iinjr, Iinji, Vterm, Theta;
+	double Ir, Ii, Iinjr, Iinji, Vterm, Theta, Igen_mag;
 	double B, G;
 
     std::string p_ckt;

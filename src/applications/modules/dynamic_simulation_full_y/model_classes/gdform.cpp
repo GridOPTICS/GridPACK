@@ -72,6 +72,7 @@ gridpack::dynamic_simulation::GridFormingGenerator::GridFormingGenerator(void)
 	
 	p_tripped = false;
 	bmodel_debug = false;
+	bCurrentLimitFlag = true;
 }
 
 /**
@@ -119,6 +120,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
   if (!data->getValue(GENERATOR_PSET, &Pset, idx)) Pset=0.44; // 
   if (!data->getValue(GENERATOR_PMAX, &Pmax, idx)) Pmax=1.0; // 
   if (!data->getValue(GENERATOR_PMIN, &Pmin, idx)) Pmin=0.0; // 
+  //if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
+  Imax=2.5;
   
   mp_org = mp;
   mq_org = mq; 
@@ -131,7 +134,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
   }
 
   if (bmodel_debug){
-	printf("\n--------gdform parameters: MVABase = %12.6f, XL = %12.6f, Ts = %12.6f, mq = %12.6f, kpv = %12.6f, kiv = %12.6f, Emax = %12.6f, Emin = %12.6f, mp = %12.6f, kppmax = %12.6f, kipmax = %12.6f, Pset = %12.6f, Pmax = %12.6f, Pmin = %12.6f  \n", MVABase, XL, Ts, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin);
+	printf("\n--------gdform parameters: MVABase = %12.6f, XL = %12.6f, Ts = %12.6f, mq = %12.6f, kpv = %12.6f, kiv = %12.6f, Emax = %12.6f, Emin = %12.6f, mp = %12.6f, kppmax = %12.6f, kipmax = %12.6f, Pset = %12.6f, Pmax = %12.6f, Pmin = %12.6f, Imax = %12.6f  \n", 
+					MVABase, XL, Ts, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin, Imax);
   }
   
 }
@@ -162,6 +166,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::init(double mag,
   double Viterm = Vterm * sin(Theta);
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
+  Igen_mag = sqrt(Ir*Ir + Ii*Ii);
   
   //compute E and delta
   double Etermr = Vrterm - Ii*XL;
@@ -254,31 +259,63 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor_currentInject
 	xq_0=xq_1;
 
   }  
+  
+  Vterm = presentMag;
+  //printf("Gensal predictor_currentInjection: %d %f\n", p_bus_id, Vterm);
+  Theta = presentAng;
+  double Vrterm = Vterm * cos(Theta);
+  double Viterm = Vterm * sin(Theta);
+  double Etermr = E_term * cos(x2d_0);
+  double Etermi = E_term * sin(x2d_0);
+  
+  double ra = 0.0; //Ra * p_sbase / MVABase;
+
+  double B_gen = -XL / (ra * ra + XL * XL);
+  double G_gen = ra / (ra * ra + XL * XL);
+  
+  double Ir_gen = (Etermr - Vrterm) * G_gen - (Etermi - Viterm) * B_gen;
+  double Ii_gen = (Etermr - Vrterm) * B_gen + (Etermi - Viterm) * G_gen;
+  
+  //printf("Xdpp = %f, Ra = %f, B = %f, G = %f\n", Xdpp, Ra, B, G);
+  
+  //the current limiting fuction
+  double I_theta, Igenlim_r, Igenlim_i, Etermr_lim, Etermi_lim;
+  I_theta = atan2(Ii_gen, Ir_gen);  // get current angle
+  Igen_mag = sqrt(Ir_gen*Ir_gen + Ii_gen*Ii_gen);
+  //printf("rktest, gdform.cpp, Igen_mag = %f, Imax = %f, Ir_gen = %f, Ii_gen = %f\n", Igen_mag, Imax, Ir_gen, Ii_gen);
+  
+  if (Igen_mag>Imax && bCurrentLimitFlag){
+	  Igenlim_r = Imax*cos(I_theta);
+	  Igenlim_i = Imax*sin(I_theta);
+	  Etermr_lim = Vrterm - XL*Igenlim_i;
+	  Etermi_lim = Viterm + XL*Igenlim_r;
+	  
+	  E_term = sqrt(Etermr_lim*Etermr_lim + Etermi_lim*Etermi_lim);
+	  x2d_0 = atan2(Etermi_lim, Etermr_lim);
+	  Etermr = E_term * cos(x2d_0);
+      Etermi = E_term * sin(x2d_0);
+  }
+  
+  // the current limiting fuction ends here
+  
   // Calculate INorton_full
   // Admittance
   B = -XL / (Ra * Ra + XL * XL);
   G = Ra / (Ra * Ra + XL * XL);
   
-  double Etermr = E_term * cos(x2d_0);
-  double Etermi = E_term * sin(x2d_0);
   double Irnorton_gen = Etermr * G - Etermi * B;
   double Iinorton_gen = Etermr * B + Etermi * G;
   
   double IrNorton = Irnorton_gen * MVABase / p_sbase; 
   double IiNorton = Iinorton_gen * MVABase / p_sbase;
     
-  Vterm = presentMag;
-  //printf("Gensal predictor_currentInjection: %d %f\n", p_bus_id, Vterm);
-  Theta = presentAng;
-  double Vrterm = Vterm * cos(Theta);
-  double Viterm = Vterm * sin(Theta);
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
+  //printf("x5Psiqpp_0 = %f, x3Eqp_0 = %f, Xl = %f, Xdp = %f, Psidpp = %f\n", x5Psiqpp_0, x3Eqp_0, Xl, Xdp, Psidpp);
   
   Ir = (Etermr - Vrterm) * G - (Etermi - Viterm) * B;
   Ii = (Etermr - Vrterm) * B + (Etermi - Viterm) * G;
+  Igen_mag = sqrt(Ir*Ir + Ii*Ii);
   //printf("Xdpp = %f, Ra = %f, B = %f, G = %f\n", Xdpp, Ra, B, G);
-  
-  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
-  //printf("x5Psiqpp_0 = %f, x3Eqp_0 = %f, Xl = %f, Xdp = %f, Psidpp = %f\n", x5Psiqpp_0, x3Eqp_0, Xl, Xdp, Psidpp);
   
   if (getGenStatus()){
 	  if (p_tripped){
@@ -329,9 +366,10 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	
 	Ir = (Etermr - Vrterm) * G - (Etermi - Viterm) * B;
 	Ii = (Etermr - Vrterm) * B + (Etermi - Viterm) * G;
+	//Igen_mag = sqrt(Ir*Ir + Ii*Ii);
 	
 	genP = Vrterm*Ir + Viterm*Ii;
-	genQ = Viterm*Ir - Vrterm*Ii;
+	genQ = Viterm*Ir - Vrterm*Ii;	
 	
 	if (bmodel_debug){
 		printf("------renke debug in GridFormingGenerator::predictor, Vterm = %f, Theta = %f, E_term= %f, x2d_0= %f, Vrterm= %f, Viterm= %f, Etermr= %f, Etermi= %f, B= %f, G= %f, Ir= %f, Ii= %f\n", Vterm, Theta, E_term, x2d_0, Vrterm, Viterm, Etermr, Etermi, B, G, Ir, Ii);
@@ -492,6 +530,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	genQ = 0.0;
 	omega= 0.0;
   }//pair with getGenStatus()
+  
+  //printf("rk test GridFormingGenerator::predictor \n");
 
 }
 
@@ -501,6 +541,44 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
  */
 void gridpack::dynamic_simulation::GridFormingGenerator::corrector_currentInjection(bool flag)
 {
+	
+  Vterm = presentMag;
+  //printf("Gensal predictor_currentInjection: %d %f\n", p_bus_id, Vterm);
+  Theta = presentAng;
+  double Vrterm = Vterm * cos(Theta);
+  double Viterm = Vterm * sin(Theta);
+  double Etermr = E_term * cos(x2d_1);
+  double Etermi = E_term * sin(x2d_1);
+  
+  double ra = 0.0; //Ra * p_sbase / MVABase;
+
+  double B_gen = -XL / (ra * ra + XL * XL);
+  double G_gen = ra / (ra * ra + XL * XL);
+  
+  double Ir_gen = (Etermr - Vrterm) * G_gen - (Etermi - Viterm) * B_gen;
+  double Ii_gen = (Etermr - Vrterm) * B_gen + (Etermi - Viterm) * G_gen;
+  
+  //printf("Xdpp = %f, Ra = %f, B = %f, G = %f\n", Xdpp, Ra, B, G);
+  
+  //the current limiting fuction
+  double I_theta, Igenlim_r, Igenlim_i, Etermr_lim, Etermi_lim;
+  I_theta = atan2(Ii_gen, Ir_gen);  // get current angle
+  Igen_mag = sqrt(Ir_gen*Ir_gen + Ii_gen*Ii_gen);
+  //printf("rktest,  gdform.cpp, corrector_currentInjection, Igen_mag = %f, Imax = %f, Ir_gen = %f, Ii_gen = %f\n", Igen_mag, Imax, Ir_gen, Ii_gen);
+  
+  if (Igen_mag>Imax  && bCurrentLimitFlag){
+	  Igenlim_r = Imax*cos(I_theta);
+	  Igenlim_i = Imax*sin(I_theta);
+	  Etermr_lim = Vrterm - XL*Igenlim_i;
+	  Etermi_lim = Viterm + XL*Igenlim_r;
+	  
+	  E_term = sqrt(Etermr_lim*Etermr_lim + Etermi_lim*Etermi_lim);
+	  x2d_1 = atan2(Etermi_lim, Etermr_lim);
+	  Etermr = E_term * cos(x2d_1);
+      Etermi = E_term * sin(x2d_1);
+  }
+  // the current limiting fuction ends here
+  
   // Calculate INorton_full
   // Admittance
   // Calculate INorton_full
@@ -508,22 +586,15 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector_currentInject
   B = -XL / (Ra * Ra + XL * XL);
   G = Ra / (Ra * Ra + XL * XL);
   
-  double Etermr = E_term * cos(x2d_1);
-  double Etermi = E_term * sin(x2d_1);
   double Irnorton_gen = Etermr * G - Etermi * B;
   double Iinorton_gen = Etermr * B + Etermi * G;
   
   double IrNorton = Irnorton_gen * MVABase / p_sbase; 
   double IiNorton = Iinorton_gen * MVABase / p_sbase;
-    
-  Vterm = presentMag;
-  //printf("Gensal predictor_currentInjection: %d %f\n", p_bus_id, Vterm);
-  Theta = presentAng;
-  double Vrterm = Vterm * cos(Theta);
-  double Viterm = Vterm * sin(Theta);
   
   Ir = (Etermr - Vrterm) * G - (Etermi - Viterm) * B;
   Ii = (Etermr - Vrterm) * B + (Etermi - Viterm) * G;
+  Igen_mag = sqrt(Ir*Ir + Ii*Ii);
   //printf("Xdpp = %f, Ra = %f, B = %f, G = %f\n", Xdpp, Ra, B, G);
   
   gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
@@ -569,6 +640,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	
 	Ir = (Etermr - Vrterm) * G - (Etermi - Viterm) * B;
 	Ii = (Etermr - Vrterm) * B + (Etermi - Viterm) * G;
+	//Igen_mag = sqrt(Ir*Ir + Ii*Ii);
 	
 	genP = Vrterm*Ir + Viterm*Ii;
 	genQ = Viterm*Ir - Vrterm*Ii;
@@ -743,6 +815,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	omega= 0.0;
   }//pair with getGenStatus()
   
+  //printf("rk test GridFormingGenerator::corrector \n");
+  
 }
 
 bool gridpack::dynamic_simulation::GridFormingGenerator::tripGenerator()
@@ -818,10 +892,11 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
     return true;
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
+	  //printf("rk test GridFormingGenerator::serialWrite\n");
       char buf[256];
 //    sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
-      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f ",
-          p_bus_id, p_ckt.c_str(), x3_1, x4_1, E_term, omega, presentMag, presentAng, genP, genQ);
+      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,",
+          p_bus_id, p_ckt.c_str(), x3_1, x4_1, E_term, presentMag, presentAng, genP, genQ, Igen_mag);
       return true;
 /*      if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
