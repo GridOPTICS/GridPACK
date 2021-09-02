@@ -2910,6 +2910,32 @@ void gridpack::dynamic_simulation::DSFullBus::applyConstYLoadShedding(double per
 }
 
 /**
+ * set the wide area control signals of the PSS of a certain generator
+ * input bus_number: generator bus number
+ * input bus_number: generator gen ID
+ * input wideAreaControlSignal:  wide area control signal for the PSS of the generator
+ */
+void gridpack::dynamic_simulation::DSFullBus::setWideAreaControlSignal(std::string genid, double wideAreaControlSignal){
+	
+	int igen, ngen;
+	gridpack::utility::StringUtils util;
+	std::string clean_genid;
+	ngen = p_generators.size();
+	clean_genid = util.clean2Char(genid);
+	
+	for (igen=0; igen<ngen; igen++){
+				
+		//printf("----------renke debug, DSFullBus::applyGFIAdjustment, generator at bus %d with p_genid---%s---, search genid ---%s--, clean_genid --%s---\n", getOriginalIndex(), p_genid[igen].c_str(), genid.c_str(),clean_genid.c_str());
+		if (clean_genid == p_genid[igen]){
+			//first check whether this generator is GFI?????
+			//printf("----------renke debug, DSFullBus::applyGeneratorTripping, find generator at bus %d with genid %s \n", getOriginalIndex(), genid.c_str());
+			p_generators[igen]->setWideAreaFreqforPSS(wideAreaControlSignal);
+		}
+	}
+	
+}
+
+/**
  * execute Grid Forming Inverter control parameters adjustment at this bus
  * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
  * input bus_number: GFI gen ID

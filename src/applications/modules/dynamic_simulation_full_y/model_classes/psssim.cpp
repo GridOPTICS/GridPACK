@@ -131,6 +131,7 @@ void gridpack::dynamic_simulation::PsssimModel::predictor(double t_inc, bool fla
 	if (inputtype == 1){
 		addwidearea = kp*wideareafreq;
 		if (bdebug) printf ("-------------!renke debug: PsssimModel::predictor wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
+		//printf ("-------------!renke debug: PsssimModel::predictor wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
 	}else{
 		addwidearea = 0.0;
 	}
@@ -180,6 +181,7 @@ void gridpack::dynamic_simulation::PsssimModel::corrector(double t_inc, bool fla
 	if (inputtype == 1){
 		addwidearea = kp*wideareafreq;
 		if (bdebug) printf ("-------------!renke debug: PsssimModel::corrector: wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
+		//printf ("-------------!renke debug: PsssimModel::predictor wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
 	}else{
 		addwidearea = 0.0;
 	}
@@ -235,7 +237,8 @@ double gridpack::dynamic_simulation::PsssimModel::getBusFreq(int busnum)
 }
 
 void gridpack::dynamic_simulation::PsssimModel::setWideAreaFreqforPSS(double freq)
-{
+{	
+	//printf ( "-------------!renke debug: PsssimModel::setWideAreaFreqforPSS wide area freq: %12.6f \n", freq );
 	wideareafreq = freq;
 }
 

@@ -3324,7 +3324,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	int tmp = vwideareafreqs.size();
 	double widearea_deltafreq = vwideareafreqs[tmp-1];
 
-	p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
 	 		
     timer->stop(t_volt);
 	
@@ -3912,6 +3912,29 @@ void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, 
 	
 	}
 		
+}
+
+/**
+ * set the wide area control signals of the PSS of a certain generator
+ * input bus_number: generator bus number
+ * input bus_number: generator gen ID
+ * input wideAreaControlSignal:  wide area control signal for the PSS of the generator
+ */
+void gridpack::dynamic_simulation::DSFullApp::setWideAreaControlSignal(int bus_number, std::string genid, double wideAreaControlSignal){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug GFI Par adjustment, in dsf full app, \n");
+		bus->setWideAreaControlSignal(genid, wideAreaControlSignal);
+	
+	}
+	
 }
 
 /**

@@ -115,6 +115,14 @@ class HADRECAppModule
 	void applyAction(gridpack::hadrec::HADRECAction control_action);
 	
 	/**
+	 * set the wide area control signals of the PSS of a certain generator
+	 * input bus_number: generator bus number
+	 * input bus_number: generator gen ID
+	 * input wideAreaControlSignal:  wide area control signal for the PSS of the generator
+	 */
+	void setWideAreaControlSignal(int bus_number, std::string genid, double wideAreaControlSignal);
+	
+	/**
 	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
 	 * the vector  vloadP and vloadQ
 	*/

@@ -559,6 +559,14 @@ class DSFullBus
 	void applyConstYLoadShedding(double percentage );
 	
 	/**
+	 * set the wide area control signals of the PSS of a certain generator
+	 * input bus_number: generator bus number
+	 * input bus_number: generator gen ID
+	 * input wideAreaControlSignal:  wide area control signal for the PSS of the generator
+	 */
+	void setWideAreaControlSignal(std::string genid, double wideAreaControlSignal);
+	
+	/**
      * execute Grid Forming Inverter control parameters adjustment at this bus
 	 * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
 	 * input bus_number: GFI gen ID

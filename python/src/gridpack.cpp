@@ -319,6 +319,12 @@ PYBIND11_MODULE(gridpack, gpm) {
 		   return flag;
          }
          )
+	.def("setWideAreaControlSignal",
+         [](gph::HADRECAppModule& self, int bus_number, const std::string& genid, double wideAreaControlSignal) {
+           self.setWideAreaControlSignal(bus_number, genid.c_str(), wideAreaControlSignal);
+         },
+		 py::arg("bus_number") = "-1", py::arg("genid") = "", py::arg("wideAreaControlSignal") = 0.0
+         )
 	.def("modifyDataCollectionGenParam",
          [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, double modvalue) {
 		   bool flag;
