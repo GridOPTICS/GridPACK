@@ -415,7 +415,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	double out3 = 0.0;
 	double out4 = 0.0;
 	//compute s3
-	if ( genP_delay>Pmax ){
+	//if ( genP_delay>Pmax ){
 		tmpin = Pmax - genP_delay;
 		tmpmax = 0.0 - kppmax*tmpin;
 		tmpmin = -delta_omega_lim - kppmax*tmpin;
@@ -427,16 +427,16 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 		
 		if( dx3_0>0.0 && x3_0>=tmpmax ) dx3_0 = 0.0;
 		if( dx3_0<0.0 && x3_0<=tmpmin ) dx3_0 = 0.0;
-		out3 = kipmax * tmpin + x3_0;
+		out3 = kppmax * tmpin + x3_0;  //previously kipmax
 		if (out3 > 0.0) out3 = 0.0;
 		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
-	}else{
-		 x3_0 = 0.0;
-		dx3_0 = 0.0;
-	}
+	//}else{
+	//	 x3_0 = 0.0;
+	//	dx3_0 = 0.0;
+	//}
 	
     //compute s4
-	if ( genP_delay<Pmin ){
+	//if ( genP_delay<Pmin ){
 		tmpin = Pmin - genP_delay;
 		tmpmax = delta_omega_lim - kppmax*tmpin;
 		tmpmin = 0.0 - kppmax*tmpin;
@@ -449,13 +449,13 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 		if( dx4_0>0.0 && x4_0>=tmpmax ) dx4_0 = 0.0;
 		if( dx4_0<0.0 && x4_0<=tmpmin ) dx4_0 = 0.0;
 		
-		out4 = kipmax * tmpin + x4_0;
+		out4 = kppmax * tmpin + x4_0; //previously kipmax
 		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
 		if (out4 < 0.0) out4 = 0.0;
-	}else{
-		 x4_0 = 0.0;
-		dx4_0 = 0.0;
-	}
+	//}else{
+	//	 x4_0 = 0.0;
+	//	dx4_0 = 0.0;
+	//}
 	
 	Poutctrl = out3 + out4;
 	
@@ -695,7 +695,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	double out4 = 0.0;
 	
 	//compute s3
-	if (genP_delay > Pmax){
+	//if (genP_delay > Pmax){
 		tmpin = Pmax - genP_delay;
 		tmpmax = 0.0 - kppmax*tmpin;
 		tmpmin = -delta_omega_lim - kppmax*tmpin;
@@ -707,16 +707,16 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 		
 		if( dx3_1>0.0 && x3_1>=tmpmax ) dx3_1 = 0.0;
 		if( dx3_1<0.0 && x3_1<=tmpmin ) dx3_1 = 0.0;
-		double out3 = kipmax * tmpin + x3_1;
-		if (out3 > 0.0) out3 = 0.0;
+		out3 = kppmax * tmpin + x3_1; //previously kipmax
+		if (out3 > 0.0) out3 = 0.0; 
 		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
-	}else{
-		 x3_1 = 0.0;
-		dx3_1 = 0.0;
-	}
+	//}else{
+	//	 x3_1 = 0.0;
+	//	dx3_1 = 0.0;
+	//}
 	
     //compute s4
-	if (genP_delay < Pmin){
+	//if (genP_delay < Pmin){
 		tmpin = Pmin - genP_delay;
 		tmpmax = delta_omega_lim - kppmax*tmpin;
 		tmpmin = 0.0 - kppmax*tmpin;
@@ -729,13 +729,13 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 		if( dx4_1>0.0 && x4_1>=tmpmax ) dx4_1 = 0.0;
 		if( dx4_1<0.0 && x4_1<=tmpmin ) dx4_1 = 0.0;
 		
-		double out4 = kipmax * tmpin + x4_1;
+		out4 = kppmax * tmpin + x4_1; //previously kipmax
 		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
 		if (out4 < 0.0) out4 = 0.0;
-	}else{
-		 x4_1 = 0.0;
-		dx4_1 = 0.0;
-	}
+	//}else{
+	//	 x4_1 = 0.0;
+	//	dx4_1 = 0.0;
+	//}
 	
 	Poutctrl = out3 + out4;
 	
