@@ -44,6 +44,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_Yload_change_Q_flag = false;
   p_bConstYLoadSettoZero_P = false;
   p_bConstYLoadSettoZero_Q = false;
+  p_bConstYLoadSettoValue = false;
+  
   p_bconstYLoadSheddingFlag = false;
   remainConstYLoadPerc = 1.0;
   p_bscatterinjload_flag = false;
@@ -2214,6 +2216,54 @@ void gridpack::dynamic_simulation::DSFullBus::applyConstYLoad_Change_P(double lo
 	  
  }
  
+   bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoValue( double impedancer, double impedancei)
+ {
+	 if (!p_bConstYLoadSettoValue){
+		p_Yload_change_P_flag = true;
+		p_Yload_change_Q_flag = true;	
+		
+		double voltagemagtmp = abs(p_volt_full);
+		
+		gridpack::ComplexType z_a(impedancer, impedancei);
+		gridpack::ComplexType Y_a;
+		gridpack::ComplexType volttmp(1.0, 0.0);
+		Y_a = volttmp / z_a;
+		p_Yload_change_r = -p_pl + real(Y_a)*(p_voltage*p_voltage);
+		p_Yload_change_i = -p_ql + imag(Y_a)*(p_voltage*p_voltage);
+		
+		p_bConstYLoadSettoValue = true;
+
+		return true;		
+		
+	 }else{
+		p_Yload_change_P_flag = false;
+		p_Yload_change_r = 0.0; 
+		p_Yload_change_Q_flag = false;
+		p_Yload_change_i = 0.0; 
+		return false;
+	 }
+	  
+ }
+ 
+ /*
+  bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoValue_P( double impedancer)
+ {
+	 if (!p_bConstYLoadSettoValue_P){
+		p_Yload_change_P_flag = true;
+		double voltagemagtmp = abs(p_volt_full);
+		//double tmp1 = p_Yload_change_r/(p_voltage*p_voltage);
+		p_Yload_change_r = -p_pl + impedancer*(p_voltage*p_voltage);
+		p_bConstYLoadSettoValue_P = true;
+		return true;
+	 }else{
+		p_Yload_change_P_flag = false;
+		p_Yload_change_r = 0.0; 
+		return false;
+	 }
+	  
+ }
+  */
+ 
  bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoZero_Q( )
  {
 	 if (!p_bConstYLoadSettoZero_Q){
@@ -2228,6 +2278,24 @@ void gridpack::dynamic_simulation::DSFullBus::applyConstYLoad_Change_P(double lo
 	 }
 	  
  }
+
+ /*
+  bool gridpack::dynamic_simulation::DSFullBus::setConstYLoadtoValue_Q( double impedancei)
+ {
+	 if (!p_bConstYLoadSettoValue_Q){
+		p_Yload_change_Q_flag = true;
+		double voltagemagtmp = abs(p_volt_full);
+		p_Yload_change_i = -p_ql - impedancei*(p_voltage*p_voltage);
+		p_bConstYLoadSettoValue_Q = true;
+		return true;
+	 }else{
+		p_Yload_change_Q_flag = false;
+		p_Yload_change_i = 0.0; 
+		return false;
+	 }
+	  
+ }
+ */
 
 void gridpack::dynamic_simulation::DSFullBus::clearConstYLoad_Change_P()
  {

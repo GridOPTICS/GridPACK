@@ -274,6 +274,14 @@ PYBIND11_MODULE(gridpack, gpm) {
          },
          py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >()
          )
+	.def("scatterInjectionLoadNew_Norton",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ, 
+		   const std::vector<double>& vimpedanceR, const std::vector<double>& vimpedanceI) {
+           self.scatterInjectionLoadNew_Norton(vbusNum, vloadP, vloadQ, vimpedanceR, vimpedanceI);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >(),
+		 py::arg("vimpedanceR") = std::vector< double >(), py::arg("vimpedanceI") = std::vector< double >()
+         )
 	.def("scatterInjectionLoadNewConstCur",
          [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vCurR, const std::vector<double>& vCurI) {
            self.scatterInjectionLoadNewConstCur(vbusNum, vCurR, vCurI);

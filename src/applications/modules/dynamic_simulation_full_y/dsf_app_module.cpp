@@ -3858,6 +3858,49 @@ void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoadNew(const std:
 }
 
 /**
+ * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+ * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+ * and model the entire load change as injection current, also add a large parallel connecting impedance at the certain bus
+*/
+void gridpack::dynamic_simulation::DSFullApp::scatterInjectionLoadNew_Norton(const std::vector<int>& vbusNum, 
+							const std::vector<double>& vloadP, const std::vector<double>& vloadQ, 
+							const std::vector<double>& vimpedanceR, const std::vector<double>& vimpedanceI){
+	
+	std::vector<int> vec_busintidx;
+	int ival, nvals, ibus, nbus, bus_number;
+	gridpack::dynamic_simulation::DSFullBus *bus;
+	double orgp, orgq, impr, impi, impedancer, impedancei;
+	
+	//first modify the original values of the Contant Y load P and Q to zero, 
+	// note: only the first time receive the command of scatter InjectionLoadNew needs to do the clear of the original load values!!!!!!
+	nvals = vbusNum.size();	
+	for (ival=0; ival<=nvals; ival++){
+		bus_number = vbusNum[ival];
+		impedancer = vimpedanceR[ival];
+		impedancei = vimpedanceI[ival];
+		//setConstYLoadtoZero_P(bus_number);
+		//setConstYLoadtoZero_Q(bus_number);
+		setConstYLoadImpedance(bus_number, impedancer, impedancei);
+	}
+	
+	// treat the new load p and q as current source
+	nvals = vbusNum.size();	
+	for (ival=0; ival<=nvals; ival++){
+		bus_number = vbusNum[ival];
+		vec_busintidx = p_network->getLocalBusIndices(bus_number);
+		nbus = vec_busintidx.size();
+		for(ibus=0; ibus<nbus; ibus++){
+			bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+			(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
+			//printf("----renke debug scatterInjectionLoad, in dsf full app, \n");
+			bus->scatterInjectionLoad(vloadP[ival], vloadQ[ival]);
+		
+		}
+	}	
+								
+}
+
+/**
  * execute load scattering with constant current load , the values of the STATIC load current at certain buses vbusNum will be changed to the values of 
  * the vector  vCurR and vCurI - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
  * and model the entire load change as injection current
@@ -4043,6 +4086,36 @@ void gridpack::dynamic_simulation::DSFullApp::setConstYLoadtoZero_P(int bus_numb
 	
    // Check to see if a load change P is occuring somewhere in the system
    bapplyLoadChangeP = p_factory->checkTrueSomewhere(bapplyLoadChangeP);
+		
+}
+
+/**
+ * set constant Y load to impedancer and impedancei
+ */
+void gridpack::dynamic_simulation::DSFullApp::setConstYLoadImpedance(int bus_number, double impedancer, double impedancei){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	bool ret;
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		ret = bus->setConstYLoadtoValue(impedancer, impedancei);
+		if (ret){
+			bapplyLoadChangeP = true;
+			p_vbus_need_to_changeP.push_back(bus);
+			bapplyLoadChangeQ = true;
+			p_vbus_need_to_changeQ.push_back(bus);
+		}				
+	}
+	
+   // Check to see if a load change P is occuring somewhere in the system
+   bapplyLoadChangeP = p_factory->checkTrueSomewhere(bapplyLoadChangeP);
+   bapplyLoadChangeQ = p_factory->checkTrueSomewhere(bapplyLoadChangeQ);
 		
 }
 

@@ -340,6 +340,10 @@ class DSFullBus
 	
 	bool setConstYLoadtoZero_P( );
 	bool setConstYLoadtoZero_Q( );
+	
+	//bool setConstYLoadtoValue_P( double impedancer);
+	//bool setConstYLoadtoValue_Q( double impedancei);
+	bool setConstYLoadtoValue( double impedancer, double impedancei);
 
     /**
      * Write output from buses to standard out
@@ -661,6 +665,9 @@ class DSFullBus
 	bool p_Yload_change_P_flag, p_Yload_change_Q_flag; // renke add, indicating whether this bus has constant-Y load P or Q change,to enable constant-Y load change during dyn. simu.
 	bool p_bConstYLoadSettoZero_P, p_bConstYLoadSettoZero_Q; // renke add, indicating whether this bus's constant-Y load P or Q has been already set to zero, check the function
 															 // setConstYLoadtoZero_P to see the usage
+															 
+	bool p_bConstYLoadSettoValue; // renke add, indicating whether this bus's constant-Y load P or Q has been already set to some value, check the function
+															 // setConstYLoadtoValue to see the usage
 	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
 	bool p_branchtripaction_from_flag, p_branchtripaction_to_flag;
 	bool p_busrelaytripflag;

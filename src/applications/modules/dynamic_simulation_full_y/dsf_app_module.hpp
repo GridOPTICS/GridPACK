@@ -137,6 +137,15 @@ class DSFullApp
 								const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
 								
 	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+     * and model the entire load change as injection current, also add a large parallel connecting impedance at the certain bus
+	*/
+	void scatterInjectionLoadNew_Norton(const std::vector<int>& vbusNum, 
+								const std::vector<double>& vloadP, const std::vector<double>& vloadQ, 
+								const std::vector<double>& vimpedanceR, const std::vector<double>& vimpedanceI);
+								
+	/**
 	 * execute load scattering with constant current load , the values of the STATIC load current at certain buses vbusNum will be changed to the values of 
      * the vector  vCurR and vCurI - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
      * and model the entire load change as injection current
@@ -188,6 +197,11 @@ class DSFullApp
 	
 	void setConstYLoadtoZero_P(int bus_number);
 	void setConstYLoadtoZero_Q(int bus_number);
+	
+	/**
+     * set constant Y load to impedancer and impedancei
+    */
+    void setConstYLoadImpedance(int bus_number, double impedancer, double impedancei);
 	
     /**
      * execute generator tripping 
