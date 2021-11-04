@@ -240,8 +240,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
         boost::shared_ptr<gridpack::component::DataCollection>
           data(new gridpack::component::DataCollection);
         int nstr = split_line.size();
@@ -346,8 +345,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
 
         // GENERATOR_BUSNUMBER               "I"                   integer
         int l_idx, o_idx;
@@ -493,8 +491,7 @@ class PTI23_parser : public BasePTIParser<_network>
         std::pair<int, int> branch_pair;
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
 
         o_idx1 = atoi(split_line[0].c_str());
         o_idx2 = atoi(split_line[1].c_str());
@@ -633,8 +630,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
 
         // KG: I'm assuming the BRANCH_FROMBUS is the bus index we need to match
         int fromBus = atoi(split_line[0].c_str());
@@ -843,7 +839,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
 
         // AREAINTG_ISW           "ISW"                  integer
         int l_idx, o_idx;
@@ -883,7 +879,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
         std::getline(input, line);
       }
     }
@@ -897,7 +893,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
         std::getline(input, line);
       }
     }
@@ -914,7 +910,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
 
         /*
          * type: integer
@@ -1100,7 +1096,7 @@ class PTI23_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
 #if 0
         std::vector<gridpack::component::DataCollection>   imped_corr_instance;
         gridpack::component::DataCollection          data;
@@ -1142,7 +1138,7 @@ class PTI23_parser : public BasePTIParser<_network>
 #if 0
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
         std::vector<gridpack::component::DataCollection>   multi_section_instance;
         gridpack::component::DataCollection          data;
 
@@ -1219,7 +1215,7 @@ class PTI23_parser : public BasePTIParser<_network>
 #if 0
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
         std::vector<gridpack::component::DataCollection>   inter_area_instance;
         gridpack::component::DataCollection          data;
 
@@ -1273,7 +1269,7 @@ class PTI23_parser : public BasePTIParser<_network>
 #if 0
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        split_line = this->splitPSSELine(line);
         std::vector<gridpack::component::DataCollection>   owner_instance;
         gridpack::component::DataCollection          data;
 

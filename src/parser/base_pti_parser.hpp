@@ -95,6 +95,38 @@ class BasePTIParser : public BaseParser<_network>
     }
 
     /**
+     * Split PSS/E formatted lines into individual tokens using both blanks and
+     * commas as delimiters
+     * @param line input string from PSS/E file
+     * @return vector of tokens parsed from PSS/E line
+     */
+    std::vector<std::string> splitPSSELine (std::string line)
+    {
+      std::vector<std::string> ret;
+      int i, j;
+      std::vector<std::string>  split_line;
+      // split line into tokens based on comma delimiters
+      boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
+                    boost::token_compress_off);
+      int slen = split_line.size();
+      // parse each token based on blank spaces
+      for (i=0; i<slen; i++) {
+        if (isBlank(split_line[i])) {
+          // If two consecutive commas have nothing in between, replace it with
+          // a zero "0" character. This should be converted to 0 and 0.0 by the
+          // atoi and atof functions, respectively
+          ret.push_back("0");
+        } else {
+          std::vector<std::string> tokens;
+          tokens = p_util.blankTokenizer(split_line[i]);
+          int tlen = tokens.size();
+          for (j=0; j<tlen; j++) ret.push_back(tokens[j]);
+        }
+      }
+      return ret;
+    }
+
+    /**
      * Expand any compound bus models that may need to be generated based on
      * parameters in the .dyr files. This function needs to be called after
      * calling the parser for the .dyr file
@@ -374,21 +406,21 @@ class BasePTIParser : public BaseParser<_network>
       double kipmax;
       double pset;
 	  
-	  int regca1_lvplsw;
-	  double regca1_tg;
-	  double regca1_rrpwr;
-	  double regca1_brkpt;
-	  double regca1_zerox;
-	  double regca1_lvpl1;
-	  double regca1_volim;
-	  double regca1_lvpnt1;
-	  double regca1_lvpnt0;
-	  double regca1_lolim;
-	  double regca1_tfltr;
-	  double regca1_khv;
-	  double regca1_lqrmax;
-	  double regca1_lqrmin;
-	  double regca1_accel;
+      int regca1_lvplsw;
+      double regca1_tg;
+      double regca1_rrpwr;
+      double regca1_brkpt;
+      double regca1_zerox;
+      double regca1_lvpl1;
+      double regca1_volim;
+      double regca1_lvpnt1;
+      double regca1_lvpnt0;
+      double regca1_lolim;
+      double regca1_tfltr;
+      double regca1_khv;
+      double regca1_lqrmax;
+      double regca1_lqrmin;
+      double regca1_accel;
 	  
       // Exciter parameters
       bool has_exciter;
@@ -433,58 +465,58 @@ class BasePTIParser : public BaseParser<_network>
       double ex_xl;
       double thetap;
 	  
-	  int reeca1_ireg;
-	  int reeca1_pfflag;
-	  int reeca1_vflag;
-	  int reeca1_qflag;
-	  int reeca1_pflag;
-	  int reeca1_pqflag;
+      int reeca1_ireg;
+      int reeca1_pfflag;
+      int reeca1_vflag;
+      int reeca1_qflag;
+      int reeca1_pflag;
+      int reeca1_pqflag;
 	  
-	  double reeca1_vdip;
-	  double reeca1_vup;
-	  double reeca1_trv;
-	  double reeca1_dbd1;
-	  double reeca1_dbd2;
-	  double reeca1_kqv;
-	  double reeca1_lqh1;
-	  double reeca1_lql1;
-	  double reeca1_vref0;
-	  double reeca1_lqfrz;
-	  double reeca1_thld;
-	  double reeca1_thld2;
-	  double reeca1_tp;
-	  double reeca1_qmax;
-	  double reeca1_qmin;
-	  double reeca1_vmax;
-	  double reeca1_vmin;
-	  double reeca1_kqp;
-	  double reeca1_kqi;
-	  double reeca1_kvp;
-	  double reeca1_kvi;
-	  double reeca1_vbias;
-	  double reeca1_tiq;
-	  double reeca1_dpmax;
-	  double reeca1_dpmin;
-	  double reeca1_pmax;
-	  double reeca1_pmin;
-	  double reeca1_imax;
-	  double reeca1_tpord;
-	  double reeca1_vq1;
-	  double reeca1_iq1;
-	  double reeca1_vq2;
-	  double reeca1_iq2;
-	  double reeca1_vq3;
-	  double reeca1_iq3;
-	  double reeca1_vq4;
-	  double reeca1_iq4;
-	  double reeca1_vp1;
-	  double reeca1_ip1;
-	  double reeca1_vp2;
-	  double reeca1_ip2;
-	  double reeca1_vp3;
-	  double reeca1_ip3;
-	  double reeca1_vp4;
-	  double reeca1_ip4;
+      double reeca1_vdip;
+      double reeca1_vup;
+      double reeca1_trv;
+      double reeca1_dbd1;
+      double reeca1_dbd2;
+      double reeca1_kqv;
+      double reeca1_lqh1;
+      double reeca1_lql1;
+      double reeca1_vref0;
+      double reeca1_lqfrz;
+      double reeca1_thld;
+      double reeca1_thld2;
+      double reeca1_tp;
+      double reeca1_qmax;
+      double reeca1_qmin;
+      double reeca1_vmax;
+      double reeca1_vmin;
+      double reeca1_kqp;
+      double reeca1_kqi;
+      double reeca1_kvp;
+      double reeca1_kvi;
+      double reeca1_vbias;
+      double reeca1_tiq;
+      double reeca1_dpmax;
+      double reeca1_dpmin;
+      double reeca1_pmax;
+      double reeca1_pmin;
+      double reeca1_imax;
+      double reeca1_tpord;
+      double reeca1_vq1;
+      double reeca1_iq1;
+      double reeca1_vq2;
+      double reeca1_iq2;
+      double reeca1_vq3;
+      double reeca1_iq3;
+      double reeca1_vq4;
+      double reeca1_iq4;
+      double reeca1_vp1;
+      double reeca1_ip1;
+      double reeca1_vp2;
+      double reeca1_ip2;
+      double reeca1_vp3;
+      double reeca1_ip3;
+      double reeca1_vp4;
+      double reeca1_ip4;
 	  
       // Governor parameters
       bool has_governor;
@@ -727,7 +759,7 @@ class BasePTIParser : public BaseParser<_network>
       double e;
       double c0;
       double tnom;
-	  double dynload_perc;
+      double dynload_perc;
 
       double tstall;
       double trestart;
@@ -1374,8 +1406,7 @@ class BasePTIParser : public BaseParser<_network>
         idx = record.find('/');
         if (idx != std::string::npos) record.erase(idx,record.length()-idx);
         std::vector<std::string>  split_line;
-        boost::split(split_line, record, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = splitPSSELine(record);
 
         std::string sval;
         // MODEL TYPE              "MODEL"                  string
@@ -1594,8 +1625,7 @@ class BasePTIParser : public BaseParser<_network>
         idx = record.find('/');
         if (idx != std::string::npos) record.erase(idx,record.length()-idx);
         std::vector<std::string>  split_line;
-        boost::split(split_line, record, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = splitPSSELine(record);
         std::string sval;
         gridpack::utility::StringUtils util;
         sval = util.trimQuotes(split_line[1]);
@@ -1738,8 +1768,7 @@ class BasePTIParser : public BaseParser<_network>
       std::getline(input,line);
       while(std::getline(input,line)) {
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = splitPSSELine(line);
 
         uc_params data;
 
@@ -1876,6 +1905,9 @@ class BasePTIParser : public BaseParser<_network>
     std::map<int,int> *p_busMap;
     // Map of PTI index pair to index in p_branchData
     std::map<std::pair<int, int>, int> *p_branchMap;
+
+    // String utility object for splitting lines in PSS/E files
+    gridpack::utility::StringUtils p_util;
 
     /**
      * Data collection object associated with network as a whole
