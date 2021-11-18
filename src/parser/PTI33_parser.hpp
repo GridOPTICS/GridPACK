@@ -355,6 +355,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
         //store bus and index as a pair
         storeBus(bus_name, o_idx);
+        if (split_line[1].find_first_of('\'',0) != std::string::npos) {
+          gridpack::utility::StringUtils util;
+          util.trim(split_line[1]);
+        }
         if (nstr > 1) data->addValue(BUS_NAME, bus_name.c_str());
 
         // BUS_BASEKV           "BASKV"               float

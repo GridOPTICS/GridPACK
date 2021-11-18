@@ -2496,6 +2496,17 @@ std::vector<int> getLocalBranchIndices(int idx1, int idx2) {
       it++;
     }
   }
+  // check to see if indices have been switched
+  if (ret.size() == 0) {
+    pair = std::pair<int,int>(idx2,idx1);
+    it = p_branchMap.find(pair);
+    if (it != p_branchMap.end()) {
+      while (it != p_branchMap.upper_bound(pair)) {
+        ret.push_back(it->second);
+        it++;
+      }
+    }
+  }
   return ret;
 }
 

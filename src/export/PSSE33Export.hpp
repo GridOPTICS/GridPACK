@@ -4,10 +4,9 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 /*
- * base_export.hpp
+ * PSSE33Export.hpp
  *
- *  This is a utility class that is used to implement the rest of the export
- *  functionality
+ *  Export .RAW files using PSS/E version 33 format
  *
  *  Created on: April 4, 2019
  *      Author: Bruce Palmer
