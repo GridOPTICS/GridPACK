@@ -223,7 +223,7 @@ public:
         ntok2 = strcpy.find(' ',ntok1);
         if (ntok2 == std::string::npos) ntok2 = slen;
       } 
-      if (ntok2 != std::string::npos) {
+      if (ntok1 != std::string::npos && ntok2 != std::string::npos) {
         ret.push_back(strcpy.substr(ntok1,ntok2-ntok1));
       }
     }
