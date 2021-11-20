@@ -22,6 +22,7 @@
 #include "GainBlockClass.hpp"
 #include "BackLashClass.hpp"
 #include "DBIntClass.hpp"
+#include <string>
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -92,6 +93,16 @@ class Wsieg1Model : public BaseGovernorModel
      * @return value of rotor speed deviation
      */
     //double getRotorSpeedDeviation();
+	
+		/** 
+	 * Set the governor bus number
+	 */
+	//void setExtBusNum(int ExtBusNum);
+	
+	/** 
+	 * Set the governor generator id
+	 */
+	//void setExtGenId(std::string ExtGenId);
 
   private:
 
@@ -119,6 +130,9 @@ class Wsieg1Model : public BaseGovernorModel
 
     double Pref;
     double w;
+	//Renke added below 2020-7-24
+	//std::string p_ckt; // id of the generator where the governor is installed on
+    //int p_bus_id;  // bus number of the generator 
 
 };
 }  // dynamic_simulation

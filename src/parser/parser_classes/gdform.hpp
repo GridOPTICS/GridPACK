@@ -247,9 +247,9 @@ template <class _data_struct> class GdformParser
       // GENERATOR_KIPMAX
       if (nstr > 12) {
         if (!data->getValue(GENERATOR_KIPMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_XL, atof(split_line[12].c_str()), g_id);
+          data->addValue(GENERATOR_KIPMAX, atof(split_line[12].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_XL, atof(split_line[12].c_str()), g_id);
+          data->setValue(GENERATOR_KIPMAX, atof(split_line[12].c_str()), g_id);
         }
       } 
 

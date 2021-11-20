@@ -83,18 +83,49 @@ class ExportGen23
             data->getValue(GENERATOR_ID,&sval,j);
             sprintf(ptr," \'%s\',",sval.c_str());
             ptr += strlen(ptr);
+
+            /*
             rval = 0.0;
             if (data->getValue(GENERATOR_PG,&rval,j)) {
-              data->getValue("GENERATOR_PF_PG",&rval,j);
+            data->getValue("GENERATOR_PF_PGEN",&rval,j);
             }
-            sprintf(ptr," %f,",rval);
+            */
+
+            rval = 0.0;
+            bool flagtmp = true;
+            if (!data->getValue("GENERATOR_PF_PGEN",&rval, j)) {
+              data->getValue(GENERATOR_PG,&rval, j);
+              flagtmp = false;
+            }
+
+            if (flagtmp){
+              sprintf(ptr," %18.11f,",rval*100.0);
+            }else{
+              sprintf(ptr," %18.11f,",rval);
+            }
             ptr += strlen(ptr);
+
+            /*	
             rval = 0.0;
             if (data->getValue(GENERATOR_QG,&rval,j)) {
-              data->getValue("GENERATOR_PF_QG",&rval,j);
+            data->getValue("GENERATOR_PF_QGEN",&rval,j);
             }
-            sprintf(ptr," %f,",rval);
+            */
+
+            rval = 0.0;
+            flagtmp = true;
+            if (!data->getValue("GENERATOR_PF_QGEN",&rval, j)) {
+              data->getValue(GENERATOR_QG,&rval, j);
+              flagtmp = false;
+            }
+
+            if (flagtmp){
+              sprintf(ptr," %18.11f,",rval*100.0);
+            }else{
+              sprintf(ptr," %18.11f,",rval);
+            }
             ptr += strlen(ptr);
+
             rval = 9999.0;
             data->getValue(GENERATOR_QMAX,&rval,j);
             sprintf(ptr," %f,",rval);

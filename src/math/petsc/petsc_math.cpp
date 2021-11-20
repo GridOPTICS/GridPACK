@@ -52,6 +52,11 @@ void Initialize(int *argcp,char ***argvp)
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
+  bool no_print = gridpack::NoPrint::instance()->status();
+  if (no_print)  {
+    PETSC_STDOUT = fopen("/dev/null", "w");
+    PETSC_STDERR = fopen("/dev/null", "w");
+  }
   // Print out some information on processor configuration
   int mpi_err, me, nproc;
   mpi_err = MPI_Comm_rank(PETSC_COMM_WORLD, &me);
@@ -60,7 +65,9 @@ void Initialize(int *argcp,char ***argvp)
     throw gridpack::Exception("MPI initialization failed");
   }
   if (me == 0) {
-    printf("\nGridPACK math module configured on %d processors\n",nproc);
+    if (!no_print) {
+      printf("\nGridPACK math module configured on %d processors\n",nproc);
+    }
   }
 }
 

@@ -467,6 +467,26 @@ class BaseFactory {
         p_branches[i]->saveData(p_network->getBranchData(i));
       }
     }
+	
+	/**
+     * Save internal state variables of the buses and branches to the
+     * associated data collection object for possible use in output or to
+     * transfer them to another network
+	 * added by Renke, also modify the original bus mag, ang, 
+	 * and the original generator PG QG in the datacollection
+     */
+    void saveDataAlsotoOrg(void)
+    {
+      int i;
+      // Save data on buses
+      for (i=0; i<p_numBuses; i++) {
+        p_buses[i]->saveDataAlsotoOrg(p_network->getBusData(i));
+      }
+      // Save data on branches
+      for (i=0; i<p_numBranches; i++) {
+        p_branches[i]->saveData(p_network->getBranchData(i));
+      }
+    }
 
     /**
      * return a pointer to the bus list

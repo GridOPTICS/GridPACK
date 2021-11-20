@@ -18,11 +18,18 @@
 #include "classical.hpp"
 #include "gensal.hpp"
 #include "genrou.hpp"
+#include "gdform.hpp"
+#include "regca1.hpp"
+#include "reeca1.hpp"
+#include "repca1.hpp"
 #include "wsieg1.hpp"
 #include "exdc1.hpp"
 #include "esst1a.hpp"
 #include "wshygp.hpp"
 #include "psssim.hpp"
+#include "tgov1.hpp"
+
+#include <stdio.h>
 
 /**
  *  Basic constructor
@@ -66,6 +73,16 @@ gridpack::dynamic_simulation::BaseGeneratorModel*
     tmp =  new gridpack::dynamic_simulation::GenrouGenerator;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+  } else if (type == "GDFORM") {
+    gridpack::dynamic_simulation::GridFormingGenerator *tmp;
+    tmp =  new gridpack::dynamic_simulation::GridFormingGenerator;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+  } else if (type == "REGCA1") {
+    gridpack::dynamic_simulation::Regca1Generator *tmp;
+    tmp =  new gridpack::dynamic_simulation::Regca1Generator;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
   } else {
     ret = NULL;
   }
@@ -96,6 +113,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     tmp =  new gridpack::dynamic_simulation::Esst1aModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  }else if (type == "REECA1") {
+    gridpack::dynamic_simulation::Reeca1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Reeca1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else {
     ret = NULL;
   }
@@ -119,6 +141,12 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
   if (type == "WSIEG1") {
     gridpack::dynamic_simulation::Wsieg1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Wsieg1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "TGOV1") {
+	//printf("----------------!!!!---debug, one TOGV1 model in the dyr file\n");
+    gridpack::dynamic_simulation::Tgov1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Tgov1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "WSHYGP") {
@@ -152,6 +180,33 @@ gridpack::dynamic_simulation::GeneratorFactory::createPssModel(
     tmp =  new gridpack::dynamic_simulation::PsssimModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else {
+    ret = NULL;
+  }
+  return ret;
+
+}
+
+
+/**
+ * Create a plant controller model
+ * @param model string containing model type
+ * @return pointer to model. If string does not correspond to a PSS
+ * model, then return NULL pointer
+ */
+gridpack::dynamic_simulation::BasePlantControllerModel*
+gridpack::dynamic_simulation::GeneratorFactory::createPlantControllerModel(
+    std::string model)
+{
+  std::string type = p_util.trimQuotes(model);
+  p_util.toUpper(type);
+
+  gridpack::dynamic_simulation::BasePlantControllerModel* ret;
+  if (type == "REPCA1") {
+    gridpack::dynamic_simulation::Repca1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Repca1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BasePlantControllerModel*>(tmp);
   } else {
     ret = NULL;
   }

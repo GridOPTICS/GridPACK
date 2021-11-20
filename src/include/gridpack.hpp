@@ -63,6 +63,7 @@
 #include "gridpack/applications/components/kds_matrix/kds_components.hpp"
 #include "gridpack/applications/modules/powerflow/pf_factory_module.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
+#include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 #include "gridpack/applications/modules/state_estimation/se_factory_module.hpp"
 #include "gridpack/applications/modules/state_estimation/se_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_factory.hpp"

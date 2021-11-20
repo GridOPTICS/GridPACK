@@ -96,10 +96,21 @@ class BaseLoadModel
 	*/
 	virtual void dynamicload_post_process(double t_inc, bool flag);
 	
+	/**
+	* return true if load change is enabled
+	* @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+	*/
+    virtual bool changeLoad(double percentageFactor);
+	
 	 /**
      * Set voltage on each generator
      */
     virtual void setVoltage(gridpack::ComplexType voltage);
+	
+    /**
+     * Set same bus static load p and q for load shedding action usage
+     */
+    virtual void setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag);
 	
 	/**
      * get intialized reactive power of the dynamic load model
@@ -110,6 +121,11 @@ class BaseLoadModel
  * Set terminal voltage frequency on each load
  */
 	virtual void setFreq(double dFreq);
+	
+	/**
+     * get the variable Fonline for each load
+     */
+    virtual double getFonline(void);
 
     /**
      * Write output from loads to a string.

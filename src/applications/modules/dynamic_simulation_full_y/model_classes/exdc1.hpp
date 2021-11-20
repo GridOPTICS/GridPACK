@@ -19,6 +19,9 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_exciter_model.hpp"
+// Yuan added below 2020-6-23
+#include <string>
+// Yuan added above 2020-6-23
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -107,10 +110,27 @@ class Exdc1Model : public BaseExciterModel
      * @return value of field current
      */
     void setOmega(double omega);
+	
+	void setVstab(double vstab);
+	
+	// Yuan added below 2020-6-23
+	/** 
+	 * Set the exciter bus number
+	 * @return value of exciter bus number
+	 */
+	void setExtBusNum(int ExtBusNum);
+	
+	/** 
+	 * Set the exciter generator id
+	 * @return value of generator id
+	 */
+	void setExtGenId(std::string ExtGenId);
+	// Yuan added above 2020-6-23
 
   private:
 
     //double S10, S12; 
+	bool OptionToModifyLimitsForInitialStateLimitViolation;
 
     // Exciter EXDC1 parameters from dyr
     double TR, KA, TA, TB, TC, Vrmax, Vrmin;
@@ -128,11 +148,16 @@ class Exdc1Model : public BaseExciterModel
     double Efd;
 
     // Field Current Output
-    double LadIfd;
+    double LadIfd, Vstab;
 
     double Vref;
 
     double Vterminal, w; 
+	
+	// Yuan added below 2020-6-23
+	std::string p_ckt; // id of the generator where the exciter is installed on
+    int p_bus_id;  // bus number of the generator 
+	// Yuan added above 2020-6-23
 
     //boost::shared_ptr<BaseGeneratorModel> p_generator;
 };

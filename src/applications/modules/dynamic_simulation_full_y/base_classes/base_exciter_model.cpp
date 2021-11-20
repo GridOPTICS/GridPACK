@@ -148,3 +148,48 @@ void gridpack::dynamic_simulation::BaseExciterModel::setVstab(double Vstab)
 void gridpack::dynamic_simulation::BaseExciterModel::setWideAreaFreqforPSS(double freq)
 {
 }	
+
+// Yuan added below 2020-6-23
+/** 
+ * Set the exciter bus number
+ * @return value of exciter bus number
+ */
+void gridpack::dynamic_simulation::BaseExciterModel::setExtBusNum(int ExtBusNum)
+{
+}	
+
+/** 
+ * Set the exciter generator id
+ * @return value of generator id
+ */
+void gridpack::dynamic_simulation::BaseExciterModel::setExtGenId(std::string ExtGenId)
+{
+}	
+
+void gridpack::dynamic_simulation::BaseExciterModel::setIpcmdIqcmd(double ipcmd, double iqcmd)
+{
+}
+
+void gridpack::dynamic_simulation::BaseExciterModel::setPrefQext(double pref, double qext)
+{
+}
+
+
+double gridpack::dynamic_simulation::BaseExciterModel::getPref(){
+	return 0.0;
+}
+
+double gridpack::dynamic_simulation::BaseExciterModel::getQext(){
+	return 0.0;
+}
+
+double gridpack::dynamic_simulation::BaseExciterModel::getIpcmd(){
+	return 0.0;
+}
+
+double gridpack::dynamic_simulation::BaseExciterModel::getIqcmd(){
+	return 0.0;
+}
+
+
+// Yuan added above 2020-6-23

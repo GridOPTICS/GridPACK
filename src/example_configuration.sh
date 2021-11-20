@@ -98,7 +98,14 @@ if [ $host == "flophouse" ]; then
         if [ "$build"x = "Debug"x ]; then
             parch="rhel7-real-c-static-debug"
         fi
-        # pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
+        parch="rhel7-real-c-static"
+        # parch="rhel7-complex-c-static"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.11.3"
+        parch="rhel7-complex-c-static"
+        parch="rhel7-real-c-static"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel7-complex-c-static"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
@@ -117,7 +124,7 @@ if [ $host == "flophouse" ]; then
         -D USE_GLPK:BOOL=ON \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
         $common_flags ..
 
 elif [ $host == "briareus" ]; then
@@ -201,7 +208,7 @@ elif [ $host == "WE32673" ]; then
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
         $common_flags ..
 
 elif [ $host == "WE30729" ]; then
@@ -235,7 +242,7 @@ elif [ $host == "WE30729" ]; then
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
         $common_flags ..
 
 elif [ $host == "olympus.local" ]; then
@@ -275,6 +282,33 @@ elif [ $host == "constance" ]; then
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
 	$common_flags ..
 
+elif [ $host == "constance-hadrec" ]; then
+
+    # always build shared
+    # always build GA
+
+    CC=`which gcc`
+    CXX=`which g++`
+    CFLAGS="-pthread"
+    CXXFLAGS="-pthread"
+    export CC CXX CFLAGS CXXFLAGS
+
+    prefix="/pic/projects/gripdack/hadrec/gridpack"
+    cmake $options \
+	-D BOOST_ROOT:STRING="$prefix" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.9.4" \
+	-D PETSC_ARCH:STRING='linux-openmpi-gnu-cxx-complex-opt' \
+	-D MPI_CXX_COMPILER:STRING=`which mpicxx` \
+	-D MPI_C_COMPILER:STRING=`which mpicc` \
+	-D MPIEXEC:STRING=`which mpiexec` \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D BUILD_GA:BOOL=ON \
+        -D BUILD_SHARED_LIBS:BOOL=ON \
+        -D CMAKE_BUILD_TYPE:STRING=$build \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+	..
+
 elif [ $host == "tlaloc" ]; then
 
     # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
@@ -292,8 +326,11 @@ elif [ $host == "tlaloc" ]; then
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
         parch="rhel6-complex-c-static"
         parch="rhel6-real-c-static"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
-        parch="rhel6-real-c-static"
+        #parch="rhel6-real-c-static"
+        #pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        #parch="rhel6-real-c-static"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.11.3"
+        parch="rhel6-complex-c-static"
     fi
 
     cmake3 $options \
@@ -307,7 +344,7 @@ elif [ $host == "tlaloc" ]; then
           -D MPIEXEC:STRING="mpiexec" \
           -D USE_GLPK:BOOL=OFF \
           -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-          -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+          -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
           -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
           $common_flags ..
 
