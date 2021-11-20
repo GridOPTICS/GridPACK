@@ -1,0 +1,173 @@
+On branch master
+Your branch is up-to-date with 'origin/master'.
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Changes to be committed:
+
+	modified:   ../../.gitmodules
+	new file:   ../../python/.gitmodules
+	new file:   ../../python/CMakeLists.txt
+	new file:   ../../python/LICENSE
+	new file:   ../../python/MANIFEST.in
+	new file:   ../../python/README.md
+	new file:   ../../python/constance-setup.sh
+	new file:   ../../python/pybind11
+	new file:   ../../python/setup.py
+	new file:   ../../python/src/CMakeLists.txt
+	new file:   ../../python/src/gridpack.cpp
+	new file:   ../../python/src/hadrec.py
+	new file:   ../../python/src/hello.py
+	new file:   ../../python/src/task_manager.py
+	new file:   ../../python/src/tests/39bus_scatterload_steptest_new_itr.py
+	new file:   ../../python/src/tests/39bus_scatterload_steptest_new_itr_compensateY.py
+	new file:   ../../python/src/tests/39bus_test_example.py
+	new file:   ../../python/src/tests/39bus_test_pfdata.py
+	new file:   ../../python/src/tests/ACTIVSg500_rmsmallgen_pslfv23.raw
+	new file:   ../../python/src/tests/IEEE39bus_exdc1_gridpack.dyr
+	new file:   ../../python/src/tests/IEEE39bus_multiloads_xfmr4_smallX_slackmvachange_v33_single.raw
+	new file:   ../../python/src/tests/__init__.py
+	new file:   ../../python/src/tests/compute_curr_single.m
+	new file:   ../../python/src/tests/gridpack_test.py
+	new file:   ../../python/src/tests/input_39bus_step005_v33.xml
+	new file:   ../../python/src/tests/input_39bus_step005_v33_itr.xml
+	new file:   ../../python/src/tests/input_tamu500_step005.xml
+	new file:   ../../python/src/tests/tamu_500bus_detail.dyr
+	new file:   ../../python/src/tests/widearea_pss/0039bus_pss_wideareacontrol.csv
+	new file:   ../../python/src/tests/widearea_pss/39bus_test_example_wideareacontrol.py
+	new file:   ../../python/src/tests/widearea_pss/39bus_test_example_with_wideareacontrolsignal_observations.csv
+	new file:   ../../python/src/tests/widearea_pss/IEEE39bus_gridpack_pss.dyr
+	new file:   ../../python/src/tests/widearea_pss/IEEE39bus_mod3_v23_pslf.raw
+	new file:   ../../python/src/tests/widearea_pss/input_39bus_step005_pss.xml
+	modified:   ../CMakeLists.txt
+	modified:   ../applications/components/pf_matrix/pf_components.cpp
+	modified:   ../applications/components/pf_matrix/pf_components.hpp
+	new file:   ../applications/data_sets/dyr/3g9b_gensal_esst1a_wsieg1_1acmotor_bus5smallload.dyr
+	new file:   ../applications/data_sets/input/hadrec/input_3g9b_gensal_esst1a_wsieg1_1acmotor_withob.xml
+	new file:   ../applications/data_sets/input/hadrec/input_tamu500_step005.xml
+	new file:   ../applications/data_sets/raw/ACTIVSg500_rmsmallgen_pslfv23.raw
+	new file:   ../applications/data_sets/raw/IEEE3G9B_V23_bus5smallload.raw
+	modified:   ../applications/dynamic_simulation_full_y/dsf_main.cpp
+	modified:   ../applications/examples/powerflow/CMakeLists.txt
+	new file:   ../applications/hadrec/CMakeLists.txt
+	new file:   ../applications/hadrec/hadrec_main.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/CMakeLists.txt
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_exciter_model.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_exciter_model.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_generator_model.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_generator_model.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_governor_model.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_governor_model.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_load_model.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_load_model.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_plant_model.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/base_classes/base_plant_model.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/dsf_app_module.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/dsf_components.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/dsf_components.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/dsf_factory.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/dsf_factory.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/generator_factory.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/generator_factory.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/DelayBlock.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/DelayBlock.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/DelayBlockwithLimit.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/DelayBlockwithLimit.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/LeadLagBlock.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/LeadLagBlock.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/PIBlockwithLimit.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/PIBlockwithLimit.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/acmotor.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/acmotor.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/classical-orgimplement.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/classical.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/classical.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/esst1a.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/exdc1.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/exdc1.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/gdform.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/gdform.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/genrou.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/genrou.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/gensal.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/gensal.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/motorw.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/motorw.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/psssim.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/psssim.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/reeca1.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/reeca1.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/regca1.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/regca1.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/repca1.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/repca1.hpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/tgov1.cpp
+	new file:   ../applications/modules/dynamic_simulation_full_y/model_classes/tgov1.hpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/wshygp.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/wsieg1.cpp
+	modified:   ../applications/modules/dynamic_simulation_full_y/model_classes/wsieg1.hpp
+	new file:   ../applications/modules/hadrec/CMakeLists.txt
+	new file:   ../applications/modules/hadrec/hadrec_app_module.cpp
+	new file:   ../applications/modules/hadrec/hadrec_app_module.hpp
+	modified:   ../applications/rtpr/rtpr_driver.cpp
+	modified:   ../component/base_component.cpp
+	modified:   ../component/base_component.hpp
+	modified:   ../factory/base_factory.hpp
+	modified:   ../include/gridpack.hpp
+	modified:   ../lib/GridPACK.cmake.in
+	modified:   ../mapper/CMakeLists.txt
+	modified:   ../math/linear_solver_implementation.hpp
+	modified:   ../math/petsc/petsc_linear_solver_implementation.hpp
+	modified:   ../math/petsc/petsc_math.cpp
+	modified:   ../math/petsc/petsc_nonlinear_solver_implementation.hpp
+	modified:   ../parser/PTI23_parser.hpp
+	modified:   ../parser/parser_classes/acmtblu1.hpp
+	modified:   ../parser/parser_classes/cim6bl.hpp
+	modified:   ../parser/parser_classes/gensal.hpp
+	new file:   ../parser/parser_classes/reeca1.hpp
+	new file:   ../parser/parser_classes/regca1.hpp
+	new file:   ../parser/parser_classes/repca1.hpp
+	new file:   ../sandbox/test_mpi/CMakeLists.txt
+	new file:   ../sandbox/test_mpi/MANIFEST.in
+	new file:   ../sandbox/test_mpi/README.md
+	new file:   ../sandbox/test_mpi/runme.py
+	new file:   ../sandbox/test_mpi/setup.py
+	new file:   ../sandbox/test_mpi/src/CMakeLists.txt
+	new file:   ../sandbox/test_mpi/src/test_mpi.hpp
+	new file:   ../sandbox/test_mpi/src/test_mpi_wrap.cpp
+	new file:   ../sandbox/test_mpi/src/tests/testit.py
+	modified:   ../timer/CMakeLists.txt
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+
+	both modified:   ../applications/modules/powerflow/pf_app_module.cpp
+	both modified:   ../applications/modules/powerflow/pf_app_module.hpp
+	both modified:   ../applications/powerflow/pf_main.cpp
+	both modified:   ../environment/CMakeLists.txt
+	both modified:   ../example_configuration.sh
+	both added:      ../export/PSSE23Export.hpp
+	both added:      ../export/data_blocks/export_bus23.hpp
+	both added:      ../export/data_blocks/export_gen23.hpp
+	both modified:   ../parallel/CMakeLists.txt
+	both modified:   ../parser/CMakeLists.txt
+	both modified:   ../parser/PTI33_parser.hpp
+	both modified:   ../parser/base_pti_parser.hpp
+	both modified:   ../parser/dictionary.hpp
+	both added:      ../parser/parser_classes/gdform.hpp
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   ../utilities/string_utils.hpp
+	modified:   ../utilities/test/test_string.cpp
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	../applications/modules/powerflow/tmp.cpp
+	./
+
