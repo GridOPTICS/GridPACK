@@ -122,6 +122,31 @@
  */
 #define BUS_3WINDING "BUS_3WINDING"
 
+// Bus sequence parameters
+/**
+ * Active component of negative sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_GNEG "BUS_SEQ_GNEG"
+
+/**
+ * Reactive component of negative sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_BNEG "BUS_SEQ_BNEG"
+
+/**
+ * Active component of zero sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_GZERO "BUS_SEQ_GZERO"
+
+/**
+ * Reactive component of zero sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_BZERO "BUS_SEQ_BZERO"
+
 // Shunt data
 
 /**
@@ -3984,6 +4009,56 @@
  */
 #define BRANCH_F4 "BRANCH_F4"
 
+// Branch sequence data
+/**
+ * Zero sequence branch resistance
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_RLINZ "BRANCH_SEQ_RLINZ"
+
+/**
+ * Zero sequence branch reactance
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_XLINZ "BRANCH_SEQ_XLINZ"
+
+/**
+ * Total zero sequence branch branch charging susceptance
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_BCHZ "BRANCH_SEQ_BCHZ"
+
+/**
+ * Real zero sequence admittance of the line connect to "from" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_GI "BRANCH_SEQ_GI"
+
+/**
+ * Imaginary zero sequence admittance of the line connect to "from" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_BJ "BRANCH_SEQ_BJ"
+
+/**
+ * Real zero sequence admittance of the line connect to "to" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_GJ "BRANCH_SEQ_GJ"
+
+/**
+ * Imaginary zero sequence admittance of the line connect to "to" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_BI "BRANCH_SEQ_BI"
+
 
 // TRANSFORMER DATA 
 /**
@@ -4260,6 +4335,99 @@
  * indexed
  */
 #define TRANSFORMER_CNXA1 "TRANSFORMER_CNXA1"
+
+// Transformer Sequence Data
+/**
+ * Bus number to which another winding of transformer is connected
+ * Default value: 0
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_SEQ_K "TRANSFORMER_SEQ_K"
+
+/**
+ * Winding connection code
+ * Default value: 4
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_SEQ_CC "TRANSFORMER_SEQ_CC"
+
+/**
+ * Real part of zero sequence grounding impedance
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_RG "TRANSFORMER_SEQ_RG"
+
+/**
+ * Imaginary part of zero sequence grounding impedance
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_XG "TRANSFORMER_SEQ_XG"
+
+/**
+ * Real part of zero sequence impedance of two-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_R1 "TRANSFORMER_SEQ_R1"
+
+/**
+ * Imaginary part of zero sequence impedance of two-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_X1 "TRANSFORMER_SEQ_X1"
+
+/**
+ * Real zero sequence grounding impedance at the winding 2 side of an impedance
+ * grounded two-winding transformer with connection code 8.
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_RG2 "TRANSFORMER_SEQ_RG2"
+
+/**
+ * Imaginary zero sequence grounding impedance at the winding 2 side of an impedance
+ * grounded two-winding transformer with connection code 8.
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_XG2 "TRANSFORMER_SEQ_XG2"
+
+/**
+ * Real part winding two zero sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_R2 "TRANSFORMER_SEQ_R2"
+
+/**
+ * Imaginary part winding two zero sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_X2 "TRANSFORMER_SEQ_X2"
+
+/**
+ * Real part winding two threeo sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_R3 "TRANSFORMER_SEQ_R3"
+
+/**
+ * Imaginary part winding three zero sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_X3 "TRANSFORMER_SEQ_X3"
 
 // AREA DATA
 /**
