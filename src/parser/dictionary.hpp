@@ -2796,6 +2796,49 @@
 
 // finished generator REECA parameters definition
 
+// Generator sequence parameters
+
+/**
+ * Generator positive sequence resistance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZRPOS "GENERATOR_SEQ_ZRPOS"
+
+/**
+ * Generator positive sequence reactance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZXPOS "GENERATOR_SEQ_ZXPOS"
+
+/**
+ * Generator negative sequence resistance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZRNEG "GENERATOR_SEQ_ZRNEG"
+
+/**
+ * Generator negative sequence reactance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZXNEG "GENERATOR_SEQ_ZXNEG"
+
+/**
+ * Generator zero sequence resistance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_RZERO "GENERATOR_SEQ_RZERO"
+
+/**
+ * Generator zero sequence reactance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_XZERO "GENERATOR_SEQ_XZERO"
 
 // GENERATOR COST PARAMETERS
 /**

@@ -40,6 +40,8 @@
 #include "gridpack/parallel/global_vector.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/PSSE_seq_parser.hpp"
+#include "gridpack/parser/MAT_parser.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/parser/hash_distr.hpp"
 #include "gridpack/parser/bus_table.hpp"
@@ -47,6 +49,7 @@
 #include "gridpack/utilities/string_utils.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
+#include "gridpack/export/PSSE23Export.hpp"
 #include "gridpack/environment/environment.hpp"
 #include "gridpack/environment/no_print.hpp"
 #ifdef USE_GOSS

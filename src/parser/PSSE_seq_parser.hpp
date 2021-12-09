@@ -34,29 +34,30 @@
 #include "gridpack/parser/hash_distr.hpp"
 #include "gridpack/factory/base_factory.hpp"
 
-define TERM_CHAR '0'
+#define TERM_CHAR '0'
 
 namespace gridpack {
 namespace parser {
 
 template <class _network>
-class PSSE_seq_Parser : public BaseParser<_network>
+class PSSE_seq_parser : public BaseParser<_network>
 {
   public:
 
     /**
      * Constructor
      */
-    explicit PSSE_seq_Parser()
+    explicit PSSE_seq_parser(boost::shared_ptr<_network> network)
+      : p_network(network)
     {
+      this->setNetwork(network);
       p_timer = gridpack::utility::CoarseTimer::instance();
     }
-
 
     /**
      * Destructor
      */
-    virtual ~PSSE_seq_Parser(){}
+    virtual ~PSSE_seq_parser(){}
 
     /**
      * parse a sequence file
@@ -67,6 +68,9 @@ class PSSE_seq_Parser : public BaseParser<_network>
       std::string ext = getExtension(fileName);
       if (ext == "seq") {
         getSeqData(fileName);
+        sortSeqData();
+      } else {
+        printf("Unknown file extension %s\n",ext.c_str());
       }
     }
 
@@ -105,7 +109,8 @@ class PSSE_seq_Parser : public BaseParser<_network>
         /* read first line and extract change code */
         std::string line;
         p_input_stream.nextLine(line);
-        std::vector split_line = p_util.charTokenizer(line,',');
+        char sep = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&sep);
         p_change_code = atoi(split_line[0].c_str());
         /* extract data for generators */
         findPosSeqImpData();
@@ -151,6 +156,8 @@ class PSSE_seq_Parser : public BaseParser<_network>
       int from_bus; // ID of from bus
       int to_bus;   // ID of to bus
       char branch_id[3]; // Branch identifier
+      bool is_xform;
+      bool three_winding;
       double rlinz;
       double xlinz;
       double bchz;
@@ -208,9 +215,10 @@ class PSSE_seq_Parser : public BaseParser<_network>
      */
     void findPosSeqImpData()
     {
-      std_string line;
+      std::string line;
       while(p_input_stream.nextLine(line) && test_end(line)) {
-        std::vector split_line = p_util.charTokenizer(line,',');
+        char seq = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&seq);
         /* Check if entry already exists for this generator */
         int bus_id = atoi(split_line[0].c_str());
         std::string tag = p_util.clean2Char(split_line[1]);
@@ -229,7 +237,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
           data.zxpos = atof(split_line[3].c_str());
           int len = p_gen_data.size();
           p_gen_data.push_back(data);
-          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,i));
+          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,len));
         }
       }
     }
@@ -239,9 +247,10 @@ class PSSE_seq_Parser : public BaseParser<_network>
      */
     void findNegSeqImpData()
     {
-      std_string line;
+      std::string line;
       while(p_input_stream.nextLine(line) && test_end(line)) {
-        std::vector split_line = p_util.charTokenizer(line,',');
+        char seq = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&seq);
         /* Check if entry already exists for this generator */
         int bus_id = atoi(split_line[0].c_str());
         std::string tag = p_util.clean2Char(split_line[1]);
@@ -260,7 +269,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
           data.zxneg = atof(split_line[3].c_str());
           int len = p_gen_data.size();
           p_gen_data.push_back(data);
-          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,i));
+          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,len));
         }
       }
     }
@@ -270,9 +279,10 @@ class PSSE_seq_Parser : public BaseParser<_network>
      */
     void findZeroSeqImpData()
     {
-      std_string line;
+      std::string line;
       while(p_input_stream.nextLine(line) && test_end(line)) {
-        std::vector split_line = p_util.charTokenizer(line,',');
+        char seq = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&seq);
         /* Check if entry already exists for this generator */
         int bus_id = atoi(split_line[0].c_str());
         std::string tag = p_util.clean2Char(split_line[1]);
@@ -291,7 +301,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
           data.xzero = atof(split_line[3].c_str());
           int len = p_gen_data.size();
           p_gen_data.push_back(data);
-          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,i));
+          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,len));
         }
       }
     }
@@ -299,11 +309,12 @@ class PSSE_seq_Parser : public BaseParser<_network>
     /**
      * Extract negative sequence shunt data and put it in bus_params structs
      */
-    void findNegativeSeqShuntData()
+    void findNegSeqShuntData()
     {
-      std_string line;
+      std::string line;
       while(p_input_stream.nextLine(line) && test_end(line)) {
-        std::vector split_line = p_util.charTokenizer(line,',');
+        char seq = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&seq);
         /* Check if entry already exists for this bus */
         int bus_id = atoi(split_line[0].c_str());
         std::map<int,int>::iterator it = p_busIDs.find(bus_id);
@@ -318,7 +329,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
           data.bneg = atof(split_line[2].c_str());
           int len = p_bus_data.size();
           p_bus_data.push_back(data);
-          p_busIDs.insert(int,int>(bus_id,i));
+          p_busIDs.insert(std::pair<int,int>(bus_id,len));
         }
       }
     }
@@ -328,9 +339,10 @@ class PSSE_seq_Parser : public BaseParser<_network>
      */
     void findZeroSeqShuntData()
     {
-      std_string line;
+      std::string line;
       while(p_input_stream.nextLine(line) && test_end(line)) {
-        std::vector split_line = p_util.charTokenizer(line,',');
+        char seq = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&seq);
         /* Check if entry already exists for this bus */
         int bus_id = atoi(split_line[0].c_str());
         std::map<int,int>::iterator it = p_busIDs.find(bus_id);
@@ -345,7 +357,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
           data.bzero = atof(split_line[2].c_str());
           int len = p_bus_data.size();
           p_bus_data.push_back(data);
-          p_busIDs.insert(int,int>(bus_id,i));
+          p_busIDs.insert(std::pair<int,int>(bus_id,len));
         }
       }
     }
@@ -355,10 +367,11 @@ class PSSE_seq_Parser : public BaseParser<_network>
      */
     void findZeroSeqNonTransformerData()
     {
-      std_string line;
+      std::string line;
       while(p_input_stream.nextLine(line) && test_end(line)) {
-        std::vector split_line = p_util.charTokenizer(line,',');
-        /* Check if entry already exists for this generator */
+        char seq = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&seq);
+        /* Check if entry already exists for this branch */
         int from_bus = atoi(split_line[0].c_str());
         int to_bus = atoi(split_line[1].c_str());
         std::string tag = p_util.clean2Char(split_line[2]);
@@ -367,6 +380,11 @@ class PSSE_seq_Parser : public BaseParser<_network>
         std::map<std::pair<std::pair<int,int>,std::string>,int>::iterator it = p_branchIDs.find(branch);
         if (it != p_branchIDs.end()) {
           int idx = it->second;
+          p_branch_data[idx].is_xform = false;
+          p_branch_data[idx].from_bus = from_bus;
+          p_branch_data[idx].to_bus = to_bus;
+          strcpy(p_branch_data[idx].branch_id,tag.c_str());
+          p_branch_data[idx].branch_id[2] = '\0';
           p_branch_data[idx].rlinz = atof(split_line[3].c_str());
           p_branch_data[idx].xlinz = atof(split_line[4].c_str());
           p_branch_data[idx].bchz = atof(split_line[5].c_str());
@@ -376,6 +394,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
           p_branch_data[idx].bj = atof(split_line[9].c_str());
         } else {
           branch_params data;
+          data.is_xform = false;
           data.from_bus = from_bus;
           data.to_bus = to_bus;
           strcpy(data.branch_id,tag.c_str());
@@ -387,9 +406,9 @@ class PSSE_seq_Parser : public BaseParser<_network>
           data.bi = atof(split_line[7].c_str());
           data.gj = atof(split_line[8].c_str());
           data.bj = atof(split_line[9].c_str());
-          int len = p_gen_data.size();
-          p_gen_data.push_back(data);
-          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,i));
+          int len = p_branch_data.size();
+          p_branch_data.push_back(data);
+          p_branchIDs.insert(std::pair<std::pair<std::pair<int,int>,std::string>,int>(branch,len));
         }
       }
     }
@@ -399,7 +418,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
      */
     void findZeroSeqMutualImpData()
     {
-      std_string line;
+      std::string line;
       while(p_input_stream.nextLine(line) && test_end(line)) {
         // Ignore this data for now.
       }
@@ -410,10 +429,17 @@ class PSSE_seq_Parser : public BaseParser<_network>
      */
     void findZeroSeqTransformerData()
     {
-      std_string line;
+      std::string line;
+      bool three_winding;
       while(p_input_stream.nextLine(line) && test_end(line)) {
-        std::vector split_line = p_util.charTokenizer(line,',');
-        /* Check if entry already exists for this generator */
+        char seq = ',';
+        std::vector<std::string> split_line = p_util.charTokenizer(line,&seq);
+        if (split_line.size() == 11) {
+          three_winding = false;
+        } else {
+          three_winding = true;
+        }
+        /* Check if entry already exists for this branch */
         int from_bus = atoi(split_line[0].c_str());
         int to_bus = atoi(split_line[1].c_str());
         std::string tag = p_util.clean2Char(split_line[3]);
@@ -422,20 +448,31 @@ class PSSE_seq_Parser : public BaseParser<_network>
         std::map<std::pair<std::pair<int,int>,std::string>,int>::iterator it = p_branchIDs.find(branch);
         if (it != p_branchIDs.end()) {
           int idx = it->second;
+          p_branch_data[idx].is_xform = true;
+          p_branch_data[idx].three_winding = three_winding;
+          p_branch_data[idx].from_bus = from_bus;
+          p_branch_data[idx].to_bus = to_bus;
+          strcpy(p_branch_data[idx].branch_id,tag.c_str());
+          p_branch_data[idx].branch_id[2] = '\0';
           p_branch_data[idx].k = atoi(split_line[2].c_str());
           p_branch_data[idx].cc = atoi(split_line[4].c_str());
           p_branch_data[idx].rg = atof(split_line[5].c_str());
           p_branch_data[idx].xg = atof(split_line[6].c_str());
           p_branch_data[idx].r1 = atof(split_line[7].c_str());
           p_branch_data[idx].x1 = atof(split_line[8].c_str());
-          p_branch_data[idx].rg2 = atof(split_line[9].c_str());
-          p_branch_data[idx].xg2 = atof(split_line[10].c_str());
-          p_branch_data[idx].r2 = atof(split_line[11].c_str());
-          p_branch_data[idx].x2 = atof(split_line[12].c_str());
-          p_branch_data[idx].r3 = atof(split_line[13].c_str());
-          p_branch_data[idx].x3 = atof(split_line[14].c_str());
+          if (!three_winding) {
+            p_branch_data[idx].rg2 = atof(split_line[9].c_str());
+            p_branch_data[idx].xg2 = atof(split_line[10].c_str());
+          } else {
+            p_branch_data[idx].r2 = atof(split_line[11].c_str());
+            p_branch_data[idx].x2 = atof(split_line[12].c_str());
+            p_branch_data[idx].r3 = atof(split_line[13].c_str());
+            p_branch_data[idx].x3 = atof(split_line[14].c_str());
+          }
         } else {
           branch_params data;
+          data.is_xform = true;
+          data.three_winding = three_winding;
           data.from_bus = from_bus;
           data.to_bus = to_bus;
           strcpy(data.branch_id,tag.c_str());
@@ -446,33 +483,36 @@ class PSSE_seq_Parser : public BaseParser<_network>
           data.xg = atof(split_line[6].c_str());
           data.r1 = atof(split_line[7].c_str());
           data.x1 = atof(split_line[8].c_str());
-          data.rg2 = atof(split_line[9].c_str());
-          data.xg2 = atof(split_line[10].c_str());
-          data.r2 = atof(split_line[11].c_str());
-          data.x2 = atof(split_line[12].c_str());
-          data.r3 = atof(split_line[13].c_str());
-          data.x3 = atof(split_line[14].c_str());
-          int len = p_gen_data.size();
-          p_gen_data.push_back(data);
-          p_genIDs.insert(std::pair<std::pair<int,std::string>,int>(gen,i));
+          if (!three_winding) {
+            data.rg2 = atof(split_line[9].c_str());
+            data.xg2 = atof(split_line[10].c_str());
+          } else {
+            data.r2 = atof(split_line[11].c_str());
+            data.x2 = atof(split_line[12].c_str());
+            data.r3 = atof(split_line[13].c_str());
+            data.x3 = atof(split_line[14].c_str());
+          }
+          int len = p_branch_data.size();
+          p_branch_data.push_back(data);
+          p_branchIDs.insert(std::pair<std::pair<std::pair<int,int>,std::string>,int>(branch,len));
         }
       }
     }
 
-    void sort_seq_data()
+    void sortSeqData()
     {
       // Store generator parameters in data collection
-      int nsize = gen_data.size();
+      int nsize = p_gen_data.size();
       std::vector<int> buses;
       int i;
       for (i=0; i<nsize; i++) {
-        buses.push_back(gen_data[i].bus_id);
+        buses.push_back(p_gen_data[i].bus_id);
       }
       // Distribute data to correct processors
       {
         gridpack::hash_distr::HashDistribution<_network,gen_params,gen_params>
           distr(p_network);
-        distr.distributeBusValues(buses,gen_data);
+        distr.distributeBusValues(buses,p_gen_data);
       }
       // Now match data with corresponding data collection objects
       gridpack::component::DataCollection *data;
@@ -488,7 +528,7 @@ class PSSE_seq_Parser : public BaseParser<_network>
         int g_id = -1;
         if (ngen > 0) {
           // Find 2 character tag for generator ID
-          std::string tag = gen_data[i].gen_id;
+          std::string tag = p_gen_data[i].gen_id;
           int j;
           for (j=0; j<ngen; j++) {
             std::string t_id;
@@ -502,59 +542,59 @@ class PSSE_seq_Parser : public BaseParser<_network>
         }
         double rval;
         // Add sequence parameters for this generator
-        if (!data->getValue(GENERATOR_SEQ_ZRPOS,rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZRPOS,gen_data[i].zrpos,g_id);
+        if (data->getValue(GENERATOR_SEQ_ZRPOS,&rval,g_id)) {
+          data->setValue(GENERATOR_SEQ_ZRPOS,p_gen_data[i].zrpos,g_id);
         } else {
-          data->addValue(GENERATOR_SEQ_ZRPOS,gen_data[i].zrpos,g_id);
+          data->addValue(GENERATOR_SEQ_ZRPOS,p_gen_data[i].zrpos,g_id);
         }
-        if (!data->getValue(GENERATOR_SEQ_ZXPOS,rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZXPOS,gen_data[i].zxpos,g_id);
+        if (data->getValue(GENERATOR_SEQ_ZXPOS,&rval,g_id)) {
+          data->setValue(GENERATOR_SEQ_ZXPOS,p_gen_data[i].zxpos,g_id);
         } else {
-          data->addValue(GENERATOR_SEQ_ZXPOS,gen_data[i].zxpos,g_id);
-        }
-
-        if (!data->getValue(GENERATOR_SEQ_ZRNEG,rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZRNEG,gen_data[i].zrneg,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_ZRNEG,gen_data[i].zrneg,g_id);
-        }
-        if (!data->getValue(GENERATOR_SEQ_ZXNEG,rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZXNEG,gen_data[i].zxneg,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_ZXNEG,gen_data[i].zxneg,g_id);
+          data->addValue(GENERATOR_SEQ_ZXPOS,p_gen_data[i].zxpos,g_id);
         }
 
-        if (!data->getValue(GENERATOR_SEQ_RZERO,rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_RZERO,gen_data[i].zrneg,g_id);
+        if (data->getValue(GENERATOR_SEQ_ZRNEG,&rval,g_id)) {
+          data->setValue(GENERATOR_SEQ_ZRNEG,p_gen_data[i].zrneg,g_id);
         } else {
-          data->addValue(GENERATOR_SEQ_RZERO,gen_data[i].zrneg,g_id);
+          data->addValue(GENERATOR_SEQ_ZRNEG,p_gen_data[i].zrneg,g_id);
         }
-        if (!data->getValue(GENERATOR_SEQ_XZERO,rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_XZERO,gen_data[i].zxneg,g_id);
+        if (data->getValue(GENERATOR_SEQ_ZXNEG,&rval,g_id)) {
+          data->setValue(GENERATOR_SEQ_ZXNEG,p_gen_data[i].zxneg,g_id);
         } else {
-          data->addValue(GENERATOR_SEQ_XZERO,gen_data[i].zxneg,g_id);
+          data->addValue(GENERATOR_SEQ_ZXNEG,p_gen_data[i].zxneg,g_id);
+        }
+
+        if (data->getValue(GENERATOR_SEQ_RZERO,&rval,g_id)) {
+          data->setValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
+        } else {
+          data->addValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
+        }
+        if (data->getValue(GENERATOR_SEQ_XZERO,&rval,g_id)) {
+          data->setValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
+        } else {
+          data->addValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
         }
       }
 
       // Store bus and branch parameters in data collection
-      nsize = bus_data.size();
+      nsize = p_bus_data.size();
       buses.clear();
       for (i=0; i<nsize; i++) {
-        buses.push_back(bus_data[i].bus_id);
+        buses.push_back(p_bus_data[i].bus_id);
       }
 
-      nsize = branch_data.size();
-      std::vector<int> branches;
+      nsize = p_branch_data.size();
+      std::vector<std::pair<int,int>> branches;
       for (i=0; i<nsize; i++) {
-        branches.push_back(std::pair<int,int>(branch_data[i].from_bus,branch_data[i].to_bus));
+        branches.push_back(std::pair<int,int>(p_branch_data[i].from_bus,p_branch_data[i].to_bus));
       }
       // Distribute data to correct processors
       std::vector<int> lbranch_idx;
       {
         gridpack::hash_distr::HashDistribution<_network,bus_params,branch_params>
           distr(p_network);
-        distr.distributeBusValues(buses,bus_data);
-        distr.distributeBranchValues(branches,lbranch_idx,branch_data);
+        distr.distributeBusValues(buses,p_bus_data);
+        distr.distributeBranchValues(branches,lbranch_idx,p_branch_data);
       }
       // Now match data with corresponding data collection objects
       // Set bus sequence values
@@ -565,26 +605,26 @@ class PSSE_seq_Parser : public BaseParser<_network>
           (p_network->getBusData(l_idx).get());
         double rval;
         // Add sequence parameters for this bus
-        if (!data->getValue(BUS_SEQ_GNEG,rval)) {
-          data->setValue(BUS_SEQ_GNEG,bus_data[i].gneg);
+        if (data->getValue(BUS_SEQ_GNEG,&rval)) {
+          data->setValue(BUS_SEQ_GNEG,p_bus_data[i].gneg);
         } else {
-          data->addValue(BUS_SEQ_GNEG,bus_data[i].gneg);
+          data->addValue(BUS_SEQ_GNEG,p_bus_data[i].gneg);
         }
-        if (!data->getValue(BUS_SEQ_BNEG,rval)) {
-          data->setValue(BUS_SEQ_BNEG,bus_data[i].bneg);
+        if (data->getValue(BUS_SEQ_BNEG,&rval)) {
+          data->setValue(BUS_SEQ_BNEG,p_bus_data[i].bneg);
         } else {
-          data->addValue(BUS_SEQ_BNEG,bus_data[i].bneg);
+          data->addValue(BUS_SEQ_BNEG,p_bus_data[i].bneg);
         }
 
-        if (!data->getValue(BUS_SEQ_GZERO,rval)) {
-          data->setValue(BUS_SEQ_GZERO,bus_data[i].gzero);
+        if (data->getValue(BUS_SEQ_GZERO,&rval)) {
+          data->setValue(BUS_SEQ_GZERO,p_bus_data[i].gzero);
         } else {
-          data->addValue(BUS_SEQ_GZERO,bus_data[i].gzero);
+          data->addValue(BUS_SEQ_GZERO,p_bus_data[i].gzero);
         }
-        if (!data->getValue(BUS_SEQ_BZERO,rval)) {
-          data->setValue(BUS_SEQ_BZERO,bus_data[i].bzero);
+        if (data->getValue(BUS_SEQ_BZERO,&rval)) {
+          data->setValue(BUS_SEQ_BZERO,p_bus_data[i].bzero);
         } else {
-          data->addValue(BUS_SEQ_BZERO,bus_data[i].bzero);
+          data->addValue(BUS_SEQ_BZERO,p_bus_data[i].bzero);
         }
       }
       // Set branch sequence values
@@ -600,12 +640,12 @@ class PSSE_seq_Parser : public BaseParser<_network>
         int br_id = -1;
         if (nbranch > 0) {
           // find 2 character tag for branch ID
-          std::string tag = branch_data[i].branch_id;
+          std::string tag = p_branch_data[i].branch_id;
           int j;
           for (j=0; j<nbranch; j++) {
             std::string t_id;
-            t_id = p_util.clean2Char(t_id);
             data->getValue(BRANCH_CKT,&t_id,j);
+            t_id = p_util.clean2Char(t_id);
             if (tag == t_id) {
               br_id = j;
               break;
@@ -614,108 +654,113 @@ class PSSE_seq_Parser : public BaseParser<_network>
         }
         double rval;
         // Add sequence parameters for this branch/transformer
-        if (!data->getValue(BRANCH_SEQ_RLINZ,rval,br_id)) 
-          data->setValue(BRANCH_SEQ_RLINZ,branch_data[i].rlinz,br_id);
-        } else {
-          data->addValue(BRANCH_SEQ_RLINZ,branch_data[i].rlinz,br_id);
-        }
-        if (!data->getValue(BRANCH_SEQ_XLINZ,rval,br_id)) 
-          data->setValue(BRANCH_SEQ_XLINZ,branch_data[i].xlinz,br_id);
-        } else {
-          data->addValue(BRANCH_SEQ_XLINZ,branch_data[i].xlinz,br_id);
-        }
-        if (!data->getValue(BRANCH_SEQ_BCHZ,rval,br_id)) 
-          data->setValue(BRANCH_SEQ_BCHZ,branch_data[i].bchz,br_id);
-        } else {
-          data->addValue(BRANCH_SEQ_BCHZ,branch_data[i].bchz,br_id);
-        }
+        if (!p_branch_data[i].is_xform) {
+          if (data->getValue(BRANCH_SEQ_RLINZ,&rval,br_id)) {
+            data->setValue(BRANCH_SEQ_RLINZ,p_branch_data[i].rlinz,br_id);
+          } else {
+            data->addValue(BRANCH_SEQ_RLINZ,p_branch_data[i].rlinz,br_id);
+          }
+          if (data->getValue(BRANCH_SEQ_XLINZ,&rval,br_id)) {
+            data->setValue(BRANCH_SEQ_XLINZ,p_branch_data[i].xlinz,br_id);
+          } else {
+            data->addValue(BRANCH_SEQ_XLINZ,p_branch_data[i].xlinz,br_id);
+          }
+          if (data->getValue(BRANCH_SEQ_BCHZ,&rval,br_id)) {
+            data->setValue(BRANCH_SEQ_BCHZ,p_branch_data[i].bchz,br_id);
+          } else {
+            data->addValue(BRANCH_SEQ_BCHZ,p_branch_data[i].bchz,br_id);
+          }
 
-        if (!data->getValue(BRANCH_SEQ_GI,rval,br_id)) 
-          data->setValue(BRANCH_SEQ_GI,branch_data[i].gi,br_id);
-        } else {
-          data->addValue(BRANCH_SEQ_GI,branch_data[i].gi,br_id);
-        }
-        if (!data->getValue(BRANCH_SEQ_BI,rval,br_id)) 
-          data->setValue(BRANCH_SEQ_BI,branch_data[i].bi,br_id);
-        } else {
-          data->addValue(BRANCH_SEQ_BI,branch_data[i].bi,br_id);
-        }
+          if (data->getValue(BRANCH_SEQ_GI,&rval,br_id)) {
+            data->setValue(BRANCH_SEQ_GI,p_branch_data[i].gi,br_id);
+          } else {
+            data->addValue(BRANCH_SEQ_GI,p_branch_data[i].gi,br_id);
+          }
+          if (data->getValue(BRANCH_SEQ_BI,&rval,br_id)) {
+            data->setValue(BRANCH_SEQ_BI,p_branch_data[i].bi,br_id);
+          } else {
+            data->addValue(BRANCH_SEQ_BI,p_branch_data[i].bi,br_id);
+          }
 
-        if (!data->getValue(BRANCH_SEQ_GJ,rval,br_id)) 
-          data->setValue(BRANCH_SEQ_GJ,branch_data[i].gj,br_id);
-        } else {
-          data->addValue(BRANCH_SEQ_GJ,branch_data[i].gj,br_id);
-        }
-        if (!data->getValue(BRANCH_SEQ_BJ,rval,br_id)) 
-          data->setValue(BRANCH_SEQ_BJ,branch_data[i].bj,br_id);
-        } else {
-          data->addValue(BRANCH_SEQ_BJ,branch_data[i].bj,br_id);
-        }
-       
-        if (!data->getValue(TRANSFORMER_SEQ_K,ival,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_K,branch_data[i].k,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_K,branch_data[i].k,br_id);
-        }
-        if (!data->getValue(TRANSFORMER_SEQ_CC,ival,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_CC,branch_data[i].cc,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_CC,branch_data[i].cc,br_id);
-        }
-       
-        if (!data->getValue(TRANSFORMER_SEQ_RG,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_RG,branch_data[i].rg,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_RG,branch_data[i].rg,br_id);
-        }
-        if (!data->getValue(TRANSFORMER_SEQ_XG,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_XG,branch_data[i].xg,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_XG,branch_data[i].xg,br_id);
-        }
-       
-        if (!data->getValue(TRANSFORMER_SEQ_R1,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_R1,branch_data[i].r1,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_R1,branch_data[i].r1,br_id);
-        }
-        if (!data->getValue(TRANSFORMER_SEQ_X1,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_X1,branch_data[i].x1,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_X1,branch_data[i].x1,br_id);
-        }
-       
-        if (!data->getValue(TRANSFORMER_SEQ_RG2,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_RG2,branch_data[i].rg2,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_RG2,branch_data[i].rg2,br_id);
-        }
-        if (!data->getValue(TRANSFORMER_SEQ_XG2,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_XG2,branch_data[i].xg2,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_XG2,branch_data[i].xg2,br_id);
-        }
-       
-        if (!data->getValue(TRANSFORMER_SEQ_R2,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_R2,branch_data[i].r2,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_R2,branch_data[i].r2,br_id);
-        }
-        if (!data->getValue(TRANSFORMER_SEQ_X2,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_X2,branch_data[i].x2,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_X2,branch_data[i].x2,br_id);
-        }
-       
-        if (!data->getValue(TRANSFORMER_SEQ_R3,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_R3,branch_data[i].r3,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_R3,branch_data[i].r3,br_id);
-        }
-        if (!data->getValue(TRANSFORMER_SEQ_X3,rval,br_id)) 
-          data->setValue(TRANSFORMER_SEQ_X3,branch_data[i].x3,br_id);
-        } else {
-          data->addValue(TRANSFORMER_SEQ_X3,branch_data[i].x3,br_id);
+          if (data->getValue(BRANCH_SEQ_GJ,&rval,br_id)) {
+            data->setValue(BRANCH_SEQ_GJ,p_branch_data[i].gj,br_id);
+          } else {
+            data->addValue(BRANCH_SEQ_GJ,p_branch_data[i].gj,br_id);
+          }
+          if (data->getValue(BRANCH_SEQ_BJ,&rval,br_id)) {
+            data->setValue(BRANCH_SEQ_BJ,p_branch_data[i].bj,br_id);
+          } else {
+            data->addValue(BRANCH_SEQ_BJ,p_branch_data[i].bj,br_id);
+          }
+        } else { 
+          if (data->getValue(TRANSFORMER_SEQ_K,&ival,br_id)) {
+            data->setValue(TRANSFORMER_SEQ_K,p_branch_data[i].k,br_id);
+          } else {
+            data->addValue(TRANSFORMER_SEQ_K,p_branch_data[i].k,br_id);
+          }
+          if (data->getValue(TRANSFORMER_SEQ_CC,&ival,br_id)) {
+            data->setValue(TRANSFORMER_SEQ_CC,p_branch_data[i].cc,br_id);
+          } else {
+            data->addValue(TRANSFORMER_SEQ_CC,p_branch_data[i].cc,br_id);
+          }
+
+          if (data->getValue(TRANSFORMER_SEQ_RG,&rval,br_id)) {
+            data->setValue(TRANSFORMER_SEQ_RG,p_branch_data[i].rg,br_id);
+          } else {
+            data->addValue(TRANSFORMER_SEQ_RG,p_branch_data[i].rg,br_id);
+          }
+          if (data->getValue(TRANSFORMER_SEQ_XG,&rval,br_id)) {
+            data->setValue(TRANSFORMER_SEQ_XG,p_branch_data[i].xg,br_id);
+          } else {
+            data->addValue(TRANSFORMER_SEQ_XG,p_branch_data[i].xg,br_id);
+          }
+
+          if (data->getValue(TRANSFORMER_SEQ_R1,&rval,br_id)) {
+            data->setValue(TRANSFORMER_SEQ_R1,p_branch_data[i].r1,br_id);
+          } else {
+            data->addValue(TRANSFORMER_SEQ_R1,p_branch_data[i].r1,br_id);
+          }
+          if (data->getValue(TRANSFORMER_SEQ_X1,&rval,br_id)) {
+            data->setValue(TRANSFORMER_SEQ_X1,p_branch_data[i].x1,br_id);
+          } else {
+            data->addValue(TRANSFORMER_SEQ_X1,p_branch_data[i].x1,br_id);
+          }
+
+          if (!p_branch_data[i].three_winding) {
+            if (data->getValue(TRANSFORMER_SEQ_RG2,&rval,br_id)) {
+              data->setValue(TRANSFORMER_SEQ_RG2,p_branch_data[i].rg2,br_id);
+            } else {
+              data->addValue(TRANSFORMER_SEQ_RG2,p_branch_data[i].rg2,br_id);
+            }
+            if (data->getValue(TRANSFORMER_SEQ_XG2,&rval,br_id)) {
+              data->setValue(TRANSFORMER_SEQ_XG2,p_branch_data[i].xg2,br_id);
+            } else {
+              data->addValue(TRANSFORMER_SEQ_XG2,p_branch_data[i].xg2,br_id);
+            }
+          } else {
+
+            if (data->getValue(TRANSFORMER_SEQ_R2,&rval,br_id)) {
+              data->setValue(TRANSFORMER_SEQ_R2,p_branch_data[i].r2,br_id);
+            } else {
+              data->addValue(TRANSFORMER_SEQ_R2,p_branch_data[i].r2,br_id);
+            }
+            if (data->getValue(TRANSFORMER_SEQ_X2,&rval,br_id)) {
+              data->setValue(TRANSFORMER_SEQ_X2,p_branch_data[i].x2,br_id);
+            } else {
+              data->addValue(TRANSFORMER_SEQ_X2,p_branch_data[i].x2,br_id);
+            }
+
+            if (data->getValue(TRANSFORMER_SEQ_R3,&rval,br_id)) {
+              data->setValue(TRANSFORMER_SEQ_R3,p_branch_data[i].r3,br_id);
+            } else {
+              data->addValue(TRANSFORMER_SEQ_R3,p_branch_data[i].r3,br_id);
+            }
+            if (data->getValue(TRANSFORMER_SEQ_X3,&rval,br_id)) {
+              data->setValue(TRANSFORMER_SEQ_X3,p_branch_data[i].x3,br_id);
+            } else {
+              data->addValue(TRANSFORMER_SEQ_X3,p_branch_data[i].x3,br_id);
+            }
+          }
         }
       }
     }
@@ -763,14 +808,16 @@ class PSSE_seq_Parser : public BaseParser<_network>
     // Vectors of parameters
     std::vector<gen_params> p_gen_data;
     std::vector<bus_params> p_bus_data;
-    std::vector<branch_params> p_bus_data;
+    std::vector<branch_params> p_branch_data;
 
     // Maps that can be used to fill out parameter arrays
-    std::map<std::pair<int,std::string>, int> p_genIDs
-    std::map<int, int> p_busIDs
-    std::map<pair<pair<int,int>,std::string>, int> p_branchIDs
+    std::map<std::pair<int,std::string>, int> p_genIDs;
+    std::map<int, int> p_busIDs;
+    std::map<std::pair<std::pair<int,int>,std::string>, int> p_branchIDs;
 
     gridpack::utility::StringUtils p_util;
+
+    int p_change_code;
 
     /**
      * Input stream object
