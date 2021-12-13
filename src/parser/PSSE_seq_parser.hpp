@@ -134,6 +134,9 @@ class PSSE_seq_parser : public BaseParser<_network>
     struct gen_params{
       int bus_id;     // ID of bus that owns device
       char gen_id[3]; // Generator ID
+      bool use_pos;
+      bool use_neg;
+      bool use_zero;
       double zrpos;
       double zxpos;
       double zrneg;
@@ -147,6 +150,8 @@ class PSSE_seq_parser : public BaseParser<_network>
       int bus_id; // ID of bus
       double gneg;
       double bneg;
+      bool use_neg;
+      bool use_zero;
       double gzero;
       double bzero;
     };
@@ -226,11 +231,15 @@ class PSSE_seq_parser : public BaseParser<_network>
         std::map<std::pair<int,std::string>,int>::iterator it = p_genIDs.find(gen);
         if (it != p_genIDs.end()) {
           int idx = it->second;
+          p_gen_data[idx].use_pos = true;
           p_gen_data[idx].zrpos = atof(split_line[2].c_str());
           p_gen_data[idx].zxpos = atof(split_line[3].c_str());
         } else {
           gen_params data;
           data.bus_id = bus_id;
+          data.use_pos = true;
+          data.use_neg = false;
+          data.use_zero = false;
           strcpy(data.gen_id,tag.c_str());
           data.gen_id[2] = '\0';
           data.zrpos = atof(split_line[2].c_str());
@@ -258,10 +267,14 @@ class PSSE_seq_parser : public BaseParser<_network>
         std::map<std::pair<int,std::string>,int>::iterator it = p_genIDs.find(gen);
         if (it != p_genIDs.end()) {
           int idx = it->second;
+          p_gen_data[idx].use_neg = true;
           p_gen_data[idx].zrneg = atof(split_line[2].c_str());
           p_gen_data[idx].zxneg = atof(split_line[3].c_str());
         } else {
           gen_params data;
+          data.use_pos = false;
+          data.use_neg = true;
+          data.use_zero = false;
           data.bus_id = bus_id;
           strcpy(data.gen_id,tag.c_str());
           data.gen_id[2] = '\0';
@@ -290,10 +303,14 @@ class PSSE_seq_parser : public BaseParser<_network>
         std::map<std::pair<int,std::string>,int>::iterator it = p_genIDs.find(gen);
         if (it != p_genIDs.end()) {
           int idx = it->second;
+          p_gen_data[idx].use_zero = true;
           p_gen_data[idx].rzero = atof(split_line[2].c_str());
           p_gen_data[idx].xzero = atof(split_line[3].c_str());
         } else {
           gen_params data;
+          data.use_pos = false;
+          data.use_neg = false;
+          data.use_zero = true;
           data.bus_id = bus_id;
           strcpy(data.gen_id,tag.c_str());
           data.gen_id[2] = '\0';
@@ -320,10 +337,13 @@ class PSSE_seq_parser : public BaseParser<_network>
         std::map<int,int>::iterator it = p_busIDs.find(bus_id);
         if (it != p_busIDs.end()) {
           int idx = it->second;
+          p_bus_data[idx].use_neg = true;
           p_bus_data[idx].gneg = atof(split_line[1].c_str());
           p_bus_data[idx].bneg = atof(split_line[2].c_str());
         } else {
           bus_params data;
+          data.use_neg = true;
+          data.use_zero = false;
           data.bus_id = bus_id;
           data.gneg = atof(split_line[1].c_str());
           data.bneg = atof(split_line[2].c_str());
@@ -348,10 +368,13 @@ class PSSE_seq_parser : public BaseParser<_network>
         std::map<int,int>::iterator it = p_busIDs.find(bus_id);
         if (it != p_busIDs.end()) {
           int idx = it->second;
+          p_bus_data[idx].use_zero;
           p_bus_data[idx].gzero = atof(split_line[1].c_str());
           p_bus_data[idx].bzero = atof(split_line[2].c_str());
         } else {
           bus_params data;
+          data.use_neg = true;
+          data.use_zero = false;
           data.bus_id = bus_id;
           data.gzero = atof(split_line[1].c_str());
           data.bzero = atof(split_line[2].c_str());
@@ -542,37 +565,43 @@ class PSSE_seq_parser : public BaseParser<_network>
         }
         double rval;
         // Add sequence parameters for this generator
-        if (data->getValue(GENERATOR_SEQ_ZRPOS,&rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZRPOS,p_gen_data[i].zrpos,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_ZRPOS,p_gen_data[i].zrpos,g_id);
-        }
-        if (data->getValue(GENERATOR_SEQ_ZXPOS,&rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZXPOS,p_gen_data[i].zxpos,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_ZXPOS,p_gen_data[i].zxpos,g_id);
-        }
-
-        if (data->getValue(GENERATOR_SEQ_ZRNEG,&rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZRNEG,p_gen_data[i].zrneg,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_ZRNEG,p_gen_data[i].zrneg,g_id);
-        }
-        if (data->getValue(GENERATOR_SEQ_ZXNEG,&rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_ZXNEG,p_gen_data[i].zxneg,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_ZXNEG,p_gen_data[i].zxneg,g_id);
+        if (p_gen_data[i].use_pos) {
+          if (data->getValue(GENERATOR_SEQ_ZRPOS,&rval,g_id)) {
+            data->setValue(GENERATOR_SEQ_ZRPOS,p_gen_data[i].zrpos,g_id);
+          } else {
+            data->addValue(GENERATOR_SEQ_ZRPOS,p_gen_data[i].zrpos,g_id);
+          }
+          if (data->getValue(GENERATOR_SEQ_ZXPOS,&rval,g_id)) {
+            data->setValue(GENERATOR_SEQ_ZXPOS,p_gen_data[i].zxpos,g_id);
+          } else {
+            data->addValue(GENERATOR_SEQ_ZXPOS,p_gen_data[i].zxpos,g_id);
+          }
         }
 
-        if (data->getValue(GENERATOR_SEQ_RZERO,&rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
+        if (p_gen_data[i].use_neg) {
+          if (data->getValue(GENERATOR_SEQ_ZRNEG,&rval,g_id)) {
+            data->setValue(GENERATOR_SEQ_ZRNEG,p_gen_data[i].zrneg,g_id);
+          } else {
+            data->addValue(GENERATOR_SEQ_ZRNEG,p_gen_data[i].zrneg,g_id);
+          }
+          if (data->getValue(GENERATOR_SEQ_ZXNEG,&rval,g_id)) {
+            data->setValue(GENERATOR_SEQ_ZXNEG,p_gen_data[i].zxneg,g_id);
+          } else {
+            data->addValue(GENERATOR_SEQ_ZXNEG,p_gen_data[i].zxneg,g_id);
+          }
         }
-        if (data->getValue(GENERATOR_SEQ_XZERO,&rval,g_id)) {
-          data->setValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
-        } else {
-          data->addValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
+
+        if (p_gen_data[i].use_zero) {
+          if (data->getValue(GENERATOR_SEQ_RZERO,&rval,g_id)) {
+            data->setValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
+          } else {
+            data->addValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
+          }
+          if (data->getValue(GENERATOR_SEQ_XZERO,&rval,g_id)) {
+            data->setValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
+          } else {
+            data->addValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
+          }
         }
       }
 
@@ -605,26 +634,30 @@ class PSSE_seq_parser : public BaseParser<_network>
           (p_network->getBusData(l_idx).get());
         double rval;
         // Add sequence parameters for this bus
-        if (data->getValue(BUS_SEQ_GNEG,&rval)) {
-          data->setValue(BUS_SEQ_GNEG,p_bus_data[i].gneg);
-        } else {
-          data->addValue(BUS_SEQ_GNEG,p_bus_data[i].gneg);
-        }
-        if (data->getValue(BUS_SEQ_BNEG,&rval)) {
-          data->setValue(BUS_SEQ_BNEG,p_bus_data[i].bneg);
-        } else {
-          data->addValue(BUS_SEQ_BNEG,p_bus_data[i].bneg);
+        if (p_bus_data[i].use_neg) {
+          if (data->getValue(BUS_SEQ_GNEG,&rval)) {
+            data->setValue(BUS_SEQ_GNEG,p_bus_data[i].gneg);
+          } else {
+            data->addValue(BUS_SEQ_GNEG,p_bus_data[i].gneg);
+          }
+          if (data->getValue(BUS_SEQ_BNEG,&rval)) {
+            data->setValue(BUS_SEQ_BNEG,p_bus_data[i].bneg);
+          } else {
+            data->addValue(BUS_SEQ_BNEG,p_bus_data[i].bneg);
+          }
         }
 
-        if (data->getValue(BUS_SEQ_GZERO,&rval)) {
-          data->setValue(BUS_SEQ_GZERO,p_bus_data[i].gzero);
-        } else {
-          data->addValue(BUS_SEQ_GZERO,p_bus_data[i].gzero);
-        }
-        if (data->getValue(BUS_SEQ_BZERO,&rval)) {
-          data->setValue(BUS_SEQ_BZERO,p_bus_data[i].bzero);
-        } else {
-          data->addValue(BUS_SEQ_BZERO,p_bus_data[i].bzero);
+        if (p_bus_data[i].use_zero) {
+          if (data->getValue(BUS_SEQ_GZERO,&rval)) {
+            data->setValue(BUS_SEQ_GZERO,p_bus_data[i].gzero);
+          } else {
+            data->addValue(BUS_SEQ_GZERO,p_bus_data[i].gzero);
+          }
+          if (data->getValue(BUS_SEQ_BZERO,&rval)) {
+            data->setValue(BUS_SEQ_BZERO,p_bus_data[i].bzero);
+          } else {
+            data->addValue(BUS_SEQ_BZERO,p_bus_data[i].bzero);
+          }
         }
       }
       // Set branch sequence values
