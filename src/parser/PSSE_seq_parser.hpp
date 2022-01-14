@@ -613,7 +613,7 @@ class PSSE_seq_parser : public BaseParser<_network>
       }
 
       nsize = p_branch_data.size();
-      std::vector<std::pair<int,int>> branches;
+      std::vector<std::pair< int,int > > branches;
       for (i=0; i<nsize; i++) {
         branches.push_back(std::pair<int,int>(p_branch_data[i].from_bus,p_branch_data[i].to_bus));
       }
