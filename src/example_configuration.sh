@@ -83,7 +83,8 @@ if [ $host == "flophouse" ]; then
     CC="/usr/bin/gcc"
     export CC
     CXX="/usr/bin/g++"
-    export CXX
+    CXXFLAGS="-std=c++11"
+    export CXX CXXFLAGS
 
     if [ "$shared"x = "ON"x ]; then
         pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
@@ -123,7 +124,7 @@ if [ $host == "flophouse" ]; then
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
         -D USE_GLPK:BOOL=ON \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=30 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
         $common_flags ..
 
