@@ -159,9 +159,9 @@ message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
 include_directories(AFTER ${MPI_CXX_INCLUDE_PATH})
 
-if (ENABLE_CRAY_BUILD)
-  set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-endif()
+#if (ENABLE_CRAY_BUILD)
+#  set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+#endif()
 
 # This is here for cmake version 2.6 
 if (NOT MPI_LIBRARY OR NOT MPI_EXTRA_LIBRARY)
@@ -176,6 +176,16 @@ else()
   endif()
 endif()
 message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+
+if (ENABLE_CRAY_BUILD)
+  if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
+    set(MPI_LIBRARY "")
+    set(MPI_EXTRA_LIBRARY "")
+  endif()
+endif()
+message(STATUS "MPI_LIBRARY: ${MPI_LIBRARY}")
+message(STATUS "MPI_EXTRA_LIBRARY: ${MPI_EXTRA_LIBRARY}")
+
 
 # Perkins found out that this was exactly the wrong thing to do:
 # 
@@ -289,6 +299,8 @@ elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cma
 else()
   message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
 endif()
+
+message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
 
 
 # checks 
@@ -432,13 +444,6 @@ set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(GRIDPACK_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/applications/data_sets)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (ENABLE_CRAY_BUILD)
-  if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
-    set(MPI_LIBRARY "")
-    set(MPI_EXTRA_LIBRARY "")
-  endif()
-endif()
-
 # If external packages are built as shared libraries, the library
 # search path needs to be set so unit tests can find them when run.
 # Try setting the LIBRARY_PATH environment variable to include the
