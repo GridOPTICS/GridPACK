@@ -3,6 +3,10 @@ with the simple two-sided runtime. This configuration is used in building and ru
 framework. It is not optimal for running large GridPACK jobs but works fine when using HADREC,
 which launches multiple single processor GridPACK tasks.
 
+Note that these scripts are in reference to a particular account. They will need to be modified
+to reflect the build environment of individual users. This should most be reflected in the
+location of the PETSc and Global Array libaries, as well as the GridPACK source code.
+
 Set environment with:
 
 module unload PrgEnv-intel
@@ -173,8 +177,10 @@ check_c_source_compiles("${source}" ${testname})
 check_cxx_source_compiles("${source}" ${testname})
 
 
-With the ToolChain.cmake file in the build directory and after modifying
-FindPackageMultipass.cmake, GridPACK can be configured with the following script
+The scripts below assume that a build directory called 'build' has been created
+under the GridPACK src directory. With the ToolChain.cmake file in the build
+directory and after modifying FindPackageMultipass.cmake, GridPACK can be configured
+with the following script
 
 rm -rf CMake*
 
@@ -210,7 +216,7 @@ cmake -Wdev \
       -D PETSC_DIR:STRING='/global/homes/b/bjpalmer/software_grid/petsc-3.7.6' \
       -D PETSC_ARCH:STRING='cori-gnu-cxx-complex-opt-static' \
       -D GA_DIR:STRING='/global/homes/b/bjpalmer/software_grid/ga-5-4/build_ts' \
-      -D CMAKE_INSTALL_PREFIX:PATH='/global/homes/b/bjpalmer/gridpack/src/gridpack-install' \
+      -D CMAKE_INSTALL_PREFIX:PATH='/global/homes/b/bjpalmer/gridpack/src/gridpack-install-static' \
       -D BUILD_SHARED_LIBS:BOOL=OFF \
       -D MPI_CXX_COMPILER:STRING='CC' \
       -D MPI_C_COMPILER:STRING='cc' \
