@@ -131,7 +131,8 @@ on the --enable-shared and --enable-static options.
 GridPACK:
 
 The original attempt to build GridPACK on a Cray needed to make use of a ToolChain.cmake
-file in the build directory to help CMake figure out the MPI compiler wrappers. This
+file in the build directory to help CMake figure out the MPI compiler wrappers. It is
+possible that this file is no longer necessary, but this method still works. The
 ToolChain.cmake file looks like
 
 # the name of the target operating system
@@ -149,8 +150,31 @@ find_program(CMAKE_CXX_COMPILER     CC    ${CRAY_COMPILER_SEARCH_PATHS}
 # Prefer local machine wrappers to driver wrappers here too.
 find_program(MPI_COMPILER NAMES CC cc PATHS /opt/cray/pe/craype/2.6.2/bin)
 
-With the ToolChain.cmake file in the build directory, GridPACK can be configured with
-the following script
+In addition to the ToolChain.cmake file, it is also necessary to modify the
+FindPackageMultipass.cmake file so that it only checks to see if test code compiles
+and does not try and run it. The changes needed are to substitute the existing
+
+include (Check${language}SourceRuns)
+
+line with
+
+include (Check${language}SourceCompiles)
+
+and to change the existing
+
+check_c_source_runs("${source}" ${testname})
+
+check_cxx_source_runs("${source}" ${testname})
+
+commands to
+
+check_c_source_compiles("${source}" ${testname})
+
+check_cxx_source_compiles("${source}" ${testname})
+
+
+With the ToolChain.cmake file in the build directory and after modifying
+FindPackageMultipass.cmake, GridPACK can be configured with the following script
 
 rm -rf CMake*
 
