@@ -29,6 +29,7 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/parser/dictionary.hpp"
+#include "equivalent_matrix.hpp"
 //#include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 
 
@@ -531,6 +532,33 @@ class DSFullApp
     bool modifyDataCollectionBusParam(int bus_id,
         std::string busParam, int value);
 
+    /**
+     * Create an equivalent matrix, negative sequence
+     */
+    void setEquivalentMatrix_Neg();
+
+    /**
+     * Return the negative sequenceequivalent matrix flattened into a linear array. The (i,j)
+     * element is located at index i*n+j where n is the size of the matrix.
+     * @param matrix vector containing matrix elements
+     * @param n size of matrix
+     */
+    void getEquivalentMatrix_Neg(std::vector<ComplexType> &matrix, int &n);
+	
+	
+	/**
+     * Create an equivalent matrix, zero sequence
+     */
+    void setEquivalentMatrix_Zero();
+
+    /**
+     * Return the zero sequence equivalent matrix flattened into a linear array. The (i,j)
+     * element is located at index i*n+j where n is the size of the matrix.
+     * @param matrix vector containing matrix elements
+     * @param n size of matrix
+     */
+    void getEquivalentMatrix_Zero(std::vector<ComplexType> &matrix, int &n);
+
   private:
     /**
      * Utility function to convert faults that are in event list into
@@ -724,6 +752,9 @@ class DSFullApp
     // pointer to factory
     boost::shared_ptr<DSFullFactory> p_factory;
 	
+	// whether the simulation is a three sequence dynamic simulation or a positive sequence simulation, default to be false
+	bool three_seq_simulation_flag;
+	
 	// whether iteratively solve the network interface 
 	bool p_biterative_solve_network;
 	double ITER_TOL;  // iteratively solve the network interface tolerance, defined in xml file
@@ -896,6 +927,15 @@ class DSFullApp
    boost::shared_ptr<gridpack::math::Matrix> ybus;
    boost::shared_ptr<gridpack::math::Matrix> ybus_fy;
    boost::shared_ptr<gridpack::math::Matrix> ybus_posfy;
+   boost::shared_ptr<gridpack::math::Matrix> ybus_zero; //zero sequence Y matrix
+   boost::shared_ptr<gridpack::math::Matrix> ybus_neg; //negative sequence Y matrix
+   boost::shared_ptr<gridpack::math::Matrix> ybus_3seq_fault;  //positive sequence Y matrix with 3-sequence equivalent Fault impedance
+   
+   //yuan, 3-seq needed
+   boost::shared_ptr<gridpack::dynamic_simulation::EquivalentMatrix> p_eqv_mat_neg;   // the equivalent matrix for negative sequence
+   boost::shared_ptr<gridpack::dynamic_simulation::EquivalentMatrix> p_eqv_mat_zero;  // the equivalent matrix for zero sequence
+   double eqv_seq_impedance;
+   std::vector<int> eqv_buses; //3-seq, original bus number of the equivalent buses
    
    boost::shared_ptr < gridpack::mapper::BusVectorMap<DSFullNetwork> > ngenMap_sptr; 
    boost::shared_ptr<gridpack::math::Vector> volt;
@@ -906,10 +946,20 @@ class DSFullApp
    boost::shared_ptr<gridpack::math::Vector> volt_full;
    double max_INorton_full;
    
+   boost::shared_ptr<gridpack::math::Vector> INorton_full_neg;
+   boost::shared_ptr<gridpack::math::Vector> INorton_full_zero;
+   boost::shared_ptr<gridpack::math::Vector> volt_full_neg;
+   boost::shared_ptr<gridpack::math::Vector> volt_full_zero;   
+   
    boost::shared_ptr<gridpack::math::LinearSolver> solver_sptr;
    boost::shared_ptr<gridpack::math::LinearSolver> solver_fy_sptr;
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_fy_3seq_sptr;  //3-seq positive seq y bus solver
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_ybus_zero_sptr; //3-seq zero seq y bus solver
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_ybus_neg_sptr; //3-seq negative seq y bus solver
    boost::shared_ptr<gridpack::math::LinearSolver> solver_posfy_sptr;
    
+   boost::shared_ptr<gridpack::dynamic_simulation::EquivalentMatrix> p_eqv_mat;
+
    int simu_total_steps;
    int S_Steps;
    int last_S_Steps;

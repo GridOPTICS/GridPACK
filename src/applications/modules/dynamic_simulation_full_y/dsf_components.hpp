@@ -34,7 +34,9 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q};
+enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay,
+            branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, EQBUS,
+			Ybus_neg, Ybus_zero, onFY_3seq, make_INorton_full_neg, make_INorton_full_zero};
 
 // Small utility structure to encapsulate information about fault events
 struct Event{
@@ -125,6 +127,18 @@ class DSFullBus
      * calculations
      */
     void setYBus(void);
+	
+	/**
+	 * Set values of negative sequence YBus matrix. These can then be used in subsequent
+	 * calculations
+     */
+	void setYBus_Neg(void);
+	
+	/**
+	 * Set values of zero sequence YBus matrix. These can then be used in subsequent
+	 * calculations
+     */
+	void setYBus_Zero(void);
 
     /**
      * Set initial values of vectors for integration. 
@@ -615,6 +629,24 @@ class DSFullBus
     */
     void getTotalGeneratorPower(double &total_p, double &total_q) const;
 
+    /**
+     * Function to set equivalent bus
+     * @param idx original index of equivlant bus
+     */
+    void setEquivalentBus(int idx);
+	
+  /**
+   * set the p_3seq_fault_z varaible (equivalent fault impedance ) 
+   * for the 3-seq fault at the bus with faultbusID (original index)
+   */
+  void set3seq_eqv_impedance(gridpack::ComplexType ztmp_eqv, int faultbusID);
+  
+  /**
+   * Get injection voltage
+   * @return injection voltage
+   */
+  ComplexType getInjectionVoltage();
+
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.
@@ -631,7 +663,9 @@ class DSFullBus
     bool p_shunt;
     int p_mode;
     double p_theta; // phase angle difference
-    double p_ybusr, p_ybusi;
+    double p_ybusr, p_ybusi; 
+	double p_ybusr_neg, p_ybusi_neg; 
+	double p_ybusr_zero, p_ybusi_zero; 
     double p_angle, p_voltage;
 	double p_busvolfreq, pbusvolfreq_old; //renke add, bus voltage frequency at current and previous timesteps
     bool p_load;
@@ -668,6 +702,10 @@ class DSFullBus
 															 
 	bool p_bConstYLoadSettoValue; // renke add, indicating whether this bus's constant-Y load P or Q has been already set to some value, check the function
 															 // setConstYLoadtoValue to see the usage
+															 
+	bool p_3seq_fault_flag; //3-seq varaibles, whether this bus has 3 seq. fault impedance
+	gridpack::ComplexType	p_3seq_fault_z; //3-seq varaibles, 3 seq. fault impedance
+	
 	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
 	bool p_branchtripaction_from_flag, p_branchtripaction_to_flag;
 	bool p_busrelaytripflag;
@@ -701,7 +739,10 @@ class DSFullBus
 
     std::vector<gridpack::ComplexType> p_INorton;
     gridpack::ComplexType p_volt_full;
+	gridpack::ComplexType p_volt_full_neg;
+	gridpack::ComplexType p_volt_full_zero;
 	gridpack::ComplexType p_volt_full_old; //renke add
+   gridpack::ComplexType p_volt_inj;
 	double p_volt_full_old_real, p_volt_full_old_imag; //renke add
 	bool bcomputefreq; // renke add
 
@@ -743,6 +784,9 @@ class DSFullBus
     std::vector<double> p_downIntervalStart;
     std::vector<bool> p_downStartedMonitoring;
 
+    // variable for generating equivalent matrix right hand side
+    bool p_equivalent_bus;
+
 
     friend class boost::serialization::access;
 
@@ -777,6 +821,7 @@ class DSFullBus
           & p_elect_final & p_mech_final
           & p_mac_ang_final & p_mac_spd_final
           & p_genid
+          & p_equivalent_bus
           & p_previousFrequency
           & p_upIntervalStart & p_upStartedMonitoring
           & p_downIntervalStart & p_downStartedMonitoring;
@@ -821,6 +866,18 @@ class DSFullBranch
      * calculations
      */
     void setYBus(void);
+	
+	/**
+     * Set values of negative sequence YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+	void setYBus_Neg(void);
+	
+	/**
+     * Set values of zero sequence YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+	void setYBus_Zero(void);
 
     /**
      * Load values stored in DataCollection object into DSFullBranch object. The
@@ -851,7 +908,20 @@ class DSFullBranch
      * @return: contribution to Y matrix from shunts associated with branches
      */
     gridpack::ComplexType getShunt(DSFullBus *bus);
-
+	
+	/**
+	 * Return branch (either line or transformer) diagonal contribution for the 
+	 * negative sequence admittance from the branch to the calling bus
+     * @return: complex addmittance of branch
+     */
+    gridpack::ComplexType getDiagonalAdmittance_Neg(DSFullBus *bus);
+	
+	/**
+     * Return the complex zero sequence admittance of the branch (either line or transformers)
+     * @return: complex addmittance of branch
+     */
+    gridpack::ComplexType getDiagonalAdmittance_Zero(DSFullBus *bus);
+	
     /**
      * Set the mode to control what matrices and vectors are built when using
      * the mapper
@@ -946,6 +1016,10 @@ class DSFullBranch
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
+	double p_ybusr_frwd_neg, p_ybusi_frwd_neg;
+    double p_ybusr_rvrs_neg, p_ybusi_rvrs_neg;
+	double p_ybusr_frwd_zero, p_ybusi_frwd_zero;
+    double p_ybusr_rvrs_zero, p_ybusi_rvrs_zero;
     double p_theta;
     double p_sbase;
     std::vector<int> p_branch_status;

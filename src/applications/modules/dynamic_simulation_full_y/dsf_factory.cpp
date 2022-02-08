@@ -88,6 +88,58 @@ void gridpack::dynamic_simulation::DSFullFactory::setYBus(void)
 }
 
 /**
+  * Create the admittance negative-sequence(Y-Bus) matrix
+  */
+void gridpack::dynamic_simulation::DSFullFactory::setYBus_Neg(void)
+{
+  int i;
+
+  // Invoke setYBus method on all bus objects
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->setYBus_Neg();
+  }
+
+  // Invoke setYBus method on all branch objects
+  for (i=0; i<p_numBranch; i++) {
+    p_branches[i]->setYBus_Neg();
+  }
+}
+	
+/**
+ * Create the admittance zero-sequence(Y-Bus) matrix
+ */
+void gridpack::dynamic_simulation::DSFullFactory::setYBus_Zero(void)
+{
+  int i;
+
+  // Invoke setYBus method on all bus objects
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->setYBus_Zero();
+  }
+
+  // Invoke setYBus method on all branch objects
+  for (i=0; i<p_numBranch; i++) {
+    p_branches[i]->setYBus_Zero();
+  }
+}
+
+/**
+ * set the p_3seq_fault_z varaible (equivalent fault impedance ) 
+ * for the 3-seq fault at the bus with faultbusID 
+ */
+void gridpack::dynamic_simulation::DSFullFactory::set3seq_eqv_impedance(gridpack::ComplexType ztmp_eqv, int faultbusID)
+{
+  int i;
+
+  // Invoke setYBus method on all bus objects
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->set3seq_eqv_impedance(ztmp_eqv, faultbusID);
+  }
+	
+}
+
+
+/**
  * Create the admittance (Y-Bus) matrix for Branch only
  */
 void gridpack::dynamic_simulation::DSFullFactory::setYBranch(void)
@@ -723,6 +775,19 @@ void gridpack::dynamic_simulation::DSFullFactory::setRTPRParams(
     } else {
       bus->setSink(false);
     }
+  }
+}
+
+/**
+ * Specify equivalent bus to generate right hand side vector for equivalent
+ * matrix calculation
+ * @param idx original index of equivalent bus
+ */
+void gridpack::dynamic_simulation::DSFullFactory::setEquivalentBus(int idx)
+{
+  int i;
+  for (i=0; i<p_numBus; i++) {
+    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_buses[i])->setEquivalentBus(idx);
   }
 }
 

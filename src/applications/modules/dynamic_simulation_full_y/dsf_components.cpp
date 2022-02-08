@@ -45,6 +45,9 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_bConstYLoadSettoZero_P = false;
   p_bConstYLoadSettoZero_Q = false;
   p_bConstYLoadSettoValue = false;
+  p_equivalent_bus = false;
+  p_3seq_fault_flag = false;
+  p_3seq_fault_z = gridpack::ComplexType (0.0, 0.0);
   
   p_bconstYLoadSheddingFlag = false;
   remainConstYLoadPerc = 1.0;
@@ -126,6 +129,14 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     // real(values[0]), imag(values[0]));
     //return status;
     return YMBus::matrixDiagValues(values);	
+  } else if (p_mode == Ybus_neg) {
+    gridpack::ComplexType ret(p_ybusr_neg, p_ybusi_neg);
+    values[0] = ret;
+    return true;
+  } else if (p_mode == Ybus_zero) {
+    gridpack::ComplexType ret(p_ybusr_zero, p_ybusi_zero);
+    values[0] = ret;
+    return true;
   } else if (p_mode == YL) {
     //printf("DSFullBus::matrixDiagValues, bus %d: p_pl = %f, p_ql = %f, p_voltage = %f\n", getOriginalIndex(), p_pl, p_ql, p_voltage);
     //printf("p_ybusr = %f, p_ybusi = %f\n", p_ybusr, p_ybusi);
@@ -221,6 +232,16 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
 	  double tmp1 = p_ybusr;
       double tmp2 = p_ybusi - 1.0e5;
       gridpack::ComplexType ret(tmp1, tmp2);
+	  
+      values[0] = ret;
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == onFY_3seq) {
+    if (p_3seq_fault_flag) { // if this bus has 3-seq fault 
+      gridpack::ComplexType tmpcplx(1.0, 0.0);
+	  gridpack::ComplexType ret = tmpcplx/p_3seq_fault_z;
 	  
       values[0] = ret;
       return true;
@@ -338,7 +359,9 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
 bool gridpack::dynamic_simulation::DSFullBus::vectorSize(int *size) const
 {
   if (!p_isolated) {
-    if (p_mode == make_INorton_full) {
+  if (p_mode == make_INorton_full || p_mode == make_INorton_full_zero || p_mode == make_INorton_full_neg) {
+      *size = 1;
+    } else if (p_mode == EQBUS) {
       *size = 1;
     }else {
       *size = 2;
@@ -490,6 +513,25 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 	  
       //printf("bus id = %d, values[0] = %f, %f\n", getOriginalIndex(), real(values[0]), imag(values[0])); 
       return true;
+    } else if (p_mode == make_INorton_full_neg) { //yuan, 3-seq here we compute the fault current into the ground by I_f = V_f/Z_f
+	  if (p_3seq_fault_flag) {		  
+		  values[0] = p_volt_full_neg/p_3seq_fault_z;
+	  } else {
+		  values[0] = ComplexType(0.0,0.0);
+	  }
+	} else if (p_mode == make_INorton_full_zero) { //yuan, 3-seq here we compute the fault current into the ground by I_f = V_f/Z_f
+	  if (p_3seq_fault_flag) {		  
+		  values[0] = p_volt_full_zero/p_3seq_fault_z;
+	  } else {
+		  values[0] = ComplexType(0.0,0.0);
+	  }
+	} else if (p_mode == EQBUS) { //Yuan, here we return the equivalent matrix value contribution
+      if (p_equivalent_bus) {
+        *values = ComplexType(1.0,0.0);
+      } else {
+        *values = ComplexType(0.0,0.0);
+      }
+      return true;
     } else {
       return false;
     }  // if mode == make Inorton
@@ -501,9 +543,24 @@ void gridpack::dynamic_simulation::DSFullBus::setValues(ComplexType *values)
 {
   int i;
   if (p_mode == make_INorton_full) {
-	p_volt_full_old = p_volt_full; //renke add  
+    p_volt_full_old = p_volt_full; //renke add  
     p_volt_full = values[0];
+  } else if (p_mode == make_INorton_full_neg) {//yuan, here we return the neg voltage
+    p_volt_full_neg = values[0];
+  } else if (p_mode == make_INorton_full_zero) {//yuan, here we return the zero voltage
+    p_volt_full_zero = values[0];
+  } else if (p_mode == EQBUS) { //yuan, here we return the voltage caused by the equivalence
+    p_volt_inj = values[0];
   }
+}
+
+/**
+ * Get injection voltage
+ * @return injection voltage
+ */
+gridpack::ComplexType gridpack::dynamic_simulation::DSFullBus::getInjectionVoltage()
+{
+  return p_volt_inj;
 }
 
 /**
@@ -517,6 +574,84 @@ void gridpack::dynamic_simulation::DSFullBus::setYBus(void)
   ret = YMBus::getYBus();
   p_ybusr = real(ret);
   p_ybusi = imag(ret);
+}
+
+/**
+ * Set values of negative sequence YBus matrix. These can then be used in subsequent
+ * calculations
+ */
+void gridpack::dynamic_simulation::DSFullBus::setYBus_Neg(void)
+{
+  // Yuan, please add the code here to compute the 
+  // diagnoal contributions of the neqtive sequence Y matrix
+  // Note here we need also to LOOP ALL THE BRANCHES CONNECTED WITH THIS BUS and compute
+  // the branch contributions to the diagnal elements of negative sequence Y matrix
+  // For example, for a single branch, the negative sequence Y matrix for it should be
+  // [ Yii, Yij
+  //   Yji, Yjj]
+  // Here we need also get the Yii or Yij values from each branch, depending on whether
+  // the bus is from bus or to bus, and thus we pass the bus object itself to the branch class function 
+  // "getDiagonalAdmittance_Neg(this)" called in this function
+  // Please check the "void gridpack::ymatrix::YMBus::setYBus(void)" function in the following cpp
+  // Gridpackrootpath\src\applications\components\y_matrix\ymatrix_components.cpp
+  // to see how the setYBux to compute the diagonal element for the positive sequence Y matrix is implemented
+  
+  gridpack::ComplexType ret(0.0,0.0);
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  getNeighborBranches(branches);
+  int size = branches.size();
+  int i;
+  // Yuan, here we need to loop all the branches connected with the bus to get the diagnonal contributions 
+  // from the branch to the negative-sequence Y matrix here
+  for (i=0; i<size; i++) {
+    gridpack::dynamic_simulation::DSFullBranch *branch
+      = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>(branches[i].get());
+    ret -= branch->getDiagonalAdmittance_Neg(this); //PAY ATTENTION HERE WE USE MINUS SIGN
+  }
+  // Yuan, if there are some shunts directly connected in the bus, 
+  // add the contributions here
+  
+  p_ybusr_neg = real(ret);
+  p_ybusi_neg = imag(ret);
+}
+
+/**
+ * Set values of zero sequence YBus matrix. These can then be used in subsequent
+ * calculations
+ */
+void gridpack::dynamic_simulation::DSFullBus::setYBus_Zero(void)
+{
+  // Yuan, please add the code here to compute the 
+  // diagnoal contributions of the zero sequence Y matrix
+  // Note here we need also to LOOP ALL THE BRANCHES CONNECTED WITH THIS BUS and compute
+  // the branch contributions to the diagnal elements of zero sequence Y matrix
+  // For example, for a single circuit, the zero sequence Y matrix for it should be
+  // [ Yii, Yij
+  //   Yji, Yjj]
+  // Here we need also get the Yii OR Yij values from each branch, depending on whether
+  // the bus is from bus or to bus, and thus we pass the bus object itself to the branch class function 
+  // "getDiagonalAdmittance_Zero(this)" called in this function
+  // Please check the "void gridpack::ymatrix::YMBus::setYBus(void)" function in the following cpp
+  // Gridpackrootpath\src\applications\components\y_matrix\ymatrix_components.cpp
+  // to see how the setYBux to compute the diagonal element for the positive sequence Y matrix is implemented
+  
+  gridpack::ComplexType ret(0.0,0.0);
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  getNeighborBranches(branches);
+  int size = branches.size();
+  int i;
+  // Yuan, here we need to loop all the branches connected with the bus to get the diagnonal contributions 
+  // from the branch to the zero-sequence Y matrix here
+  for (i=0; i<size; i++) {
+    gridpack::dynamic_simulation::DSFullBranch *branch
+      = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>(branches[i].get());
+    ret -= branch->getDiagonalAdmittance_Zero(this); //PAY ATTENTION HERE WE USE MINUS SIGN
+  }
+  // Yuan, if there are some shunts directly connected in the bus, 
+  // add the contributions here
+  
+  p_ybusr_zero = real(ret);
+  p_ybusi_zero = imag(ret);
 }
 
 void gridpack::dynamic_simulation::DSFullBus::setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase)
@@ -998,6 +1133,8 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   //p_pl /= p_sbase;
   //p_ql /= p_sbase;
+  //Yuan, please add your code here to load the negative and zero sequence bus
+  //parameters from the Data Collection Object																		  
 
   bool lgen;
   int i, gstatus;
@@ -3139,6 +3276,34 @@ bool gridpack::dynamic_simulation::DSFullBus::getGeneratorPower(std::string tag,
 }
 
 /**
+ * Yuan, Function to set equivalent bus
+ * @param idx original index of equivlant bus
+ */
+void gridpack::dynamic_simulation::DSFullBus::setEquivalentBus(int idx)
+{
+  if (idx == getOriginalIndex()) {
+    p_equivalent_bus = true;
+  } else {
+    p_equivalent_bus = false;
+  }
+}
+
+/**
+ * Yuan, set the p_3seq_fault_z varaible (equivalent fault impedance ) 
+ * for the 3-seq fault at the bus with faultbusID (original index)
+ */
+void gridpack::dynamic_simulation::DSFullBus::set3seq_eqv_impedance(gridpack::ComplexType ztmp_eqv, int faultbusID)
+{
+  if (faultbusID == getOriginalIndex()) {
+    p_3seq_fault_z = ztmp_eqv;
+	p_3seq_fault_flag = true;
+  } else {
+    p_3seq_fault_z = gridpack::ComplexType (0.0, 0.0);
+	p_3seq_fault_flag = false;
+  }
+}
+
+/**
  *  Simple constructor
  */
 gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)
@@ -3164,6 +3329,8 @@ gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)
   p_branchrelaytripflag = false;
   p_branchactiontripflag = false;
   p_bextendedloadbranch = -1;
+  //Yuan you may need to initialize the newly add class member variables 
+  //for the negative and zero sequence parameters of the branch																	 
 }
 
 /**
@@ -3182,7 +3349,8 @@ gridpack::dynamic_simulation::DSFullBranch::~DSFullBranch(void)
 bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardSize(int *isize, int *jsize) const
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY || p_mode == branch_trip_action
-  || p_mode == jxd || p_mode == YDYNLOAD ||p_mode == bus_relay || p_mode == branch_relay) { 
+  || p_mode == jxd || p_mode == YDYNLOAD ||p_mode == bus_relay || p_mode == branch_relay
+  || p_mode == Ybus_neg || p_mode == Ybus_zero) { 
     return YMBranch::matrixForwardSize(isize,jsize);
   } else {
     return false;
@@ -3191,7 +3359,8 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardSize(int *isize, i
 bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY || p_mode == branch_trip_action
-  || p_mode == jxd || p_mode == YDYNLOAD || p_mode == bus_relay || p_mode == branch_relay) { 
+  || p_mode == jxd || p_mode == YDYNLOAD || p_mode == bus_relay || p_mode == branch_relay 
+  || p_mode == Ybus_neg || p_mode == Ybus_zero) { 
     return YMBranch::matrixReverseSize(isize,jsize);
   } else {
     return false;
@@ -3218,7 +3387,39 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType
 	//return bstatus;  
 	
     return YMBranch::matrixForwardValues(values);
-  } else if (p_mode == posFY) {
+  } else if (p_mode == Ybus_neg) {
+	  //yuan, here we return the off-diagnonal elements 
+	  //for the neg-sequence Y matrix from the branch
+	gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
+		gridpack::ComplexType ret(p_ybusr_frwd_neg,p_ybusi_frwd_neg);
+		values[0] = ret;
+		return true;
+	}else {
+      return false;
+    }
+  } else if (p_mode == Ybus_zero) {
+	  //yuan, here we return the off-diagnonal elements 
+	  //for the zero-sequence Y matrix from the branch
+    gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
+		gridpack::ComplexType ret(p_ybusr_frwd_zero,p_ybusi_frwd_zero);
+		values[0] = ret;
+		return true;
+	}else {
+      return false;
+    }
+  }  else if (p_mode == posFY) {
     if (p_event) {
       values[0] = -getUpdateFactor();
       return true;
@@ -3273,6 +3474,38 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseValues(ComplexType
 	// return bstatus;  
 	  
     return YMBranch::matrixReverseValues(values);
+  } else if (p_mode == Ybus_neg) {
+	  //yuan, here we return the off-diagnonal elements 
+	  //for the neg-sequence Y matrix from the branch
+	gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
+		gridpack::ComplexType ret(p_ybusr_rvrs_neg,p_ybusi_rvrs_neg);
+		values[0] = ret;
+		return true;
+	}else {
+      return false;
+    }
+  } else if (p_mode == Ybus_zero) {
+	  //yuan, here we return the off-diagnonal elements 
+	  //for the zero-sequence Y matrix from the branch
+    gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
+		gridpack::ComplexType ret(p_ybusr_rvrs_zero,p_ybusi_rvrs_zero);
+		values[0] = ret;
+		return true;
+	}else {
+      return false;
+    }
   } else if (p_mode == posFY) {
     if (p_event) {
       values[0] = -getUpdateFactor();
@@ -3331,6 +3564,72 @@ void gridpack::dynamic_simulation::DSFullBranch::setYBus(void)
   //printf("p_theta: %12.6f\n",p_theta);
   //printf("p_tap_ratio: %12.6f\n",p_tap_ratio);
  
+}
+
+/**
+  * Set values of negative sequence YBus matrix. These can then be used in subsequent
+  * calculations
+  */
+void gridpack::dynamic_simulation::DSFullBranch::setYBus_Neg(void)
+{
+  /*
+    Yuan, please compute the off-diagonal element Yij (forward value) and Yji (reverse value)
+    for the branch negative sequence Y matrix here
+    
+    Please check the "void gridpack::ymatrix::YMBranch::setYBus(void)" function in the following cpp
+    Gridpackrootpath\src\applications\components\y_matrix\ymatrix_components.cpp
+    to see how the setYBux to compute the off-diagonal element for the positive sequence Y matrix is implemented
+  */
+  int i;
+  p_ybusr_frwd_neg = 0.0;
+  p_ybusi_frwd_neg = 0.0;
+  p_ybusr_rvrs_neg = 0.0;
+  p_ybusi_rvrs_neg = 0.0;
+  
+  // loop all the circuits with different CKT ID here
+  for (i=0; i<p_elems; i++) {
+    gridpack::ComplexType ret(0.0, 0.0);
+	
+	
+	// Yuan, please do your computation here to calculate the 
+	// off-diagonal element Yij (forward value) and Yji (reverse value)
+    // for the branch negative sequence Y matrix here
+	
+  }
+
+}
+	
+/**
+ * Set values of zero sequence YBus matrix. These can then be used in subsequent
+ * calculations
+ */
+void gridpack::dynamic_simulation::DSFullBranch::setYBus_Zero(void)
+{
+	/*
+    Yuan, please compute the off-diagonal element Yij (forward value) and Yji (reverse value)
+    for the branch zero sequence Y matrix here
+    
+    Please check the "void gridpack::ymatrix::YMBranch::setYBus(void)" function in the following cpp
+    Gridpackrootpath\src\applications\components\y_matrix\ymatrix_components.cpp
+    to see how the setYBux to compute the off-diagonal element for the positive sequence Y matrix is implemented
+  */
+  int i;
+  p_ybusr_frwd_zero = 0.0;
+  p_ybusi_frwd_zero = 0.0;
+  p_ybusr_rvrs_zero = 0.0;
+  p_ybusi_rvrs_zero = 0.0;
+  
+  // loop all the circuits with different CKT ID here
+  for (i=0; i<p_elems; i++) {
+    gridpack::ComplexType ret(0.0, 0.0);
+	
+	
+	// Yuan, please do your computation here to calculate the 
+	// off-diagonal element Yij (forward value) and Yji (reverse value)
+    // for the branch zero sequence Y matrix here
+	
+  }
+  
 }
 
 /**
@@ -3480,6 +3779,10 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
       }
     }
   }
+//Yuan, please add your code here to load the negative and zero sequence branch
+  //parameters from the Data Collection Object. Note that this branch object may includes
+  //multiple branches from the same bus and to the same bus. Please take a look at the above code
+  //to see how to load different parameters for different branches with differen CKT ID
 }
 
 /**
@@ -3654,6 +3957,156 @@ gridpack::dynamic_simulation::DSFullBranch::getTransformer(gridpack::dynamic_sim
     ret += tmp;
   }
   return ret;
+}
+
+/**
+ * Return branch (either line or transformer) diagonal contribution for the 
+ * negative sequence admittance from the branch to the calling bus
+ * @return: complex addmittance of branch
+ */
+gridpack::ComplexType 
+gridpack::dynamic_simulation::DSFullBranch::getDiagonalAdmittance_Neg(gridpack::dynamic_simulation::DSFullBus *bus)
+{
+  /*
+  Yuan, please add the code here to compute the 
+  diagnoal contributions from the branch (line or transformer)
+  to  the neqtive sequence Y matrix.
+  That is, return the Yii, or Yij value of the negative sequence Y matrix of the branch, supposing the 
+  negative sequence Y matrix of the line is 
+  [ Yii, Yij
+  Yji, Yjj]
+  
+  !!!!!!!!!!!!!!!
+  Note that I provided the code in this function to check whether the calling bus (input argument *bus) is 
+  FROM BUS OR TO BUS,
+  THIS IS IMPORT TO CHECK BECAUSE THE TRANSFORMER MAY HAVE DIFFERENT YII AND YJJ
+  !!!!!!!!!!!!!!!!
+  You can also check the above two functions "getAdmittance" and "getTransformer" to see how the diagonal values
+  are computed for the positive sequence Y matrix for your reference
+  Note for the positive sequence, we use two functions to sepearately compute line and transformer, 
+  but I think we can do them together in one function for neg. sequence by checking whether the branch is a line
+  or a transformer
+  
+  DO NOT FORGET to add the shunt contribution from the branch in this function too,
+  please check the following functions "getShunt" to see how the shunt contribution is computed
+  for the positive sequence Y matrix for your reference
+  */
+	
+  int i;
+  gridpack::ComplexType ret(0.0,0.0);
+  
+  // loop multiple circuits with different ckt id for the same from bus and to bus branches
+  for (i=0; i<p_elems; i++) {
+	 
+	//use the variable tmp to compute the contribution from single circuit
+	gridpack::ComplexType tmp(0.0, 0.0);
+	
+	if (!p_xform[i] && p_branch_status[i] == 1) { // if this is a line, not a transformer
+	
+	    // modify the variable tmp values here
+	}
+	
+	if (p_xform[i] && p_branch_status[i] == 1)  { // if this is a transformer
+	
+		// modify the variable tmp values here
+		
+		// Yuan, please note that for the transformer,
+		// the diagonal elements of the Ymatrix may be different for the from bus
+		// and to bus, the following code helps you to check whether the bus
+		// calling this function is the from bus or the to bus,
+		gridpack::dynamic_simulation::DSFullBus *bus1 =
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
+		gridpack::dynamic_simulation::DSFullBus *bus2 =
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
+		
+		if (bus == bus1) {
+			// if the bus is the FROM BUS of the branch, do the computation
+		} else if (bus == bus2) {
+			// if the bus is the TO BUS of the branch, do the computation
+		}
+	}
+	
+	ret += tmp;
+	
+  }
+  
+  return ret;
+  
+}
+
+/**
+ * Return branch (either line or transformer) diagonal contribution for the 
+ * zero sequence admittance from the branch to the calling bus
+ * @return: complex addmittance of branch
+ */
+gridpack::ComplexType 
+gridpack::dynamic_simulation::DSFullBranch::getDiagonalAdmittance_Zero(gridpack::dynamic_simulation::DSFullBus *bus)
+{
+  /*
+  Yuan, please add the code here to compute the 
+  diagnoal contributions from the branch (line or transformer)
+  to  the zero sequence Y matrix.
+  That is, return the Yii, or Yij value of the zero sequence Y matrix of the branch, supposing the 
+  zero sequence Y matrix of the line is 
+  [ Yii, Yij
+  Yji, Yjj]
+  
+  !!!!!!!!!!!!!!!
+  Note that I provided the code in this function to check whether the calling bus (input argument *bus) is 
+  FROM BUS OR TO BUS,
+  THIS IS IMPORT TO CHECK BECAUSE THE TRANSFORMER MAY HAVE DIFFERENT YII AND YJJ
+  !!!!!!!!!!!!!!!!
+  You can also check the above two functions "getAdmittance" and "getTransformer" to see how the diagonal values
+  are computed for the positive sequence Y matrix for your reference
+  Note for the positive sequence, we use two functions to sepearately compute line and transformer, 
+  but I think we can do them together for the zero sequence in one function by checking whether the branch is a line
+  or a transformer.
+  
+  DO NOT FORGET to add the shunt contribution from the branch in this function too,
+  please check the following functions "getShunt" to see how the shunt contribution is computed
+  for the positive sequence Y matrix for your reference
+  */
+	
+  int i;
+  gridpack::ComplexType ret(0.0,0.0);
+  
+  // loop multiple circuits with different ckt id for the same from bus and to bus branches
+  for (i=0; i<p_elems; i++) {
+	 
+	//use the variable tmp to compute the contribution from single circuit
+	gridpack::ComplexType tmp(0.0, 0.0);
+	
+	if (!p_xform[i] && p_branch_status[i] == 1) { // if this is a line, not a transformer
+	
+	    // modify the variable tmp values here
+	}
+	
+	if (p_xform[i] && p_branch_status[i] == 1)  { // if this is a transformer
+	
+		// modify the variable tmp values here
+		
+		// Yuan, please note that for the transformer,
+		// the diagonal elements of the Ymatrix may be different for the from bus
+		// and to bus, the following code helps you to check whether the bus
+		// calling this function is the from bus or the to bus,
+		gridpack::dynamic_simulation::DSFullBus *bus1 =
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
+		gridpack::dynamic_simulation::DSFullBus *bus2 =
+			dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
+		
+		if (bus == bus1) {
+			// if the bus is the FROM BUS of the branch, do the computation
+		} else if (bus == bus2) {
+			// if the bus is the TO BUS of the branch, do the computation
+		}
+	}
+	
+	ret += tmp;
+	
+  }
+  
+  return ret;
+  
 }
 
 /**

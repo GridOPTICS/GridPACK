@@ -24,7 +24,6 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    ${PETSC_LIBRARIES}
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

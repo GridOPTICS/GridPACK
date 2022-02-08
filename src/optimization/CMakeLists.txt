@@ -64,7 +64,6 @@ set(target_libraries
   ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
-  ${PETSC_LIBRARIES}
   ${MPI_CXX_LIBRARIES}
 )
 

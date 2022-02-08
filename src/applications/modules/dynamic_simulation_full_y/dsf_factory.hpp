@@ -46,6 +46,21 @@ class DSFullFactory
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);
+	
+	/**
+     * Create the admittance negative-sequence(Y-Bus) matrix
+     */
+    void setYBus_Neg(void);
+	
+	/**
+     * Create the admittance zero-sequence(Y-Bus) matrix
+     */
+    void setYBus_Zero(void);
+	
+	/**
+     * set the p_3seq_fault_z varaible (equivalent fault impedance ) for the 3-seq fault at the bus with faultbusID 
+     */
+	void set3seq_eqv_impedance(gridpack::ComplexType ztmp_eqv, int faultbusID);
 
     /**
      * Create the admittance (Y-Bus) matrix for Branch only
@@ -207,6 +222,13 @@ class DSFullFactory
      */
     void setRTPRParams(int src_area, int src_zone, int load_area,
         int load_zone, double gen_scale, double load_scale);
+
+    /**
+     * Specify equivalent bus to generate right hand side vector for equivalent
+     * bus calculation
+     * @param idx original index of equivalent bus
+     */
+    void setEquivalentBus(int idx);
 
 #ifdef USE_FNCS
     /**

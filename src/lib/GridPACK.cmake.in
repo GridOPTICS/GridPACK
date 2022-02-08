@@ -192,9 +192,9 @@ function(gridpack_setup)
     list(APPEND gp_include
       @PETSC_INCLUDE_DIRS@
     )
-    list(APPEND gp_libs
-      @PETSC_LIBRARIES@
-    )
+#    list(APPEND gp_libs
+#      @PETSC_LIBRARIES@
+#    )
   endif()
 
   if (GRIDPACK_HAVE_GA)
@@ -231,7 +231,7 @@ function(gridpack_setup)
   )
 
   list(APPEND gp_libs
-    @Boost_LIBRARIES@
+#    @Boost_LIBRARIES@
     @MPI_CXX_LIBRARIES@
   )
 

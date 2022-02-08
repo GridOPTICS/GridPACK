@@ -19,6 +19,7 @@
 
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/PSSE_seq_parser.hpp"
 //#include "gridpack/mapper/full_map.hpp"
 //#include "gridpack/mapper/bus_vector_map.hpp"
 //#include "gridpack/math/math.hpp"
@@ -67,6 +68,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_generator_observationpower_systembase = true;
   ITER_TOL = 1.0e-7;
   MAX_ITR_NO = 8;
+  eqv_seq_impedance = 0.0;
+  three_seq_simulation_flag = false;
   
 }
 
@@ -95,6 +98,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_iterative_network_debug = false;
   ITER_TOL = 1.0e-7;
   MAX_ITR_NO = 8;
+  eqv_seq_impedance = 0.0;
+  three_seq_simulation_flag = false;
   
 }
 
@@ -269,6 +274,98 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
   //printf("p[%d] generatorParameters: %s\n",p_comm.rank(),filename.c_str());
   if (filename.size() > 0) parser.externalParse(filename.c_str());
   //printf("p[%d] finished Generator parameters\n",p_comm.rank());
+  filename = cursor->get("sequenceFile","");
+  if (filename.size() > 0) {
+    gridpack::parser::PSSE_seq_parser<DSFullNetwork> seq_parser(p_network);
+    seq_parser.parse(filename);
+	
+	//Yuan, here I assume if we have "sequenceFile" in the input xml file,
+	//Which means we are running a three-sequence dynamic simulation.
+	//So here we need to set the following flag to be true
+	//to make the simulator known this is
+	//the three-sequence dynamic simulation
+	three_seq_simulation_flag = true;
+  }
+}
+
+/**
+ * Create an equivalent matrix, negative sequence
+ */
+void gridpack::dynamic_simulation::DSFullApp::setEquivalentMatrix_Neg()
+{
+  int flag = 1;
+  p_eqv_mat_neg.reset(new gridpack::dynamic_simulation::EquivalentMatrix(p_config,
+        p_network, flag)); // flag 1 means set negative sequence matrix
+#if 0
+  if (p_network->communicator().rank() == 0) {
+    std::vector<ComplexType> eMat;
+    int i, j, n;
+    p_eqv_mat_neg->getMatrix(eMat,n);
+    if (n>0) {
+      printf("N: %d\n",n);
+      printf("\n\n\n");
+      for (i=0; i<n; i++) {
+        for (j=0; j<n; j++) {
+          printf("(%16.8f,%16.8f) ",real(eMat[i*n+j]),imag(eMat[i*n+j]));
+        }
+        printf("\n");
+      }
+      printf("\n\n\n");
+    }
+  }
+#endif
+}
+
+/**
+ * Return the negative sequence equivalent matrix flattened into a linear array. The (i,j)
+ * element is located at index i*n+j where n is the size of the matrix.
+ * @param matrix vector containing matrix elements
+ * @param n size of matrix
+ */
+void gridpack::dynamic_simulation::DSFullApp::getEquivalentMatrix_Neg(
+    std::vector<ComplexType> &matrix, int &n)
+{
+  p_eqv_mat_neg->getMatrix(matrix,n);
+}
+
+/**
+ * Return the zero sequence equivalent matrix flattened into a linear array. The (i,j)
+ * element is located at index i*n+j where n is the size of the matrix.
+ * @param matrix vector containing matrix elements
+ * @param n size of matrix
+ */
+void gridpack::dynamic_simulation::DSFullApp::getEquivalentMatrix_Zero(
+    std::vector<ComplexType> &matrix, int &n)
+{
+  p_eqv_mat_zero->getMatrix(matrix,n);
+}
+
+/**
+ * Create an equivalent matrix, zero sequence
+ */
+void gridpack::dynamic_simulation::DSFullApp::setEquivalentMatrix_Zero()
+{
+  int flag = 2;
+  p_eqv_mat_zero.reset(new gridpack::dynamic_simulation::EquivalentMatrix(p_config,
+        p_network, flag)); // flag 2 means set zero sequence matrix
+#if 0
+  if (p_network->communicator().rank() == 0) {
+    std::vector<ComplexType> eMat;
+    int i, j, n;
+    p_eqv_mat_zero->getMatrix(eMat,n);
+    if (n>0) {
+      printf("N: %d\n",n);
+      printf("\n\n\n");
+      for (i=0; i<n; i++) {
+        for (j=0; j<n; j++) {
+          printf("(%16.8f,%16.8f) ",real(eMat[i*n+j]),imag(eMat[i*n+j]));
+        }
+        printf("\n");
+      }
+      printf("\n\n\n");
+    }
+  }
+#endif
 }
 
 /**
@@ -302,6 +399,18 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
 
   // set YBus components so that you can create Y matrix  
   p_factory->setYBus();
+  
+  // Yuan, here we set negative-sequence YBus components 
+  // so that you can create Y matrix for negative sequence 
+  if (three_seq_simulation_flag){
+     p_factory->setYBus_Neg();
+  }
+  
+  // Yuan, here we set zero--sequence YBus components 
+  // so that you can create Y matrix for zero sequence 
+  if (three_seq_simulation_flag){
+     p_factory->setYBus_Zero();
+  }
 
   if (!p_factory->checkGen()) {
     p_busIO->header("Missing generators on at least one processor\n");
@@ -2837,8 +2946,34 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   timer->start(t_misc);
   timer->start(t_presolve);
 
-  // Get cursor for setting solver options
+  gridpack::utility::StringUtils util;
   gridpack::utility::Configuration::CursorPtr cursor;
+  // Yuan, 3-seq here we get cursor for reading equivalent matrix settings
+  if (three_seq_simulation_flag){
+      cursor = p_config->getCursor("Configuration.Dynamic_simulation.Equivalent_matrix");
+      // Read in buses from input deck
+      std::string eq_buses;
+      cursor->get("equivalentBusSet", &eq_buses);
+      util.trim(eq_buses);
+      eqv_buses.clear();
+      if (eq_buses.length() > 0) {
+        
+        gridpack::utility::StringUtils util;
+        std::vector<std::string> str_buses = util.blankTokenizer(eq_buses);
+        int i;
+        for (i=0; i<str_buses.size(); i++) {
+          eqv_buses.push_back(atoi(str_buses[i].c_str()));
+        }
+      
+        double p_dim = eqv_buses.size();
+        if (p_dim <= 0) {
+          std::cout<<"Illegal number of buses used to create EquivalentMatrix: "
+            <<p_dim<<std::endl;
+        }
+      }
+  }
+  
+  // Get cursor for setting solver options
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   timer->stop(t_misc);
 
@@ -2942,7 +3077,56 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   //ybus_posfy->print();
   //ybus_posfy->save("ybus_posfy_GridPACK_jxd.m");
   timer->stop(t_ybus);
-
+  
+  if (three_seq_simulation_flag){
+      //Yuan, here we formulate the neg. and zero sequence Y matrix
+      
+      // Form neg. sequence Y matrix
+      p_factory->setMode(Ybus_neg);
+      ybus_neg = ybusMap_sptr->mapToMatrix();
+      // we can print out the neg. ybus matrix
+      //branchIO.header("\n=== neg. ybus_neg: ============\n");
+      //printf("\n=== neg. ybus_neg: ============\n");
+      //Ybus_neg->print();
+      //Ybus_neg->save("ybus_neg.m");
+      //exit(0);
+      // Form neg. sequence Y matrix
+      p_factory->setMode(Ybus_zero);
+      ybus_zero = ybusMap_sptr->mapToMatrix();
+      // we can print out the zero ybus matrix
+      //branchIO.header("\n=== zero. ybus_zero: ============\n");
+      //printf("\n=== zero ybus_zero: ============\n");
+      //Ybus_zero->print();
+      //Ybus_zero->save("ybus_zero.m");
+      //exit(0);
+      
+      // Yuan, here we finished the fomulation of the neg. and zero sequence Y matrix
+      
+      // Yuan, here we get the neg and zero sequence EquivalentMatrix 
+      setEquivalentMatrix_Neg();
+      setEquivalentMatrix_Zero();
+      
+      // Yuan, here we get the Zi(neg) and Zi(zero) for the single phase to ground fault at bus i
+      std::vector<ComplexType> eMat;
+      int n;
+      gridpack::ComplexType ztmp_neg, ztmp_zero, ztmp_eqv;
+      getEquivalentMatrix_Neg(eMat,n);
+      ztmp_neg = eMat[0];
+      getEquivalentMatrix_Zero(eMat,n);
+      ztmp_zero = eMat[0];
+      ztmp_eqv = ztmp_neg + ztmp_zero;
+      
+      //Yuan, 3-seq here we need to write the ztmp_eqv back to the corresponding bus
+      //!!!!!!!!! here we assume the first bus from the equivalent bus set is the fault bus
+      
+      p_factory->set3seq_eqv_impedance(ztmp_eqv, eqv_buses[0]);
+      
+      //Yuan, here we create the positive-sequence Y-matrix-with-eqv_impedance
+      ybus_3seq_fault.reset(ybus->clone());
+      p_factory->setMode(onFY_3seq);  
+      ybusMap_sptr->incrementMatrix(ybus_3seq_fault);
+  }
+  
   // Simulation related variables
   t_init = timer->createCategory("DS Solve: Initialization");
   timer->start(t_init);
@@ -2991,9 +3175,24 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   solver_sptr.reset(new gridpack::math::LinearSolver (*ybus));
   solver_sptr->configure(cursor);
   
+  //3-seq, yuan, here we initialize the solver for the neg. and zero sequence Y matrix
+  if (three_seq_simulation_flag){
+     solver_ybus_neg_sptr.reset(new gridpack::math::LinearSolver (*ybus_neg));
+     solver_ybus_neg_sptr->configure(cursor);
+     
+     solver_ybus_zero_sptr.reset(new gridpack::math::LinearSolver (*ybus_zero));
+     solver_ybus_zero_sptr->configure(cursor);
+  }
+  
   //gridpack::math::LinearSolver solver_fy(*ybus_fy);
   solver_fy_sptr.reset(new gridpack::math::LinearSolver (*ybus_fy));
   solver_fy_sptr->configure(cursor);
+  
+  //Yuan, here we set the solver for the 3-seq Ymatrix during fault
+  if (three_seq_simulation_flag){
+     solver_fy_3seq_sptr.reset(new gridpack::math::LinearSolver (*ybus_3seq_fault));
+     solver_fy_3seq_sptr->configure(cursor);
+  }
   
   //gridpack::math::LinearSolver solver_posfy(*ybus_posfy);
   //gridpack::math::LinearSolver solver_posfy(*ybus); 
@@ -3019,6 +3218,12 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   INorton_full_chk = nbusMap_sptr->mapToVector();
   max_INorton_full = 0.0;
   volt_full.reset(INorton_full->clone());
+  
+  //3-seq, yuan, here we first initialize the current and voltage vector for neg. and zero sequence
+  INorton_full_neg.reset(INorton_full->clone());
+  INorton_full_zero.reset(INorton_full->clone());
+  volt_full_neg.reset(INorton_full->clone());
+  volt_full_zero.reset(INorton_full->clone());
 
   timer->stop(t_init);
   if (!p_suppress_watch_files) {
@@ -3223,22 +3428,46 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 			
 			if (flagP == 0) {
 				solver_sptr->solve(*INorton_full, *volt_full);
-			} else if (flagP == 1) {
-				solver_fy_sptr->solve(*INorton_full, *volt_full);
+			} else if (flagP == 1) {			
+				// Yuan, here we check whether this is 3-sequence or
+				// positive sequence dynamic simulation, 
+				// and use different Y matrix during fault
+				if (three_seq_simulation_flag){
+					// here use the 3-seq Ymatrix to compute the voltage
+					solver_fy_3seq_sptr->solve(*INorton_full, *volt_full);
+				} else {
+					solver_fy_sptr->solve(*INorton_full, *volt_full);
+				}
+				
 			} else if (flagP == 2) {
 				solver_posfy_sptr->solve(*INorton_full, *volt_full);
 			}
 			
-
 			//printf("1: itr test:----previous predictor_INorton_full:\n");
 			//INorton_full->print();
 
 			INorton_full_chk->equate(*INorton_full);
 			//printf("2: itr test:----predictor_INorton_full_chk:\n");
 			//INorton_full_chk->print();
-
+			
+			p_factory->setMode(make_INorton_full);
 			nbusMap_sptr->mapToBus(volt_full);
 			p_factory->setVolt(false);
+			
+			if (three_seq_simulation_flag){
+			   if (flagP == 1) {
+			   	   //Yuan, 3-seq, here we need also compute the negative and zero sequence voltage, if it is during fault
+			   	   p_factory->setMode(make_INorton_full_neg);
+			   	   nbusMap_sptr->mapToVector(INorton_full_neg);
+			   	   solver_ybus_neg_sptr->solve(*INorton_full_neg, *volt_full_neg);
+			   	   nbusMap_sptr->mapToBus(volt_full_neg);
+			   	   
+			   	   p_factory->setMode(make_INorton_full_zero);
+			   	   nbusMap_sptr->mapToVector(INorton_full_zero);
+			   	   solver_ybus_zero_sptr->solve(*INorton_full_zero, *volt_full_zero);
+			   	   nbusMap_sptr->mapToBus(volt_full_zero);
+			   }
+			}
 			
 			if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
 				p_factory->predictor_currentInjection(false);
@@ -3279,7 +3508,15 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     if (flagP == 0) {
       solver_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 1) {
-      solver_fy_sptr->solve(*INorton_full, *volt_full);
+       // Yuan, here we check whether this is 3-sequence or
+	   // positive sequence dynamic simulation, 
+	   // and use different Y matrix during faul
+	  if (three_seq_simulation_flag){
+		  //Yuan, here we use the 3-seq Ymatrix to compute the voltage
+	      solver_fy_3seq_sptr->solve(*INorton_full, *volt_full);
+	  } else {
+		  solver_fy_sptr->solve(*INorton_full, *volt_full);
+	  }
     } else if (flagP == 2) {
       solver_posfy_sptr->solve(*INorton_full, *volt_full);
     }
@@ -3302,6 +3539,21 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	//p_factory->printallbusvoltage();
 	
     nbusMap_sptr->mapToBus(volt_full);
+	
+	if (three_seq_simulation_flag){
+	    if (flagP == 1) {
+	    	//Yuan, 3-seq, here we need also compute the negative and zero sequence voltage, if it is during fault
+	    	p_factory->setMode(make_INorton_full_neg);
+	    	nbusMap_sptr->mapToVector(INorton_full_neg);
+	    	solver_ybus_neg_sptr->solve(*INorton_full_neg, *volt_full_neg);
+	    	nbusMap_sptr->mapToBus(volt_full_neg);
+	    	
+	    	p_factory->setMode(make_INorton_full_zero);
+	    	nbusMap_sptr->mapToVector(INorton_full_zero);
+	    	solver_ybus_zero_sptr->solve(*INorton_full_zero, *volt_full_zero);
+	    	nbusMap_sptr->mapToBus(volt_full_zero);
+	    }
+	}
 	
 	//printf("after first volt sovle, after first volt map: \n");
 	
@@ -3504,12 +3756,33 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 			if (flagP == 0) {
 				solver_sptr->solve(*INorton_full, *volt_full);
 			} else if (flagP == 1) {
-				solver_fy_sptr->solve(*INorton_full, *volt_full);
+
+				//Yuan, here we use the 3-seq Ymatrix to compute the voltage
+				if (three_seq_simulation_flag){
+				    solver_fy_3seq_sptr->solve(*INorton_full, *volt_full);
+				} else {
+					solver_fy_sptr->solve(*INorton_full, *volt_full);
+				}
 			} else if (flagP == 2) {
 				solver_posfy_sptr->solve(*INorton_full, *volt_full);
 			}
 			nbusMap_sptr->mapToBus(volt_full);
 			p_factory->setVolt(false);
+			
+			if (three_seq_simulation_flag){
+			    if (flagP == 1) {
+			    	//Yuan, 3-seq, here we need also compute the negative and zero sequence voltage, if it is during fault
+			    	p_factory->setMode(make_INorton_full_neg);
+			    	nbusMap_sptr->mapToVector(INorton_full_neg);
+			    	solver_ybus_neg_sptr->solve(*INorton_full_neg, *volt_full_neg);
+			    	nbusMap_sptr->mapToBus(volt_full_neg);
+			    	
+			    	p_factory->setMode(make_INorton_full_zero);
+			    	nbusMap_sptr->mapToVector(INorton_full_zero);
+			    	solver_ybus_zero_sptr->solve(*INorton_full_zero, *volt_full_zero);
+			    	nbusMap_sptr->mapToBus(volt_full_zero);
+			    }
+			}
 			
 			if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
 				p_factory->corrector_currentInjection(false);
@@ -3545,8 +3818,13 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
   }else{ // p_biterative_solve_network = false
     if (flagP == 0) {
       solver_sptr->solve(*INorton_full, *volt_full);
-    } else if (flagP == 1) {
-      solver_fy_sptr->solve(*INorton_full, *volt_full);
+    } else if (flagP == 1) {	  
+	  //Yuan, here we use the 3-seq Ymatrix to compute the voltage
+	  if (three_seq_simulation_flag){
+         solver_fy_3seq_sptr->solve(*INorton_full, *volt_full);
+	  } else {
+		 solver_fy_sptr->solve(*INorton_full, *volt_full); 
+	  }
     } else if (flagP == 2) {
       solver_posfy_sptr->solve(*INorton_full, *volt_full);
     }
@@ -3563,6 +3841,22 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	//p_factory->printallbusvoltage();
 	
     nbusMap_sptr->mapToBus(volt_full);
+	
+	if (three_seq_simulation_flag){
+	    if (flagP == 1) {
+	    	//Yuan, 3-seq, here we need also compute the negative and zero sequence voltage, if it is during fault
+	    	p_factory->setMode(make_INorton_full_neg);
+	    	nbusMap_sptr->mapToVector(INorton_full_neg);
+	    	solver_ybus_neg_sptr->solve(*INorton_full_neg, *volt_full_neg);
+	    	nbusMap_sptr->mapToBus(volt_full_neg);
+	    	
+	    	p_factory->setMode(make_INorton_full_zero);
+	    	nbusMap_sptr->mapToVector(INorton_full_zero);
+	    	solver_ybus_zero_sptr->solve(*INorton_full_zero, *volt_full_zero);
+	    	nbusMap_sptr->mapToBus(volt_full_zero);
+		}
+	    
+	}
 	
 	//printf("after second solve, after second map: \n");
 	//p_factory->printallbusvoltage();
