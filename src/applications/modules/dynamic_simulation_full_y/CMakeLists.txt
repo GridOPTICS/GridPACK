@@ -28,8 +28,7 @@ set(target_libraries
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    ${MPI_CXX_LIBRARIES})
 
 if (GOSS_DIR)
   set(target_libraries
