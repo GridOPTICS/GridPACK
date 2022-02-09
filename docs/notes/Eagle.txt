@@ -113,7 +113,7 @@ Configure ga-5-8 with the following:
 ../configure \
   --enable-i4 --enable-cxx --enable-shared=yes \
   --with-mpi --without-blas --disable-f77 \
-  --prefix=/home/bpalmer/software/ga-5.8/build_ts_so \
+  --prefix=/home/bpalmer/software/ga-5.8/build_ts_so/install \
   CC=mpicc CXX=mpicxx CFLAGS=-g CXXFLAGS=-g
 
 This script is run in a directory build_ts_so located immediately below the
@@ -134,7 +134,7 @@ rm -rf CMake*
 cmake -Wdev \
       -D PETSC_DIR:STRING='/home/bpalmer/software/petsc-3.8.4' \
       -D PETSC_ARCH:STRING='linux-openmpi-gnu-cxx-complex-opt-so/' \
-      -D GA_DIR:STRING='/home/bpalmer/software/ga-5.8/build_ts_so' \
+      -D GA_DIR:STRING='/home/bpalmer/software/ga-5.8/build_ts_so/install' \
       -D USE_PROGRESS_RANKS:BOOL=FALSE \
       -D MPI_CXX_COMPILER:STRING='mpicxx' \
       -D MPI_C_COMPILER:STRING='mpicc' \
