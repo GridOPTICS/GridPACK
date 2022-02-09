@@ -127,7 +127,13 @@ on the --enable-shared option to "no".
 GridPACK:
 
 If the Global Arrays and PETSc libraries are available, it is fairly straightforward
-to build GridPACK. A configuration script for GridPACK is
+to build GridPACK. If you have cloned GridPACK from the Github repository, be sure to
+type
+
+git submodule update --init
+
+in the top level directory before doing anything else. This downloads some CMake modules
+need in the build. A configuration script for GridPACK is
 
 rm -rf CMake*
 
@@ -161,3 +167,30 @@ make test
 On Eagle, only the parallel jobs pass. The CMake test suite assumes that you can
 run single processor jobs without using 'mpirun' or its erquivalent, but this is
 not true on Eagle for any code that uses MPI.
+
+To build with static libraries, set the BUILD_SHARED_LIBS variable to "FALSE", If
+you are building GridPACK using the Global Arrays two-sided runtime (--with-mpi)
+and using static libraries, you will also have to make a modification to the
+FindPackageMultipass.cmake file located in the GRIDPACK/cmake-jedbrown directory.
+The changes needed are to substitute the existing
+
+include (Check${language}SourceRuns)
+
+line with
+
+include (Check${language}SourceCompiles)
+
+and to change the existing
+
+check_c_source_runs("${source}" ${testname})
+
+check_cxx_source_runs("${source}" ${testname})
+
+commands to
+
+check_c_source_compiles("${source}" ${testname})
+
+check_cxx_source_compiles("${source}" ${testname})
+
+This prevents the build process from trying to run some test processes on the login
+nodes.
