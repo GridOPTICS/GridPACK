@@ -57,7 +57,7 @@ The "--with-batch" option causes the build to stop so that you can run part of t
 configuration process on the compute nodes. The build will stop and tell you to run
 the script
 
-onftest-cori-gnu-cxx-complex-opt
+conftest-cori-gnu-cxx-complex-opt
 
 by submitting it as a single process job on the compute nodes. A submission script
 will look like
