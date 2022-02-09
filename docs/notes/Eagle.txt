@@ -76,7 +76,11 @@ The configuration script will have generated a script
 
 conftest-linux-openmpi-gnu-cxx-complex-opt-so
 
-Run this on the compute nodes and then log off so that you are back on the login nodes.
+Run this on the compute nodes using
+
+mpirun -n 1 conftest-linux-openmpi-gnu-cxx-complex-opt-so
+
+and then log off so that you are back on the login nodes.
 Running the conftest-linux-openmpi-gnu-cxx-complex-opt-so script generates a python
 script
 
