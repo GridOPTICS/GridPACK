@@ -141,6 +141,7 @@ main(int argc, char **argv)
     ds_app.setNetwork(ds_network, config);
     //ds_app.readNetwork(ds_network,config);
     ds_app.readGenerators();
+    ds_app.readSequenceData();
     //printf("ds_app.initialize:\n");
     ds_app.initialize();
     ds_app.setGeneratorWatch();

@@ -245,7 +245,6 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
  */
 void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
 {
-  int rank = p_network->communicator().rank();
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   std::string filename;
@@ -269,6 +268,18 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
   //printf("p[%d] generatorParameters: %s\n",p_comm.rank(),filename.c_str());
   if (filename.size() > 0) parser.externalParse(filename.c_str());
   //printf("p[%d] finished Generator parameters\n",p_comm.rank());
+}
+
+/**
+ * Read sequence data from a file.
+ */
+void gridpack::dynamic_simulation::readSequenceData()
+{
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  std::string filename = cursor->get("sequenceDataFile");
+  gridpack::parser::PSSE_seq_data<DSFullNetwork> parser(p_network);
+  parser.parse(filename);
 }
 
 /**

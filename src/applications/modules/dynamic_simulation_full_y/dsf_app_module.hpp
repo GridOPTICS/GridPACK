@@ -89,6 +89,11 @@ class DSFullApp
     void readGenerators(int ds_idx = -1);
 
     /**
+     * Read sequence data from a file.
+     */
+    void readSequenceData();
+
+    /**
      * Set up exchange buffers and other internal parameters and initialize
      * network components using data from data collection
      */
