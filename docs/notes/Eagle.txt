@@ -194,3 +194,5 @@ check_cxx_source_compiles("${source}" ${testname})
 
 This prevents the build process from trying to run some test processes on the login
 nodes.
+
+Eagle can't checkin changes to github on login node el4. Use el3 instead.
