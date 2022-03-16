@@ -64,7 +64,7 @@ gridpack::dynamic_simulation::GridFormingGenerator::GridFormingGenerator(void)
 	presentMag = 1.0;
 	presentAng = 0.0;
 	fset = 60.0;
-	Ra = 0.0;
+	Ra = 0.005;
 	omega = 1.0;
 	delta_omega_lim = 999.0;
 	Poutctrl = 0.0;
@@ -120,8 +120,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
   if (!data->getValue(GENERATOR_PSET, &Pset, idx)) Pset=0.44; // 
   if (!data->getValue(GENERATOR_PMAX, &Pmax, idx)) Pmax=1.0; // 
   if (!data->getValue(GENERATOR_PMIN, &Pmin, idx)) Pmin=0.0; // 
-  //if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
-  Imax=2.5;
+  if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
   
   mp_org = mp;
   mq_org = mq; 
@@ -132,7 +131,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
       //printf("-----------generator at bus %d  has P: %f, Q: %f, S: %f, MVABASE: %f  \n", p_bus_id, p_pg, p_qg, tmp, MVABase);
 	  MVABase = tmp*1.2;
   }
-
+  
   if (bmodel_debug){
 	printf("\n--------gdform parameters: MVABase = %12.6f, XL = %12.6f, Ts = %12.6f, mq = %12.6f, kpv = %12.6f, kiv = %12.6f, Emax = %12.6f, Emin = %12.6f, mp = %12.6f, kppmax = %12.6f, kipmax = %12.6f, Pset = %12.6f, Pmax = %12.6f, Pmin = %12.6f, Imax = %12.6f  \n", 
 					MVABase, XL, Ts, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin, Imax);
@@ -169,20 +168,25 @@ void gridpack::dynamic_simulation::GridFormingGenerator::init(double mag,
   Igen_mag = sqrt(Ir*Ir + Ii*Ii);
   
   //compute E and delta
-  double Etermr = Vrterm - Ii*XL;
-  double Etermi = Viterm + Ir*XL;
+  double Etermr = Vrterm - Ii*XL + Ir*Ra;
+  double Etermi = Viterm + Ir*XL + Ii*Ra;
   
   x1E_0 = sqrt(Etermr*Etermr+Etermi*Etermi);
   x1E_1 = x1E_0;
   E_term = x1E_0;
   x2d_0 = atan2(Etermi, Etermr);  // from -pi to pi, rads
+  E_delta = x2d_0;
   x2d_1 = x2d_0;
   xvterm_0 = Vterm;
   xp_0 = genP;
   xq_0 = genQ;
+  x3_0 = 0.0;
+  x4_0 = 0.0;
   xvterm_1 = Vterm;
   xp_1 = genP;
   xq_1 = genQ;
+  x3_1 = 0.0;
+  x4_1 = 0.0;
   
   if (bmodel_debug){
     printf("Ir = %f, Ii = %f\n", Ir, Ii);
@@ -231,7 +235,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::GridFormingGenerator::Norton
   G = ra / (ra + xd);
   gridpack::ComplexType Y_a(B, G);
   return Y_a;*/
-  double ra = 0.0; //Ra * p_sbase / MVABase;
+  double ra = Ra * p_sbase / MVABase;
   double xd = XL * p_sbase / MVABase;
   //printf("Ra = %f, Xdpp = %f\n", Ra, Xdpp);
   //printf("ra = %f, xd = %f, p_sbase = %f, MVABase = %f\n", ra, xd, p_sbase, MVABase);
@@ -265,13 +269,11 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor_currentInject
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
-  double Etermr = E_term * cos(x2d_0);
-  double Etermi = E_term * sin(x2d_0);
-  
-  double ra = 0.0; //Ra * p_sbase / MVABase;
+  double Etermr = E_term * cos(E_delta);
+  double Etermi = E_term * sin(E_delta);
 
-  double B_gen = -XL / (ra * ra + XL * XL);
-  double G_gen = ra / (ra * ra + XL * XL);
+  double B_gen = -XL / (Ra * Ra + XL * XL);
+  double G_gen = Ra / (Ra * Ra + XL * XL);
   
   double Ir_gen = (Etermr - Vrterm) * G_gen - (Etermi - Viterm) * B_gen;
   double Ii_gen = (Etermr - Vrterm) * B_gen + (Etermi - Viterm) * G_gen;
@@ -284,6 +286,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor_currentInject
   Igen_mag = sqrt(Ir_gen*Ir_gen + Ii_gen*Ii_gen);
   //printf("rktest, gdform.cpp, Igen_mag = %f, Imax = %f, Ir_gen = %f, Ii_gen = %f\n", Igen_mag, Imax, Ir_gen, Ii_gen);
   
+  double x2d_0_lim = 0.0;
+  double Eterm_lim = 0.0;
   if (Igen_mag>Imax && bCurrentLimitFlag){
 	  Igenlim_r = Imax*cos(I_theta);
 	  Igenlim_i = Imax*sin(I_theta);
@@ -291,9 +295,14 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor_currentInject
 	  Etermi_lim = Viterm + XL*Igenlim_r;
 	  
 	  E_term = sqrt(Etermr_lim*Etermr_lim + Etermi_lim*Etermi_lim);
-	  x2d_0 = atan2(Etermi_lim, Etermr_lim);
-	  Etermr = E_term * cos(x2d_0);
-      Etermi = E_term * sin(x2d_0);
+	  E_delta = atan2(Etermi_lim, Etermr_lim);
+	  Etermr = E_term * cos(E_delta);
+      Etermi = E_term * sin(E_delta);
+	  
+	  //Eterm_lim = sqrt(Etermr_lim*Etermr_lim + Etermi_lim*Etermi_lim);
+	  //x2d_0_lim = atan2(Etermi_lim, Etermr_lim);
+	  //Etermr = Eterm_lim * cos(x2d_0_lim);
+      //Etermi = Eterm_lim * sin(x2d_0_lim);
   }
   
   // the current limiting fuction ends here
@@ -358,8 +367,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	Theta = presentAng;
 	double Vrterm = Vterm * cos(Theta);
 	double Viterm = Vterm * sin(Theta);
-	double Etermr = E_term * cos(x2d_0);
-    double Etermi = E_term * sin(x2d_0);
+	double Etermr = E_term * cos(E_delta);
+    double Etermi = E_term * sin(E_delta);
 	
 	B = -XL / (Ra * Ra + XL * XL);
     G = Ra / (Ra * Ra + XL * XL);
@@ -400,16 +409,20 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	}
 	
 	double tmpin = -mq*genQ_delay - Vterm_delay + Vset;
-	double tmpmax = Emax - kpv*tmpin;
-	double tmpmin = Emin - kpv*tmpin;
-	
-	if (x1E_0 > tmpmax) x1E_0 = tmpmax;
-	if (x1E_0 < tmpmin) x1E_0 = tmpmin;
-	
+	double out1 = 0.0;
+		
+	if (x1E_0 > Emax) x1E_0 = Emax;
+	if (x1E_0 < Emin) x1E_0 = Emin;
 	dx1E_0 = kiv*tmpin;
+	if( dx1E_0>0.0 && x1E_0>=Emax ) dx1E_0 = 0.0;
+	if( dx1E_0<0.0 && x1E_0<=Emin ) dx1E_0 = 0.0;
+	out1 = x1E_0;  
+	if (out1 > Emax) out1 = Emax;
+	if (out1 < Emin) out1 = Emin;
 	
-	if( dx1E_0>0.0 && x1E_0>=tmpmax ) dx1E_0 = 0.0;
-	if( dx1E_0<0.0 && x1E_0<=tmpmin ) dx1E_0 = 0.0;
+	E_term = out1 + tmpin*kpv;
+	if (E_term > Emax) E_term = Emax;
+	if (E_term < Emin) E_term = Emin;
 	
 	Poutctrl = 0.0;
 	double out3 = 0.0;
@@ -417,19 +430,20 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	//compute s3
 	//if ( genP_delay>Pmax ){
 		tmpin = Pmax - genP_delay;
-		tmpmax = 0.0 - kppmax*tmpin;
-		tmpmin = -delta_omega_lim - kppmax*tmpin;
 		
-		if (x3_0 > tmpmax) x3_0 = tmpmax;
-		if (x3_0 < tmpmin) x3_0 = tmpmin;
-		
+		if (x3_0 > 0.0) x3_0 = 0.0;
+		if (x3_0 < -delta_omega_lim) x3_0 = -delta_omega_lim;
 		dx3_0 = kipmax*tmpin;
-		
-		if( dx3_0>0.0 && x3_0>=tmpmax ) dx3_0 = 0.0;
-		if( dx3_0<0.0 && x3_0<=tmpmin ) dx3_0 = 0.0;
-		out3 = kppmax * tmpin + x3_0;  //previously kipmax
+		if( dx3_0>0.0 && x3_0>=0.0 ) dx3_0 = 0.0;
+		if( dx3_0<0.0 && x3_0<=-delta_omega_lim ) dx3_0 = 0.0;
+		out3 = x3_0;  
 		if (out3 > 0.0) out3 = 0.0;
 		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
+		
+		out3 = out3 + tmpin*kppmax;
+		if (out3 > 0.0) out3 = 0.0;
+		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
+
 	//}else{
 	//	 x3_0 = 0.0;
 	//	dx3_0 = 0.0;
@@ -438,20 +452,20 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
     //compute s4
 	//if ( genP_delay<Pmin ){
 		tmpin = Pmin - genP_delay;
-		tmpmax = delta_omega_lim - kppmax*tmpin;
-		tmpmin = 0.0 - kppmax*tmpin;
 		
-		if (x4_0 > tmpmax) x4_0 = tmpmax;
-		if (x4_0 < tmpmin) x4_0 = tmpmin;
-		
+		if (x4_0 > delta_omega_lim) x4_0 = delta_omega_lim;
+		if (x4_0 < 0.0) x4_0 = 0.0;
 		dx4_0 = kipmax*tmpin;
-		
-		if( dx4_0>0.0 && x4_0>=tmpmax ) dx4_0 = 0.0;
-		if( dx4_0<0.0 && x4_0<=tmpmin ) dx4_0 = 0.0;
-		
-		out4 = kppmax * tmpin + x4_0; //previously kipmax
+		if( dx4_0>0.0 && x4_0>=delta_omega_lim ) dx4_0 = 0.0;
+		if( dx4_0<0.0 && x4_0<=0.0 ) dx4_0 = 0.0;
+		out4 = x4_0;
 		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
 		if (out4 < 0.0) out4 = 0.0;
+		
+		out4 = out4 + tmpin*kppmax;
+		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
+		if (out4 < 0.0) out4 = 0.0;
+		
 	//}else{
 	//	 x4_0 = 0.0;
 	//	dx4_0 = 0.0;
@@ -468,6 +482,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	tmpin = tmpin + 2*pi*fset - 2*pi*60.0;
 	dx2d_0 = tmpin/1.0;
 	omega = tmpin/(2*pi*60.0)+1.0;
+	E_delta = x2d_0;
 	
 	x1E_1 = x1E_0 + dx1E_0 * t_inc;
 	x2d_1 = x2d_0 + dx2d_0 * t_inc;
@@ -476,11 +491,6 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor(
 	xvterm_1 = xvterm_0 + dxvterm_0 * t_inc;
 	xp_1 = xp_0 + dxp_0 * t_inc;
 	xq_1 = xq_0 + dxq_0 * t_inc;
-	
-	E_term = tmpin*kpv + x1E_1;
-	
-	if (E_term > Emax) E_term = Emax;
-	if (E_term < Emin) E_term = Emin;
 
 	if (bmodel_debug){	
 		printf("---gdform predictor: pbusid: %d, dx: %12.6f, %12.6f, %12.6f, %12.6f \n", p_bus_id, dx1E_0, dx2d_0, dx3_0, dx4_0);
@@ -547,13 +557,11 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector_currentInject
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
-  double Etermr = E_term * cos(x2d_1);
-  double Etermi = E_term * sin(x2d_1);
-  
-  double ra = 0.0; //Ra * p_sbase / MVABase;
+  double Etermr = E_term * cos(E_delta);
+  double Etermi = E_term * sin(E_delta);
 
-  double B_gen = -XL / (ra * ra + XL * XL);
-  double G_gen = ra / (ra * ra + XL * XL);
+  double B_gen = -XL / (Ra * Ra + XL * XL);
+  double G_gen = Ra / (Ra * Ra + XL * XL);
   
   double Ir_gen = (Etermr - Vrterm) * G_gen - (Etermi - Viterm) * B_gen;
   double Ii_gen = (Etermr - Vrterm) * B_gen + (Etermi - Viterm) * G_gen;
@@ -566,6 +574,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector_currentInject
   Igen_mag = sqrt(Ir_gen*Ir_gen + Ii_gen*Ii_gen);
   //printf("rktest,  gdform.cpp, corrector_currentInjection, Igen_mag = %f, Imax = %f, Ir_gen = %f, Ii_gen = %f\n", Igen_mag, Imax, Ir_gen, Ii_gen);
   
+  double Eterm_lim = 0.0;
+  double x2d_1_lim = 0.0;
+  
   if (Igen_mag>Imax  && bCurrentLimitFlag){
 	  Igenlim_r = Imax*cos(I_theta);
 	  Igenlim_i = Imax*sin(I_theta);
@@ -573,9 +584,14 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector_currentInject
 	  Etermi_lim = Viterm + XL*Igenlim_r;
 	  
 	  E_term = sqrt(Etermr_lim*Etermr_lim + Etermi_lim*Etermi_lim);
-	  x2d_1 = atan2(Etermi_lim, Etermr_lim);
-	  Etermr = E_term * cos(x2d_1);
-      Etermi = E_term * sin(x2d_1);
+	  E_delta = atan2(Etermi_lim, Etermr_lim);
+	  Etermr = E_term * cos(E_delta);
+      Etermi = E_term * sin(E_delta);
+	  
+	  //Eterm_lim = sqrt(Etermr_lim*Etermr_lim + Etermi_lim*Etermi_lim);
+	  //x2d_1_lim = atan2(Etermi_lim, Etermr_lim);
+	  //Etermr = Eterm_lim * cos(x2d_1_lim);
+      //Etermi = Eterm_lim * sin(x2d_1_lim); 
   }
   // the current limiting fuction ends here
   
@@ -632,8 +648,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	Theta = presentAng;
 	double Vrterm = Vterm * cos(Theta);
 	double Viterm = Vterm * sin(Theta);
-	double Etermr = E_term * cos(x2d_1);
-    double Etermi = E_term * sin(x2d_1);
+	double Etermr = E_term * cos(E_delta);
+    double Etermi = E_term * sin(E_delta);
 	
 	B = -XL / (Ra * Ra + XL * XL);
     G = Ra / (Ra * Ra + XL * XL);
@@ -672,23 +688,28 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	}
 	
 	double tmpin = -mq*genQ_delay - Vterm_delay + Vset;
-	double tmpmax = Emax - kpv*tmpin;
-	double tmpmin = Emin - kpv*tmpin;
-	
-	if (x1E_1 > tmpmax) x1E_1 = tmpmax;
-	if (x1E_1 < tmpmin) x1E_1 = tmpmin;
+	double out1 = 0.0;
+		
+	if (x1E_1 > Emax) x1E_1 = Emax;
+	if (x1E_1 < Emin) x1E_1 = Emin;
+	dx1E_0 = kiv*tmpin;
+	if( dx1E_1>0.0 && x1E_1>=Emax ) dx1E_1 = 0.0;
+	if( dx1E_1<0.0 && x1E_1<=Emin ) dx1E_1 = 0.0;
+	out1 = x1E_1;  
+	if (out1 > Emax) out1 = Emax;
+	if (out1 < Emin) out1 = Emin;
 	
 	if (bmodel_debug){
-		printf("------renke debug in GridFormingGenerator::corrector, tmpmax = %f, tmpmin = %f, tmpin = %f, x1E_1 = %f \n", tmpmax, tmpmin, tmpin, x1E_1);
+		printf("------renke debug in GridFormingGenerator::corrector, tmpin = %f, x1E_1 = %f \n", tmpin, x1E_1);
     }
 	
-	dx1E_1 = kiv*tmpin;
+	E_term = out1 + tmpin*kpv;
+	if (E_term > Emax) E_term = Emax;
+	if (E_term < Emin) E_term = Emin;
+
 	if (bmodel_debug){
 		printf("------renke debug in GridFormingGenerator::corrector, dx1E_1 = %12.6f \n", dx1E_1);
     }
-	
-	if( dx1E_1>0.0 && x1E_1>=tmpmax ) dx1E_1 = 0.0;
-	if( dx1E_1<0.0 && x1E_1<=tmpmin ) dx1E_1 = 0.0;
 	
 	Poutctrl = 0.0;
 	double out3 = 0.0;
@@ -697,39 +718,39 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	//compute s3
 	//if (genP_delay > Pmax){
 		tmpin = Pmax - genP_delay;
-		tmpmax = 0.0 - kppmax*tmpin;
-		tmpmin = -delta_omega_lim - kppmax*tmpin;
 		
-		if (x3_1 > tmpmax) x3_1 = tmpmax;
-		if (x3_1 < tmpmin) x3_1 = tmpmin;
-		
+		if (x3_1 > 0.0) x3_1 = 0.0;
+		if (x3_1 < -delta_omega_lim) x3_1 = -delta_omega_lim;
 		dx3_1 = kipmax*tmpin;
-		
-		if( dx3_1>0.0 && x3_1>=tmpmax ) dx3_1 = 0.0;
-		if( dx3_1<0.0 && x3_1<=tmpmin ) dx3_1 = 0.0;
-		out3 = kppmax * tmpin + x3_1; //previously kipmax
-		if (out3 > 0.0) out3 = 0.0; 
+		if( dx3_1>0.0 && x3_1>=0.0 ) dx3_1 = 0.0;
+		if( dx3_1<0.0 && x3_1<=-delta_omega_lim ) dx3_1 = 0.0;
+		out3 = x3_1;  
+		if (out3 > 0.0) out3 = 0.0;
 		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
+		
+		out3 = out3 + tmpin*kppmax;
+		if (out3 > 0.0) out3 = 0.0;
+		if (out3 < -delta_omega_lim) out3 = -delta_omega_lim;
+
 	//}else{
-	//	 x3_1 = 0.0;
-	//	dx3_1 = 0.0;
+	//	 x3_0 = 0.0;
+	//	dx3_0 = 0.0;
 	//}
 	
     //compute s4
-	//if (genP_delay < Pmin){
+	//if ( genP_delay<Pmin ){
 		tmpin = Pmin - genP_delay;
-		tmpmax = delta_omega_lim - kppmax*tmpin;
-		tmpmin = 0.0 - kppmax*tmpin;
 		
-		if (x4_1 > tmpmax) x4_1 = tmpmax;
-		if (x4_1 < tmpmin) x4_1 = tmpmin;
-		
+		if (x4_1 > delta_omega_lim) x4_1 = delta_omega_lim;
+		if (x4_1 < 0.0) x4_1 = 0.0;
 		dx4_1 = kipmax*tmpin;
+		if( dx4_1>0.0 && x4_1>=delta_omega_lim ) dx4_1 = 0.0;
+		if( dx4_1<0.0 && x4_1<=0.0 ) dx4_1 = 0.0;
+		out4 = x4_1;
+		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
+		if (out4 < 0.0) out4 = 0.0;
 		
-		if( dx4_1>0.0 && x4_1>=tmpmax ) dx4_1 = 0.0;
-		if( dx4_1<0.0 && x4_1<=tmpmin ) dx4_1 = 0.0;
-		
-		out4 = kppmax * tmpin + x4_1; //previously kipmax
+		out4 = out4 + tmpin*kppmax;
 		if (out4 > delta_omega_lim) out4 = delta_omega_lim;
 		if (out4 < 0.0) out4 = 0.0;
 	//}else{
@@ -749,7 +770,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	tmpin = tmpin + 2*pi*fset - 2*pi*60.0;
 	dx2d_1 = tmpin/1.0;
 	omega = tmpin/(2*pi*60.0)+1.0;
-	
+	E_delta = x2d_1;
 	
 	if (bmodel_debug){	
 		printf("---gdform corrector: pbusid: %d, dx: %12.6f, %12.6f, %12.6f, %12.6f \n", p_bus_id, dx1E_1, dx2d_1, dx3_1, dx4_1);
@@ -763,11 +784,6 @@ void gridpack::dynamic_simulation::GridFormingGenerator::corrector(
 	xvterm_1 = xvterm_0 + (dxvterm_0+dxvterm_1)/2.0 * t_inc;
 	xp_1 = xp_0 + (dxp_0+dxp_1)/2.0 * t_inc;
 	xq_1 = xq_0 + (dxq_0+dxq_1)/2.0 * t_inc;
-	
-	E_term = tmpin*kpv + x1E_1;
-	
-	if (E_term > Emax) E_term = Emax;
-	if (E_term < Emin) E_term = Emin;
 	
 	if (bmodel_debug){
 		printf("------renke debug in GridFormingGenerator::corrector, presentMag, presentAng = %12.6f, %12.6f \n", presentMag, presentAng);
@@ -896,7 +912,7 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
       char buf[256];
 //    sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
       sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,",
-          p_bus_id, p_ckt.c_str(), x3_1, x4_1, E_term, presentMag, presentAng, genP, genQ, Igen_mag);
+          p_bus_id, p_ckt.c_str(), x3_1, x4_1, E_term, E_delta, Poutctrl, genP, genQ, Igen_mag);
       return true;
 /*      if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);

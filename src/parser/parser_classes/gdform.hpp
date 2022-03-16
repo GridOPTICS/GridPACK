@@ -126,7 +126,7 @@ template <class _data_struct> class GdformParser
         data->setValue(GENERATOR_PSET, data_struct.pset, g_id);
       }
 
-      // GENERATOR_S1
+      // GENERATOR_PMAX
       if (!data->getValue(GENERATOR_PMAX,&rval,g_id)) {
         data->addValue(GENERATOR_PMAX, data_struct.pmax, g_id);
       } else {
@@ -139,6 +139,14 @@ template <class _data_struct> class GdformParser
       } else {
         data->setValue(GENERATOR_PMIN, data_struct.pmin, g_id);
       }
+	  
+	  // GENERATOR_IMAX
+      if (!data->getValue(GENERATOR_IMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_IMAX, data_struct.imax, g_id);
+      } else {
+        data->setValue(GENERATOR_IMAX, data_struct.imax, g_id);
+      }
+	  
     }
 
     /**
@@ -281,6 +289,16 @@ template <class _data_struct> class GdformParser
           data->setValue(GENERATOR_PMIN, atof(split_line[15].c_str()), g_id);
         }
       } 
+	  
+	  // GENERATOR_IMAX
+      if (nstr > 16) {
+        if (!data->getValue(GENERATOR_IMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_IMAX, atof(split_line[16].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_IMAX, atof(split_line[16].c_str()), g_id);
+        }
+      } 
+	  
     }
 
     /**
@@ -373,6 +391,12 @@ template <class _data_struct> class GdformParser
       if (nstr > 15) {
         data.pmin = atof(split_line[15].c_str());
       } 
+	  
+	  // GENERATOR_IMAX
+      if (nstr > 16) {
+        data.imax = atof(split_line[16].c_str());
+      } 
+	  
     }
 };
 }  // parser
