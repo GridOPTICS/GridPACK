@@ -5,7 +5,7 @@
     <networkFiles>
 	
 	<networkFile> 
-    <networkConfiguration_v33> IEEE_14_bus_mod2.raw </networkConfiguration_v33>
+    <networkConfiguration_v33> IEEE_14_bus_mod3.raw </networkConfiguration_v33>
 	</networkFile>
 	
 	<networkFile> 
@@ -91,7 +91,7 @@
 		
 	 </generatorFiles> 
                 
-    <simulationTime>30.0</simulationTime>
+    <simulationTime>15.0</simulationTime>
     <timeStep>0.005</timeStep>
     <faultEvents>
       <faultEvent>
@@ -202,7 +202,22 @@
 	  
 	  <observation> 
         <type> busfrequency </type>
+        <busID> 3 </busID>
+      </observation> 
+	  
+	  <observation> 
+        <type> busfrequency </type>
+        <busID> 4 </busID>
+      </observation> 
+	  
+	  <observation> 
+        <type> busfrequency </type>
         <busID> 5 </busID>
+      </observation> 
+	  
+	  <observation> 
+        <type> busfrequency </type>
+        <busID> 6 </busID>
       </observation> 
 	  
 	  <observation> 
@@ -217,7 +232,22 @@
 	  
 	  <observation> 
         <type> busfrequency </type>
+        <busID> 11 </busID>
+      </observation> 
+	  
+	  <observation> 
+        <type> busfrequency </type>
+        <busID> 12 </busID>
+      </observation> 
+	  
+	  <observation> 
+        <type> busfrequency </type>
         <busID> 13 </busID>
+      </observation> 
+	  
+	  <observation> 
+        <type> busfrequency </type>
+        <busID> 14 </busID>
       </observation> 
 	  
     </observations>

@@ -40,12 +40,13 @@ tielinefile = "14bus_branchdata_tieline.csv"
 For the ipfcase variable, we define different power flow raw files 
 with different line ratings, for tripping different lines experiments
 
+choose 0, no line trip
 choose 2, only trip 2 tie-lines, 5-6 and 4-9
 choose 3, trip 3 tie-lines, 5-6, 4-7 and 4-9
 choose 4, trip 4 tie-lines, 5-6, 4-9, 10-11, and 13-14
 '''
 
-ipfcase = 4
+ipfcase = 0
 
 '''
 # this variable defines the dyr file index in the xml input file, 
@@ -53,8 +54,19 @@ you may add more dyr files for your own testing
 '''
 idyrcase =0  
 
-# whether implement load shedding
+# whether implement manual load shedding
 bloadshedding = False
+
+# under frequency load shedding parameters
+bUFLS = True
+loadshedingbuslist = [2,3,4,5,6,9,10,11,12,13,14]  # the load buses
+freqthre = 59.5  # under frequency load shedding threshold
+loadshedperc = 0.1  # load shedding percentage
+loadshedingtimer = [-1 for i in range (len(loadshedingbuslist))] # timer to count for the load shedding delay
+loadshedingtimersteps = 40 # load shedding delay time steps
+
+# line tripping relay setting
+blinetriprelay = True #False
 
 input_xml_dict = xml2dict(inputfile)
 
@@ -196,6 +208,19 @@ for iline in range(len(linedf)):
     Y21.append(y21)
     Y22.append(y22)
 
+# get the load original normal operation values of the system
+# set the load value output csv file head
+loadvalue_csvhead = []
+loadvalue_csvhead.append('time')
+loadorgvaluelist = []
+for ibus in (loadshedingbuslist):  
+    loadpar = 'LOAD_PL'
+    testpar = hadapp.getDataCollectionLoadParam(ibus, '1', loadpar)
+    loadorgvaluelist.append(testpar)
+    loadvalue_csvhead.append('bus-%d-load-P'%(ibus))
+    
+loadremainingvaluelist = loadorgvaluelist[:] # list record the remaining load of each load bus
+    
 # transfer data from power flow network to dynamic simulation network
 hadapp.transferPFtoDS()
 
@@ -270,7 +295,16 @@ busangidx_dict = {}
 for itmp in range (len(obs_busIDs)):
     busmagidx_dict[obs_busIDs[itmp]] = 4*len(obs_genBus)+itmp
     busangidx_dict[obs_busIDs[itmp]] = 4*len(obs_genBus)+len(obs_busIDs)+itmp
+    
+# form some dictionary to record the index of the bus frequency
+# observations in the whole observation array
 
+busfreqidx_dict = {}
+for itmp in range (len(loadshedingbuslist)):
+    
+    busnumtmp = loadshedingbuslist[itmp] 
+    busfreqidx_dict[busnumtmp] = 4*len(obs_genBus)+2*len(obs_busIDs)+ob_freqBusIDs.index(busnumtmp)
+    
 #print ('busmagidx_dict: ', busmagidx_dict)
 
 # create observation names for csv file header writting purpose
@@ -296,6 +330,7 @@ isteps = 0
 
 observation_list = []
 lineflow_list = []
+loadvalue_list = []
 total_dataconv_time = 0.0
 
 timeser = []
@@ -307,19 +342,20 @@ The following While loop is the main dynamic simulation loop
 while (not hadapp.isDynSimuDone()):
 
     # apply generator tripping at t = 5.0 seconds
-    if (bApplyGenTripAct and( isteps == 1000 )):
+    if (bApplyGenTripAct and( isteps == 200 )):
         hadapp.applyAction(gentripact)
         
     # apply load shedding at t = 25.0 seconds
-    if (bloadshedding and( isteps == 2500 )):
+    if (bloadshedding and( isteps == 700 )):
         hadapp.applyAction(loadshedact)
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
         
-    if (bloadshedding and( isteps == 3500 )):
+    if (bloadshedding and( isteps == 1200 )):
         hadapp.applyAction(loadshedact)
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
+        
         
     # execute one simulation time step	
     hadapp.executeDynSimuOneStep()       
@@ -331,7 +367,42 @@ while (not hadapp.isDynSimuDone()):
         ob_vals = hadapp.getObservations()
         after_getob_time = time.time()	
         total_dataconv_time += (after_getob_time - before_getob_time)
-               
+        
+        '''  
+        Implement under frequency load shedding here
+        '''
+    
+        for itmp, ibus in enumerate(loadshedingbuslist):
+            freqtmp = ob_vals[busfreqidx_dict[ibus]]
+            loadorgvalue = loadorgvaluelist[itmp]
+            
+            #if the frequency of the bus is lower than the threshold
+            if (freqtmp < freqthre and bUFLS and loadremainingvaluelist[itmp]>loadshedperc*0.5):
+                if loadshedingtimer[itmp] == loadshedingtimersteps:  # if the load shedding delay timer is reached
+                    
+                    #define the load shedding action
+                    loadshedact = gridpack.hadrec.Action()
+                    loadshedact.actiontype = 3;
+                    loadshedact.bus_number = ibus;
+                    loadshedact.componentID = "1";
+                    
+                    # shed load amount should be the min value of load drop percentage and the remaining load value
+                    loadshedamount = min(loadorgvalue*loadshedperc, loadremainingvaluelist[itmp])
+                    loadshedact.percentage = -loadshedamount;  
+                    hadapp.applyAction(loadshedact)
+					
+                    loadshedingtimer[itmp] = -1 # reset the timer once the load shedding action is applied
+                    loadremainingvaluelist[itmp] -= loadshedamount # change the remaining load value as the load has been shed
+                    print ('------Warning: Time: %5.3f seconds, bus %d frequency is %4.2f, shed %6.2f load at this bus, remaining load: %6.2f'%
+                       (isteps*simu_time_step, ibus, freqtmp, loadshedamount, loadremainingvaluelist[itmp]))
+                    
+                else: # if the load shedding delay timer is not reached, increase the timer
+
+                    loadshedingtimer[itmp] += 1
+                
+            else: # if the frequency of the bus is higher than the threshold, reset the timer
+                loadshedingtimer[itmp] = -1
+                            
         # compute line flows here
         lineflowonesteplist = []
         for iline in range(len(linedf)):
@@ -374,7 +445,7 @@ while (not hadapp.isDynSimuDone()):
             
             # if the line flow exceeds the rating, trip the line
             # lineS is with P.U. While Rating is actual value
-            if ( lineS*100.0 > lineRating and nlinestatus[iline]==1 ): 
+            if ( blinetriprelay and lineS*100.0 > lineRating and nlinestatus[iline]==1 ): 
                 
                 #define a line tripping action here and apply it in the simulation
                 linetripact = gridpack.hadrec.Action()
@@ -409,6 +480,11 @@ while (not hadapp.isDynSimuDone()):
         lineflowonesteplist.insert(0,isteps*simu_time_step)
         lineflow_list.append(lineflowonesteplist)
         
+        # add time in the head of the load data list
+        loadvalue_onestep = loadremainingvaluelist[:]
+        loadvalue_onestep.insert(0,isteps*simu_time_step)
+        loadvalue_list.append(loadvalue_onestep)
+        
     isteps = isteps + 1
 
 gridpack_endtime = time.time()
@@ -434,6 +510,15 @@ pd_lineflow_data = pd.DataFrame(np_lineflow_data,columns=lineflow_csvhead)
 csv_lineflow_wrt_f = '14bus_test_example_lineflow'
 
 pd_lineflow_data.to_csv(csv_lineflow_wrt_f+'.csv', index=False)
+
+# also write load data into a csv file
+np_load_data = np.array(loadvalue_list)
+
+pd_load_data = pd.DataFrame(np_load_data,columns=loadvalue_csvhead)
+
+csv_load_wrt_f = '14bus_test_example_load'
+
+pd_load_data.to_csv(csv_load_wrt_f+'.csv', index=False)
 
 total_csvwr_time = time.time() - before_csvwr_time
 print("-------------!!! total csv write time :  ", total_csvwr_time)
