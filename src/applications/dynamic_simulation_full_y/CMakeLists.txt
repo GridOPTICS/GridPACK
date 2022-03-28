@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-11-29 06:34:00 d3g096
+# Last Change: 2023-11-29 06:35:33 d3g096
 # -------------------------------------------------------------
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)
@@ -245,7 +245,6 @@ gridpack_add_run_test("dynamic_simulation_two_area" dsf.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area" dsf2.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
-gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
 if (ENABLE_ENVIRONMENT_FROM_COMM)
   gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
 endif()
