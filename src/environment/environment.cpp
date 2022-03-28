@@ -88,6 +88,16 @@ Environment::Environment(int argc, char **argv,const char* help,const long int& 
 
 }
 
+Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc,argv),clparser(argc,argv)
+{
+  PrintStatus();
+  pma_stack = 200000;
+  pma_heap  = 200000;
+  GA_Initialize();
+  MA_init(C_DBL,pma_stack,pma_heap);
+  gridpack::math::Initialize(&argc,&argv);
+}
+
 Environment::~Environment(void)
 {
   // Finalize math libraries

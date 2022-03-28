@@ -65,14 +65,19 @@ main(int argc, char **argv)
       pf_network(new gridpack::powerflow::PFNetwork(world));
 
     gridpack::powerflow::PFAppModule pf_app;
+    printf("Got to 1\n");
     pf_app.readNetwork(pf_network, config);
+    printf("Got to 2\n");
     pf_app.initialize();
+    printf("Got to 3\n");
     if (useNonLinear) {
       pf_app.nl_solve();
     } else {
       pf_app.solve();
     }
+    printf("Got to 4\n");
     pf_app.write();
+    printf("Got to 5\n");
     pf_app.saveData();
    
     // setup and run dynamic simulation calculation

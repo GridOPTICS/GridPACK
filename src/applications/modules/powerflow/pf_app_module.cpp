@@ -231,10 +231,12 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     p_busIO->header(ioBuf);
   }
 
+  printf("(readNetwork) Got to 1\n");
   // partition network
   int t_part = timer->createCategory("Powerflow: Partition");
   timer->start(t_part);
   network->partition();
+  printf("(readNetwork) Got to 2\n");
   timer->stop(t_part);
   timer->stop(t_total);
 }

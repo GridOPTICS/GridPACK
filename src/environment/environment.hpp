@@ -56,17 +56,18 @@ private:
 // -------------------------------------------------------------
 //  class Environment
 // -------------------------------------------------------------
-  class Environment : private utility::Uncopyable
+class Environment : private utility::Uncopyable
 {
 public:
 
-  /// Default constructor.
   /** 
-   * 
-   * 
+   * Constructors
+   */
+  /**
    * @param argc        number of program command line arguments
    * @param argv        command line arguments
    * @param help        help string to be displayed for the application
+   * @param comm        existing communicator used to initialize gridpack
    * 
    * @return 
    */
@@ -75,10 +76,19 @@ public:
 
   Environment(int argc, char **argv,
               const char* help,
-	      const long int& ma_stack,
+              const long int& ma_stack,
               const long int& ma_heap);
-
   Environment(int argc, char **argv);
+
+  /**
+   * Initialize environment from existing communicator
+   * @param argc        number of program command line arguments
+   * @param argv        command line arguments
+   * @param comm        existing communicator used to initialize gridpack
+   * 
+   * @return 
+   */
+  Environment(int argc, char **argv, MPI_Comm &comm);
 
 
   /// Destructor
