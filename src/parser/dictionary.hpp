@@ -2066,6 +2066,13 @@
  */
 #define GENERATOR_PSET "GENERATOR_PSET"
 
+/**
+ * Generator imax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_IMAX "GENERATOR_IMAX"
+
 
 // start generator REGCA parameters here
 /**

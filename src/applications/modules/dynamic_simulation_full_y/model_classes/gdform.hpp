@@ -147,7 +147,7 @@ class GridFormingGenerator : public BaseGeneratorModel
     double dx1E_0, dx2d_0, dx3_0, dx4_0, dxvterm_0, dxp_0, dxq_0;
     double dx1E_1, dx2d_1, dx3_1, dx4_1, dxvterm_1, dxp_1, dxq_1;
 
-    double E_term, IrNorton, IiNorton, omega, genP, genQ;
+    double E_term, E_delta, IrNorton, IiNorton, omega, genP, genQ;
 	double Poutctrl;
 	double Vterm_delay, genP_delay, genQ_delay;
     

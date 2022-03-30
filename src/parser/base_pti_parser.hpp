@@ -423,6 +423,7 @@ class BasePTIParser : public BaseParser<_network>
       double kppmax;
       double kipmax;
       double pset;
+	  double imax;
 	  
       int regca1_lvplsw;
       double regca1_tg;
