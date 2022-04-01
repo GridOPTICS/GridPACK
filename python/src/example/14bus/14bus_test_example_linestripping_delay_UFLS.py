@@ -36,6 +36,15 @@ def xml2dict(input_xmlfile):
 inputfile = "input_14bus_step005_v33.xml"
 tielinefile = "14bus_branchdata_tieline.csv"
 
+
+'''
+!!!!!!!!!!!!!!
+For the case -1, set ipfcase = 0, and bloadshedding = False
+For the case -2, set ipfcase = 4, and bloadshedding = False
+For the case -3, set ipfcase = 4, and bloadshedding = True
+!!!!!!!!!!!!!!
+'''
+
 '''
 For the ipfcase variable, we define different power flow raw files 
 with different line ratings, for tripping different lines experiments
@@ -46,7 +55,7 @@ choose 3, trip 3 tie-lines, 5-6, 4-7 and 4-9
 choose 4, trip 4 tie-lines, 5-6, 4-9, 10-11, and 13-14
 '''
 
-ipfcase = 0
+ipfcase = 4
 
 '''
 # this variable defines the dyr file index in the xml input file, 
@@ -54,8 +63,12 @@ you may add more dyr files for your own testing
 '''
 idyrcase =0  
 
-# whether implement manual load shedding
-bloadshedding = False
+'''
+# whether implement manual load shedding to mimic the energy storage system 
+# increase output power
+'''
+bloadshedding = True #False
+
 
 # under frequency load shedding parameters
 bUFLS = True
@@ -67,6 +80,7 @@ loadshedingtimersteps = 40 # load shedding delay time steps
 
 # line tripping relay setting
 blinetriprelay = True #False
+linetriptimersteps = 35
 
 input_xml_dict = xml2dict(inputfile)
 
@@ -137,6 +151,7 @@ lineflow_csvhead = []
 lineflow_csvhead.append('time')
 
 nlinestatus = [1 for i in range(len(linedf))]
+linetriptimer = [-1 for i in range (len(linedf))]
 for iline in range(len(linedf)):
     singlelinepara = []
     brfrombus  =  linedf['From Bus  Number'][iline]# from bus number
@@ -260,19 +275,25 @@ loadshedact = gridpack.hadrec.Action()
 loadshedact.actiontype = 3;
 loadshedact.bus_number = 11;
 loadshedact.componentID = "1";
-loadshedact.percentage = -13.33;  
+loadshedact.percentage = -65.0/3.0/4;  
 
 loadshedact2 = gridpack.hadrec.Action()
 loadshedact2.actiontype = 3;
-loadshedact2.bus_number = 13;
+loadshedact2.bus_number = 12;
 loadshedact2.componentID = "1";
-loadshedact2.percentage = -13.33; 
+loadshedact2.percentage = -65.0/3.0/4; 
 
 loadshedact3 = gridpack.hadrec.Action()
 loadshedact3.actiontype = 3;
-loadshedact3.bus_number = 14;
+loadshedact3.bus_number = 13;
 loadshedact3.componentID = "1";
-loadshedact3.percentage = -13.33; 
+loadshedact3.percentage = -65.0/3.0/4; 
+
+loadshedact4 = gridpack.hadrec.Action()
+loadshedact4.actiontype = 3;
+loadshedact4.bus_number = 9;
+loadshedact4.componentID = "1";
+loadshedact4.percentage = -10.0/4; 
 
 # get the observation name list 
 (obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs, ob_freqBusIDs) = hadapp.getObservationLists_withBusFreq()
@@ -346,17 +367,27 @@ while (not hadapp.isDynSimuDone()):
         hadapp.applyAction(gentripact)
         
     # apply load shedding at t = 25.0 seconds
-    if (bloadshedding and( isteps == 700 )):
+    if (bloadshedding and( isteps == 205 )):
+        hadapp.applyAction(loadshedact)
+        hadapp.applyAction(loadshedact2)
+        hadapp.applyAction(loadshedact3)
+        hadapp.applyAction(loadshedact4)
+      
+    if (bloadshedding and( isteps == 210 )):
         hadapp.applyAction(loadshedact)
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
         
-    if (bloadshedding and( isteps == 1200 )):
+    if (bloadshedding and( isteps == 215 )):
         hadapp.applyAction(loadshedact)
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
         
-        
+    if (bloadshedding and( isteps == 220 )):
+        hadapp.applyAction(loadshedact)
+        hadapp.applyAction(loadshedact2)
+        hadapp.applyAction(loadshedact3)
+
     # execute one simulation time step	
     hadapp.executeDynSimuOneStep()       
 
@@ -447,21 +478,26 @@ while (not hadapp.isDynSimuDone()):
             # lineS is with P.U. While Rating is actual value
             if ( blinetriprelay and lineS*100.0 > lineRating and nlinestatus[iline]==1 ): 
                 
-                #define a line tripping action here and apply it in the simulation
-                linetripact = gridpack.hadrec.Action()
-                linetripact.actiontype = 1;
-                linetripact.brch_from_bus_number = brfrombus;
-                linetripact.brch_to_bus_number = brtobus;
-                linetripact.componentID = cktid;
+                if linetriptimer[iline] == linetriptimersteps:
+                    #define a line tripping action here and apply it in the simulation
+                    linetripact = gridpack.hadrec.Action()
+                    linetripact.actiontype = 1;
+                    linetripact.brch_from_bus_number = brfrombus;
+                    linetripact.brch_to_bus_number = brtobus;
+                    linetripact.componentID = cktid;
                 
-                hadapp.applyAction(linetripact)
+                    hadapp.applyAction(linetripact)
                 
-                # set corresponding line status in the line status list to be 0, 
-                # if the line is tripped
-                nlinestatus[iline] = 0 
+                    # set corresponding line status in the line status list to be 0, 
+                    # if the line is tripped
+                    nlinestatus[iline] = 0 
                 
-                print ('------Warning: Time: %5.3f seconds, Branch from bus %d to bus %d with CKT %s has a flow %7.3f MVA, larger than the rating A %7.3f, line tripped!'%
+                    print ('------Warning: Time: %5.3f seconds, Branch from bus %d to bus %d with CKT %s has a flow %7.3f MVA, larger than the rating A %7.3f, line tripped!'%
                        (isteps*simu_time_step, brfrombus, brtobus, cktid, lineS*100.0, lineRating))
+                else:
+                    linetriptimer[iline] += 1
+            else:
+                linetriptimer[iline] = -1
             
             # if the line is tripped, line flow is zero                
             if nlinestatus[iline] == 0: 
