@@ -372,21 +372,78 @@ while (not hadapp.isDynSimuDone()):
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
         hadapp.applyAction(loadshedact4)
-      
+        
+        # the remaining load should be reduced
+        # get the index of the load to be shed in the loadremainingvaluelist 
+        idxtmp = loadshedingbuslist.index(loadshedact.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact2.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact2.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact3.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact3.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact4.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact4.percentage
+        
+        
     if (bloadshedding and( isteps == 210 )):
         hadapp.applyAction(loadshedact)
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
+        
+        # the remaining load should be reduced
+        # get the index of the load to be shed in the loadremainingvaluelist 
+        idxtmp = loadshedingbuslist.index(loadshedact.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact2.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact2.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact3.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact3.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact4.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact4.percentage
         
     if (bloadshedding and( isteps == 215 )):
         hadapp.applyAction(loadshedact)
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
         
+        # the remaining load should be reduced
+        # get the index of the load to be shed in the loadremainingvaluelist 
+        idxtmp = loadshedingbuslist.index(loadshedact.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact2.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact2.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact3.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact3.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact4.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact4.percentage
+        
     if (bloadshedding and( isteps == 220 )):
         hadapp.applyAction(loadshedact)
         hadapp.applyAction(loadshedact2)
         hadapp.applyAction(loadshedact3)
+        
+        # the remaining load should be reduced
+        # get the index of the load to be shed in the loadremainingvaluelist 
+        idxtmp = loadshedingbuslist.index(loadshedact.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact2.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact2.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact3.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact3.percentage
+        
+        idxtmp = loadshedingbuslist.index(loadshedact4.bus_number)
+        loadremainingvaluelist[idxtmp] += loadshedact4.percentage
 
     # execute one simulation time step	
     hadapp.executeDynSimuOneStep()       
