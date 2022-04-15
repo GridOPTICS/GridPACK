@@ -61,7 +61,8 @@ if (APR_DIR)
 endif()
 
 # check to see if rt library exists. If so, add -lrt to GA_EXTRA_LIBS
-#find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
+if (TRUE)
+find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
 if (LIBRT)
   if (GA_EXTRA_LIBS)
     set (GA_EXTRA_LIBS "${GA_EXTRA_LIBS} ${LIBRT}")
@@ -70,12 +71,13 @@ if (LIBRT)
   endif()
 endif()
 
-#find_library(LIBDL dl PATHS /lib /usr/lib /usr/local/lib)
+find_library(LIBDL dl PATHS /lib /usr/lib /usr/local/lib)
 message(STATUS "LIBDL: ${LIBDL}")
 if (GA_EXTRA_LIBS)
   set(GA_EXTRA_LIBS "${GA_EXTRA_LIBS} ${LIBDL}")
 else()
   set(GA_EXTRA_LIBS ${LIBDL})
+endif()
 endif()
 
 # add HELICS directory
