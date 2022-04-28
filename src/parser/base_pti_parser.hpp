@@ -385,7 +385,6 @@ class BasePTIParser : public BaseParser<_network>
         p_input_stream.openStringVector(fileVec);
         if (!p_input_stream.isOpen()) {
           p_timer->stop(t_ds);
-          std::cout<<"Failed to open generator parameter file "<<fileVec<<std::endl;
           return;
         }
         find_ds_par();
@@ -962,7 +961,6 @@ class BasePTIParser : public BaseParser<_network>
         p_input_stream.openFile(fileName);
         if (!p_input_stream.isOpen()) {
           // p_timer->stop(t_ds);
-          std::cout<<"Failed to open generator parameter file "<<fileVec<<std::endl;
           return;
         }
         find_ds_vector(&gen_data, &bus_relay_data,
