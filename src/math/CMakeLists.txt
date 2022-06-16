@@ -91,7 +91,7 @@ if (PETSC_FOUND)
     petsc/petsc_dae_solver.cpp
     )  
 
-if (TRUE)
+if (NOT USE_OLD_PETSC)
   set(target_libraries PkgConfig::PETSC ${target_libraries})
 else()
   set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
