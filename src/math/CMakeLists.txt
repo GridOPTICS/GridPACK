@@ -91,7 +91,11 @@ if (PETSC_FOUND)
     petsc/petsc_dae_solver.cpp
     )  
 
+if (TRUE)
+  set(target_libraries PkgConfig::PETSC ${target_libraries})
+else()
   set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
+endif()
 
   add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml"
@@ -138,12 +142,33 @@ add_library(gridpack_math
 gridpack_set_library_version(gridpack_math)
 add_dependencies(gridpack_math external_build)
 
+if (NOT USE_OLD_PETSC)
+target_link_libraries(gridpack_math 
+  PUBLIC
+  gridpack_configuration
+  PUBLIC
+  gridpack_timer
+  PUBLIC
+  gridpack_parallel
+  PUBLIC
+  PkgConfig::PETSC
+  )
+
+if (NOT BUILD_SHARED_LIBS)
+  target_link_libraries(gridpack_math 
+    PUBLIC
+    ${PETSC_STATIC_LIBRARIES}
+  )
+  target_link_options(gridpack_math PUBLIC ${PETSC_STATIC_LDFLAGS})
+endif()
+else()
 target_link_libraries(gridpack_math 
   gridpack_configuration
   gridpack_timer
   gridpack_parallel
   ${PETSC_LIBRARIES}
   )
+endif()
 
 # -------------------------------------------------------------
 # a small test (not a unit test)

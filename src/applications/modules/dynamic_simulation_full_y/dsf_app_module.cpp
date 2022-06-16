@@ -19,6 +19,7 @@
 
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/PSSE_seq_parser.hpp"
 //#include "gridpack/mapper/full_map.hpp"
 //#include "gridpack/mapper/bus_vector_map.hpp"
 //#include "gridpack/math/math.hpp"
@@ -273,12 +274,12 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
 /**
  * Read sequence data from a file.
  */
-void gridpack::dynamic_simulation::readSequenceData()
+void gridpack::dynamic_simulation::DSFullApp::readSequenceData()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-  std::string filename = cursor->get("sequenceDataFile");
-  gridpack::parser::PSSE_seq_data<DSFullNetwork> parser(p_network);
+  std::string filename = cursor->get("sequenceDataFile","");
+  gridpack::parser::PSSE_seq_parser<DSFullNetwork> parser(p_network);
   parser.parse(filename);
 }
 

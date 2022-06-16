@@ -40,6 +40,7 @@ include(GridPACK)
 
 # add user configuration options
 option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
+option (USE_OLD_PETSC "Use older versions of PETSc" OFF)
 if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
@@ -61,6 +62,7 @@ if (APR_DIR)
 endif()
 
 # check to see if rt library exists. If so, add -lrt to GA_EXTRA_LIBS
+if (TRUE)
 find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
 if (LIBRT)
   if (GA_EXTRA_LIBS)
@@ -68,6 +70,15 @@ if (LIBRT)
   else()
     set (GA_EXTRA_LIBS ${LIBRT})
   endif()
+endif()
+
+find_library(LIBDL dl PATHS /lib /usr/lib /usr/local/lib)
+message(STATUS "LIBDL: ${LIBDL}")
+if (GA_EXTRA_LIBS)
+  set(GA_EXTRA_LIBS "${GA_EXTRA_LIBS} ${LIBDL}")
+else()
+  set(GA_EXTRA_LIBS ${LIBDL})
+endif()
 endif()
 
 # add HELICS directory
@@ -287,9 +298,39 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
+if (NOT USE_OLD_PETSC)
+include(FindPkgConfig)
+# Include petsc package path in pkg_config_path                                                                      
+set(ENV{PKG_CONFIG_PATH}
+${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig                         
+)
+pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
+else()
 find_package (PETSc REQUIRED)
+endif()
 message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
+if (NOT USE_OLD_PETSC)
+if(EXISTS "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+  set(petscconf "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+elseif(EXISTS "${PETSC_DIR}/include/petscconf.h")
+  set(petscconf "${PETSC_DIR}/include/petscconf.h")
+ else()
+  message(FATAL_ERROR "Could not find PETSc configuration header file
+petscconf.h")
+endif()
+
+# checks
+# define PETSc variables                                                                                           
+include(CheckSymbolExists)
+check_symbol_exists(PETSC_HAVE_PARMETIS ${petscconf} PETSC_HAVE_PARMETIS)
+check_symbol_exists(PETSC_USE_REAL_DOUBLE ${petscconf} PETSC_USE_REAL_DOUBLE)
+check_symbol_exists(PETSC_USE_COMPLEX ${petscconf} PETSC_USE_COMPLEX)
+check_symbol_exists(PETSC_LANGUAGE_CXX ${petscconf} PETSC_CLANGUAGE_Cxx)
+check_symbol_exists(PETSC_HAVE_SUPERLU_DIST ${petscconf}
+PETSC_HAVE_SUPERLU_DIST)
+check_symbol_exists(PETSC_HAVE_MUMPS ${petscconf} PETSC_HAVE_MUMPS)
+else()
 if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
 elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
@@ -307,6 +348,7 @@ message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
 
 if (NOT PETSC_HAVE_MPI)
   message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
+endif()
 endif()
 
 # PETSc can be compiled for double precsion (--with-precision=double)
