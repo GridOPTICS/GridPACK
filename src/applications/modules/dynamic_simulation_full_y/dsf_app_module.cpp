@@ -326,6 +326,27 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
  */
 void gridpack::dynamic_simulation::DSFullApp::reload()
 {
+  orgYbus.reset();
+  ybusyl.reset();
+  ybuspg.reset();
+  ybus_jxd.reset();
+  ybus.reset();
+  ybus_fy.reset();
+  ybus_posfy.reset();
+
+  ybusMap_sptr.reset();
+  ngenMap_sptr.reset();
+  nbusMap_sptr.reset();
+
+  volt.reset();
+  INorton_full.reset();
+  INorton_full_chk.reset();
+  volt_full.reset();
+
+  solver_sptr.reset();
+  solver_fy_sptr.reset();
+  solver_posfy_sptr.reset();
+
   p_factory->load();
   p_factory->setYBus();
 }
