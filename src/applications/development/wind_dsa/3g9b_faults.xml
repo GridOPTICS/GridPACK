@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FaultList>
+  <Dynamic_simulation>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 2.00</beginFault>
+        <endFault>   2.05</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+      <faultEvent>
+        <beginFault> 2.00</beginFault>
+        <endFault>   2.05</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+      <faultEvent>
+        <beginFault> 2.00</beginFault>
+        <endFault>   2.05</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+      <faultEvent>
+        <beginFault> 2.00</beginFault>
+        <endFault>   2.05</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+    </faultEvents>
+  </Dynamic_simulation>
+</FaultList>
