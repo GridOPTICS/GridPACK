@@ -938,6 +938,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_generators.clear();
   p_loadrelays.clear();
   p_loadmodels.clear();
+  p_ngen_nodynmodel = 0;
 
   std::string snewbustype; //renke add
 
@@ -2465,11 +2466,12 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
     bool ok = true;
   //  printf("Writing for %d generators\n",p_ngen);
     for (i=0; i<p_ngen; i++) {
-      p_generators[i]->serialWrite(buf,128,signal);
-      int slen = strlen(buf);
-      if (len+slen < bufsize) sprintf(ptr,"%s",buf);
-      len += slen;
-      ptr += slen;
+      if (p_generators[i]->serialWrite(buf,128,signal)) {
+        int slen = strlen(buf);
+        if (len+slen < bufsize) sprintf(ptr,"%s",buf);
+        len += slen;
+        ptr += slen;
+      }
     }
     if (len > 0) return true;
   }
