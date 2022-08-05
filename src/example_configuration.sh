@@ -312,41 +312,48 @@ elif [ $host == "constance-hadrec" ]; then
 
 elif [ $host == "tlaloc" ]; then
 
-    # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
-    # Boost 1.55, GA 5.6.2, and PETSc 3.6.4 built by hand.  Available
-    # Boost, GA, and PETSc packages were either too old or installed
-    # in such a way as to be unrecognizable.
+    # Ubuntu 20 with as many system packages as possible: GNU
+    # compilers 9.4.0, OpenMPI 4.0.3, Boost 1.71.0, PETSc 3.12,
+    # ParMETIS 4.0.3.  
+    
+    CC=gcc
+    CXX=g++
+    CFLAGS=-pthread
+    CXXFLAGS=-pthread
+    export CC CXX CFLAGS CXXFLAGS
 
-    prefix="/file0/perksoft"
-    if [ "$shared"x = "ON"x ]; then
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel6-complex-c-shared"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
-        parch="rhel6-complex-c-shared"
-    else
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel6-complex-c-static"
-        parch="rhel6-real-c-static"
-        #parch="rhel6-real-c-static"
-        #pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
-        #parch="rhel6-real-c-static"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.11.3"
-        parch="rhel6-complex-c-static"
-    fi
+    # Custom built 3.16, complex:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-3.16.6" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
 
-    cmake3 $options \
-          -D GA_DIR:PATH="${prefix}/ga-c++" \
-          -D BOOST_ROOT:PATH="${prefix}" \
-          -D USE_PROGRESS_RANKS:BOOL=OFF \
-          -D PETSC_DIR:PATH="$pdir" \
-          -D PETSC_ARCH:STRING="$parch" \
+    # Custom built 3.16, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+
+    # System PETSc package:
+    #      -D PETSC_DIR:STRING="/usr/lib/petsc" \
+    #      -D PETSC_ARCH:STRING="" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+    
+    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
+    cmake -Wdev --debug-trycompile \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
+          -D USE_OLD_PETSC:BOOL=OFF \
+          -D BOOST_ROOT:PATH="/usr" \
+          -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
+          -D PARMETIS_DIR:PATH="/usr" \
           -D MPI_CXX_COMPILER:STRING="mpicxx" \
           -D MPI_C_COMPILER:STRING="mpicc" \
           -D MPIEXEC:STRING="mpiexec" \
-          -D USE_GLPK:BOOL=OFF \
           -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
-          -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
+          -D USE_GLPK:BOOL=OFF \
+          -D BUILD_SHARED_LIBS:BOOL=ON \
+          -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
+          -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
           $common_flags ..
 
 elif [ $host == "gridpackvm" ]; then
