@@ -623,7 +623,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   pf_app.readNetwork(pf_network, config);
   pf_app.initialize();
   /* TODO: Is this needed? */
-#if 0
+#if 1
   if (useNonLinear) {
     pf_app.nl_solve();
   } else {
@@ -878,8 +878,8 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
       printf("PF_P size: %d PF_Q size: %d\n",pf_p.size(),pf_q.size());
     // only store results from process 0 on task communicator
     if (task_comm.rank()==0 && p_watch_lines) {
-      pf_results.addVector(2*task_id,pf_p);
-      pf_results.addVector(2*task_id+1,pf_q);
+      pf_results.addVector(2*task_id+2,pf_p);
+      pf_results.addVector(2*task_id+3,pf_q);
     }
     printf("p[%d] (wind) Got to 7\n",world.rank());
 
@@ -888,12 +888,14 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     transferPFtoDS(pf_network, p_network);
     printf("p[%d] (wind) Got to 8\n",world.rank());
     ds_app.reload();
+    printf("p[%d] (wind) Got to 9\n",world.rank());
 
 
     timer->start(t_file);
     sprintf(sbuf,"Event_scn_%d_flt_%d_%d_%d.out",ncnfg,nfault,faults[nfault].from_idx,
         faults[nfault].to_idx);
     ds_app.open(sbuf);
+    printf("p[%d] (wind) Got to 10\n",world.rank());
     timer->stop(t_file);
     // Save off time series to watch file (even if using GOSS)
     sprintf(sbuf,"Gen_watch_scn_%d_flt_%d.csv",ncnfg,nfault);
@@ -901,9 +903,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 //    ds_app.solvePreInitialize(faults[nfault]);
     timer->start(t_solve);
 
-    printf("p[%d] (wind) Got to 9\n",world.rank());
+    printf("p[%d] (wind) Got to 11\n",world.rank());
     ds_app.solve(faults[nfault]);
-    printf("p[%d] (wind) Got to 10\n",world.rank());
+    printf("p[%d] (wind) Got to 12\n",world.rank());
 
     /*
     while(!ds_app.isDynSimuDone()) {
@@ -932,14 +934,14 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     data_store.writeData(topics[task_id+1]);
 #endif
 #endif
-    printf("p[%d] (wind) Got to 11\n",world.rank());
+    printf("p[%d] (wind) Got to 13\n",world.rank());
     ds_app.close();
 #ifndef USE_GOSS
     sprintf(sbuf,"config_%d_fault_%d",ncnfg+1,nfault+1);
     printf("topic: (%s)\n",sbuf);
 #endif
     timer->stop(t_file);
-    printf("p[%d] (wind) Got to 12\n",world.rank());
+    printf("p[%d] (wind) Got to 14\n",world.rank());
   }
   taskmgr.printStats();
 
