@@ -593,14 +593,14 @@ class PSSE_seq_parser : public BaseParser<_network>
 
         if (p_gen_data[i].use_zero) {
           if (data->getValue(GENERATOR_SEQ_RZERO,&rval,g_id)) {
-            data->setValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
+            data->setValue(GENERATOR_SEQ_RZERO,p_gen_data[i].rzero,g_id);
           } else {
-            data->addValue(GENERATOR_SEQ_RZERO,p_gen_data[i].zrneg,g_id);
+            data->addValue(GENERATOR_SEQ_RZERO,p_gen_data[i].rzero,g_id);
           }
           if (data->getValue(GENERATOR_SEQ_XZERO,&rval,g_id)) {
-            data->setValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
+            data->setValue(GENERATOR_SEQ_XZERO,p_gen_data[i].xzero,g_id);
           } else {
-            data->addValue(GENERATOR_SEQ_XZERO,p_gen_data[i].zxneg,g_id);
+            data->addValue(GENERATOR_SEQ_XZERO,p_gen_data[i].xzero,g_id);
           }
         }
       }
