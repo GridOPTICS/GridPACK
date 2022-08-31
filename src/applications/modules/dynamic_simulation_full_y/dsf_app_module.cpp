@@ -1445,12 +1445,12 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
   }
   if (p_save_time_series) {
     p_time_series.clear();
-    printf("p_gen_buses: %d\n",(int)p_gen_buses.size());
     for (i=0; i<p_gen_buses.size(); i++) {
       std::vector<double> vec0;
       p_time_series.push_back(vec0);
-      std::vector<double> vec1;
-      p_time_series.push_back(vec1);
+      p_time_series.push_back(vec0);
+      p_time_series.push_back(vec0);
+      p_time_series.push_back(vec0);
     }
   }
 }

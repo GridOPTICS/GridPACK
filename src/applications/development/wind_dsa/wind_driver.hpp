@@ -25,6 +25,62 @@
 namespace gridpack {
 namespace contingency_analysis {
 
+class QuantileAnalysis
+{
+  public:
+  /**
+   * Basic constructor
+   * @param comm communicator used for analysis
+   * @param nwatch number of generators being watched
+   * @param nconf number of scenarios
+   * @param nsteps number of timesteps being stored
+   */
+  QuantileAnalysis(gridpack::parallel::Communicator comm, int nwatch, int nconf, int nsteps);
+
+  /**
+   * Basic destructor
+   */
+  ~QuantileAnalysis();
+
+  /**
+   * Save data for a single time step for a single generator
+   * @param cfg_idx scenario index for time series
+   * @param gen_idx generator index for time series
+   * @param vals vector of time series values for a generator
+   */
+  void saveData(int cfg_idx, int gen_idx, std::vector<double> &vals);
+
+  /**
+   * Save variable names
+   * @param name vector of variable names
+   */
+  void saveVarNames(std::vector<std::string> &names);
+
+  /**
+   * Stream data in storage array
+   */
+  void writeData();
+
+  /**
+   * Calculate quantiles and write them to a file
+   * @param quantiles values describing quantiles to be calculated.
+   *                  These values should be between 0 and 1.
+   * @param dt magnitude time step (in seconds)
+   */
+  void exportQuantiles(std::vector<double> quantiles, double dt);
+
+  private:
+
+    gridpack::parallel::Communicator p_comm;
+    int p_nwatch;
+    std::vector<std::string> p_var_names;
+    int p_nconf;
+    int p_nsteps;
+    int p_GA;
+};
+
+
+
 // Data structure for storing time series data and streaming it out all at
 // once at the end of the calculation
 class DataStore
