@@ -15,6 +15,7 @@
  */
 // -------------------------------------------------------------
 
+#include <algorithm>
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
 #include "wind_driver.hpp"
@@ -22,6 +23,273 @@
 
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
+
+/**
+ * Basic constructor
+ * @param comm communicator used for analysis
+ * @param nwatch number of generator variables being watched
+ * @param nconf number of scenarios
+ * @param nsteps number of timesteps being stored
+ */
+gridpack::contingency_analysis::QuantileAnalysis::QuantileAnalysis(
+    gridpack::parallel::Communicator comm, int nwatch, int nconf, int nsteps)
+{
+  int dims[3];
+  int three = 3;
+  int chunk[3];
+  p_nwatch = nwatch;
+  p_nconf = nconf;
+  p_nsteps = nsteps;
+  dims[0] = nconf;
+  dims[1] = nwatch;
+  dims[2] = nsteps;
+  // Keep all steps for a time series on one processor
+  chunk[0] = -1;
+  chunk[1] = -1;
+  chunk[2] = nsteps;
+  // Create GA
+  p_GA = GA_Create_handle();
+  int grp = comm.getGroup();
+  GA_Set_data(p_GA,three,dims,C_DBL);
+  GA_Set_pgroup(p_GA,grp);
+  GA_Set_chunk(p_GA,chunk);
+  GA_Allocate(p_GA);
+  // Initialize all values to zero
+  GA_Zero(p_GA);
+
+  p_comm = comm;
+}
+
+/**
+ * Basic destructor
+ */
+gridpack::contingency_analysis::QuantileAnalysis::~QuantileAnalysis()
+{
+  GA_Destroy(p_GA);
+}
+
+/**
+ * Save data for a single time step for a single generator
+ * @param cfg_idx scenario index for time series
+ * @param gen_idx generator index for time series
+ * @param vals vector of time series values for a generator
+ */
+void gridpack::contingency_analysis::QuantileAnalysis::saveData(int cfg_idx,
+    int gen_idx, std::vector<double> &vals)
+{
+  int lo[3], hi[3], ld[2];
+  lo[0] = cfg_idx;
+  lo[1] = gen_idx;
+  lo[2] = 0;
+  hi[0] = cfg_idx;
+  hi[1] = gen_idx;
+  hi[2] = p_nsteps-1;
+  ld[0] = 1;
+  ld[1] = p_nsteps;
+  printf("p[%d] size: %d p_nsteps: %d\n",p_comm.rank(),vals.size(),p_nsteps);
+  printf("p[%d] VALS:",p_comm.rank());
+  for (int i=0; i<vals.size(); i++) {
+    printf(" %f",vals[i]);
+  }
+  printf("\n");
+  if (vals.size() > 0) {
+    NGA_Put(p_GA,lo,hi,&(vals[0]),ld);
+  }
+
+}
+
+/**
+ * Save variable names
+ * @param name vector of variable names
+ */
+void gridpack::contingency_analysis::QuantileAnalysis::saveVarNames(
+    std::vector<std::string> &names)
+{
+  p_var_names = names;
+  if (names.size() != p_nwatch) {
+    printf("Number of variable names does not match number of variables\n");
+  }
+}
+
+/**
+ * Stream data in storage array
+ */
+void gridpack::contingency_analysis::QuantileAnalysis::writeData()
+{
+  GA_Sync();
+}
+
+/**
+ * Calculate quantiles and write them to a file
+ * @param quantiles values describing quantiles to be calculated.
+ *                  These values should be between 0 and 1.
+ * @param dt magnitude time step (in seconds)
+ */
+void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
+    std::vector<double> quantiles, double dt)
+{
+  int i, j, k, nvals;
+  nvals = quantiles.size();
+  // Check quantile values to make sure they lie between 0.0 and 1.0
+  printf("p[%d] (exportQuantiles) Got to 1 nvals: %d\n",p_comm.rank(),
+      quantiles.size());
+  for (i=0; i<nvals; i++) {
+    if (quantiles[i]<0.0 || quantiles[i] > 1.0) {
+      //TODO: out of range error
+    }
+  }
+  GA_Print(p_GA);
+  // Create global array of size n_vals*p_nwatch*p_nsteps to hold nvals
+  // quantile values for all watched generators over all timesteps
+  int g_quant = GA_Create_handle();
+  int dims[3];
+  dims[0] = nvals;
+  dims[1] = p_nwatch;
+  dims[2] = p_nsteps;
+  NGA_Set_data(g_quant,3,dims,C_DBL);
+  GA_Allocate(g_quant);
+  // Sort quantile values so that they run from lowest to highest
+  std::sort(quantiles.begin(),quantiles.end());
+  std::vector<int> partition(nvals);
+  std::vector<double> weight(nvals);
+
+  printf("p[%d] (exportQuantiles) Got to 2\n",p_comm.rank());
+  // find indices that bracket quantiles
+  for (i=0; i<nvals; i++) {
+    partition[i] = static_cast<int>(quantiles[i]*static_cast<double>(p_nconf));
+    printf("p[%d] i: %d partition: %d quantile: %f nconf: %d\n",p_comm.rank(),
+       i,partition[i],quantiles[i],p_nconf);
+  }
+  if (quantiles[0] == 0.0) partition[0] = 0;
+  if (quantiles[nvals-1] == 1.0) partition[nvals-1] = p_nconf-1;
+  // calculate weights for each partition
+  for (i=0; i<nvals; i++) {
+    if (i == 0 && quantiles[0] == 0.0) {
+      weight[0] = 1.0;
+    } else if (i == nvals-1 && quantiles[i] == 1.0) {
+      weight[nvals-1] = 1.0;
+    } else {
+      double ratio = static_cast<double>(partition[i])/static_cast<double>(p_nconf);
+      printf("p[%d] i: %d ratio: %f quantiles: %f\n",p_comm.rank(),i,ratio,quantiles[i]);
+      weight[i] = 1.0 - (ratio - quantiles[i]);
+    }
+  }
+  printf("p[%d] quantiles: %f %f %f %f %f\n",p_comm.rank(),quantiles[0],quantiles[1],
+      quantiles[2],quantiles[3],quantiles[4]);
+  printf("p[%d] weight: %f %f %f %f %f\n",p_comm.rank(),weight[0],weight[1],
+      weight[2],weight[3],weight[4]);
+  printf("p[%d] partition: %d %d %d %d %d size: %d\n",p_comm.rank(),partition[0],
+      partition[1], partition[2],partition[3],partition[4],partition.size());
+  int lo[3], hi[3], ld[2];
+  // nconf, nwatch, nsteps
+  std::vector<double> time_slice(p_nconf*p_nwatch);
+  lo[0] = 0;
+  hi[0] = p_nconf-1;
+  lo[1] = 0;
+  hi[1] = p_nwatch-1;
+  ld[0] = p_nwatch;
+  ld[1] = 1;
+  // Set up task manager to iterate over steps;
+  gridpack::parallel::TaskManager counter(p_comm);
+  counter.set(p_nsteps);
+  int step;
+  int nquar = quantiles.size();
+  int rlo[3], rhi[3];
+  rlo[0] = 0;
+  rlo[1] = 0;
+  rhi[0] = nvals-1;
+  rhi[1] = p_nwatch-1;
+  printf("p[%d] (exportQuantiles) Got to 3\n",p_comm.rank());
+  // loop over steps
+  std::vector<double> results(p_nwatch*nvals);
+  std::vector<double> qvalues(nvals);
+  while (counter.nextTask(&step)){
+    lo[2] = step;
+    hi[2] = step;
+    // Get all data for this step
+    NGA_Get(p_GA,lo,hi,&time_slice[0],ld);
+    printf("p[%d] time_slice:",p_comm.rank());
+    for (i=0; i<nvals*p_nwatch; i++) {
+      printf(" %f",time_slice[i]);
+    }
+    printf("\n");
+    // loop over watched variables
+    for (i=0; i<p_nwatch; i++) {
+      // get all configuration values for each variable
+      std::vector<double> conf(p_nconf);
+      for (j=0; j<p_nconf; j++) {
+        conf[j] = time_slice[j*p_nwatch+i];
+      }
+    printf("p[%d] size: %d conf_slice:",p_comm.rank(),conf.size());
+    for (j=0; j<p_nconf; j++) {
+      printf(" %f",conf[j]);
+    }
+    printf("\n");
+      // Sort values from lowest to highest
+      std::sort(conf.begin(),conf.end());
+      // Find quantile values 
+    printf("p[%d] size: %d partition:",p_comm.rank(),partition.size());
+    for (j=0; j<partition.size(); j++) {
+      printf(" %d",partition[j]);
+    }
+    printf("\n");
+    printf("p[%d] quantile_slice (step %d variable: %d):",p_comm.rank(),step,i);
+      for (k=0; k<nvals; k++) {
+        int kdx = partition[k];
+        if (k == 0 && quantiles[k] == 0.0) {
+          qvalues[0] = conf[kdx];
+        } else if (k == nvals-1 && quantiles[k] == 1.0) {
+          qvalues[k] = conf[kdx];
+        } else {
+          if (partition[k] < p_nconf-1) {
+            qvalues[k] = weight[k]*conf[kdx]+(1.0-weight[k])*conf[kdx+1];
+          } else {
+            //TODO: report error
+          }
+        }
+      printf("k: %d kdx: %d weight: %f qu: %f",k,kdx,weight[k],qvalues[k]);
+      }
+    printf("\n");
+      // copy quantile values into results buffer
+      for (k=0; k<nvals; k++) {
+        results[k*p_nwatch+i] = qvalues[k];
+      }
+    }
+    rlo[2] = step;
+    rhi[2] = step;
+    // copy results values into global array containing results for all steps
+    NGA_Put(g_quant,rlo,rhi,&results[0],ld);
+  }
+  printf("p[%d] (exportQuantiles) Got to 4\n",p_comm.rank());
+  GA_Sync();
+  // Write out results to files. Currently writing out each variable to a
+  // separate file
+  if (GA_Pgroup_nodeid(p_comm.getGroup()) == 0) {
+    // loop over watched variables
+    std::vector<double> wbuf(nvals*p_nsteps);
+    lo[0] = 0;
+    lo[2] = 0;
+    hi[0] = nvals-1;
+    hi[2] = p_nsteps-1;
+    ld[0] = 1;
+    ld[1] = p_nsteps;
+    for (i=0; i<p_nwatch; i++) {
+      lo[1] = i;
+      hi[1] = i;
+      NGA_Get(g_quant,lo,hi,&wbuf[0],ld);
+      FILE *fd = fopen(p_var_names[i].c_str(),"w");
+      for (j=0; j<p_nsteps; j++) {
+        fprintf(fd,"%16.4f",j*dt);
+        for (k=0; k<nvals; k++) {
+          fprintf(fd," %16.8f",wbuf[k*p_nsteps+j]);
+        }
+        fprintf(fd,"\n");
+      }
+      fclose(fd);
+    }
+  }
+  printf("p[%d] (exportQuantiles) Got to 5\n",p_comm.rank());
+}
 
 /**
  * Basic constructor
@@ -658,7 +926,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   ds_app.readGenerators();
   ds_app.initialize();
   timer->stop(t_init);
-  ds_app.saveTimeSeries(false);
+  ds_app.saveTimeSeries(true);
   /* turn and generator watch and set file name */
   ds_app.setGeneratorWatch("watch.txt");
   std::vector<int> bus_ids;
@@ -676,7 +944,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   if (total_time == 0.0 || time_step == 0.0) {
     // Some kind of error
   } 
-  int nsteps = static_cast<int>(total_time/time_step)-1;
+  int nsteps = static_cast<int>(total_time/time_step);
   if (world.rank() == 0) {
     printf(" Number of time steps: %d\n",nsteps);
   }
@@ -684,11 +952,25 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   if (!cursor->get("faultList",&faultfile)) {
     faultfile = "faults.xml";
   }
+  // Read in quantile values
+  gridpack::utility::StringUtils util;
+  std::string quantiles_str;
+  if (!cursor->get("quantiles",&quantiles_str)) {
+    quantiles_str = "0.0 0.25 0.5 0.75 1.0";
+  }
+  std::vector<std::string> tokens;
+  tokens = util.blankTokenizer(quantiles_str);
+  int i, j;
+  std::vector<double> quantiles;
+  for (i=0; i<tokens.size(); i++) {
+    quantiles.push_back(atof(tokens[i].c_str()));
+  }
   if (!config->open(faultfile,world) && world.rank() == 0) {
     printf("\nUnable to open fault file: %s\n",faultfile.c_str());
   } else if (world.rank() == 0) {
     printf("\nFaults located in file: %s\n",faultfile.c_str());
   }
+
 
 #ifdef USE_GOSS
   // Read information to set up GOSS channel
@@ -700,16 +982,16 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   double goss_time, goss_tstep;
   cursor->get("simulationTime",&goss_time);
   cursor->get("timeStep",&goss_tstep);
+#endif
   // Find number of generators being watched
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("generatorWatch");
   gridpack::utility::Configuration::ChildCursors watch;
-  int goss_num_watch_gen;
+  int num_watch_gen;
   if (list) {
     list->children(watch);
-    goss_num_watch_gen = watch.size();
+    num_watch_gen = watch.size();
   }
-#endif
 
   // get a list of faults
   int t_flts = timer->createCategory("Read Faults");
@@ -781,15 +1063,15 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   taskmgr.set(ntasks*numConfigs);
 
   // Create distributed storage object
+  gridpack::contingency_analysis::QuantileAnalysis analysis(world,
+      2*bus_ids.size(),ntasks*numConfigs,nsteps);
 #ifdef OLD_GOSS
   gridpack::contingency_analysis::DataStore
     data_store(2*bus_ids.size(),ntasks*numConfigs,nsteps);
 #endif
-  // Get construct variable names
+  // Construct variable names
   std::vector<std::string> var_names;
   char sbuf[128];
-  gridpack::utility::StringUtils util;
-  int i, j;
   for (i=0; i<gen_ids.size(); i++) {
     std::string tag = gen_ids[i];
     util.trim(tag);
@@ -798,6 +1080,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     sprintf(sbuf, "%d_%s_SPD", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
   }
+  analysis.saveVarNames(var_names);
 #ifdef OLD_GOSS
   data_store.saveVarNames(var_names);
 #endif
@@ -853,12 +1136,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     } else {
       loadVals.clear();
     }
-    printf("p[%d] (wind) Got to 1\n",world.rank());
     pf_app.reload();
-    printf("p[%d] (wind) Got to 2\n",world.rank());
     resetData(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,
         pf_network,p_network);
-    printf("p[%d] (wind) Got to 3\n",world.rank());
     // Recalculate powerflow for new values of generators and loads
  
     if (useNonLinear) {
@@ -866,12 +1146,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     } else {
       pf_app.solve();
     }
-    printf("p[%d] (wind) Got to 4\n",world.rank());
     
     pf_app.write();
-    printf("p[%d] (wind) Got to 5\n",world.rank());
     pf_app.saveData();
-    printf("p[%d] (wind) Got to 6\n",world.rank());
 
     getWatchedBranches(pf_p, pf_q, pf_network);
     if (task_comm.rank() == 0)
@@ -881,31 +1158,30 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
       pf_results.addVector(2*task_id+2,pf_p);
       pf_results.addVector(2*task_id+3,pf_q);
     }
-    printf("p[%d] (wind) Got to 7\n",world.rank());
+    printf("(wind_driver) Got to 1\n");
 
     // transfer results from PF calculation to DS calculation
 //    setDSConfig(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,p_network);
     transferPFtoDS(pf_network, p_network);
-    printf("p[%d] (wind) Got to 8\n",world.rank());
     ds_app.reload();
-    printf("p[%d] (wind) Got to 9\n",world.rank());
+    printf("(wind_driver) Got to 2\n");
 
 
     timer->start(t_file);
     sprintf(sbuf,"Event_scn_%d_flt_%d_%d_%d.out",ncnfg,nfault,faults[nfault].from_idx,
         faults[nfault].to_idx);
     ds_app.open(sbuf);
-    printf("p[%d] (wind) Got to 10\n",world.rank());
     timer->stop(t_file);
+    printf("(wind_driver) Got to 3\n");
     // Save off time series to watch file (even if using GOSS)
     sprintf(sbuf,"Gen_watch_scn_%d_flt_%d.csv",ncnfg,nfault);
     ds_app.setGeneratorWatch(sbuf);
+    printf("(wind_driver) Got to 4\n");
 //    ds_app.solvePreInitialize(faults[nfault]);
     timer->start(t_solve);
 
-    printf("p[%d] (wind) Got to 11\n",world.rank());
     ds_app.solve(faults[nfault]);
-    printf("p[%d] (wind) Got to 12\n",world.rank());
+    printf("(wind_driver) Got to 5\n");
 
     /*
     while(!ds_app.isDynSimuDone()) {
@@ -917,8 +1193,15 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     ds_app.write("default");
     std::vector<std::vector<double> > all_series;
     all_series = ds_app.getGeneratorTimeSeries();
+    printf("(wind_driver) Got to 6\n");
     std::vector<int> gen_idx = ds_app.getTimeSeriesMap();
+    printf("(wind_driver) Got to 7\n");
     int iseries;
+    printf("p[%d] gen_idx.size: %d all_series.size: %d\n",world.rank(),
+        gen_idx.size(),all_series.size());
+    for (iseries=0; iseries<gen_idx.size(); iseries++) {
+      analysis.saveData(task_id, gen_idx[iseries],all_series[iseries]);
+    }
 #ifdef USE_GOSS
 #ifdef OLD_GOSS
     for (iseries=0; iseries<gen_idx.size(); iseries++) {
@@ -934,14 +1217,12 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     data_store.writeData(topics[task_id+1]);
 #endif
 #endif
-    printf("p[%d] (wind) Got to 13\n",world.rank());
     ds_app.close();
 #ifndef USE_GOSS
     sprintf(sbuf,"config_%d_fault_%d",ncnfg+1,nfault+1);
     printf("topic: (%s)\n",sbuf);
 #endif
     timer->stop(t_file);
-    printf("p[%d] (wind) Got to 14\n",world.rank());
   }
   taskmgr.printStats();
 
@@ -1018,6 +1299,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     delete [] lq;
   }
 
+  printf("Call exportQuantiles\n");
+  analysis.exportQuantiles(quantiles, time_step);
+  printf("Completed exportQuantiles\n");
 #ifdef USE_GOSS
 #ifdef OLD_GOSS
   data_store.writeData();
