@@ -218,6 +218,14 @@ template <class _data_struct> class Cim6blParser
       } else {
         data->setValue(LOAD_TNOM, data_struct.tnom, l_id);
       }
+	  
+	  // LOAD_DYN_PERC
+      if (!data->getValue(LOAD_DYN_PERC,&rval,l_id)) {
+        data->addValue(LOAD_DYN_PERC, data_struct.dynload_perc, l_id);
+      } else {
+        data->setValue(LOAD_DYN_PERC, data_struct.dynload_perc, l_id);
+      }
+	  
     }
 
     /**
@@ -460,6 +468,16 @@ template <class _data_struct> class Cim6blParser
           data->setValue(LOAD_TNOM, atof(split_line[26].c_str()), l_id);
         }
       }
+	  
+	  // LOAD_DYN_PERC
+      if (nstr > 27) {
+        if (!data->getValue(LOAD_DYN_PERC,&rval,l_id)) {
+          data->addValue(LOAD_DYN_PERC, atof(split_line[27].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_DYN_PERC, atof(split_line[27].c_str()), l_id);
+        }
+      }
+	  
     }
 
     /**
@@ -602,6 +620,12 @@ template <class _data_struct> class Cim6blParser
       if (nstr > 26) {
         data.tnom = atof(split_line[26].c_str());
       }
+	  
+	  // LOAD_DYN_PERC
+      if (nstr > 27) {
+        data.dynload_perc = atof(split_line[27].c_str());
+      }
+	  
     }
 };
 }  // parser

@@ -122,6 +122,31 @@
  */
 #define BUS_3WINDING "BUS_3WINDING"
 
+// Bus sequence parameters
+/**
+ * Active component of negative sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_GNEG "BUS_SEQ_GNEG"
+
+/**
+ * Reactive component of negative sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_BNEG "BUS_SEQ_BNEG"
+
+/**
+ * Active component of zero sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_GZERO "BUS_SEQ_GZERO"
+
+/**
+ * Reactive component of zero sequance shunt addmittance
+ * type: real float
+ */
+#define BUS_SEQ_BZERO "BUS_SEQ_BZERO"
+
 // Shunt data
 
 /**
@@ -1126,6 +1151,13 @@
 #define LOAD_ETRQA "LOAD_ETRQA"
 
 /**
+ * Load DYN_PERC
+ * type: float
+ * indexed
+ */
+#define LOAD_DYN_PERC "LOAD_DYN_PERC"
+
+/**
  * Load VTR1A
  * type: float
  * indexed
@@ -1173,6 +1205,13 @@
  * indexed
  */
 #define LOAD_TTR2A "LOAD_TTR2A"
+
+/**
+ * LOAD_AC_PERC, ac motor load percentage
+ * type: float
+ * indexed
+ */
+#define LOAD_AC_PERC "LOAD_AC_PERC"
 
 /**
  * Load FTR2A
@@ -2027,6 +2066,787 @@
  */
 #define GENERATOR_PSET "GENERATOR_PSET"
 
+/**
+ * Generator imax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_IMAX "GENERATOR_IMAX"
+
+
+// start generator REGCA parameters here
+/**
+ * Generator REGCA Lvplsw
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REGCA_LVPLSW "GENERATOR_REGCA_LVPLSW"
+
+/**
+ * Generator REGCA tg
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_TG "GENERATOR_REGCA_TG"
+
+
+/**
+ * Generator REGCA Rrpwr
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_RRPWR "GENERATOR_REGCA_RRPWR"
+
+/**
+ * Generator REGCA Brkpt
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_BRKPT "GENERATOR_REGCA_BRKPT"
+
+/**
+ * Generator REGCA Zerox
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_ZEROX "GENERATOR_REGCA_ZEROX"
+
+/**
+ * Generator REGCA Lvpl1
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_LVPL1 "GENERATOR_REGCA_LVPL1"
+
+/**
+ * Generator REGCA Volim
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_VOLIM "GENERATOR_REGCA_VOLIM"
+
+/**
+ * Generator REGCA Lvpnt1
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_LVPNT1 "GENERATOR_REGCA_LVPNT1"
+
+/**
+ * Generator REGCA Lvpnt0
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_LVPNT0 "GENERATOR_REGCA_LVPNT0"
+
+/**
+ * Generator REGCA lolim
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_LOLIM "GENERATOR_REGCA_LOLIM"
+
+/**
+ * Generator REGCA Tfltr
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_TFLTR "GENERATOR_REGCA_TFLTR"
+
+/**
+ * Generator REGCA Khv
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_KHV "GENERATOR_REGCA_KHV"
+
+/**
+ * Generator REGCA lqrmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_LQRMAX "GENERATOR_REGCA_LQRMAX"
+
+/**
+ * Generator REGCA lqrmin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_LQRMIN "GENERATOR_REGCA_LQRMIN"
+
+/**
+ * Generator REGCA accel
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGCA_ACCEL "GENERATOR_REGCA_ACCEL"
+
+
+#define HAS_PLANT_CONTROLLER "HAS_PLANT_CONTROLLER"
+
+#define PLANT_CONTROLLER_MODEL "PLANT_CONTROLLER_MODEL"
+
+// start generator REPCA parameters here
+
+/**
+ * Generator REPCA remote bus
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REPCA_IREG "GENERATOR_REPCA_IREG"
+
+/**
+ * Generator REPCA montiored branch FROM bus number for line compensation
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REPCA_BRCH_BUS_FROM "GENERATOR_REPCA_BRCH_BUS_FROM"
+
+/**
+ * Generator REPCA montiored branch TO bus number for line compensation
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REPCA_BRCH_BUS_TO "GENERATOR_REPCA_BRCH_BUS_TO"
+
+/**
+ * Generator REPCA montiored branch CKT for line compensation
+ * type: string
+ * indexed
+ */
+#define GENERATOR_REPCA_BRCH_CKT "GENERATOR_REPCA_BRCH_CKT"
+
+/**
+ * Generator REPCA VC flag (droop falg)
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REPCA_VC_FLAG "GENERATOR_REPCA_VC_FLAG"
+
+/**
+ * Generator REPCA Ref flag (flag for V or Q control)
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REPCA_REF_FLAG "GENERATOR_REPCA_REF_FLAG"
+
+/**
+ * Generator REPCA F flag to disable frequency control, 1: enable, 0:disable
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REPCA_F_FLAG "GENERATOR_REPCA_F_FLAG"
+
+// finished REPCA M parameters definition, starts J parameters definition
+
+/**
+ * Generator REPCA Tfltr
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_TFLTR "GENERATOR_REPCA_TFLTR"
+
+/**
+ * Generator REPCA Kp
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_KP "GENERATOR_REPCA_KP"
+
+/**
+ * Generator REPCA Ki
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_KI "GENERATOR_REPCA_KI"
+
+/**
+ * Generator REPCA Tft
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_TFT "GENERATOR_REPCA_TFT"
+
+/**
+ * Generator REPCA Tfv
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_TFV "GENERATOR_REPCA_TFV"
+
+/**
+ * Generator REPCA Vfrz
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_VFRZ "GENERATOR_REPCA_VFRZ"
+
+/**
+ * Generator REPCA Rc
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_RC "GENERATOR_REPCA_RC"
+
+/**
+ * Generator REPCA Xc
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_XC "GENERATOR_REPCA_XC"
+
+/**
+ * Generator REPCA Kc
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_KC "GENERATOR_REPCA_KC"
+
+/**
+ * Generator REPCA emax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_EMAX "GENERATOR_REPCA_EMAX"
+
+/**
+ * Generator REPCA emin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_EMIN "GENERATOR_REPCA_EMIN"
+
+/**
+ * Generator REPCA dbd1
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_DBD1 "GENERATOR_REPCA_DBD1"
+
+/**
+ * Generator REPCA dbd2
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_DBD2 "GENERATOR_REPCA_DBD2"
+
+/**
+ * Generator REPCA qmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_QMAX "GENERATOR_REPCA_QMAX"
+
+/**
+ * Generator REPCA qmin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_QMIN "GENERATOR_REPCA_QMIN"
+
+/**
+ * Generator REPCA kpg
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_KPG "GENERATOR_REPCA_KPG"
+
+/**
+ * Generator REPCA kig
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_KIG "GENERATOR_REPCA_KIG"
+
+/**
+ * Generator REPCA tp
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_TP "GENERATOR_REPCA_TP"
+
+/**
+ * Generator REPCA fdbd1
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_FDBD1 "GENERATOR_REPCA_FDBD1"
+
+/**
+ * Generator REPCA fdbd2
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_FDBD2 "GENERATOR_REPCA_FDBD2"
+
+/**
+ * Generator REPCA femax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_FEMAX "GENERATOR_REPCA_FEMAX"
+
+/**
+ * Generator REPCA femin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_FEMIN "GENERATOR_REPCA_FEMIN"
+
+/**
+ * Generator REPCA pmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_PMAX "GENERATOR_REPCA_PMAX"
+
+/**
+ * Generator REPCA pmin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_PMIN "GENERATOR_REPCA_PMIN"
+
+/**
+ * Generator REPCA tg
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_TG "GENERATOR_REPCA_TG"
+
+/**
+ * Generator REPCA ddn
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_DDN "GENERATOR_REPCA_DDN"
+
+/**
+ * Generator REPCA dup
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REPCA_DUP "GENERATOR_REPCA_DUP"
+
+// finished generator REPCA parameters definition
+
+
+// start generator REECA parameters here
+
+/**
+ * Generator REECA REMOTE CONTROL BUS
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REECA_IREG "GENERATOR_REECA_IREG"
+
+/**
+ * Generator REECA PFFLAG
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REECA_PFFLAG "GENERATOR_REECA_PFFLAG"
+
+/**
+ * Generator REECA VFLAG
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REECA_VFLAG "GENERATOR_REECA_VFLAG"
+
+/**
+ * Generator REECA QFLAG
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REECA_QFLAG "GENERATOR_REECA_QFLAG"
+
+/**
+ * Generator REECA PFLAG
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REECA_PFLAG "GENERATOR_REECA_PFLAG"
+
+/**
+ * Generator REECA PQFLAG
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REECA_PQFLAG "GENERATOR_REECA_PQFLAG"
+
+// finished M parameters definition for REECA, start J parameters defintion
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VDIP "GENERATOR_REECA_VDIP"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VUP "GENERATOR_REECA_VUP"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_TRV "GENERATOR_REECA_TRV"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_DBD1 "GENERATOR_REECA_DBD1"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_DBD2 "GENERATOR_REECA_DBD2"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_KQV "GENERATOR_REECA_KQV"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_LQH1 "GENERATOR_REECA_LQH1"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_LQL1 "GENERATOR_REECA_LQL1"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VREF0 "GENERATOR_REECA_VREF0"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_LQFRZ "GENERATOR_REECA_LQFRZ"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_THLD "GENERATOR_REECA_THLD"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_THLD2 "GENERATOR_REECA_THLD2"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_TP "GENERATOR_REECA_TP"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_QMAX "GENERATOR_REECA_QMAX"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_QMIN "GENERATOR_REECA_QMIN"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VMAX "GENERATOR_REECA_VMAX"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VMIN "GENERATOR_REECA_VMIN"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_KQP "GENERATOR_REECA_KQP"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_KQI "GENERATOR_REECA_KQI"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_KVP "GENERATOR_REECA_KVP"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_KVI "GENERATOR_REECA_KVI"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VBIAS "GENERATOR_REECA_VBIAS"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_TIQ "GENERATOR_REECA_TIQ"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_DPMAX "GENERATOR_REECA_DPMAX"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_DPMIN "GENERATOR_REECA_DPMIN"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_PMAX "GENERATOR_REECA_PMAX"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_PMIN "GENERATOR_REECA_PMIN"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IMAX "GENERATOR_REECA_IMAX"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_TPORD "GENERATOR_REECA_TPORD"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VQ1 "GENERATOR_REECA_VQ1"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IQ1 "GENERATOR_REECA_IQ1"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VQ2 "GENERATOR_REECA_VQ2"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IQ2 "GENERATOR_REECA_IQ2"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VQ3 "GENERATOR_REECA_VQ3"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IQ3 "GENERATOR_REECA_IQ3"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VQ4 "GENERATOR_REECA_VQ4"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IQ4 "GENERATOR_REECA_IQ4"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VP1 "GENERATOR_REECA_VP1"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IP1 "GENERATOR_REECA_IP1"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VP2 "GENERATOR_REECA_VP2"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IP2 "GENERATOR_REECA_IP2"
+
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VP3 "GENERATOR_REECA_VP3"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IP3 "GENERATOR_REECA_IP3"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_VP4 "GENERATOR_REECA_VP4"
+
+/**
+ * Generator REECA 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECA_IP4 "GENERATOR_REECA_IP4"
+
+// finished generator REECA parameters definition
+
+// Generator sequence parameters
+
+/**
+ * Generator positive sequence resistance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZRPOS "GENERATOR_SEQ_ZRPOS"
+
+/**
+ * Generator positive sequence reactance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZXPOS "GENERATOR_SEQ_ZXPOS"
+
+/**
+ * Generator negative sequence resistance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZRNEG "GENERATOR_SEQ_ZRNEG"
+
+/**
+ * Generator negative sequence reactance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_ZXNEG "GENERATOR_SEQ_ZXNEG"
+
+/**
+ * Generator zero sequence resistance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_RZERO "GENERATOR_SEQ_RZERO"
+
+/**
+ * Generator zero sequence reactance
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_SEQ_XZERO "GENERATOR_SEQ_XZERO"
+
 // GENERATOR COST PARAMETERS
 /**
  * Generator cost model type:
@@ -2522,6 +3342,13 @@
  * indexed
  */
 #define GOVERNOR_DM "GOVERNOR_DM"
+
+/**
+ * Governor DT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_DT "GOVERNOR_DT"
 
 /**
  * Governor DT
@@ -3232,6 +4059,56 @@
  */
 #define BRANCH_F4 "BRANCH_F4"
 
+// Branch sequence data
+/**
+ * Zero sequence branch resistance
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_RLINZ "BRANCH_SEQ_RLINZ"
+
+/**
+ * Zero sequence branch reactance
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_XLINZ "BRANCH_SEQ_XLINZ"
+
+/**
+ * Total zero sequence branch branch charging susceptance
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_BCHZ "BRANCH_SEQ_BCHZ"
+
+/**
+ * Real zero sequence admittance of the line connect to "from" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_GI "BRANCH_SEQ_GI"
+
+/**
+ * Imaginary zero sequence admittance of the line connect to "from" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_BJ "BRANCH_SEQ_BJ"
+
+/**
+ * Real zero sequence admittance of the line connect to "to" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_GJ "BRANCH_SEQ_GJ"
+
+/**
+ * Imaginary zero sequence admittance of the line connect to "to" bus
+ * type: real float
+ * indexed
+ */
+#define BRANCH_SEQ_BI "BRANCH_SEQ_BI"
+
 
 // TRANSFORMER DATA 
 /**
@@ -3508,6 +4385,99 @@
  * indexed
  */
 #define TRANSFORMER_CNXA1 "TRANSFORMER_CNXA1"
+
+// Transformer Sequence Data
+/**
+ * Bus number to which another winding of transformer is connected
+ * Default value: 0
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_SEQ_K "TRANSFORMER_SEQ_K"
+
+/**
+ * Winding connection code
+ * Default value: 4
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_SEQ_CC "TRANSFORMER_SEQ_CC"
+
+/**
+ * Real part of zero sequence grounding impedance
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_RG "TRANSFORMER_SEQ_RG"
+
+/**
+ * Imaginary part of zero sequence grounding impedance
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_XG "TRANSFORMER_SEQ_XG"
+
+/**
+ * Real part of zero sequence impedance of two-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_R1 "TRANSFORMER_SEQ_R1"
+
+/**
+ * Imaginary part of zero sequence impedance of two-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_X1 "TRANSFORMER_SEQ_X1"
+
+/**
+ * Real zero sequence grounding impedance at the winding 2 side of an impedance
+ * grounded two-winding transformer with connection code 8.
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_RG2 "TRANSFORMER_SEQ_RG2"
+
+/**
+ * Imaginary zero sequence grounding impedance at the winding 2 side of an impedance
+ * grounded two-winding transformer with connection code 8.
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_XG2 "TRANSFORMER_SEQ_XG2"
+
+/**
+ * Real part winding two zero sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_R2 "TRANSFORMER_SEQ_R2"
+
+/**
+ * Imaginary part winding two zero sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_X2 "TRANSFORMER_SEQ_X2"
+
+/**
+ * Real part winding two threeo sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_R3 "TRANSFORMER_SEQ_R3"
+
+/**
+ * Imaginary part winding three zero sequence impedance of a three-winding transformer
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_SEQ_X3 "TRANSFORMER_SEQ_X3"
 
 // AREA DATA
 /**

@@ -89,6 +89,18 @@ class BaseGovernorModel
      * @return value of rotor speed deviation
      */
     virtual double getRotorSpeedDeviation();
+	
+		// Yuan added below 2020-6-23
+	/** 
+	 * Set the governor bus number
+	 */
+	virtual void setExtBusNum(int ExtBusNum);
+	
+	/** 
+	 * Set the governor generator id
+	 */
+	virtual void setExtGenId(std::string ExtGenId);
+	// Yuan added above 2020-6-23
 
   private:
 

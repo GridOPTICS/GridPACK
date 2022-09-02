@@ -98,6 +98,7 @@ class PsssimModel : public BasePssModel
 
     // Keep around 
     double psscon1, psscon2;
+	bool bdebug;
 
 };
 }  // dynamic_simulation

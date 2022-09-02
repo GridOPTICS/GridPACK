@@ -40,6 +40,7 @@ include(GridPACK)
 
 # add user configuration options
 option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
+option (USE_OLD_PETSC "Use older versions of PETSc" OFF)
 if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
@@ -61,6 +62,7 @@ if (APR_DIR)
 endif()
 
 # check to see if rt library exists. If so, add -lrt to GA_EXTRA_LIBS
+if (TRUE)
 find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
 if (LIBRT)
   if (GA_EXTRA_LIBS)
@@ -68,6 +70,15 @@ if (LIBRT)
   else()
     set (GA_EXTRA_LIBS ${LIBRT})
   endif()
+endif()
+
+find_library(LIBDL dl PATHS /lib /usr/lib /usr/local/lib)
+message(STATUS "LIBDL: ${LIBDL}")
+if (GA_EXTRA_LIBS)
+  set(GA_EXTRA_LIBS "${GA_EXTRA_LIBS} ${LIBDL}")
+else()
+  set(GA_EXTRA_LIBS ${LIBDL})
+endif()
 endif()
 
 # add HELICS directory
@@ -159,9 +170,9 @@ message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
 include_directories(AFTER ${MPI_CXX_INCLUDE_PATH})
 
-if (ENABLE_CRAY_BUILD)
-  set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-endif()
+#if (ENABLE_CRAY_BUILD)
+#  set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+#endif()
 
 # This is here for cmake version 2.6 
 if (NOT MPI_LIBRARY OR NOT MPI_EXTRA_LIBRARY)
@@ -176,6 +187,16 @@ else()
   endif()
 endif()
 message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+
+if (ENABLE_CRAY_BUILD)
+  if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
+    set(MPI_LIBRARY "")
+    set(MPI_EXTRA_LIBRARY "")
+  endif()
+endif()
+message(STATUS "MPI_LIBRARY: ${MPI_LIBRARY}")
+message(STATUS "MPI_EXTRA_LIBRARY: ${MPI_EXTRA_LIBRARY}")
+
 
 # Perkins found out that this was exactly the wrong thing to do:
 # 
@@ -277,9 +298,39 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
+if (NOT USE_OLD_PETSC)
+include(FindPkgConfig)
+# Include petsc package path in pkg_config_path                                                                      
+set(ENV{PKG_CONFIG_PATH}
+${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig                         
+)
+pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
+else()
 find_package (PETSc REQUIRED)
+endif()
 message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
+if (NOT USE_OLD_PETSC)
+if(EXISTS "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+  set(petscconf "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+elseif(EXISTS "${PETSC_DIR}/include/petscconf.h")
+  set(petscconf "${PETSC_DIR}/include/petscconf.h")
+ else()
+  message(FATAL_ERROR "Could not find PETSc configuration header file
+petscconf.h")
+endif()
+
+# checks
+# define PETSc variables                                                                                           
+include(CheckSymbolExists)
+check_symbol_exists(PETSC_HAVE_PARMETIS ${petscconf} PETSC_HAVE_PARMETIS)
+check_symbol_exists(PETSC_USE_REAL_DOUBLE ${petscconf} PETSC_USE_REAL_DOUBLE)
+check_symbol_exists(PETSC_USE_COMPLEX ${petscconf} PETSC_USE_COMPLEX)
+check_symbol_exists(PETSC_LANGUAGE_CXX ${petscconf} PETSC_CLANGUAGE_Cxx)
+check_symbol_exists(PETSC_HAVE_SUPERLU_DIST ${petscconf}
+PETSC_HAVE_SUPERLU_DIST)
+check_symbol_exists(PETSC_HAVE_MUMPS ${petscconf} PETSC_HAVE_MUMPS)
+else()
 if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
 elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
@@ -290,11 +341,14 @@ else()
   message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
 endif()
 
+message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
+
 
 # checks 
 
 if (NOT PETSC_HAVE_MPI)
   message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
+endif()
 endif()
 
 # PETSc can be compiled for double precsion (--with-precision=double)
@@ -432,13 +486,6 @@ set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(GRIDPACK_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/applications/data_sets)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (ENABLE_CRAY_BUILD)
-  if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
-    set(MPI_LIBRARY "")
-    set(MPI_EXTRA_LIBRARY "")
-  endif()
-endif()
-
 # If external packages are built as shared libraries, the library
 # search path needs to be set so unit tests can find them when run.
 # Try setting the LIBRARY_PATH environment variable to include the
@@ -497,6 +544,7 @@ add_subdirectory(applications/contingency_analysis)
 add_subdirectory(applications/rtpr)
 add_subdirectory(applications/state_estimation)
 add_subdirectory(applications/kalman_ds)
+add_subdirectory(applications/hadrec)
 add_subdirectory(applications/development/powerflow2)
 add_subdirectory(applications/development/dynamic_simulation_reduced_y)
 add_subdirectory(applications/development/dynamic_simulation_implicit)
@@ -509,6 +557,7 @@ add_subdirectory(applications/modules/dynamic_simulation)
 add_subdirectory(applications/modules/dynamic_simulation_full_y)
 add_subdirectory(applications/modules/state_estimation)
 add_subdirectory(applications/modules/kalman_ds)
+add_subdirectory(applications/modules/hadrec)
 add_subdirectory(applications/components/kds_matrix)
 add_subdirectory(applications/components/ds_matrix)
 add_subdirectory(applications/components/se_matrix)

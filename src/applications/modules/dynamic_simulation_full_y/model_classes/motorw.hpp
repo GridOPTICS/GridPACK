@@ -114,12 +114,29 @@ class MotorwLoad : public BaseLoadModel
      * get intialized reactive power of the dynamic load model
      */
     double getInitReactivePower(void);
+	
+	/**
+     * get the variable Fonline for each load
+     */
+    double getFonline(void);
+	
+	/**
+	 * return true if load change is enabled
+	 * @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+	 */
+	bool changeLoad(double percentageFactor);
+	
+	/**
+     * Set same bus static load p and q for load shedding action usage
+     */
+    void setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag);
 
   private:
 
     double p_sbase;
     double p_pl, p_ql;
     int p_status;
+	bool bdebugprint;
 	
     // parameters
     double loadFactor, Pul, rs, lls, lm, lmr, rr1, llr1, rr2, llr2;
@@ -143,6 +160,12 @@ class MotorwLoad : public BaseLoadModel
 
     // oter varialbes
     double w0, TL, Tm0, p, q, Pmotor, Qmotor, Qmotor_init, sysMVABase;
+	gridpack::ComplexType nortonImpedance_sysMVA;
+	double Fonline;
+	double motorwload_perc; //motorw load percentage to the total load;
+	double samebus_static_loadP;  // system base mva pu value
+    double samebus_static_loadQ;  // system base mva pu value
+	gridpack::ComplexType samebus_static_equivY_sysMVA;
 
     gridpack::ComplexType p_INorton;
 

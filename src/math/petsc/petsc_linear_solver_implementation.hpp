@@ -52,6 +52,7 @@ public:
       PETScConfigurable(this->communicator()),
       p_matrixSet(false)
   {
+    p_no_print = gridpack::NoPrint::instance()->status();
   }
 
   /// Destructor
@@ -77,6 +78,9 @@ protected:
 
   /// For constant matrices, has the coefficient matrix been set
   mutable bool p_matrixSet;
+
+  // Turn off printing
+  bool p_no_print;
 
   /// Do what is necessary to build this instance
   void p_build(const std::string& option_prefix)
@@ -160,7 +164,9 @@ protected:
         msg = 
           boost::str(boost::format("%d: PETSc KSP converged after %d iterations, reason: %d") % 
                      me % its % reason);
-        std::cerr << msg << std::endl;
+        if (!p_no_print) {
+          //std::cerr << msg << std::endl;
+        }
       }
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);

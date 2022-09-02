@@ -55,6 +55,11 @@ int main(int argc, char **argv)
       printf("expected: (\' quoted token5\') found: (%s)\n",tokens[4].c_str());
     }
   }
+  printf("\nCheck corner case \"   1   \"\n");
+  str = "   1   ";
+  tokens = util.blankTokenizer(str);
+  printf("expected: (1) found: (%s)\n",tokens[0].c_str());
+
   std::string tag;
   printf("\nTesting clean2Char function\n");
   str = "1";

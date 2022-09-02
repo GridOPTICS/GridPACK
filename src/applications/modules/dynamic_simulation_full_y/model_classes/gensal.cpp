@@ -41,6 +41,7 @@ gridpack::dynamic_simulation::GensalGenerator::GensalGenerator(void)
     dx4Psidp_1 = 0;
     dx5Psiqpp_1 = 0;
 	Vstab = 0.0;
+	p_tripped = false;
 }
 
 /**
@@ -90,6 +91,13 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
   //if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.0; // S12
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
   if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 TBD: check parser
+  
+  double tmp = sqrt(p_pg*p_pg +p_qg*p_qg);
+  if ( tmp > MVABase) {
+       //MVABase = tmp*1.3;
+      //printf("-----------generator at bus %d  has P: %f, Q: %f, S: %f, MVABASE: %f  \n", p_bus_id, p_pg, p_qg, tmp, MVABase);
+	  MVABase = tmp*1.2;
+ }
   //printf("load S10 = %f, S12 = %f\n", S10, S12);
   //if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
   
@@ -102,17 +110,20 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
  */
 double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 {
+	//the following sat may have problems
+	/*
     double a_ = S12 / S10 - 1.0 / 1.2;
     double b_ = -2 * S12 / S10 + 2;
     double c_ = S12 / S10 - 1.2;
     double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
     double B = S10 / ((1.0 - A) * (1.0 - A));
     double result = B * (x - A) * (x - A) / x;
+	*/
     //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
     //printf("Sat result = %f\n", result); 
 	
 	// the following is another method for saturation computation, add by renke
-	/*
+	
 	double a_ = S12 / S10 - 1.0;
     double b_ = -2 * S12 / S10 + 2.4;
     double c_ = S12 / S10 - 1.44;
@@ -125,8 +136,9 @@ double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 		tmp = 0.0;
 	}
     double result = B * tmp * tmp;
-	*/
 	
+	//printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
+    //printf("Sat result = %f\n", result); 
     return result; // Scaled Quadratic with 1.7.1 equations
 }
 
@@ -143,10 +155,15 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
   presentMag = mag;
   Theta = ang;
   presentAng = ang;
+
   double P = p_pg / MVABase;
   double Q = p_qg / MVABase;
+  
+  genP = P;
+  genQ = Q;
+  
   //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
-  //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
+  ////printf("Gensal at bus %d, Vterm = %f, Theta = %f, genP = %f, genQ = %f\n", p_bus_id, Vterm, Theta, genP, genQ);
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
@@ -186,13 +203,18 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
 //  printf("esst1a Vcomp= %f\n", gridpack::dynamic_simulation::Esst1aModel::p_exciter->Vcomp);
 	p_exciter->setFieldVoltage(Efd);
 	p_exciter->setFieldCurrent(LadIfd);
+	p_exciter->setExtBusNum(p_bus_id); // Yuan added on 2020-6-23
+	//p_exciter->setExtGenId(p_ckt); // Yuan added on 2020-6-23
 	p_exciter->init(mag, ang, ts);
+
   }
 
   if (p_hasGovernor) {
 	p_governor = getGovernor();
 	p_governor->setMechanicalPower(Pmech);
 	p_governor->setRotorSpeedDeviation(x2w_0); // set Speed Deviation w for wsieg1 
+	//p_governor->setExtBusNum(p_bus_id); // Yuan added on 2020-6-23
+	//p_governor->setExtGenId(p_ckt); // Yuan added on 2020-6-23
 	p_governor->init(mag, ang, ts);
   }
   
@@ -202,6 +224,9 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
 	
 	p_pss->init(mag, ang, ts);
 	}
+	
+	p_Norton_Ya = NortonImpedence();
+	//printf("------renke debug in GensalGenerator::init, p_Norton_Ya = %f, %f \n", real(p_Norton_Ya), imag(p_Norton_Ya));
 
   // Initialize other variables 
   /*p_mac_ang_s1 = gridpack::ComplexType(0.0,0.0);
@@ -276,8 +301,11 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor_currentInjection(b
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
+  
   double Vdterm = Vrterm * sin(x1d_0) - Viterm * cos(x1d_0);
   double Vqterm = Vrterm * cos(x1d_0) + Viterm * sin(x1d_0);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
   //printf("x5Psiqpp_0 = %f, x3Eqp_0 = %f, Xl = %f, Xdp = %f, Psidpp = %f\n", x5Psiqpp_0, x3Eqp_0, Xl, Xdp, Psidpp);
   //printf("x2w_0 = %f, Vd = %f, Vq = %f, Vrterm = %f, Viterm = %f, Vdterm = %f, Vqterm = %f, Theta = %f\n", x2w_0, Vd, Vq, Vrterm, Viterm, Vdterm, Vqterm, Theta);
   //DQ Axis
@@ -288,13 +316,41 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor_currentInjection(b
   //Network
   Ir = + Id * sin(x1d_0) + Iq * cos(x1d_0);
   Ii = - Id * cos(x1d_0) + Iq * sin(x1d_0);
+  
+  genP = Vrterm*Ir + Viterm*Ii;
+  genQ = Viterm*Ir - Vrterm*Ii;
+  
   IrNorton = + Idnorton * sin(x1d_0) + Iqnorton * cos(x1d_0);
   IiNorton = - Idnorton * cos(x1d_0) + Iqnorton * sin(x1d_0);
+  
+  
+      ///debug compute genP and genQ, method 2
+	  /*
+  
+  double Iimpr, Iimpi, Irtmp, Iitmp;
+  Iimpr = Vrterm*G - Viterm*B;
+  Iimpi = Vrterm*B + Viterm*G;
+  Irtmp = IrNorton-Iimpr;
+  Iitmp = IiNorton-Iimpi;
+  genP = Vrterm*Irtmp + Viterm*Iitmp;
+  genQ = Viterm*Irtmp - Vrterm*Iitmp;
+  */
+  
+  //printf("gensal predictor_currentInjection test 2 genP and genQ,  %f,  %f, \n", genP, genQ);
+  
+  
   IrNorton = IrNorton * MVABase / p_sbase; 
   IiNorton = IiNorton * MVABase / p_sbase; 
   //gridpack::ComplexType INorton(IrNorton, IiNorton);
+  
+  //printf("gensal predictor_currentInjection test 1 genP and genQ, Vterm Mag and theta, IrNorton and IiNorton, %f,  %f, %f,  %f, %f,  %f,\n", genP, genQ, Vterm, Theta, IrNorton, IiNorton);
+  
   if (getGenStatus()){
-	  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);	  
+	  if (p_tripped){
+		  p_INorton = p_Norton_Ya*vt_complex_tmp;
+	  }else{
+		  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);	
+	  }		
   }else {
 	  p_INorton = gridpack::ComplexType(0.0, 0.0);
   }
@@ -338,10 +394,30 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
     x4Psidp_0 = x4Psidp_1;
     x5Psiqpp_0 = x5Psiqpp_1; 
   }  
+  
+  double Psidpp;
+  
+  /*
+    //----------compute Id and Iq--------------------------------
+  double Psiqpp = x5Psiqpp_0; // this will be different for GENROU
+  Psidpp = + x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl) 
+                + x4Psidp_0 * (Xdp - Xdpp) / (Xdp - Xl);
+  double Vd = -Psiqpp * (1.0 + x2w_0);
+  double Vq = +Psidpp * (1.0 + x2w_0);
+  Vterm = presentMag;
+  Theta = presentAng;
+  double Vrterm = Vterm * cos(Theta);
+  double Viterm = Vterm * sin(Theta);
+  double Vdterm = Vrterm * sin(x1d_0) - Viterm * cos(x1d_0);
+  double Vqterm = Vrterm * cos(x1d_0) + Viterm * sin(x1d_0);
+  
+  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
+  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
+  */
     
   double pi = 4.0*atan(1.0);
   double Psiq = x5Psiqpp_0 - Iq * Xdpp;
-  double Psidpp = x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl) 
+  Psidpp = x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl) 
                 + x4Psidp_0 * (Xdp - Xdpp) / (Xdp - Xl);
   double Psid = Psidpp - Id * Xdpp;
   double Telec = Psid * Iq - Psiq * Id;
@@ -391,17 +467,34 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
 	p_governor->predictor(t_inc, flag);
   }
 //  printf("predictor gensal: Efd = %f, Pmech = %f\n", Efd, Pmech); 
+
+	if (p_tripped){
+		x1d_0 = 0.0;
+		x2w_0 = -1.0;
+		x3Eqp_0 = 0.0;
+		x4Psidp_0 = 0.0;
+		x5Psiqpp_0 = 0.0;
+		x1d_1 = 0.0;
+		x2w_1 = -1.0;
+		x3Eqp_1 = 0.0;
+		x4Psidp_1 = 0.0;
+		x5Psiqpp_1 = 0.0;	
+		genP = 0.0;
+		genQ = 0.0;
+	}
   }else {
 	x1d_0 = 0.0;
-    x2w_0 = 0.0;
+    x2w_0 = -1.0;
     x3Eqp_0 = 0.0;
     x4Psidp_0 = 0.0;
     x5Psiqpp_0 = 0.0;
 	x1d_1 = 0.0;
-    x2w_1 = 0.0;
+    x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqpp_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
   
   }
 
@@ -430,6 +523,9 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector_currentInjection(b
   double Viterm = Vterm * sin(Theta);
   double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
   double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
+	
   //DQ Axis
   Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
   Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
@@ -438,13 +534,42 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector_currentInjection(b
   //Network
   Ir = + Id * sin(x1d_1) + Iq * cos(x1d_1);
   Ii = - Id * cos(x1d_1) + Iq * sin(x1d_1);
+  
+  //genP and genQ should not be updated here to output values, as here the states values are from the predictor, is not accurate enough
+  double genP1 = Vrterm*Ir + Viterm*Ii;
+  double genQ1 = Viterm*Ir - Vrterm*Ii;
+  
   IrNorton = + Idnorton * sin(x1d_1) + Iqnorton * cos(x1d_1);
   IiNorton = - Idnorton * cos(x1d_1) + Iqnorton * sin(x1d_1); 
+  
+  
+  ///debug compute genP and genQ, method 2
+  /*
+  
+  double Iimpr, Iimpi, Irtmp, Iitmp;
+  Iimpr = Vrterm*G - Viterm*B;
+  Iimpi = Vrterm*B + Viterm*G;
+  Irtmp = IrNorton-Iimpr;
+  Iitmp = IiNorton-Iimpi;
+  genP = Vrterm*Irtmp + Viterm*Iitmp;
+  genQ = Viterm*Irtmp - Vrterm*Iitmp;
+  */
+  
+  //printf("gensal corrector_currentInjuction test 2 genP and genQ,  %f,  %f, \n", genP, genQ);
+  
   IrNorton = IrNorton * MVABase / p_sbase; 
   IiNorton = IiNorton * MVABase / p_sbase; 
   //gridpack::ComplexType INorton(IrNorton, IiNorton);
-  if (getGenStatus()){
-	  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);	 	  
+  
+  //printf("gensal corrector_currentInjuction test 1 genP and genQ, Vterm Mag and theta, IrNorton and IiNorton, %f,  %f, %f,  %f, %f,  %f,\n", genP1, genQ1, Vterm, Theta, IrNorton, IiNorton);
+  
+  
+  if (getGenStatus()){	  
+      if (p_tripped){
+		  p_INorton = p_Norton_Ya*vt_complex_tmp;
+	  }else{
+		  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);		
+	  }	 	  
   }else {
 	  p_INorton = gridpack::ComplexType(0.0, 0.0);
   }
@@ -480,10 +605,29 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
   }
 
 // printf("Corrector: Efd = %f, Pmech = %f\n", Efd, Pmech); 
+  double Psidpp;
+
+  //----------compute Id and Iq--------------------------------
+  /*
+  double Psiqpp = x5Psiqpp_1; // this will be different for GENROU
+  Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) 
+                + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
+  double Vd = -Psiqpp * (1 + x2w_1);
+  double Vq = +Psidpp * (1 + x2w_1);
+  Vterm = presentMag;
+  Theta = presentAng;
+  double Vrterm = Vterm * cos(Theta);
+  double Viterm = Vterm * sin(Theta);
+  double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
+  double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
+  
+  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
+  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
+  */
 
   double pi = 4.0*atan(1.0);
   double Psiq = x5Psiqpp_1 - Iq * Xdpp;
-  double Psidpp = x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) 
+  Psidpp = x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) 
                 + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
   double Psid = Psidpp - Id * Xdpp;
   double Telec = Psid * Iq - Psiq * Id;
@@ -529,24 +673,41 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
  }
  
  if (p_hasGovernor){
-  p_governor->setRotorSpeedDeviation(x2w_0);
+  p_governor->setRotorSpeedDeviation(x2w_1); //note previous version here is x2w_0, not correct
   p_governor->corrector(t_inc, flag);
  }
+ 
+ 	if (p_tripped){
+		x1d_0 = 0.0;
+		x2w_0 = -1.0;
+		x3Eqp_0 = 0.0;
+		x4Psidp_0 = 0.0;
+		x5Psiqpp_0 = 0.0;
+		x1d_1 = 0.0;
+		x2w_1 = -1.0;
+		x3Eqp_1 = 0.0;
+		x4Psidp_1 = 0.0;
+		x5Psiqpp_1 = 0.0;
+		genP = 0.0;
+		genQ = 0.0;		
+	}
 
   //if (p_bus_id == 1)
     //printf("\t%d          %12.6f   %12.6f   %12.6f   %12.6f   %12.6f\n",    
      //     p_bus_id, x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1);
   }else {
 	x1d_0 = 0.0;
-    x2w_0 = 0.0;
+    x2w_0 = -1.0;
     x3Eqp_0 = 0.0;
     x4Psidp_0 = 0.0;
     x5Psiqpp_0 = 0.0;
 	x1d_1 = 0.0;
-    x2w_1 = 0.0;
+    x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqpp_1 = 0.0;
+	genP = 0.0;
+	genQ = 0.0;
   
   }
 }
@@ -559,6 +720,13 @@ void gridpack::dynamic_simulation::GensalGenerator::setWideAreaFreqforPSS(double
 		p_pss = getPss();
 		p_pss->setWideAreaFreqforPSS(freq);	
 	}
+}
+
+bool gridpack::dynamic_simulation::GensalGenerator::tripGenerator()
+{
+	p_tripped = true;
+	
+	return true;
 }
 
 /**
@@ -603,10 +771,13 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
     return true;
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
-      char buf[128];
+      char buf[256];
 //    sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
-      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,",
-          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm, Efd, LadIfd);
+//      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f",
+//          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm, Efd, LadIfd, genP, genQ);
+		  
+	  sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f",
+          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, Vterm, Efd, LadIfd, genP, genQ);
       return true;
 /*      if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
@@ -633,8 +804,14 @@ void gridpack::dynamic_simulation::GensalGenerator::getWatchValues(
     std::vector<double> &vals)
 {
   vals.clear();
-  if (getWatch()) {
-    vals.push_back(x1d_1);
-    vals.push_back(x2w_1+1.0);
+  vals.push_back(x1d_1);
+  vals.push_back(x2w_1+1.0);
+  
+  if (p_generatorObservationPowerSystemBase){
+	vals.push_back(genP*MVABase/p_sbase);  //output at system mva base
+	vals.push_back(genQ*MVABase/p_sbase);  //output at system mva base
+  }else{
+	vals.push_back(genP);  //output at generator mva base
+	vals.push_back(genQ);  //output at generator mva base
   }
 }

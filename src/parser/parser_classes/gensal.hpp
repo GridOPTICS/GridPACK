@@ -276,7 +276,7 @@ template <class _data_struct> class GensalParser
       // GENERATOR_S1
       if (nstr > 13) {
         if (!data->getValue(GENERATOR_S1,&rval,g_id)) {
-          data->addValue(GENERATOR_XL,
+          data->addValue(GENERATOR_S1,
               atof(split_line[13].c_str()), g_id);
         } else {
           data->setValue(GENERATOR_S1,
@@ -287,7 +287,7 @@ template <class _data_struct> class GensalParser
       // GENERATOR_S12
       if (nstr > 14) {
         if (!data->getValue(GENERATOR_S12,&rval,g_id)) {
-          data->addValue(GENERATOR_XL,
+          data->addValue(GENERATOR_S12,
               atof(split_line[14].c_str()), g_id);
         } else {
           data->setValue(GENERATOR_S12,

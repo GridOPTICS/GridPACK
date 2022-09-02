@@ -69,60 +69,7 @@ common_flags="\
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
-if [ $host == "flophouse" ]; then
-
-    # RHEL 7 with GNU 4.8 compilers
-    # The following are installed as packages:
-    #   boost.x86_64                         1.53.0-26.el7
-    #   boost-openmpi.x86_64                 1.53.0-26.el7
-    #   (lots of other boost packages)
-    #   
-
-    prefix="/net/flophouse/files0/perksoft/linux64"
-    PATH="${prefix}/bin:${PATH}"
-    export PATH
-
-    CC="/usr/bin/gcc"
-    export CC
-    CXX="/usr/bin/g++"
-    export CXX
-
-    if [ "$shared"x = "ON"x ]; then
-        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
-        parch="rhel7-real-c-shared"
-    else
-        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
-        parch="rhel7-gnu48-real-opt"
-        # parch="rhel7-gnu48-complex-opt"
-        # parch="rhel7-gnu48-complex-opt-c"
-        parch="rhel7-real-c-static"
-        parch="rhel7-complex-c-static"
-        if [ "$build"x = "Debug"x ]; then
-            parch="rhel7-real-c-static-debug"
-        fi
-        # pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
-    fi
-
-    cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
-
-    cmake3 -Wdev --debug-trycompile \
-        -D USE_PROGRESS_RANKS:BOOL=OFF \
-        -D GA_DIR:PATH="$prefix/ga-c++" \
-        -D BOOST_ROOT:STRING="/usr" \
-        -D PETSC_DIR:STRING="$pdir" \
-        -D PETSC_ARCH:STRING="$parch" \
-        -D MPI_CXX_COMPILER:STRING="mpicxx" \
-        -D MPI_C_COMPILER:STRING="mpicc" \
-        -D MPIEXEC:STRING="mpiexec" \
-        -D USE_CPLEX:BOOL=OFF \
-        -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
-        -D USE_GLPK:BOOL=ON \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
-        $common_flags ..
-
-elif [ $host == "briareus" ]; then
+if [ $host == "briareus" ]; then
 
     # Using GNU 4.9 and OpenMPI modules
 
@@ -151,15 +98,14 @@ elif [ $host == "briareus" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
         $common_flags ..
 
-elif [ $host == "WE32673" ]; then
+elif [ $host == "we32673" ]; then
 
-    # Mac using CLang 6.0 compilers and MPICH via MacPorts
+    # Mac using CLang 14.0 compilers and MPICH via MacPorts
     # The following MacPorts packages are installed:
-    #   clang-6.0 @6.0.1_0+analyzer+libstdcxx
-    #   mpich-clang60 @3.2.1_4+gcc7
-    #   boost @1.66.0_3+clang60+mpich+no_single+no_static+python27
-    #   glpk @4.65_0
-    #   doxygen @1.8.13_2+qt4+wizard
+    #   clang-14 @14.0.6_0+analyzer+libstdcxx
+    #   mpich-clang14 @4.0.2_0+gcc12
+    #   boost176 @1.76.0_3+clang14+mpich+no_single+no_static+python310
+    # Global Arrays 5.7 built by hand
     # PETSc 3.8.4 w/ ParMETIS, SuperLU, etc., built by hand
     # Need to make sure the compiler set and MPI are selected, i.e.
     #   sudo port select clang mp-clang-6.0
@@ -172,30 +118,15 @@ elif [ $host == "WE32673" ]; then
     export CXX
 
     prefix="/Users/d3g096/Projects/GridPACK"
+    pdir="$prefix/petsc.gitlab"
 
-    if [ "$shared"x = "ON"x ]; then
-        pdir="$prefix/petsc-3.8.4" 
-        parch="arch-macosx-clang-real-shared-c" 
-        pdir="$prefix/petsc.gitlab"
-        parch="macosx-real-cpp-static"
-    else
-        pdir="$prefix/petsc-3.8.4"
-        parch="arch-macosx-clang-real-opt"
-        parch="arch-macosx-clang-complex-opt"
-        #pdir="$prefix/petsc-3.8.4" 
-        #parch="arch-macosx-clang-real-opt-c"
-        #pdir="$prefix/petsc-3.9.4" 
-        #parch="macosx-real-cpp-static"
-        # pdir="$prefix/petsc-3.11.3"
-        # parch="macosx-complex-c-static"
-        # pdir="$prefix/petsc-3.12.3"
-        # parch="macosx-complex-c-static"
-        pdir="$prefix/petsc.gitlab"
-        parch="macosx-complex-cpp-static-3.8.4"
-    fi
+    parch="darwin-mpich-clang-complex-opt-3.16"
+    parch="darwin-mpich-clang-real-opt-3.16"
+    
     cmake $options \
-        -D GA_DIR:STRING="$prefix" \
-        -D BOOST_ROOT:STRING="/opt/local" \
+        -D GA_DIR:STRING="$prefix/gridpack-install" \
+        -D BOOST_ROOT:STRING="/opt/local/libexec/boost/1.76" \
+        -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
         -D PETSC_DIR:PATH="$pdir" \
         -D PETSC_ARCH:STRING="$parch" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
@@ -206,7 +137,7 @@ elif [ $host == "WE32673" ]; then
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-install" \
         $common_flags ..
 
 elif [ $host == "WE30729" ]; then
@@ -240,7 +171,7 @@ elif [ $host == "WE30729" ]; then
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
         $common_flags ..
 
 elif [ $host == "olympus.local" ]; then
@@ -280,40 +211,77 @@ elif [ $host == "constance" ]; then
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
 	$common_flags ..
 
+elif [ $host == "constance-hadrec" ]; then
+
+    # always build shared
+    # always build GA
+
+    CC=`which gcc`
+    CXX=`which g++`
+    CFLAGS="-pthread"
+    CXXFLAGS="-pthread"
+    export CC CXX CFLAGS CXXFLAGS
+
+    prefix="/pic/projects/gripdack/hadrec/gridpack"
+    cmake $options \
+	-D BOOST_ROOT:STRING="$prefix" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.9.4" \
+	-D PETSC_ARCH:STRING='linux-openmpi-gnu-cxx-complex-opt' \
+	-D MPI_CXX_COMPILER:STRING=`which mpicxx` \
+	-D MPI_C_COMPILER:STRING=`which mpicc` \
+	-D MPIEXEC:STRING=`which mpiexec` \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D BUILD_GA:BOOL=ON \
+        -D BUILD_SHARED_LIBS:BOOL=ON \
+        -D CMAKE_BUILD_TYPE:STRING=$build \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+	..
+
 elif [ $host == "tlaloc" ]; then
 
-    # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
-    # Boost 1.55, GA 5.6.2, and PETSc 3.6.4 built by hand.  Available
-    # Boost, GA, and PETSc packages were either too old or installed
-    # in such a way as to be unrecognizable.
+    # Ubuntu 20 with as many system packages as possible: GNU
+    # compilers 9.4.0, OpenMPI 4.0.3, Boost 1.71.0, PETSc 3.12,
+    # ParMETIS 4.0.3.  
+    
+    CC=gcc
+    CXX=g++
+    CFLAGS=-pthread
+    CXXFLAGS=-pthread
+    export CC CXX CFLAGS CXXFLAGS
 
-    prefix="/file0/perksoft"
-    if [ "$shared"x = "ON"x ]; then
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel6-complex-c-shared"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
-        parch="rhel6-complex-c-shared"
-    else
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel6-complex-c-static"
-        parch="rhel6-real-c-static"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
-        parch="rhel6-real-c-static"
-    fi
+    # Custom built 3.16, complex:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-3.16.6" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
 
-    cmake3 $options \
-          -D GA_DIR:PATH="${prefix}/ga-c++" \
-          -D BOOST_ROOT:PATH="${prefix}" \
-          -D USE_PROGRESS_RANKS:BOOL=OFF \
-          -D PETSC_DIR:PATH="$pdir" \
-          -D PETSC_ARCH:STRING="$parch" \
+    # Custom built 3.16, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+
+    # System PETSc package:
+    #      -D PETSC_DIR:STRING="/usr/lib/petsc" \
+    #      -D PETSC_ARCH:STRING="" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+    
+    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
+    cmake -Wdev --debug-trycompile \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
+          -D USE_OLD_PETSC:BOOL=OFF \
+          -D BOOST_ROOT:PATH="/usr" \
+          -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
+          -D PARMETIS_DIR:PATH="/usr" \
           -D MPI_CXX_COMPILER:STRING="mpicxx" \
           -D MPI_C_COMPILER:STRING="mpicc" \
           -D MPIEXEC:STRING="mpiexec" \
-          -D USE_GLPK:BOOL=OFF \
           -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-          -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-          -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
+          -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
+          -D USE_GLPK:BOOL=OFF \
+          -D BUILD_SHARED_LIBS:BOOL=ON \
+          -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
+          -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
           $common_flags ..
 
 elif [ $host == "gridpackvm" ]; then

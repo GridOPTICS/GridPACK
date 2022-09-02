@@ -102,6 +102,7 @@ install(FILES
   dictionary.hpp
   PTI23_parser.hpp
   PTI33_parser.hpp
+  PSSE_seq_parser.hpp
   GOSS_parser.hpp
   MAT_parser.hpp
   hash_distr.hpp
@@ -115,6 +116,9 @@ install(FILES
   parser_classes/gensal.hpp
   parser_classes/genrou.hpp
   parser_classes/gdform.hpp
+  parser_classes/regca1.hpp
+  parser_classes/reeca1.hpp
+  parser_classes/repca1.hpp
   parser_classes/wsieg1.hpp
   parser_classes/exdc1.hpp
   parser_classes/esst1a.hpp

@@ -13,6 +13,7 @@
 # Last Change: 2019-08-16 13:45:12 d3g096
 # -------------------------------------------------------------
 
+
 set(target_libraries
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
@@ -64,6 +65,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   base_classes/base_generator_model.cpp
   base_classes/base_exciter_model.cpp
   base_classes/base_pss_model.cpp
+  base_classes/base_plant_model.cpp
   base_classes/base_governor_model.cpp
   base_classes/base_relay_model.cpp
   base_classes/base_load_model.cpp
@@ -74,6 +76,10 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/GainBlockClass.cpp
   model_classes/BackLashClass.cpp
   model_classes/DBIntClass.cpp
+  model_classes/PIBlockwithLimit.cpp
+  model_classes/DelayBlockwithLimit.cpp
+  model_classes/LeadLagBlock.cpp
+  model_classes/DelayBlock.cpp
   model_classes/genrou.cpp
   model_classes/esst4b.cpp
   model_classes/esst1a.cpp
@@ -86,6 +92,11 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/ieel.cpp
   model_classes/motorw.cpp
   model_classes/psssim.cpp
+  model_classes/tgov1.cpp
+  model_classes/gdform.cpp
+  model_classes/regca1.cpp
+  model_classes/reeca1.cpp
+  model_classes/repca1.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -114,6 +125,7 @@ install(FILES
   base_classes/base_generator_model.hpp
   base_classes/base_exciter_model.hpp
   base_classes/base_pss_model.hpp
+  base_classes/base_plant_model.hpp
   base_classes/base_governor_model.hpp
   base_classes/base_relay_model.hpp
   base_classes/base_load_model.hpp
@@ -121,6 +133,10 @@ install(FILES
   model_classes/DBIntClass.hpp
   model_classes/exdc1.hpp
   model_classes/GainBlockClass.hpp
+  model_classes/PIBlockwithLimit.hpp
+  model_classes/DelayBlockwithLimit.hpp
+  model_classes/LeadLagBlock.hpp
+  model_classes/DelayBlock.hpp
   model_classes/gensal.hpp
   model_classes/wsieg1.hpp
   model_classes/genrou.hpp
@@ -135,6 +151,11 @@ install(FILES
   model_classes/ieel.hpp
   model_classes/motorw.hpp
   model_classes/psssim.hpp
+  model_classes/tgov1.hpp
+  model_classes/gdform.hpp
+  model_classes/regca1.hpp
+  model_classes/reeca1.hpp
+  model_classes/repca1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
@@ -142,6 +163,7 @@ install(FILES
   base_classes/base_generator_model.hpp
   base_classes/base_exciter_model.hpp
   base_classes/base_pss_model.hpp
+  base_classes/base_plant_model.hpp
   base_classes/base_governor_model.hpp
   base_classes/base_relay_model.hpp
   base_classes/base_load_model.hpp
@@ -153,6 +175,10 @@ install(FILES
   model_classes/DBIntClass.hpp
   model_classes/exdc1.hpp
   model_classes/GainBlockClass.hpp
+  model_classes/PIBlockwithLimit.hpp
+  model_classes/DelayBlockwithLimit.hpp
+  model_classes/LeadLagBlock.hpp
+  model_classes/DelayBlock.hpp
   model_classes/gensal.hpp
   model_classes/wsieg1.hpp
   model_classes/genrou.hpp
@@ -167,6 +193,11 @@ install(FILES
   model_classes/ieel.hpp
   model_classes/motorw.hpp
   model_classes/psssim.hpp
+  model_classes/tgov1.hpp
+  model_classes/gdform.hpp
+  model_classes/regca1.hpp
+  model_classes/reeca1.hpp
+  model_classes/repca1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 )
 

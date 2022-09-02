@@ -30,6 +30,7 @@ gridpack::dynamic_simulation::BaseGeneratorModel::BaseGeneratorModel(void)
   p_hasGovernor = false;
   p_hasPss = false;
   bStatus = true;
+  p_generatorObservationPowerSystemBase = true;
   p_wideareafreq = 0.0;
 }
 
@@ -123,6 +124,20 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::setWideAreaFreqforPSS(dou
 	p_wideareafreq = freq;
 }
 
+bool gridpack::dynamic_simulation::BaseGeneratorModel::tripGenerator(){
+	return true;
+}
+
+/**
+	* return true if modify the generator parameters successfully
+	* input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid 
+    * input newParValScaletoOrg:  GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+	* 
+	*/
+bool gridpack::dynamic_simulation::BaseGeneratorModel::applyGeneratorParAdjustment(int controlType, double newParValScaletoOrg){
+	return false;
+}
+
 /**
  * Set voltage on each generator
  */
@@ -130,6 +145,14 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::setVoltage(
     gridpack::ComplexType voltage)
 {
 }
+
+/**
+ * Set terminal voltage frequency on each generator
+ */
+void gridpack::dynamic_simulation::BaseGeneratorModel::setFreq(double dFreq){
+	
+}
+
 
 /** 
  * Get the value of the field voltage parameter
@@ -187,6 +210,13 @@ gridpack::dynamic_simulation::BaseGeneratorModel::setExciter(boost::shared_ptr<B
   p_hasExciter = true;
 }
 
+void 
+gridpack::dynamic_simulation::BaseGeneratorModel::setPlantController(boost::shared_ptr<BasePlantControllerModel> &plant)
+{
+	p_plant = plant;
+    p_hasPlantController = true;
+}
+
 void
 gridpack::dynamic_simulation::BaseGeneratorModel::setPss(boost::shared_ptr<BasePssModel>
     &pss)
@@ -234,6 +264,12 @@ gridpack::dynamic_simulation::BaseGeneratorModel::getPss()
   return p_pss;
 }
 
+boost::shared_ptr<gridpack::dynamic_simulation::BasePlantControllerModel>
+gridpack::dynamic_simulation::BaseGeneratorModel::getPlantController()
+{
+  return p_plant;
+}
+
 
 //renke add
 boost::shared_ptr<gridpack::dynamic_simulation::BaseRelayModel> 
@@ -271,4 +307,9 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::getWatchValues(
     std::vector<double> &vals)
 {
   vals.clear();
+}
+
+void gridpack::dynamic_simulation::BaseGeneratorModel::setGeneratorObPowerBaseFlag(bool generatorObservationPowerSystemBase)
+{
+	p_generatorObservationPowerSystemBase = generatorObservationPowerSystemBase;
 }

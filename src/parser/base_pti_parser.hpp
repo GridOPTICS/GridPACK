@@ -37,6 +37,9 @@
 #include "parser_classes/gensal.hpp"
 #include "parser_classes/genrou.hpp"
 #include "parser_classes/gdform.hpp"
+#include "parser_classes/regca1.hpp"
+#include "parser_classes/reeca1.hpp"
+#include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
 #include "parser_classes/exdc1.hpp"
 #include "parser_classes/esst1a.hpp"
@@ -90,6 +93,38 @@ class BasePTIParser : public BaseParser<_network>
       } else if (ext == "uc") {
         getUCExternal(fileName);
       }
+    }
+
+    /**
+     * Split PSS/E formatted lines into individual tokens using both blanks and
+     * commas as delimiters
+     * @param line input string from PSS/E file
+     * @return vector of tokens parsed from PSS/E line
+     */
+    std::vector<std::string> splitPSSELine (std::string line)
+    {
+      std::vector<std::string> ret;
+      int i, j;
+      std::vector<std::string>  split_line;
+      // split line into tokens based on comma delimiters
+      boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
+                    boost::token_compress_off);
+      int slen = split_line.size();
+      // parse each token based on blank spaces
+      for (i=0; i<slen; i++) {
+        if (isBlank(split_line[i])) {
+          // If two consecutive commas have nothing in between, replace it with
+          // a zero "0" character. This should be converted to 0 and 0.0 by the
+          // atoi and atof functions, respectively
+          ret.push_back("0");
+        } else {
+          std::vector<std::string> tokens;
+          tokens = p_util.blankTokenizer(split_line[i]);
+          int tlen = tokens.size();
+          for (j=0; j<tlen; j++) ret.push_back(tokens[j]);
+        }
+      }
+      return ret;
     }
 
     /**
@@ -388,6 +423,24 @@ class BasePTIParser : public BaseParser<_network>
       double kppmax;
       double kipmax;
       double pset;
+	  double imax;
+	  
+      int regca1_lvplsw;
+      double regca1_tg;
+      double regca1_rrpwr;
+      double regca1_brkpt;
+      double regca1_zerox;
+      double regca1_lvpl1;
+      double regca1_volim;
+      double regca1_lvpnt1;
+      double regca1_lvpnt0;
+      double regca1_lolim;
+      double regca1_tfltr;
+      double regca1_khv;
+      double regca1_lqrmax;
+      double regca1_lqrmin;
+      double regca1_accel;
+	  
       // Exciter parameters
       bool has_exciter;
       double ex_tr;
@@ -430,6 +483,60 @@ class BasePTIParser : public BaseParser<_network>
       double vbmax;
       double ex_xl;
       double thetap;
+	  
+      int reeca1_ireg;
+      int reeca1_pfflag;
+      int reeca1_vflag;
+      int reeca1_qflag;
+      int reeca1_pflag;
+      int reeca1_pqflag;
+	  
+      double reeca1_vdip;
+      double reeca1_vup;
+      double reeca1_trv;
+      double reeca1_dbd1;
+      double reeca1_dbd2;
+      double reeca1_kqv;
+      double reeca1_lqh1;
+      double reeca1_lql1;
+      double reeca1_vref0;
+      double reeca1_lqfrz;
+      double reeca1_thld;
+      double reeca1_thld2;
+      double reeca1_tp;
+      double reeca1_qmax;
+      double reeca1_qmin;
+      double reeca1_vmax;
+      double reeca1_vmin;
+      double reeca1_kqp;
+      double reeca1_kqi;
+      double reeca1_kvp;
+      double reeca1_kvi;
+      double reeca1_vbias;
+      double reeca1_tiq;
+      double reeca1_dpmax;
+      double reeca1_dpmin;
+      double reeca1_pmax;
+      double reeca1_pmin;
+      double reeca1_imax;
+      double reeca1_tpord;
+      double reeca1_vq1;
+      double reeca1_iq1;
+      double reeca1_vq2;
+      double reeca1_iq2;
+      double reeca1_vq3;
+      double reeca1_iq3;
+      double reeca1_vq4;
+      double reeca1_iq4;
+      double reeca1_vp1;
+      double reeca1_ip1;
+      double reeca1_vp2;
+      double reeca1_ip2;
+      double reeca1_vp3;
+      double reeca1_ip3;
+      double reeca1_vp4;
+      double reeca1_ip4;
+	  
       // Governor parameters
       bool has_governor;
       int jbus;
@@ -533,6 +640,44 @@ class BasePTIParser : public BaseParser<_network>
       double psssim_t4;
       double psssim_maxout;
       double psssim_minout;
+	  
+	  // plant controller parameters
+	  int repca1_ireg;
+	  int repca1_brh_bus_from;
+	  int repca1_brh_bus_to;
+	  char repca1_brh_ckt[3];
+	  int repca1_vcflag;
+	  int repca1_refflag;
+	  int repca1_fflag;
+	  
+	  double repca1_tfltr;
+	  double repca1_kp;
+	  double repca1_ki;
+	  double repca1_tft;
+	  double repca1_tfv;
+	  double repca1_vfrz;
+	  double repca1_rc;
+	  double repca1_xc;
+	  double repca1_kc;
+	  double repca1_emax;
+	  double repca1_emin;
+	  double repca1_dbd1;
+	  double repca1_dbd2;
+	  double repca1_qmax;
+	  double repca1_qmin;
+	  double repca1_kpg;
+	  double repca1_kig;
+	  double repca1_tp;
+	  double repca1_fdbd1;
+	  double repca1_fdbd2;
+	  double repca1_femax;
+	  double repca1_femin;
+	  double repca1_pmax;
+	  double repca1_pmin;
+	  double repca1_tg;
+	  double repca1_ddn;
+	  double repca1_dup;  
+	  
     };
 
     // Data structure to hold relay parameters on buses
@@ -633,6 +778,7 @@ class BasePTIParser : public BaseParser<_network>
       double e;
       double c0;
       double tnom;
+      double dynload_perc;
 
       double tstall;
       double trestart;
@@ -669,6 +815,7 @@ class BasePTIParser : public BaseParser<_network>
       double ttr1;
       double uvtr2;
       double ttr2;
+	  double load_ac_perc;
 
       double a1;
       double a2;
@@ -868,6 +1015,15 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"GDFORM")) {
             GdformParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"REGCA1")) {
+            Regca1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"REECA1")) {
+            Reeca1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"REPCA1")) {
+            Repca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"WSIEG1")) {
             Wsieg1Parser<gen_params> parser;
@@ -1180,9 +1336,10 @@ class BasePTIParser : public BaseParser<_network>
       bool ret = false;
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "GDFORM" ||
+          device == "REGCA1" || device == "REECA1"  || device == "REPCA1" ||
           device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
-          device == "WSHYGP" || device == "PSSSIM" || device == "TGOV1") {
+          device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM") {
         ret = true;
       }
       return ret;
@@ -1266,8 +1423,7 @@ class BasePTIParser : public BaseParser<_network>
         idx = record.find('/');
         if (idx != std::string::npos) record.erase(idx,record.length()-idx);
         std::vector<std::string>  split_line;
-        boost::split(split_line, record, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = splitPSSELine(record);
 
         std::string sval;
         // MODEL TYPE              "MODEL"                  string
@@ -1328,6 +1484,15 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "GDFORM") {
               GdformParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "REGCA1") {
+              Regca1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "REECA1") {
+              Reeca1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "REPCA1") {
+              Repca1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "WSIEG1") {
               Wsieg1Parser<gen_params> parser;
@@ -1477,8 +1642,7 @@ class BasePTIParser : public BaseParser<_network>
         idx = record.find('/');
         if (idx != std::string::npos) record.erase(idx,record.length()-idx);
         std::vector<std::string>  split_line;
-        boost::split(split_line, record, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = splitPSSELine(record);
         std::string sval;
         gridpack::utility::StringUtils util;
         sval = util.trimQuotes(split_line[1]);
@@ -1514,6 +1678,15 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "GDFORM") {
             GdformParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "REGCA1") {
+            Regca1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "REECA1") {
+            Reeca1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "REPCA1") {
+            Repca1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "WSIEG1") {
             Wsieg1Parser<gen_params> parser;
@@ -1612,8 +1785,7 @@ class BasePTIParser : public BaseParser<_network>
       p_input_stream.nextLine(line);
       while(p_input_stream.nextLine(line)) {
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
+        split_line = splitPSSELine(line);
 
         uc_params data;
 
@@ -1724,6 +1896,7 @@ class BasePTIParser : public BaseParser<_network>
       }
     }
 
+
     /**
      * Check to see if string is blank
      * @return true if no non-blank characters are found
@@ -1748,6 +1921,9 @@ class BasePTIParser : public BaseParser<_network>
     std::map<int,int> *p_busMap;
     // Map of PTI index pair to index in p_branchData
     std::map<std::pair<int, int>, int> *p_branchMap;
+
+    // String utility object for splitting lines in PSS/E files
+    gridpack::utility::StringUtils p_util;
 
     /**
      * Data collection object associated with network as a whole

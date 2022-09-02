@@ -31,6 +31,7 @@ function(gridpack_setup)
   set(GRIDPACK_HAVE_GLPK @USE_GLPK@)
   set(GRIDPACK_HAVE_GOSS @GOSS_DIR@)
   set(GRIDPACK_HAVE_APR @APR_DIR@)
+  set(GRIDPACK_USE_OLD_PETSC @USE_OLD_PETSC@)
 
   find_library(GRIDPACK_COMPONENTS_LIBRARY
     NAMES gridpack_components
@@ -87,15 +88,15 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
-  message(status "GRIDPACK_HAVE_GOSS: ${GRIDPACK_HAVE_GOSS}")
+  message(STATUS "GRIDPACK_HAVE_GOSS: ${GRIDPACK_HAVE_GOSS}")
   if (GRIDPACK_HAVE_GOSS) 
-  message(status "Adding GRIDPACK_GOSS library")
+  message(STATUS "Adding GRIDPACK_GOSS library")
   find_library(GRIDPACK_GOSS_LIBRARY
     NAMES gridpack_goss
     HINTS ${GRIDPACK_LIB_DIR}
   )
   endif()
-  message(status "GRIDPACK_GOSS_LIBRARY: ${GRIDPACK_GOSS_LIBRARY}")
+  message(STATUS "GRIDPACK_GOSS_LIBRARY: ${GRIDPACK_GOSS_LIBRARY}")
 
   find_library(GRIDPACK_YMATRIX_COMPONENTS_LIBRARY
     NAMES gridpack_ymatrix_components
@@ -127,6 +128,11 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_HADREC_MODULE_LIBRARY
+    NAMES gridpack_hadrec_module
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   find_library(GRIDPACK_DYNAMIC_SIMULATION_MODULE_LIBRARY
     NAMES gridpack_dynamic_simulation_module
     HINTS ${GRIDPACK_LIB_DIR}
@@ -153,6 +159,7 @@ function(gridpack_setup)
     ${GRIDPACK_DYNAMIC_SIMULATION_FULL_MODULE_LIBRARY}
     ${GRIDPACK_KALMAN_DS_MODULE_LIBRARY}
     ${GRIDPACK_STATE_ESTIMATION_MODULE_LIBRARY}
+    ${GRIDPACK_HADREC_MODULE_LIBRARY}
     ${GRIDPACK_YMATRIX_COMPONENTS_LIBRARY}
     ${GRIDPACK_PFMATRIX_COMPONENTS_LIBRARY}
     ${GRIDPACK_DSMATRIX_COMPONENTS_LIBRARY}
@@ -183,11 +190,18 @@ function(gridpack_setup)
   endif()
 
   if (GRIDPACK_HAVE_PETSC)
+    if (USE_OLD_PETSC)
+      list(APPEND gp_libs
+        @PETSC_LIBRARIES@
+      )
+    else()
+      list(APPEND gp_libs
+        @PETSC_LDFLAGS@
+        @PETSC_STATIC_LDFLAGS@
+      )
+    endif()
     list(APPEND gp_include
       @PETSC_INCLUDE_DIRS@
-    )
-    list(APPEND gp_libs
-      @PETSC_LIBRARIES@
     )
   endif()
 
@@ -239,6 +253,8 @@ function(gridpack_setup)
     CACHE STRING "Libraries for GridPACK"
   )
 
+  message(STATUS "Include directories for GridPACK: ${gp_include}")
+  message(STATUS "Libraries for GridPACK: ${gp_libs}")
   # set(GRIDPACK_DEFINITIONS
   #   "@GRIDPACK_DEFINITIONS@"
   #   CACHE STRING "Any compiler definitions/flags set in the GridPACK configuration"

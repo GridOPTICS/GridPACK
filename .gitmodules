@@ -5,4 +5,7 @@
 [submodule "src/ga"]
 	path = src/ga
 	url = https://github.com/wperkins/ga.git
-	branch = for_gridpack
+        branch = for-gridpack
+[submodule "python/pybind11"]
+	path = python/pybind11
+	url = https://github.com/pybind/pybind11.git

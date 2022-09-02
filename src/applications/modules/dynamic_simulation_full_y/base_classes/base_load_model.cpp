@@ -125,6 +125,14 @@ void gridpack::dynamic_simulation::BaseLoadModel::dynamicload_post_process(
 }
 
 /**
+* return true if load change is enabled
+* @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+*/
+bool gridpack::dynamic_simulation::BaseLoadModel::changeLoad(double percentageFactor)
+{
+}
+
+/**
  * Set voltage on each load
  */
 void gridpack::dynamic_simulation::BaseLoadModel::setVoltage(
@@ -147,6 +155,14 @@ void gridpack::dynamic_simulation::BaseLoadModel::setFreq(double dFreq)
 double gridpack::dynamic_simulation::BaseLoadModel::getInitReactivePower(void)
 {
 	return 0.0;
+}
+
+/**
+ * get the variable Fonline for each load
+ */
+double gridpack::dynamic_simulation::BaseLoadModel::getFonline(void)
+{
+	return 1.0;
 }
 
 /**
@@ -198,6 +214,12 @@ void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadP(double pl)
 void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadQ(double ql)
 {
 	dyn_q = ql;
+}
+/**
+  * Set same bus static load p and q for load shedding action usage
+*/
+void gridpack::dynamic_simulation::BaseLoadModel::setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag)
+{
 }
 void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadID(std::string load_id)
 {
