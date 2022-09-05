@@ -29,6 +29,7 @@
 #include <gridpack/math/linear_solver_interface.hpp>
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/environment/no_print.hpp>
 #include <gridpack/configuration/configurable.hpp>
 
 namespace gridpack {

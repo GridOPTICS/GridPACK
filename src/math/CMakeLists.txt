@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2020-06-02 06:48:10 d3g096
+# Last Change: 2022-08-08 08:32:05 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -91,7 +91,11 @@ if (PETSC_FOUND)
     petsc/petsc_dae_solver.cpp
     )  
 
+if (NOT USE_OLD_PETSC)
+  set(target_libraries PkgConfig::PETSC ${target_libraries})
+else()
   set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
+endif()
 
   add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml"
@@ -138,12 +142,35 @@ add_library(gridpack_math
 gridpack_set_library_version(gridpack_math)
 add_dependencies(gridpack_math external_build)
 
-target_link_libraries(gridpack_math 
-  gridpack_configuration
-  gridpack_timer
-  gridpack_parallel
-  ${PETSC_LIBRARIES}
+if (NOT USE_OLD_PETSC)
+  target_link_libraries(gridpack_math 
+    PUBLIC
+    gridpack_configuration
+    PUBLIC
+    gridpack_timer
+    PUBLIC
+    gridpack_parallel
+    PUBLIC
+    PkgConfig::PETSC
   )
+  
+  if (NOT BUILD_SHARED_LIBS)
+    target_link_libraries(gridpack_math 
+      PUBLIC
+      ${PETSC_STATIC_LIBRARIES}
+    )
+    target_link_options(gridpack_math PUBLIC ${PETSC_STATIC_LDFLAGS})
+  else()
+    target_link_options(gridpack_math PUBLIC ${PETSC_LDFLAGS})
+  endif()
+else()
+  target_link_libraries(gridpack_math 
+    gridpack_configuration
+    gridpack_timer
+    gridpack_parallel
+    ${PETSC_LIBRARIES}
+  )
+endif()
 
 # -------------------------------------------------------------
 # a small test (not a unit test)

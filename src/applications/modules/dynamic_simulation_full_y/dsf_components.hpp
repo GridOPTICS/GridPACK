@@ -34,18 +34,27 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay};
+enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q};
 
 // Small utility structure to encapsulate information about fault events
 struct Event{
-  double start,end; // start and end times of fault
-  double step;      // time increment of fault (not used?)
-  char tag[3];      // 2-character identifier of line or generator
-  bool isGenerator; // fault is a generator failure
-  int bus_idx;      // index of bus hosting generator
-  bool isLine;      // fault is a line failure
-  int from_idx;     // "from" bus of line
-  int to_idx;       // "to" bus of line
+  double start;         // start times of fault
+  double end;           // end times of fault
+  double step;          // time increment of fault (not used?)
+  std::string tag;      // 2-character identifier of line or generator
+  bool isGenerator;     // fault is a generator failure
+  bool isBus;           // fault is a bus failure
+  bool isLine;          // fault is a line failure
+  int bus_idx;          // index of fault bus, corresponding to the bus fault
+  int from_idx;         // "from" bus of line
+  int to_idx;           // "to" bus of line
+  Event(void)
+    : start(0.0), end(0.0), step(0.005),
+      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false),
+      bus_idx(-1), from_idx(-1), to_idx(-1)
+  {
+    tag = "1";
+  }
 };
 
 class DSFullBranch;
@@ -123,6 +132,8 @@ class DSFullBus
      * @param ts time step
      */
     void initDSVect(double ts);
+	
+	void setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase);
 
     /**
      * Update values for vectors in each integration time step (Predictor)
@@ -316,6 +327,23 @@ class DSFullBus
      * Clear fault event from bus
      */
     void clearEvent();
+	
+	void setBranchTripAction(int from_idx, int to_idx,
+		gridpack::component::BaseBranchComponent* branch_ptr);
+		
+	void clearBranchTripAction();
+	
+	void applyConstYLoad_Change_P(double loadPChangeMW);
+	void applyConstYLoad_Change_Q(double loadPChangeMVAR);
+	void clearConstYLoad_Change_P();
+	void clearConstYLoad_Change_Q();
+	
+	bool setConstYLoadtoZero_P( );
+	bool setConstYLoadtoZero_Q( );
+	
+	//bool setConstYLoadtoValue_P( double impedancer);
+	//bool setConstYLoadtoValue_Q( double impedancei);
+	bool setConstYLoadtoValue( double impedancer, double impedancei);
 
     /**
      * Write output from buses to standard out
@@ -386,6 +414,16 @@ class DSFullBus
      * @return rotor angle and speed for all watched generators on bus
      */
     std::vector<double> getWatchedValues();
+
+    /**
+     * Return rotor speed and angle for a specific generator
+     * @param idx index of generator
+     * @param speed generator rotor speed
+     * @param angle generator rotor angle
+	 * @param speed generator real power
+     * @param angle generator reactive power
+     */
+    void getWatchedValues(int idx, double *speed, double *angle, double *genP, double *genQ);
 
     /**
      * Check generators for frequency violations
@@ -459,6 +497,12 @@ class DSFullBus
     std::vector<std::string> getLoads();
 
     /**
+     * Get list of IDs for dynamic loads
+     * @return vector of dynamic load IDs
+     */
+    std::vector<std::string> getDynamicLoads();
+
+    /**
      * Get area parameter for bus
      * @return bus area index
      */
@@ -488,6 +532,88 @@ class DSFullBus
      loads
      */
     void setScale(double scale);
+	
+	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses will be changed to the values of 
+	 * the loadP and loadQ
+	*/
+	void scatterInjectionLoad(double loadP, double loadQ);
+	
+	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses will be changed to the values of 
+	 * the loadP and loadQ, this function keeps the Y load component of the bus still at the bus, while only compenstates the difference
+	*/
+	void scatterInjectionLoad_compensateY(double loadP, double loadQ);
+	
+	/**
+	* execute load scattering, the current values of the STATIC load at certain buses will be changed to the values of 
+	* the curR and curI
+	*/
+	void scatterInjectionLoadConstCurrent(double curR, double curI);
+	
+	/**
+     * apply load shedding for the loads in this bus
+     */
+	void applyLoadShedding(std::string loadid, double percentage);
+	
+	/**
+	 * execute constant Y load shedding 	 
+	 * percentage: float load shed percentage, for example -0.2 means shed 20%
+	 */
+	void applyConstYLoadShedding(double percentage );
+	
+	/**
+	 * set the wide area control signals of the PSS of a certain generator
+	 * input bus_number: generator bus number
+	 * input bus_number: generator gen ID
+	 * input wideAreaControlSignal:  wide area control signal for the PSS of the generator
+	 */
+	void setWideAreaControlSignal(std::string genid, double wideAreaControlSignal);
+	
+	/**
+     * execute Grid Forming Inverter control parameters adjustment at this bus
+	 * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
+	 * input bus_number: GFI gen ID
+	 * input newParValScaletoOrg: GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
+     */
+    void applyGFIAdjustment(int controlType, std::string genid, double newParValScaletoOrg);
+	
+     /**
+     * apply generator tripping for the specific generator with genid in this bus
+     */
+	void applyGeneratorTripping(std::string genid);
+
+
+   /**
+    * return the fraction online from dynamic load model
+    * @param idx index of dynamic load model
+    * @return fraction of dynamic load that is online
+    */
+   double getOnlineLoadFraction(int idx);
+
+   /**
+    * return the total load on the bus
+    * @param total_p total real power load on bus
+    * @param total_q total reactive power load on bus
+    */
+    void getTotalLoadPower(double &total_p, double &total_q) const;
+
+    /**
+     * return the real and reactive power produced by the generator indicated by
+     * the tag variable
+     * @param tag 2-character identifier for the generator
+     * @param pg real power produced by generator
+     * @param qg reactive power produced by generator
+     * @return false if no generator corresponds to tag value.
+     */
+    bool getGeneratorPower(std::string tag, double &pg, double &qg) const;
+
+   /**
+    * return the power generated on the bus
+    * @param total_p total active power generated on bus
+    * @param total_q total reactive power generated on bus
+    */
+    void getTotalGeneratorPower(double &total_p, double &total_q) const;
 
 #ifdef USE_FNCS
     /**
@@ -509,8 +635,19 @@ class DSFullBus
     double p_angle, p_voltage;
 	double p_busvolfreq, pbusvolfreq_old; //renke add, bus voltage frequency at current and previous timesteps
     bool p_load;
-    double p_pl, p_ql;
+    double p_pl, p_ql; //static loads for Y-bus formation, check the ::load() function for more info.
 	double p_loadimpedancer, p_loadimpedancei;
+	double p_Yload_change_r, p_Yload_change_i; // renke add, to enable constant-Y load changes during the dynamic simulation
+	                                           // per unit value based on system MVA 100, increase 500 MW load, p_Yload_change_r = 5.0
+	bool p_bconstYLoadSheddingFlag; //renke add, whether the static constant Y load of the bus has been shedding, true: has been shed
+    double 	remainConstYLoadPerc; // renke add, remaining percent of the static constant Y load of the bus
+	bool p_bscatterinjload_flag; //renke add, whether the static load of the bus could be modified at each time step 
+	bool p_bscatterinjload_flag_compensateY; //renke add, whether the static load of the bus could be modified at each time step, this flag is corresponding to the
+											 // scatterInjectionLoad_compensateY function, 
+											 // which keep the Y load component still at the bus, while only compenstate the difference
+	double p_scatterinjload_p, p_scatterinjload_q; //renke add, the value of the static load of the bus modified at each time step
+	bool p_bscatterinjloadconstcur_flag; //renke add, whether the static load of the bus could be modified at each time step as constant current load
+	double p_scatterinjload_constcur_r, p_scatterinjload_constcur_i; //renke add, the value of the static load of the bus modified at each time step as constant current load
     double p_sbase;
     bool p_isGen;
     int p_area;
@@ -518,14 +655,21 @@ class DSFullBus
     bool p_source;
     bool p_sink;
     double p_rtpr_scale;
-    std::vector<double> p_pg, p_qg, p_savePg, p_negpg, p_negqg;
+    std::vector<double> p_pg, p_qg, p_savePg, p_negpg, p_negqg, p_genpg_nodynmodel, p_genqg_nodynmodel;
     std::vector<double> p_mva, p_r, p_dstr, p_dtr, p_gpmin, p_gpmax;
-    int p_ngen, p_negngen;
+    int p_ngen, p_negngen, p_ngen_nodynmodel;
     int p_ndyn_load, p_npowerflow_load;
     int p_type;
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
+	bool p_Yload_change_P_flag, p_Yload_change_Q_flag; // renke add, indicating whether this bus has constant-Y load P or Q change,to enable constant-Y load change during dyn. simu.
+	bool p_bConstYLoadSettoZero_P, p_bConstYLoadSettoZero_Q; // renke add, indicating whether this bus's constant-Y load P or Q has been already set to zero, check the function
+															 // setConstYLoadtoZero_P to see the usage
+															 
+	bool p_bConstYLoadSettoValue; // renke add, indicating whether this bus's constant-Y load P or Q has been already set to some value, check the function
+															 // setConstYLoadtoValue to see the usage
 	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
+	bool p_branchtripaction_from_flag, p_branchtripaction_to_flag;
 	bool p_busrelaytripflag;
 	int p_bextendedloadbus; // whether it is an extended load bus with composite load model
 	                        // -1: normal bus
@@ -533,6 +677,7 @@ class DSFullBus
 							//  2: LOAD_BUS
     std::vector<std::string> p_genid;
     std::vector<std::string> p_loadid;
+    std::vector<std::string> p_dynamic_loadid;
     std::vector<int> p_gstatus;
     std::vector<bool> p_watch;
 
@@ -562,6 +707,8 @@ class DSFullBus
 
     gridpack::component::BaseBranchComponent* p_branch;
 	gridpack::component::BaseBranchComponent* p_relaytrippedbranch; //renke add
+	std::vector<gridpack::component::BaseBranchComponent*> p_vec_tripactionbranch; // the branch connect to this bus that will be tripped for the branch trip action
+	
 
     //std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseGenerator> >
       //p_generators;
@@ -726,7 +873,22 @@ class DSFullBranch
      * @return: value of update factor
      */
 	gridpack::ComplexType getBranchRelayTripUpdateFactor(); //renke add
-
+	
+	/**
+     * Return the updating factor that will be applied to the ybus matrix at
+     * the branch trip action
+     * @return: value of update factor
+     */
+	gridpack::ComplexType getBranchTripActionUpdateFactorForBus(int busNo); //renke add
+	gridpack::ComplexType getBranchTripActionUpdateFactorForward(); //renke add
+	
+	gridpack::ComplexType getBranchTripActionUpdateFactorReverse(); //renke add
+	
+	/**
+	 * Clear fault event from branch
+	*/
+	void clearEvent();
+	
     /**
      * Check to see if an event applies to this branch and set appropriate
      * internal parameters
@@ -735,6 +897,10 @@ class DSFullBranch
      */
     void setEvent(const Event &event);
 	
+	bool setBranchTripAction(const std::string ckt_tag);
+	bool setBranchTripAction();
+	void clearBranchTripAction();
+		
 	/**
      * update branch current
      */
@@ -760,6 +926,7 @@ class DSFullBranch
      * check the type of the extended load branch type variable: p_bextendedloadbranch
      */
 	int checkExtendedLoadBranchType(void);
+	
 
   private:
     std::vector<double> p_reactance;
@@ -772,7 +939,9 @@ class DSFullBranch
     std::vector<double> p_shunt_admt_g2;
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
+	std::vector<bool> p_switched;
 	std::vector<int> p_newtripbranchcktidx;
+	std::vector<int> p_vec_tripaction_branchcktidx;
 	
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
@@ -784,6 +953,7 @@ class DSFullBranch
     bool p_active;
     bool p_event;
 	bool p_branchrelaytripflag;
+	bool p_branchactiontripflag;  // whether this branch will be tripped due to a branch trip action
 	int  p_bextendedloadbranch; //whether this branch is added by composite load model
 								// -1: normal branch
 								//  1: transformer branch added by composite load model

@@ -47,9 +47,12 @@ int main(int argc, char **argv)
     cursor = config->getCursor("Configuration.Powerflow");
     bool useNonLinear = false;
     useNonLinear = cursor->get("UseNonLinear", useNonLinear);
-    bool exportPSSE = false;
-    std::string filename;
-    exportPSSE = cursor->get("exportPSSE_v33",&filename);
+    bool exportPSSE23 = false;
+    std::string filename23;
+    exportPSSE23 = cursor->get("exportPSSE_v23",&filename23);
+    bool exportPSSE33 = false;
+    std::string filename33;
+    exportPSSE33 = cursor->get("exportPSSE_v33",&filename33);
     bool noPrint = false;
     cursor->get("suppressOutput",&noPrint);
 
@@ -71,8 +74,11 @@ int main(int argc, char **argv)
     }
     pf_app.write();
     pf_app.saveData();
-    if (exportPSSE) {
-      pf_app.exportPSSE33(filename);
+    if (exportPSSE23) {
+      pf_app.exportPSSE23(filename23);
+    }
+    if (exportPSSE33) {
+      pf_app.exportPSSE33(filename33);
     }
     if (!noPrint) {
       timer ->dump();

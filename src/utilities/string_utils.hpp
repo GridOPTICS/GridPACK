@@ -223,7 +223,7 @@ public:
         ntok2 = strcpy.find(' ',ntok1);
         if (ntok2 == std::string::npos) ntok2 = slen;
       } 
-      if (ntok2 != std::string::npos) {
+      if (ntok1 != std::string::npos && ntok2 != std::string::npos) {
         ret.push_back(strcpy.substr(ntok1,ntok2-ntok1));
       }
     }
@@ -242,13 +242,13 @@ public:
     int slen = str.length();
     int ntok1, ntok2;
     std::vector<std::string> ret;
-    ntok1 = str.find_first_not_of(sep,0);
-    ntok2 = str.find(sep,ntok1);
+    ntok1 = str.find_first_not_of(*sep,0);
+    ntok2 = str.find(*sep,ntok1);
     if (ntok2 == std::string::npos) ntok2 = slen;
     if (ntok1<=ntok2) ret.push_back(str.substr(ntok1,ntok2-ntok1));
     while (ntok2 < slen-1 && ntok1 != std::string::npos) {
-      ntok1 = str.find_first_not_of(sep,ntok2);
-      ntok2 = str.find(sep,ntok1);
+      ntok1 = str.find_first_not_of(*sep,ntok2);
+      ntok2 = str.find(*sep,ntok1);
       if (ntok2 == std::string::npos) ntok2 = slen;
       if (ntok1<=ntok2) ret.push_back(str.substr(ntok1,ntok2-ntok1));
     }

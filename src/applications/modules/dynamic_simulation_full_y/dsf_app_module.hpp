@@ -7,7 +7,7 @@
 /**
  * @file   dsf_app_module.hpp
  * @author Shuangshuang Jin
- * @date   Feb 04, 2015
+ * @date   2020-02-12 12:17:37 d3g096
  *
  * @brief
  *
@@ -19,9 +19,17 @@
 #define _dsf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/network/base_network.hpp"
+#include "gridpack/component/base_component.hpp"
 #include "gridpack/configuration/configuration.hpp"
+#include "gridpack/parallel/global_vector.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "dsf_factory.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/math/math.hpp"
+#include "gridpack/parser/dictionary.hpp"
+//#include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 
 
 namespace gridpack {
@@ -76,8 +84,14 @@ class DSFullApp
     /**
      * Read generator parameters. These will come from a separate file (most
      * likely). The name of this file comes from the input configuration file.
+     * @param ds_idx index of dyr file if a list of dyr files are provided.
      */
-    void readGenerators(void);
+    void readGenerators(int ds_idx = -1);
+
+    /**
+     * Read sequence data from a file.
+     */
+    void readSequenceData();
 
     /**
      * Set up exchange buffers and other internal parameters and initialize
@@ -94,6 +108,138 @@ class DSFullApp
      * Execute the time integration portion of the application
      */
     void solve(gridpack::dynamic_simulation::Event fault);
+	
+	/**
+     * initialization before the time step integration starts 
+     */
+    void solvePreInitialize(gridpack::dynamic_simulation::Event fault);
+	
+	/**
+     * Execute only one simulation time step 
+     */
+    void executeOneSimuStep();
+	
+	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ
+	*/
+	void scatterInjectionLoad(const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
+	
+	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+     * and model the entire load change as injection current
+	*/
+	void scatterInjectionLoadNew(const std::vector<int>& vbusNum, 
+								const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
+								
+	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ - this implemnetation keeps the Y load component of the bus still at the bus, 
+	 * while only compenstates the difference
+	*/
+	void scatterInjectionLoadNew_compensateY(const std::vector<int>& vbusNum, 
+								const std::vector<double>& vloadP, const std::vector<double>& vloadQ);
+								
+	/**
+	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
+	 * the vector  vloadP and vloadQ - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+     * and model the entire load change as injection current, also add a large parallel connecting impedance at the certain bus
+	*/
+	void scatterInjectionLoadNew_Norton(const std::vector<int>& vbusNum, 
+								const std::vector<double>& vloadP, const std::vector<double>& vloadQ, 
+								const std::vector<double>& vimpedanceR, const std::vector<double>& vimpedanceI);
+								
+	/**
+	 * execute load scattering with constant current load , the values of the STATIC load current at certain buses vbusNum will be changed to the values of 
+     * the vector  vCurR and vCurI - new implemnetation by removing the contribution of the original constant Y load from y-maxtrix, 
+     * and model the entire load change as injection current
+    */
+ 
+    void scatterInjectionLoadNewConstCur(const std::vector<int>& vbusNum, 
+										const std::vector<double>& vCurR, const std::vector<double>& vCurI);
+	
+	/**
+     * execute load shedding	 
+     */
+    void applyLoadShedding(int bus_number, std::string loadid, double percentage);
+	
+	/**
+	 * execute constant Y load shedding at a curtain bus	 
+	 * bus number
+	 * percentage: float load shed percentage, for example -0.2 means shed 20%
+	 */
+	void applyConstYLoadShedding(int bus_number, double percentage );
+	
+	/**
+	 * set the wide area control signals of the PSS of a certain generator
+	 * input bus_number: generator bus number
+	 * input bus_number: generator gen ID
+	 * input wideAreaControlSignal:  wide area control signal for the PSS of the generator
+	 */
+	void setWideAreaControlSignal(int bus_number, std::string genid, double wideAreaControlSignal);
+	
+	/**
+     * execute Grid Forming Inverter control parameters adjustment
+	 * input controlTyp: 0: GFI mp adjust; 1: GFI mq adjust; 2: GFI Pset adjust; 3: GFI Qset adjust; others: invalid
+	 * input bus_number: GFI bus number
+	 * input bus_number: GFI gen ID
+	 * input newParValScaletoOrg: GFI new parameter scale value to the very intial value at the begining of dynamic simulation
+     */
+    void applyGFIAdjustment(int controlType, int bus_number, std::string genid, double newParValScaletoOrg);
+	
+	/**
+     * execute Constant Y load P change	 
+     */
+    void applyConstYLoad_Change_P(int bus_number, double loadPChangeMW);
+	void clearConstYLoad_Change_P();
+	
+	/**
+     * execute Constant Y load Q change	 
+     */
+    void applyConstYLoad_Change_Q(int bus_number, double loadPChangeMVAR);
+	void clearConstYLoad_Change_Q();
+	
+	void setConstYLoadtoZero_P(int bus_number);
+	void setConstYLoadtoZero_Q(int bus_number);
+	
+	/**
+     * set constant Y load to impedancer and impedancei
+    */
+    void setConstYLoadImpedance(int bus_number, double impedancer, double impedancei);
+	
+    /**
+     * execute generator tripping 
+     */
+    void applyGeneratorTripping(int bus_number, std::string genid);
+	
+	/**
+	* set all the necessery flags for the two buses and one branch for the line needs to trip
+	* this function is for single branch flags set-up, may need to be called
+	* multiple times for multiple line tripping 
+	*/
+	void setLineTripAction(int brch_from_bus_number, int brch_to_bus_number, std::string branch_ckt);
+	
+	/**
+	* set all the necessery flags for the two buses and one branch for the line needs to trip
+	* this function will trip a branch, given a bus number, just find any one of the 
+	* connected line(not transformer) with the bus, and trip that one
+	* this function is for single branch flags set-up, may need to be called
+	* multiple times for multiple line tripping 
+	*/
+	void setLineTripAction(int bus_number);
+	
+	/**
+	* clear all the necessery flags for the all buses and branches for the lines needs to trip
+	* this function is for all the branches' flags clear-up, just need to be called
+	* once to clear all the tripping lines's flag
+	*/
+	void clearLineTripAction();
+	
+	/**
+     * Check whether the dynamic simulation is done
+     */
+    bool isDynSimuDone();
 
     /**
      * Write out final results of dynamic simulation calculation to standard output
@@ -248,6 +394,148 @@ class DSFullApp
      */
     void setFrequencyMonitoring(bool flag, double maxFreq);
 
+    /**
+     * Get observations and store them internally
+     * @param cursor configuration pointer to observation block
+     */
+    void setObservations(gridpack::utility::Configuration::CursorPtr cursor);
+
+    /**
+     * Get bus and generator IDs for all observations
+     * @param genBuses host IDs for all observed generators
+     * @param genIDs character identifiers for all observed generators
+     * @param loadBuses host IDs for all observed dynamic loads
+     * @param loadIDs character identifiers for all observed dynamic loads
+     * @param busIDs bus IDs for all observed buses
+     */
+    void getObservationLists(std::vector<int> &genBuses,
+        std::vector<std::string> &genIDs,  std::vector<int> &loadBuses,
+        std::vector<std::string> &loadIDs, std::vector<int> &busIDs);
+		
+	/**
+	* Get bus and generator IDs for all observations including bus frequency ob
+	* @param genBuses host IDs for all observed generators
+	* @param genIDs character identifiers for all observed generators
+	* @param loadBuses host IDs for all observed dynamic loads
+	* @param loadIDs character identifiers for all observed dynamic loads
+	* @param busIDs bus IDs for all observed buses
+	* @param busfreqIDs bus IDs for all observed buses for bus frequency
+	*/
+	void getObservationLists_withBusFreq(
+		std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+		std::vector<int> &loadBuses, std::vector<std::string> &loadIDs,
+		std::vector<int> &busIDs, std::vector<int> &busfreqIDs);
+
+    /**
+     * Get current values of observations
+     * @param vMag voltage magnitude for observed buses
+     * @param vAng voltage angle for observed buses
+     * @param rSpd rotor speed on observed generators
+     * @param rAng rotor angle on observed generators
+	 * @param genP real power on observed generators
+     * @param genQ reactive power on observed generators
+     * @param fOnline fraction of load shed
+     */
+    void getObservations(std::vector<double> &vMag, std::vector<double> &vAng,
+        std::vector<double> &rSpd, std::vector<double> &rAng,
+		std::vector<double> &genP, std::vector<double> &genQ,
+        std::vector<double> &fOnline);
+		
+	/**
+	* Get current values of observations including bus frequency ob
+	* @param vMag voltage magnitude for observed buses
+	* @param vAng voltage angle for observed buses
+	* @param rSpd rotor speed on observed generators
+	* @param rAng rotor angle on observed generators
+	* @param genP real power on observed generators
+	* @param genQ reactive power on observed generators
+	* @param fOnline fraction of load shed
+	* @param busfreq frequency of the buses in ob list
+	*/
+	void getObservations_withBusFreq(
+		std::vector<double> &vMag, std::vector<double> &vAng,
+		std::vector<double> &rSpd, std::vector<double> &rAng,
+		std::vector<double> &genP, std::vector<double> &genQ,
+		std::vector<double> &fOnline, std::vector<double> &busfreq);
+
+    /**
+     * Return values for total active and reactive load power on bus
+     * @param bus_id original bus index
+     * @param lp active load power
+     * @param lq reactive load power
+     * @return false if bus is not found on this processor
+     */
+    bool getBusTotalLoadPower(int bus_id, double &total_p, double &total_q);
+
+    /**
+     * Return real and reactive power produced by requested generator
+     * @param bus_id original index for bus hosting generator
+     * @param gen_id 2-character identifier for generator
+     * @param pg active power produced by generator
+     * @param qg reactive power produced by generator
+     * @return false if generator is not found on this processor
+     */
+    bool getGeneratorPower(int bus_id, std::string gen_id, double &pg, double &qg);
+
+    /**
+     * Return total active and reactive loads for each zone
+     * @param load_p active load for all zones
+     * @param load_q reactive load for all zones
+     * @param zone_id label for each zone
+     */
+    void getZoneLoads(std::vector<double> &load_p, std::vector<double> &load_q,
+        std::vector<int> &zone_id) const;
+
+    /**
+     * Return total active and reactive generator power for each zone
+     * @param generator_p active generator power for all zones
+     * @param generator_q reactive generator power for all zones
+     * @param zone_id label for each zone
+     */
+    void getZoneGeneratorPower(std::vector<double> &generator_p,
+        std::vector<double> &generator_q, std::vector<int> &zone_id) const;
+
+    /**
+     * Modify generator parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param gen_id two character token specifying generator on bus
+     * @param genParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, double value);
+    bool modifyDataCollectionGenParam(int bus_id, std::string gen_id,
+        std::string genParam, int value);
+
+    /**
+     * Modify load parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param load_id two character token specifying load on bus
+     * @param loadParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, double value);
+    bool modifyDataCollectionLoadParam(int bus_id, std::string load_id,
+        std::string loadParam, int value);
+
+    /**
+     * Modify parameters in data collection for specified bus
+     * @param bus_id bus ID
+     * @param busParam string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    bool modifyDataCollectionBusParam(int bus_id,
+        std::string busParam, double value);
+    bool modifyDataCollectionBusParam(int bus_id,
+        std::string busParam, int value);
+
   private:
     /**
      * Utility function to convert faults that are in event list into
@@ -299,6 +587,137 @@ class DSFullApp
      */
     bool checkFrequency(double limit);
 
+    /**
+     * Get a list of unique zones in the system
+     * @param zones a complete list of all zones in the network
+     */
+    void getZoneList(std::vector<int> &zones) const;
+
+    /**
+     * Template function for modifying generator parameters in data collection
+     * for specified bus
+     * @param bus_id bus ID
+     * @param gen_id two character token specifying generator on bus
+     * @param gen_par string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_modifyDataCollectionGenParam(
+        int bus_id, std::string gen_id, std::string genParam, T value)
+    {
+      std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          boost::shared_ptr<gridpack::component::DataCollection> data =
+            p_network->getBusData(indices[i]);
+          int ngen;
+          if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+            int igen = -1;
+            T tval;
+            int j;
+            std::string gID;
+            for (j = 0; j<ngen; j++) {
+              // Get index of generator
+              if (data->getValue(GENERATOR_ID,&gID,j)) {
+                if (gID == gen_id) {
+                  igen = j;
+                  break;
+                }
+              }
+            }
+            if (igen >= 0) {
+              if (data->setValue(genParam.c_str(),value,igen)) {
+                ret = true;
+              }
+            }
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
+    /**
+     * Template function for modifying load parameters in data collection for
+     * specified bus
+     * @param bus_id bus ID
+     * @param load_id two character token specifying load on bus
+     * @param load_par string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_modifyDataCollectionLoadParam(int bus_id, std::string load_id,
+          std::string loadParam, T value)
+    {
+      std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          boost::shared_ptr<gridpack::component::DataCollection> data =
+            p_network->getBusData(indices[i]);
+          int nload;
+          if (data->getValue(LOAD_NUMBER, &nload)) {
+            int iload = -1;
+            T tval;
+            int j;
+            std::string lID;
+            for (j = 0; j<nload; j++) {
+              if (data->getValue(LOAD_ID,&lID,j)) {
+                if (lID == load_id) {
+                  iload = j;
+                  break;
+                }
+              }
+            }
+            if (iload >= 0) {
+              if (data->setValue(loadParam.c_str(),value,iload)) {
+                ret = true;
+              }
+            }
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
+    /**
+     * Template function for modifying parameters in data collection for
+     * specified bus
+     * @param bus_id bus ID
+     * @param bus_par string representing dictionary name of data element
+     *                to be modified
+     * @param value new value of parameter
+     * @return return false if parameter is not found
+     */
+    template <typename T>
+    bool p_modifyDataCollectionBusParam(int bus_id, std::string busParam, 
+        T value)
+    {
+      std::vector<int> indices = p_network->getLocalBusIndices(bus_id);
+      if (indices.size() > 0) {
+        int i;
+        bool ret = false;
+        for (i=0; i<indices.size(); i++) {
+          boost::shared_ptr<gridpack::component::DataCollection> data =
+            p_network->getBusData(indices[i]);
+          T tval;
+          if (data->setValue(busParam.c_str(),value)) {
+            ret = true;
+          }
+        }
+        return ret;
+      }
+      return false;
+    }
+
     std::vector<gridpack::dynamic_simulation::Event> p_faults;
 
     // pointer to network
@@ -309,6 +728,17 @@ class DSFullApp
 
     // pointer to factory
     boost::shared_ptr<DSFullFactory> p_factory;
+	
+	// whether iteratively solve the network interface 
+	bool p_biterative_solve_network;
+	double ITER_TOL;  // iteratively solve the network interface tolerance, defined in xml file
+	int MAX_ITR_NO;   // iteratively solve the network interface max iteration number, defined in xml file
+	
+	// whether print out debug information for iteratively solve the network interface 
+	bool p_iterative_network_debug;
+	
+	//for the generator observations, output the generator power based on system base or generator base
+	bool p_generator_observationpower_systembase;
 
     // Simulation time
     double p_sim_time;
@@ -332,6 +762,9 @@ class DSFullApp
 
     // file name for generator watch file
     std::string p_gen_watch_file;
+
+    // suppress watch file output but still monitor watched generators
+    bool p_suppress_watch_files;
 
     // flag indicating whether or not to use application supplied generator
     // watch file name or name from input deck
@@ -358,6 +791,20 @@ class DSFullApp
 
     // Tags of generators that are being monitors
     std::vector<std::string> p_watch_gen_ids;
+	
+	//branches need to be tripped at a specific dynamic simulation step
+	std::vector<gridpack::dynamic_simulation::DSFullBranch*> p_vbranches_need_to_trip;
+	
+	//flag indicating whether there is/are branches need to be tripped at a specific dynamic simulation step
+	bool bapplyLineTripAction;
+	
+	//flag indicating whether there is/are bus load P or Q change at a specific dynamic simulation step
+	bool bapplyLoadChangeP;
+	bool bapplyLoadChangeQ;
+	
+	std::vector<gridpack::dynamic_simulation::DSFullBus*> p_vbus_need_to_changeP;
+	std::vector<gridpack::dynamic_simulation::DSFullBus*>p_vbus_need_to_changeQ;
+
 
     // Monitor generators for instability
     bool p_monitorGenerators;
@@ -397,6 +844,111 @@ class DSFullApp
 
    // Record bus ID where frequency violation occured
    std::vector<int> p_violations;
+
+   // Report observations even if the corresponding network elements do not
+   // exist
+   bool p_report_dummy_obs;
+
+   // Observation data structures
+   std::vector<int> p_obs_genBus;
+   std::vector<std::string> p_obs_genIDs;
+   std::vector<int> p_obs_loadBus;
+   std::vector<std::string> p_obs_loadIDs;
+   std::vector<int> p_obs_vBus;
+   std::vector<int> p_obs_vBusfreq;
+
+   std::vector<int> p_obs_lGenIdx;
+   std::vector<int> p_obs_GenIdx;
+   std::vector<int> p_obs_lGenBus;
+   std::vector<std::string> p_obs_lGenIDs;
+   std::vector<int> p_obs_gActive;
+   std::vector<int> p_obs_gUse;
+
+   std::vector<int> p_obs_lLoadIdx;
+   std::vector<int> p_obs_LoadIdx;
+   std::vector<int> p_obs_lLoadBus;
+   std::vector<std::string> p_obs_lLoadIDs;
+   std::vector<int> p_obs_lActive;
+   std::vector<int> p_obs_lUse;
+
+   std::vector<int> p_obs_lVIdx;
+   std::vector<int> p_obs_VIdx;
+   std::vector<int> p_obs_lVBus;
+   std::vector<int> p_obs_vActive;
+   std::vector<int> p_obs_vUse;
+   
+   std::vector<int> p_obs_lVIdxfreq;
+   std::vector<int> p_obs_VIdxfreq;
+   std::vector<int> p_obs_lVBusfreq;
+   std::vector<int> p_obs_vActivefreq;
+   std::vector<int> p_obs_vUsefreq;
+
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vMag;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vAng;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vBusfreqVal;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rSpd;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rAng;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_genP;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_genQ;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_fOnline;
+   
+   // below are all variables originally defined the solve function, now define them as class private members
+   boost::shared_ptr < gridpack::mapper::FullMatrixMap<DSFullNetwork> > ybusMap_sptr;  
+   boost::shared_ptr<gridpack::math::Matrix> orgYbus;  
+   boost::shared_ptr<gridpack::math::Matrix> ybusyl;  
+   boost::shared_ptr<gridpack::math::Matrix> ybuspg;
+   boost::shared_ptr<gridpack::math::Matrix> ybus_jxd;
+   boost::shared_ptr<gridpack::math::Matrix> ybus;
+   boost::shared_ptr<gridpack::math::Matrix> ybus_fy;
+   boost::shared_ptr<gridpack::math::Matrix> ybus_posfy;
+   
+   boost::shared_ptr < gridpack::mapper::BusVectorMap<DSFullNetwork> > ngenMap_sptr; 
+   boost::shared_ptr<gridpack::math::Vector> volt;
+   
+   boost::shared_ptr < gridpack::mapper::BusVectorMap<DSFullNetwork> > nbusMap_sptr;
+   boost::shared_ptr<gridpack::math::Vector> INorton_full;
+   boost::shared_ptr<gridpack::math::Vector> INorton_full_chk;
+   boost::shared_ptr<gridpack::math::Vector> volt_full;
+   double max_INorton_full;
+   
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_sptr;
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_fy_sptr;
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_posfy_sptr;
+   
+   int simu_total_steps;
+   int S_Steps;
+   int last_S_Steps;
+   int steps3, steps2, steps1;
+   double h_sol1, h_sol2;
+   int flagP, flagC;
+   int Simu_Current_Step;
+   bool p_bDynSimuDone;
+   
+   const double sysFreq = 60.0;
+   double pi = 4.0*atan(1.0);
+   const double basrad = 2.0 * pi * sysFreq;
+   //gridpack::ComplexType jay(0.0, 1.0);
+   
+   //timer for record the excution time for each main modules
+   //gridpack::utility::CoarseTimer *timer;
+   int t_solve;
+   int t_execute_steps;
+   int t_presolve;
+   int t_misc;
+   int t_mode;
+   int t_ybus;
+   int t_init;
+   int t_mIf;
+   int t_psolve;
+   int t_vmap;
+   int t_volt;
+   int t_predictor;
+   int t_csolve;
+   int t_corrector;
+   int t_secure;
+   int t_cmIf;
+   
+   
 };
 
 } // dynamic simulation

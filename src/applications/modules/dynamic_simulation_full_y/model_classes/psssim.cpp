@@ -38,6 +38,7 @@ gridpack::dynamic_simulation::PsssimModel::PsssimModel(void)
   dx3pss_1 = 0.0;
   wideareafreq = 0.0;
   kp = 7.0/60.0;
+  bdebug = false;
   
 }
 
@@ -75,7 +76,7 @@ void gridpack::dynamic_simulation::PsssimModel::load(
   if (!data->getValue(PSSSIM_MAXOUT, &maxout, idx)) maxout = 0.2; // Vrmax
   if (!data->getValue(PSSSIM_MINOUT, &minout, idx)) minout = -0.05; // Vrmin
   
-  printf("----!!renke debug:  psssim load:  %d, %d, %d, %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", inputtype, bus1, bus2, gaink, tw, t1, t2, t3, t4, maxout, minout); 
+  if (bdebug) printf("----!!renke debug:  psssim load:  %d, %d, %d, %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", inputtype, bus1, bus2, gaink, tw, t1, t2, t3, t4, maxout, minout); 
 
   //if (!data->getValue(EXCITER_TA1, &Ta1, idx)) Ta1 = 0.0; // Ta1
 }
@@ -106,7 +107,7 @@ void gridpack::dynamic_simulation::PsssimModel::init(double mag, double ang, dou
 //	 psscon2 = 1.0; 
 //  }
 
-  printf("----renke debug: psssim init:  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", x1pss_1, x2pss_1, x3pss_1, pssout_vstab, psscon1, psscon2); 
+  if (bdebug) printf("----renke debug: psssim init:  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", x1pss_1, x2pss_1, x3pss_1, pssout_vstab, psscon1, psscon2); 
 }
 
 /**
@@ -129,7 +130,8 @@ void gridpack::dynamic_simulation::PsssimModel::predictor(double t_inc, bool fla
 	
 	if (inputtype == 1){
 		addwidearea = kp*wideareafreq;
-		printf ("-------------!renke debug: PsssimModel::predictor wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
+		if (bdebug) printf ("-------------!renke debug: PsssimModel::predictor wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
+		//printf ("-------------!renke debug: PsssimModel::predictor wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
 	}else{
 		addwidearea = 0.0;
 	}
@@ -178,7 +180,8 @@ void gridpack::dynamic_simulation::PsssimModel::corrector(double t_inc, bool fla
 	
 	if (inputtype == 1){
 		addwidearea = kp*wideareafreq;
-		printf ("-------------!renke debug: PsssimModel::corrector: wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
+		if (bdebug) printf ("-------------!renke debug: PsssimModel::corrector: wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
+		//printf ("-------------!renke debug: PsssimModel::predictor wide area freq: %12.6f, addwidearea: %12.6f \n", wideareafreq, addwidearea);
 	}else{
 		addwidearea = 0.0;
 	}
@@ -234,7 +237,8 @@ double gridpack::dynamic_simulation::PsssimModel::getBusFreq(int busnum)
 }
 
 void gridpack::dynamic_simulation::PsssimModel::setWideAreaFreqforPSS(double freq)
-{
+{	
+	//printf ( "-------------!renke debug: PsssimModel::setWideAreaFreqforPSS wide area freq: %12.6f \n", freq );
 	wideareafreq = freq;
 }
 

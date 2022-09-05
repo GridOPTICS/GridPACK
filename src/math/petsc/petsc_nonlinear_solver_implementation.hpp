@@ -170,7 +170,7 @@ protected:
         msg = 
           boost::str(boost::format("%d: PETSc SNES converged after %d iterations, reason: %d") % 
                      me % iter % reason);
-        std::cerr << msg << std::endl;
+        //std::cerr << msg << std::endl; renke modify to suppress the pets c output
       }
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);

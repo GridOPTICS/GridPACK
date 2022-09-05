@@ -28,12 +28,14 @@
  *  Basic constructor
  */
 gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
-{
-  volt_measured0 = 0.0; // contracttor and UV relays
-  freq_measured0 = 1.0; // for relay  models
-  temperatureA0 = 0.0; // for thermal protection
-  temperatureB0 = 0.0; // for thermal protection
-  volt_measured = 0.0; // contracttor and UV relays
+{ // with zero -> predictor step, without zero -> corrector
+  bdebugprint = false;
+  
+  volt_measured0 = 0.0; // contractor and UV relays, voltage into the 1-ph A/C model is measured value with a delay of Tv, volt_measured = 1/(1+Tv*s) * vt
+  freq_measured0 = 1.0; // for relay  models, frequency into the 1-ph A/C model is measured value with a delay of Tf, freq_measured = 1/(1+Tf*s) * freq
+  temperatureA0 = 0.0; // for thermal protection, it is theta in thermal relay model
+  temperatureB0 = 0.0; // for thermal protection, it is theta in thermal relay model
+  volt_measured = 0.0; // contractor and UV relays
   freq_measured = 1.0; // for relay  models
   temperatureA = 0.0; // for thermal protection
   temperatureB = 0.0; // for thermal protection
@@ -108,6 +110,7 @@ gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
   Bstall = 0.0;
   equivY =0.0; // motor base
   equivY_sysMVA =0.0; // system mva base
+  
        
   INorton_sysMVA = 0.0; // system base
        
@@ -144,6 +147,14 @@ gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
   equivYpq_motorBase = 0.0;
         
   I_conv_factor_M2S = 0.0;
+  
+  Fonline = 1.0;
+  acload_perc = 0.43; //ac motor load percentage to the total load, default 0.43;
+  samebus_static_loadP = 0.0;
+  samebus_static_loadQ = 0.0;
+  samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);
+  
+  
 
 }
 
@@ -178,7 +189,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
   setDynLoadQ(p_ql);
   setDynLoadID(p_loadid);
   
-  printf("AcmotorLoad::load: p_pl: %12.6f, p_ql: %12.6f \n", p_pl, p_ql);
+  if (bdebugprint) printf("AcmotorLoad::load: p_pl: %12.6f, p_ql: %12.6f \n", p_pl, p_ql);
   	
   if (!data->getValue(LOAD_TSTALL, &Tstall, idx))  		Tstall = 0.033;
   
@@ -231,10 +242,10 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
   if (!data->getValue(LOAD_UVTR2, &Uvtr2, idx))  Uvtr2 	= 0.9;
   if (!data->getValue(LOAD_TTR2, &Ttr2 , idx))  Ttr2 	= 5.0;
  
- printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
-    printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
-    printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
-    printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
+    if (bdebugprint) printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
+    if (bdebugprint) printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
+    if (bdebugprint) printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
+    if (bdebugprint) printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
   
   
   // set the information of dynamic load P, Q, id at the base class level too.
@@ -243,7 +254,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
   setDynLoadQ(p_ql);
   setDynLoadID(p_loadid);
   
-  printf("AcmotorLoad::load: p_pl: %12.6f, p_ql: %12.6f \n", p_pl, p_ql);
+  if (bdebugprint) printf("AcmotorLoad::load: p_pl: %12.6f, p_ql: %12.6f \n", p_pl, p_ql);
   	
   if (!data->getValue(LOAD_TSTALL, &Tstall, idx))  		Tstall = 0.033;
   if (!data->getValue(LOAD_TRESTART, &Trst 	, idx))  	Trst 	= 0.4;
@@ -283,11 +294,16 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
   if (!data->getValue(LOAD_TTR1, &Ttr1 , idx))  Ttr1 	= 0.2;
   if (!data->getValue(LOAD_UVTR2, &Uvtr2, idx))  Uvtr2 	= 0.9;
   if (!data->getValue(LOAD_TTR2, &Ttr2 , idx))  Ttr2 	= 5.0;
- 
- printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
-    printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
-    printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
-    printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
+  if (!data->getValue(LOAD_AC_PERC, &acload_perc, idx)) acload_perc = 0.43;
+  //printf("-------rkde,  ac motor acload_perc: %.2f\n", acload_perc);
+  
+  if (acload_perc< 0.01) acload_perc = 0.43; //if the LOAD_AC_PERC is not defined in the dyr file, as the normal PSS/E dyr file
+  //printf("-------rkde after mod,  ac motor acload_perc: %.2f\n", acload_perc);
+  
+    if (bdebugprint) printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
+    if (bdebugprint) printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
+    if (bdebugprint) printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
+    if (bdebugprint) printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
   
 }
 
@@ -306,13 +322,17 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   PintMW = p_pl;
   systemMVABase = 100.0;
   vt = mag;
+  
+  presentMag = mag;
+  vt_complex = gridpack::ComplexType(mag*cos(ang), mag*sin(ang)); 
 
   if (CompLF ==0.0)
     CompLF = 1.0;
 
   // calculate the mva base
-  Pinit = PintMW; //SJin: what is PintMW
+  Pinit = PintMW * acload_perc; // Yuan. please consider the ac motor/ static load percentage here
   MVABase = Pinit / CompLF;
+  
   I_conv_factor_M2S = MVABase / systemMVABase;  // factor for Converting from motor to system base
 
   Gstall = Rstall / (Rstall * Rstall + Xstall * Xstall);
@@ -320,7 +340,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
 
   equivY = gridpack::ComplexType(Gstall, Bstall); 
 
-  equivY_sysMVA = equivY * MVABase / systemMVABase;
+  equivY_sysMVA = equivY * MVABase / systemMVABase;  // Yuan, please modify the equivY_sysMVA based on the static load
+  
+  samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);//Yuan, please modify this equivY to be the value of the corresponding 30% static load at the system MVA
   
   //printf("AcmotorLoad::init: equivY_sysMVA: %12.6f + j %12.6f \n", real(equivY_sysMVA), imag(equivY_sysMVA));
 
@@ -360,7 +382,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   double v = 0.4;
   while (v <= Vbrk) {
     double pst = Gstall * v * v; //renke??
-    double p_comp = P0 + Kp1 * pow(v - Vbrk, Np1);
+    double p_comp = P0 + Kp1 * pow(v - Vbrk, Np1); // original
+	//double p_comp = P0 + Kp2 * pow(v - Vbrk, Np2);  // Yuan changed on 20200709
 
     if (p_comp < pst) {
       Vstallbrk = v;
@@ -376,7 +399,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
 
   if (Th1t >0.0 && Th2t > Th1t) {
     thEqnA = -1.0/(Th2t - Th1t);
-    thEqnB = Th2t/(Th2t - Th1t);
+    thEqnB = Th2t/(Th2t - Th1t); // for the thermal relay model, if Th1t<theta<Th2t, fth = 1.0/(Th2t - Th1t) * (Th2t - theta) = thEqnA * theta + thEqnB
   }
 
   // check parameter Vc2off and Vc1off, Vc2off should be no larger than Vc1ff
@@ -392,16 +415,20 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   temperatureA0 = temperatureA; // for thermal protection
   temperatureB0 = temperatureB; // for thermal protection
   
-  printf("AcmotorLoad::Init(), I_conv_factor_M2S: %12.6f, MVABase: %12.6f  \n", I_conv_factor_M2S, MVABase);
-  printf("AcmotorLoad::Init(), equivY_sysMVA: %12.6f + j %12.6f  \n", real(equivY_sysMVA), imag(equivY_sysMVA) );
-  printf("AcmotorLoad::Init(), equivYpq_motorBase: %12.6f + j %12.6f  \n", real(equivYpq_motorBase), imag(equivYpq_motorBase) );
-  printf("AcmotorLoad::Init(), Pinit_pu: %12.6f, Qinit_pu: %12.6f, Imotor_init: %12.6f,  temperatureA: %12.6f\n", Pinit_pu, Qinit_pu, Imotor_init, temperatureA);
-  printf("AcmotorLoad::Init(), volt: %12.6f, volt_measured: %12.6f, P0: %12.6f, Q0: %12.6f  \n", volt, volt_measured, P0, Q0);
-  printf("AcmotorLoad::Init(), Vstall: %12.6f, Vbrk: %12.6f, Vstallbrk: %12.6f  \n", Vstall, Vbrk, Vstallbrk);
-  printf("AcmotorLoad::Init(), thEqnA: %12.6f, thEqnB: %12.6f, Vc2off: %12.6f, Vc2on: %12.6f  \n", thEqnA, thEqnB, Vc2off, Vc2on);
+  if (bdebugprint) printf("AcmotorLoad::Init(), I_conv_factor_M2S: %12.6f, MVABase: %12.6f  \n", I_conv_factor_M2S, MVABase);
+  if (bdebugprint) printf("AcmotorLoad::Init(), equivY_sysMVA: %12.6f + j %12.6f  \n", real(equivY_sysMVA), imag(equivY_sysMVA) );
+  if (bdebugprint) printf("AcmotorLoad::Init(), equivYpq_motorBase: %12.6f + j %12.6f  \n", real(equivYpq_motorBase), imag(equivYpq_motorBase) );
+  if (bdebugprint) printf("AcmotorLoad::Init(), Pinit_pu: %12.6f, Qinit_pu: %12.6f, Imotor_init: %12.6f,  temperatureA: %12.6f\n", Pinit_pu, Qinit_pu, Imotor_init, temperatureA);
+  if (bdebugprint) printf("AcmotorLoad::Init(), volt: %12.6f, volt_measured: %12.6f, P0: %12.6f, Q0: %12.6f  \n", volt, volt_measured, P0, Q0);
+  if (bdebugprint) printf("AcmotorLoad::Init(), Vstall: %12.6f, Vbrk: %12.6f, Vstallbrk: %12.6f  \n", Vstall, Vbrk, Vstallbrk);
+  if (bdebugprint) printf("AcmotorLoad::Init(), thEqnA: %12.6f, thEqnB: %12.6f, Vc2off: %12.6f, Vc2on: %12.6f  \n", thEqnA, thEqnB, Vc2off, Vc2on);
   
-  setDynLoadQ(getInitReactivePower());
- 
+  setDynLoadP(Pinit);
+  setDynLoadQ(getInitReactivePower()); // original, 20200714
+  
+  Fonline = 1.0;
+  //acload_perc = 0.7;
+  
 }
 
 /**
@@ -432,7 +459,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::AcmotorLoad::NortonImpedence
     CompLF = 1.0;
 
   // calculate the mva base
-  Pinit = PintMW; //SJin: what is PintMW
+  Pinit = PintMW * acload_perc; //SJin: what is PintMW
   MVABase = Pinit / CompLF;
   I_conv_factor_M2S = MVABase / systemMVABase;  // factor for Converting from motor to system base
 
@@ -441,7 +468,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::AcmotorLoad::NortonImpedence
 
   equivY = gridpack::ComplexType(Gstall, Bstall); 
 
-  equivY_sysMVA = equivY * MVABase / systemMVABase;
+  equivY_sysMVA = equivY * MVABase / systemMVABase; 
   
   return equivY_sysMVA;
   
@@ -461,12 +488,13 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor_currentInjection(bool 
   }
   gridpack::ComplexType Imotor_motorBase = equivYpq_motorBase * vt_complex;
   
-  printf("AcmotorLoad::predictor_currentInjection, equivY_sysMVA: %12.6f +j %12.6f\n", real(equivY_sysMVA), imag(equivY_sysMVA));
-  printf("AcmotorLoad::predictor_currentInjection, vt_complex: %12.6f +j %12.6f\n", real(vt_complex), imag(vt_complex));
-  printf("AcmotorLoad::predictor_currentInjection, Imotor_motorBase: %12.6f +j %12.6f\n", real(Imotor_motorBase), imag(Imotor_motorBase));
-  printf("AcmotorLoad::predictor_currentInjection, I_conv_factor_M2S: %12.6f \n", I_conv_factor_M2S);
+  if (bdebugprint) printf("AcmotorLoad::predictor_currentInjection, equivY_sysMVA: %12.6f +j %12.6f\n", real(equivY_sysMVA), imag(equivY_sysMVA));
+  if (bdebugprint) printf("AcmotorLoad::predictor_currentInjection, vt_complex: %12.6f +j %12.6f\n", real(vt_complex), imag(vt_complex));
+  if (bdebugprint) printf("AcmotorLoad::predictor_currentInjection, Imotor_motorBase: %12.6f +j %12.6f\n", real(Imotor_motorBase), imag(Imotor_motorBase));
+  if (bdebugprint) printf("AcmotorLoad::predictor_currentInjection, I_conv_factor_M2S: %12.6f \n", I_conv_factor_M2S);
   
-  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S;
+  //INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S; //original one without considering loadshedding of the same bus static load
+  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline); // original
   p_INorton = INorton_sysMVA; // SJin: Correct? 
 } 
 
@@ -494,8 +522,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor(
   }
          
   // step -2 dx/dt
-  dv_dt0 = (vt - volt_measured0) / Tv; // only used for relay and protection, not in dynamic calculation
-  dfreq_dt0 = (freq - freq_measured0) / Tf; // only used for relay and protection, not in dynamic calculation
+  dv_dt0 = (vt - volt_measured0) / Tv; // only used for relay and protection, not in dynamic calculation, in dv_dt0, v represents volt_measured. This is the dyn eqns of voltage sensor.
+  dfreq_dt0 = (freq - freq_measured0) / Tf; // only used for relay and protection, not in dynamic calculation. This is the dyn eqns of frequency sensor.
   // the thermal proection temperature is only measured when the AC is stalled
   //double i = sqrt(-1);
   gridpack::ComplexType ImotorA_pu(0.0, 0.0);
@@ -532,7 +560,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor(
 void gridpack::dynamic_simulation::AcmotorLoad::corrector_currentInjection(bool flag)
 {
   gridpack::ComplexType Imotor_motorBase = equivYpq_motorBase * vt_complex;
-  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S;
+  
+  //INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S; //original one without considering loadshedding of the same bus static load
+  INorton_sysMVA = equivY_sysMVA * vt_complex - Imotor_motorBase * I_conv_factor_M2S + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline); // original
   p_INorton = INorton_sysMVA; // SJin: Correct? 
 }
 
@@ -624,12 +654,12 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
   
   // contractor
   // Contactor – If the voltage drops to below Vc2off, all of the load is tripped; if the voltage is between
-  // Vc1off and Vc2off, a linear fraction of the load is tripped. If the voltage later recovers to above Vc2on, all
+  // Vc1off and Vc2off, a linear fraction of the load is tripped. If the voltage later recovers to above Vc1on, all
   // of the motor is reconnected; if the voltage recovers to between Vc2on and Vc1on, a linear fraction of the
   // load is reconnected.
   
   if ( volt_measured <  Vc2off){
-     Kcon = 0.0;
+     Kcon = 0.0;  // fraction not tripped by contactor
      fcon_trip = 1.0;
   }
   else if ( volt_measured >=  Vc2off &&  
@@ -644,8 +674,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
      Kcon = 1.0;
   } else if  ( volt_measured <  Vc1on &&   volt_measured >=  Vc2on) {  
     double Frecv =  ( volt_measured -  Vc2on)/( Vc1on -  Vc2on);
-     Kcon = 1.0 -  fcon_trip*(1.0- Frecv);
+     Kcon = 1.0 -  fcon_trip*(1.0- Frecv);  // Kcon = (1 - fcon_trip) + fcon_trip * Frecv, fraction not tripped by contactor
   } 
+  // if (volt_measured > Vc1off and volt_measured < Vc2on) then No change on Kcon
   
   // update timer for AC thermal protection
   if  ( statusA == 1) {
@@ -707,12 +738,12 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
   } // end of if ( thEqnA < 0.0)
    
   // calculate the AC motor power 
-  printf("AcmotorLoad::dynamicload_post_process, P0: %12.6f, Q0: %12.6f \n", P0, Q0);
+  if (bdebugprint) printf("AcmotorLoad::dynamicload_post_process, P0: %12.6f, Q0: %12.6f \n", P0, Q0);
    if ( statusA == 1 ) {// MotorA running
        
            if (vt >=  Vbrk) {
 
-                PA = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));
+                PA = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));  // delta_f = freq - 1 or 1 - freq?
                 QA = ( Q0 +  Kq1*pow(vt -  Vbrk, Nq1) )*(1.0 +  CmpKqf*(freq - 1.0));
 		   }
            else if (vt <  Vbrk && vt >  Vstallbrk) {
@@ -764,17 +795,18 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
      Qmotor =  QA*(1.0- Frst)* FthA +  QB*  Frst* FthB;
   
     // consider the UR relay and contractor
-     Pmotor =  Kuv* Kcon* Pmotor;
-     Qmotor =  Kuv* Kcon* Qmotor;
+	 //Fonline = Kuv* Kcon* Fonline;
+     Pmotor =  Kuv*Kcon*Fonline* Pmotor;
+     Qmotor =  Kuv*Kcon*Fonline* Qmotor;
 	 
 	 gridpack::ComplexType tmpcplx(Pmotor, -Qmotor);
 	 equivYpq_motorBase = tmpcplx/vt/vt;
      
     //equivYpq_motorBase = ( Pmotor - i* Qmotor)/vt/vt;
 
-    printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, \n",
+    if (bdebugprint) printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,\n",
           p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA, temperatureB, presentMag, presentFreq,
-                  statusA, statusB, Pmotor, Qmotor, FthA, FthB);
+                  statusA, statusB, Pmotor, Qmotor, FthA, FthB, Fonline, Kuv, Kcon);
 
 }
 
@@ -784,7 +816,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
 void gridpack::dynamic_simulation::AcmotorLoad::setVoltage(
     gridpack::ComplexType voltage)
 {
-  printf("AcmotorLoad::setVoltage, %12.6f + j %12.6f \n", real(voltage), imag(voltage));	
+  if (bdebugprint) printf("AcmotorLoad::setVoltage, %12.6f + j %12.6f \n", real(voltage), imag(voltage));	
   presentMag = abs(voltage);
   presentAng = atan2(imag(voltage), real(voltage));  
   vt_complex = voltage;
@@ -805,6 +837,14 @@ void gridpack::dynamic_simulation::AcmotorLoad::setFreq(double dFreq)
 double gridpack::dynamic_simulation::AcmotorLoad::getInitReactivePower(void)
 {
 	return Qinit_pu*MVABase;
+}
+
+/**
+ * get the variable Fonline 
+ */
+double gridpack::dynamic_simulation::AcmotorLoad::getFonline(void)
+{
+	return Fonline;
 }
 
 /** 
@@ -861,4 +901,56 @@ bool gridpack::dynamic_simulation::AcmotorLoad::serialWrite(
   }	
 		
   return false;
+}
+
+
+/**
+ * return true if load change is enabled
+ * @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+ */
+bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFactor)
+{
+	if (percentageFactor < -1.0) {
+		if (bdebugprint) printf("percentageFactor < -1.0, this change will not be applied.  \n");
+		return false;
+	}
+	
+	if (Fonline == 0.0){
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has 0 percent of load and could not be shedding the percentange of %f !!!! \n", 
+		                                              p_bus_id, p_loadid.c_str(), percentageFactor);
+		//percentageFactor = 0.0;
+		//Fonline = Fonline + percentageFactor;
+		if (bdebugprint) printf("----renke debug load shed, AcmotorLoad::changeLoad, Fonline: %f \n", Fonline);
+		return true;
+	}
+	
+	if ( (Fonline + percentageFactor) < 0.0 ){
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load at bus %d with ID %s has %f percent of load and could not be shedding the percentange of %f !!!! \n", 
+		                                              p_bus_id, p_loadid.c_str(), Fonline, percentageFactor);
+		Fonline = 0.0;
+		if (bdebugprint) printf("----renke debug load shed, AcmotorLoad::changeLoad, Fonline: %f \n", Fonline);
+		return true;
+	}
+	
+	Fonline = Fonline + percentageFactor;
+	// Yuan added below 20200709
+	if (Fonline < 0.0) Fonline=0.0;
+	// Yuan added above 20200709
+	
+	if (bdebugprint) printf("----renke debug load shed, AcmotorLoad::changeLoad, the dynamic load at bus %d with ID %s, percentageFactor: %f, remaining Fonline: %f \n", 
+																				p_bus_id, p_loadid.c_str(), percentageFactor, Fonline);
+	return true;
+}
+/**
+ * Set same bus static load p and q for load shedding action usage
+ */
+void gridpack::dynamic_simulation::AcmotorLoad::setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag)
+{
+  samebus_static_loadP = static_pl;
+  samebus_static_loadQ = static_ql;
+  
+  double samebus_static_load_yr = samebus_static_loadP/(mag*mag);
+  double samebus_static_load_yi = (-samebus_static_loadQ)/(mag*mag);
+  samebus_static_equivY_sysMVA = samebus_static_equivY_sysMVA + gridpack::ComplexType(samebus_static_load_yr, samebus_static_load_yi);
+  if (bdebugprint) printf("AcmotorLoad::setSameBusStaticLoadPQ, samebus_static_equivY_sysMVA: %12.6f +j %12.6f\n", real(samebus_static_equivY_sysMVA), imag(samebus_static_equivY_sysMVA));
 }

@@ -7,7 +7,7 @@
 /**
  * @file   rtpr_driver.cpp
  * @author Bruce Palmer
- * @date   2019-10-09 13:12:46 d3g293
+ * @date   2020-04-16 12:48:51 d3g096
  *
  * @brief Driver for real-time path rating calculation that make use of the
  *        powerflow module to implement individual power flow simulations for
@@ -938,15 +938,13 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv, gridpack::Enviro
       event.from_idx = p_events[i].p_busid[0];
       event.to_idx = p_events[i].p_busid[0];
       event.bus_idx = p_events[i].p_busid[0];
-      strncpy(event.tag,p_events[i].p_genid[0].c_str(),2);
-      event.tag[2] = '\0';
+      event.tag = p_events[i].p_genid[0];
       event.isGenerator = true;
       event.isLine = false;
     } else {
       event.from_idx = p_events[i].p_from[0];
       event.to_idx = p_events[i].p_to[0];
-      strncpy(event.tag,p_events[i].p_ckt[0].c_str(),2);
-      event.tag[2] = '\0';
+      event.tag = p_events[i].p_ckt[0];
       event.isGenerator = false;
       event.isLine = true;
     }

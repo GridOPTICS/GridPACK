@@ -1,0 +1,187 @@
+These notes are aimed at building a shared object version of GridPACK using
+Global Arrays built with the simple two-sided runtime. This configuration is
+used in building GridPACK with the Python interface.  It is not optimal for
+running large GridPACK jobs. If it is desirable to run GridPACK using a large
+number of processors then GA should be built with the progress ranks runtime.
+This build also uses new features of the CMake build to build with the latest
+versions of PETSc. This means that the build is currently restricted to the
+feature/three-sequence branch of GridPACK and the 3.16 release of PETSc.
+
+Note that these scripts are in reference to a particular account. They will
+need to be modified to reflect the build environment of individual users.
+This should most be reflected in the location of the PETSc and Global Array
+libaries, as well as the GridPACK source code.
+
+Set the environment with:
+
+module purge
+module load gcc/8.4.0
+module load openmpi/3.1.6/gcc-8.4.0
+module load cmake/3.18.2
+module load boost/1.73.0/gcc
+
+The user needs to build PETSc and Global Arrays in order to build GridPACK. Boost
+is picked up from the boost module.
+
+PETSc-3.16.3:
+
+Building PETSc-3.16.3 is more straightforward than building older versions that
+required and intermediate job submission to the compute nodes. An important
+simplification for users trying to build PETSc on Eagle using a remote login is
+to log in to the el3 node (the el4 node is the one that is reached
+directly from an external login). This node can download external files (this
+is blocked on el4) so that the configure process works correctly. Building on
+el4 requires users to separately download tarballs for Suitesparse and
+flablapack to a local directory.
+
+Because the front end and back end nodes are different, it is necessary to build
+using the --with-batch option, but it is not necessary to split the build up with
+a separate submission to the compute nodes. The following script was used to
+configure PETSc 3.16 with shared libraries
+
+python ./config/configure.py \
+       PETSC_ARCH=linux-openmpi-gnu-cxx-complex-opt-so \
+       --with-batch=1 \
+       --with-mpi=1 \
+       --with-cc="mpicc" \
+       --with-fc="mpif90" \
+       --with-cxx="mpicxx" \
+       --with-c++-support=1 \
+       --with-c-support=0 \
+       --with-fortran=1 \
+       --with-scalar-type=complex \
+       --with-precision=double \
+       --with-fortran-kernels=false \
+       --with-valgrind=0 \
+       --download-superlu_dist \
+       --download-superlu \
+       --download-parmetis \
+       --download-metis \
+       --download-suitesparse \
+       --download-mumps=0 \
+       --download-scalapack=0 \
+       --download-fblaslapack \
+       --with-shared-libraries=1 \
+       --with-x=0 \
+       --with-mpirun=mpiexec \
+       --with-mpiexec=mpiexec \
+       --with-debugging=0 \
+       CFLAGS=-pthread CXXFLAGS=-pthread FFLAGS=-pthread
+
+At the end of the configuration, you should see the following output (the
+library locations will be different)
+
+xxx=========================================================================xxx
+ Configure stage complete. Now build PETSc libraries with:
+   make PETSC_DIR=/lustre/eaglefs/projects/ipep/bpalmer/software/petsc-3.16.3 PETSC_ARCH=linux-openmpi-gnu-cxx-complex-opt-so all
+xxx=========================================================================xxx
+
+Copy and paste the complete make line into the terminal to build the PETSc
+libraries. The following lines will appear at the end of the build
+
+=========================================
+Now to check if the libraries are working do:
+make PETSC_DIR=/lustre/eaglefs/projects/ipep/bpalmer/software/petsc-3.16.3 PETSC_ARCH=linux-openmpi-gnu-cxx-complex-opt-so check
+=========================================
+
+Running this command does not do much, since the tests actually need to execute
+on the back-end compute nodes.
+
+GA-5.8:
+
+These instructions should work with any recent version of Global Arrays. GA is
+largely backwards compatible. The version of GA described here uses an inefficient
+runtime that performs poorly on large numbers of nodes (it is, however,
+sufficient for single node jobs of the type used in machine learning
+applications). If you want to use a higher performing runtime, switch --with-mpi
+to --with-mpi-pr.
+
+Configure ga-5-8 with the following:
+
+../configure \
+  --enable-i4 --enable-cxx --enable-shared=yes \
+  --with-mpi --without-blas --disable-f77 \
+  --prefix=/projects/ipep/bpalmer/software/ga-5.8/build_ts_so/install \
+  CC=mpicc CXX=mpicxx CFLAGS=-g CXXFLAGS=-g
+
+This script is run in a directory build_ts_so located immediately below the
+top-level GA directory. After configuring, type
+
+make; make install
+
+to build GA. If static libraries are desired, they can be built by switching the
+setting on the --enable-shared option to "no".
+
+GridPACK:
+
+If the Global Arrays and PETSc libraries are available, it is fairly
+straightforward to build GridPACK. If you have cloned GridPACK from the Github
+repository, be sure to type
+
+git submodule update --init
+
+in the top level directory before doing anything else. This downloads some CMake
+modules need in the build. A configuration script for GridPACK is
+
+rm -rf CMake*
+
+cmake -Wdev \
+      -D PETSC_DIR:STRING='/projects/ipep/bpalmer/software/petsc-3.16.3' \
+      -D PETSC_ARCH:STRING='linux-openmpi-gnu-cxx-complex-opt-so' \
+      -D GA_DIR:STRING='/projects/ipep/bpalmer/software/ga-5.8/build_ts_so' \
+      -D USE_PROGRESS_RANKS:BOOL=FALSE \
+      -D GA_EXTRA_LIBS='-lrt' \
+      -D MPI_CXX_COMPILER:STRING='mpicxx' \
+      -D MPI_C_COMPILER:STRING='mpicc' \
+      -D MPIEXEC:STRING='mpiexec' \
+      -D MPIEXEC_MAX_NUMPROCS:STRING="3" \
+      -D CMAKE_INSTALL_PREFIX:PATH='/projects/ipep/bpalmer/gridpack/src/build_ts_so/install' \
+      -D CMAKE_BUILD_TYPE:STRING='DEBUG' \
+      -D BUILD_SHARED_LIBS:BOOL=TRUE \
+      -D CMAKE_VERBOSE_MAKEFILE:STRING=TRUE \
+      CXXFLAGS="-pthread -fsanitize=address" \
+      ..
+
+The directory locations in this script should be modified to reflect your local
+environment. If you want to build with the higher performing progress ranks runtime
+in Global Arrays, switch the USE_PROGRESS_RANKS value to "TRUE". After the CMake
+configuration is complete, type
+
+make; make install
+
+If you log onto a compute node, you can run the test suite by typing
+
+make test
+
+On Eagle, only the parallel jobs pass. The CMake test suite assumes that you can
+run single processor jobs without using 'mpirun' or its erquivalent, but this is
+not true on Eagle for any code that uses MPI.
+
+To build with static libraries, set the BUILD_SHARED_LIBS variable to "FALSE", If
+you are building GridPACK using the Global Arrays two-sided runtime (--with-mpi)
+and using static libraries, you will also have to make a modification to the
+FindPackageMultipass.cmake file located in the GRIDPACK/cmake-jedbrown directory.
+The changes needed are to substitute the existing
+
+include (Check${language}SourceRuns)
+
+line with
+
+include (Check${language}SourceCompiles)
+
+and to change the existing
+
+check_c_source_runs("${source}" ${testname})
+
+check_cxx_source_runs("${source}" ${testname})
+
+commands to
+
+check_c_source_compiles("${source}" ${testname})
+
+check_cxx_source_compiles("${source}" ${testname})
+
+This prevents the build process from trying to run some test processes on the login
+nodes.
+
+Eagle can't checkin changes to github on login node el4. Use el3 instead.

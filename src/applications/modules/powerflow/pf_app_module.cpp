@@ -23,9 +23,11 @@
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/parser/MAT_parser.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
+#include "gridpack/export/PSSE23Export.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
+#include "gridpack/utilities/string_utils.hpp"
 
 #define USE_REAL_VALUES
 
@@ -53,10 +55,11 @@ enum Parser{PTI23, PTI33, MAT_POWER, GOSS};
  * @param network pointer to a PFNetwork object. This should not have any
  * buses or branches defined on it.
  * @param config point to open configuration file
+ * @param idx index of configuration to use if set to a non-negative value
  */
 void gridpack::powerflow::PFAppModule::readNetwork(
     boost::shared_ptr<PFNetwork> &network,
-    gridpack::utility::Configuration *config)
+    gridpack::utility::Configuration *config, int idx)
 {
   p_network = network;
   p_comm = network->communicator();
@@ -78,17 +81,43 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   std::string filename;
   int filetype = PTI23;
-  if (!cursor->get("networkConfiguration",&filename)) {
-    if (cursor->get("networkConfiguration_v33",&filename)) {
-      filetype = PTI33;
-    } else if (cursor->get("networkConfiguration_GOSS",&filename)) {
-      filetype = GOSS;
-    } else if (cursor->get("networkConfiguration_mat",&filename)) {
-      filetype = MAT_POWER;
+  if (idx == -1) {
+    if (!cursor->get("networkConfiguration",&filename)) {
+      if (cursor->get("networkConfiguration_v33",&filename)) {
+        filetype = PTI33;
+      } else if (cursor->get("networkConfiguration_mat",&filename)) {
+        filetype = MAT_POWER;
+      } else if (cursor->get("networkConfiguration_GOSS",&filename)) {
+        filetype = GOSS;
+      } else {
+        printf("No network configuration file specified\n");
+        return;
+      }
+    }
+  } else if (idx >= 0) {
+    gridpack::utility::Configuration::CursorPtr network_cursor;
+    network_cursor = config->getCursor(
+        "Configuration.Powerflow.networkFiles");
+    gridpack::utility::Configuration::ChildCursors files;
+    if (network_cursor) network_cursor->children(files);
+    if (idx < files.size()) {
+      if (!files[idx]->get("networkConfiguration",&filename)) {
+        if (files[idx]->get("networkConfiguration_v33",&filename)) {
+          filetype = PTI33;
+        } else if (cursor->get("networkConfiguration_mat",&filename)) {
+          filetype = MAT_POWER;
+        } else {
+          printf("Unknown network configuration file specified\n");
+          return;
+        }
+      }
     } else {
-      printf("No network configuration file specified\n");
+      printf("Unknown file index\n");
       return;
     }
+  } else {
+    printf("No network configuration file specified\n");
+    return;
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);
@@ -244,8 +273,10 @@ bool gridpack::powerflow::PFAppModule::solve()
     iter = 0;
     tol = 2.0*p_tolerance;
     int_repeat ++;
+    char ioBuf[128];
     if (!p_no_print) {
-      printf (" repeat time = %d \n", int_repeat);
+      sprintf (ioBuf," repeat time = %d \n", int_repeat);
+      p_busIO->header(ioBuf);
     }
 
     // set YBus components so that you can create Y matrix
@@ -273,14 +304,6 @@ bool gridpack::powerflow::PFAppModule::solve()
 #endif
     timer->stop(t_mmap);
 
-    timer->start(t_fact);
-    p_factory->setMode(S_Cal);
-    timer->stop(t_fact);
-    timer->start(t_cmap);
-    gridpack::mapper::BusVectorMap<PFNetwork> vvMap(p_network);
-    timer->stop(t_cmap);
-    int t_vmap = timer->createCategory("Powerflow: Map to Vector");
-
     // make Sbus components to create S vector
     timer->start(t_fact);
     p_factory->setSBus();
@@ -292,19 +315,27 @@ bool gridpack::powerflow::PFAppModule::solve()
     p_factory->setMode(RHS); 
     gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
     timer->stop(t_cmap);
+    int t_vmap = timer->createCategory("Powerflow: Map to Vector");
     timer->start(t_vmap);
+
 #ifdef USE_REAL_VALUES
     boost::shared_ptr<gridpack::math::RealVector> PQ = vMap.mapToRealVector();
 #else
     boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
 #endif
     timer->stop(t_vmap);
+    gridpack::ComplexType  tol_org = PQ->normInfinity();
+    if (!p_no_print) {
+      sprintf (ioBuf,"\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
+      p_busIO->header(ioBuf);
+    }
     //  PQ->print();
     timer->start(t_cmap);
     p_factory->setMode(Jacobian);
     gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
     timer->stop(t_cmap);
     timer->start(t_mmap);
+
 #ifdef USE_REAL_VALUES
     boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
 #else
@@ -349,9 +380,10 @@ bool gridpack::powerflow::PFAppModule::solve()
     } catch (const gridpack::Exception e) {
       std::string w(e.what());
       if (!p_no_print) {
-        printf("p[%d] hit exception: %s\n",
+        sprintf(ioBuf,"p[%d] hit exception: %s\n",
             p_network->communicator().rank(),
             w.c_str());
+        p_busIO->header(ioBuf);
         p_busIO->header("Solver failure\n\n");
       }
       timer->stop(t_lsolv);
@@ -361,11 +393,13 @@ bool gridpack::powerflow::PFAppModule::solve()
     }
     timer->stop(t_lsolv);
     tol = PQ->normInfinity();
-
     // Create timer for map to bus
     int t_bmap = timer->createCategory("Powerflow: Map to Bus");
     int t_updt = timer->createCategory("Powerflow: Bus Update");
-    char ioBuf[128];
+    if (!p_no_print) {
+      sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+      p_busIO->header(ioBuf);
+    }										
 
     while (real(tol) > p_tolerance && iter < p_max_iteration) {
       // Push current values in X vector back into network components
@@ -414,9 +448,10 @@ bool gridpack::powerflow::PFAppModule::solve()
       } catch (const gridpack::Exception e) {
         std::string w(e.what());
         if (!p_no_print) {
-          printf("p[%d] hit exception: %s\n",
+          sprintf(ioBuf,"p[%d] hit exception: %s\n",
               p_network->communicator().rank(),
               w.c_str());
+          p_busIO->header(ioBuf);
           p_busIO->header("Solver failure\n\n");
         }
         timer->stop(t_lsolv);
@@ -431,6 +466,14 @@ bool gridpack::powerflow::PFAppModule::solve()
         p_busIO->header(ioBuf);
       }
       iter++;
+      if (real(tol)> 100.0*real(tol_org)){
+        ret = false;
+        if (!p_no_print) {
+          sprintf (ioBuf,"\n-------------current iteration tol bigger than 100 times of original tol, power flow diverge\n");
+          p_busIO->header(ioBuf);
+        }
+        break;
+      }
     }
 
     if (iter >= p_max_iteration) ret = false;
@@ -441,7 +484,8 @@ bool gridpack::powerflow::PFAppModule::solve()
         repeat =false;
       } else {
         if (!p_no_print) {
-          printf ("There are Qlim violations at iter =%d\n", iter);
+          sprintf (ioBuf,"There are Qlim violations at iter =%d\n", iter);
+          p_busIO->header(ioBuf);
         }
       }
     }
@@ -457,7 +501,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     p_network->updateBuses();
     timer->stop(t_updt);
   }
-    timer->stop(t_total);
+  timer->stop(t_total);
   return ret;
 
 }
@@ -681,7 +725,7 @@ void gridpack::powerflow::PFAppModule::print(const char *buf)
 }
 
 /**
- * Export final configuration to PSS/E formatted file
+ * Export final configuration to PSS/E v33 formatted file
  * @param filename name of file to store network configuration
  */
 void gridpack::powerflow::PFAppModule::exportPSSE33(std::string &filename)
@@ -692,11 +736,63 @@ void gridpack::powerflow::PFAppModule::exportPSSE33(std::string &filename)
 }
 
 /**
+ * Export final configuration to PSS/E v23 formatted file
+ * @param filename name of file to store network configuration
+ */
+void gridpack::powerflow::PFAppModule::exportPSSE23(std::string &filename)
+{
+  //if (p_no_print) return;
+  gridpack::expnet::PSSE23Export<PFNetwork> exprt(p_network);
+  exprt.writeFile(filename);
+}
+
+/**
  * Save results of powerflow calculation to data collection objects
  */
 void gridpack::powerflow::PFAppModule::saveData()
 {
   p_factory->saveData();
+}
+
+/**
+ * Save results of powerflow calculation to data collection objects
+ * added by Renke, also modify the original bus mag, ang, 
+ * and the original generator PG QG in the datacollection
+ */
+void gridpack::powerflow::PFAppModule::saveDataAlsotoOrg()
+{
+  p_factory->saveDataAlsotoOrg();
+}
+
+/**
+ * get the power flow solution for the specific bus, vmag and v angle
+ * @param bus original number, bus solution vmag and v angle
+ * @return false if location of bus is not found in
+ * network
+ */
+
+bool gridpack::powerflow::PFAppModule::getPFSolutionSingleBus(
+    int bus_number, double &bus_mag, double &bus_angle)
+{
+	bool ret = true;
+	std::vector<int> vec_busintidx;
+	int ibus, nbus;
+	gridpack::powerflow::PFBus *bus;
+	
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	nbus = vec_busintidx.size();
+	if (nbus == 0) ret = false;
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::powerflow::PFBus*>
+		(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
+		//printf("----renke debug PFAppModule::getPFSolutionSingleBus, \n");
+		bus_mag=bus->getVoltage();
+		double anglerads = bus->getPhase();
+		double pi = 4.0*atan(1.0);
+		bus_angle = 180.0*anglerads/pi;	
+	}
+	
+	return ret;
 }
 
 /**
@@ -1085,3 +1181,176 @@ void gridpack::powerflow::PFAppModule::setGOSSClient(
   p_simID = simID;
 }
 #endif
+/**
+ * Modify generator parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param gen_id two character token specifying generator on bus
+ * @param genParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, double value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_gen_id = util.clean2Char(gen_id);
+  return p_modifyDataCollectionGenParam<double>(bus_id,clean_gen_id,genParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionGenParam(
+    int bus_id, std::string gen_id, std::string genParam, int value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_gen_id = util.clean2Char(gen_id);
+  return p_modifyDataCollectionGenParam<int>(bus_id,clean_gen_id,genParam,value);
+}
+
+/**
+ * Modify load parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param load_id two character token specifying load on bus
+ * @param loadParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, double value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_load_id = util.clean2Char(load_id);
+  return p_modifyDataCollectionLoadParam<double>(bus_id,clean_load_id,loadParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionLoadParam(
+    int bus_id, std::string load_id, std::string loadParam, int value)
+{
+  gridpack::utility::StringUtils util;
+  std::string clean_load_id = util.clean2Char(load_id);
+  return p_modifyDataCollectionLoadParam<int>(bus_id,clean_load_id,loadParam,value);
+}
+
+/**
+ * Modify parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param busParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, double value)
+{
+  return p_modifyDataCollectionBusParam<double>(bus_id,busParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBusParam(
+    int bus_id, std::string busParam, int value)
+{
+  return p_modifyDataCollectionBusParam<int>(bus_id,busParam,value);
+}
+
+/**
+ * Modify parameters in data collection for specified branch
+ * @param bus1, bus2 bus IDs for from and to bus
+ * @param ckt two character token specifying branch
+ * @param branchParam string representing dictionary name of data element
+ *                to be modified
+ * @param value new value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, double value)
+{
+  return p_modifyDataCollectionBranchParam<double>(bus1,bus2,ckt,branchParam,value);
+}
+bool gridpack::powerflow::PFAppModule::modifyDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, int value)
+{
+  return p_modifyDataCollectionBranchParam<int>(bus1,bus2,ckt,branchParam,value);
+}
+
+/**
+ * Get generator parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param gen_id two character token specifying generator on bus
+ * @param genParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionGenParam(
+    int bus_id, std::string gen_id,
+    std::string genParam, double *value)
+{
+  return p_getDataCollectionGenParam<double>(bus_id, gen_id, genParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionGenParam(
+    int bus_id, std::string gen_id,
+    std::string genParam, int *value)
+{
+  return p_getDataCollectionGenParam<int>(bus_id, gen_id, genParam, value);
+}
+
+/**
+ * Get load parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param load_id two character token specifying load on bus
+ * @param loadParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionLoadParam(
+    int bus_id, std::string load_id,
+    std::string loadParam, double *value)
+{
+  return p_getDataCollectionLoadParam<double>(bus_id, load_id, loadParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionLoadParam(
+    int bus_id, std::string load_id,
+    std::string loadParam, int *value)
+{
+  return p_getDataCollectionLoadParam<int>(bus_id, load_id, loadParam, value);
+}
+
+/**
+ * Get parameters in data collection for specified bus
+ * @param bus_id bus ID
+ * @param busParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionBusParam(
+    int bus_id, std::string busParam, double *value)
+{
+  return p_getDataCollectionBusParam<double>(bus_id, busParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionBusParam(
+    int bus_id, std::string busParam, int *value)
+{
+  return p_getDataCollectionBusParam<int>(bus_id, busParam, value);
+}
+
+/**
+ * Get parameters in data collection for specified branch
+ * @param bus1, bus2 bus IDs for from and to bus
+ * @param ckt two character token specifying branch
+ * @param branchParam string representing dictionary name of data element
+ *                to be modified
+ * @param value value of parameter
+ * @return return false if parameter is not found
+ */
+bool gridpack::powerflow::PFAppModule::getDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, double *value)
+{
+  return p_getDataCollectionBranchParam<double>(bus1, bus2, ckt, branchParam, value);
+}
+bool gridpack::powerflow::PFAppModule::getDataCollectionBranchParam(
+    int bus1, int bus2, std::string ckt,
+    std::string branchParam, int *value)
+{
+  return p_getDataCollectionBranchParam<int>(bus1, bus2, ckt, branchParam, value);
+}

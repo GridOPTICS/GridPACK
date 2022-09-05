@@ -103,6 +103,11 @@ class AcmotorLoad : public BaseLoadModel
 	void setVoltage(gridpack::ComplexType voltage);
 	
 	/**
+     * Set same bus static load p and q for load shedding action usage
+     */
+    void setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag);
+	
+	/**
  * Set terminal voltage frequency on each load
  */
 	void setFreq(double dFreq);
@@ -111,6 +116,12 @@ class AcmotorLoad : public BaseLoadModel
      * get intialized reactive power of the dynamic load model
      */
     double getInitReactivePower(void);
+	
+    /**
+     * get the variable Fonline for each load
+     */
+    double getFonline(void);
+
 
     /**
      * Write out load state
@@ -119,6 +130,12 @@ class AcmotorLoad : public BaseLoadModel
      * @param signal character string used to determine behavior
      */
     bool serialWrite(char* string, const int bufsize, const char* signal);
+	
+	/**
+	 * return true if load change is enabled
+	 * @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+	 */
+	bool changeLoad(double percentageFactor);
 
   private:
 
@@ -161,6 +178,12 @@ class AcmotorLoad : public BaseLoadModel
     double UVTimer1, UVTimer2;
     gridpack::ComplexType equivYpq_motorBase;
     double I_conv_factor_M2S;
+	double Fonline;
+	double acload_perc; //ac motor load percentage to the total load;
+	double samebus_static_loadP;  // system base mva pu value
+    double samebus_static_loadQ;  // system base mva pu value
+	gridpack::ComplexType samebus_static_equivY_sysMVA;
+	bool bdebugprint;
    
  
     gridpack::ComplexType p_INorton;

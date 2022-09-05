@@ -40,6 +40,7 @@ gridpack::dynamic_simulation::Esst1aModel::Esst1aModel(void)
   dx3LL1_1 = 0;
   dx4LL2_1 = 0;
   dx5Deriv_1 = 0;
+  OptionToModifyLimitsForInitialStateLimitViolation = true;
 }
 
 /**
@@ -131,16 +132,16 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
 //  printf("esst1a: Efd = %f\n", Efd);
   //State 1
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (Efd > (Vterm * Vrmax - Kc * LadIfd)) Vrmax = (Efd + Kc * LadIfd) / Vterm;
-    if (Efd < (Vterm * Vrmin)) Vrmax = Efd / Vterm;
+    if (Efd > (Vterm * Vrmax - Kc * LadIfd)) Vrmax = (Efd + Kc * LadIfd) / Vterm+0.21;
+    if (Efd < (Vterm * Vrmin)) Vrmin = Efd / Vterm-0.1;
   }
   double Va;
   if (LadIfd > Ilr) Va = Efd + Klr * (LadIfd - Ilr);
   else Va = Efd;
   // Check for initial limit violations - should not happen!
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (Va > Vamax) Vamax = Va;
-    if (Va < Vamin) Vamin = Va;
+    if (Va > Vamax) Vamax = Va+0.1;
+    if (Va < Vamin) Vamin = Va-0.1;
   }
   x1Va = Va;
   //State 4
@@ -154,8 +155,8 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   else x3LL1 = TempLL * (1 - Tc / Tb);
   //State 2
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (TempLL > Vimax) Vimax = TempLL;
-    if (TempLL < Vimin) Vimin = TempLL;
+    if (TempLL > Vimax) Vimax = TempLL+0.1;
+    if (TempLL < Vimin) Vimin = TempLL-0.1;
   }
   printf ("Esst1a ini() Vcomp = %f, TempLL = %f \n", Vcomp, TempLL);
   x2Vcomp = Vcomp;

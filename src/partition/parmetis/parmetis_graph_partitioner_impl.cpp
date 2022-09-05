@@ -6,7 +6,7 @@
 /**
  * @file   parmetis_graph_partitioner_impl.cpp
  * @author William A. Perkins
- * @date   2019-12-13 10:21:28 d3g096
+ * @date   2020-07-28 08:18:58 d3g096
  * 
  * @brief  
  * 
@@ -124,9 +124,14 @@ ParMETISGraphPartitionerImpl::p_partition(void)
   std::vector<real_t> tpwgts(nparts*ncon, 1.0/static_cast<real_t>(nparts));
   real_t ubvec(1.05);
   std::vector<idx_t> options(3);
-  options[0] = 1;
-  options[1] = 127;
-  options[2] = 14;
+  // Too verbose
+  // options[0] = 1;
+  // options[1] = 127;
+  // options[2] = 14;
+  // Very quiet
+  options[0] = 0;               // options: 0=default,  1=use below
+  options[1] = 0;               // verbosity: 0=none
+  options[2] = 14;              // random seed
   MPI_Comm comm(this->communicator());
 
   idx_t edgecut;

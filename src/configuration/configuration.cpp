@@ -112,6 +112,9 @@ bool Configuration::open(const std::string & file) {
 #endif 
 	std::string str;
 	std::ifstream input(file.c_str());
+   if (!input.is_open()) {
+     std::cout<<"(Configuration::open) Could not open file "<<file<<std::endl;
+   }
    int n = -1;
 	if(!input.bad()) {
 		input.seekg(0, std::ios::end);   
@@ -121,6 +124,8 @@ bool Configuration::open(const std::string & file) {
 		str.assign((std::istreambuf_iterator<char>(input)),
 					std::istreambuf_iterator<char>());
       n = 0;
+   } else {
+     std::cout<<"(Configuration::open) File "<<file<<" found to be bad"<<std::endl;
    }
 #ifdef CONFIGURATION_USE_MPI
    if (n >= 0) {
@@ -142,6 +147,7 @@ bool Configuration::open(const std::string & file) {
 	catch(...) {
 		if(pimpl->logging != NULL)
 		 (*pimpl->logging) << "Error reading XML file " << file << std::endl;
+      std::cout << "(Configuration::open) Could not read XML file "<<file<<std::endl;
 		return false;
 	}
 	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration.enableLogging",false))

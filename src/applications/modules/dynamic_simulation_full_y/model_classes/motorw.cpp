@@ -93,6 +93,7 @@ gridpack::dynamic_simulation::MotorwLoad::MotorwLoad(void)
   // other variables
   double pi = 4.0*atan(1.0);
   w0 = 2.0 * pi * 60.0 ; // rad/s
+  Fonline = 1.0;
 
   TL = 0.0 ; // mechanical load torque, pu
   Tm0 =0.0;  // mechanical load torque with slip = 0;
@@ -102,6 +103,15 @@ gridpack::dynamic_simulation::MotorwLoad::MotorwLoad(void)
   Qmotor = 0.0 ; // reactive power consumed by motor, MVAr
   Qmotor_init = 0.0;
   sysMVABase = 100.0;
+  nortonImpedance_sysMVA = gridpack::ComplexType(0.0, 0.0);
+  
+  bdebugprint = false;
+  
+  Fonline = 1.0;
+  motorwload_perc = 1.0; //motor w load percentage to the total load, default 0.3;
+  samebus_static_loadP = 0.0;
+  samebus_static_loadQ = 0.0;
+  samebus_static_equivY_sysMVA = gridpack::ComplexType(0.0, 0.0);
 }
 
 /**
@@ -151,8 +161,8 @@ void gridpack::dynamic_simulation::MotorwLoad::load(
 	data->getValue(LOAD_ID,&p_loadid,idx);
 	setDynLoadID(p_loadid);
 	
-	printf ("MotorwLoad::load(), motorw with composite load model, ID: %s, loadFactor: %f, rs: %f, Ls: %f, Lp: %f, Lpp: %f, tpo: %f, tppo: %f, H: %f, A: %f, B: %f, C0: %f, D: %f, E: %f \n", 
-	    p_loadid.c_str(), loadFactor, rs, Ls, Lp, Lpp, tpo, tppo, H, A, B, C0, D, E);
+	if (bdebugprint) printf ("MotorwLoad::load(), motorw at bus %d with composite load model, ID: %s, loadFactor: %f, rs: %f, Ls: %f, Lp: %f, Lpp: %f, tpo: %f, tppo: %f, H: %f, A: %f, B: %f, C0: %f, D: %f, E: %f \n", 
+	    p_bus_id, p_loadid.c_str(), loadFactor, rs, Ls, Lp, Lpp, tpo, tppo, H, A, B, C0, D, E);
 
   } else { // if the model is CIM6BL
   
@@ -173,6 +183,10 @@ void gridpack::dynamic_simulation::MotorwLoad::load(
 	if (!data->getValue(LOAD_D, &D, idx)) D = 0.0;
 	if (!data->getValue(LOAD_E, &E, idx)) E = 0.0;
 	
+	if (!data->getValue(LOAD_DYN_PERC, &motorwload_perc, idx)) motorwload_perc = 1.0;
+	
+	if (motorwload_perc< 0.01) motorwload_perc = 1.0; //if the LOAD_DYN_PERC is not defined in the dyr file, as the normal PSS/E dyr file
+	
 	//tmp code please remove this
 	llr1 = 0.08;
 	
@@ -180,8 +194,8 @@ void gridpack::dynamic_simulation::MotorwLoad::load(
 	setDynLoadP(p_pl);
     setDynLoadID(p_loadid);
 	
-	printf (" MotorwLoad::load(), motorw with CIM6BL, ID: %s, Pul: %f, rs: %f, lls: %f, lm: %f, rr1: %f, llr1: %f, rr2: %f, llr2: %f, MVABase: %f, \n", p_loadid.c_str(), Pul, rs, lls, lm, rr1, llr1, rr2, llr2, MVABase);
-	printf (" MotorwLoad::load(), motorw with CIM6BL, ID: %s, H: %f, A: %f, B: %f, C0: %f, D: %f, E: %f, \n", p_loadid.c_str(), H, A, B, C0, D, E);
+	if (bdebugprint) printf (" MotorwLoad::load(), motorw with CIM6BL at bus %d, ID: %s, Pul: %f, rs: %f, lls: %f, lm: %f, rr1: %f, llr1: %f, rr2: %f, llr2: %f, MVABase: %f, \n", p_bus_id, p_loadid.c_str(), Pul, rs, lls, lm, rr1, llr1, rr2, llr2, MVABase);
+	if (bdebugprint) printf (" MotorwLoad::load(), motorw with CIM6BL at bus %d, ID: %s, H: %f, A: %f, B: %f, C0: %f, D: %f, E: %f, \n", p_bus_id, p_loadid.c_str(), H, A, B, C0, D, E);
   }
 }
 
@@ -198,15 +212,23 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   double systemMVABase, Pini, wt;
   gridpack::ComplexType vt(mag*cos(ang), mag*sin(ang));
   
+  presentMag = mag;
+  presentAng = ang;  
+  vt_complex = vt;
+  
   double pi = 4.0*atan(1.0);
 
   Pini = p_pl;
+  Pini = Pini*motorwload_perc;
+  
+  if (bdebugprint) printf ("------- MotorwLoad::init(), motorw with CIM6BL at bus %d , ID: %s, motorwload_perc value is %f \n", p_bus_id, p_loadid.c_str(), motorwload_perc);
+  
   wt = 2.0*60.0*pi;
   w0 = wt;
   systemMVABase = 100.0;
   sysMVABase = systemMVABase;
   
-  printf("MotorwLoad::init(), vt: %12.6f +j*%12.6f, Pini: %12.6f, w0: %12.6f\n", real(vt), imag(vt), Pini, w0);
+  if (bdebugprint) printf("MotorwLoad::init(), bus: %d, vt: %12.6f +j*%12.6f, Pini: %12.6f, w0: %12.6f\n", p_bus_id, real(vt), imag(vt), Pini, w0);
   
   // initialize the paramters
   // if the data is input in the form of motor equivalent circuit
@@ -220,7 +242,7 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
     tpo = llr1 * lm / (w0 * rr1 * lmp) ;
     tppo = llr2 * lmp / (w0 * rr2 * lmpp) ;
 	
-	printf(" MotorwLoad::init(), Ls: %12.6f, lmp: %12.6f, Lp: %12.6f, lmpp: %12.6f, Lpp: %12.6f, tpo: %12.6f, tppo: %12.6f, \n", Ls, lmp, Lp, lmpp, Lpp, tpo, tppo);
+	if (bdebugprint) printf(" MotorwLoad::init(), at bus %d, Ls: %12.6f, lmp: %12.6f, Lp: %12.6f, lmpp: %12.6f, Lpp: %12.6f, tpo: %12.6f, tppo: %12.6f, \n", p_bus_id, Ls, lmp, Lp, lmpp, Lpp, tpo, tppo);
   // else if the data is input in the form of
   // subtransient/transient reactance and time constant paramters
   // need to obtain the corresponding equivalent circuit paramters
@@ -259,7 +281,7 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   //Vs0 = Vd0 + 1j * Vq0;  // pu
   gridpack::ComplexType Vs0(Vd0, Vq0);
   
-  printf("    MotorwLoad::init(), Vs0: %12.6f + j*%12.6f, MVABase: %12.6f, loadFactor: %12.6f, \n", real(Vs0), imag(Vs0), MVABase, loadFactor);
+  if (bdebugprint) printf("    MotorwLoad::init(), bus %d, Vs0: %12.6f + j*%12.6f, MVABase: %12.6f, loadFactor: %12.6f, \n", p_bus_id, real(Vs0), imag(Vs0), MVABase, loadFactor);
 
   double Pe[1001];  // electrical power, MW
   double sl[1001]; // slip, pu
@@ -327,10 +349,10 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   double D4 = (Lp - Lpp) / tppo * p * Lpp / (rs*rs + Lpp*Lpp) - 1.0 / tppo ;
   double E4 = (Lp - Lpp) / tppo * (Vq0 * rs - Vd0 * Lpp) / (rs*rs + Lpp*Lpp) ;
   
-  printf(" MotorwLoad::init(), A1: %12.6f, B1: %12.6f, C1: %12.6f, D1: %12.6f, E1: %12.6f, \n", A1, B1, C1, D1, E1);
-  printf(" MotorwLoad::init(), A2: %12.6f, B2: %12.6f, C2: %12.6f, D2: %12.6f, E2: %12.6f, \n", A2, B2, C2, D2, E2);
-  printf(" MotorwLoad::init(), A3: %12.6f, B3: %12.6f, C3: %12.6f, D3: %12.6f, E3: %12.6f, \n", A3, B3, C3, D3, E3);
-  printf(" MotorwLoad::init(), A4: %12.6f, B4: %12.6f, C4: %12.6f, D4: %12.6f, E4: %12.6f, \n", A4, B4, C4, D4, E4);
+  if (bdebugprint)  printf(" MotorwLoad::init(), bus %d, A1: %12.6f, B1: %12.6f, C1: %12.6f, D1: %12.6f, E1: %12.6f, \n", p_bus_id, A1, B1, C1, D1, E1);
+  if (bdebugprint)  printf(" MotorwLoad::init(), bus %d, A2: %12.6f, B2: %12.6f, C2: %12.6f, D2: %12.6f, E2: %12.6f, \n", p_bus_id, A2, B2, C2, D2, E2);
+  if (bdebugprint)  printf(" MotorwLoad::init(), bus %d, A3: %12.6f, B3: %12.6f, C3: %12.6f, D3: %12.6f, E3: %12.6f, \n", p_bus_id, A3, B3, C3, D3, E3);
+  if (bdebugprint)  printf(" MotorwLoad::init(), bus %d, A4: %12.6f, B4: %12.6f, C4: %12.6f, D4: %12.6f, E4: %12.6f, \n", p_bus_id, A4, B4, C4, D4, E4);
 
   // solve the 4 linear equations to obtain 4 state variables
   epq = (B1*C2*D3*E4 - B1*C2*D4*E3 - B1*C3*D2*E4 + B1*C3*D4*E2 + B1*C4*D2*E3
@@ -383,7 +405,7 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   Iq = ( (Vq0 - q * eppq) * rs - (Vd0 - p * eppd) * Lpp ) / (rs*rs + Lpp*Lpp) ;
   TL = p * eppd * Id + q * eppq * Iq ;
   
-  printf("MotorwLoad::init(), states: epq: %f, epd: %f, eppq: %f, eppd: %f, slip: %f, Id: %f, Iq: %f, TL: %f, \n", epq, epd, eppq, eppd, slip, Id, Iq, TL);
+  if (bdebugprint) printf("MotorwLoad::init(), bus %d, states: epq: %f, epd: %f, eppq: %f, eppd: %f, slip: %f, Id: %f, Iq: %f, TL: %f, \n", p_bus_id, epq, epd, eppq, eppd, slip, Id, Iq, TL);
 
   double w = 1.0 - slip ; // rotor speed, pu
   C0 = 1.0 - A*w*w - B*w - D*(pow(w, E));
@@ -395,7 +417,7 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   Pmotor = real( vt * conj(tmp) ) * MVABase;
   Qmotor = imag( vt * conj(tmp) ) * MVABase;
   
-  printf("MotorwLoad::init(), C0: %f, Tm0: %f, Pmotor: %f, Qmotor: %f, \n", C0, Tm0, Pmotor, Qmotor);
+  if (bdebugprint) printf("MotorwLoad::init(), bus %d, C0: %f, Tm0: %f, Pmotor: %f, Qmotor: %f, \n", p_bus_id, C0, Tm0, Pmotor, Qmotor);
 
   // slightly adjust slip to accurately match resulting real power from the
   // power flow solution
@@ -590,8 +612,8 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
     }
   }
 
-  printf(" MotorwLoad::init(), states after slightly adjust, epq: %f, epd: %f, eppq: %f, eppd: %f, slip: %f, Id: %f, Iq: %f, TL: %f, \n", epq, epd, eppq, eppd, slip, Id, Iq, TL);
-  printf(" MotorwLoad::init(),  after slightly adjust, C0: %f, Tm0: %f, Pmotor: %f, Qmotor: %f, \n", C0, Tm0, Pmotor, Qmotor);
+  if (bdebugprint) printf(" MotorwLoad::init(), bus %d, states after slightly adjust, epq: %f, epd: %f, eppq: %f, eppd: %f, slip: %f, Id: %f, Iq: %f, TL: %f, \n", p_bus_id, epq, epd, eppq, eppd, slip, Id, Iq, TL);
+  if (bdebugprint) printf(" MotorwLoad::init(), bus %d, after slightly adjust, C0: %f, Tm0: %f, Pmotor: %f, Qmotor: %f, \n", p_bus_id, C0, Tm0, Pmotor, Qmotor);
     
   epq0  = epq;
   epd0  = epd; 
@@ -599,8 +621,12 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   eppd0 = eppd;
   slip0 = slip;
   
+  setDynLoadP(Pini); // need to reset Dynamic load P here, as we applied the motorwload_perc during initialization
+  
   Qmotor_init = Qmotor; 
   setDynLoadQ(Qmotor_init);
+  
+  Fonline = 1.0;
   
 }
 
@@ -627,8 +653,9 @@ gridpack::ComplexType  gridpack::dynamic_simulation::MotorwLoad::NortonImpedence
   gridpack::ComplexType  temp(rs, Lpp);
   Yn = 1.0 / temp;
   Yn = Yn * MVABase / sysMVABase;
-  printf("MotorwLoad::NortonImpedence(), Yn: %12.6f + j*%12.6f \n", real(Yn), imag(Yn));
-  return Yn;
+  nortonImpedance_sysMVA = Yn;
+  if (bdebugprint) printf("MotorwLoad::NortonImpedence(), bus %d, Yn: %12.6f + j*%12.6f \n", p_bus_id, real(Yn), imag(Yn));
+  return nortonImpedance_sysMVA;
 }
 
 /**
@@ -653,8 +680,13 @@ void gridpack::dynamic_simulation::MotorwLoad::predictor_currentInjection(bool f
   //In = ( p * eppd + 1j * q * eppq ) / ( rs + 1j * Lpp ) ; // pu
   In = a / b;
   In = In * MVABase / sysMVABase ;  // convert Norton injection current from motor base to system base
+  
+  //-----load percentage change compenstation here--------------------------------
+  In = In*Fonline + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline);  // compensate for the static load part, if have load shedding
+  In = In + nortonImpedance_sysMVA*vt_complex*(1.0-Fonline);  // compensate for the NortonY of the motorw, if have load shedding
+  
   p_INorton = In;
-  printf("MotorwLoad::predictor_currentInjection(), p_INorton: %12.6f + j*%12.6f \n", real(In), imag(In));
+  if (bdebugprint) printf("MotorwLoad::predictor_currentInjection(), bus %d, p_INorton: %12.6f + j*%12.6f \n", p_bus_id, real(In), imag(In));
 } 
 
 /**
@@ -671,7 +703,7 @@ void gridpack::dynamic_simulation::MotorwLoad::predictor(
   double pi = 4.0*atan(1.0);
   double wt = presentFreq*2.0*60.0*pi;
   double dt = t_inc;
-  printf("MotorwLoad::predictor(), vt: %12.6f + j*%12.6f, wt: %12.6f \n", real(vt), imag(vt), wt);
+  if (bdebugprint) printf("MotorwLoad::predictor(), bus %d, vt: %12.6f + j*%12.6f, wt: %12.6f \n", p_bus_id, real(vt), imag(vt), wt);
 
   // Step-1: update predictor state variables using corrector
   // state variables;
@@ -702,6 +734,9 @@ void gridpack::dynamic_simulation::MotorwLoad::predictor(
   deppq_dt0 = ( epq0 - eppq0 - (Lp - Lpp) * Id )/ tppo + wt * slip0 * ( epd0 - eppd0 ) + depq_dt0 ;  // d_eppq
   deppd_dt0 = ( epd0 - eppd0 + (Lp - Lpp) * Iq )/ tppo - wt * slip0 * ( epq0 - eppq0 ) + depd_dt0 ;  // d_eppd
   dslip_dt0 = -( p * eppd0 * Id + q * eppq0 * Iq - TL ) / (2.0 * H * w) ;
+  
+  if (bdebugprint) printf (" Output MotorwLoad::predictor() dxdt, bus: %d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, \n", p_bus_id, 
+			depq_dt, depd_dt, deppq_dt, deppd_dt, dslip_dt);
 
   // Step-3: integrate
   epq = epq0 +  depq_dt0 * dt;
@@ -726,7 +761,7 @@ void gridpack::dynamic_simulation::MotorwLoad::predictor(
   Pmotor = real( vt * conj(tmp3) ) * MVABase;
   Qmotor = imag( vt * conj(tmp3) ) * MVABase;
   
-  printf(" MotorwLoad::predictor(), %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f\n", presentMag, presentAng, presentFreq, epq, epd, eppq, eppd, 1.0-slip, Pmotor, Qmotor, Id, Iq );
+  if (bdebugprint) printf(" MotorwLoad::predictor(), bus %d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f\n", p_bus_id, presentMag, presentAng, presentFreq, epq, epd, eppq, eppd, 1.0-slip, Pmotor, Qmotor, Id, Iq );
     
 }
 
@@ -744,8 +779,13 @@ void gridpack::dynamic_simulation::MotorwLoad::corrector_currentInjection(bool f
   //In = ( p * eppd + 1j * q * eppq ) / ( rs + 1j * Lpp ) ; // pu
   In = a / b;
   In = In * MVABase / sysMVABase ;  // convert Norton injection current from motor base to system base
+  
+  //-----load percentage change compenstation here--------------------------------
+  In = In*Fonline + samebus_static_equivY_sysMVA*vt_complex*(1.0-Fonline);  // compensate for the static load part, if have load shedding
+  In = In + nortonImpedance_sysMVA*vt_complex*(1.0-Fonline);  // compensate for the NortonY of the motorw, if have load shedding
+  
   p_INorton = In;
-  printf("MotorwLoad::corrector_currentInjection(), p_INorton: %12.6f + j*%12.6f \n", real(In), imag(In));
+  if (bdebugprint) printf("MotorwLoad::corrector_currentInjection(), bus %d, p_INorton: %12.6f + j*%12.6f \n", p_bus_id, real(In), imag(In));
 }
 
 /**
@@ -763,7 +803,7 @@ void gridpack::dynamic_simulation::MotorwLoad::corrector(
   double wt = presentFreq*2.0*60.0*pi;
   double dt = t_inc;
 
-  printf("MotorwLoad::corrector(), vt: %12.6f + j*%12.6f, wt: %12.6f \n", real(vt), imag(vt), wt);
+  if (bdebugprint) printf("MotorwLoad::corrector(), bus %d, vt: %12.6f + j*%12.6f, wt: %12.6f \n", p_bus_id, real(vt), imag(vt), wt);
   
   //g Step-1: calculate corrector dx'/dt
   //Es = p * eppd + 1j * q * eppq ;  //g p * eppd + j q * eppq
@@ -782,6 +822,9 @@ void gridpack::dynamic_simulation::MotorwLoad::corrector(
   deppq_dt = ( epq - eppq - (Lp - Lpp) * Id )/ tppo + wt * slip * ( epd - eppd ) + depq_dt ;  //g d_eppq
   deppd_dt = ( epd - eppd + (Lp - Lpp) * Iq )/ tppo - wt * slip * ( epq - eppq ) + depd_dt ;  //g d_eppd
   dslip_dt = -( p * eppd * Id + q * eppq * Iq - TL ) / (2.0 * H * w) ;
+  
+  if (bdebugprint) printf (" Output MotorwLoad::corrector() dxdt, bus: %d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, \n", p_bus_id, 
+			depq_dt, depd_dt, deppq_dt, deppd_dt, dslip_dt);
 
   //g Step-2: integrate
   epq = epq0 +  0.5 * ( depq_dt0 + depq_dt  )* dt;
@@ -807,7 +850,7 @@ void gridpack::dynamic_simulation::MotorwLoad::corrector(
   Pmotor = real( vt * conj(tmp3) ) * MVABase;
   Qmotor = imag( vt * conj(tmp3) ) * MVABase;
   
-  printf(" Output MotorwLoad::corrector(), bus: %d,  %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f \n", p_bus_id, presentMag, presentAng, presentFreq, epq, epd, eppq, eppd, 1.0-slip, Pmotor, Qmotor, TL, Id, Iq );
+  if (bdebugprint) printf(" Output MotorwLoad::corrector(), bus: %d,  %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f \n", p_bus_id, presentMag, presentAng, presentFreq, epq, epd, eppq, eppd, 1.0-slip, Pmotor, Qmotor, TL, Id, Iq );
     
 }
 
@@ -817,7 +860,7 @@ void gridpack::dynamic_simulation::MotorwLoad::corrector(
 void gridpack::dynamic_simulation::MotorwLoad::setVoltage(
     gridpack::ComplexType voltage)
 {
-  printf("MotorwLoad::setVoltage, %12.6f + j %12.6f \n", real(voltage), imag(voltage));	
+  if (bdebugprint) printf("MotorwLoad::setVoltage, %12.6f + j %12.6f \n", real(voltage), imag(voltage));	
   presentMag = abs(voltage);
   presentAng = atan2(imag(voltage), real(voltage));  
   vt_complex = voltage;
@@ -855,4 +898,62 @@ double gridpack::dynamic_simulation::MotorwLoad::getInitReactivePower()
   return Qmotor_init;
 }
 
+/**
+ * get the variable Fonline 
+ */
+double gridpack::dynamic_simulation::MotorwLoad::getFonline(void)
+{
+	return Fonline;
+}
+
+/**
+ * return true if load change is enabled
+ * @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+ */
+bool gridpack::dynamic_simulation::MotorwLoad::changeLoad(double percentageFactor)
+{
+	if (percentageFactor < -1.0) {
+		if (bdebugprint) printf("percentageFactor < -1.0, this change will not be applied.  \n");
+		return false;
+	}
+	
+	if (Fonline == 0.0){
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load motor w at bus %d with ID %s has 0 percent of load and could not be shedding the percentange of %f !!!! \n", 
+		                                              p_bus_id, p_loadid.c_str(), percentageFactor);
+		//percentageFactor = 0.0;
+		//Fonline = Fonline + percentageFactor;
+		if (bdebugprint) printf("----renke debug load shed, MotorwLoad::changeLoad, Fonline: %f \n", Fonline);
+		return true;
+	}
+	
+	if ( (Fonline + percentageFactor) < 0.0 ){
+		if (bdebugprint) printf("-------!!!! gridpack warning: the dynamic load motor w at bus %d with ID %s has %f percent of load and could not be shedding the percentange of %f !!!! \n", 
+		                                              p_bus_id, p_loadid.c_str(), Fonline, percentageFactor);
+		Fonline = 0.0;
+		if (bdebugprint) printf("----renke debug load shed, MotorwLoad::changeLoad, Fonline: %f \n", Fonline);
+		return true;
+	}
+	
+	Fonline = Fonline + percentageFactor;
+	// Yuan added below 20200709
+	if (Fonline < 0.0) Fonline=0.0;
+	// Yuan added above 20200709
+	
+	if (bdebugprint) printf("----renke debug load shed, MotorwLoad::changeLoad, the dynamic load at bus %d with ID %s, percentageFactor: %f, remaining Fonline: %f \n", 
+																				p_bus_id, p_loadid.c_str(), percentageFactor, Fonline);
+	return true;
+}
+/**
+ * Set same bus static load p and q for load shedding action usage
+ */
+void gridpack::dynamic_simulation::MotorwLoad::setSameBusStaticLoadPQ(double static_pl, double static_ql, double mag)
+{
+  samebus_static_loadP = static_pl;
+  samebus_static_loadQ = static_ql;
+  
+  double samebus_static_load_yr = samebus_static_loadP/(mag*mag);
+  double samebus_static_load_yi = (-samebus_static_loadQ)/(mag*mag);
+  samebus_static_equivY_sysMVA = samebus_static_equivY_sysMVA + gridpack::ComplexType(samebus_static_load_yr, samebus_static_load_yi);
+  if (bdebugprint) printf("MotorwLoad::setSameBusStaticLoadPQ, samebus_static_equivY_sysMVA: %12.6f +j %12.6f\n", real(samebus_static_equivY_sysMVA), imag(samebus_static_equivY_sysMVA));
+}
 

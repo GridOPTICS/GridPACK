@@ -74,6 +74,8 @@ class DSFullFactory
      * @param ts time step
      */
     void initDSVect(double ts);
+	
+	void setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase);
 
     /**
      * Update vectors in each integration time step (Predictor)

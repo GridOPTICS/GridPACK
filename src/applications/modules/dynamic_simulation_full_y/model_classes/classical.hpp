@@ -132,6 +132,7 @@ class ClassicalGenerator : public BaseGeneratorModel
     double p_mva, p_r, p_dstr, p_dtr;
     double p_d0, p_h;
     double p_PI;
+	double genP, genQ;
 
     gridpack::ComplexType p_pelect, p_volt;
     gridpack::ComplexType p_mac_ang_s0, p_mac_spd_s0;
