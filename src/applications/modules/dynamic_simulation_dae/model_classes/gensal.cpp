@@ -139,7 +139,8 @@ double GensalGen::Sat(double Eqp)
     double result = sat_B * (Eqp - sat_A) * (Eqp - sat_A) /Eqp;
     if(Eqp < sat_A) result = 0.0;
     //    return result; // Scaled Quadratic with 1.7.1 equations\
-    return 0.0; // disabled saturation effect
+    result = 0.0;
+    return result; // disabled saturation effect
 }
 
 /**
@@ -188,7 +189,7 @@ void GensalGen::init(gridpack::ComplexType* values)
   Psidp = Psidpp - Id * (Xdpp - Xl);
   Eqp   = Psidp + Id * (Xdp - Xl);
 
-  Efd = Eqp * (1 + Sat(Eqp)) + Id * (Xd - Xdp); 
+  Efd = Eqp * (1.0 + Sat(Eqp)) + Id * (Xd - Xdp); 
   LadIfd = Efd;
   Pmech = Psid * Iq - Psiq * Id;
 
@@ -198,6 +199,9 @@ void GensalGen::init(gridpack::ComplexType* values)
   values[3] = Psidp;
   values[4] = Psiqpp;
   
+  //  printf("delta = %f,dw = %f,Eqp = %f,Psidp = %f,Psiqpp = %f,Efd = %f,Pmech = %f,VD = %f,VQ = %f\n",
+  //	 delta,dw,Eqp,Psidp,Psiqpp,Efd,Pmech,VD,VQ);
+
   // Initialize exciters
   if (p_hasExciter) {
     p_exciter = getExciter();
@@ -322,7 +326,7 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     Psid  = Psidpp - Id * Xdpp;
     Telec = Psid * Iq - Psiq * Id;
     TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
-    LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
+    LadIfd = Eqp * (1.0 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
 
     // RESIDUAL_EVAL for state 1 to 5
     values[delta_idx] = dw * OMEGA_S - ddelta;
@@ -330,7 +334,6 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp; 
     values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
     values[Psiqpp_idx] = (-Psiqpp - (Xq - Xdpp) * Iq ) / Tqopp - dPsiqpp;
-
   }
 
   return true;
@@ -470,7 +473,7 @@ bool GensalGen::setJacobian(gridpack::ComplexType **values)
     values[delta_idx][delta_idx] = 1.0;
     values[dw_idx][dw_idx] = 1.0;
     values[Eqp_idx][Eqp_idx] = 1.0;
-    values[Psidp_idx][dw_idx] = 1.0;
+    values[Psidp_idx][Psidp_idx] = 1.0;
     values[Psiqpp_idx][Psiqpp_idx] = 1.0;
   } else {
 
@@ -632,8 +635,9 @@ double GensalGen::getFieldCurrent()
   double Psiq = Psiqpp - Iq * Xdpp;
   double Psid  = Psidpp - Id * Xdpp;
   double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
-  double LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
+  double LadIfd = Eqp * (1.0 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
 
+  //  printf("LadIfd = %f\n",LadIfd);
   return LadIfd;
 
 }

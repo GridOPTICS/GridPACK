@@ -180,6 +180,8 @@ private:
   bool   p_isghost; // Is it a local or ghosted element
   
   int    p_rank;
+
+  gridpack::ComplexType **p_matvalues;
   
   BaseGenModel **p_gen;    // Generator model
   int           *p_neqsgen; // Number of equations for each generator

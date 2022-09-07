@@ -72,6 +72,12 @@ public:
    * return the bolean indicating whether the gen is ON or OFF
    */
   bool getGenStatus() {return status;}
+
+  /**
+   * set the bolean indicating whether the gen is ON or OFF
+   */
+  void setGenStatus(int gstatus) {status = gstatus;}
+
   
   /**
    * Set bus voltage

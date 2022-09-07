@@ -2066,6 +2066,77 @@
  */
 #define GENERATOR_PSET "GENERATOR_PSET"
 
+// GENERATOR COST PARAMETERS
+/**
+ * Generator vset
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_VSET "GENERATOR_VSET"
+
+/**
+ * Generator mq
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_MQ "GENERATOR_MQ"
+
+/**
+ * Generator kpv
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_KPV "GENERATOR_KPV"
+
+/**
+ * Generator kiv
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_KIV "GENERATOR_KIV"
+
+/**
+ * Generator emax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_EMAX "GENERATOR_EMAX"
+
+/**
+ * Generator emin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_EMIN "GENERATOR_EMIN"
+
+/**
+ * Generator mp
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_MP "GENERATOR_MP"
+
+/**
+ * Generator kppmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_KPPMAX "GENERATOR_KPPMAX"
+
+/**
+ * Generator kipmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_KIPMAX "GENERATOR_KIPMAX"
+
+/**
+ * Generator pset
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_PSET "GENERATOR_PSET"
+
 /**
  * Generator imax
  * type: real float

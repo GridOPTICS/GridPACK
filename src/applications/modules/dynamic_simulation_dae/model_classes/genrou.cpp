@@ -176,8 +176,8 @@ void GenrouGen::init(gridpack::ComplexType* values)
   double Psid,Psiq,Psidpp,Psiqpp;
   double Eppr,Eppi,Vdterm,Vqterm;
 
-  P = pg / mbase;
-  Q = qg / mbase;
+  P = pg / sbase;
+  Q = qg / sbase;
 
   // Generator currents in network reference frame
   Ir = (P * VD + Q * VQ) / (Vm * Vm);
@@ -522,7 +522,7 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
     values[delta_idx][delta_idx] = 1.0;
     values[dw_idx][dw_idx] = 1.0;
     values[Eqp_idx][Eqp_idx] = 1.0;
-    values[Psidp_idx][dw_idx] = 1.0;
+    values[Psidp_idx][Psidp_idx] = 1.0;
     values[Psiqp_idx][Psiqp_idx] = 1.0;
     values[Edp_idx][Edp_idx] = 1.0;
 

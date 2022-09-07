@@ -19,15 +19,8 @@
 
 BaseGovModel::BaseGovModel(void)
 {
-  /*pg = 0.0;
-  qg = 0.0;
   mbase = DEFAULT_MVABASE;
   sbase = DEFAULT_MVABASE;
-  status = 0;
-  shift  = 0.0;
-  VD     = 0.0;
-  VQ     = 0.0;
-  hasGov = hasGovernor = false;*/
 }
 
 BaseGovModel::~BaseGovModel(void)
@@ -43,15 +36,8 @@ BaseGovModel::~BaseGovModel(void)
 void BaseGovModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx)
 {
-  /*data->getValue(GENERATOR_STAT,&status,idx); // Generator status
   data->getValue(CASE_SBASE,&sbase); // System MVAbase, used in conversion from machine base to system base.
-  if(status) {
-    data->getValue(GENERATOR_PG,&pg,idx); // Generator real power
-    data->getValue(GENERATOR_QG,&qg,idx); // Generator reactive power
-    data->getValue(GENERATOR_MBASE,&mbase,idx); // Machine base (in MVA)
-  } else {
-    pg = qg = mbase = 0.0;
-  }*/
+  data->getValue(GENERATOR_MBASE,&mbase,idx); // Machine base (in MVA)
 }
 
 /**
@@ -160,6 +146,14 @@ bool BaseGovModel::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dP
 void BaseGovModel::setVcomp(double Vcomp)
 {
 }
+
+/**
+ * Set Event
+ */
+void BaseGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+}
+
 
 void BaseGovModel::setGenerator(BaseGenModel *generator)
 {

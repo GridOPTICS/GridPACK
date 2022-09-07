@@ -52,6 +52,7 @@ protected:
       // Push the updated solution back to network
       p_sim->p_factory->setMode(XVECTOBUS);
       p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
+      p_sim->p_X->ready();
       p_sim->p_factory->resetEventFlags();
     }
   }
@@ -117,12 +118,12 @@ protected:
     
   if (triggered[0]) {
     // Set fault
-    printf("Applying a fault on bus %d at t = %3.2f\n", p_bus, t);
+    if(!p_sim->rank())printf("Applying a fault on bus %d at t = %3.2f\n", p_bus, t);
     p_sim->p_factory->setfault(p_bus, p_Gfault, -p_Bfault);
     p_sim->p_resolve = true;
   } else if (triggered[1]) {
     // Remove fault
-    printf("Removing fault on bus %d at t = %3.2f\n", p_bus, t);
+    if(!p_sim->rank()) printf("Removing fault on bus %d at t = %3.2f\n", p_bus, t);
     p_sim->p_factory->setfault(p_bus,-p_Gfault,p_Bfault);
     p_sim->p_resolve = true;
   }
@@ -208,9 +209,9 @@ void DSim::setup()
 
   /* Create mappers and vectors, matrices */
   p_VecMapper = new gridpack::mapper::BusVectorMap<DSimNetwork>(p_network);
-  p_MatMapper = new gridpack::mapper::FullMatrixMap<DSimNetwork>(p_network);
-
   p_X = p_VecMapper->mapToVector();
+
+  p_MatMapper = new gridpack::mapper::FullMatrixMap<DSimNetwork>(p_network);
   p_J = p_MatMapper->mapToMatrix();
 
   if(!rank()) printf("DSim:Finished setting up mappers\n");
@@ -243,7 +244,8 @@ void DSim::setup()
   // Event manager must be populated before DAE solver construction
   eman->add(e);
 
-  p_daesolver = new DAESolver(p_comm,lsize,daejacobian,daefunction, eman);
+  gridpack::math::Matrix* mat_ptr = p_J.get();
+  p_daesolver = new DAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);
   p_daesolver->configure(p_configcursor);
 
   // Create nonlinear solver for solving the algebraic equations at fault-on/fault-off time instants
@@ -264,6 +266,7 @@ void DSim::initialize()
 {
   p_factory->setMode(INIT_X);
   p_VecMapper->mapToVector(p_X);
+  p_X->ready();
   
   p_network->updateBuses();
   //p_X->print();
@@ -278,11 +281,17 @@ void DSim::solve()
 {
   // Get simulation time length
   double t(0.0), tstep, tmax;
+  int maxsteps(10000);
 
   // Get simulation time frame from input
   p_configcursor->get("timeStep",&tstep);
   p_configcursor->get("simulationTime",&tmax);
 
+  p_daesolver->initialize(t,tstep,*(p_X.get()));
+  p_profiler.startsolvetimer();
+  p_daesolver->solve(tmax,maxsteps);
+  p_profiler.stopsolvetimer();
+  /*
   while (t < tmax) {
     double tout(tmax);
     int maxsteps(10000);
@@ -293,6 +302,7 @@ void DSim::solve()
               << "actual time = " << tout << ", "
               << "Steps = " << maxsteps << std::endl;
     t = tout;
-  }  
+  } 
+  */ 
 }
 

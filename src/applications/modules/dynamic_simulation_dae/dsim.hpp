@@ -78,19 +78,20 @@ public:
     p_factory->setTSshift(shift);
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
-    p_VecMapper->mapToBus(X);
+    //    p_VecMapper->mapToBus(X);
 
     // Push current values in Xdot vector back into network components
     p_factory->setMode(XDOTVECTOBUS);
     p_VecMapper->mapToBus(Xdot);
 
     // Update ghost buses
-    p_network->updateBuses();
+    //    p_network->updateBuses();
 
     // Evaluate the DAE Jacobian
-    J.zero();
+    //    J.zero();
     p_factory->setMode(RESIDUAL_EVAL);
     p_MatMapper->mapToMatrix(J);
+    J.ready();
   }
 
   /// Build the DAE RHS function
@@ -147,9 +148,10 @@ public:
     p_network->updateBuses();
 
     // Evaluate the fault residual Jacobian
+    J.zero();
     p_factory->setMode(FAULT_EVAL);
     p_MatMapper->mapToMatrix(J);
-    
+    J.ready();
   }
 
   private:

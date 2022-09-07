@@ -119,6 +119,26 @@ public:
    */
   void setVcomp(double vtmp);
   
+    /**
+   * Set Event 
+   */
+  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+
+  /**
+   * Update the event function values
+   */
+  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
+
+  /**
+   * Event handler function 
+   */
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+
+  /**
+   * Updated limiter flags after event has occured. Only called when the network is resolved
+   */
+  void resetEventFlags(void);
+
 private:
   
   // Governor WSIEG1 Parameters read from dyr
@@ -147,10 +167,39 @@ private:
 
   bool SecondGenExists;
 
+  // Flags for limiter
+  bool uGV_at_min,uGV_at_max;
+  bool xGV_at_min,xGV_at_max;
+
   // Inputs
   double Pref;
 
   int iseq_diff[6];   
+};
+
+// Class for defining events for ESST1a model
+class Wsieg1GovEvent
+  :public gridpack::math::DAESolver::Event
+{
+public:
+
+  // Default constructor
+  Wsieg1GovEvent(Wsieg1Gov *gov):gridpack::math::DAESolver::Event(4),p_gov(gov)
+  {
+    std:fill(p_term.begin(),p_term.end(),false);
+
+    std::fill(p_dir.begin(),p_dir.end(),gridpack::math::CrossZeroNegative);
+
+  }
+
+  // Destructor
+  ~Wsieg1GovEvent(void) {}
+protected:
+  Wsieg1Gov *p_gov;
+
+  void p_update(const double& t, gridpack::ComplexType *state);
+
+  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state);
 };
 
 #endif

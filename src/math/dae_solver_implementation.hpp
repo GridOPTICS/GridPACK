@@ -57,12 +57,27 @@ public:
     : parallel::Distributed(comm),
       utility::Configurable("DAESolver"),
       utility::Uncopyable(),
-      p_J(comm, local_size, local_size),
       p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
       p_eventManager(eman),
       p_doAdaptive(true)
   {
-    
+    p_J = new gridpack::math::Matrix(comm,local_size,local_size);
+  }
+
+  DAESolverImplementation(const parallel::Communicator& comm, 
+                          const int local_size,
+			  MatrixType* J,
+                          JacobianBuilder& jbuilder,
+                          FunctionBuilder& fbuilder,
+                          EventManagerPtr eman)
+    : parallel::Distributed(comm),
+      utility::Configurable("DAESolver"),
+      utility::Uncopyable(),
+      p_J(J),
+      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
+      p_eventManager(eman),
+      p_doAdaptive(true)
+  {
   }
 
 
@@ -74,7 +89,7 @@ public:
 protected:
 
   /// A matrix to hold the Jacobian
-  MatrixType p_J;
+  MatrixType *p_J;
 
   /// A function to build the RHS vector
   FunctionBuilder p_Fbuilder;

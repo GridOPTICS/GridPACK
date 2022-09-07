@@ -10,10 +10,12 @@
 -dsim_snes_linesearch_type basic
 
 # Numerical integration scheme
--dsim_ts_type cn # Implicit trapezoidal
+#-dsim_ts_type cn # Implicit trapezoidal
+-dsim_ts_type rosw
+-dsim_ts_rosw_type 2m
 
 # Time-step adaptivity
--dsim_ts_adapt_type none # Turned off (Use -dsim_ts_adapt_type basic to turn on adaptivity)
+-dsim_ts_adapt_type basic # Turned off (Use -dsim_ts_adapt_type basic to turn on adaptivity)
 
 # Tolerances for step adaptivity (only used when step adaptivity is on)
 -dsim_ts_atol 1e-2
@@ -23,7 +25,7 @@
 -dsim_ts_event_tol 1e-3
 
 # Min. and max. steps (only used when step adaptivity is on)
--dsim_ts_adapt_dt_max 0.08
+-dsim_ts_adapt_dt_max 0.3
 -dsim_ts_adapt_dt_min 0.01
 
 # End last time at the given final time 
@@ -33,27 +35,35 @@
 -dsim_ts_monitor
 
 # Show progress of nonlinear solver during each step
--dsim_snes_monitor
+#-dsim_snes_monitor
 
 # Use full Newton step
 -dsim_snes_linesearch_type basic
 
 # Use LU factorization as the linear solver
--dsim_pc_type lu
+-dsim_pc_type asm
+-dsim_pc_asm_overlap 2
+-dsim_sub_pc_type lu
+-dsim_sub_pc_factor_mat_ordering_type qmd
 
 # Use SuperLU_Dist package for doing the linear solve (Note: PETSc must be configured with --download-superlu_dist --download-metis --download-parmetis)
--dsim_pc_factor_mat_solver_package superlu_dist
+#-dsim_pc_type lu
+#-dsim_pc_factor_mat_solver_package superlu_dist
 
 # Use finite-difference Jacobian
 #-dsim_snes_fd
 
 # Save the output at each time-step
--dsim_ts_save_trajectory
+#-dsim_ts_save_trajectory
 
 # Options for the nonlinear solver used for FAULT ON/OFF
--snes_fd
--snes_pc_type lu
--snes_pc_factor_mat_solver_package superlu_dist
+#-snes_fd
+-pc_type asm
+-pc_asm_overlap 2
+-sub_pc_type lu
+-sub_pc_factor_mat_ordering_type qmd
+#-pc_type lu
+#-pc_factor_mat_solver_package superlu_dist
 
 
 
