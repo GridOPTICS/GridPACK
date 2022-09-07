@@ -7,7 +7,7 @@
 /**
  * @file   dsimnetwork.cpp
  * @author Shrirang Abhyankar
- * @date   02/09/19
+ * @date   2022-09-07 07:40:28 d3g096
  * @last modified by Shuangshuang Jin on 10/19/2019 to add
  *  generator, exciter and governor model instantiation
  * @last modified by Shrirang Abhyankar - Jacobian evaluation
@@ -168,7 +168,7 @@ void DSimBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
     if(has_ex) {
       p_gen[i]->getExciter()->setEvent(eman);
     }
-    has_gov = p_gen[i]->getGovernor();
+    has_gov = static_cast<bool>(p_gen[i]->getGovernor());
     if(has_gov) {
       p_gen[i]->getGovernor()->setEvent(eman);
     }
