@@ -115,13 +115,17 @@ elif [ $host == "we32673" ]; then
     CC=/opt/local/bin/clang
     export CC
     CXX=/opt/local/bin/clang++
-    export CXX
+    export CC CXX 
 
     prefix="/Users/d3g096/Projects/GridPACK"
     pdir="$prefix/petsc.gitlab"
 
-    parch="darwin-mpich-clang-complex-opt-3.16"
-    parch="darwin-mpich-clang-real-opt-3.16"
+    if [ "$shared"x = "ON"x ]; then
+        parch="darwin-mpich-clang-real-opt-3.16"
+        parch="darwin-mpich-clang-complex-opt-3.16"
+    else
+        parch="darwin-mpich-clang-complex-opt-3.16-static"
+    fi
     
     cmake $options \
         -D GA_DIR:STRING="$prefix/gridpack-install" \

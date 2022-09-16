@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2021-06-10 07:07:20 d3g096
+# Last Change: 2022-09-16 08:35:02 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -235,11 +235,12 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(CMAKE_MACOSX_RPATH 1)
+endif()
+
 # When built as shared libraries, and installed in non-system dirs, deal with RPATH
 if(BUILD_SHARED_LIBS)
-  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(CMAKE_MACOSX_RPATH 1)
-  endif()
   list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES ${CMAKE_INSTALL_PREFIX}/lib isSystemDir)
   if("${isSystemDir}" STREQUAL "-1")
     set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
