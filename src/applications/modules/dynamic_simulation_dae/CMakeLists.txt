@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:27:34 d3g096
+# Last Change: 2022-09-16 07:49:18 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -55,10 +55,9 @@ add_library(gridpack_dynamic_simulation_dae_module
   model_classes/DBIntClass.cpp
 )
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_dynamic_simulation_dae_module
-    )
-endif()
+target_link_libraries(gridpack_dynamic_simulation_dae_module
+  gridpack_ymatrix_components
+)
 
 # -------------------------------------------------------------
 # component serialization tests
