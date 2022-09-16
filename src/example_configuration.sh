@@ -268,11 +268,22 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_DIR:STRING="/usr/lib/petsc" \
     #      -D PETSC_ARCH:STRING="" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
+
+    # Custom built 3.12.5, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.12.5" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.12" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+    
+    # Custom built 3.10.5, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.10.5" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.10" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+    
     
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
-          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
-          -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.10.5" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared-3.10" \
           -D USE_OLD_PETSC:BOOL=OFF \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
