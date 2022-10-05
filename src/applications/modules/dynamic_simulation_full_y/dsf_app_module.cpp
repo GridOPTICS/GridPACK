@@ -1688,8 +1688,10 @@ std::vector<int> gridpack::dynamic_simulation::DSFullApp::getTimeSeriesMap()
           std::map<std::pair<int,std::string>,int>::iterator it;
           it = p_watch_list.find(gen);
           if (it != p_watch_list.end()) {
-            ret.push_back(2*(it->second));
-            ret.push_back(2*(it->second)+1);
+            ret.push_back(4*(it->second));
+            ret.push_back(4*(it->second)+1);
+            ret.push_back(4*(it->second)+2);
+            ret.push_back(4*(it->second)+3);
           } else {
             printf("Could not find generator %s on bus %d\n",
                 watched[j].c_str(),bus->getOriginalIndex());

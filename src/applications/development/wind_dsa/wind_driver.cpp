@@ -1024,7 +1024,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 
   // Create distributed storage object
   gridpack::contingency_analysis::QuantileAnalysis analysis(world,
-      2*bus_ids.size(),ntasks*numConfigs,nsteps);
+      4*bus_ids.size(),ntasks*numConfigs,nsteps);
 #ifdef OLD_GOSS
   gridpack::contingency_analysis::DataStore
     data_store(2*bus_ids.size(),ntasks*numConfigs,nsteps);
@@ -1038,6 +1038,10 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     sprintf(sbuf, "%d_%s_ANG", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
     sprintf(sbuf, "%d_%s_SPD", bus_ids[i], tag.c_str());
+    var_names.push_back(sbuf);
+    sprintf(sbuf, "%d_%s_GENP", bus_ids[i], tag.c_str());
+    var_names.push_back(sbuf);
+    sprintf(sbuf, "%d_%s_GENQ", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
   }
   analysis.saveVarNames(var_names);
