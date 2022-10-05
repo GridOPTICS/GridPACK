@@ -283,6 +283,7 @@ elif [ $host == "tlaloc" ]; then
     
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
+        --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
           -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
           -D USE_OLD_PETSC:BOOL=OFF \

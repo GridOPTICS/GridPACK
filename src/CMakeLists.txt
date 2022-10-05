@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2022-09-16 08:54:41 d3g096
+# Last Change: 2022-10-05 09:26:46 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -479,9 +479,9 @@ set(GRIDPACK_LIB_LINK_LIBRARIES OFF
   CACHE BOOL "Do we need library link libraries?")
 
 if (BUILD_SHARED_LIBS)
-  if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  # if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     set(GRIDPACK_LIB_LINK_LIBRARIES ON)
-  endif()
+  # endif()
 endif()
 
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
