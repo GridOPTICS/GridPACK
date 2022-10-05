@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2019-12-10 09:31:33 d3g096
+ * @date   2022-10-05 08:51:23 d3g096
  * 
  * @brief  
  * 
@@ -38,7 +38,7 @@
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/environment/environment.hpp"
-#include "gridpack/environment/no_print.hpp"
+#include "gridpack/configuration/no_print.hpp"
 
 namespace gridpack {
 namespace network {

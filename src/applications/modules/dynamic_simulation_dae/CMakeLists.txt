@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2022-09-16 07:49:18 d3g096
+# Last Change: 2022-10-05 09:05:48 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -57,6 +57,7 @@ add_library(gridpack_dynamic_simulation_dae_module
 
 target_link_libraries(gridpack_dynamic_simulation_dae_module
   gridpack_ymatrix_components
+  gridpack_partition
 )
 
 # -------------------------------------------------------------

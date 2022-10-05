@@ -10,11 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2020-01-27 12:42:34 d3g096
+# Last Change: 2022-10-05 08:49:51 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
   configuration.cpp
+  no_print.cpp
 )
 
 gridpack_set_library_version(gridpack_configuration)
@@ -67,6 +68,7 @@ add_dependencies(configuration_test configuration_test_input)
 install(FILES 
   configuration.hpp
   configurable.hpp
+  no_print.hpp
   DESTINATION include/gridpack/configuration
 )
 
