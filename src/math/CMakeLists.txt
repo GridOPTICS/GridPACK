@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2022-08-08 08:32:05 d3g096
+# Last Change: 2022-10-05 08:15:59 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -148,8 +148,6 @@ if (NOT USE_OLD_PETSC)
     gridpack_configuration
     PUBLIC
     gridpack_timer
-    PUBLIC
-    gridpack_parallel
     PUBLIC
     PkgConfig::PETSC
   )

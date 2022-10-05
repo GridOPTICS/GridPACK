@@ -128,6 +128,7 @@ elif [ $host == "we32673" ]; then
     fi
     
     cmake $options \
+        --graphviz=GridPACK.dot \
         -D GA_DIR:STRING="$prefix/gridpack-install" \
         -D BOOST_ROOT:STRING="/opt/local/libexec/boost/1.76" \
         -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
