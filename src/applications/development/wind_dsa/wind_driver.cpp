@@ -617,6 +617,7 @@ void gridpack::contingency_analysis::WindDriver::resetData(
     data = ds_network->getBusData(genIDs[i]).get();
     ds_bus->setGeneratorRealPower(genTags[i],windVals[i],data);
   }
+  
   nsize = loadVals.size();
   for (i=0; i<nsize; i++) {
     if (loadIDs[i] < 0 || loadIDs[i] >= pf_network->numBuses()) {
@@ -1106,7 +1107,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     }
     pf_app.reload();
     resetData(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,
-        pf_network,p_network);
+	      pf_network,p_network);
     // Recalculate powerflow for new values of generators and loads
  
     if (useNonLinear) {
