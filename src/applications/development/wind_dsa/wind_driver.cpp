@@ -545,9 +545,11 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
     pfData = pf_network->getBusData(i).get();
     dsData = ds_network->getBusData(i).get();
     pfData->getValue("BUS_PF_VMAG",&rval);
+    dsData->setValue("BUS_PF_VMAG",rval);
     dsData->setValue(BUS_VOLTAGE_MAG,rval);
     temp = rval;
     pfData->getValue("BUS_PF_VANG",&rval);
+    dsData->setValue("BUS_PF_VANG",rval);
     dsData->setValue(BUS_VOLTAGE_ANG,rval);
     rval = rval * pi/180.0;
     pfData->getValue("BUS_TYPE", &ival);
@@ -671,6 +673,8 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
           event.from_idx = 0;
           event.to_idx = 0;
         }
+	event.isBus = false;
+	event.isLine = true;
       } else {
         event.from_idx = 0;
         event.to_idx = 0;
