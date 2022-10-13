@@ -1633,6 +1633,7 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
     if (!data->setValue(LOAD_PL,value,idx)) {
       data->addValue(LOAD_PL,value,idx);
     }
+    p_pl[idx] = value;
   } else {
     printf("No load found for tag: (%s)\n",tag.c_str());
   }
