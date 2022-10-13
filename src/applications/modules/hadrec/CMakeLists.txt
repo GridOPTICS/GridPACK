@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-12-16 12:57:42 d3g096
+# Last Change: 2022-10-05 08:22:08 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -44,12 +44,7 @@ add_library(gridpack_hadrec_module
 gridpack_set_library_version(gridpack_hadrec_module)
 
 target_link_libraries(gridpack_hadrec_module
-  gridpack_pfmatrix_components
-  gridpack_partition
-  gridpack_math
-  gridpack_stream
   gridpack_dynamic_simulation_full_y_module
-  gridpack_powerflow_module
   )
 
 

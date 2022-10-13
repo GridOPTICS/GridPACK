@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include "gridpack/environment/no_print.hpp"
+#include "gridpack/configuration/no_print.hpp"
 
 gridpack::NoPrint
          *gridpack::NoPrint::p_instance = NULL;

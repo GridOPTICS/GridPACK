@@ -15,6 +15,7 @@
 #include "gridpack/analysis/stat_block.hpp"
 #include "gridpack/configuration/configurable.hpp"
 #include "gridpack/configuration/configuration.hpp"
+#include "gridpack/configuration/no_print.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -51,7 +52,6 @@
 #include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/export/PSSE23Export.hpp"
 #include "gridpack/environment/environment.hpp"
-#include "gridpack/environment/no_print.hpp"
 #ifdef USE_GOSS
 #include "gridpack/serial_io/goss_client.hpp"
 #endif

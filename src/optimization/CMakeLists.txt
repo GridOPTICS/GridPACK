@@ -83,7 +83,6 @@ if (GRIDPACK_LIB_LINK_LIBRARIES)
     gridpack_components
     gridpack_partition
     gridpack_expression
-    gridpack_math
     ${optimizer_libraries}
     )
 endif()

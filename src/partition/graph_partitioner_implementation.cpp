@@ -7,7 +7,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2016-07-14 13:20:29 d3g096
+ * @date   2022-10-05 08:51:53 d3g096
  * 
  * @brief  
  * 
@@ -28,7 +28,7 @@
 
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
-#include "gridpack/environment/no_print.hpp"
+#include "gridpack/configuration/no_print.hpp"
 #include "graph_partitioner_implementation.hpp"
 
 

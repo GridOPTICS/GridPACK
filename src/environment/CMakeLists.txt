@@ -10,12 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2020-05-22 12:12:23 d3g096
+# Last Change: 2022-10-05 08:49:22 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_environment 
   environment.cpp
-  no_print.cpp
   )
 
 target_link_libraries(gridpack_environment
@@ -42,7 +41,6 @@ endif()
 # -------------------------------------------------------------
 install(FILES
   environment.hpp
-  no_print.hpp
   DESTINATION include/gridpack/environment
 )
 

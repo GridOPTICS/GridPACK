@@ -128,6 +128,7 @@ elif [ $host == "we32673" ]; then
     fi
     
     cmake $options \
+        --graphviz=GridPACK.dot \
         -D GA_DIR:STRING="$prefix/gridpack-install" \
         -D BOOST_ROOT:STRING="/opt/local/libexec/boost/1.76" \
         -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
@@ -282,6 +283,7 @@ elif [ $host == "tlaloc" ]; then
     
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
+        --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
           -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
           -D USE_OLD_PETSC:BOOL=OFF \
