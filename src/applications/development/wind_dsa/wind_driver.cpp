@@ -19,7 +19,6 @@
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
 #include "wind_driver.hpp"
-#define USE_TIMESTAMP
 
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
@@ -249,262 +248,6 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
       fclose(fd);
     }
   }
-}
-
-/**
- * Basic constructor
- * @param nwatch number of generator variables being watched
- * @param nconf number of scenarios
- * @param nsteps number of timesteps being stored
- */
-gridpack::contingency_analysis::DataStore::DataStore(int nwatch, int nconf,
-    int nsteps)
-{
-  int dims[3];
-  int three = 3;
-  int chunk[3];
-  p_nwatch = nwatch;
-  p_nconf = nconf;
-  p_nsteps = nsteps;
-  dims[0] = nconf;
-  dims[1] = nwatch;
-  dims[2] = nsteps;
-  // Keep all steps for a time series on one processor
-  chunk[0] = -1;
-  chunk[1] = -1;
-  chunk[2] = nsteps;
-  // Create GA
-  p_GA = GA_Create_handle();
-  GA_Set_data(p_GA,three,dims,MT_DBL);
-  GA_Set_chunk(p_GA,chunk);
-  GA_Allocate(p_GA);
-  // Initialize all values to zero
-  GA_Zero(p_GA);
-}
-
-/**
- * Basic destructor
- */
-gridpack::contingency_analysis::DataStore::~DataStore()
-{
-  GA_Destroy(p_GA);
-}
-
-/**
- * Save data for a single time step for a single generator
- * @param cfg_idx scenario index for time series
- * @param gen_idx generator index for time series
- * @param vals vector of time series values for a generator
- */
-void gridpack::contingency_analysis::DataStore::saveData(int cfg_idx,
-    int gen_idx, std::vector<double> &vals)
-{
-  int lo[3], hi[3], ld[2];
-  lo[0] = cfg_idx;
-  lo[1] = gen_idx;
-  lo[2] = 0;
-  hi[0] = cfg_idx;
-  hi[1] = gen_idx;
-  hi[2] = p_nsteps-1;
-  ld[0] = 1;
-  ld[1] = p_nsteps;
-  if (vals.size() > 0) {
-    NGA_Put(p_GA,lo,hi,&(vals[0]),ld);
-  }
-}
-
-/**
- * Save variable names
- * @param name vector of variable names
- */
-void gridpack::contingency_analysis::DataStore::saveVarNames(
-    std::vector<std::string> &names)
-{
-  p_var_names = names;
-  if (names.size() != p_nwatch) {
-    printf("Number of variable names does not match number of variables\n");
-  }
-}
-
-/**
- * Stream data in storage array
- */
-void gridpack::contingency_analysis::DataStore::writeData()
-{
-  GA_Sync();
-  gridpack::parallel::Communicator world;
-#ifdef USE_GOSS
-  //Stream data from process 0
-  if (GA_Nodeid() == 0) {
-    //std::ofstream fout;
-    //fout.open("stream_data.dat");
-    // Stream data to GOSS server
-    int istep, ivar, icfg;
-    int lo[3], hi[3], ld[3];
-    std::string channel_buf("block_data");
-    char sbuf[256];
-    double *vals = (double*)malloc(sizeof(double)*p_nwatch*p_nconf);
-    lo[0] = 0;
-    lo[1] = 0;
-    hi[0] = p_nconf-1;
-    hi[1] = p_nwatch-1;
-    ld[0] =p_nwatch;
-    ld[1] =1;
-    int icnt;
-    gridpack::goss::GOSSUtils *goss_util = gridpack::goss::GOSSUtils::instance();
-    channel_buf.clear();
-//    printf ("nwatch = %d \n", p_nwatch);
-    for (ivar=0; ivar<p_nwatch; ivar++) {
-      sprintf(sbuf," %s",p_var_names[ivar].c_str());
-  //    printf ("sbuf = %s \n", sbuf);
-      channel_buf.append(sbuf);
-    }
-
-    goss_util->sendGOSSMessage(channel_buf);
-    //goss_util->openGOSSChannel(world,channel_buf);
-    //fout << channel_buf << std::endl;
-    channel_buf.clear();
-    for (istep = 0; istep<p_nsteps; istep++) {
-      lo[2] = istep;
-      hi[2] = istep;
-      NGA_Get(p_GA,lo,hi,vals,ld);
-      icnt = 0;
-      channel_buf.clear();
-      for (icfg = 0; icfg < p_nconf; icfg++) {
-        for (ivar = 0; ivar<p_nwatch; ivar++) {
-          sprintf(sbuf," %f",vals[icnt]);
-          channel_buf.append(sbuf);
-          icnt++;
-        }
-      }
-    //  sprintf(sbuf,"\n");
-    //  channel_buf.append(sbuf);
-    }
-    std::cout<<"test"<<channel_buf<<std::endl; 
-    goss_util->sendGOSSMessage(channel_buf);
-    free(vals);
-    goss_util->closeGOSSChannel(world);
-  }
-#endif
-}
-
-/**
- * Basic constructor
- * @param nwatch number of generators being watched
- * @param nconf number of scenarios
- * @param nsteps number of timesteps being stored
- * @param comm communicator
- */
-gridpack::contingency_analysis::SimulationStore::SimulationStore(int nwatch, int nsteps,
-    gridpack::parallel::Communicator &comm)
-{
-  p_comm = comm;
-  p_grp = comm.getGroup();
-  p_nwatch = nwatch;
-  p_nsteps = nsteps;
-  int dims[2], chunk[2];
-  int two = 2;
-  dims[0] = nwatch;
-  dims[1] = nsteps;
-  // Keep all steps for a time series on one processor
-  chunk[0] = -1;
-  chunk[1] = nsteps;
-  // Create GA
-  p_GA = GA_Create_handle();
-  GA_Set_data(p_GA,two,dims,MT_DBL);
-  GA_Set_chunk(p_GA,chunk);
-  GA_Set_pgroup(p_GA,p_grp);
-  GA_Allocate(p_GA);
-  // Initialize all values to zero
-  GA_Zero(p_GA);
-}
-
-/**
- * Basic destructor
- */
-gridpack::contingency_analysis::SimulationStore::~SimulationStore()
-{
-  GA_Destroy(p_GA);
-}
-
-/**
- * Save data for a single time step for a single generator
- * @param cfg_idx scenario index for time series
- * @param gen_idx generator index for time series
- * @param vals vector of time series values for a generator
- */
-void gridpack::contingency_analysis::SimulationStore::saveData(int gen_idx,
-    std::vector<double> &vals)
-{
-  int lo[2], hi[2], ld;
-  lo[0] = gen_idx;
-  hi[0] = gen_idx;
-  lo[1] = 0;
-  hi[1] = p_nsteps-1;
-  ld = p_nsteps;
-  if (vals.size() > 0) {
-    NGA_Put(p_GA,lo,hi,&(vals[0]),&ld);
-  }
-}
-
-/**
- * Save variable names
- * @param name vector of variable names
- */
-void gridpack::contingency_analysis::SimulationStore::saveVarNames(
-    std::vector<std::string> &names)
-{
-  p_var_names = names;
-  if (names.size() != p_nwatch) {
-    printf("Number of variable names does not match number of variables\n");
-  }
-}
-
-/**
- * Stream data in storage array
- * @param topic name of channel to use for data
- */
-void gridpack::contingency_analysis::SimulationStore::writeData(std::string &topic)
-{
-  GA_Sync();
-#ifdef USE_GOSS
-  //Stream data from process 0
-  if (GA_Pgroup_nodeid(p_grp) == 0) {
-    int istep, ivar;
-    int lo[2], hi[2], ld[2];
-    double *vals = (double*)malloc(sizeof(double)*p_nwatch);
-    lo[0] = 0;
-    hi[0] = p_nwatch-1;
-    ld[0] =1;
-    gridpack::goss::GOSSUtils *goss_util = gridpack::goss::GOSSUtils::instance();
-    goss_util->openGOSSChannel(p_comm,topic);
-    std::string channel_buf;
-    char sbuf[256];
-    for (ivar=0; ivar<p_nwatch; ivar++) {
-      sprintf(sbuf," %s",p_var_names[ivar].c_str());
-      channel_buf.append(sbuf);
-    }
-    goss_util->sendGOSSMessage(channel_buf);
-    //printf("check 1 %s %s\n",topic.c_str(),channel_buf.c_str());
-    goss_util->sendGOSSMessage(channel_buf);
-    //fout << channel_buf << std::endl;
-    channel_buf.clear();
-    for (istep = 0; istep<p_nsteps; istep++) {
-      lo[1] = istep;
-      hi[1] = istep;
-      NGA_Get(p_GA,lo,hi,vals,ld);
-      for (ivar = 0; ivar<p_nwatch; ivar++) {
-        sprintf(sbuf," %f",vals[ivar]);
-        channel_buf.append(sbuf);
-      }
-      sprintf(sbuf,"\n");
-      //printf("check istep %s %s\n",topic.c_str(),channel_buf.c_str());
-    }
-    goss_util->sendGOSSMessage(channel_buf);
-    free(vals);
-    goss_util->closeGOSSChannel(p_comm);
-  }
-#endif
 }
 
 /**
@@ -937,17 +680,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   }
 
 
-#ifdef USE_GOSS
-  // Read information to set up GOSS channel
-  std::string URI, username, passwd;
-  bool goss_ok = true;
-  goss_ok = goss_ok && cursor->get("channelURI",&URI);
-  goss_ok = goss_ok && cursor->get("username",&username);
-  goss_ok = goss_ok && cursor->get("password",&passwd);
-  double goss_time, goss_tstep;
-  cursor->get("simulationTime",&goss_time);
-  cursor->get("timeStep",&goss_tstep);
-#endif
   // Find number of generators being watched
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("generatorWatch");
@@ -1030,10 +762,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   // Create distributed storage object
   gridpack::contingency_analysis::QuantileAnalysis analysis(world,
       4*bus_ids.size(),ntasks*numConfigs,nsteps);
-#ifdef OLD_GOSS
-  gridpack::contingency_analysis::DataStore
-    data_store(2*bus_ids.size(),ntasks*numConfigs,nsteps);
-#endif
   // Construct variable names
   std::vector<std::string> var_names;
   char sbuf[128];
@@ -1050,44 +778,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     var_names.push_back(sbuf);
   }
   analysis.saveVarNames(var_names);
-#ifdef OLD_GOSS
-  data_store.saveVarNames(var_names);
-#endif
-
-#ifdef USE_GOSS
-  // Send information to GOSS about number of tasks, etc.
-  gridpack::goss::GOSSUtils *goss_util = gridpack::goss::GOSSUtils::instance();
-  char statbuf[512];
-  std::vector<std::string> topics;
-  // Create complete list of topics
-  topics.push_back("header");
-#ifndef OLD_GOSS
-  for (i=0; i<numConfigs; i++) {
-    for (j=0; j<ntasks; j++) {
-      sprintf(statbuf,"config_%d_fault_%d",i+1,j+1);
-      topics.push_back(statbuf);
-    }
-  }
-#else
-  topics.push_back("block_data");
-#endif
-  printf("wind: channelURI %s \n", URI.c_str());
-  printf("wind: username %s \n", username.c_str());
-  printf("wind: password %s \n", passwd.c_str());
-  goss_util->initGOSS(topics,URI.c_str(),username.c_str(),passwd.c_str());
-
-  // Create header message detailing rest of the simulation
-  sprintf(statbuf,"%d,%d,%d,%f,%f",numConfigs,ntasks,
-      goss_num_watch_gen,goss_time,goss_tstep);
-  printf("Initial GOSS status message (%s)\n",statbuf);
-  std::string text(statbuf);
-  printf("topics[0] %s\n",topics[0].c_str());
-  goss_util->openGOSSChannel(world,topics[0]);
-  printf("text %s\n",text.c_str());
-  goss_util->sendGOSSMessage(text);
-  goss_util->closeGOSSChannel(world);
-  printf("After sendChannelMessge\n");
-#endif
   world.barrier();
 
   // evaluate faults
@@ -1139,7 +829,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
         faults[nfault].to_idx);
     ds_app.open(sbuf);
     timer->stop(t_file);
-    // Save off time series to watch file (even if using GOSS)
+    // Save off time series to watch file
     sprintf(sbuf,"Gen_watch_scn_%d_flt_%d.csv",ncnfg,nfault);
     ds_app.setGeneratorWatch(sbuf);
 //    ds_app.solvePreInitialize(faults[nfault]);
@@ -1162,26 +852,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     for (iseries=0; iseries<gen_idx.size(); iseries++) {
       analysis.saveData(task_id, gen_idx[iseries],all_series[iseries]);
     }
-#ifdef USE_GOSS
-#ifdef OLD_GOSS
-    for (iseries=0; iseries<gen_idx.size(); iseries++) {
-      data_store.saveData(task_id, gen_idx[iseries],all_series[iseries]);
-    }
-#else
-    gridpack::contingency_analysis::SimulationStore data_store(2*bus_ids.size(),nsteps,
-        task_comm);
-    data_store.saveVarNames(var_names);
-    for (iseries=0; iseries<gen_idx.size(); iseries++) {
-      data_store.saveData(gen_idx[iseries],all_series[iseries]);
-    }
-    data_store.writeData(topics[task_id+1]);
-#endif
-#endif
     ds_app.close();
-#ifndef USE_GOSS
-    sprintf(sbuf,"config_%d_fault_%d",ncnfg+1,nfault+1);
-    printf("topic: (%s)\n",sbuf);
-#endif
     timer->stop(t_file);
   }
   taskmgr.printStats();
@@ -1260,19 +931,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   }
 
   analysis.exportQuantiles(quantiles, time_step);
-#ifdef USE_GOSS
-#ifdef OLD_GOSS
-  data_store.writeData();
-#endif
-#endif
-
-#ifdef USE_GOSS
-  // Send signal to GOSS that simulation is done
-  printf("Final GOSS status message (%s)\n",statbuf);
-  goss_util->terminateGOSS();
-  printf("Completed final GOSS status message (%s)\n",statbuf);
-#endif
-
   timer->stop(t_total);
   if (ntasks*numConfigs >= world.size()/task_comm.size()) {
     timer->dump();
