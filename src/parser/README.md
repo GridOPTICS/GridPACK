@@ -13,7 +13,7 @@ The modifications needed are described in order.
    beginning with GENERATOR_, new governors have names beginning with GOVERNOR_,
    etc.)
 
-2. The base_pti_parser class needs to modified to include the new device.
+2. The `base_pti_parser` class needs to modified to include the new device.
    To start with, the new device parser is added to the `getDSExternal` method. A
    good way to go about this is to find an existing device in the same class as
    the new device (generator, governor, exciter, relay, or load) and search for
@@ -53,9 +53,9 @@ The modifications needed are described in order.
    tedious. The list of variables that need to be parsed in the .dyr file can
    be found in the PSS/E documenation. The variables used in the parser methods
    should also correspond to the variables in the parameter struct defined in the
-   base_pti_parser.hpp file that was used to create the parser class instance.
+   `base_pti_parser.hpp` file that was used to create the parser class instance.
    The character string names used for each variable need to match the names in
-   the dictionary.hpp file.
+   the `dictionary.hpp` file.
 
 4. Add the new parser class to the `CMakeLists.txt` file. This can be done by
    searching for one of the existing parser classes and following that format.
