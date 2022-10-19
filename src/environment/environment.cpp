@@ -111,6 +111,7 @@ Environment::~Environment(void)
   if (p_from_comm) {
     // Finalize math libraries
     gridpack::math::Finalize();
+<<<<<<< HEAD
 
     GA_Terminate();
   }
@@ -119,6 +120,11 @@ Environment::~Environment(void)
 bool Environment::active()
 {
   return p_from_comm;
+=======
+
+    GA_Terminate();
+  }
+>>>>>>> 357dc81e... Added a configuration option so that branch still builds if a GA library that
 }
 
 /**
