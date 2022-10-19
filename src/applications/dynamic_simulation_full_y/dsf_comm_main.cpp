@@ -71,7 +71,8 @@ void dsf(MPI_Comm comm, int argc, char **argv)
   
   gridpack::Environment env(argc,argv,comm);
 
-  if (1) {
+  if (env.active()) {
+
     gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
     int t_total = timer->createCategory("Dynamic Simulation: Total Application");

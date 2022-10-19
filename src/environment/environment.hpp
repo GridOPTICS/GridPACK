@@ -92,6 +92,11 @@ public:
   Environment(int argc, char **argv, MPI_Comm &comm);
 #endif
 
+  /**
+   * Return true if processor is active in this environment, false otherwise.
+   * Only chance of returning false is with progress rank runtime
+   */
+  bool active();
 
   /// Destructor
   ~Environment(void);

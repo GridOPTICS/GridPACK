@@ -93,15 +93,16 @@ Environment::Environment(int argc, char **argv,const char* help,const long int& 
 }
 
 #ifdef ENABLE_ENVIRONMENT_FROM_COMM
-Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc,argv),clparser(argc,argv),p_from_comm(false);
+Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc,argv),clparser(argc,argv),p_from_comm(false)
 {
   PrintStatus();
   pma_stack = 200000;
   pma_heap  = 200000;
-  GA_Initialize_comm(comm);
-  p_from_comm = true;
-  MA_init(C_DBL,pma_stack,pma_heap);
-  gridpack::math::Initialize(&argc,&argv);
+  if (GA_Initialize_comm(comm)) {
+    p_from_comm = true;
+    MA_init(C_DBL,pma_stack,pma_heap);
+    gridpack::math::Initialize(&argc,&argv);
+  }
 }
 #endif
 
@@ -115,9 +116,14 @@ Environment::~Environment(void)
   }
 }
 
-  /**
-   *    * return next token after option
-   *       */
+bool Environment::active()
+{
+  return p_from_comm;
+}
+
+/**
+ * return next token after option
+ */
 const std::string Environment::getCmdOption(std::string &option)
 {
   return clparser.getCmdOption(option);
