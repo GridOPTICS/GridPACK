@@ -54,13 +54,15 @@ void Environment::PrintStatus()
 //  class Environment
 // -------------------------------------------------------------
 
-Environment::Environment(int argc, char **argv):p_boostEnv(argc,argv),clparser(argc,argv)
+Environment::Environment(int argc, char **argv):p_boostEnv(argc,argv),
+  clparser(argc,argv)
 {
   pma_stack = 200000;
   pma_heap  = 200000;
 
   PrintStatus();
   GA_Initialize();
+  p_from_comm = true;
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
@@ -73,6 +75,7 @@ Environment::Environment(int argc, char **argv,const char* help): p_boostEnv(arg
 
   PrintStatus();
   GA_Initialize();
+  p_from_comm = true;
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
@@ -83,27 +86,33 @@ Environment::Environment(int argc, char **argv,const char* help,const long int& 
 
   PrintStatus();
   GA_Initialize();
+  p_from_comm = true;
   MA_init(C_DBL,ma_stack,ma_heap);
   gridpack::math::Initialize(&argc,&argv);
 
 }
 
-Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc,argv),clparser(argc,argv)
+#ifdef ENABLE_ENVIRONMENT_FROM_COMM
+Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc,argv),clparser(argc,argv),p_from_comm(false);
 {
   PrintStatus();
   pma_stack = 200000;
   pma_heap  = 200000;
-  GA_Initialize();
+  GA_Initialize_comm(comm);
+  p_from_comm = true;
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
+#endif
 
 Environment::~Environment(void)
 {
-  // Finalize math libraries
-  gridpack::math::Finalize();
+  if (p_from_comm) {
+    // Finalize math libraries
+    gridpack::math::Finalize();
 
-  GA_Terminate();
+    GA_Terminate();
+  }
 }
 
   /**
