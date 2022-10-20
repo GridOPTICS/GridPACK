@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-11-29 06:32:02 d3g096
+# Last Change: 2023-11-29 06:34:00 d3g096
 # -------------------------------------------------------------
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)
@@ -74,12 +74,16 @@ add_executable(dsf.x
 add_executable(dsf2.x
   dsf_main2.cpp
 )
-add_executable(dsf_comm.x
-   dsf_comm_main.cpp
-)
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  add_executable(dsf_comm.x
+     dsf_comm_main.cpp
+  )
+endif()
 
 target_link_libraries(dsf.x ${target_libraries})
-target_link_libraries(dsf_comm.x ${target_libraries})
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  target_link_libraries(dsf_comm.x ${target_libraries})
+endif()
 
 target_link_libraries(dsf.x ${target_libraries})
 target_link_libraries(dsf2.x ${target_libraries})
@@ -198,7 +202,9 @@ add_custom_target(dsf.x.input
 
 add_dependencies(dsf.x dsf.x.input)
 add_dependencies(dsf2.x dsf.x.input)
-add_dependencies(dsf_comm.x dsf.x.input)
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  add_dependencies(dsf_comm.x dsf.x.input)
+endif()
 
 # -------------------------------------------------------------
 # install as an example
@@ -240,4 +246,7 @@ gridpack_add_run_test("dynamic_simulation_2_two_area" dsf2.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
+endif()
 
