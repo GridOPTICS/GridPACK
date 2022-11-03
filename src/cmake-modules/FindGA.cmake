@@ -57,7 +57,7 @@ find_package(MPI QUIET REQUIRED)
 # Stupid RHEL puts GA headers in with the MPI headers
 
 find_path(GA_INCLUDE_DIR ga++.h
-  HINTS ${GA_INCLUDE_DIR} ${GA_DIR} ${MPI_CXX_INCLUDE_PATH}
+  HINTS ${GA_INCLUDE_DIR} ${GA_DIR}/include ${GA_DIR}/include/ga 
   ENV GA_INCLUDE_DIR 
   ENV MPI_INCLUDE_DIR
   ENV GA_DIR

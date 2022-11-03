@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-
+# -------------------------------------------------------------
 
 # 
 cmake_minimum_required (VERSION 3.5.0)
@@ -111,7 +111,7 @@ option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
 
 option(ENABLE_ENVIRONMENT_FROM_COMM,
-  "Create GridPACK environment from communicator",OFF)
+  "Create GridPACK environment from communicator" OFF)
 
 
 # turn testing on/off
