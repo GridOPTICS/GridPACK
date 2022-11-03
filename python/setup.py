@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-02-17 12:01:02 d3g096
+# Last Change: 2022-11-03 09:33:55 d3g096
 # -------------------------------------------------------------
 
 import os
@@ -39,7 +39,8 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable]
+                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DCMAKE_VERBOSE_MAKEFILE=YES' ]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -64,6 +65,7 @@ setup(
     long_description='',
     ext_modules=[CMakeExtension('gridpack')],
     cmdclass=dict(build_ext=CMakeBuild),
+    install_requires=["mpi4py"],
     zip_safe=False,
     scripts=[
         'src/hadrec.py',
