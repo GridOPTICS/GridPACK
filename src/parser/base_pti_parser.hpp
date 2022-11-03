@@ -54,6 +54,10 @@
 #include "parser_classes/ieelbl.hpp"
 #include "parser_classes/cmldblu1.hpp"
 #include "parser_classes/psssim.hpp"
+#include "parser_classes/wtdta1.hpp"
+#include "parser_classes/wtara1.hpp"
+#include "parser_classes/wtpta1.hpp"
+#include "parser_classes/wttqa1.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -405,7 +409,7 @@ class BasePTIParser : public BaseParser<_network>
       double kppmax;
       double kipmax;
       double pset;
-	  double imax;
+      double imax;
 	  
       int regca1_lvplsw;
       double regca1_tg;
@@ -622,44 +626,79 @@ class BasePTIParser : public BaseParser<_network>
       double psssim_t4;
       double psssim_maxout;
       double psssim_minout;
-	  
-	  // plant controller parameters
-	  int repca1_ireg;
-	  int repca1_brh_bus_from;
-	  int repca1_brh_bus_to;
-	  char repca1_brh_ckt[3];
-	  int repca1_vcflag;
-	  int repca1_refflag;
-	  int repca1_fflag;
-	  
-	  double repca1_tfltr;
-	  double repca1_kp;
-	  double repca1_ki;
-	  double repca1_tft;
-	  double repca1_tfv;
-	  double repca1_vfrz;
-	  double repca1_rc;
-	  double repca1_xc;
-	  double repca1_kc;
-	  double repca1_emax;
-	  double repca1_emin;
-	  double repca1_dbd1;
-	  double repca1_dbd2;
-	  double repca1_qmax;
-	  double repca1_qmin;
-	  double repca1_kpg;
-	  double repca1_kig;
-	  double repca1_tp;
-	  double repca1_fdbd1;
-	  double repca1_fdbd2;
-	  double repca1_femax;
-	  double repca1_femin;
-	  double repca1_pmax;
-	  double repca1_pmin;
-	  double repca1_tg;
-	  double repca1_ddn;
-	  double repca1_dup;  
-	  
+
+      // plant controller parameters
+      int repca1_ireg;
+      int repca1_brh_bus_from;
+      int repca1_brh_bus_to;
+      char repca1_brh_ckt[3];
+      int repca1_vcflag;
+      int repca1_refflag;
+      int repca1_fflag;
+
+      double repca1_tfltr;
+      double repca1_kp;
+      double repca1_ki;
+      double repca1_tft;
+      double repca1_tfv;
+      double repca1_vfrz;
+      double repca1_rc;
+      double repca1_xc;
+      double repca1_kc;
+      double repca1_emax;
+      double repca1_emin;
+      double repca1_dbd1;
+      double repca1_dbd2;
+      double repca1_qmax;
+      double repca1_qmin;
+      double repca1_kpg;
+      double repca1_kig;
+      double repca1_tp;
+      double repca1_fdbd1;
+      double repca1_fdbd2;
+      double repca1_femax;
+      double repca1_femin;
+      double repca1_pmax;
+      double repca1_pmin;
+      double repca1_tg;
+      double repca1_ddn;
+      double repca1_dup;  
+
+      // Wind model params
+      double wind_ka;
+      double wind_theta;
+      double wind_h;
+      double wind_damp;
+      double wind_hfrac;
+      double wind_freq1;
+      double wind_dshaft;
+      double wind_kiw;
+      double wind_kpw;
+      double wind_kic;
+      double wind_kpc;
+      double wind_kcc;
+      double wind_tp;
+      double wind_tetamax;
+      double wind_tetamin;
+      double wind_rtetamax;
+      double wind_rtetamin;
+      double wind_kpp;
+      double wind_kip;
+      double wind_twref;
+      double wind_temax;
+      double wind_temin;
+      double wind_p1;
+      double wind_spd1;
+      double wind_p2;
+      double wind_spd2;
+      double wind_p3;
+      double wind_spd3;
+      double wind_p4;
+      double wind_spd4;
+      double wind_trate;
+
+      int wind_tflag;
+
     };
 
     // Data structure to hold relay parameters on buses
@@ -797,7 +836,7 @@ class BasePTIParser : public BaseParser<_network>
       double ttr1;
       double uvtr2;
       double ttr2;
-	  double load_ac_perc;
+      double load_ac_perc;
 
       double a1;
       double a2;
@@ -1032,6 +1071,18 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"PSSSIM")) {
             PsssimParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"WTDTA1")) {
+            Wtdta1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"WTARA1")) {
+            Wtara1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"WTPTA1")) {
+            Wtpta1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"WTTQA1")) {
+            Wttqa1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
           }
         }
@@ -1323,7 +1374,9 @@ class BasePTIParser : public BaseParser<_network>
           device == "REGCA1" || device == "REECA1"  || device == "REPCA1" ||
           device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
-          device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM") {
+          device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM" ||
+          device == "WTDTA1" || device == "WTARA1" || device == "WTPTA1" ||
+          device == "WTTQA1") {
         ret = true;
       }
       return ret;
@@ -1501,6 +1554,18 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "PSSSIM") {
               PsssimParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "WTDTA1") {
+              Wtdta1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "WTARA1") {
+              Wtara1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "WTPTA1") {
+              Wtpta1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "WTTQA1") {
+              Wttqa1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             }
           }
@@ -1695,6 +1760,18 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "PSSSIM") {
             PsssimParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "WTDTA1") {
+            Wtdta1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "WTARA1") {
+            Wtara1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "WTPTA1") {
+            Wtpta1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "WTTQA1") {
+            Wttqa1Parser<gen_params> parser;
             parser.store(split_line,data);
           }
           gen_vector->push_back(data);
