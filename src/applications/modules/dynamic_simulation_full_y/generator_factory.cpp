@@ -28,6 +28,7 @@
 #include "wshygp.hpp"
 #include "psssim.hpp"
 #include "tgov1.hpp"
+#include "sexs.hpp"
 
 #include <stdio.h>
 
@@ -107,6 +108,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     gridpack::dynamic_simulation::Exdc1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Exdc1Model;
     ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "SEXS") {
+      gridpack::dynamic_simulation::SexsModel *tmp;
+      tmp =  new gridpack::dynamic_simulation::SexsModel;
+      ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else if (type == "ESST1A") {
     gridpack::dynamic_simulation::Esst1aModel *tmp;

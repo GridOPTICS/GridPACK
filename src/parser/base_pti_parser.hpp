@@ -6,6 +6,9 @@
 /*
  *  Created on: December 30, 2014
  *      Author: Kevin Glass, Bruce Palmer
+ *
+ *  Added SEXS exciter model: Nov 7, 2022
+ *      Author: Shrirang Abhyankar
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -54,6 +57,7 @@
 #include "parser_classes/ieelbl.hpp"
 #include "parser_classes/cmldblu1.hpp"
 #include "parser_classes/psssim.hpp"
+#include "parser_classes/sexs.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -426,10 +430,14 @@ class BasePTIParser : public BaseParser<_network>
       // Exciter parameters
       bool has_exciter;
       double ex_tr;
+      double ex_k;
       double ex_ka;
+      double ex_ta_over_tb;
       double ex_ta;
       double ex_tb;
       double ex_tc;
+      double ex_emin;
+      double ex_emax;
       double vrmax;
       double vrmin;
       double ex_ke;
@@ -1021,6 +1029,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"ESST4B")) {
             Esst4bParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+	  } else if (!strcmp(gen_data[i].model,"SEXS")) {
+            SexsParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"GGOV1")) {
             Ggov1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1322,6 +1333,7 @@ class BasePTIParser : public BaseParser<_network>
           device == "GDFORM" ||
           device == "REGCA1" || device == "REECA1"  || device == "REPCA1" ||
           device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
+	  device == "SEXS"   ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
           device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM") {
         ret = true;
@@ -1483,6 +1495,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "EXDC1" || sval == "EXDC2") {
               Exdc1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+	    } else if (sval == "SEXS") {
+              SexsParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "ESST1A") {
               Esst1aParser<gen_params> parser;
@@ -1677,6 +1692,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "EXDC1" || sval == "EXDC2") {
             Exdc1Parser<gen_params> parser;
+            parser.store(split_line,data);
+	  } else if (sval == "SEXS") {
+            SexsParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "ESST1A") {
             Esst1aParser<gen_params> parser;

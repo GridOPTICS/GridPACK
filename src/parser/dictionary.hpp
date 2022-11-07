@@ -3633,6 +3633,13 @@
 #define EXCITER_TR "EXCITER_TR"
 
 /**
+ * Exciter K
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K "EXCITER_K"
+
+/**
  * Exciter KA
  * type: real float
  * indexed
@@ -3654,6 +3661,13 @@
 #define EXCITER_TB "EXCITER_TB"
 
 /**
+ * Exciter TA_OVER_TB
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TA_OVER_TB "EXCITER_TA_OVER_TB"
+
+/**
  * Exciter TC
  * type: real float
  * indexed
@@ -3673,6 +3687,21 @@
  * indexed
  */
 #define EXCITER_VRMIN "EXCITER_VRMIN"
+
+/**
+ * Exciter EMAX
+ * type: real float
+ * indexed
+ */
+#define EXCITER_EMAX "EXCITER_EMAX"
+
+/**
+ * Exciter EMIN
+ * type: real float
+ * indexed
+ */
+#define EXCITER_EMIN "EXCITER_EMIN"
+
 
 /**
  * Exciter KE
