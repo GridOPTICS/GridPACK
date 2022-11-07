@@ -135,5 +135,6 @@ install(FILES
   parser_classes/cmldblu1.hpp
   parser_classes/psssim.hpp
   parser_classes/sexs.hpp
+  parser_classes/gast.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )

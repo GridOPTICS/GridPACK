@@ -213,6 +213,26 @@ class Cblock
   void init(double u, double y);
 
   /**
+     INIT_GIVEN_U - Initializes the control block - calculates x[0] given input u
+
+     Inputs:
+       u           Control block input u
+     Outputs:
+       y           Expected output for the control block given the input u
+  **/
+  double init_given_u(double u);
+
+  /**
+     INIT_GIVEN_Y - Initializes the control block - calculates x[0] given output y
+
+     Inputs:
+       y           Control block output y
+     Outputs:
+       u           Expected input for the control block given the output y
+  **/
+  double init_given_y(double y);
+
+  /**
      GETOUPUT - Returns output y of the control block
 
      Inputs:

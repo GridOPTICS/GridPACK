@@ -58,6 +58,7 @@
 #include "parser_classes/cmldblu1.hpp"
 #include "parser_classes/psssim.hpp"
 #include "parser_classes/sexs.hpp"
+#include "parser_classes/gast.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -532,6 +533,8 @@ class BasePTIParser : public BaseParser<_network>
       int jbus;
       int gv_m;
       double gv_k;
+      double gv_kt;
+      double gv_at;
       double gv_t1;
       double gv_t2;
       double gv_t3;
@@ -1038,6 +1041,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"TGOV1")) {
             Tgov1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+	  } else if (!strcmp(gen_data[i].model,"GAST")) {
+            GastParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"WSHYGP")) {
             WshygpParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1332,8 +1338,8 @@ class BasePTIParser : public BaseParser<_network>
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "GDFORM" ||
           device == "REGCA1" || device == "REECA1"  || device == "REPCA1" ||
-          device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
-	  device == "SEXS"   ||
+          device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
+	  device == "SEXS"   || device == "GAST"    ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
           device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM") {
         ret = true;
@@ -1510,6 +1516,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "TGOV1") {
               Tgov1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+	    } else if (sval == "GAST") {
+              GastParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "WSHYGP") {
               WshygpParser<gen_params> parser;
@@ -1707,6 +1716,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "TGOV1") {
             Tgov1Parser<gen_params> parser;
+            parser.store(split_line,data);
+	  } else if (sval == "GAST") {
+            GastParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "WSHYGP") {
             WshygpParser<gen_params> parser;

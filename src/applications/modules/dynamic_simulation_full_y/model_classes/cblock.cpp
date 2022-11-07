@@ -107,6 +107,33 @@ void Cblock::init(double u, double y)
   }
 }
 
+double Cblock::init_given_u(double u)
+{
+  double y;
+  if(fabs(p_A[0]) < 1e-10) {
+    y = u;
+    x[0] = u;
+  } else {
+    x[0] = -p_B[0]/p_A[0]*u;
+    y    = p_C[0]*x[0] + p_D[0]*u;
+  }
+  return y;
+}
+
+double Cblock::init_given_y(double y)
+{
+  double u;
+  if(fabs(p_A[0]) < 1e-10) {
+    u = y;
+    x[0] = u;
+  } else {
+    u = y/(p_D[0] - p_C[0]*p_B[0]/p_A[0]);
+    x[0] = -p_B[0]/p_A[0]*u;
+  }
+  return u;
+}
+
+
 double Cblock::getstate(IntegrationStage stage)
 {
   double xout;

@@ -29,6 +29,7 @@
 #include "psssim.hpp"
 #include "tgov1.hpp"
 #include "sexs.hpp"
+#include "gast.hpp"
 
 #include <stdio.h>
 
@@ -150,9 +151,13 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "TGOV1") {
-	//printf("----------------!!!!---debug, one TOGV1 model in the dyr file\n");
     gridpack::dynamic_simulation::Tgov1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Tgov1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "GAST") {
+    gridpack::dynamic_simulation::GastModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::GastModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "WSHYGP") {

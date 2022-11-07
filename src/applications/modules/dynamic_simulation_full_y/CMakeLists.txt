@@ -99,6 +99,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/repca1.cpp
   model_classes/cblock.cpp
   model_classes/sexs.cpp
+  model_classes/gast.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -160,6 +161,7 @@ install(FILES
   model_classes/repca1.hpp
   model_classes/cblock.hpp
   model_classes/sexs.hpp
+  model_classes/gast.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
@@ -204,6 +206,7 @@ install(FILES
   model_classes/repca1.hpp
   model_classes/cblock.hpp
   model_classes/sexs.hpp
+  model_classes/gast.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 ) 	      
 

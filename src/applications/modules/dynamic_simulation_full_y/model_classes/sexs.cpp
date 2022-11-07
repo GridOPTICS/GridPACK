@@ -5,9 +5,9 @@
  */
 // -----------------------------------------------------------
 /**
- * @file   exdc1.cpp
+ * @file   sexs.cpp
  * @author Shrirang Abhyankar
- * @Last modified:   Nov 6, 2022
+ * @Added:   Nov 6, 2022
  * 
  * @brief  
  * 

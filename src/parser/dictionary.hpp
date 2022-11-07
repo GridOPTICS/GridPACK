@@ -3422,6 +3422,20 @@
 #define GOVERNOR_DT "GOVERNOR_DT"
 
 /**
+ * Governor AT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_AT "GOVERNOR_AT"
+/**
+ * Governor KT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KT "GOVERNOR_KT"
+
+
+/**
  * Governor DT
  * type: real float
  * indexed
