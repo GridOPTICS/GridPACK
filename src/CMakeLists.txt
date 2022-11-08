@@ -110,7 +110,7 @@ option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
 option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
 
-option(ENABLE_ENVIRONMENT_FROM_COMM,
+option(ENABLE_ENVIRONMENT_FROM_COMM
   "Create GridPACK environment from communicator" OFF)
 
 
