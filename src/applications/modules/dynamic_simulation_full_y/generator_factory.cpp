@@ -30,6 +30,7 @@
 #include "tgov1.hpp"
 #include "sexs.hpp"
 #include "gast.hpp"
+#include "hygov.hpp"
 
 #include <stdio.h>
 
@@ -158,6 +159,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
   } else if (type == "GAST") {
     gridpack::dynamic_simulation::GastModel *tmp;
     tmp =  new gridpack::dynamic_simulation::GastModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "HYGOV") {
+    gridpack::dynamic_simulation::HygovModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::HygovModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "WSHYGP") {

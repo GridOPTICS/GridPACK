@@ -57,8 +57,8 @@ void gridpack::dynamic_simulation::GastModel::load(
   if (!data->getValue(GOVERNOR_T1, &T1, idx)) T1 = 0.5;
   if (!data->getValue(GOVERNOR_T2, &T2, idx)) T2 = 3.0; 
   if (!data->getValue(GOVERNOR_T3, &T3, idx)) T3 = 10.0;
-  if (!data->getValue(GOVERNOR_AT, &AT, idx)) KT = 0.0;
-  if (!data->getValue(GOVERNOR_KT, &KT, idx))  AT = 0.0;
+  if (!data->getValue(GOVERNOR_AT, &AT, idx)) AT = 0.0;
+  if (!data->getValue(GOVERNOR_KT, &KT, idx))  KT = 0.0;
   if (!data->getValue(GOVERNOR_VMAX, &VMAX, idx)) VMAX = 1.0; 
   if (!data->getValue(GOVERNOR_VMIN, &VMIN, idx)) VMIN = 0.0; 
   if (!data->getValue(GOVERNOR_DT, &Dt, idx)) Dt = 0.0;

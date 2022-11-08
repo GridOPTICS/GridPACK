@@ -3023,6 +3023,28 @@
 #define GOVERNOR_K "GOVERNOR_K"
 
 /**
+ * Governor TR
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TR "GOVERNOR_TR"
+
+/**
+ * Governor TG
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TG "GOVERNOR_TG"
+
+/**
+ * Governor TW
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TW "GOVERNOR_TW"
+
+
+/**
  * Governor T1
  * type: real float
  * indexed
@@ -3275,6 +3297,13 @@
 #define GOVERNOR_R "GOVERNOR_R"
 
 /**
+ * Governor r
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_r "GOVERNOR_r"
+
+/**
  * Governor TPELEC
  * type: real float
  * indexed
@@ -3336,6 +3365,35 @@
  * indexed
  */
 #define GOVERNOR_VMIN "GOVERNOR_VMIN"
+
+/**
+ * Governor VELM
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VELM "GOVERNOR_VELM"
+
+/**
+ * Governor GMAX
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_GMAX "GOVERNOR_GMAX"
+
+/**
+ * Governor GMIN
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_GMIN "GOVERNOR_GMIN"
+
+/**
+ * Governor QNL
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_QNL "GOVERNOR_QNL"
+
 
 /**
  * Governor TACT

@@ -11,6 +11,7 @@
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
 # Last Change: 2019-08-16 13:45:12 d3g096
+# Last Change: 2022-11-07 Shrirang Abhyankar - added sexs, gast, and hygov models
 # -------------------------------------------------------------
 
 
@@ -100,6 +101,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/cblock.cpp
   model_classes/sexs.cpp
   model_classes/gast.cpp
+  model_classes/hygov.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -162,6 +164,7 @@ install(FILES
   model_classes/cblock.hpp
   model_classes/sexs.hpp
   model_classes/gast.hpp
+  model_classes/hygov.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
@@ -207,6 +210,7 @@ install(FILES
   model_classes/cblock.hpp
   model_classes/sexs.hpp
   model_classes/gast.hpp
+  model_classes/hygov.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 ) 	      
 
