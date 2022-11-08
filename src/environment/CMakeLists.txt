@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2022-11-03 11:17:49 d3g096
+# Last Change: 2022-11-08 13:13:13 d3g096
 # -------------------------------------------------------------
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)
@@ -67,5 +67,8 @@ target_link_libraries(env_test ${target_libraries})
 gridpack_add_run_test(env_test env_test "-i input -o output")
 
 
-add_executable(env_comm_test test/env_comm_test.cpp)
-target_link_libraries(env_comm_test ${target_libraries})
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  add_executable(env_comm_test test/env_comm_test.cpp)
+  target_link_libraries(env_comm_test ${target_libraries})
+  gridpack_add_run_test(env_comm_test env_comm_test "-i input -o output")
+endif()
