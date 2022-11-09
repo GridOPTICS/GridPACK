@@ -107,11 +107,11 @@ void gridpack::dynamic_simulation::HygovModel::predictor(double t_inc, bool flag
 {
   filter_block_in = nref - (delta_w + R*gate_block_out);
 
-  double filter_block_out = filter_block.getoutput(filter_block_in,t_inc,PREDICTOR);
+  double filter_block_out = filter_block.getoutput(filter_block_in,t_inc,PREDICTOR,true);
 
-  gate_block_out = gate_block.getoutput(filter_block_out,t_inc,PREDICTOR);
+  gate_block_out = gate_block.getoutput(filter_block_out,t_inc,PREDICTOR,true);
 
-  opening_block_out = opening_block.getoutput(gate_block_out,t_inc,PREDICTOR);
+  opening_block_out = opening_block.getoutput(gate_block_out,t_inc,PREDICTOR,true);
 
   double turbine_flow_block_in,h;
 
@@ -120,7 +120,7 @@ void gridpack::dynamic_simulation::HygovModel::predictor(double t_inc, bool flag
 
   turbine_flow_block_in = 1 - h;
 
-  turbine_flow_block_out = turbine_flow_block.getoutput(turbine_flow_block_in,t_inc,PREDICTOR);
+  turbine_flow_block_out = turbine_flow_block.getoutput(turbine_flow_block_in,t_inc,PREDICTOR,true);
 
   Pmech =  AT*(turbine_flow_block_out - qNL)*h - opening_block_out*Dt*delta_w;
 }
@@ -134,11 +134,11 @@ void gridpack::dynamic_simulation::HygovModel::corrector(double t_inc, bool flag
 {
   filter_block_in = nref - (delta_w + R*gate_block_out);
 
-  double filter_block_out = filter_block.getoutput(filter_block_in,t_inc,CORRECTOR);
+  double filter_block_out = filter_block.getoutput(filter_block_in,t_inc,CORRECTOR,true);
 
-  gate_block_out = gate_block.getoutput(filter_block_out,t_inc,CORRECTOR);
+  gate_block_out = gate_block.getoutput(filter_block_out,t_inc,CORRECTOR,true);
 
-  opening_block_out = opening_block.getoutput(gate_block_out,t_inc,CORRECTOR);
+  opening_block_out = opening_block.getoutput(gate_block_out,t_inc,CORRECTOR,true);
 
   double turbine_flow_block_in,h;
 
@@ -147,7 +147,7 @@ void gridpack::dynamic_simulation::HygovModel::corrector(double t_inc, bool flag
 
   turbine_flow_block_in = 1 - h;
 
-  turbine_flow_block_out = turbine_flow_block.getoutput(turbine_flow_block_in,t_inc,CORRECTOR);
+  turbine_flow_block_out = turbine_flow_block.getoutput(turbine_flow_block_in,t_inc,CORRECTOR,true);
 
   Pmech =  AT*(turbine_flow_block_out - qNL)*h - opening_block_out*Dt*delta_w;
 

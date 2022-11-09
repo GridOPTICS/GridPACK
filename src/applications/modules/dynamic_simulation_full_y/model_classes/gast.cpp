@@ -111,15 +111,15 @@ void gridpack::dynamic_simulation::GastModel::predictor(double t_inc, bool flag)
   double fuel_valve_block_in = std::min(lv_gate_in1,Pref - droop);
 
   // Fuel valve block
-  double fuel_valve_block_out = fuel_valve_block.getoutput(fuel_valve_block_in,t_inc,PREDICTOR);
+  double fuel_valve_block_out = fuel_valve_block.getoutput(fuel_valve_block_in,t_inc,PREDICTOR,true);
 
   // Fuel flow block
-  double fuel_flow_block_out = fuel_flow_block.getoutput(fuel_valve_block_out,t_inc,PREDICTOR);
+  double fuel_flow_block_out = fuel_flow_block.getoutput(fuel_valve_block_out,t_inc,PREDICTOR,true);
 
   Pmech = fuel_flow_block_out - Dt*delta_w;
 
   // Exhaust temperature block
-  exh_temp_block_out = exh_temp_block.getoutput(fuel_flow_block_out,t_inc,PREDICTOR);
+  exh_temp_block_out = exh_temp_block.getoutput(fuel_flow_block_out,t_inc,PREDICTOR,true);
   
 }
 
@@ -137,15 +137,15 @@ void gridpack::dynamic_simulation::GastModel::corrector(double t_inc, bool flag)
   double fuel_valve_block_in = std::min(lv_gate_in1,Pref - droop);
 
   // Fuel valve block
-  double fuel_valve_block_out = fuel_valve_block.getoutput(fuel_valve_block_in,t_inc,CORRECTOR);
+  double fuel_valve_block_out = fuel_valve_block.getoutput(fuel_valve_block_in,t_inc,CORRECTOR,true);
 
   // Fuel flow block
-  double fuel_flow_block_out = fuel_flow_block.getoutput(fuel_valve_block_out,t_inc,CORRECTOR);
+  double fuel_flow_block_out = fuel_flow_block.getoutput(fuel_valve_block_out,t_inc,CORRECTOR,true);
 
   Pmech = fuel_flow_block_out - Dt*delta_w;
 
   // Exhaust temperature block
-  exh_temp_block_out = exh_temp_block.getoutput(fuel_flow_block_out,t_inc,CORRECTOR);
+  exh_temp_block_out = exh_temp_block.getoutput(fuel_flow_block_out,t_inc,CORRECTOR,true);
 
 }
 

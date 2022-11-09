@@ -92,28 +92,21 @@ class Cblock
        dt              Integration time-step
        IntegrationStage  Stage of integration mode calculation, PREDICTOR or CORRECTOR
 
-     Output:
-       x               Control state variable
-                         x = \hat{x}_{n+1} for PREDICTOR stage
-			 x = x_{n+1}       for CORRECTOR stage
-
      Note: State update calculation
        PREDICTOR (Forward Euler):
 
-         \hat{x}_{n+1} = x_{n} + dt*dx_dt(x_{n},u_{n})
+         \hat{x}_{n+1} = x_{n} + dt*dx_dt(x_{n},u)
 
        CORRECTOR (Trapezoidal):
 
-         x_{n+1} = x_{n} + 0.5*dt*(dx_dt(x_{n}) + dx_dt(\hat{x}_{n+1},u_{n+1}))
+         x_{n+1} = x_{n} + 0.5*dt*(dx_dt(x_{n},u_n) + dx_dt(\hat{x}_{n+1},u))
 
-
-    Note here that GridLab-D does a network solve after every predictor/corrector
-    call. So, during the corrector stage the input u is updated (u_{n+1}) 
+	 The updated state can be retrieved via getstate() method
   **/
-  double updatestate(double u, double dt,IntegrationStage stage);
+  void updatestate(double u, double dt,IntegrationStage stage);
 
   /**
-     UPDATESTATE - Update linear control block state variable enforcing limits
+     UPDATESTATE - Version of UPDATESTATE enforcing limits
 
      Inputs:
        u               Input to the control block
@@ -122,28 +115,10 @@ class Cblock
        xmax            Max. limiter for state x
        IntegrationStage  Stage of integration mode calculation, PREDICTOR or CORRECTOR
 
-     Output:
-       x               Control state variable
-                         x = \hat{x}_{n+1} for PREDICTOR stage
-			 x = x_{n+1}       for CORRECTOR stage
-
-     Note: State update calculation
-       PREDICTOR (Forward Euler):
-
-         \hat{x}_{n+1} = x_{n} + dt*dx_dt(x_{n},u_{n})
-
-	 \hat{x}_{n+1} = max(xmin,min(\hat{x}_{n+1},xmax)
-
-       CORRECTOR (Trapezoidal):
-
-         x_{n+1} = x_{n} + 0.5*dt*(dx_dt(x_{n}) + dx_dt(\hat{x}_{n+1},u_{n+1})) 
-
-	 x_{n+1} = max(xmin,min(x_{n+1},xmax)
-
-    Note here that GridLab-D does a network solve after every predictor/corrector
-    call. So, during the corrector stage the input u is updated (u_{n+1}) 
+       Notes:
+       The updated state can be retrieved via getstate() method
   **/
-  double updatestate(double u, double dt,double xmin, double xmax, IntegrationStage stage);
+  void updatestate(double u, double dt,double xmin, double xmax, IntegrationStage stage);
 
   /**
      GETDERIVATIVE - Returns the time derivative of the linear control block state variable
@@ -233,31 +208,37 @@ class Cblock
   double init_given_y(double y);
 
   /**
-     GETOUPUT - Returns output y of the control block
+     GETOUPUT - Returns output y of the control block and (optionally) updates the state
 
      Inputs:
-       u               Input to the control block
-       dt              Integration time-step
+       u                 Input to the control block
+       dt                Integration time-step
        IntegrationStage  Stage of integration mode calculation, PREDICTOR or CORRECTOR
+       dostateupdate     Should state variable be updated?
 
      Output:
-       y               Control block output
+       y                 Control block output
 
-     Note: Output calculation
+     Notes: 
+     This method also can optionally update the state variable x of 
+     the control block by setting dostateupdate appropriately. 
+
+       Output calculation
        PREDICTOR :
-	 y_{n+1} = C\hat{x}_{n+1} + Du_{n}
+	 y_{n+1} = Cx_{n} + Du
 
        CORRECTOR :
+	 y_{n+1} = C\hat{x}_{n+1} + Du
 
-	 y_{n+1} = Cx_{n+1} + Du_{n+1}
-
-    Note here that GridLab-D does a network solve after every predictor/corrector
-    call. So, during the corrector stage the input u is updated (u_{n+1}) 
+	 Here, x_n is value of the state variable
+	 at time instant n, and \hat{x}_{n+1} is the
+	 predictor value of state variable at time instant
+	 n+1
   **/
-  double getoutput(double u,double dt,IntegrationStage stage);
+  double getoutput(double u,double dt,IntegrationStage stage,bool dostateupdate);
 
   /**
-     GETOUTPUT - Returns control block output y enforcing limits on state and output.
+     GETOUTPUT - Version of GETOUTPUT  enforcing limits on state and output.
 
      Inputs:
        u               Input to the control block
@@ -267,26 +248,13 @@ class Cblock
        ymin            Min. limit for output y
        ymax            Max. limit for output y
        IntegrationStage  Stage of integration mode calculation, PREDICTOR or CORRECTOR
+       dostateupdate   Should state variable be updated?
 
      Output:
        y               Control block output
 
-     Note: Output calculation
-       PREDICTOR :
-
-	 y_{n+1} = C\hat{x}_{n+1} + Du_{n}
-
-	 y_{n+1} = max(ymin,min(y_{n+1},ymax)
-
-       CORRECTOR :
-	 y_{n+1} = Cx_{n+1} + Du_{n+1}
-
-	 y_{n+1} = max(ymin,min(y_{n+1},ymax)
-
-    Note here that GridLab-D does a network solve after every predictor/corrector
-    call. So, during the corrector stage the input u is updated (u_{n+1}) 
   **/
-  double getoutput(double u,double dt,double xmin, double xmax, double ymin, double ymax, IntegrationStage stage);
+  double getoutput(double u,double dt,double xmin, double xmax, double ymin, double ymax, IntegrationStage stage, bool dostateupdate);
 
   /**
      GETSTATE - Returns the internal state variable x for the control block
@@ -296,6 +264,9 @@ class Cblock
 
      Output:
        x              Control block state variable
+
+     Note:
+       This method should be called after the state is updated, either by calling getoutput or updatestate
   **/
   double getstate(IntegrationStage stage);
 

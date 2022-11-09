@@ -110,9 +110,9 @@ void gridpack::dynamic_simulation::SexsModel::predictor(double t_inc, bool flag)
 
   u1 = Vref - Vterminal;
   
-  y1 = leadlagblock.getoutput(u1,t_inc,PREDICTOR);
+  y1 = leadlagblock.getoutput(u1,t_inc,PREDICTOR,true);
 
-  Efd = filterblock.getoutput(y1,t_inc,PREDICTOR);
+  Efd = filterblock.getoutput(y1,t_inc,PREDICTOR,true);
 }
 
 /**
@@ -126,9 +126,9 @@ void gridpack::dynamic_simulation::SexsModel::corrector(double t_inc, bool flag)
 
   u1 = Vref - Vterminal;
   
-  y1 = leadlagblock.getoutput(u1,t_inc,CORRECTOR);
+  y1 = leadlagblock.getoutput(u1,t_inc,CORRECTOR,true);
 
-  Efd = filterblock.getoutput(y1,t_inc,CORRECTOR);
+  Efd = filterblock.getoutput(y1,t_inc,CORRECTOR,true);
 }
 
 /**

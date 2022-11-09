@@ -45,7 +45,7 @@ double Cblock::getderivative(double x, double u)
   return p_A[0]*x + p_B[0]*u;
 }
 
-double Cblock::updatestate(double u,double dt,double xmin,double xmax,IntegrationStage stage)
+void Cblock::updatestate(double u,double dt,double xmin,double xmax,IntegrationStage stage)
 {
   double xout,dx_dt;
 
@@ -62,37 +62,37 @@ double Cblock::updatestate(double u,double dt,double xmin,double xmax,Integratio
     xout = std::max(xmin,std::min(xout,xmax));
     x[0] = xout;
   }
-
-  return xout;
 }
 
-double Cblock::updatestate(double u,double dt,IntegrationStage stage)
+void Cblock::updatestate(double u,double dt,IntegrationStage stage)
 {
-  double xout;
-
-  xout = updatestate(u,dt,p_xmin,p_xmax,stage);
-
-  return xout;
+  updatestate(u,dt,p_xmin,p_xmax,stage);
 }
 
-double Cblock::getoutput(double u,double dt,double xmin,double xmax,double ymin,double ymax,IntegrationStage stage)
+double Cblock::getoutput(double u,double dt,double xmin,double xmax,double ymin,double ymax,IntegrationStage stage, bool dostateupdate)
 {
-  double x,y;
+  double x_n,y_n,x_n1;
 
-  x = updatestate(u,dt,xmin,xmax,stage);
+  if(stage == PREDICTOR) x_n = x[0];
+  else x_n = p_xhat[0];
   
-  y = p_C[0]*x + p_D[0]*u;
+  y_n = p_C[0]*x_n + p_D[0]*u;
 
-  y = std::max(ymin,std::min(y,ymax));
+  y_n = std::max(ymin,std::min(y_n,ymax));
 
-  return y;
+  // State update is done after output
+  if(dostateupdate) {
+    updatestate(u,dt,xmin,xmax,stage);
+  }
+
+  return y_n;
 }
 
-double Cblock::getoutput(double u,double dt,IntegrationStage stage)
+double Cblock::getoutput(double u,double dt,IntegrationStage stage,bool dostateupdate)
 {
   double y;
 
-  y = getoutput(u,dt,p_xmin,p_xmax,p_ymin,p_ymax,stage);
+  y = getoutput(u,dt,p_xmin,p_xmax,p_ymin,p_ymax,stage,dostateupdate);
 
   return y;
 }
