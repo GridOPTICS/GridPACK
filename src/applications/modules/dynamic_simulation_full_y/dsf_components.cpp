@@ -586,7 +586,6 @@ void gridpack::dynamic_simulation::DSFullBus::initDSVect(double ts)
       p_eprime_s1.push_back(0.0);
       p_INorton.push_back(0.0);
 #else
-      printf("\ngen %d i = %d,  ngen = %d:***********\n", getOriginalIndex(),i,p_ngen);
       p_generators[i]->init(p_voltage,p_angle, ts);
 #endif
     }
