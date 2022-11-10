@@ -5369,18 +5369,60 @@
 
 // WIND MODEL DATA
 /**
- * Flag to indicate that WIND model is present
+ * Flag to indicate that WIND aerodynamic model is present
  * type: boolean
  * indexed
  */
-#define HAS_WIND "HAS_WIND"
+#define HAS_WIND_AERODYNAMIC "HAS_WIND_AERODYNAMIC"
 
 /**
- * Wind model
+ * Flag to indicate that WIND drive train model is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_WIND_DRIVETRAIN "HAS_WIND_DRIVETRAIN"
+
+/**
+ * Flag to indicate that WIND pitch control model is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_WIND_PITCHCONTROL "HAS_WIND_PITCHCONTROL"
+
+/**
+ * Flag to indicate that WIND torqu control model is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_WIND_TORQUECONTROL "HAS_WIND_TORQUECONTROL"
+
+/**
+ * Wind aero-dynamic model
  * type: string
  * indexed
  */
-#define WIND_MODEL "WIND_MODEL"
+#define WIND_AERODYNAMIC "WIND_AERODYNAMIC"
+
+/**
+ * Wind drive train model
+ * type: string
+ * indexed
+ */
+#define WIND_DRIVETRAIN "WIND_DRIVETRAIN"
+
+/**
+ * Wind pitch control model
+ * type: string
+ * indexed
+ */
+#define WIND_PITCHCONTROL "WIND_PITCHCONTROL"
+
+/**
+ * Wind torque control model
+ * type: string
+ * indexed
+ */
+#define WIND_TORQUECONTROL "WIND_TORQUECONTROL"
 
 /**
  * Wind model ID
@@ -5481,11 +5523,11 @@
 #define WIND_KCC "WIND_KCC"
 
 /**
- * Blade response time constant or electrical power filter time constant
+ * Blade response time constant
  * type: real float
  * indexed
  */
-#define WIND_TP "WIND_TP"
+#define WIND_BR_TP "WIND_BR_TP"
 
 /**
  * Maximum pitch angle
@@ -5528,6 +5570,13 @@
  * indexed
  */
 #define WIND_KIP "WIND_KIP"
+
+/**
+ * Electrical power filter time constant
+ * type: real float
+ * indexed
+ */
+#define WIND_PF_TP "WIND_PF_TP"
 
 /**
  * Speed reference time constant

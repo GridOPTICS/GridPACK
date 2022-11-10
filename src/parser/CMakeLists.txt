@@ -134,5 +134,9 @@ install(FILES
   parser_classes/ieelbl.hpp
   parser_classes/cmldblu1.hpp
   parser_classes/psssim.hpp
+  parser_classes/wtara1.hpp
+  parser_classes/wtdta1.hpp
+  parser_classes/wtpta1.hpp
+  parser_classes/wttqa1.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )

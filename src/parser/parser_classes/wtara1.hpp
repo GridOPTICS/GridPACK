@@ -43,19 +43,19 @@ template <class _data_struct> class Wtara1Parser
       double rval;
       bool bval;
       int ival;
-      // HAS_WIND
-      if (!data->getValue(HAS_WIND,&bval,g_id)) {
-        data->addValue(HAS_WIND, true, g_id);
+      // HAS_WIND_AERODYNAMIC
+      if (!data->getValue(HAS_WIND_AERODYNAMIC,&bval,g_id)) {
+        data->addValue(HAS_WIND_AERODYNAMIC, true, g_id);
       } else {
-        data->setValue(HAS_WIND, true, g_id);
+        data->setValue(HAS_WIND_AERODYNAMIC, true, g_id);
       }
 
-      // WIND_MODEL
+      // WIND_AERODYNAMIC
       std::string stmp;
-      if (!data->getValue(WIND_MODEL, &stmp, g_id)) {
-        data->addValue(WIND_MODEL, data_struct.model, g_id);
+      if (!data->getValue(WIND_AERODYNAMIC, &stmp, g_id)) {
+        data->addValue(WIND_AERODYNAMIC, data_struct.model, g_id);
       } else {
-        data->setValue(WIND_MODEL, data_struct.model, g_id);
+        data->setValue(WIND_AERODYNAMIC, data_struct.model, g_id);
       }
 
       // WIND_ID
@@ -93,11 +93,11 @@ template <class _data_struct> class Wtara1Parser
       int ival;
       int nstr = split_line.size();
       bool bval;
-      // HAS_WIND
-      if (!data->getValue(HAS_WIND,&bval,g_id)) {
-        data->addValue(HAS_WIND, true, g_id);
+      // HAS_WIND_AERODYNAMIC
+      if (!data->getValue(HAS_WIND_AERODYNAMIC,&bval,g_id)) {
+        data->addValue(HAS_WIND_AERODYNAMIC, true, g_id);
       } else {
-        data->setValue(HAS_WIND, true, g_id);
+        data->setValue(HAS_WIND_AERODYNAMIC, true, g_id);
       }
 
       // WIND_NAME
@@ -105,10 +105,10 @@ template <class _data_struct> class Wtara1Parser
       gridpack::utility::StringUtils util;
       model = util.trimQuotes(split_line[1]);
       util.toUpper(model);
-      if (!data->getValue(WIND_MODEL,&stmp,g_id)) {
-        data->addValue(WIND_MODEL, model.c_str(), g_id);
+      if (!data->getValue(WIND_AERODYNAMIC,&stmp,g_id)) {
+        data->addValue(WIND_AERODYNAMIC, model.c_str(), g_id);
       } else {
-        data->setValue(WIND_MODEL, model.c_str(), g_id);
+        data->setValue(WIND_AERODYNAMIC, model.c_str(), g_id);
       }
 
       // WIND_ID
@@ -160,7 +160,7 @@ template <class _data_struct> class Wtara1Parser
       sval = util.trimQuotes(split_line[1]);
       util.toUpper(sval);
 
-      // WIND_MODEL              "MODEL"                  integer
+      // WIND_AERODYNAMIC              "MODEL"                  integer
       strcpy(data.model, sval.c_str());
 
       int nstr = split_line.size();

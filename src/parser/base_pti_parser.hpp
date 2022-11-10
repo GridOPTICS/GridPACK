@@ -1680,6 +1680,12 @@ class BasePTIParser : public BaseParser<_network>
         // Check to see if line is blank
         int idx = line.find_first_not_of(' ');
         if (idx == std::string::npos) continue;
+        // Check to see if line is a comment
+        if (line[idx] == '/') {
+          if (line.length() > idx+2 && line[idx+1] == '/') {
+            continue;
+          }
+        }
 
         std::string record = line;
         idx = line.find('/');
