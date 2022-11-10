@@ -220,7 +220,6 @@ template <class _data_struct> class Wttqa1Parser
 
       // Use counter to keep track of additional parameters
       if (nstr > 3) {
-          printf("THIRD param (%s)\n",split_line[3].c_str());
         if (!data->getValue(WIND_TFLAG,&ival,g_id)) {
           data->addValue(WIND_TFLAG, atoi(split_line[3].c_str()), g_id);
         } else {
