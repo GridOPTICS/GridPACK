@@ -96,9 +96,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
   //printf("---classical gen init p_pg = %f, p_qg = %f\n", p_pg, p_qg);
   
   //p_mva = p_sbase / p_mva;
-  p_d0 = p_d0 ;
-  p_h = p_h ;
-  p_dtr = p_dtr;
   p_pelect = p_pg;
   double eterm = mag;
   double vi = ang;
@@ -394,7 +391,7 @@ serialWrite(char *string, const int bufsize, const char *signal)
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,", %8d, %2s, %f, %f, %f",p_bus_id, p_ckt.c_str(), real(p_mac_ang_s1),real(p_mac_spd_s1), real(p_eqprime));
+      sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

@@ -3023,6 +3023,28 @@
 #define GOVERNOR_K "GOVERNOR_K"
 
 /**
+ * Governor TR
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TR "GOVERNOR_TR"
+
+/**
+ * Governor TG
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TG "GOVERNOR_TG"
+
+/**
+ * Governor TW
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TW "GOVERNOR_TW"
+
+
+/**
  * Governor T1
  * type: real float
  * indexed
@@ -3275,6 +3297,13 @@
 #define GOVERNOR_R "GOVERNOR_R"
 
 /**
+ * Governor r
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_r "GOVERNOR_r"
+
+/**
  * Governor TPELEC
  * type: real float
  * indexed
@@ -3336,6 +3365,35 @@
  * indexed
  */
 #define GOVERNOR_VMIN "GOVERNOR_VMIN"
+
+/**
+ * Governor VELM
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VELM "GOVERNOR_VELM"
+
+/**
+ * Governor GMAX
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_GMAX "GOVERNOR_GMAX"
+
+/**
+ * Governor GMIN
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_GMIN "GOVERNOR_GMIN"
+
+/**
+ * Governor QNL
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_QNL "GOVERNOR_QNL"
+
 
 /**
  * Governor TACT
@@ -3420,6 +3478,20 @@
  * indexed
  */
 #define GOVERNOR_DT "GOVERNOR_DT"
+
+/**
+ * Governor AT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_AT "GOVERNOR_AT"
+/**
+ * Governor KT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KT "GOVERNOR_KT"
+
 
 /**
  * Governor DT
@@ -3633,6 +3705,13 @@
 #define EXCITER_TR "EXCITER_TR"
 
 /**
+ * Exciter K
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K "EXCITER_K"
+
+/**
  * Exciter KA
  * type: real float
  * indexed
@@ -3654,6 +3733,13 @@
 #define EXCITER_TB "EXCITER_TB"
 
 /**
+ * Exciter TA_OVER_TB
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TA_OVER_TB "EXCITER_TA_OVER_TB"
+
+/**
  * Exciter TC
  * type: real float
  * indexed
@@ -3673,6 +3759,21 @@
  * indexed
  */
 #define EXCITER_VRMIN "EXCITER_VRMIN"
+
+/**
+ * Exciter EMAX
+ * type: real float
+ * indexed
+ */
+#define EXCITER_EMAX "EXCITER_EMAX"
+
+/**
+ * Exciter EMIN
+ * type: real float
+ * indexed
+ */
+#define EXCITER_EMIN "EXCITER_EMIN"
+
 
 /**
  * Exciter KE

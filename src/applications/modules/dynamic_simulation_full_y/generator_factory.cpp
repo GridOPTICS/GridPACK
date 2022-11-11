@@ -28,6 +28,9 @@
 #include "wshygp.hpp"
 #include "psssim.hpp"
 #include "tgov1.hpp"
+#include "sexs.hpp"
+#include "gast.hpp"
+#include "hygov.hpp"
 
 #include <stdio.h>
 
@@ -108,6 +111,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     tmp =  new gridpack::dynamic_simulation::Exdc1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "SEXS") {
+      gridpack::dynamic_simulation::SexsModel *tmp;
+      tmp =  new gridpack::dynamic_simulation::SexsModel;
+      ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else if (type == "ESST1A") {
     gridpack::dynamic_simulation::Esst1aModel *tmp;
     tmp =  new gridpack::dynamic_simulation::Esst1aModel;
@@ -144,9 +152,18 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "TGOV1") {
-	//printf("----------------!!!!---debug, one TOGV1 model in the dyr file\n");
     gridpack::dynamic_simulation::Tgov1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Tgov1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "GAST") {
+    gridpack::dynamic_simulation::GastModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::GastModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "HYGOV") {
+    gridpack::dynamic_simulation::HygovModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::HygovModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "WSHYGP") {

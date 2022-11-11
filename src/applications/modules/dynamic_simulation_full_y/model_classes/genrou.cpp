@@ -693,26 +693,55 @@ void gridpack::dynamic_simulation::GenrouGenerator::write(
 bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
+  bool ret = false;
   if (!strcmp(signal,"standard")) {
     sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f  %12.6f\n",
           p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1.0, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
-    return true;
+    ret = true;
   } else if (!strcmp(signal,"init_debug")) {
     sprintf(string," %8d  %2s Something\n",p_bus_id,p_ckt.c_str());
-    return true;
+    ret = true;
   } else if (!strcmp(signal,"debug_initial")) {
     sprintf(string,"Bus: %d PG: %f QG: %f\n",p_bus_id,p_pg,p_qg);
-    return true;
+    ret = true;
+  } else if(!strcmp(signal,"watch_header")) {
+    if(getWatch()) {
+      char buf[128];
+      std::string tag;
+      if(p_ckt[0] != ' ') {
+	tag = p_ckt;
+      } else {
+	tag = p_ckt[1];
+      }
+      sprintf(buf,", %d_%s_angle, %d_%s_speed",p_bus_id,tag.c_str(),
+          p_bus_id,tag.c_str());
+      if (strlen(buf) <= bufsize) {
+        sprintf(string,"%s",buf);
+        ret = true;
+      } else {
+        ret = false;
+      }
+    } else {
+      ret = false;
+    }
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
-      char buf[128];
-      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,",
-          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1.0, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1, Vterm, Efd, LadIfd);
-      return true;
+      char buf[256];
+      sprintf(buf,",%f, %f",
+	      x1d_1, x2w_1+1.0);
+      if (strlen(buf) <= bufsize) {
+        sprintf(string,"%s",buf);
+        ret = true;
+      } else {
+        ret = false;
+      }
+    } else {
+      ret = false;
     }
   } else if (!strcmp(signal,"debug_initial")) {
-  return false;
+    ret = false;
   }
+  return ret;
 } 
 
 /**
