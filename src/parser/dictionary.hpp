@@ -5432,234 +5432,243 @@
 #define WIND_ID "WIND_ID"
 
 /**
+ * Parameters for different components of the wind model are
+ * identified by two-character tags
+ * Aerodynamic: AD
+ * Drive train: DT
+ * Pitch control: PC
+ * Torque control: TC
+ */
+
+/**
  * Wind model ICONM
  * type: integer
  * indexed
  */
-#define WIND_TFLAG "WIND_TFLAG"
+#define WIND_TC_TFLAG "WIND_TC_TFLAG"
 
 /**
  * Flag for speed control (0)/power control (1)
  * type: real float
  * indexed
  */
-#define WIND_KA "WIND_KA"
+#define WIND_AD_KA "WIND_AD_KA"
 
 /**
  * Initial pitch angle
  * type: real float
  * indexed
  */
-#define WIND_THETA "WIND_THETA"
+#define WIND_AD_THETA "WIND_AD_THETA"
 
 /**
  * Total inertial constant
  * type: real float
  * indexed
  */
-#define WIND_H "WIND_H"
+#define WIND_DT_H "WIND_DT_H"
 
 /**
  * Machine damping factor
  * type: real float
  * indexed
  */
-#define WIND_DAMP "WIND_DAMP"
+#define WIND_DT_DAMP "WIND_DT_DAMP"
 
 /**
  * Turbine inertial fraction
  * type: real float
  * indexed
  */
-#define WIND_HFRAC "WIND_HFRAC"
+#define WIND_DT_HFRAC "WIND_DT_HFRAC"
 
 /**
  * First shaft torsional resonant frequency
  * type: real float
  * indexed
  */
-#define WIND_FREQ1 "WIND_FREQ1"
+#define WIND_DT_FREQ1 "WIND_DT_FREQ1"
 
 /**
  * Shaft damping factor
  * type: real float
  * indexed
  */
-#define WIND_DSHAFT "WIND_DSHAFT"
+#define WIND_DT_DSHAFT "WIND_DT_DSHAFT"
 
 /**
  * Pitch-control integral gain
  * type: real float
  * indexed
  */
-#define WIND_KIW "WIND_KIW"
+#define WIND_PC_KIW "WIND_PC_KIW"
 
 /**
  * Pitch-control proportional gain
  * type: real float
  * indexed
  */
-#define WIND_KPW "WIND_KPW"
+#define WIND_PC_KPW "WIND_PC_KPW"
 
 /**
  * Pitch-compensation integral gain
  * type: real float
  * indexed
  */
-#define WIND_KIC "WIND_KIC"
+#define WIND_PC_KIC "WIND_PC_KIC"
 
 /**
  * Pitch-compensation proportional gain
  * type: real float
  * indexed
  */
-#define WIND_KPC "WIND_KPC"
+#define WIND_PC_KPC "WIND_PC_KPC"
 
 /**
  * Gain
  * type: real float
  * indexed
  */
-#define WIND_KCC "WIND_KCC"
+#define WIND_PC_KCC "WIND_PC_KCC"
 
 /**
  * Blade response time constant
  * type: real float
  * indexed
  */
-#define WIND_BR_TP "WIND_BR_TP"
+#define WIND_PC_TP "WIND_PC_TP"
 
 /**
  * Maximum pitch angle
  * type: real float
  * indexed
  */
-#define WIND_TETAMAX "WIND_TETAMAX"
+#define WIND_PC_TETAMAX "WIND_PC_TETAMAX"
 
 /**
  * Minimum pitch angle
  * type: real float
  * indexed
  */
-#define WIND_TETAMIN "WIND_TETAMIN"
+#define WIND_PC_TETAMIN "WIND_PC_TETAMIN"
 
 /**
  * Maximum pitch angle rate
  * type: real float
  * indexed
  */
-#define WIND_RTETAMAX "WIND_RTETAMAX"
+#define WIND_PC_RTETAMAX "WIND_PC_RTETAMAX"
 
 /**
  * Minimum pitch angle rate
  * type: real float
  * indexed
  */
-#define WIND_RTETAMIN "WIND_RTETAMIN"
+#define WIND_PC_RTETAMIN "WIND_PC_RTETAMIN"
 
 /**
  * Proportional gain in torque regulator
  * type: real float
  * indexed
  */
-#define WIND_KPP "WIND_KPP"
+#define WIND_TC_KPP "WIND_TC_KPP"
 
 /**
  * Integrator gain in torque regulator
  * type: real float
  * indexed
  */
-#define WIND_KIP "WIND_KIP"
+#define WIND_TC_KIP "WIND_TC_KIP"
 
 /**
  * Electrical power filter time constant
  * type: real float
  * indexed
  */
-#define WIND_PF_TP "WIND_PF_TP"
+#define WIND_TC_TP "WIND_TC_TP"
 
 /**
  * Speed reference time constant
  * type: real float
  * indexed
  */
-#define WIND_TWREF "WIND_TWREF"
+#define WIND_TC_TWREF "WIND_TC_TWREF"
 
 /**
  * Max limit in torque regulator
  * type: real float
  * indexed
  */
-#define WIND_TEMAX "WIND_TEMAX"
+#define WIND_TC_TEMAX "WIND_TC_TEMAX"
 
 /**
  * Min limit in torque regulator
  * type: real float
  * indexed
  */
-#define WIND_TEMIN "WIND_TEMIN"
+#define WIND_TC_TEMIN "WIND_TC_TEMIN"
 
 /**
  * Power
  * type: real float
  * indexed
  */
-#define WIND_P1 "WIND_P1"
+#define WIND_TC_P1 "WIND_TC_P1"
 
 /**
  * Shaft speed for power p1
  * type: real float
  * indexed
  */
-#define WIND_SPD1 "WIND_SPD1"
+#define WIND_TC_SPD1 "WIND_TC_SPD1"
 
 /**
  * Power
  * type: real float
  * indexed
  */
-#define WIND_P2 "WIND_P2"
+#define WIND_TC_P2 "WIND_TC_P2"
 
 /**
  * Shaft speed for power p2
  * type: real float
  * indexed
  */
-#define WIND_SPD2 "WIND_SPD2"
+#define WIND_TC_SPD2 "WIND_TC_SPD2"
 
 /**
  * Power
  * type: real float
  * indexed
  */
-#define WIND_P3 "WIND_P3"
+#define WIND_TC_P3 "WIND_TC_P3"
 
 /**
  * Shaft speed for power p3
  * type: real float
  * indexed
  */
-#define WIND_SPD3 "WIND_SPD3"
+#define WIND_TC_SPD3 "WIND_TC_SPD3"
 
 /**
  * Power
  * type: real float
  * indexed
  */
-#define WIND_P4 "WIND_P4"
+#define WIND_TC_P4 "WIND_TC_P4"
 
 /**
  * Shaft speed for power p4
  * type: real float
  * indexed
  */
-#define WIND_SPD4 "WIND_SPD4"
+#define WIND_TC_SPD4 "WIND_TC_SPD4"
 
 /**
  * Total turbine rating
  * type: real float
  * indexed
  */
-#define WIND_TRATE "WIND_TRATE"
+#define WIND_TC_TRATE "WIND_TC_TRATE"
 
 #endif /* DICTIONARY_HPP_ */

@@ -66,17 +66,17 @@ template <class _data_struct> class Wtara1Parser
       }
 
       // WIND_KA
-      if (!data->getValue(WIND_KA,&rval,g_id)) {
-        data->addValue(WIND_KA, data_struct.wind_ka, g_id);
+      if (!data->getValue(WIND_AD_KA,&rval,g_id)) {
+        data->addValue(WIND_AD_KA, data_struct.wind_ka, g_id);
       } else {
-        data->setValue(WIND_KA, data_struct.wind_ka, g_id);
+        data->setValue(WIND_AD_KA, data_struct.wind_ka, g_id);
       }
 
       // WIND_THETA
-      if (!data->getValue(WIND_THETA,&rval,g_id)) {
-        data->addValue(WIND_THETA, data_struct.wind_theta, g_id);
+      if (!data->getValue(WIND_AD_THETA,&rval,g_id)) {
+        data->addValue(WIND_AD_THETA, data_struct.wind_theta, g_id);
       } else {
-        data->setValue(WIND_THETA, data_struct.wind_theta, g_id);
+        data->setValue(WIND_AD_THETA, data_struct.wind_theta, g_id);
       }
     }
 
@@ -122,18 +122,18 @@ template <class _data_struct> class Wtara1Parser
 
       // Use counter to keep track of additional parameters
       if (nstr > 3) {
-        if (!data->getValue(WIND_KA,&rval,g_id)) {
-          data->addValue(WIND_KA, atof(split_line[3].c_str()), g_id);
+        if (!data->getValue(WIND_AD_KA,&rval,g_id)) {
+          data->addValue(WIND_AD_KA, atof(split_line[3].c_str()), g_id);
         } else {
-          data->setValue(WIND_KA, atof(split_line[3].c_str()), g_id);
+          data->setValue(WIND_AD_KA, atof(split_line[3].c_str()), g_id);
         }
       }
 
       if (nstr > 4) {
-        if (!data->getValue(WIND_THETA,&rval,g_id)) {
-          data->addValue(WIND_THETA, atof(split_line[4].c_str()), g_id);
+        if (!data->getValue(WIND_AD_THETA,&rval,g_id)) {
+          data->addValue(WIND_AD_THETA, atof(split_line[4].c_str()), g_id);
         } else {
-          data->setValue(WIND_THETA, atof(split_line[4].c_str()), g_id);
+          data->setValue(WIND_AD_THETA, atof(split_line[4].c_str()), g_id);
         }
       }
     }
