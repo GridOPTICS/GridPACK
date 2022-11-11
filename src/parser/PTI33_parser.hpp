@@ -332,6 +332,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
         boost::shared_ptr<gridpack::component::DataCollection>
@@ -400,6 +404,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
 
@@ -500,6 +508,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
 
@@ -573,6 +585,10 @@ class PTI33_parser : public BasePTIParser<_network>
       p_istream.nextLine(line); //this should be the first line of the block
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
 
@@ -768,6 +784,10 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::pair<int, int> branch_pair;
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
 
@@ -965,6 +985,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
         int o_idx1, o_idx2;
@@ -978,6 +1002,10 @@ class PTI33_parser : public BasePTIParser<_network>
             int o_idx3 = k;
             p_istream.nextLine(line);
             std::vector<std::string>  split_line2;
+            if (check_comment(line)) {
+              p_istream.nextLine(line);
+              continue;
+            }
             this->cleanComment(line);
             split_line2 = this->splitPSSELine(line);
             // Check to see if transformer is active
@@ -1104,6 +1132,10 @@ class PTI33_parser : public BasePTIParser<_network>
             p_branchData.push_back(data1);
             p_istream.nextLine(line);
             std::vector<std::string> split_line3;
+            if (check_comment(line)) {
+              p_istream.nextLine(line);
+              continue;
+            }
             this->cleanComment(line);
             split_line3 = this->splitPSSELine(line);
             double windv, ang, ratea, rateb, ratec;
@@ -1139,6 +1171,10 @@ class PTI33_parser : public BasePTIParser<_network>
             p_branchData.push_back(data2);
             p_istream.nextLine(line);
             std::vector<std::string> split_line4;
+            if (check_comment(line)) {
+              p_istream.nextLine(line);
+              continue;
+            }
             this->cleanComment(line);
             split_line4 = this->splitPSSELine(line);
             parse3WindXForm(split_line4, &windv, &ang, &ratea, &rateb, &ratec);
@@ -1173,6 +1209,10 @@ class PTI33_parser : public BasePTIParser<_network>
             p_branchData.push_back(data3);
             p_istream.nextLine(line);
             std::vector<std::string> split_line5;
+            if (check_comment(line)) {
+              p_istream.nextLine(line);
+              continue;
+            }
             this->cleanComment(line);
             split_line5 = this->splitPSSELine(line);
             parse3WindXForm(split_line5, &windv, &ang, &ratea, &rateb, &ratec);
@@ -1211,16 +1251,28 @@ class PTI33_parser : public BasePTIParser<_network>
           int ntoken = split_line.size();
           p_istream.nextLine(line);
           std::vector<std::string>  split_line2;
+          if (check_comment(line)) {
+            p_istream.nextLine(line);
+            continue;
+          }
           this->cleanComment(line);
           split_line2 = this->splitPSSELine(line);
 
           p_istream.nextLine(line);
           std::vector<std::string>  split_line3;
+          if (check_comment(line)) {
+            p_istream.nextLine(line);
+            continue;
+          }
           this->cleanComment(line);
           split_line3 = this->splitPSSELine(line);
 
           p_istream.nextLine(line);
           std::vector<std::string>  split_line4;
+          if (check_comment(line)) {
+            p_istream.nextLine(line);
+            continue;
+          }
           this->cleanComment(line);
           split_line4 = this->splitPSSELine(line);
           // find branch corresponding to this transformer line. If it doesn't
@@ -1570,6 +1622,10 @@ class PTI33_parser : public BasePTIParser<_network>
       int ncnt = 0;
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
 
@@ -1602,6 +1658,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
         int l_idx, o_idx;
@@ -1631,6 +1691,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
 
@@ -1649,6 +1713,10 @@ class PTI33_parser : public BasePTIParser<_network>
       p_istream.nextLine(line); //this should be the first line of the block
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
 
@@ -1848,6 +1916,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
         int nval = split_line.size();
@@ -1909,6 +1981,10 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         this->cleanComment(line);
         split_line = this->splitPSSELine(line);
         int o_idx1, o_idx2;
@@ -1998,6 +2074,10 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
 #if 0
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         split_line = this->splitPSSELine(line);
         std::vector<gridpack::component::DataCollection>   inter_area_instance;
         gridpack::component::DataCollection          data;
@@ -2051,6 +2131,10 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
 #if 0
         std::vector<std::string>  split_line;
+        if (check_comment(line)) {
+          p_istream.nextLine(line);
+          continue;
+        }
         split_line = this->splitPSSELine(line);
         std::vector<gridpack::component::DataCollection>   owner_instance;
         gridpack::component::DataCollection          data;
@@ -2238,6 +2322,7 @@ class PTI33_parser : public BasePTIParser<_network>
     /**
      * Test to see if string is a comment line. Check to see if first
      * non-blank characters are "//"
+     * For version 34, check for "@!" as well
      */
     bool check_comment(std::string &str) const
     {
@@ -2245,9 +2330,11 @@ class PTI33_parser : public BasePTIParser<_network>
       if (ntok != std::string::npos && ntok+1 != std::string::npos &&
           str[ntok] == '/' && str[ntok+1] == '/') {
         return true;
-      } else {
-        return false;
+      } else if (ntok != std::string::npos && ntok+1 != std::string::npos &&
+          str[ntok] == '@' && str[ntok+1] == '!') {
+        return true;
       }
+      return false;
     }
 
     /**
