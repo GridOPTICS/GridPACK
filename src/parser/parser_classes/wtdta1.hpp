@@ -43,19 +43,19 @@ template <class _data_struct> class Wtdta1Parser
       double rval;
       bool bval;
       int ival;
-      // HAS_WIND
-      if (!data->getValue(HAS_WIND,&bval,g_id)) {
-        data->addValue(HAS_WIND, true, g_id);
+      // HAS_WIND_DRIVETRAIN
+      if (!data->getValue(HAS_WIND_DRIVETRAIN,&bval,g_id)) {
+        data->addValue(HAS_WIND_DRIVETRAIN, true, g_id);
       } else {
-        data->setValue(HAS_WIND, true, g_id);
+        data->setValue(HAS_WIND_DRIVETRAIN, true, g_id);
       }
 
-      // WIND_MODEL
+      // WIND_DRIVETRAIN
       std::string stmp;
-      if (!data->getValue(WIND_MODEL, &stmp, g_id)) {
-        data->addValue(WIND_MODEL, data_struct.model, g_id);
+      if (!data->getValue(WIND_DRIVETRAIN, &stmp, g_id)) {
+        data->addValue(WIND_DRIVETRAIN, data_struct.model, g_id);
       } else {
-        data->setValue(WIND_MODEL, data_struct.model, g_id);
+        data->setValue(WIND_DRIVETRAIN, data_struct.model, g_id);
       }
 
       // WIND_ID
@@ -66,38 +66,38 @@ template <class _data_struct> class Wtdta1Parser
       }
 
       // WIND_H
-      if (!data->getValue(WIND_H,&rval,g_id)) {
-        data->addValue(WIND_H, data_struct.wind_h, g_id);
+      if (!data->getValue(WIND_DT_H,&rval,g_id)) {
+        data->addValue(WIND_DT_H, data_struct.wind_h, g_id);
       } else {
-        data->setValue(WIND_H, data_struct.wind_h, g_id);
+        data->setValue(WIND_DT_H, data_struct.wind_h, g_id);
       }
 
       // WIND_DAMP
-      if (!data->getValue(WIND_DAMP,&rval,g_id)) {
-        data->addValue(WIND_DAMP, data_struct.wind_damp, g_id);
+      if (!data->getValue(WIND_DT_DAMP,&rval,g_id)) {
+        data->addValue(WIND_DT_DAMP, data_struct.wind_damp, g_id);
       } else {
-        data->setValue(WIND_DAMP, data_struct.wind_damp, g_id);
+        data->setValue(WIND_DT_DAMP, data_struct.wind_damp, g_id);
       }
 
       // WIND_HFRAC
-      if (!data->getValue(WIND_HFRAC,&rval,g_id)) {
-        data->addValue(WIND_HFRAC, data_struct.wind_hfrac, g_id);
+      if (!data->getValue(WIND_DT_HFRAC,&rval,g_id)) {
+        data->addValue(WIND_DT_HFRAC, data_struct.wind_hfrac, g_id);
       } else {
-        data->setValue(WIND_HFRAC, data_struct.wind_hfrac, g_id);
+        data->setValue(WIND_DT_HFRAC, data_struct.wind_hfrac, g_id);
       }
 
       // WIND_FREQ1
-      if (!data->getValue(WIND_FREQ1,&rval,g_id)) {
-        data->addValue(WIND_FREQ1, data_struct.wind_freq1, g_id);
+      if (!data->getValue(WIND_DT_FREQ1,&rval,g_id)) {
+        data->addValue(WIND_DT_FREQ1, data_struct.wind_freq1, g_id);
       } else {
-        data->setValue(WIND_FREQ1, data_struct.wind_freq1, g_id);
+        data->setValue(WIND_DT_FREQ1, data_struct.wind_freq1, g_id);
       }
 
       // WIND_DSHAFT
-      if (!data->getValue(WIND_DSHAFT,&rval,g_id)) {
-        data->addValue(WIND_DSHAFT, data_struct.wind_dshaft, g_id);
+      if (!data->getValue(WIND_DT_DSHAFT,&rval,g_id)) {
+        data->addValue(WIND_DT_DSHAFT, data_struct.wind_dshaft, g_id);
       } else {
-        data->setValue(WIND_DSHAFT, data_struct.wind_dshaft, g_id);
+        data->setValue(WIND_DT_DSHAFT, data_struct.wind_dshaft, g_id);
       }
     }
 
@@ -114,11 +114,11 @@ template <class _data_struct> class Wtdta1Parser
       int ival;
       int nstr = split_line.size();
       bool bval;
-      // HAS_WIND
-      if (!data->getValue(HAS_WIND,&bval,g_id)) {
-        data->addValue(HAS_WIND, true, g_id);
+      // HAS_WIND_DRIVETRAIN
+      if (!data->getValue(HAS_WIND_DRIVETRAIN,&bval,g_id)) {
+        data->addValue(HAS_WIND_DRIVETRAIN, true, g_id);
       } else {
-        data->setValue(HAS_WIND, true, g_id);
+        data->setValue(HAS_WIND_DRIVETRAIN, true, g_id);
       }
 
       // WIND_NAME
@@ -126,10 +126,10 @@ template <class _data_struct> class Wtdta1Parser
       gridpack::utility::StringUtils util;
       model = util.trimQuotes(split_line[1]);
       util.toUpper(model);
-      if (!data->getValue(WIND_MODEL,&stmp,g_id)) {
-        data->addValue(WIND_MODEL, model.c_str(), g_id);
+      if (!data->getValue(WIND_DRIVETRAIN,&stmp,g_id)) {
+        data->addValue(WIND_DRIVETRAIN, model.c_str(), g_id);
       } else {
-        data->setValue(WIND_MODEL, model.c_str(), g_id);
+        data->setValue(WIND_DRIVETRAIN, model.c_str(), g_id);
       }
 
       // WIND_ID
@@ -143,42 +143,42 @@ template <class _data_struct> class Wtdta1Parser
 
       // Use counter to keep track of additional parameters
       if (nstr > 3) {
-        if (!data->getValue(WIND_H,&rval,g_id)) {
-          data->addValue(WIND_H, atof(split_line[3].c_str()), g_id);
+        if (!data->getValue(WIND_DT_H,&rval,g_id)) {
+          data->addValue(WIND_DT_H, atof(split_line[3].c_str()), g_id);
         } else {
-          data->setValue(WIND_H, atof(split_line[3].c_str()), g_id);
+          data->setValue(WIND_DT_H, atof(split_line[3].c_str()), g_id);
         }
       }
 
       if (nstr > 4) {
-        if (!data->getValue(WIND_DAMP,&rval,g_id)) {
-          data->addValue(WIND_DAMP, atof(split_line[4].c_str()), g_id);
+        if (!data->getValue(WIND_DT_DAMP,&rval,g_id)) {
+          data->addValue(WIND_DT_DAMP, atof(split_line[4].c_str()), g_id);
         } else {
-          data->setValue(WIND_DAMP, atof(split_line[4].c_str()), g_id);
+          data->setValue(WIND_DT_DAMP, atof(split_line[4].c_str()), g_id);
         }
       }
 
       if (nstr > 5) {
-        if (!data->getValue(WIND_HFRAC,&rval,g_id)) {
-          data->addValue(WIND_HFRAC, atof(split_line[5].c_str()), g_id);
+        if (!data->getValue(WIND_DT_HFRAC,&rval,g_id)) {
+          data->addValue(WIND_DT_HFRAC, atof(split_line[5].c_str()), g_id);
         } else {
-          data->setValue(WIND_HFRAC, atof(split_line[5].c_str()), g_id);
+          data->setValue(WIND_DT_HFRAC, atof(split_line[5].c_str()), g_id);
         }
       }
 
       if (nstr > 6) {
-        if (!data->getValue(WIND_FREQ1,&rval,g_id)) {
-          data->addValue(WIND_FREQ1, atof(split_line[6].c_str()), g_id);
+        if (!data->getValue(WIND_DT_FREQ1,&rval,g_id)) {
+          data->addValue(WIND_DT_FREQ1, atof(split_line[6].c_str()), g_id);
         } else {
-          data->setValue(WIND_FREQ1, atof(split_line[6].c_str()), g_id);
+          data->setValue(WIND_DT_FREQ1, atof(split_line[6].c_str()), g_id);
         }
       }
 
       if (nstr > 7) {
-        if (!data->getValue(WIND_DSHAFT,&rval,g_id)) {
-          data->addValue(WIND_DSHAFT, atof(split_line[7].c_str()), g_id);
+        if (!data->getValue(WIND_DT_DSHAFT,&rval,g_id)) {
+          data->addValue(WIND_DT_DSHAFT, atof(split_line[7].c_str()), g_id);
         } else {
-          data->setValue(WIND_DSHAFT, atof(split_line[7].c_str()), g_id);
+          data->setValue(WIND_DT_DSHAFT, atof(split_line[7].c_str()), g_id);
         }
       }
     }
@@ -205,7 +205,7 @@ template <class _data_struct> class Wtdta1Parser
       sval = util.trimQuotes(split_line[1]);
       util.toUpper(sval);
 
-      // WIND_MODEL              "MODEL"                  integer
+      // WIND_DRIVETRAIN              "MODEL"                  integer
       strcpy(data.model, sval.c_str());
 
       int nstr = split_line.size();

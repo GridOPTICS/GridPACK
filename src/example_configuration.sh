@@ -269,6 +269,9 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_DIR:STRING="/usr/lib/petsc" \
     #      -D PETSC_ARCH:STRING="" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
+    
+    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
+    cmake -Wdev --debug-trycompile \
 
     # Custom built 3.12.5, real:
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.12.5" \

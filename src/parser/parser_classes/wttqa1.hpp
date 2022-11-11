@@ -43,19 +43,19 @@ template <class _data_struct> class Wttqa1Parser
       double rval;
       bool bval;
       int ival;
-      // HAS_WIND
-      if (!data->getValue(HAS_WIND,&bval,g_id)) {
-        data->addValue(HAS_WIND, true, g_id);
+      // HAS_WIND_TORQUECONTROL
+      if (!data->getValue(HAS_WIND_TORQUECONTROL,&bval,g_id)) {
+        data->addValue(HAS_WIND_TORQUECONTROL, true, g_id);
       } else {
-        data->setValue(HAS_WIND, true, g_id);
+        data->setValue(HAS_WIND_TORQUECONTROL, true, g_id);
       }
 
-      // WIND_MODEL
+      // WIND_TORQUECONTROL
       std::string stmp;
-      if (!data->getValue(WIND_MODEL, &stmp, g_id)) {
-        data->addValue(WIND_MODEL, data_struct.model, g_id);
+      if (!data->getValue(WIND_TORQUECONTROL, &stmp, g_id)) {
+        data->addValue(WIND_TORQUECONTROL, data_struct.model, g_id);
       } else {
-        data->setValue(WIND_MODEL, data_struct.model, g_id);
+        data->setValue(WIND_TORQUECONTROL, data_struct.model, g_id);
       }
 
       // WIND_ID
@@ -66,108 +66,115 @@ template <class _data_struct> class Wttqa1Parser
       }
 
       // WIND_TFLAG
-      if (!data->getValue(WIND_KIW,&ival,g_id)) {
-        data->addValue(WIND_KIW, data_struct.wind_tflag, g_id);
+      if (!data->getValue(WIND_TC_TFLAG,&ival,g_id)) {
+        data->addValue(WIND_TC_TFLAG, data_struct.wind_tflag, g_id);
       } else {
-        data->setValue(WIND_KIW, data_struct.wind_tflag, g_id);
+        data->setValue(WIND_TC_TFLAG, data_struct.wind_tflag, g_id);
       }
 
       // WIND_KPP
-      if (!data->getValue(WIND_KPP,&rval,g_id)) {
-        data->addValue(WIND_KPP, data_struct.wind_kpp, g_id);
+      if (!data->getValue(WIND_TC_KPP,&rval,g_id)) {
+        data->addValue(WIND_TC_KPP, data_struct.wind_kpp, g_id);
       } else {
-        data->setValue(WIND_KPP, data_struct.wind_kpp, g_id);
+        data->setValue(WIND_TC_KPP, data_struct.wind_kpp, g_id);
       }
 
       // WIND_KIP
-      if (!data->getValue(WIND_KIP,&rval,g_id)) {
-        data->addValue(WIND_KIP, data_struct.wind_kip, g_id);
+      if (!data->getValue(WIND_TC_KIP,&rval,g_id)) {
+        data->addValue(WIND_TC_KIP, data_struct.wind_kip, g_id);
       } else {
-        data->setValue(WIND_KIP, data_struct.wind_kip, g_id);
+        data->setValue(WIND_TC_KIP, data_struct.wind_kip, g_id);
       }
 
-      // WIND_TP
-      if (!data->getValue(WIND_TP,&rval,g_id)) {
-        data->addValue(WIND_TP, data_struct.wind_tp, g_id);
+      // WIND_PF_TP
+      if (!data->getValue(WIND_TC_TP,&rval,g_id)) {
+        data->addValue(WIND_TC_TP, data_struct.wind_tp, g_id);
       } else {
-        data->setValue(WIND_TP, data_struct.wind_tp, g_id);
+        data->setValue(WIND_TC_TP, data_struct.wind_tp, g_id);
       }
 
       // WIND_TWREF
-      if (!data->getValue(WIND_TWREF,&rval,g_id)) {
-        data->addValue(WIND_TWREF, data_struct.wind_twref, g_id);
+      if (!data->getValue(WIND_TC_TWREF,&rval,g_id)) {
+        data->addValue(WIND_TC_TWREF, data_struct.wind_twref, g_id);
       } else {
-        data->setValue(WIND_TWREF, data_struct.wind_twref, g_id);
+        data->setValue(WIND_TC_TWREF, data_struct.wind_twref, g_id);
       }
 
       // WIND_TEMAX
-      if (!data->getValue(WIND_TEMAX,&rval,g_id)) {
-        data->addValue(WIND_TEMAX, data_struct.wind_temax, g_id);
+      if (!data->getValue(WIND_TC_TEMAX,&rval,g_id)) {
+        data->addValue(WIND_TC_TEMAX, data_struct.wind_temax, g_id);
       } else {
-        data->setValue(WIND_TEMAX, data_struct.wind_temax, g_id);
+        data->setValue(WIND_TC_TEMAX, data_struct.wind_temax, g_id);
       }
 
       // WIND_TEMIN
-      if (!data->getValue(WIND_TEMIN,&rval,g_id)) {
-        data->addValue(WIND_TEMIN, data_struct.wind_temin, g_id);
+      if (!data->getValue(WIND_TC_TEMIN,&rval,g_id)) {
+        data->addValue(WIND_TC_TEMIN, data_struct.wind_temin, g_id);
       } else {
-        data->setValue(WIND_TEMIN, data_struct.wind_temin, g_id);
+        data->setValue(WIND_TC_TEMIN, data_struct.wind_temin, g_id);
       }
 
       // WIND_P1
-      if (!data->getValue(WIND_P1,&rval,g_id)) {
-        data->addValue(WIND_P1, data_struct.wind_p1, g_id);
+      if (!data->getValue(WIND_TC_P1,&rval,g_id)) {
+        data->addValue(WIND_TC_P1, data_struct.wind_p1, g_id);
       } else {
-        data->setValue(WIND_P1, data_struct.wind_p1, g_id);
+        data->setValue(WIND_TC_P1, data_struct.wind_p1, g_id);
       }
 
       // WIND_SPD1
-      if (!data->getValue(WIND_SPD1,&rval,g_id)) {
-        data->addValue(WIND_SPD1, data_struct.wind_spd1, g_id);
+      if (!data->getValue(WIND_TC_SPD1,&rval,g_id)) {
+        data->addValue(WIND_TC_SPD1, data_struct.wind_spd1, g_id);
       } else {
-        data->setValue(WIND_SPD1, data_struct.wind_spd1, g_id);
+        data->setValue(WIND_TC_SPD1, data_struct.wind_spd1, g_id);
       }
 
       // WIND_P2
-      if (!data->getValue(WIND_P2,&rval,g_id)) {
-        data->addValue(WIND_P2, data_struct.wind_p2, g_id);
+      if (!data->getValue(WIND_TC_P2,&rval,g_id)) {
+        data->addValue(WIND_TC_P2, data_struct.wind_p2, g_id);
       } else {
-        data->setValue(WIND_P2, data_struct.wind_p2, g_id);
+        data->setValue(WIND_TC_P2, data_struct.wind_p2, g_id);
       }
 
       // WIND_SPD2
-      if (!data->getValue(WIND_SPD2,&rval,g_id)) {
-        data->addValue(WIND_SPD2, data_struct.wind_spd2, g_id);
+      if (!data->getValue(WIND_TC_SPD2,&rval,g_id)) {
+        data->addValue(WIND_TC_SPD2, data_struct.wind_spd2, g_id);
       } else {
-        data->setValue(WIND_SPD2, data_struct.wind_spd2, g_id);
+        data->setValue(WIND_TC_SPD2, data_struct.wind_spd2, g_id);
       }
 
       // WIND_P3
-      if (!data->getValue(WIND_P3,&rval,g_id)) {
-        data->addValue(WIND_P3, data_struct.wind_p3, g_id);
+      if (!data->getValue(WIND_TC_P3,&rval,g_id)) {
+        data->addValue(WIND_TC_P3, data_struct.wind_p3, g_id);
       } else {
-        data->setValue(WIND_P3, data_struct.wind_p3, g_id);
+        data->setValue(WIND_TC_P3, data_struct.wind_p3, g_id);
       }
 
       // WIND_SPD3
-      if (!data->getValue(WIND_SPD3,&rval,g_id)) {
-        data->addValue(WIND_SPD3, data_struct.wind_spd3, g_id);
+      if (!data->getValue(WIND_TC_SPD3,&rval,g_id)) {
+        data->addValue(WIND_TC_SPD3, data_struct.wind_spd3, g_id);
       } else {
-        data->setValue(WIND_SPD3, data_struct.wind_spd3, g_id);
+        data->setValue(WIND_TC_SPD3, data_struct.wind_spd3, g_id);
       }
 
       // WIND_P4
-      if (!data->getValue(WIND_P4,&rval,g_id)) {
-        data->addValue(WIND_P4, data_struct.wind_p4, g_id);
+      if (!data->getValue(WIND_TC_P4,&rval,g_id)) {
+        data->addValue(WIND_TC_P4, data_struct.wind_p4, g_id);
       } else {
-        data->setValue(WIND_P4, data_struct.wind_p4, g_id);
+        data->setValue(WIND_TC_P4, data_struct.wind_p4, g_id);
       }
 
       // WIND_SPD4
-      if (!data->getValue(WIND_SPD4,&rval,g_id)) {
-        data->addValue(WIND_SPD4, data_struct.wind_spd4, g_id);
+      if (!data->getValue(WIND_TC_SPD4,&rval,g_id)) {
+        data->addValue(WIND_TC_SPD4, data_struct.wind_spd4, g_id);
       } else {
-        data->setValue(WIND_SPD4, data_struct.wind_spd4, g_id);
+        data->setValue(WIND_TC_SPD4, data_struct.wind_spd4, g_id);
+      }
+
+      // WIND_TRATE
+      if (!data->getValue(WIND_TC_TRATE,&rval,g_id)) {
+        data->addValue(WIND_TC_TRATE, data_struct.wind_trate, g_id);
+      } else {
+        data->setValue(WIND_TC_TRATE, data_struct.wind_trate, g_id);
       }
     }
 
@@ -184,11 +191,11 @@ template <class _data_struct> class Wttqa1Parser
       int ival;
       int nstr = split_line.size();
       bool bval;
-      // HAS_WIND
-      if (!data->getValue(HAS_WIND,&bval,g_id)) {
-        data->addValue(HAS_WIND, true, g_id);
+      // HAS_WIND_TORQUECONTROL
+      if (!data->getValue(HAS_WIND_TORQUECONTROL,&bval,g_id)) {
+        data->addValue(HAS_WIND_TORQUECONTROL, true, g_id);
       } else {
-        data->setValue(HAS_WIND, true, g_id);
+        data->setValue(HAS_WIND_TORQUECONTROL, true, g_id);
       }
 
       // WIND_NAME
@@ -196,10 +203,10 @@ template <class _data_struct> class Wttqa1Parser
       gridpack::utility::StringUtils util;
       model = util.trimQuotes(split_line[1]);
       util.toUpper(model);
-      if (!data->getValue(WIND_MODEL,&stmp,g_id)) {
-        data->addValue(WIND_MODEL, model.c_str(), g_id);
+      if (!data->getValue(WIND_TORQUECONTROL,&stmp,g_id)) {
+        data->addValue(WIND_TORQUECONTROL, model.c_str(), g_id);
       } else {
-        data->setValue(WIND_MODEL, model.c_str(), g_id);
+        data->setValue(WIND_TORQUECONTROL, model.c_str(), g_id);
       }
 
       // WIND_ID
@@ -213,122 +220,130 @@ template <class _data_struct> class Wttqa1Parser
 
       // Use counter to keep track of additional parameters
       if (nstr > 3) {
-        if (!data->getValue(WIND_TFLAG,&ival,g_id)) {
-          data->addValue(WIND_TFLAG, atoi(split_line[3].c_str()), g_id);
+        if (!data->getValue(WIND_TC_TFLAG,&ival,g_id)) {
+          data->addValue(WIND_TC_TFLAG, atoi(split_line[3].c_str()), g_id);
         } else {
-          data->setValue(WIND_TFLAG, atoi(split_line[3].c_str()), g_id);
+          data->setValue(WIND_TC_TFLAG, atoi(split_line[3].c_str()), g_id);
         }
       }
 
       if (nstr > 4) {
-        if (!data->getValue(WIND_KPP,&rval,g_id)) {
-          data->addValue(WIND_KPP, atof(split_line[4].c_str()), g_id);
+        if (!data->getValue(WIND_TC_KPP,&rval,g_id)) {
+          data->addValue(WIND_TC_KPP, atof(split_line[4].c_str()), g_id);
         } else {
-          data->setValue(WIND_KPP, atof(split_line[4].c_str()), g_id);
+          data->setValue(WIND_TC_KPP, atof(split_line[4].c_str()), g_id);
         }
       }
 
       if (nstr > 5) {
-        if (!data->getValue(WIND_KIP,&rval,g_id)) {
-          data->addValue(WIND_KIP, atof(split_line[5].c_str()), g_id);
+        if (!data->getValue(WIND_TC_KIP,&rval,g_id)) {
+          data->addValue(WIND_TC_KIP, atof(split_line[5].c_str()), g_id);
         } else {
-          data->setValue(WIND_KIP, atof(split_line[5].c_str()), g_id);
+          data->setValue(WIND_TC_KIP, atof(split_line[5].c_str()), g_id);
         }
       }
 
       if (nstr > 6) {
-        if (!data->getValue(WIND_TP,&rval,g_id)) {
-          data->addValue(WIND_TP, atof(split_line[6].c_str()), g_id);
+        if (!data->getValue(WIND_TC_TP,&rval,g_id)) {
+          data->addValue(WIND_TC_TP, atof(split_line[6].c_str()), g_id);
         } else {
-          data->setValue(WIND_TP, atof(split_line[6].c_str()), g_id);
+          data->setValue(WIND_TC_TP, atof(split_line[6].c_str()), g_id);
         }
       }
 
       if (nstr > 7) {
-        if (!data->getValue(WIND_TWREF,&rval,g_id)) {
-          data->addValue(WIND_TWREF, atof(split_line[7].c_str()), g_id);
+        if (!data->getValue(WIND_TC_TWREF,&rval,g_id)) {
+          data->addValue(WIND_TC_TWREF, atof(split_line[7].c_str()), g_id);
         } else {
-          data->setValue(WIND_TWREF, atof(split_line[7].c_str()), g_id);
+          data->setValue(WIND_TC_TWREF, atof(split_line[7].c_str()), g_id);
         }
       }
 
       if (nstr > 8) {
-        if (!data->getValue(WIND_TEMAX,&rval,g_id)) {
-          data->addValue(WIND_TEMAX, atof(split_line[8].c_str()), g_id);
+        if (!data->getValue(WIND_TC_TEMAX,&rval,g_id)) {
+          data->addValue(WIND_TC_TEMAX, atof(split_line[8].c_str()), g_id);
         } else {
-          data->setValue(WIND_TEMAX, atof(split_line[8].c_str()), g_id);
+          data->setValue(WIND_TC_TEMAX, atof(split_line[8].c_str()), g_id);
         }
       }
 
       if (nstr > 9) {
-        if (!data->getValue(WIND_TEMIN,&rval,g_id)) {
-          data->addValue(WIND_TEMIN, atof(split_line[9].c_str()), g_id);
+        if (!data->getValue(WIND_TC_TEMIN,&rval,g_id)) {
+          data->addValue(WIND_TC_TEMIN, atof(split_line[9].c_str()), g_id);
         } else {
-          data->setValue(WIND_TEMIN, atof(split_line[9].c_str()), g_id);
+          data->setValue(WIND_TC_TEMIN, atof(split_line[9].c_str()), g_id);
         }
       }
 
       if (nstr > 10) {
-        if (!data->getValue(WIND_P1,&rval,g_id)) {
-          data->addValue(WIND_P1, atof(split_line[10].c_str()), g_id);
+        if (!data->getValue(WIND_TC_P1,&rval,g_id)) {
+          data->addValue(WIND_TC_P1, atof(split_line[10].c_str()), g_id);
         } else {
-          data->setValue(WIND_P1, atof(split_line[10].c_str()), g_id);
+          data->setValue(WIND_TC_P1, atof(split_line[10].c_str()), g_id);
         }
       }
 
       if (nstr > 11) {
-        if (!data->getValue(WIND_SPD1,&rval,g_id)) {
-          data->addValue(WIND_SPD1, atof(split_line[11].c_str()), g_id);
+        if (!data->getValue(WIND_TC_SPD1,&rval,g_id)) {
+          data->addValue(WIND_TC_SPD1, atof(split_line[11].c_str()), g_id);
         } else {
-          data->setValue(WIND_SPD1, atof(split_line[11].c_str()), g_id);
+          data->setValue(WIND_TC_SPD1, atof(split_line[11].c_str()), g_id);
         }
       }
 
       if (nstr > 12) {
-        if (!data->getValue(WIND_P2,&rval,g_id)) {
-          data->addValue(WIND_P2, atof(split_line[12].c_str()), g_id);
+        if (!data->getValue(WIND_TC_P2,&rval,g_id)) {
+          data->addValue(WIND_TC_P2, atof(split_line[12].c_str()), g_id);
         } else {
-          data->setValue(WIND_P2, atof(split_line[12].c_str()), g_id);
+          data->setValue(WIND_TC_P2, atof(split_line[12].c_str()), g_id);
         }
       }
 
       if (nstr > 13) {
-        if (!data->getValue(WIND_SPD2,&rval,g_id)) {
-          data->addValue(WIND_SPD2, atof(split_line[13].c_str()), g_id);
+        if (!data->getValue(WIND_TC_SPD2,&rval,g_id)) {
+          data->addValue(WIND_TC_SPD2, atof(split_line[13].c_str()), g_id);
         } else {
-          data->setValue(WIND_SPD2, atof(split_line[13].c_str()), g_id);
+          data->setValue(WIND_TC_SPD2, atof(split_line[13].c_str()), g_id);
         }
       }
 
       if (nstr > 14) {
-        if (!data->getValue(WIND_P3,&rval,g_id)) {
-          data->addValue(WIND_P3, atof(split_line[14].c_str()), g_id);
+        if (!data->getValue(WIND_TC_P3,&rval,g_id)) {
+          data->addValue(WIND_TC_P3, atof(split_line[14].c_str()), g_id);
         } else {
-          data->setValue(WIND_P3, atof(split_line[14].c_str()), g_id);
+          data->setValue(WIND_TC_P3, atof(split_line[14].c_str()), g_id);
         }
       }
 
       if (nstr > 15) {
-        if (!data->getValue(WIND_SPD3,&rval,g_id)) {
-          data->addValue(WIND_SPD3, atof(split_line[15].c_str()), g_id);
+        if (!data->getValue(WIND_TC_SPD3,&rval,g_id)) {
+          data->addValue(WIND_TC_SPD3, atof(split_line[15].c_str()), g_id);
         } else {
-          data->setValue(WIND_SPD3, atof(split_line[15].c_str()), g_id);
+          data->setValue(WIND_TC_SPD3, atof(split_line[15].c_str()), g_id);
         }
       }
 
       if (nstr > 16) {
-        if (!data->getValue(WIND_P4,&rval,g_id)) {
-          data->addValue(WIND_P4, atof(split_line[16].c_str()), g_id);
+        if (!data->getValue(WIND_TC_P4,&rval,g_id)) {
+          data->addValue(WIND_TC_P4, atof(split_line[16].c_str()), g_id);
         } else {
-          data->setValue(WIND_P4, atof(split_line[16].c_str()), g_id);
+          data->setValue(WIND_TC_P4, atof(split_line[16].c_str()), g_id);
         }
       }
 
       if (nstr > 17) {
-        if (!data->getValue(WIND_SPD4,&rval,g_id)) {
-          data->addValue(WIND_SPD4, atof(split_line[17].c_str()), g_id);
+        if (!data->getValue(WIND_TC_SPD4,&rval,g_id)) {
+          data->addValue(WIND_TC_SPD4, atof(split_line[17].c_str()), g_id);
         } else {
-          data->setValue(WIND_SPD4, atof(split_line[17].c_str()), g_id);
+          data->setValue(WIND_TC_SPD4, atof(split_line[17].c_str()), g_id);
+        }
+      }
+
+      if (nstr > 18) {
+        if (!data->getValue(WIND_TC_TRATE,&rval,g_id)) {
+          data->addValue(WIND_TC_TRATE, atof(split_line[18].c_str()), g_id);
+        } else {
+          data->setValue(WIND_TC_TRATE, atof(split_line[18].c_str()), g_id);
         }
       }
     }
@@ -355,71 +370,74 @@ template <class _data_struct> class Wttqa1Parser
       sval = util.trimQuotes(split_line[1]);
       util.toUpper(sval);
 
-      // WIND_MODEL              "MODEL"                  integer
+      // WIND_TORQUECONTROL              "MODEL"                  integer
       strcpy(data.model, sval.c_str());
 
       int nstr = split_line.size();
 
       // Wind model parameters
-
       if (nstr > 3) {
-        data.wind_kpp = atof(split_line[3].c_str());
+        data.wind_tflag = atoi(split_line[3].c_str());
       }
 
       if (nstr > 4) {
-        data.wind_kip = atof(split_line[4].c_str());
+        data.wind_kpp = atof(split_line[4].c_str());
       }
 
       if (nstr > 5) {
-        data.wind_tp = atof(split_line[5].c_str());
+        data.wind_kip = atof(split_line[5].c_str());
       }
 
       if (nstr > 6) {
-        data.wind_twref = atof(split_line[6].c_str());
+        data.wind_tp = atof(split_line[6].c_str());
       }
 
       if (nstr > 7) {
-        data.wind_temax = atof(split_line[7].c_str());
+        data.wind_twref = atof(split_line[7].c_str());
       }
 
       if (nstr > 8) {
-        data.wind_temin = atof(split_line[8].c_str());
+        data.wind_temax = atof(split_line[8].c_str());
       }
 
       if (nstr > 9) {
-        data.wind_p1 = atof(split_line[9].c_str());
+        data.wind_temin = atof(split_line[9].c_str());
       }
 
       if (nstr > 10) {
-        data.wind_spd1 = atof(split_line[10].c_str());
+        data.wind_p1 = atof(split_line[10].c_str());
       }
 
       if (nstr > 11) {
-        data.wind_p2 = atof(split_line[11].c_str());
+        data.wind_spd1 = atof(split_line[11].c_str());
       }
 
       if (nstr > 12) {
-        data.wind_spd2 = atof(split_line[12].c_str());
+        data.wind_p2 = atof(split_line[12].c_str());
       }
 
       if (nstr > 13) {
-        data.wind_p3 = atof(split_line[13].c_str());
+        data.wind_spd2 = atof(split_line[13].c_str());
       }
 
       if (nstr > 14) {
-        data.wind_spd3 = atof(split_line[14].c_str());
+        data.wind_p3 = atof(split_line[14].c_str());
       }
 
       if (nstr > 15) {
-        data.wind_p4 = atof(split_line[15].c_str());
+        data.wind_spd3 = atof(split_line[15].c_str());
       }
 
       if (nstr > 16) {
-        data.wind_spd4 = atof(split_line[16].c_str());
+        data.wind_p4 = atof(split_line[16].c_str());
       }
 
       if (nstr > 17) {
-        data.wind_trate = atof(split_line[17].c_str());
+        data.wind_spd4 = atof(split_line[17].c_str());
+      }
+
+      if (nstr > 18) {
+        data.wind_trate = atof(split_line[18].c_str());
       }
     }
 };
