@@ -136,6 +136,7 @@ install(FILES
   parser_classes/psssim.hpp
   parser_classes/sexs.hpp
   parser_classes/gast.hpp
+  parser_classes/hygov.hpp
   parser_classes/wtara1.hpp
   parser_classes/wtdta1.hpp
   parser_classes/wtpta1.hpp
