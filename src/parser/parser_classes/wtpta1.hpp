@@ -107,32 +107,32 @@ template <class _data_struct> class Wtpta1Parser
         data->setValue(WIND_PC_TP, data_struct.wind_tp, g_id);
       }
 
-      // WIND_TETAMAX
-      if (!data->getValue(WIND_PC_TETAMAX,&rval,g_id)) {
-        data->addValue(WIND_PC_TETAMAX, data_struct.wind_tetamax, g_id);
+      // WIND_THETAMAX
+      if (!data->getValue(WIND_PC_THETAMAX,&rval,g_id)) {
+        data->addValue(WIND_PC_THETAMAX, data_struct.wind_thetamax, g_id);
       } else {
-        data->setValue(WIND_PC_TETAMAX, data_struct.wind_tetamax, g_id);
+        data->setValue(WIND_PC_THETAMAX, data_struct.wind_thetamax, g_id);
       }
 
-      // WIND_TETAMIN
-      if (!data->getValue(WIND_PC_TETAMIN,&rval,g_id)) {
-        data->addValue(WIND_PC_TETAMIN, data_struct.wind_tetamin, g_id);
+      // WIND_THETAMIN
+      if (!data->getValue(WIND_PC_THETAMIN,&rval,g_id)) {
+        data->addValue(WIND_PC_THETAMIN, data_struct.wind_thetamin, g_id);
       } else {
-        data->setValue(WIND_PC_TETAMIN, data_struct.wind_tetamin, g_id);
+        data->setValue(WIND_PC_THETAMIN, data_struct.wind_thetamin, g_id);
       }
 
-      // WIND_RTETAMAX
-      if (!data->getValue(WIND_PC_RTETAMAX,&rval,g_id)) {
-        data->addValue(WIND_PC_RTETAMAX, data_struct.wind_rtetamax, g_id);
+      // WIND_RTHETAMAX
+      if (!data->getValue(WIND_PC_RTHETAMAX,&rval,g_id)) {
+        data->addValue(WIND_PC_RTHETAMAX, data_struct.wind_rthetamax, g_id);
       } else {
-        data->setValue(WIND_PC_RTETAMAX, data_struct.wind_rtetamax, g_id);
+        data->setValue(WIND_PC_RTHETAMAX, data_struct.wind_rthetamax, g_id);
       }
 
-      // WIND_RTETAMIN
-      if (!data->getValue(WIND_PC_RTETAMIN,&rval,g_id)) {
-        data->addValue(WIND_PC_RTETAMIN, data_struct.wind_rtetamin, g_id);
+      // WIND_RTHETAMIN
+      if (!data->getValue(WIND_PC_RTHETAMIN,&rval,g_id)) {
+        data->addValue(WIND_PC_RTHETAMIN, data_struct.wind_rthetamin, g_id);
       } else {
-        data->setValue(WIND_PC_RTETAMIN, data_struct.wind_rtetamin, g_id);
+        data->setValue(WIND_PC_RTHETAMIN, data_struct.wind_rthetamin, g_id);
       }
     }
 
@@ -226,34 +226,34 @@ template <class _data_struct> class Wtpta1Parser
       }
 
       if (nstr > 9) {
-        if (!data->getValue(WIND_PC_TETAMAX,&rval,g_id)) {
-          data->addValue(WIND_PC_TETAMAX, atof(split_line[9].c_str()), g_id);
+        if (!data->getValue(WIND_PC_THETAMAX,&rval,g_id)) {
+          data->addValue(WIND_PC_THETAMAX, atof(split_line[9].c_str()), g_id);
         } else {
-          data->setValue(WIND_PC_TETAMAX, atof(split_line[9].c_str()), g_id);
+          data->setValue(WIND_PC_THETAMAX, atof(split_line[9].c_str()), g_id);
         }
       }
 
       if (nstr > 10) {
-        if (!data->getValue(WIND_PC_TETAMIN,&rval,g_id)) {
-          data->addValue(WIND_PC_TETAMIN, atof(split_line[10].c_str()), g_id);
+        if (!data->getValue(WIND_PC_THETAMIN,&rval,g_id)) {
+          data->addValue(WIND_PC_THETAMIN, atof(split_line[10].c_str()), g_id);
         } else {
-          data->setValue(WIND_PC_TETAMIN, atof(split_line[10].c_str()), g_id);
+          data->setValue(WIND_PC_THETAMIN, atof(split_line[10].c_str()), g_id);
         }
       }
 
       if (nstr > 11) {
-        if (!data->getValue(WIND_PC_RTETAMAX,&rval,g_id)) {
-          data->addValue(WIND_PC_RTETAMAX, atof(split_line[11].c_str()), g_id);
+        if (!data->getValue(WIND_PC_RTHETAMAX,&rval,g_id)) {
+          data->addValue(WIND_PC_RTHETAMAX, atof(split_line[11].c_str()), g_id);
         } else {
-          data->setValue(WIND_PC_RTETAMAX, atof(split_line[11].c_str()), g_id);
+          data->setValue(WIND_PC_RTHETAMAX, atof(split_line[11].c_str()), g_id);
         }
       }
 
       if (nstr > 12) {
-        if (!data->getValue(WIND_PC_RTETAMIN,&rval,g_id)) {
-          data->addValue(WIND_PC_RTETAMIN, atof(split_line[12].c_str()), g_id);
+        if (!data->getValue(WIND_PC_RTHETAMIN,&rval,g_id)) {
+          data->addValue(WIND_PC_RTHETAMIN, atof(split_line[12].c_str()), g_id);
         } else {
-          data->setValue(WIND_PC_RTETAMIN, atof(split_line[12].c_str()), g_id);
+          data->setValue(WIND_PC_RTHETAMIN, atof(split_line[12].c_str()), g_id);
         }
       }
     }
@@ -312,19 +312,19 @@ template <class _data_struct> class Wtpta1Parser
       }
 
       if (nstr > 9) {
-        data.wind_tetamax = atof(split_line[9].c_str());
+        data.wind_thetamax = atof(split_line[9].c_str());
       }
 
       if (nstr > 10) {
-        data.wind_tetamin = atof(split_line[10].c_str());
+        data.wind_thetamin = atof(split_line[10].c_str());
       }
 
       if (nstr > 11) {
-        data.wind_rtetamax = atof(split_line[11].c_str());
+        data.wind_rthetamax = atof(split_line[11].c_str());
       }
 
       if (nstr > 12) {
-        data.wind_rtetamin = atof(split_line[12].c_str());
+        data.wind_rthetamin = atof(split_line[12].c_str());
       }
     }
 };

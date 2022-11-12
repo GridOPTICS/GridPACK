@@ -63,6 +63,8 @@ add_library(gridpack_dynamic_simulation_full_y_module
   generator_factory.cpp
   load_factory.cpp
   relay_factory.cpp
+  cblock.cpp
+  dblock.cpp
   base_classes/base_generator_model.cpp
   base_classes/base_exciter_model.cpp
   base_classes/base_pss_model.cpp
@@ -98,7 +100,6 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/regca1.cpp
   model_classes/reeca1.cpp
   model_classes/repca1.cpp
-  model_classes/cblock.cpp
   model_classes/sexs.cpp
   model_classes/gast.cpp
   model_classes/hygov.cpp
@@ -127,44 +128,8 @@ install(FILES
   relay_factory.hpp
   generator_factory.hpp
   load_factory.hpp
-  base_classes/base_generator_model.hpp
-  base_classes/base_exciter_model.hpp
-  base_classes/base_pss_model.hpp
-  base_classes/base_plant_model.hpp
-  base_classes/base_governor_model.hpp
-  base_classes/base_relay_model.hpp
-  base_classes/base_load_model.hpp
-  model_classes/classical.hpp
-  model_classes/DBIntClass.hpp
-  model_classes/exdc1.hpp
-  model_classes/GainBlockClass.hpp
-  model_classes/PIBlockwithLimit.hpp
-  model_classes/DelayBlockwithLimit.hpp
-  model_classes/LeadLagBlock.hpp
-  model_classes/DelayBlock.hpp
-  model_classes/gensal.hpp
-  model_classes/wsieg1.hpp
-  model_classes/genrou.hpp
-  model_classes/esst4b.hpp
-  model_classes/esst1a.hpp
-  model_classes/wshygp.hpp
-  model_classes/ggov1.hpp
-  model_classes/lvshbl.hpp
-  model_classes/frqtpat.hpp
-  model_classes/distr1.hpp
-  model_classes/acmotor.hpp
-  model_classes/ieel.hpp
-  model_classes/motorw.hpp
-  model_classes/psssim.hpp
-  model_classes/tgov1.hpp
-  model_classes/gdform.hpp
-  model_classes/regca1.hpp
-  model_classes/reeca1.hpp
-  model_classes/repca1.hpp
-  model_classes/cblock.hpp
-  model_classes/sexs.hpp
-  model_classes/gast.hpp
-  model_classes/hygov.hpp
+  cblock.hpp
+  dblock.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
@@ -207,7 +172,6 @@ install(FILES
   model_classes/regca1.hpp
   model_classes/reeca1.hpp
   model_classes/repca1.hpp
-  model_classes/cblock.hpp
   model_classes/sexs.hpp
   model_classes/gast.hpp
   model_classes/hygov.hpp

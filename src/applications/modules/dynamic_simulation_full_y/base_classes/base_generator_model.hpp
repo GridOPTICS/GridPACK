@@ -199,9 +199,9 @@ class BaseGeneratorModel
 	bool p_hasPlantController;
 	bool p_generatorObservationPowerSystemBase;
 	double p_wideareafreq;
-
   private:
 
+  
     boost::shared_ptr<BaseGovernorModel> p_governor;
     boost::shared_ptr<BaseExciterModel> p_exciter;
 	boost::shared_ptr<BasePssModel> p_pss;

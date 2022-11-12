@@ -83,6 +83,7 @@ class Cblock
 
   double p_xmax,p_xmin; /* Max./Min. limits on state X */
   double p_ymax,p_ymin; /* Max./Min. limits on output Y */
+  double p_dxmax,p_dxmin; /* Rate-limiter */
 
   /**
      UPDATESTATE - Updates the linear control block state variable
@@ -113,12 +114,14 @@ class Cblock
        dt              Integration time-step
        xmin            Min. limiter for state x
        xmax            Max. limiter for state x
+       dxmin           Min. limit for rate of change of x
+       dxmax           Max. limit for rate of change of x
        IntegrationStage  Stage of integration mode calculation, PREDICTOR or CORRECTOR
 
        Notes:
        The updated state can be retrieved via getstate() method
   **/
-  void updatestate(double u, double dt,double xmin, double xmax, IntegrationStage stage);
+  void updatestate(double u, double dt,double xmin, double xmax, double dxmin, double dxmax,IntegrationStage stage);
 
   /**
      GETDERIVATIVE - Returns the time derivative of the linear control block state variable
@@ -177,6 +180,16 @@ class Cblock
        ymax          Max. limit for y
   **/
   void setylimits(double ymin, double ymax);
+
+  /**
+     SETYLIMITS - Sets limits for rate of change of x
+
+     Inputs:
+       dxmin          Min. limit for rate of change of x (dx_dt)
+       dxmax          Max. limit for rate of change of x (dx_dt)
+  **/
+  void setdxlimits(double dxmin, double dxmax);
+
 
   /**
      INIT - Initializes the control block - calculates x[0]
@@ -256,6 +269,28 @@ class Cblock
   **/
   double getoutput(double u,double dt,double xmin, double xmax, double ymin, double ymax, IntegrationStage stage, bool dostateupdate);
 
+    /**
+     GETOUTPUT - Version of GETOUTPUT  enforcing limits on state and output.
+
+     Inputs:
+       u               Input to the control block
+       dt              Integration time-step
+       xmin            Min. limit for state variable
+       xmax            Max. limit for state variable
+       dxmin           Min. limit for rate of change of x (dx_dt)
+       dxmax           Max. limit for rate of change of x (dx_dt)
+       ymin            Min. limit for output y
+       ymax            Max. limit for output y
+       IntegrationStage  Stage of integration mode calculation, PREDICTOR or CORRECTOR
+       dostateupdate   Should state variable be updated?
+
+     Output:
+       y               Control block output
+
+  **/
+  double getoutput(double u,double dt,double xmin, double xmax, double dxmin, double dxmax,double ymin, double ymax, IntegrationStage stage, bool dostateupdate);
+
+
   /**
      GETSTATE - Returns the internal state variable x for the control block
 
@@ -326,6 +361,22 @@ class PIControl: public Cblock
        ymax       Max. limit for output y
   **/
   void setparams(double Kp, double Ki,double xmin,double xmax,double ymin,double ymax);
+
+    /**
+     SETPARAMS - Set the PI controller gains, state/output limits and rate limiter
+
+     INPUTS:
+       Kp         Proportional gain
+       Ki         Integral gain
+       xmin       Min. limit for state variable
+       xmax       Max. limit for state variable
+       dxmin      Min. limit on rate of change of x
+       dxmax      Max. limit on rate of change of x
+       ymin       Min. limit for output y
+       ymax       Max. limit for output y
+  **/
+  void setparams(double Kp, double Ki,double xmin,double xmax,double dxmin, double dxmax,double ymin,double ymax);
+
 };
 
 /*
@@ -381,6 +432,22 @@ class LeadLag: public Cblock
        ymax       Max. limit for output y
   **/
   void setparams(double TA, double TB,double xmin,double xmax,double ymin,double ymax);
+
+      /**
+     SETPARAMS - Set the PI controller gains, state/output limits and rate limiter
+
+     INPUTS:
+       TA         Denominator time constant
+       TB         Numerator time constant
+       xmin       Min. limit for state variable
+       xmax       Max. limit for state variable
+       dxmin      Min. limit on rate of change of x
+       dxmax      Max. limit on rate of change of x
+       ymin       Min. limit for output y
+       ymax       Max. limit for output y
+  **/
+  void setparams(double TA, double TB,double xmin,double xmax,double dxmin, double dxmax,double ymin,double ymax);
+
 };
 
 
@@ -439,6 +506,22 @@ class Filter: public Cblock
        ymax       Max. limit for output y
   **/
   void setparams(double K,double T,double xmin,double xmax,double ymin,double ymax);
+
+    /**
+     SETPARAMS - Set the filter gain, time constant and limits
+
+     INPUTS:
+       K          Filter gain
+       T          Filter time constant
+       xmin       Min. limit for state variable
+       xmax       Max. limit for state variable
+       dxmin      Min. limit for rate of change of x
+       dxmax      Max. limit for rate of change of x
+       ymin       Min. limit for output y
+       ymax       Max. limit for output y
+  **/
+  void setparams(double K,double T,double xmin,double xmax,double dxmin, double dxmax,double ymin,double ymax);
+
 };
 
 /*
