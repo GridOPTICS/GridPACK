@@ -698,10 +698,10 @@ class BasePTIParser : public BaseParser<_network>
       double wind_kpc;
       double wind_kcc;
       double wind_tp;
-      double wind_tetamax;
-      double wind_tetamin;
-      double wind_rtetamax;
-      double wind_rtetamin;
+      double wind_thetamax;
+      double wind_thetamin;
+      double wind_rthetamax;
+      double wind_rthetamin;
       double wind_kpp;
       double wind_kip;
       double wind_twref;
