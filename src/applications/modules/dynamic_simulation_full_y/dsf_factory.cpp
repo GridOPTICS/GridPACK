@@ -7,7 +7,7 @@
 /**
  * @file   dsf_factory.cpp
  * @author Shuangshuang Jin 
- * @date   Feb 04, 2015
+ * @date   2022-08-16 08:07:47 d3g096
  * @last modified date   May 13, 2015
  * 
  * @brief  
@@ -409,7 +409,7 @@ void gridpack::dynamic_simulation::DSFullFactory::addLoadAdmittance()
 bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
 {
   int i;
-  bool secure;
+  bool secure = false;
 
   double maxAngle = -999999.0;
   double minAngle = 999999.0;
