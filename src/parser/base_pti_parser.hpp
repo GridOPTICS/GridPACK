@@ -1718,7 +1718,8 @@ class BasePTIParser : public BaseParser<_network>
       while(std::getline(input,line)) {
         // Check to see if line is blank
         int idx = line.find_first_not_of(' ');
-        if (idx == std::string::npos) continue;
+	int idx2 = line.find_first_not_of('\r'); // Some systems use \r\n for line ends.
+        if (idx == std::string::npos || idx2 == std::string::npos) continue;
         // Check to see if line is a comment
         if (line[idx] == '/') {
           if (line.length() > idx+2 && line[idx+1] == '/') {

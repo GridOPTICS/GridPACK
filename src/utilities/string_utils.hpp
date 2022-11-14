@@ -224,7 +224,9 @@ public:
         if (ntok2 == std::string::npos) ntok2 = slen;
       } 
       if (ntok1 != std::string::npos && ntok2 != std::string::npos) {
-        ret.push_back(strcpy.substr(ntok1,ntok2-ntok1));
+	std::string field = strcpy.substr(ntok1,ntok2-ntok1);
+	if((field.find_first_not_of(' ',0) != std::string::npos) &&  (field.find_first_not_of('\r',0) != std::string::npos))
+	  ret.push_back(field);
       }
     }
     return ret;
