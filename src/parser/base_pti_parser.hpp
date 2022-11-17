@@ -698,10 +698,10 @@ class BasePTIParser : public BaseParser<_network>
       double wind_kpc;
       double wind_kcc;
       double wind_tp;
-      double wind_tetamax;
-      double wind_tetamin;
-      double wind_rtetamax;
-      double wind_rtetamin;
+      double wind_thetamax;
+      double wind_thetamin;
+      double wind_rthetamax;
+      double wind_rthetamin;
       double wind_kpp;
       double wind_kip;
       double wind_twref;
@@ -1718,7 +1718,8 @@ class BasePTIParser : public BaseParser<_network>
       while(std::getline(input,line)) {
         // Check to see if line is blank
         int idx = line.find_first_not_of(' ');
-        if (idx == std::string::npos) continue;
+	int idx2 = line.find_first_not_of('\r'); // Some systems use \r\n for line ends.
+        if (idx == std::string::npos || idx2 == std::string::npos) continue;
         // Check to see if line is a comment
         if (line[idx] == '/') {
           if (line.length() > idx+2 && line[idx+1] == '/') {

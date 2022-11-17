@@ -3,8 +3,8 @@
 Cblock::Cblock()
 {
   p_order = 1; // For future use
-  p_xmin  = p_ymin = -1000.0;
-  p_xmax  = p_ymax =  1000.0;
+  p_xmin  = p_ymin = p_dxmin = -1000.0;
+  p_xmax  = p_ymax = p_dxmax =  1000.0;
 }
 
 Cblock::~Cblock(void)
@@ -33,6 +33,13 @@ void Cblock::setxlimits(double xmin,double xmax)
   p_xmax = xmax;
 }
 
+void Cblock::setdxlimits(double dxmin,double dxmax)
+{
+  p_dxmin = dxmin;
+  p_dxmax = dxmax;
+}
+
+
 void Cblock::setylimits(double ymin,double ymax)
 {
   p_ymin = ymin;
@@ -45,12 +52,13 @@ double Cblock::getderivative(double x, double u)
   return p_A[0]*x + p_B[0]*u;
 }
 
-void Cblock::updatestate(double u,double dt,double xmin,double xmax,IntegrationStage stage)
+void Cblock::updatestate(double u,double dt,double xmin,double xmax,double dxmin, double dxmax,IntegrationStage stage)
 {
   double xout,dx_dt;
 
   if(stage == PREDICTOR) {
-    p_dxdt[0] = getderivative(x[0],u);
+    dx_dt = getderivative(x[0],u);
+    p_dxdt[0] = std::max(p_dxmin,std::min(dx_dt,p_dxmax));
     xout = x[0] + dt*p_dxdt[0];
     xout = std::max(xmin,std::min(xout,xmax));
     p_xhat[0] = xout;
@@ -58,7 +66,8 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,IntegrationS
 
   if(stage == CORRECTOR) {
     dx_dt = getderivative(p_xhat[0],u);
-    xout = x[0] + 0.5*dt*(p_dxdt[0] + dx_dt);
+    dx_dt = std::max(p_dxmin,std::min(0.5*(p_dxdt[0] + dx_dt),p_dxmax));
+    xout = x[0] + dt*dx_dt;
     xout = std::max(xmin,std::min(xout,xmax));
     x[0] = xout;
   }
@@ -66,7 +75,7 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,IntegrationS
 
 void Cblock::updatestate(double u,double dt,IntegrationStage stage)
 {
-  updatestate(u,dt,p_xmin,p_xmax,stage);
+  updatestate(u,dt,p_xmin,p_xmax,p_dxmin,p_dxmax,stage);
 }
 
 double Cblock::getoutput(double u,double dt,double xmin,double xmax,double ymin,double ymax,IntegrationStage stage, bool dostateupdate)
@@ -82,11 +91,24 @@ double Cblock::getoutput(double u,double dt,double xmin,double xmax,double ymin,
 
   // State update is done after output
   if(dostateupdate) {
-    updatestate(u,dt,xmin,xmax,stage);
+    updatestate(u,dt,xmin,xmax,p_dxmin,p_dxmax,stage);
   }
 
   return y_n;
 }
+
+double Cblock::getoutput(double u,double dt,double xmin,double xmax,double dxmin, double dxmax,double ymin,double ymax,IntegrationStage stage, bool dostateupdate)
+{
+  double y;
+  
+  p_dxmin = dxmin;
+  p_dxmax = dxmax;
+
+  y = getoutput(u,dt,xmin,xmax,ymin,ymax,stage,dostateupdate);
+
+  return y;
+}
+
 
 double Cblock::getoutput(double u,double dt,IntegrationStage stage,bool dostateupdate)
 {
@@ -148,6 +170,9 @@ double Cblock::getstate(IntegrationStage stage)
 
 PIControl::PIControl(void): Cblock()
 {
+  setxlimits(-1000.0,1000.0);
+  setdxlimits(-1000.0,1000.0);
+  setylimits(-1000.0,1000.0);
 }
 
 void PIControl::setparams(double Kp, double Ki)
@@ -167,15 +192,26 @@ void PIControl::setparams(double Kp, double Ki)
 
   setcoeffs(a,b);
   setxlimits(-1000.0,1000.0);
+  setdxlimits(-1000.0,1000.0);
   setylimits(-1000.0,1000.0);
 
 }
+
 void PIControl::setparams(double Kp, double Ki,double xmin,double xmax,double ymin,double ymax)
 {
   setparams(Kp,Ki);
   setxlimits(xmin,xmax);
   setylimits(ymin,ymax);
 }
+
+void PIControl::setparams(double Kp, double Ki,double xmin,double xmax,double dxmin, double dxmax,double ymin,double ymax)
+{
+  setparams(Kp,Ki);
+  setxlimits(xmin,xmax);
+  setdxlimits(dxmin,dxmax);
+  setylimits(ymin,ymax);
+}
+
 
 // ------------------------------------
 // Filter
@@ -184,6 +220,7 @@ void PIControl::setparams(double Kp, double Ki,double xmin,double xmax,double ym
 Filter::Filter(void)
 {
   setxlimits(-1000.0,1000.0);
+  setdxlimits(-1000.0,1000.0);
   setylimits(-1000.0,1000.0);
 }
 
@@ -204,6 +241,7 @@ void Filter::setparams(double K,double T)
 
   setcoeffs(a,b);
   setxlimits(-1000.0,1000.0);
+  setdxlimits(-1000.0,1000.0);
   setylimits(-1000.0,1000.0);
 }
 
@@ -214,6 +252,15 @@ void Filter::setparams(double K,double T,double xmin,double xmax,double ymin,dou
   setylimits(ymin,ymax);
 }
 
+ void Filter::setparams(double K,double T,double xmin,double xmax,double dxmin, double dxmax,double ymin,double ymax)
+{
+  setparams(K,T);
+  setxlimits(xmin,xmax);
+  setdxlimits(dxmin,dxmax);
+  setylimits(ymin,ymax);
+}
+
+
 // ------------------------------------
 // Lead lag
 // ------------------------------------
@@ -221,7 +268,8 @@ void Filter::setparams(double K,double T,double xmin,double xmax,double ymin,dou
 LeadLag::LeadLag(void)
 {
   setxlimits(-1000.0,1000.0);
-  setylimits(-1000.0,1000.0);
+  setdxlimits(-1000.0,1000.0);
+  setylimits(-1000.0,1000.0);  
 }
 
 void LeadLag::setparams(double TA,double TB)
@@ -239,6 +287,7 @@ void LeadLag::setparams(double TA,double TB)
 
   setcoeffs(a,b);
   setxlimits(-1000.0,1000.0);
+  setdxlimits(-1000.0,1000.0);
   setylimits(-1000.0,1000.0);
 }
 
@@ -248,6 +297,15 @@ void LeadLag::setparams(double TA,double TB,double xmin,double xmax,double ymin,
   setxlimits(xmin,xmax);
   setylimits(ymin,ymax);
 }
+
+void LeadLag::setparams(double TA,double TB,double xmin,double xmax,double dxmin, double dxmax,double ymin,double ymax)
+{
+  setparams(TA,TB);
+  setxlimits(xmin,xmax);
+  setdxlimits(dxmin,dxmax);
+  setylimits(ymin,ymax);
+}
+
 
 
 // ------------------------------------

@@ -5644,28 +5644,28 @@
  * type: real float
  * indexed
  */
-#define WIND_PC_TETAMAX "WIND_PC_TETAMAX"
+#define WIND_PC_THETAMAX "WIND_PC_THETAMAX"
 
 /**
  * Minimum pitch angle
  * type: real float
  * indexed
  */
-#define WIND_PC_TETAMIN "WIND_PC_TETAMIN"
+#define WIND_PC_THETAMIN "WIND_PC_THETAMIN"
 
 /**
  * Maximum pitch angle rate
  * type: real float
  * indexed
  */
-#define WIND_PC_RTETAMAX "WIND_PC_RTETAMAX"
+#define WIND_PC_RTHETAMAX "WIND_PC_RTHETAMAX"
 
 /**
  * Minimum pitch angle rate
  * type: real float
  * indexed
  */
-#define WIND_PC_RTETAMIN "WIND_PC_RTETAMIN"
+#define WIND_PC_RTHETAMIN "WIND_PC_RTHETAMIN"
 
 /**
  * Proportional gain in torque regulator

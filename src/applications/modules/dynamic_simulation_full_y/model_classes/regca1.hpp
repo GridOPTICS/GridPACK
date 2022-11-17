@@ -6,13 +6,16 @@
 // -------------------------------------------------------------
 /**
  * @file   regca1.hpp
- * @author Renke Huang
- * @Last modified:   May. 16, 2021
+ * @author Shrirang Abhyankar
+ * @Added: November 14, 2022
  * 
- * @brief  
- * 
- * 
- */
+ * @brief Updated implementation of REGCA1 model 
+ * Following additions are made:
+ * - Added high voltage reactive current management
+ * - Low voltage active current management
+ * - Low voltage rate of change of active current management
+ * - Rate of change limiter for reactive current
+ **/
 
 
 #ifndef _regca1_h_
@@ -21,10 +24,8 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_generator_model.hpp"
 #include "base_plant_model.hpp"
-#include "DelayBlock.hpp"
-#include "DelayBlockwithLimit.hpp"
-#include "PIBlockwithLimit.hpp"
-#include "LeadLagBlock.hpp"
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -136,45 +137,51 @@ class Regca1Generator : public BaseGeneratorModel
      */
     void getWatchValues(std::vector<double> &vals);
 		
-	//three state blocks
-	gridpack::dynamic_simulation::DelayBlock delayblock_x3vmeas;
-	gridpack::dynamic_simulation::DelayBlockwithLimit delayblocklimit_x1ip;
-	gridpack::dynamic_simulation::DelayBlockwithLimit delayblocklimit_x2iq;
-
-
   private:
 
     double p_sbase;
+    double p_mbase;
     double p_pg, p_qg;
     int p_status;
-	bool p_tripped;
-	bool bmodel_debug;
-    
-    double MVABase;
-	int lvplsw;
+    bool p_tripped;
+
+    // parameters
+    int lvplsw;
     double tg, rrpwr, brkpt, zerox, lvpl1, volim, lvpnt1, lvpnt0, lolim, tfltr, khv, iqrmax, iqrmin, accel;
 
-    //double Vterm, Theta, Ir, Ii;
-    
-    double x1ip_0, x2iq_0, x3vmeas_0;
-    double x1ip_1, x2iq_1, x3vmeas_1;
-    double dx1ip_0, dx2iq_0, dx3vmeas_0;
-    double dx1ip_1, dx2iq_1, dx3vmeas_1;
+    // Blocks
+    Filter Ip_blk;
+    double Ip; // Output of Ip_blk
 
-    double ipcmd, iqcmd, pref, qext, ip, iq, IrNorton, IiNorton, genP, genQ, busfreq;  // busfreq is perunit, 1.0
+    Filter Iq_blk;
+    double Iq; // Output of Iq_blk
+
+    Filter Vt_filter_blk;
+    double Vt_filter; // Output of Vt_filter blk
+
+    Slope  Lvpnt_blk;
+    double Lvpnt_out; // Output of Lvpnt_blk
+
+    Slope Lvpl_blk;
+    double Lvpl_out; // Output of Lvpl_blk
+
+    Gain    Iqlowlim_blk;
+  
+    double  Ipout,Iqout; // inverter current output in inverter reference frame
+  double  Irout, Iiout; // inverter current output in network reference frame
+  
+    double Ipcmd, Iqcmd, busfreq;  // busfreq is perunit, 1.0
 	
     boost::shared_ptr<BaseExciterModel> p_exciter;
-	boost::shared_ptr<BasePlantControllerModel> p_plant;
+    boost::shared_ptr<BasePlantControllerModel> p_plant;
     
     gridpack::ComplexType p_INorton;
-	gridpack::ComplexType p_Norton_Ya;
+    gridpack::ComplexType p_Norton_Ya;
 
-    double presentMag, presentAng;
-	double Vterm, Theta;
-	//double B, G;
+    double Vt, theta, VR, VI;
 
-    std::string p_ckt;
-    int p_bus_id;
+    std::string p_gen_id;
+    int p_bus_num;
 
     friend class boost::serialization::access;
 
@@ -183,11 +190,11 @@ class Regca1Generator : public BaseGeneratorModel
       {
         ar &
           & p_sbase
+	  & p_mbase
           & p_pg & p_qg
           & p_status
-          & MVABase 
           & p_INorton
-          & p_bus_id;
+          & p_bus_num;
       }
 
 };

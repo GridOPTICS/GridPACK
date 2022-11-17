@@ -941,7 +941,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   std::string snewbustype; //renke add
 
-  p_sbase = 100.0;
+  if(!data->getValue(CASE_SBASE,&p_sbase)) p_sbase = 100.0;
 
   // check whether the bus is the ones extended by composite load models,
   // if yes, return
@@ -1056,7 +1056,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         //std::cout << "generator: " << model << std::endl;
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
-		if (model == "REGCA1"){
+	if (model == "REGCA1"){
 			bcomputefreq = true;
 			//printf ("----------renke debug in fullbus::load(), set bus bcomputefreq as true due to REGCA1 \n\n");
 		}
@@ -1461,7 +1461,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
 	  printf("DSFullBus::LoadExtendedCmplBus(), Bus No.: %d \n", iorgbusno);
   }
   
-  p_sbase = 100.0;
+  if(!data->getValue(CASE_SBASE,&p_sbase)) p_sbase = 100.0;
   
   //load data for LOW_SIDE_BUS
   if (snewbustype=="LOW_SIDE_BUS") { 
