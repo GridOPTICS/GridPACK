@@ -125,6 +125,14 @@ void gridpack::dynamic_simulation::BaseExciterModel::setVterminal(double mag)
 {
 }
 
+/**
+ * Set generator active and reactive power (machine MVA base)
+ * 
+ */
+void gridpack::dynamic_simulation::BaseExciterModel::setGeneratorPower(double Pg, double Qg)
+{
+}
+
 /** 
  * Set the value of the omega
  * @return value of field current

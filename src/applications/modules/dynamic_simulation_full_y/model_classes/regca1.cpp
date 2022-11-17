@@ -169,7 +169,8 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
 
   if (p_hasExciter){
     p_exciter = getExciter();
-    p_exciter->setVterminal(Vm); 
+    p_exciter->setVterminal(Vm);
+    p_exciter->setGeneratorPower(p_pg,p_qg);
     p_exciter->setIpcmdIqcmd(Ipcmd, Iqcmd); 
 
     p_exciter->init(Vm, Va, ts);
@@ -256,8 +257,9 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
 
   Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
 
-  Pg = Vt*Ipout*p_mbase/p_sbase;
-  Qg = -Vt*Iqout*p_mbase/p_sbase;
+  // Pg, Qg on machine MVAbase
+  Pg = Vt*Ipout;
+  Qg = -Vt*Iqout;
   
   if (p_hasPlantController){
     p_plant = getPlantController();
@@ -275,6 +277,7 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
     p_exciter = getExciter();
     p_exciter->setPrefQext(Pref, Qext);
     p_exciter->setVterminal(Vt);
+    p_exciter->setGeneratorPower(Pg,Qg);
     p_exciter->predictor(t_inc, flag);
 		
     Ipcmd = p_exciter->getIpcmd();
@@ -323,8 +326,9 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector(
 
   Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
 
-  Pg = Vt*Ipout*p_mbase/p_sbase;
-  Qg = -Vt*Iqout*p_mbase/p_sbase;
+  // Pg,Qg on machine MVAbase
+  Pg = Vt*Ipout;
+  Qg = -Vt*Iqout;
   
   if (p_hasPlantController){
     p_plant = getPlantController();
@@ -341,6 +345,7 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector(
   if (p_hasExciter){
     p_exciter = getExciter();
     p_exciter->setPrefQext(Pref, Qext);
+    p_exciter->setGeneratorPower(Pg,Qg);
     p_exciter->setVterminal(Vt);
     p_exciter->corrector(t_inc, flag);
 		
@@ -420,8 +425,9 @@ bool gridpack::dynamic_simulation::Regca1Generator::serialWrite(
       Iq_olim = std::max(0.0,khv*(Vt - volim));
       
       Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
-      
-      Pg = Vt*Ipout*p_mbase/p_sbase;
+
+      // Pg, Qg on machine MVAbase
+      Pg = Vt*Ipout*p_mbase/p_sbase; 
       Qg = -Vt*Iqout*p_mbase/p_sbase;
 
       sprintf(string,",%12.6f, %12.6f, %12.6f ",Pg, Qg, busfreq);
@@ -472,12 +478,13 @@ void gridpack::dynamic_simulation::Regca1Generator::getWatchValues(
       
   Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
 
-  Pg = Vt*Ipout;
-  Qg = -Vt*Iqout;
+  // Pg, Qg on system MVAbase
+  Pg = Vt*Ipout*p_mbase/p_sbase;
+  Qg = -Vt*Iqout*p_mbase/p_sbase;
   
   if (p_generatorObservationPowerSystemBase){
-    vals.push_back(Pg*p_mbase/p_sbase);  //output at system mva base
-    vals.push_back(Qg*p_mbase/p_sbase);  //output at system mva base
+    vals.push_back(Pg);  //output at system mva base
+    vals.push_back(Qg);  //output at system mva base
   }else{
     vals.push_back(Pg);  //output at generator mva base
     vals.push_back(Qg);  //output at generator mva base

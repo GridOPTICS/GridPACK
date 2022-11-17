@@ -53,6 +53,20 @@ class Gain
        y       - block output
   **/
   double getoutput(double u);
+
+    /**
+     GETOUTPUT - Returns the block output, applies dynamic limits
+
+     INPUTS:
+       u       - block input
+       ymin    - Min. limit on output
+       ymax    - Max. limit on output
+
+     OUPUTS:
+       y       - block output
+  **/
+  double getoutput(double u, double ymin, double ymax);
+
   
   /**
      SETPARAMS - Set the gain and limits
@@ -76,21 +90,15 @@ class Gain
 
   input  : u 
   output : y
-
-      
-                 
-                             
-                             
-        -------------       
-        |           |      
-  u ----|   Slope   |
-        |  Control  |----------- y
-        |           |    
-        -------------   
+        ----------------           
+        |        ymax  |
+        |       ----   |
+        |      /       |      
+  u ----|     /dy_du   |----- y
+        | ___/         |
+        | ymin         |    
+        ---------------   
                     
-                    
-        
-        
 
    Output:
     if u <= u0,     y = ya
@@ -134,6 +142,118 @@ class Slope
   double p_ya;   // Output y when u <= u0
   double p_yb;   // Output y when u >= u1
   double p_dydu; // slope
+};
+
+/**
+  Deadband:
+
+  input  : u 
+  output : y
+                   
+        ---------------       
+        |           /  |      
+  u ----|   _______/   |
+        |  /u1    u2   |----------- y
+        | /            |    
+        ---------------   
+                    
+
+   Output:
+    if u <= u1,     y = u
+    if u >= u2,     y = u
+    else:
+      y = 0
+**/
+class Deadband
+{
+  public:
+  Deadband();
+
+    /**
+     GETOUTPUT - Returns the block output
+
+     INPUTS:
+       u       - block input
+       y       - block output
+  **/
+  double getoutput(double u);
+  
+  /**
+     SETPARAMS - Set the gain and the slop points
+
+     INPUTS:
+       u1      lower limit for deadband
+       u2      upper limit for deadband
+  **/
+  void setparams(double, double);
+  private:
+  double p_u1,p_u2; // Lower and upper limits for deadband
+};
+
+/*
+  PIECEWISESLOPE: Implements a piecewise linear slope function
+
+  input  : u 
+  output : y
+        ----------------           
+        |               |
+        |   PIECEWISE   |
+        |     SLOPE     |      
+  u ----|               |----- y
+        |               |    
+        ----------------   
+                    
+
+   Output:
+   The output y is decided on which slope segment u lies on
+   See the description for Slope class, i.e., if u lies on
+   segment i with boundary points u_i and u_i{i+1} output y
+   is
+      y = y_i + (dy_du)_{i}*(u - u_i)
+
+    where, the slope dy_du is calculated from the points (u_i,y_i), (u_{i+1},y_{i+1}) as
+
+     (dy_du)_{i+1} = (y_{i+1} - y_i)/(u_{i+1} - u_i)
+     
+*/
+class PiecewiseSlope
+{
+ public:
+  PiecewiseSlope();
+
+  /**
+     GETOUTPUT - Returns the block output
+
+     INPUTS:
+       u       - block input
+       y       - block output
+  **/
+  double getoutput(double u);
+  
+  /**
+     SETPARAMS - Set the gain and the slope points
+
+     INPUTS:
+       n       number of slope segments (max 4.)
+       u       array of size n+1 input points [u0,u1,...] for the piecewise function
+       y       array of size n+1 output points [y0,y1,...]] for slope calculation
+
+       Notes:
+         u <= u0 => y = y0
+	 u >= un => y = yn
+
+	 Max 4. segments (n = 4) supported currently.
+	 
+	 Segments with [u_i,y_i] = [0,0] are ignored
+  **/
+  void setparams(int, double *, double *);
+
+  private:
+    Slope p_slopes[4];
+    double p_u[5]; // Input points for slope calculations
+    double p_y[5]; // Output points for slope calculations
+    int   p_n;     // Number of segments 
+    bool  p_increasing; // Increasing (true) or decreasing (false) function
 };
 
 

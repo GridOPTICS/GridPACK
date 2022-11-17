@@ -92,9 +92,14 @@ class BaseExciterModel
 
     /**
      * Set the value of the Vterminal
-     * @return value of field current
      */
     virtual void setVterminal(double mag);
+
+    /**
+     * Set generator active and reactive power (machine MVA base)
+     * 
+     */
+    virtual void setGeneratorPower(double Pg, double Qg);
 
     /** 
      * Set the value of the Omega 

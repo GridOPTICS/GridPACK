@@ -2597,14 +2597,14 @@
  * type: real float
  * indexed
  */
-#define GENERATOR_REECA_LQH1 "GENERATOR_REECA_LQH1"
+#define GENERATOR_REECA_IQH1 "GENERATOR_REECA_IQH1"
 
 /**
  * Generator REECA 
  * type: real float
  * indexed
  */
-#define GENERATOR_REECA_LQL1 "GENERATOR_REECA_LQL1"
+#define GENERATOR_REECA_IQL1 "GENERATOR_REECA_IQL1"
 
 /**
  * Generator REECA 
@@ -2618,7 +2618,7 @@
  * type: real float
  * indexed
  */
-#define GENERATOR_REECA_LQFRZ "GENERATOR_REECA_LQFRZ"
+#define GENERATOR_REECA_IQFRZ "GENERATOR_REECA_IQFRZ"
 
 /**
  * Generator REECA 
