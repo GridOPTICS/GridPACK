@@ -66,17 +66,13 @@ void gridpack::dynamic_simulation::SexsModel::load(
 
   TA = TA_OVER_TB*TB;
 
+  // Set parameters for the first block
   leadlagblock.setparams(TA,TB);
-  filterblock.setparams(K,TE,EMIN,EMAX,-1000.0,1000);
-}
 
-/**
- *  * Saturation function
- *   * @ param x
- *    */
-double gridpack::dynamic_simulation::SexsModel::Sat(double x)
-{
-	return 0;
+  // Set parameters for the second block
+  filterblock.setparams(K,TE,EMIN,EMAX,-1000.0,1000);
+
+  Vs = 0.0; 
 }
 
 /**
@@ -85,17 +81,23 @@ double gridpack::dynamic_simulation::SexsModel::Sat(double x)
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::SexsModel::init(double mag, double ang, double ts)
+void gridpack::dynamic_simulation::SexsModel::init(double Vm, double ang, double ts)
 {
-  filterblock.init(0.0,Efd); // Initialize second integrator
-  double y1 = Efd/K;         // Output of first block
+  double y1,u1;
 
-  leadlagblock.init(0.0,y1); // Initialize first integrator
-  double u1 = y1/(1 - TA + TA_OVER_TB); // Input for first integrator
-
-  Vstab = 0.0; // No stabilizer signal implemented
+  // For initialization, we are given the output for the model Efd.
+  // To initialize the model blocks, we need to go backwards starting
+  // from initializing second block and then the first one and then
+  // calculating the model input Vref
   
-  Vref = mag + u1;   // Voltage reference
+  // Initialize second block
+  y1 = filterblock.init_given_y(Efd);
+
+  // Initialize first block
+  u1 = leadlagblock.init_given_y(y1); 
+
+  // Note: Vm is same as Ec
+  Vref = Vm + u1 - Vs;   // Voltage reference initial value
 
 }
 
@@ -108,10 +110,14 @@ void gridpack::dynamic_simulation::SexsModel::predictor(double t_inc, bool flag)
 {
   double u1,y1;
 
-  u1 = Vref - Vterminal;
-  
+  u1 = Vref + Vs - Ec;
+
+  // Calculate first block output, last input flag = true
+  // tells the block to do the state update (predictor update)
   y1 = leadlagblock.getoutput(u1,t_inc,PREDICTOR,true);
 
+  // Calculate second block output, last input flag = true
+  // tells the block to do the state update (predictor update)
   Efd = filterblock.getoutput(y1,t_inc,PREDICTOR,true);
 }
 
@@ -124,10 +130,14 @@ void gridpack::dynamic_simulation::SexsModel::corrector(double t_inc, bool flag)
 {
   double u1,y1;
 
-  u1 = Vref - Vterminal;
-  
+  u1 = Vref + Vs - Ec;
+
+  // Calculate first block output, last input flag = true
+  // tells the block to do the state update (corrector update)
   y1 = leadlagblock.getoutput(u1,t_inc,CORRECTOR,true);
 
+  // Calculate second block output, last input flag = true
+  // tells the block to do the state update (corrector update)
   Efd = filterblock.getoutput(y1,t_inc,CORRECTOR,true);
 }
 
@@ -137,16 +147,8 @@ void gridpack::dynamic_simulation::SexsModel::corrector(double t_inc, bool flag)
  */
 void gridpack::dynamic_simulation::SexsModel::setFieldVoltage(double fldv)
 {
+  // This is the initial value of Efd using during initialization
   Efd = fldv;
-}
-
-/**
- * Set the field current parameter inside the exciter
- * @param fldc value of the field current
- */
-void gridpack::dynamic_simulation::SexsModel::setFieldCurrent(double fldc)
-{
-  LadIfd = fldc;
 }
 
 /** 
@@ -159,34 +161,17 @@ double gridpack::dynamic_simulation::SexsModel::getFieldVoltage()
 }
 
 /** 
- * Get the value of the field current parameter
- * @return value of field current
+ * Set the value of terminal voltage
+ * 
  */
-double gridpack::dynamic_simulation::SexsModel::getFieldCurrent()
+void gridpack::dynamic_simulation::SexsModel::setVterminal(double Vm)
 {
-  return 0.0;
+  Ec = Vm;
 }
 
-/** 
- * Set the value of the Vterminal
- * @return value of field current
- */
-void gridpack::dynamic_simulation::SexsModel::setVterminal(double mag)
+void gridpack::dynamic_simulation::SexsModel::setVstab(double Vstab)
 {
-  Vterminal = mag;
-}
-
-/** 
- * Set the value of the omega
- * @return value of field current
- */
-void gridpack::dynamic_simulation::SexsModel::setOmega(double omega)
-{
-}
-
-void gridpack::dynamic_simulation::SexsModel::setVstab(double vtmp)
-{
-  Vstab = vtmp;
+  Vs = Vstab;
 }
 
 
