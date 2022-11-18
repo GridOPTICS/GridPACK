@@ -78,16 +78,10 @@ class SexsModel : public BaseExciterModel
     void corrector(double t_inc, bool flag);
 
     /**
-     * Set the field voltage parameter inside the exciter
-     * @param fldv value of the field voltage
+     * Set the initial field voltage value
+     * @param initial value of the field voltage
      */
     void setFieldVoltage(double fldv);
-
-    /**
-     * Set the field current parameter inside the exciter
-     * @param fldc value of the field current
-     */
-    void setFieldCurrent(double fldc);
 
     /** 
      * Get the value of the field voltage parameter
@@ -96,23 +90,15 @@ class SexsModel : public BaseExciterModel
     double getFieldVoltage();
 
     /** 
-     * Get the value of the field current parameter
-     * @return value of field current
-     */
-    double getFieldCurrent();
-
-    /** 
      * Set the value of the Vterminal
-     * @return value of field current
+     * 
      */
     void setVterminal(double mag);
 
-    /** 
-     * Set the value of the Omega 
-     * @return value of field current
-     */
-    void setOmega(double omega);
-	
+    /**
+     * Set the initial voltage stabilizer signal
+     * @param stabilizing signal input
+    **/
     void setVstab(double vstab);
 	
 	// Yuan added below 2020-6-23
@@ -139,19 +125,17 @@ class SexsModel : public BaseExciterModel
     // Linear control blocks
     LeadLag leadlagblock;
     Filter  filterblock;
+
+    // Model inputs
+    double Ec; // Terminal voltage
+    double Vref; // Reference voltage
+    double Vs;  // Stabilizing voltage signal
   
-    // Field Voltage Output
-    double Efd;
+    // Model outputs 
+    double Efd;     // Field Voltage
 
-    // Field Current Output
-    double LadIfd, Vstab;
-
-    double Vref;
-
-    double Vterminal, w; 
-	
-	// Yuan added below 2020-6-23
-	std::string p_ckt; // id of the generator where the exciter is installed on
+    // Yuan added below 2020-6-23
+    std::string p_ckt; // id of the generator where the exciter is installed on
     int p_bus_id;  // bus number of the generator 
 	// Yuan added above 2020-6-23
 
