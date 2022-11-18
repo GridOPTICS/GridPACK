@@ -116,7 +116,9 @@ class BaseExciterModel
 	virtual void setVstab(double Vstab);
 	
 	virtual void setWideAreaFreqforPSS(double freq);	
-	
+
+    virtual bool getVoltageDip(double Vt) {return false;}
+  
 	// Yuan added below 2020-6-23
 	/** 
 	 * Set the exciter bus number
@@ -133,6 +135,7 @@ class BaseExciterModel
 	virtual double getIpcmd();
 	virtual double getIqcmd();
 
+        virtual double getPord() {return 0.0;}
 	/** 
 	 * Set the exciter generator id
 	 * @return value of generator id

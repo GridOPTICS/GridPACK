@@ -9,7 +9,7 @@
  * @author Shrirang Abhyankar
  * @Added: November 14, 2022
  * 
- * @brief  
+ * @brief  WECC generic generator/converter model
  * 
  * 
  */
@@ -54,6 +54,9 @@ static void transform(double xin, double yin, double theta,double *xout, double 
  */
 gridpack::dynamic_simulation::Regca1Generator::Regca1Generator(void)
 {
+  domega_g = 0.0;
+  Thetapitch = 0.0;
+  omega_ref = 1.0;
 }
 
 /**
@@ -164,9 +167,10 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
   Iqcmd = Iq_blk.init_given_y(Iq);
   Vt_filter = Vt_filter_blk.init_given_u(Vt);
 
-  // Initialize electrical controller and plant controller models
-  double pref,qext;
+  double Qext, Pord;
+  double domega_t = 0.0;
 
+  // Initialize electrical controller model
   if (p_hasExciter){
     p_exciter = getExciter();
     p_exciter->setVterminal(Vm);
@@ -175,17 +179,76 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
 
     p_exciter->init(Vm, Va, ts);
 	
-    pref = p_exciter->getPref( );
-    qext = p_exciter->getQext( );
+    Pref = p_exciter->getPref( );
+    Qext = p_exciter->getQext( );
+    Pord = p_exciter->getPord( );
   }
-  
+
+  // Initialize plant controller model
   if (p_hasPlantController){
     p_plant = getPlantController();
     p_plant->setGenPQV(p_pg, p_qg, Vm);
-    p_plant->setPrefQext(pref, qext);
+    p_plant->setPrefQext(Pref, Qext);
     p_plant->setExtBusNum(p_bus_num);
+    
     p_plant->init(Vm, Va, ts);
   }
+
+  // Initialize drive train model
+  if(p_hasDriveTrainModel) {
+    p_drivetrainmodel = getDriveTrainModel();
+    p_drivetrainmodel->setTelec(p_pg);
+
+    p_drivetrainmodel->init(Vm, Va, ts);
+  }
+
+  // Initialize torque controller model
+  if(p_hasTorqueController) {
+    p_torquecontroller = getTorqueController();
+    p_torquecontroller->setPref0(Pref);
+    p_torquecontroller->setPelec(Pref);
+
+    p_torquecontroller->init(Vm, Va, ts);
+  }
+
+  // Initialize pitch controller model
+  if(p_hasPitchController) {
+    p_pitchcontroller = getPitchController();
+    p_pitchcontroller->setPord(p_pg);
+    p_pitchcontroller->setPord0(p_pg);
+
+    if(p_hasDriveTrainModel) {
+      domega_t = p_drivetrainmodel->getTurbineSpeedDeviation();
+    }
+    if(p_hasTorqueController) {
+      omega_ref = p_torquecontroller->getOmegaref();
+    }
+    p_pitchcontroller->setTurbineSpeedDeviation(domega_t);
+    p_pitchcontroller->setOmegaref(omega_ref);
+
+    p_pitchcontroller->init(Vm, Va, ts);
+  }
+
+  // Initialize aerodynamic model
+  if(p_hasAeroDynamicModel) {
+    p_aerodynamicmodel = getAeroDynamicModel();
+    if(p_hasPitchController) {
+      Thetapitch = p_pitchcontroller->getTheta();
+      p_aerodynamicmodel->setTheta(Thetapitch);
+    }
+    if(p_hasDriveTrainModel) {
+      domega_t = p_drivetrainmodel->getTurbineSpeedDeviation();
+    }
+    p_aerodynamicmodel->setTurbineSpeedDeviation(domega_t);
+    p_aerodynamicmodel->setPmech(p_pg);
+
+    p_aerodynamicmodel->init(Vm, Va, ts);
+
+    Taero = p_aerodynamicmodel->getTaero();
+  }
+      
+      
+
 }
 
 /**
@@ -246,8 +309,9 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
     double t_inc, bool flag)
 {
   double Pg,Qg;
-  double Pref,Qext;
+  double Qext;
   double Iq_olim; // Current injection for over-voltage
+  bool Vdip; // Voltage dip flag for electrical controller
   
   Lvpnt_out = Lvpnt_blk.getoutput(Vt);
 
@@ -260,7 +324,16 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
   // Pg, Qg on machine MVAbase
   Pg = Vt*Ipout;
   Qg = -Vt*Iqout;
-  
+
+  double domega_t = 0.0;
+  double Pord = 0.0;
+
+  if(p_hasDriveTrainModel) {
+    p_drivetrainmodel = getDriveTrainModel();
+    domega_g = p_drivetrainmodel->getGeneratorSpeedDeviation();
+    domega_t = p_drivetrainmodel->getTurbineSpeedDeviation();
+  }
+
   if (p_hasPlantController){
     p_plant = getPlantController();
     p_plant->setGenPQV(Pg, Qg, Vt);
@@ -271,18 +344,68 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
     Pref = p_plant->getPref();
     Qext = p_plant->getQext();
   }
-	
+
+  if(p_hasTorqueController) {
+    p_torquecontroller = getTorqueController();
+    p_torquecontroller->setPref0(Pref);
+    p_torquecontroller->setPelec(Pg);
+    p_torquecontroller->setGeneratorSpeedDeviation(domega_g);
+
+    Vdip = getExciter()->getVoltageDip(Vt);
+
+    p_torquecontroller->setVdip(Vdip);
+    
+    p_torquecontroller->predictor(t_inc,flag);
+
+    Pref = p_torquecontroller->getPref();
+    omega_ref = p_torquecontroller->getOmegaref();
+  }
+
   //get ipcmd and iqcmd from the exctier REECA1 MODEL
   if (p_hasExciter){
     p_exciter = getExciter();
     p_exciter->setPrefQext(Pref, Qext);
     p_exciter->setVterminal(Vt);
+
     p_exciter->setGeneratorPower(Pg,Qg);
     p_exciter->predictor(t_inc, flag);
 		
     Ipcmd = p_exciter->getIpcmd();
-    Iqcmd = p_exciter->getIqcmd();		
+    Iqcmd = p_exciter->getIqcmd();
+
+    Pord = p_exciter->getPord();
   }
+
+  if(p_hasPitchController) {
+    p_pitchcontroller = getPitchController();
+    p_pitchcontroller->setPord(Pord);
+    p_pitchcontroller->setTurbineSpeedDeviation(domega_t);
+    p_pitchcontroller->setOmegaref(omega_ref);
+
+    p_pitchcontroller->predictor(t_inc,flag);
+
+    Thetapitch = p_pitchcontroller->getTheta();
+  }
+
+  if(p_hasAeroDynamicModel) {
+    p_aerodynamicmodel = getAeroDynamicModel();
+    p_aerodynamicmodel->setTheta(Thetapitch);
+    p_aerodynamicmodel->setTurbineSpeedDeviation(domega_t);
+
+    p_aerodynamicmodel->predictor(t_inc,flag);
+
+    Taero = p_aerodynamicmodel->getTaero();
+  }
+
+  if(p_hasDriveTrainModel) {
+    p_drivetrainmodel = getDriveTrainModel();
+
+    p_drivetrainmodel->setTelec(Pg);
+    p_drivetrainmodel->setTmech(Taero);
+
+    p_drivetrainmodel->predictor(t_inc,flag);
+  }
+  
 
   Vt_filter = Vt_filter_blk.getoutput(Vt,t_inc,PREDICTOR,true);
 
@@ -315,8 +438,9 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector(
     double t_inc, bool flag)
 {
   double Pg,Qg;
-  double Pref,Qext;
+  double Qext;
   double Iq_olim; // Current injection for over-voltage
+  bool   Vdip;
   
   Lvpnt_out = Lvpnt_blk.getoutput(Vt);
 
@@ -329,7 +453,16 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector(
   // Pg,Qg on machine MVAbase
   Pg = Vt*Ipout;
   Qg = -Vt*Iqout;
-  
+
+  double domega_t = 0.0;
+  double Pord = 0.0;
+
+  if(p_hasDriveTrainModel) {
+    p_drivetrainmodel = getDriveTrainModel();
+    domega_g = p_drivetrainmodel->getGeneratorSpeedDeviation();
+    domega_t = p_drivetrainmodel->getTurbineSpeedDeviation();
+  }
+
   if (p_hasPlantController){
     p_plant = getPlantController();
     p_plant->setGenPQV(Pg, Qg, Vt);
@@ -340,17 +473,66 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector(
     Pref = p_plant->getPref();
     Qext = p_plant->getQext();
   }
-	
+
+  if(p_hasTorqueController) {
+    p_torquecontroller = getTorqueController();
+    p_torquecontroller->setPref0(Pref);
+    p_torquecontroller->setPelec(Pg);
+    p_torquecontroller->setGeneratorSpeedDeviation(domega_g);
+
+    Vdip = getExciter()->getVoltageDip(Vt);
+
+    p_torquecontroller->setVdip(Vdip);
+    
+    p_torquecontroller->corrector(t_inc,flag);
+
+    Pref = p_torquecontroller->getPref();
+    omega_ref = p_torquecontroller->getOmegaref();
+  }
+
   //get ipcmd and iqcmd from the exctier REECA1 MODEL
   if (p_hasExciter){
     p_exciter = getExciter();
     p_exciter->setPrefQext(Pref, Qext);
-    p_exciter->setGeneratorPower(Pg,Qg);
     p_exciter->setVterminal(Vt);
+
+    p_exciter->setGeneratorPower(Pg,Qg);
     p_exciter->corrector(t_inc, flag);
 		
     Ipcmd = p_exciter->getIpcmd();
-    Iqcmd = p_exciter->getIqcmd();		
+    Iqcmd = p_exciter->getIqcmd();
+
+    Pord = p_exciter->getPord();
+  }
+
+  if(p_hasPitchController) {
+    p_pitchcontroller = getPitchController();
+    p_pitchcontroller->setPord(Pord);
+    p_pitchcontroller->setTurbineSpeedDeviation(domega_t);
+    p_pitchcontroller->setOmegaref(omega_ref);
+
+    p_pitchcontroller->corrector(t_inc,flag);
+
+    Thetapitch = p_pitchcontroller->getTheta();
+  }
+
+  if(p_hasAeroDynamicModel) {
+    p_aerodynamicmodel = getAeroDynamicModel();
+    p_aerodynamicmodel->setTheta(Thetapitch);
+    p_aerodynamicmodel->setTurbineSpeedDeviation(domega_t);
+
+    p_aerodynamicmodel->corrector(t_inc,flag);
+
+    Taero = p_aerodynamicmodel->getTaero();
+  }
+
+  if(p_hasDriveTrainModel) {
+    p_drivetrainmodel = getDriveTrainModel();
+
+    p_drivetrainmodel->setTelec(Pg);
+    p_drivetrainmodel->setTmech(Taero);
+
+    p_drivetrainmodel->corrector(t_inc,flag);
   }
 
   Vt_filter = Vt_filter_blk.getoutput(Vt,t_inc,CORRECTOR,true);
@@ -430,8 +612,18 @@ bool gridpack::dynamic_simulation::Regca1Generator::serialWrite(
       Pg = Vt*Ipout*p_mbase/p_sbase; 
       Qg = -Vt*Iqout*p_mbase/p_sbase;
 
-      sprintf(string,",%12.6f, %12.6f, %12.6f ",Pg, Qg, busfreq);
-      ret = true;
+      sprintf(string,",%12.6f, %12.6f, %12.6f, %12.6f ",Pg, Qg, busfreq,Pref);
+      if(p_hasPitchController) {
+	sprintf(string + strlen(string),",%12.6f,%12.6f ", Thetapitch,omega_ref);
+      }
+      if(p_hasDriveTrainModel) {
+	sprintf(string + strlen(string),",%12.6f ", 1+domega_g);
+      }
+      if(p_hasAeroDynamicModel) {
+	sprintf(string + strlen(string),",%12.6f ", Taero);
+      }
+
+      ret = true; 
     }
   } else if(!strcmp(signal,"watch_header")) {
     if(getWatch()) {
@@ -442,8 +634,19 @@ bool gridpack::dynamic_simulation::Regca1Generator::serialWrite(
       } else {
 	tag = p_gen_id[1];
       }
-      sprintf(buf,", %d_%s_Pg, %d_%s_Qg, %d_%s_freq",p_bus_num,tag.c_str(),
-	      p_bus_num,tag.c_str(),p_bus_num,tag.c_str());
+      sprintf(buf,", %d_%s_Pg, %d_%s_Qg, %d_%s_freq, %d_%s_Pref",p_bus_num,tag.c_str(),
+	      p_bus_num,tag.c_str(),p_bus_num,tag.c_str(), p_bus_num, tag.c_str());
+      if(p_hasPitchController) {
+	sprintf(buf + strlen(buf),", %d_%s_Tpitch,%d_%s_Omegaref",p_bus_num, tag.c_str(),p_bus_num, tag.c_str());
+      }
+      if(p_hasDriveTrainModel) {
+	sprintf(buf + strlen(buf),", %d_%s_Omega_g",p_bus_num, tag.c_str());
+      }
+      if(p_hasAeroDynamicModel) {
+	sprintf(buf + strlen(buf),", %d_%s_Taero",p_bus_num, tag.c_str());
+      }
+
+      
       if (strlen(buf) <= bufsize) {
 	sprintf(string,"%s",buf);
 	ret = true;

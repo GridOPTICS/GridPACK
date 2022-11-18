@@ -15,6 +15,9 @@
  * - Low voltage active current management
  * - Low voltage rate of change of active current management
  * - Rate of change limiter for reactive current
+ *
+ * Updated: December 6, 2022
+ * - Incorporated wind mechanical models
  **/
 
 
@@ -174,13 +177,26 @@ class Regca1Generator : public BaseGeneratorModel
 	
     boost::shared_ptr<BaseExciterModel> p_exciter;
     boost::shared_ptr<BasePlantControllerModel> p_plant;
+
+    boost::shared_ptr<BaseMechanicalModel> p_torquecontroller;
+
+  boost::shared_ptr<BaseMechanicalModel> p_pitchcontroller;
+  boost::shared_ptr<BaseMechanicalModel> p_drivetrainmodel;
+
+  boost::shared_ptr<BaseMechanicalModel> p_aerodynamicmodel;
     
-    gridpack::ComplexType p_INorton;
-    gridpack::ComplexType p_Norton_Ya;
+  gridpack::ComplexType p_INorton;
+  gridpack::ComplexType p_Norton_Ya;
+  
+  double Vt, theta, VR, VI;
 
-    double Vt, theta, VR, VI;
-
-    std::string p_gen_id;
+  // Internal variables used in printing
+  double Pref; // Plant/Torque controller reference power
+  double Taero; // Aerodynamic torque
+  double Thetapitch; // Pitch angle (degrees)
+  double domega_g;    // Drive train gen. speed deviation (pu)
+  double omega_ref; // Reference speed from torque controller (pu)
+  std::string p_gen_id;
     int p_bus_num;
 
     friend class boost::serialization::access;

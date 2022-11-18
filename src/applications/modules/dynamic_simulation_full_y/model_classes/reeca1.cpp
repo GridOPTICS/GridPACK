@@ -34,7 +34,10 @@ bool gridpack::dynamic_simulation::Reeca1Model::getVoltageDip(double Vt)
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::Reeca1Model::Reeca1Model(void) {}
+gridpack::dynamic_simulation::Reeca1Model::Reeca1Model(void)
+{
+  omega_g = 1.0;
+}
 
 /**
  *  Basic destructor
@@ -547,3 +550,12 @@ void gridpack::dynamic_simulation::Reeca1Model::setExtGenId(
   p_gen_id = ExtGenId;
 }
 // Yuan added above 2020-6-23
+
+/**
+ * Return Pord
+ * @return Pord
+ */
+double gridpack::dynamic_simulation::Reeca1Model::getPord()
+{
+  return Pord;
+}

@@ -965,7 +965,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   if (!data->getValue("BUS_PF_VMAG", &p_voltage)) {
     data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
   }
-  //printf("p_voltage at bus %d: %f\n", getOriginalIndex(), p_voltage);
 
   p_area = 1;
   data->getValue(BUS_AREA, &p_area);
@@ -991,20 +990,14 @@ void gridpack::dynamic_simulation::DSFullBus::load(
     p_isolated = true;
   }
 
-  //p_load = true;
-  //p_load = p_load && data->getValue(LOAD_PL, &p_pl);
-  //p_load = p_load && data->getValue(LOAD_QL, &p_ql);
-
-  //p_pl /= p_sbase;
-  //p_ql /= p_sbase;
-
   bool lgen;
   int i, gstatus;
-  int nrelay, irelay, relaycnt; //renke add
-  std::string relay_genid; //renke add
+  int nrelay, irelay, relaycnt;
+  std::string relay_genid;
   double pg, qg, mva, r, dstr, dtr;
   double h, d0;
   bool has_ex, has_gov, has_pss, has_plantcontroller;
+  bool has_wind_aero,has_wind_dt,has_wind_tc,has_wind_pc;
   GeneratorFactory genFactory;
   RelayFactory relayFactory;
   LoadFactory loadFactory;
@@ -1026,22 +1019,10 @@ void gridpack::dynamic_simulation::DSFullBus::load(
     for (i=0; i<p_ngen; i++) { 
       int stat;
       data->getValue(GENERATOR_STAT, &stat, i);
-      /* TBD: if (stat == 1 && GENERATOR_PG < 0) 
-         modify Ybus
-         */ 
       data->getValue(GENERATOR_PG, &pg, i);
       data->getValue(GENERATOR_QG, &qg, i);
-      //    printf("bus %d: pg[%d] = %f, qg = %f\n", idx, i, pg,qg);
-      /*if (stat == 1 && pg < 0) {
-        p_pg_flag[i] = -1;
-        } else {
-        p_pg_flag[i] = 1;
-        }
-        */
+
       std::string model;
-      //if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1) 
-      // TBD: if (data->getValue(GENERATOR_MODEL, &model, i)
-      //            && stat == 1 && GENERATOR_PG >= 0) 
       data->getValue(GENERATOR_MODEL, &model, i);
       if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0.0) {
         p_pg.push_back(pg);
@@ -1053,27 +1034,28 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         data->getValue(GENERATOR_PMAX,&pmax,i);
         p_gpmin.push_back(pmin);
         p_gpmax.push_back(pmax);
-        //std::cout << "generator: " << model << std::endl;
+
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
 	if (model == "REGCA1"){
-			bcomputefreq = true;
-			//printf ("----------renke debug in fullbus::load(), set bus bcomputefreq as true due to REGCA1 \n\n");
-		}
+	  bcomputefreq = true;
+	}
         has_ex = false;
         has_gov = false;
         has_pss = false;
-		has_plantcontroller = false;
+	has_plantcontroller = false;
+	has_wind_aero = has_wind_dt = has_wind_pc = has_wind_tc = false;
+	
         data->getValue(HAS_EXCITER, &has_ex, i);
         data->getValue(HAS_GOVERNOR, &has_gov, i);
-		data->getValue(HAS_PSS, &has_pss, i);
-		data->getValue(HAS_PLANT_CONTROLLER, &has_plantcontroller, i);
+	data->getValue(HAS_PSS, &has_pss, i);
+	data->getValue(HAS_PLANT_CONTROLLER, &has_plantcontroller, i);
+	data->getValue(HAS_WIND_TORQUECONTROL,&has_wind_tc, i);
+	data->getValue(HAS_WIND_AERODYNAMIC,&has_wind_aero, i);
+	data->getValue(HAS_WIND_DRIVETRAIN,&has_wind_dt, i);
+	data->getValue(HAS_WIND_PITCHCONTROL,&has_wind_pc, i);
+
         if (generator) {
-          //boost::shared_ptr<BaseGeneratorModel> tmp;
-          //tmp.reset(generator);
-          //boost::shared_ptr<BaseGenerator> basegen;
-          //basegen.reset(new BaseGenerator);
-          //basegen->setGeneratorModel(tmp);
           boost::shared_ptr<BaseGeneratorModel> basegen;
           basegen.reset(generator);
           p_generators.push_back(basegen);
@@ -1081,8 +1063,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           p_genid.push_back(genid);
           if (has_ex) {
             if (data->getValue(EXCITER_MODEL, &model, i)) {
-              //std::cout << "exciter: " << model << std::endl;
-			  //p_generators[icnt]->p_hasExciter = true;
               BaseExciterModel *exciter
                 = genFactory.createExciterModel(model);
               boost::shared_ptr<BaseExciterModel> ex;
@@ -1092,8 +1072,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           }
           if (has_gov) {
             if (data->getValue(GOVERNOR_MODEL, &model, i)) {
-              //std::cout << "governor: " << model << std::endl;
-			  //p_generators[icnt]->p_hasGovernor = true;
               BaseGovernorModel *governor
                 = genFactory.createGovernorModel(model);
               boost::shared_ptr<BaseGovernorModel> gov;
@@ -1101,10 +1079,8 @@ void gridpack::dynamic_simulation::DSFullBus::load(
               p_generators[icnt]->setGovernor(gov);
             }
           }
-		  if (has_pss) {
-			//printf("---------renkedebug: bus %d: has pss", idx);
+	  if (has_pss) {
             if (data->getValue(PSS_MODEL, &model, i)) {
-			  //p_generators[icnt]->p_hasPss = true;
               BasePssModel *pssmodel
                 = genFactory.createPssModel(model);
               boost::shared_ptr<BasePssModel> pss;
@@ -1112,10 +1088,8 @@ void gridpack::dynamic_simulation::DSFullBus::load(
               p_generators[icnt]->setPss(pss);
             }
           }
-		  if (has_plantcontroller) {
-			//printf("---------renkedebug: bus %d: has pss", idx);
+	  if (has_plantcontroller) {
             if (data->getValue(PLANT_CONTROLLER_MODEL, &model, i)) {
-			  //p_generators[icnt]->p_hasPss = true;
               BasePlantControllerModel *plantctrlmodel
                 = genFactory.createPlantControllerModel(model);
               boost::shared_ptr<BasePlantControllerModel> plantctrl;
@@ -1124,11 +1098,52 @@ void gridpack::dynamic_simulation::DSFullBus::load(
             }
           }
 
-          // create relay objective associate with the generator, Renke Add
-          // get the number of relay associate with the generator, Renke add
+	  if (has_wind_tc) {
+	    if(data->getValue(WIND_TORQUECONTROL, &model, i)) {
+	      BaseMechanicalModel *torquectrlmodel
+		= genFactory.createMechanicalModel(model);
+	      boost::shared_ptr<BaseMechanicalModel> torquectrl;
+	      torquectrl.reset(torquectrlmodel);
+	      p_generators[icnt]->setTorqueController(torquectrl);
+	    }
+	  }
+
+	  if (has_wind_pc) {
+	    if(data->getValue(WIND_PITCHCONTROL, &model, i)) {
+	      BaseMechanicalModel *pitchctrlmodel
+		= genFactory.createMechanicalModel(model);
+	      boost::shared_ptr<BaseMechanicalModel> pitchctrl;
+	      pitchctrl.reset(pitchctrlmodel);
+	      p_generators[icnt]->setPitchController(pitchctrl);
+	    }
+	  }
+
+	  if (has_wind_dt) {
+	    if(data->getValue(WIND_DRIVETRAIN, &model, i)) {
+	      BaseMechanicalModel *drivetrainmodel
+		= genFactory.createMechanicalModel(model);
+	      boost::shared_ptr<BaseMechanicalModel> drivetrain;
+	      drivetrain.reset(drivetrainmodel);
+	      p_generators[icnt]->setDriveTrainModel(drivetrain);
+	    }
+	  }
+
+	  if (has_wind_aero) {
+	    if(data->getValue(WIND_AERODYNAMIC, &model, i)) {
+	      BaseMechanicalModel *aerodynmodel
+		= genFactory.createMechanicalModel(model);
+	      boost::shared_ptr<BaseMechanicalModel> aerodyn;
+	      aerodyn.reset(aerodynmodel);
+	      p_generators[icnt]->setAeroDynamicModel(aerodyn);
+	    }
+	  }
+
+
+
+          // create relay objective associate with the generator
+          // get the number of relay associate with the generator
           nrelay = 0;
           data->getValue(RELAY_NUMBER, &nrelay);
-          //printf ("-- component generator  -- nrelay = %d \n", nrelay);
           p_generators[icnt]->ClearRelay();
           relaycnt = 0;
           if (nrelay>0) {
@@ -1137,70 +1152,53 @@ void gridpack::dynamic_simulation::DSFullBus::load(
               if (relay_genid == genid) {
                 if (data->getValue(RELAY_MODEL, &model, irelay)) {
                   if ( model== "FRQTPAT" ) {
-                    //printf("generator ID: %s  \n", genid.c_str());
                     BaseRelayModel *relaymodel
                       = relayFactory.createRelayModel(model);
                     boost::shared_ptr<BaseRelayModel> relay;
                     relay.reset(relaymodel);
                     relay->load(data, irelay);
-                    p_generators[icnt]->AddRelay(relay);   //????
+                    p_generators[icnt]->AddRelay(relay);
                     relaycnt++;
                     bcomputefreq = true;
                   }  
-
                 }
               }
-
             }
           }
         }
         p_generators[icnt]->load(data,i);
         if (has_gov) p_generators[icnt]->getGovernor()->load(data,i);
         if (has_ex) p_generators[icnt]->getExciter()->load(data,i);	
-		if (has_pss) p_generators[icnt]->getPss()->load(data,i);	
-		if (has_plantcontroller) p_generators[icnt]->getPlantController()->load(data,i);
+	if (has_pss) p_generators[icnt]->getPss()->load(data,i);	
+	if (has_plantcontroller) p_generators[icnt]->getPlantController()->load(data,i);
+	if (has_wind_tc) p_generators[icnt]->getTorqueController()->load(data,i);
+	if (has_wind_pc) p_generators[icnt]->getPitchController()->load(data,i);
+	if (has_wind_dt) p_generators[icnt]->getDriveTrainModel()->load(data,i);
+	if (has_wind_aero) p_generators[icnt]->getAeroDynamicModel()->load(data,i);
+
         icnt++;
       } else if (!data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0.0){ 
 	    // handle the generators having no dynamic model, need to convert to negative load
-		p_genpg_nodynmodel.push_back(pg);
-		p_genqg_nodynmodel.push_back(qg);
-		p_ngen_nodynmodel++;
-		//printf ("----at bus %d, pg %f added to p_genpg_nodynmodel vector \n", getOriginalIndex(), pg);
-		
-	  } else if (stat == 1 && pg < 0.0) {
+	p_genpg_nodynmodel.push_back(pg);
+	p_genqg_nodynmodel.push_back(qg);
+	p_ngen_nodynmodel++;
+      } else if (stat == 1 && pg < 0.0) {
         p_negpg.push_back(pg);
         p_negqg.push_back(qg);
         p_negngen++;
-		
-        // Evaluate correction to Y-bus
-        /*  p_pl = p_pl - pg;
-            p_ql = p_ql - qg;
-            double tempPL = p_pl * p_sbase;
-            double tempQL = p_ql * p_sbase;
-            data->setValue(LOAD_PL, tempPL);
-            data->setValue(LOAD_QL, tempQL);*/
       }
-      //      p_ngen = tempNg;
-      //      data->setValue(GENERATOR_NUMBER, tempNg);
     }
   }
   int ngen_chk = p_ngen;
   p_ngen = p_generators.size();
-  //if (p_ngen != ngen_chk)
-  //  printf("Warning: inconsistent # of gens at bus %d, pf %d, dyr %d \n",
-  //    idx, ngen_chk, p_ngen); 
-  //printf("Warning: inconsistent # of gens at bus %d, pf %d, dyr %d \n",
-  //  idx, ngen_chk, p_ngen); 
 
   // add load relay (LVSHBL) assoicate with the bus, renke add
   std::string model;
   nrelay = 0;
   data->getValue(RELAY_NUMBER, &nrelay);
-  //printf ("-- component load  -- nrelay = %d \n", nrelay);
   p_loadrelays.clear();
   if (nrelay>0) {
     for (irelay=0 ; irelay<=nrelay ; irelay++) {
-      //data->getValue(RELAY_GENID, &relay_genid, irelay);
       if (data->getValue(RELAY_MODEL, &model, irelay)) {
         if (model == "LVSHBL") {
           BaseRelayModel *relaymodel
@@ -1246,18 +1244,10 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       if (bdebug_load_model) printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
       std::string model;
 
-      // check if the this load component is a dynamic load model
       if (data->getValue(LOAD_MODEL, &model, i)) {
-        // SJIN: LOAD_MODEL not in parser yet?
-        //if (1) // SJIN: Fake loop condition
-        //p_pl.push_back(pl); // SJIN: p_pl and p_ql are defined double already, do we need array for load model?
-        //p_ql.push_back(ql);
-        //
         if (bdebug_load_model) printf("dynamic load at bus %d, model = %s \n", idx, model.c_str());
         bcomputefreq = true;
-        if ( model == "CMLDBLU1" ) {  // if the load model at the bus
-          // is CMLDBLU,
-          // actually this bus does not have any dynamic loads
+        if ( model == "CMLDBLU1" ) {
           // all the dynamic loads will be added to the extended buses
           if (bdebug_load_model) printf("pop the powerflow load with ID %s back, as the type is %s !\n",
               loadid.c_str(), model.c_str());

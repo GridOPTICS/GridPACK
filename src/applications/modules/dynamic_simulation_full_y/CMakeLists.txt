@@ -72,6 +72,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   base_classes/base_governor_model.cpp
   base_classes/base_relay_model.cpp
   base_classes/base_load_model.cpp
+  base_classes/base_mechanical_model.cpp
   model_classes/classical.cpp
   model_classes/gensal.cpp
   model_classes/exdc1.cpp
@@ -103,6 +104,10 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/sexs.cpp
   model_classes/gast.cpp
   model_classes/hygov.cpp
+  model_classes/wtara1.cpp
+  model_classes/wtdta1.cpp
+  model_classes/wtpta1.cpp
+  model_classes/wttqa1.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -141,6 +146,7 @@ install(FILES
   base_classes/base_governor_model.hpp
   base_classes/base_relay_model.hpp
   base_classes/base_load_model.hpp
+  base_classes/base_mechanical_model.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/base_classes
 )
 
@@ -175,6 +181,10 @@ install(FILES
   model_classes/sexs.hpp
   model_classes/gast.hpp
   model_classes/hygov.hpp
+  model_classes/wtara1.hpp
+  model_classes/wtdta1.hpp
+  model_classes/wtpta1.hpp
+  model_classes/wttqa1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 ) 	      
 
