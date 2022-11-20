@@ -1400,7 +1400,7 @@ class BasePTIParser : public BaseParser<_network>
       bool ret = false;
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "GDFORM" ||
-          device == "REGCA1" || device == "REECA1"  || device == "REPCA1" ||
+          device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||

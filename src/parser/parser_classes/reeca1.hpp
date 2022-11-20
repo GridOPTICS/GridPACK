@@ -132,16 +132,16 @@ template <class _data_struct> class Reeca1Parser
         data->setValue(GENERATOR_REECA_KQV, data_struct.reeca1_kqv, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REECA_LQH1,&rval,g_id)) {
-        data->addValue(GENERATOR_REECA_LQH1,data_struct.reeca1_lqh1, g_id);
+	  if (!data->getValue(GENERATOR_REECA_IQH1,&rval,g_id)) {
+        data->addValue(GENERATOR_REECA_IQH1,data_struct.reeca1_lqh1, g_id);
       } else {
-        data->setValue(GENERATOR_REECA_LQH1, data_struct.reeca1_lqh1, g_id);
+        data->setValue(GENERATOR_REECA_IQH1, data_struct.reeca1_lqh1, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REECA_LQL1,&rval,g_id)) {
-        data->addValue(GENERATOR_REECA_LQL1,data_struct.reeca1_lql1, g_id);
+	  if (!data->getValue(GENERATOR_REECA_IQL1,&rval,g_id)) {
+        data->addValue(GENERATOR_REECA_IQL1,data_struct.reeca1_lql1, g_id);
       } else {
-        data->setValue(GENERATOR_REECA_LQL1, data_struct.reeca1_lql1, g_id);
+        data->setValue(GENERATOR_REECA_IQL1, data_struct.reeca1_lql1, g_id);
       }
 	  
 	  if (!data->getValue(GENERATOR_REECA_VREF0,&rval,g_id)) {
@@ -150,10 +150,10 @@ template <class _data_struct> class Reeca1Parser
         data->setValue(GENERATOR_REECA_VREF0, data_struct.reeca1_vref0, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REECA_LQFRZ,&rval,g_id)) {
-        data->addValue(GENERATOR_REECA_LQFRZ,data_struct.reeca1_lqfrz, g_id);
+	  if (!data->getValue(GENERATOR_REECA_IQFRZ,&rval,g_id)) {
+        data->addValue(GENERATOR_REECA_IQFRZ,data_struct.reeca1_lqfrz, g_id);
       } else {
-        data->setValue(GENERATOR_REECA_LQFRZ, data_struct.reeca1_lqfrz, g_id);
+        data->setValue(GENERATOR_REECA_IQFRZ, data_struct.reeca1_lqfrz, g_id);
       }
 	  
 	  if (!data->getValue(GENERATOR_REECA_THLD,&rval,g_id)) {
@@ -512,19 +512,19 @@ template <class _data_struct> class Reeca1Parser
 
 
       if (nstr > 15) {
-        if (!data->getValue(GENERATOR_REECA_LQH1,&rval,g_id)) {
-          data->addValue(GENERATOR_REECA_LQH1, atof(split_line[15].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REECA_IQH1,&rval,g_id)) {
+          data->addValue(GENERATOR_REECA_IQH1, atof(split_line[15].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REECA_LQH1, atof(split_line[15].c_str()), g_id);
+          data->setValue(GENERATOR_REECA_IQH1, atof(split_line[15].c_str()), g_id);
         }
       } 
 	  
 
       if (nstr > 16) {
-        if (!data->getValue(GENERATOR_REECA_LQL1,&rval,g_id)) {
-          data->addValue(GENERATOR_REECA_LQL1, atof(split_line[16].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REECA_IQL1,&rval,g_id)) {
+          data->addValue(GENERATOR_REECA_IQL1, atof(split_line[16].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REECA_LQL1, atof(split_line[16].c_str()), g_id);
+          data->setValue(GENERATOR_REECA_IQL1, atof(split_line[16].c_str()), g_id);
         }
       } 
 	  
@@ -537,10 +537,10 @@ template <class _data_struct> class Reeca1Parser
       } 
 	  
 	  if (nstr > 18  ) {
-        if (!data->getValue(GENERATOR_REECA_LQFRZ,&rval,g_id)) {
-          data->addValue(GENERATOR_REECA_LQFRZ, atof(split_line[ 18].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REECA_IQFRZ,&rval,g_id)) {
+          data->addValue(GENERATOR_REECA_IQFRZ, atof(split_line[ 18].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REECA_LQFRZ, atof(split_line[ 18].c_str()), g_id);
+          data->setValue(GENERATOR_REECA_IQFRZ, atof(split_line[ 18].c_str()), g_id);
         }
       } 
 	  
