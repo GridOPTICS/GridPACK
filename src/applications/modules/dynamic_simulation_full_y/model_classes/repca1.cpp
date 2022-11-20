@@ -86,6 +86,42 @@ void gridpack::dynamic_simulation::Repca1Model::load(
   if (!data->getValue(GENERATOR_REPCA_PMAX,  &Pmax   , idx))  Pmax   = 1.5;
   if (!data->getValue(GENERATOR_REPCA_PMIN,  &Pmin   , idx))  Pmin   =  -1.5;
   if (!data->getValue(GENERATOR_REPCA_TG,    &Tg     , idx))  Tg     = 0.1;
+
+  // Set constants
+  Freq_ref = 1.0;
+  
+  // Set up model blocks
+  // V filter block
+  V_filter_blk.setparams(1.0,Tfltr);
+  // Q branch filter block
+  Qbranch_filter_blk.setparams(1.0,Tfltr);
+
+  // VQerr deadband block
+  VQerr_deadband.setparams(dbd1,dbd2);
+
+  // VQerror limiter
+  VQerr_limiter.setparams(1.0,Emin,Emax);
+
+  // Qext PI controller
+  Qext_PI_blk.setparams(Kp,Ki,Qmin,Qmax,-1000.0,1000.0);
+
+  // Qext lead lag
+  Qext_leadlag_blk.setparams(Tft,Tfv);
+
+  // Frequency error deadband
+  Freqerr_deadband.setparams(fdbd1,fdbd2);
+
+  // Pbranch filter block
+  Pbranch_filter_blk.setparams(1.0,Tp);
+
+  // Frequency error limiter
+  Freqerr_limiter.setparams(1.0,femin,femax);
+
+  // Pext PI block
+  Pext_PI_blk.setparams(Kpg,Kig,Pmin,Pmax,-1000.0,1000.0);
+
+  // Pext filter block
+  Pext_filter_blk.setparams(1.0,Tg);
 }
 
 /**
@@ -94,8 +130,44 @@ void gridpack::dynamic_simulation::Repca1Model::load(
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::Repca1Model::init(double mag, double ang, double ts)
+void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, double ts)
 {
+  // Assume Pext and Qext are 0
+  Pext = Qext = 0.0;
+
+  if(FreqFLAG) {
+    double ferr;
+    Pext_PI_blk_out = Pext_filter_blk.init_given_y(Pext);
+    ferr = Pext_PI_blk.init_given_y(Pext_PI_blk_out);
+
+    // ***********
+    // Need to add Pbranch, assume = Pref for now
+    // ***********
+    Pbranch = Pref*p_mbase/p_sbase; // On system MVA base
+  }
+
+  // Qext side now
+  Qext_PI_blk_out = Qext_leadlag_blk.init_given_y(Qext);
+  VQerr_limiter_out = Qext_PI_blk.init_given_y(Qext_PI_blk_out);
+
+  if(!RefFLAG) {
+    double temp;
+    Qbranch = Qref*p_mbase/p_sbase; // On system MVA base
+    temp = Qbranch_filter_blk.init_given_u(Qref);
+  } else {
+    if(!VCompFLAG) {
+      double V_VFLAG;
+      Qbranch = Qref;
+      V_VFLAG = Qbranch*Kc + Vt;
+
+      V_filter_blk_out = V_filter_blk.init_given_u(V_VFLAG);
+      Vref = V_filter_blk_out;
+    } else {
+      // **************
+      // **** TO BE IMPLEMENTED
+      // *************
+    }
+  }
 }
 
 /**
@@ -128,18 +200,20 @@ void gridpack::dynamic_simulation::Repca1Model::setBusFreq(double f)
   Freq  = f;
 }
 
-void gridpack::dynamic_simulation::Repca1Model::setPrefQext(double Pref, double Qext)
+void gridpack::dynamic_simulation::Repca1Model::setPrefQext(double Pref_in, double Qref_in)
 {
+  Pref = Pref_in;
+  Qref = Qref_in;
 }
 
 double gridpack::dynamic_simulation::Repca1Model::getPref( )
 {
-  return 0;
+  return Pref + Pext;
 }
 
 double gridpack::dynamic_simulation::Repca1Model::getQext( )
 {
-  return 0;
+  return Qref + Qext;
 }
 
 void gridpack::dynamic_simulation::Repca1Model::setExtBusNum(int ExtBusNum)
