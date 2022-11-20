@@ -6,8 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   repca1.hpp
- * @author Renke Huang
- * @Last modified:   Aug. 20, 2019
+ * @author Shrirang Abhyankar
+ * @Updated November 20, 2022
  * 
  * @brief  
  * 

@@ -1067,6 +1067,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"REPCA1")) {
             Repca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+	  } else if (!strcmp(gen_data[i].model,"REPCTA1")) {
+            Repca1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"WSIEG1")) {
             Wsieg1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1401,6 +1404,7 @@ class BasePTIParser : public BaseParser<_network>
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "GDFORM" ||
           device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
+	  device == "REPCTA1" ||
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
@@ -1559,6 +1563,9 @@ class BasePTIParser : public BaseParser<_network>
               Reeca1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "REPCA1") {
+              Repca1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+	    } else if (sval == "REPCTA1") {
               Repca1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "WSIEG1") {
@@ -1781,6 +1788,9 @@ class BasePTIParser : public BaseParser<_network>
             Reeca1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "REPCA1") {
+            Repca1Parser<gen_params> parser;
+            parser.store(split_line,data);
+	  } else if (sval == "REPCTA1") {
             Repca1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "WSIEG1") {

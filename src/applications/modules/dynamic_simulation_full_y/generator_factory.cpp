@@ -219,7 +219,7 @@ gridpack::dynamic_simulation::GeneratorFactory::createPlantControllerModel(
   p_util.toUpper(type);
 
   gridpack::dynamic_simulation::BasePlantControllerModel* ret;
-  if (type == "REPCA1") {
+  if (type == "REPCA1" || type == "REPCTA1") {
     gridpack::dynamic_simulation::Repca1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Repca1Model;
     ret =
