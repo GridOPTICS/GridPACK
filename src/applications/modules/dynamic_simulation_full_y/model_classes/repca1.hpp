@@ -19,10 +19,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_plant_model.hpp"
-#include "DelayBlock.hpp"
-#include "DelayBlockwithLimit.hpp"
-#include "LeadLagBlock.hpp"
-#include "PIBlockwithLimit.hpp"
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -72,41 +70,62 @@ class Repca1Model : public BasePlantControllerModel
 
     void setGenPQV(double P, double Q, double Vt);
 
-	void setBusFreq(double freq);
+    void setBusFreq(double freq);
 	
-	void setPrefQext(double Pref, double Qext);
+    void setPrefQext(double Pref, double Qext);
 	
-	void setExtBusNum(int ExtBusNum);
+    void setExtBusNum(int ExtBusNum);
+  
+    void setExtGenId(std::string ExtGenId);
 	
-	void setExtGenId(std::string ExtGenId);
+    double getPref( );
 	
-	double getPref( );
+    double getQext( );
 	
-	double getQext( );
-	
-	double pref, qext, vref, freqref, plant_pref, genP, genQ, Vterm, busfreq;
-	
-	//blocks------------------------------------
-
-    gridpack::dynamic_simulation::DelayBlock delayblock_x1vmeas;
-	//gridpack::dynamic_simulation::DelayBlock delayblock_x2qmeas;
-	gridpack::dynamic_simulation::PIBlockwithLimit piblock_x3qpi;
-	gridpack::dynamic_simulation::LeadLagBlock leadlagblock_x4qext;
-	gridpack::dynamic_simulation::DelayBlock delayblock_x5pmeas;
-	gridpack::dynamic_simulation::PIBlockwithLimit piblock_x6ppi;
-	gridpack::dynamic_simulation::DelayBlock delayblock_x7pref;
-
-
   private:
 
-    bool bmodel_debug;
-	
-	double kc, tfltr, dbd1, dbd2, emax, emin, qmax, qmin, kp, ki, tft, tfv, fdbd1, fdbd2, ddn, dup, tp, femax, femin;
-	double kpg, kig, pmax, pmin, tg;
-	
-	std::string p_ckt;
-    int p_bus_id;
+  // Model parameters
+  double ireg;   // Bus number of regulated bus
+  double fbus, tbus; // To and from bus of the monitored branch
+  std::string  br_ckt; // Branch circuit id
+  int VCompFLAG; // droop flag
+  int RefFLAG;  // Q control or V control
+  int FreqFLAG;   // Freq control
+  
+  double Rc, Xc; // line compensation parameters
+  double Kc;     // Gain for branch reactive power measurement
+  double Tfltr;  // Filter time constant
+  double dbd1,dbd2; // Deadband limits
+  double Emax,Emin;  // Limits for voltage
+  double Kp, Ki;     // PI controller gains for reactive power
+  double Qmax,Qmin;  // Limits on Q PI controller
+  double Tft, Tfv;    // Parameters for Qext lead lag block
+  double Tp;        // Pbranch filter time constant
+  double fdbd1,fdbd2; // Deadband limits for frequency error
+  double Ddn, Dup;   // Droop constant
+  double Kpg, Kig;   // Pext PI contoller gains
+  double femax,femin; // Limits on Frequency error
+  double Pmax, Pmin;  // Non wind-up limits for Pext PI controller
+  double Tlag;      // Pext filter time constant
+  double Tg;
+  double Vfrz;      // State freeze voltage
 
+  std::string p_gen_id;
+  int p_bus_num;
+  
+  // Model inputs
+  double Pbranch, Qbranch; // Line flow on designated branch (on system MVAbase)
+  double Vreg;             // Voltage of regulated bus
+  double Ibranch;          // Line current on designated branch (on system Ibase)
+  double Freq;             // Frequency at POI
+
+  // Model outputs
+  double Pext,Qext;        // Output reference signals from the plant.
+  double Pg, Qg;           // Generator active and reactive power (on machine Mbase
+
+  // Internal variables
+  double Vt;
+  double p_sbase,p_mbase; // System base and machine Mbase
 };
 }  // dynamic_simulation
 }  // gridpack
