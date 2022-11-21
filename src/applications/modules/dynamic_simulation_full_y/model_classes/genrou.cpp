@@ -10,6 +10,7 @@
  * @author Shuangshuang Jin 
  * @Last modified:   Oct 9, 2015
  * 
+ * @Modified: November 21, 2022, Shri, Disable saturation if S10 and S12 are 0.
  * @brief  
  * 
  * 
@@ -104,10 +105,12 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
   //printf ("---debug, genrou, load:  Xdp = %f, Xqp = %f, Xdpp = %f, Xqpp = %f, Xl = %f, S10 = %f, S12 = %f, Ra = %f,\n",  Xdp, Xqp, Xdpp, Xqpp, Xl, S10, S12, Ra);
   
   //Tqop = 0.75; // omitted in the data entry
-  enableSat = true;
+  if(fabs(S10*S12) < 1e-6) {
+    // Zero saturation
+    enableSat = false;
+  } else enableSat = true;
   printFlag = false;
-  // Yuan end
-  
+
   double tmp = sqrt(p_pg*p_pg +p_qg*p_qg);
   if ( tmp > MVABase) {
        //MVABase = tmp*1.3;
@@ -713,8 +716,8 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
       } else {
 	tag = p_ckt[1];
       }
-      sprintf(buf,", %d_%s_angle, %d_%s_speed",p_bus_id,tag.c_str(),
-          p_bus_id,tag.c_str());
+      sprintf(buf,", %d_%s_angle, %d_%s_speed, %d_%s_Efd",p_bus_id,tag.c_str(),
+	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
@@ -727,8 +730,8 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,",%f, %f",
-	      x1d_1, x2w_1+1.0);
+      sprintf(buf,",%f, %f, %f",
+	      x1d_1, x2w_1+1.0, Efd);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

@@ -29,14 +29,11 @@
 #include "base_exciter_model.hpp"
 #include "sexs.hpp"
 
-#define TS_THRESHOLD 4
-
 /**
  *  Basic constructor
  */
 gridpack::dynamic_simulation::SexsModel::SexsModel(void)
 {
-  OptionToModifyLimitsForInitialStateLimitViolation = true;
 }
 
 /**
@@ -69,8 +66,17 @@ void gridpack::dynamic_simulation::SexsModel::load(
   // Set parameters for the first block
   leadlagblock.setparams(TA,TB);
 
+  zero_TE = false;
+  if(fabs(TE) < 1e-6) {
+    zero_TE = true;
+  }
+  
   // Set parameters for the second block
-  filterblock.setparams(K,TE,EMIN,EMAX,-1000.0,1000);
+  if(!zero_TE) {
+    filterblock.setparams(K,TE,EMIN,EMAX,-1000.0,1000);
+  } else {
+    gainblock.setparams(K,EMIN,EMAX);
+  }
 
   Vs = 0.0; 
 }
@@ -91,7 +97,11 @@ void gridpack::dynamic_simulation::SexsModel::init(double Vm, double ang, double
   // calculating the model input Vref
   
   // Initialize second block
-  y1 = filterblock.init_given_y(Efd);
+  if(!zero_TE) {
+    y1 = filterblock.init_given_y(Efd);
+  } else {
+    y1 = std::min(EMAX,std::max(EMIN,Efd/K));
+  }
 
   // Initialize first block
   u1 = leadlagblock.init_given_y(y1); 
@@ -118,7 +128,11 @@ void gridpack::dynamic_simulation::SexsModel::predictor(double t_inc, bool flag)
 
   // Calculate second block output, last input flag = true
   // tells the block to do the state update (predictor update)
-  Efd = filterblock.getoutput(y1,t_inc,PREDICTOR,true);
+  if(!zero_TE) {
+    Efd = filterblock.getoutput(y1,t_inc,PREDICTOR,true);
+  } else {
+    Efd = gainblock.getoutput(y1);
+  }
 }
 
 /**
@@ -138,7 +152,11 @@ void gridpack::dynamic_simulation::SexsModel::corrector(double t_inc, bool flag)
 
   // Calculate second block output, last input flag = true
   // tells the block to do the state update (corrector update)
-  Efd = filterblock.getoutput(y1,t_inc,CORRECTOR,true);
+  if(!zero_TE) {
+    Efd = filterblock.getoutput(y1,t_inc,PREDICTOR,true);
+  } else {
+    Efd = gainblock.getoutput(y1);
+  }
 }
 
 /**
@@ -174,8 +192,6 @@ void gridpack::dynamic_simulation::SexsModel::setVstab(double Vstab)
   Vs = Vstab;
 }
 
-
-// Yuan added below 2020-6-23
 /** 
  * Set the exciter bus number
  * @return value of exciter bus number
@@ -193,5 +209,5 @@ void gridpack::dynamic_simulation::SexsModel::setExtGenId(std::string ExtGenId)
 {
 	p_ckt = ExtGenId;
 }	
-// Yuan added above 2020-6-23
+
 

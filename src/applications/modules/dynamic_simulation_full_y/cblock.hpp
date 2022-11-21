@@ -60,7 +60,7 @@ typedef enum {
 
   here u,x,y \in R^1 
 
-  A = -a1/a0, B = (b1 - a1b0)/a0, C = 1, D = b0/a0
+  A = -a1/a0, B = b1/a0 - a1b0/a0^2, C = 1, D = b0/a0
 
   Output:
    y = Cx + D*u,  ymin <= y <= ymax
