@@ -68,6 +68,13 @@ class Repca1Model : public BasePlantControllerModel
      */
     void corrector(double t_inc, bool flag);
 
+    /**
+     * Compute the Model
+     * One call that computes the model both for the predictor and corrector
+     * The integration stage chosen by passing the appropriate flag
+     **/
+    void computeModel(double t_inc, IntegrationStage int_flag, bool Vfreeze);
+  
     void setGenPQV(double P, double Q, double Vt);
 
     void setBusFreq(double freq);
@@ -137,7 +144,7 @@ class Repca1Model : public BasePlantControllerModel
   double   Pbranch_filter_blk_out; // Output of Pbranch filter block
 
   Gain     Freqerr_limiter;   // Frequency error limiter
-
+  double   Freqerr_limiter_out; // Output of frequency error limiter
   PIControl Pext_PI_blk;
   double    Pext_PI_blk_out; // Output of Pext PI block
 
@@ -165,6 +172,7 @@ class Repca1Model : public BasePlantControllerModel
   double Vt;
   double p_sbase,p_mbase; // System base and machine Mbase
   double Vref; // Reference voltage used in QV control
+  bool   Vfreeze; // Flag to check if Vfreeze state is active (Vt < Vfrz)
 };
 }  // dynamic_simulation
 }  // gridpack

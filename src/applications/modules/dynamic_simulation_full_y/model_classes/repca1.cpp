@@ -139,11 +139,14 @@ void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, doubl
     double ferr;
     Pext_PI_blk_out = Pext_filter_blk.init_given_y(Pext);
     ferr = Pext_PI_blk.init_given_y(Pext_PI_blk_out);
+    
+    // ***********
+    // Need to use Pbranch if given, using Pg
+    // ***********
 
-    // ***********
-    // Need to add Pbranch, assume = Pref for now
-    // ***********
-    Pbranch = Pref*p_mbase/p_sbase; // On system MVA base
+    Pbranch = Pg; // machine MVA base
+
+    Pbranch_filter_blk_out = Pbranch_filter_blk.init_given_u(Pbranch); 
   }
 
   // Qext side now
@@ -152,12 +155,18 @@ void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, doubl
 
   if(!RefFLAG) {
     double temp;
-    Qbranch = Qref*p_mbase/p_sbase; // On system MVA base
-    temp = Qbranch_filter_blk.init_given_u(Qref);
+
+    // ***********
+    // Need to actual Qbranch if Q branch is given, using Qg
+    // ***********
+
+    Qbranch = Qg; // machine MVA base
+    
+    temp = Qbranch_filter_blk.init_given_u(Qbranch);
   } else {
     if(!VCompFLAG) {
       double V_VFLAG;
-      Qbranch = Qref;
+      Qbranch = Qg;
       V_VFLAG = Qbranch*Kc + Vt;
 
       V_filter_blk_out = V_filter_blk.init_given_u(V_VFLAG);
@@ -170,6 +179,70 @@ void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, doubl
   }
 }
 
+void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,IntegrationStage int_flag, bool Vfreeze)
+{
+  bool updateState = !Vfreeze; // Do not update state (freeze) when Vfreeze is true
+  
+  // Pext part
+  double ferr,dP;
+
+  if(FreqFLAG) {
+    ferr = Freq_ref - Freq;
+    ferr = Freqerr_deadband.getoutput(ferr);
+    dP = std::max(0.0,Ddn*ferr) + std::min(0.0,Dup*ferr);
+    // ***********
+    // Need to use Pbranch if given, using Pg
+    // ***********
+    Pbranch = Pg;
+    
+    Pbranch_filter_blk_out = Pbranch_filter_blk.getoutput(Pbranch,t_inc,int_flag,true);
+
+    Freqerr_limiter_out = Freqerr_limiter.getoutput(Pref - Pbranch_filter_blk_out + dP);
+
+    Pext_PI_blk_out = Pext_PI_blk.getoutput(Freqerr_limiter_out,t_inc,int_flag,true);
+
+    Pext = Pext_filter_blk.getoutput(Pext_PI_blk_out,t_inc,int_flag,true);
+  }
+
+  // Qext part
+  double y_VCompFLAG=0.0; // value at VCompFLAG
+  double y_RefFLAG = 0.0; // value at RefFLAG
+
+  if(!VCompFLAG) {
+    Qbranch = Qg;
+    y_VCompFLAG = Qbranch*Kc + Vt;
+  } else {
+    // **************
+    // *** Not implemented yet
+    // *************
+  }
+
+  if(!RefFLAG) {
+    // ***********
+    // Need to actual Qbranch if Q branch is given, using Qg
+    // ***********
+    Qbranch = Qg; // machine MVA base
+
+    Qbranch_filter_blk_out = Qbranch_filter_blk.getoutput(Qbranch,t_inc,int_flag,true);
+    y_RefFLAG = (Qref + Qext) - Qbranch_filter_blk_out;
+  } else {
+    V_filter_blk_out = V_filter_blk.getoutput(y_VCompFLAG,t_inc,int_flag,true);
+    y_RefFLAG = Vref - V_filter_blk_out;
+  }
+
+  // VQ error deadband block
+  VQerr_deadband_out = VQerr_deadband.getoutput(y_RefFLAG);
+
+  // VQ error limiter block
+  VQerr_limiter_out = VQerr_limiter.getoutput(VQerr_deadband_out);
+
+  // Qext PI control
+  Qext_PI_blk_out = Qext_PI_blk.getoutput(VQerr_limiter_out,t_inc,int_flag,updateState);
+
+  // Qext lead lag block
+  Qext = Qext_leadlag_blk.getoutput(Qext_PI_blk_out,t_inc,int_flag,true);
+  
+}
 /**
  * Predict new state variables for time step
  * @param t_inc time step increment
@@ -177,6 +250,13 @@ void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, doubl
  */
 void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool flag)
 {
+  if(Vt < Vfrz) {
+    Vfreeze = true;
+  }
+  else Vfreeze = false;
+
+  computeModel(t_inc,PREDICTOR,Vfreeze);
+    
 }
 
 /**
@@ -186,6 +266,9 @@ void gridpack::dynamic_simulation::Repca1Model::predictor(double t_inc, bool fla
  */
 void gridpack::dynamic_simulation::Repca1Model::corrector(double t_inc, bool flag)
 {
+
+  computeModel(t_inc,CORRECTOR,Vfreeze);
+
 }
 
 void gridpack::dynamic_simulation::Repca1Model::setGenPQV(double P, double Q, double Vm)
