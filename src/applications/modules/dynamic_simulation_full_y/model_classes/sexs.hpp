@@ -39,6 +39,7 @@
 // Yuan added above 2020-6-23
 
 #include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -63,12 +64,6 @@ class SexsModel : public BaseExciterModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
-
-    /**
-     * Saturation function
-     * @ param x
-     */
-    double Sat(double x);
 
     /**
      * Initialize exciter model before calculation
@@ -116,23 +111,22 @@ class SexsModel : public BaseExciterModel
     **/
     void setVstab(double vstab);
 	
-	// Yuan added below 2020-6-23
-	/** 
-	 * Set the exciter bus number
-	 * @return value of exciter bus number
-	 */
-	void setExtBusNum(int ExtBusNum);
+    /** 
+     * Set the exciter bus number
+     * @return value of exciter bus number
+     */
+    void setExtBusNum(int ExtBusNum);
 	
-	/** 
-	 * Set the exciter generator id
-	 * @return value of generator id
-	 */
-	void setExtGenId(std::string ExtGenId);
-	// Yuan added above 2020-6-23
+    /** 
+     * Set the exciter generator id
+     * @return value of generator id
+     */
+    void setExtGenId(std::string ExtGenId);
 
   private:
 
-    bool OptionToModifyLimitsForInitialStateLimitViolation;
+    // Internal variables
+    bool zero_TE; // If TE == 0 then the filter block is replaced by gain block
 
     // Exciter SEXS parameters from dyr
     double TA_OVER_TB, TA, TB, K, TE, EMIN, EMAX;
@@ -140,6 +134,7 @@ class SexsModel : public BaseExciterModel
     // Linear control blocks
     LeadLag leadlagblock;
     Filter  filterblock;
+    Gain    gainblock;
 
     // Model inputs
     double Ec; // Terminal voltage
@@ -149,12 +144,9 @@ class SexsModel : public BaseExciterModel
     // Model outputs 
     double Efd;     // Field Voltage
 
-    // Yuan added below 2020-6-23
     std::string p_ckt; // id of the generator where the exciter is installed on
     int p_bus_id;  // bus number of the generator 
-	// Yuan added above 2020-6-23
 
-    //boost::shared_ptr<BaseGeneratorModel> p_generator;
 };
 }  // dynamic_simulation
 }  // gridpack

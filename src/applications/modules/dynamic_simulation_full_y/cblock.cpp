@@ -1,4 +1,5 @@
 #include "cblock.hpp"
+#include <stdexcept>
 
 Cblock::Cblock()
 {
@@ -21,8 +22,12 @@ Cblock::~Cblock(void)
  */
 void Cblock::setcoeffs(double *a,double *b)
 {
+  if(a[0] == 0) {
+    printf("a[0] = 0.0\n");
+    throw std::runtime_error("Cblock is not a transfer function\nCheck the value of the parameters\n");
+  }
   p_A[0] = -a[1]/a[0];
-  p_B[0] = (b[1] - a[1]*b[0])/a[0];
+  p_B[0] = b[1]/a[0] - a[1]*b[0]/(a[0]*a[0]);
   p_C[0] = 1.0;
   p_D[0] = b[0]/a[0];
 }
