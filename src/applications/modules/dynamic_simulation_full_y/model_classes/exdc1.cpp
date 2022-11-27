@@ -6,8 +6,8 @@
 // -----------------------------------------------------------
 /**
  * @file   exdc1.cpp
- * @author Shuangshuang Jin, Renke Huang
- * @Last modified:   June 17, 2020
+ * @author Shrirang Abhyankar
+ * @Updated:   Novemeber 26, 2022
  * 
  * @brief  
  * 
@@ -18,11 +18,8 @@
 #include <iostream>
 #include <cstdio>
 
-// Yuan added below 2020-6-23
-//#include <cstdio>
 #include <cstring>
 #include <string>
-// Yuan added above 2020-6-23
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -36,19 +33,13 @@
  */
 gridpack::dynamic_simulation::Exdc1Model::Exdc1Model(void)
 {
-  dx1 = 0;
-  dx2 = 0;
-  dx3 = 0; 
-  dx4 = 0; 
-  dx5 = 0;
-  dx1_1 = 0;
-  dx2_1 = 0;
-  dx3_1 = 0;
-  dx4_1 = 0;
-  dx5_1 = 0;
-  w = 0.0;
-  
-  OptionToModifyLimitsForInitialStateLimitViolation = true;
+  Vs = 0.0;
+  sat_A = 0.0;
+  sat_B = 0.0;
+  has_Sat = true;
+  has_leadlag = true;
+  zero_TA = false;
+  zero_TR = false;
 }
 
 /**
@@ -79,53 +70,63 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
   if (!data->getValue(EXCITER_KE, &KE, idx)) KE = 0.0; // KE
   if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
   if (!data->getValue(EXCITER_KF, &KF, idx)) KF = 0.0; // KF
-  //if (!data->getValue(EXCITER_TF1, &TF1, idx)) TF1 = 0.0; // TF1
-  if (!data->getValue(EXCITER_TF1, &TF, idx)) TF = 0.0; // TF
-  //printf("load TF = %f\n", TF);
-  if (!data->getValue(EXCITER_SWITCH, &SWITCH, idx)) SWITCH = 0.0; // SWITCH
+  if (!data->getValue(EXCITER_TF1, &TF1, idx)) TF1 = 0.0; // TF
   if (!data->getValue(EXCITER_E1, &E1, idx)) E1 = 0.0; // E1
   if (!data->getValue(EXCITER_SE1, &SE1, idx)) SE1 = 0.0; // SE1
   if (!data->getValue(EXCITER_E2, &E2, idx)) E2 = 0.0; // E2
   if (!data->getValue(EXCITER_SE2, &SE2, idx)) SE2 = 0.0; // SE2
-  //if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.0; // S10
-  //if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.0; // S12
+
+  if(fabs(SE1*SE2) < 1e-6) has_Sat = false;
+  if(fabs(TB*TC) < 1e-6)   has_leadlag = false;
+  if(fabs(TA) < 1e-6) zero_TA = true;
+  if(fabs(TR) < 1e-6) zero_TR = true;
+
+  if(has_Sat) {
+    /* Calculate saturation function constants */
+    double r;
+    r = std::sqrt(SE1*E1/(SE2*E2));
+    sat_A = (E1 - r*E2)/(1 - r);
+    sat_B = SE1*E1/((E1 - sat_A)*(E1 - sat_A));
+  }
+
+  // Set up blocks
+  if(!zero_TR) {
+    Vmeas_blk.setparams(1.0,TR);
+  }
+
+  if(has_leadlag) {
+    Leadlag_blk.setparams(TA,TB);
+  }
+
+  if(!zero_TA) {
+    Regulator_blk.setparams(KA,TA,Vrmin,Vrmax,-1000.0,1000.0);
+  } else {
+    Regulator_gain_blk.setparams(KA,Vrmin,Vrmax);
+  }
+
+  double a[2],b[2];
+  a[0] = TF1; a[1] = 1.0;
+  b[0] = KF;  b[1] = 0.0;
+  Feedback_blk.setcoeffs(a,b);
+
+  Output_blk.setparams(TE);
 }
 
 /**
  *  * Saturation function
- *   * @ param x
+ *  * @ param x
+ *  * return - saturation value given by quadratic function 
+ *       S = B(x - A)^2/x if x > A
+ *  else S = 0
  *    */
 double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
 {
-    /*double a_ = S12 / S10 - 1.0 / 1.2;
-    double b_ = (-2 * S12 / S10 + 2);
-    double c_ = S12 / S10 - 1.2;
-    double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
-    double B = S10 / ((1.0 - A) * (1.0 - A));
-    return B * ( x - A) * (x - A);*/
-	
-	double B = log(SE2 / SE1)/(E2 - E1); // original
-    double A = SE1 / exp(B * E1);
-	
-	/*
-    //double B = log(SE2*E2/E1/SE1)/(E2 - E1);  // Yuan comment: E1 and E2 here are natural log values of field voltages
-    //double A = SE1 / exp(B * E1);
-	if (x >= 0) {
-		result = A * exp(B * abs(x));
-	}else{
-		result = -A * exp(B * abs(x));
-	}
-    */
-	
-	// double B = log(SE2 / SE1)/log(E2 / E1);  // Yuan changed this
-    // double A = SE1 / pow(E1, B);
-	
-    // double result = 0.0;
-	
-	// return result;
-	// return A * pow(x, B); // Yuan changed this
-	return A * exp(B * x); // original
+  double S;
 
+  if(x < sat_A) S = 0.0;
+  else S = sat_B*(x - sat_A)*(x - sat_A)/x;
+
+  return S;
 }
 
 /**
@@ -134,40 +135,80 @@ double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, double ts)
+void gridpack::dynamic_simulation::Exdc1Model::init(double Vm, double Va, double ts)
 {
-  //printf("exdc1: Efd = %f, mag=%f\n", Efd,mag);
-  x1 = Efd;
-  x4 = Efd * (KE + Sat(Efd));
-  bool ini_check_print = false;
-  if (ini_check_print) {
-	if (x4 >= Vrmax) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n",p_bus_id, x4, Vrmax);
-	if (x4 <= Vrmin) printf ("----------suspect error in exdc1 init (gen bus: %d) :  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n",p_bus_id, x4, Vrmin);
+  VF = Feedback_blk.init_given_u(Efd);
+
+  double output_blk_in;
+  output_blk_in = Output_blk.init_given_y(Efd);
+
+  double sat_signal = KE*Efd;
+  if(has_Sat) {
+    sat_signal += Efd*Sat(Efd);
   }
-  
-  if (OptionToModifyLimitsForInitialStateLimitViolation){
-	  if (x4 >= Vrmax) Vrmax = x4 + 0.2;
-	  if (x4 <= Vrmin) Vrmin = x4 - 0.2;
+
+  VR = output_blk_in + sat_signal;
+
+  if(zero_TA) {
+    VLL = VR/KA;
+  } else {
+    VLL = Regulator_blk.init_given_y(VR);
   }
+
+  double leadlag_blk_in;
+  if(has_leadlag) {
+    leadlag_blk_in = Leadlag_blk.init_given_y(VLL);
+  } else leadlag_blk_in = VLL;
+
+  double Verr;
+  Verr = leadlag_blk_in - VF + Vs;
+      
+  if(!zero_TR) {
+    Vmeas = Vmeas_blk.init_given_u(Ec);
+  } else Vmeas = Ec;
+
+  Vref = Verr + Vmeas;
+
   
-  if (TB > (TS_THRESHOLD * ts)) 
-    x3 = (x4 / KA) * (1.0 - TC / TB); // SJin: x4 is Vr 
-  else
-    x3 = x4 / KA; // original
-	// x3 = 0.0; // Yuan changed this 2020-6-19
-  x2 = mag; // SJin: mag is Vterminal 
-  //printf("KF = %f, TF = %f, x1 = %f, ts = %f\n", KF, TF, x1, ts);
-  //if (TF > (TS_THRESHOLD * ts)) 
-  //  x5 = x1 * (KF / TF); // SJin: x1 is Ve
-  //else
-    x5 = 0.0;
-  //x5 = 0.0; // Diao: force x5 to 0.0 for now
-  Vref = mag + x4 / KA;
-  //printf("Vref = %f\n", Vref);
-  ///printf("exdc1 init:  %f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5); 
-  Vstab = 0.0;
 }
 
+/**
+ * computeModel - Updates the model states and gets the output
+ */
+void gridpack::dynamic_simulation::Exdc1Model::computeModel(double t_inc,IntegrationStage int_flag)
+{
+  if(!zero_TR) {
+    Vmeas = Vmeas_blk.getoutput(Ec,t_inc,int_flag,true);
+  } else {
+    Vmeas = Ec;
+  }
+
+  double Verr = Vref - Vmeas;
+
+  VF = Feedback_blk.getoutput(Efd,t_inc,int_flag,true);
+
+  double leadlag_blk_in = Verr - VF;
+  if(has_leadlag) {
+    VLL = Leadlag_blk.getoutput(leadlag_blk_in,t_inc,int_flag,true);
+  } else {
+    VLL = leadlag_blk_in;
+  }
+
+  if(zero_TA) {
+    VR = Regulator_gain_blk.getoutput(VLL);
+  } else {
+    VR = Regulator_blk.getoutput(VLL,t_inc,int_flag,true);
+  }
+
+  double sat_signal = KE*Efd;
+  if(has_Sat) {
+    sat_signal += Efd*Sat(Efd);
+  }
+
+  double output_blk_in = VR - sat_signal;
+
+  Efd = Output_blk.getoutput(output_blk_in,t_inc,int_flag,true);
+}
 /**
  * Predict new state variables for time step
  * @param t_inc time step increment
@@ -175,76 +216,7 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, doub
  */
 void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag)
 {
-  if (!flag) {
-    x1 = x1_1;
-    x2 = x2_1;
-    x3 = x3_1;
-    x4 = x4_1;
-    x5 = x5_1;
-  }
-  //printf("...........%f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5);
-  //printf(".........Vterminal = %f\n", Vterminal);
-  double Feedback;
-  // State 2
-  //printf("TR = %f\n", TR);
-  if (TR > TS_THRESHOLD * t_inc) dx2 = (Vterminal - x2) / TR; // SJin: x2 is Vsens
-  else x2 = Vterminal; // propogate state immediately
-  // State 5
-  if (TF > TS_THRESHOLD * t_inc) {
-    dx5 = (x1 * KF / TF - x5) / TF;
-    Feedback = x1 * KF / TF - x5;
-  } else {
-    x5 = 0;
-    Feedback = 0;
-  }
-  //printf("TF = %f, t_inc = %f, x5 = %f, dx5 = %f\n", TF, t_inc, x5, dx5);
-  // State 3
-  //double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
-  double LeadLagIN = Vref - x2 + Vstab - Feedback;
-  //printf("Vref = %f, TB = %f, TC = %f\n", Vref, TB, TC); 
-  double LeadLagOUT;
-  //printf("LeadLagIN = %f, TC = %f, TB = %f, x3 = %f\n", LeadLagIN, TC, TB, x3);
-  if (TB > (TS_THRESHOLD * t_inc)) {
-    dx3 = (LeadLagIN * (1 - TC / TB) - x3) / TB;
-    LeadLagOUT = LeadLagIN * TC / TB + x3;
-  } else 
-    LeadLagOUT = LeadLagIN;
-  // State 4
-  //printf("x4 = %f, Vrmax = %f, Vrmin = %f, TA = %f, LeadLagOUT = %f, KA = %f\n", x4, Vrmax, Vrmin, TA, LeadLagOUT, KA);
-  if (x4 > Vrmax) {
-	  //printf ("----------suspect error in exdc1 predictor (gen bus: %d) :  X4-VR value is %12.6f, larger then Vrmax: %12.6f \n",p_bus_id, x4, Vrmax);
-	  x4 = Vrmax;
-  }
-  if (x4 < Vrmin) {
-	  x4 = Vrmin;
-	  //printf ("----------suspect error in exdc1 predictor (gen bus: %d) :  X4-VR value is %12.6f, smaller then Vrmin: %12.6f \n",p_bus_id, x4, Vrmin);
-  }
-  if (TA > (TS_THRESHOLD * t_inc)) 
-    dx4 = (LeadLagOUT * KA - x4) / TA;
-  else {
-    dx4 = 0;
-    x4 = LeadLagOUT * KA;
-  }
-  if (dx4 > 0 && x4 >= Vrmax) dx4 = 0;
-  if (dx4 < 0 && x4 <= Vrmin) dx4 = 0;
-  // State 1
-  //dx1 = x4 - x1 * (KE + Sat(x1));
-  dx1 = x4 - x1 * KE;
-
-  x1_1 = x1 + dx1 * t_inc;
-  x2_1 = x2 + dx2 * t_inc;
-  x3_1 = x3 + dx3 * t_inc;
-  x4_1 = x4 + dx4 * t_inc;
-  x5_1 = x5 + dx5 * t_inc;
-  //printf("x2 = %f, dx2 = %f, x2_1 = %f\n", x2, dx2, x2_1);
-  //printf("x5 = %f, dx5 = %f, x5_1 = %f\n", x5, dx5, x5_1);
-
-  ///printf("exdc1 dx: %f\t%f\t%f\t%f\t%f\t\n", dx1, dx2, dx3, dx4, dx5);
-  ///printf("exdc1 x: %f\t%f\t%f\t%f\t%f\n", x1_1, x2_1, x3_1, x4_1, x5_1);
-
-  Efd = x1_1 * (1 + w);
-
-  ///printf("exdc1 Efd: %f\n", Efd);
+  computeModel(t_inc,PREDICTOR);
 }
 
 /**
@@ -254,55 +226,8 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
  */
 void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag)
 {
-  double Feedback;
-  // State 2
-  //printf("TR = %f, Vterminal = %f, x2_1 = %f\n", TR, Vterminal, x2_1);
-  if (TR > TS_THRESHOLD * t_inc) dx2_1 = (Vterminal - x2_1) / TR; // SJin: x2 is Vsens
-  else x2_1 = Vterminal; // propogate state immediately
-  // State 5
-  if (TF > TS_THRESHOLD * t_inc) {
-    dx5_1 = (x1_1 * KF / TF - x5_1) / TF;
-    Feedback = x1_1 * KF / TF - x5_1;
-  } else {
-    x5_1 = 0;
-    Feedback = 0;
-  }
-  // State 3
-  //double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
-  double LeadLagIN = Vref - x2_1 + Vstab - Feedback;  
-  double LeadLagOUT;
-  //printf("LeadLagIN = %f, TC = %f, TB = %f, x3 = %f\n", LeadLagIN, TC, TB, x3);
-  if (TB > (TS_THRESHOLD * t_inc)) {
-    dx3_1 = (LeadLagIN * (1 - TC / TB) - x3_1) / TB;
-    LeadLagOUT = LeadLagIN * TC / TB + x3_1;
-  } else 
-    LeadLagOUT = LeadLagIN;
-  // State 4
-  if (x4_1 > Vrmax) x4_1 = Vrmax;
-  if (x4_1 < Vrmin) x4_1 = Vrmin;
-  if (TA > (TS_THRESHOLD * t_inc)) 
-    dx4_1 = (LeadLagOUT * KA - x4_1) / TA;
-  else {
-    dx4_1 = 0;
-    x4_1 = LeadLagOUT * KA;
-  }
-  if (dx4_1 > 0 && x4_1 >= Vrmax) dx4_1 = 0;
-  if (dx4_1 < 0 && x4_1 <= Vrmin) dx4_1 = 0;
-  // State 1
-  dx1_1 = x4_1 - x1_1 * (KE + Sat(x1));
+  computeModel(t_inc,CORRECTOR);
 
-  x1_1 = x1 + (dx1 + dx1_1) / 2.0 * t_inc;
-  x2_1 = x2 + (dx2 + dx2_1) / 2.0 * t_inc;
-  x3_1 = x3 + (dx3 + dx3_1) / 2.0 * t_inc;
-  x4_1 = x4 + (dx4 + dx4_1) / 2.0 * t_inc;
-  x5_1 = x5 + (dx5 + dx5_1) / 2.0 * t_inc;
-
-  ///printf("exdc1 dx: %f\t%f\t%f\t%f\t%f\t\n", dx1_1, dx2_1, dx3_1, dx4_1, dx5_1);
-  ///printf("exdc1 x: %f\t%f\t%f\t%f\t%f\n", x1_1, x2_1, x3_1, x4_1, x5_1);
-  
-  Efd = x1_1 * (1 + w);
-
-  ///printf("exdc1 Efd: %f\n", Efd);
 }
 
 /**
@@ -312,15 +237,6 @@ void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag
 void gridpack::dynamic_simulation::Exdc1Model::setFieldVoltage(double fldv)
 {
   Efd = fldv;
-}
-
-/**
- * Set the field current parameter inside the exciter
- * @param fldc value of the field current
- */
-void gridpack::dynamic_simulation::Exdc1Model::setFieldCurrent(double fldc)
-{
-  LadIfd = fldc;
 }
 
 /** 
@@ -333,55 +249,34 @@ double gridpack::dynamic_simulation::Exdc1Model::getFieldVoltage()
 }
 
 /** 
- * Get the value of the field current parameter
- * @return value of field current
+ * Set the value of terminal voltage
  */
-double gridpack::dynamic_simulation::Exdc1Model::getFieldCurrent()
+void gridpack::dynamic_simulation::Exdc1Model::setVterminal(double Vm)
 {
-  return 0.0;
+  Ec = Vm;
 }
 
-/** 
- * Set the value of the Vterminal
- * @return value of field current
+/**
+ * Set stabilizer signal input
  */
-void gridpack::dynamic_simulation::Exdc1Model::setVterminal(double mag)
+void gridpack::dynamic_simulation::Exdc1Model::setVstab(double Vstab)
 {
-  Vterminal = mag;
+  Vs = Vstab;
 }
 
-/** 
- * Set the value of the omega
- * @return value of field current
- */
-void gridpack::dynamic_simulation::Exdc1Model::setOmega(double omega)
-{
-  w = omega;
-}
-
-void gridpack::dynamic_simulation::Exdc1Model::setVstab(double vtmp)
-{
-  Vstab = vtmp;
-}
-
-
-// Yuan added below 2020-6-23
 /** 
  * Set the exciter bus number
- * @return value of exciter bus number
  */
 void gridpack::dynamic_simulation::Exdc1Model::setExtBusNum(int ExtBusNum)
 {
-	p_bus_id = ExtBusNum;
+  p_bus_num = ExtBusNum;
 }	
 
 /** 
  * Set the exciter generator id
- * @return value of generator id
  */
 void gridpack::dynamic_simulation::Exdc1Model::setExtGenId(std::string ExtGenId)
 {
-	p_ckt = ExtGenId;
-}	
-// Yuan added above 2020-6-23
+  p_gen_id = ExtGenId;
+}
 
