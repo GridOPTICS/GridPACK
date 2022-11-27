@@ -6,10 +6,11 @@
 // -------------------------------------------------------------
 /**
  * @file   exdc1.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   Jun 11, 2015
+ * @author Shrirang Abhyankar
+ * @Updated:  November 26, 2022
  * 
- * @brief  
+ * @brief EXDC1 exciter model. This is the name in PSLF.
+ *        PSSE calls it IEEEX1 
  * 
  * 
  */
@@ -19,9 +20,9 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_exciter_model.hpp"
-// Yuan added below 2020-6-23
 #include <string>
-// Yuan added above 2020-6-23
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -55,11 +56,11 @@ class Exdc1Model : public BaseExciterModel
 
     /**
      * Initialize exciter model before calculation
-     * @param mag voltage magnitude
-     * @param ang voltage angle
+     * @param Vm voltage magnitude
+     * @param Va voltage angle
      * @param ts time step 
      */
-    void init(double mag, double ang, double ts);
+    void init(double Vm, double Va, double ts);
 
     /**
      * Predict new state variables for time step
@@ -77,15 +78,10 @@ class Exdc1Model : public BaseExciterModel
 
     /**
      * Set the field voltage parameter inside the exciter
+     * Only used during initialization
      * @param fldv value of the field voltage
      */
     void setFieldVoltage(double fldv);
-
-    /**
-     * Set the field current parameter inside the exciter
-     * @param fldc value of the field current
-     */
-    void setFieldCurrent(double fldc);
 
     /** 
      * Get the value of the field voltage parameter
@@ -94,72 +90,73 @@ class Exdc1Model : public BaseExciterModel
     double getFieldVoltage();
 
     /** 
-     * Get the value of the field current parameter
-     * @return value of field current
+     * Set terminal voltage
      */
-    double getFieldCurrent();
+    void setVterminal(double Vm);
 
+  /**
+   * Set stabilizer signal
+   */
+    void setVstab(double vstab);
+	
     /** 
-     * Set the value of the Vterminal
-     * @return value of field current
-     */
-    void setVterminal(double mag);
-
+     * Set the exciter bus number
+     * @return value of exciter bus number
+    **/
+    void setExtBusNum(int ExtBusNum);
+	
     /** 
-     * Set the value of the Omega 
-     * @return value of field current
-     */
-    void setOmega(double omega);
-	
-	void setVstab(double vstab);
-	
-	// Yuan added below 2020-6-23
-	/** 
-	 * Set the exciter bus number
-	 * @return value of exciter bus number
-	 */
-	void setExtBusNum(int ExtBusNum);
-	
-	/** 
-	 * Set the exciter generator id
-	 * @return value of generator id
-	 */
-	void setExtGenId(std::string ExtGenId);
-	// Yuan added above 2020-6-23
+     * Set the exciter generator id
+     * 
+    */
+    void setExtGenId(std::string ExtGenId);
 
   private:
 
-    //double S10, S12; 
-	bool OptionToModifyLimitsForInitialStateLimitViolation;
-
-    // Exciter EXDC1 parameters from dyr
+    // Model parameters
     double TR, KA, TA, TB, TC, Vrmax, Vrmin;
-    //double KE, TE, KF, TF1, SWITCH;
-    double KE, TE, KF, TF, SWITCH; // TF?
+    double KE, TE, KF, TF1;
     double E1, SE1, E2, SE2;
 
-    // EXDC1 state variables
-    double x1, x2, x3, x4, x5;
-    double x1_1, x2_1, x3_1, x4_1, x5_1;
-    double dx1, dx2, dx3, dx4, dx5;
-    double dx1_1, dx2_1, dx3_1, dx4_1, dx5_1;
+    // Model inputs
+    double Ec; // Terminal voltage
+    double Vref; // Reference voltage
+    double Vs; // Stabilizer voltage signal
 
-    // Field Voltage Output
-    double Efd;
+    // Model output
+    double Efd;  // Field voltage
 
-    // Field Current Output
-    double LadIfd, Vstab;
+    // Model transfer blocks
+    Filter Vmeas_blk; // Voltage measurement block
+    double Vmeas; // Output of voltage measurement block
+  
+    LeadLag Leadlag_blk; // Lead lag block
+    double  VLL;  // Output of lead lag block
 
-    double Vref;
+    Filter Regulator_blk; // Voltage regulator block
+    double VR;  // Voltage regulator output
+    Gain Regulator_gain_blk; // Replaces Regulator block if TA = 0
+  
+  Cblock Feedback_blk; // Feedback block
+  double VF; // Output of feedback block
 
-    double Vterminal, w; 
-	
-	// Yuan added below 2020-6-23
-	std::string p_ckt; // id of the generator where the exciter is installed on
-    int p_bus_id;  // bus number of the generator 
-	// Yuan added above 2020-6-23
+  Integrator Output_blk; // Ouput block
 
-    //boost::shared_ptr<BaseGeneratorModel> p_generator;
+    // Variables
+  // A and B parameters for quadratic saturation curve
+  double sat_A;
+  double sat_B; 
+  bool   has_Sat;     // Saturation active?
+  bool   has_leadlag;  // Is lead-lag block active?
+  bool   zero_TA;      // Time constant TA for regulator block zero, no transfer function
+  bool   zero_TR;      // Time constant TR for measurement block is zero, no transfer function
+  
+    std::string p_gen_id; // id of the generator where the exciter is installed on
+    int p_bus_num;  // bus number of the generator
+
+  void computeModel(double t_inc,IntegrationStage int_flag);
+
+
 };
 }  // dynamic_simulation
 }  // gridpack
