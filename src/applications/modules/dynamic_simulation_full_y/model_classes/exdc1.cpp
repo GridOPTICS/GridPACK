@@ -36,7 +36,7 @@ gridpack::dynamic_simulation::Exdc1Model::Exdc1Model(void)
   Vs = 0.0;
   sat_A = 0.0;
   sat_B = 0.0;
-  has_Sat = false;
+  has_Sat = true;
   has_leadlag = true;
   zero_TA = false;
   zero_TR = false;
@@ -76,13 +76,17 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
   if (!data->getValue(EXCITER_E2, &E2, idx)) E2 = 0.0; // E2
   if (!data->getValue(EXCITER_SE2, &SE2, idx)) SE2 = 0.0; // SE2
 
-  if(fabs(SE1*SE2) < 1e-6) has_Sat = true;
+  if(fabs(SE1*SE2) < 1e-6) has_Sat = false;
   if(fabs(TB*TC) < 1e-6)   has_leadlag = false;
   if(fabs(TA) < 1e-6) zero_TA = true;
   if(fabs(TR) < 1e-6) zero_TR = true;
 
   if(has_Sat) {
     /* Calculate saturation function constants */
+    double r;
+    r = std::sqrt(SE1*E1/(SE2*E2));
+    sat_A = (E1 - r*E2)/(1 - r);
+    sat_B = SE1*E1/((E1 - sat_A)*(E1 - sat_A));
   }
 
   // Set up blocks
