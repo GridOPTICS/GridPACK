@@ -220,5 +220,24 @@ void EquivalentMatrix::getMatrix(std::vector<ComplexType> &matrix, int &n)
   NGA_Get(p_ga,lo,hi,&matrix[0],&ld);
 }
 
+/**
+ * Print equivalent matrix to standard out
+ */
+void EquivalentMatrix::printMatrix()
+{
+  if (!p_initialized) return;
+  std::vector<ComplexType> matrix;
+  int i, j, dim;
+  this->getMatrix(matrix, dim);
+  if (p_network->communicator().rank() == 0) {
+    for (i=0; i<p_dim; i++) {
+      for (j=0; j<p_dim; j++) {
+        printf("(%10.6f,%10.6f) ",real(matrix[i*p_dim+j]),imag(matrix[i*p_dim+j]));
+      }
+      printf("\n");
+    }
+  }
+}
+
 }  // dynamic_simulation
 }  // gridpack

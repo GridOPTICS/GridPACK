@@ -55,6 +55,11 @@ class EquivalentMatrix
      */
     void getMatrix(std::vector<ComplexType> &matrix, int &n);
 
+    /**
+     * Print equivalent matrix to standard out
+     */
+    void printMatrix();
+
   private:
 
     /**
