@@ -543,13 +543,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     p_governor->setRotorSpeedDeviation(x2w_1);
     Pmech = p_governor->getMechanicalPower();
   } else {
-	Pmech = Pmechinit;
+    Pmech = Pmechinit;
   }
-
-  if (printFlag) {
-	printf("\n***** GEN %d Corrector:\n", p_bus_id);
-	printf("Efd = %f, Pmech = %f\n", Efd, Pmech);
-  }  
 
   double pi = 4.0*atan(1.0);
   double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
@@ -712,8 +707,8 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
       } else {
 	tag = p_ckt[1];
       }
-      sprintf(buf,", %d_%s_angle, %d_%s_speed, %d_%s_Efd",p_bus_id,tag.c_str(),
-	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
+      sprintf(buf,", %d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),
+	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
@@ -726,8 +721,8 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,",%f, %f, %f",
-	      x1d_1, x2w_1+1.0, Efd);
+      sprintf(buf,",%f, %f, %f, %f",
+	      x1d_1, x2w_1+1.0, Efd,Pmech);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
