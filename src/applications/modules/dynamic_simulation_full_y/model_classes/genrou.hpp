@@ -144,7 +144,7 @@ class GenrouGenerator : public BaseGeneratorModel
     int p_status;
 	bool p_tripped;
     
-    double MVABase;
+    double MBase;
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
     double Tdop, Tdopp, Tqopp, Tqop, S10, S12;
 	double genP, genQ;
@@ -189,7 +189,7 @@ class GenrouGenerator : public BaseGeneratorModel
           & p_sbase
           & p_pg & p_qg
           & p_status
-          & MVABase & Ra
+          & MBase & Ra
           & p_INorton
           & p_bus_id;
       }

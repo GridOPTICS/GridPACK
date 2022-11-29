@@ -3252,63 +3252,60 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     flag_chk = true;
 	iter_num_record = 0;
 	if (p_iterative_network_debug) printf ("--------------------------in iterative predictor current injection, Simu_Current_Step: %d------------------- \n", Simu_Current_Step);
-    while (flag_chk == true ) {
-
-			volt_full->zero();
+    while (flag_chk == true ) {			
+      if (flagP == 0) {
+	solver_sptr->solve(*INorton_full, *volt_full);
+      } else if (flagP == 1) {
+	solver_fy_sptr->solve(*INorton_full, *volt_full);
+      } else if (flagP == 2) {
+	solver_posfy_sptr->solve(*INorton_full, *volt_full);
+      }
 			
-			if (flagP == 0) {
-				solver_sptr->solve(*INorton_full, *volt_full);
-			} else if (flagP == 1) {
-				solver_fy_sptr->solve(*INorton_full, *volt_full);
-			} else if (flagP == 2) {
-				solver_posfy_sptr->solve(*INorton_full, *volt_full);
-			}
-			
+      
+      //printf("1: itr test:----previous predictor_INorton_full:\n");
+      //INorton_full->print();
+      
+      INorton_full_chk->equate(*INorton_full);
+      //printf("2: itr test:----predictor_INorton_full_chk:\n");
+      //INorton_full_chk->print();
 
-			//printf("1: itr test:----previous predictor_INorton_full:\n");
-			//INorton_full->print();
-
-			INorton_full_chk->equate(*INorton_full);
-			//printf("2: itr test:----predictor_INorton_full_chk:\n");
-			//INorton_full_chk->print();
-
-			nbusMap_sptr->mapToBus(volt_full);
-			p_factory->setVolt(false);
-			
-			if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
-				p_factory->predictor_currentInjection(false);
-			} else {
-				p_factory->predictor_currentInjection(true);
-			}
-			
+      nbusMap_sptr->mapToBus(volt_full);
+      p_factory->setVolt(false);
+      
+      if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
+	p_factory->predictor_currentInjection(false);
+      } else {
+	p_factory->predictor_currentInjection(true);
+      }
+      
 # if 0	
-			printf("3: itr test:----previous predictor_INorton_full:\n");
-			INorton_full->print();
-
-			INorton_full_chk->equate(*INorton_full);
-			printf("4: itr test:----predictor_INorton_full_chk:\n");
-			INorton_full_chk->print();
+      printf("3: itr test:----previous predictor_INorton_full:\n");
+      INorton_full->print();
+      
+      INorton_full_chk->equate(*INorton_full);
+      printf("4: itr test:----predictor_INorton_full_chk:\n");
+      INorton_full_chk->print();
 # endif			
-			p_factory->setMode(make_INorton_full);
-			nbusMap_sptr->mapToVector(INorton_full);
-			
-			//printf("5: itr test:----predictor_INorton_full:\n");
-			//INorton_full->print();
-			
-			//multiply(*ybus_fy, *volt_full, *INorton_full_chk);
-			INorton_full_chk->add(*INorton_full, -1.0);
-			max_INorton_full=abs(INorton_full_chk->normInfinity());
-			
-			if (max_INorton_full < ITER_TOL || iter_num_record >= MAX_ITR_NO) {
-				flag_chk = false;
-			} else {
-				iter_num_record += 1;
-				if (p_iterative_network_debug) printf("              predictor iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
-				//printf("-----INorton_full : \n");
-				//INorton_full->print();
-				//printf("-----INorton_full_chk - INorton_full : \n");
-				//INorton_full_chk->print();
-			}
+      p_factory->setMode(make_INorton_full);
+      nbusMap_sptr->mapToVector(INorton_full);
+      
+      //printf("5: itr test:----predictor_INorton_full:\n");
+      //INorton_full->print();
+      
+      //multiply(*ybus_fy, *volt_full, *INorton_full_chk);
+      INorton_full_chk->add(*INorton_full, -1.0);
+      max_INorton_full=abs(INorton_full_chk->normInfinity());
+      
+      if (max_INorton_full < ITER_TOL || iter_num_record >= MAX_ITR_NO) {
+	flag_chk = false;
+      } else {
+	iter_num_record += 1;
+	if (p_iterative_network_debug) printf("              predictor iter number: %d, max_INorton_full = %13.10f \n", iter_num_record, max_INorton_full);
+	//printf("-----INorton_full : \n");
+	//INorton_full->print();
+	//printf("-----INorton_full_chk - INorton_full : \n");
+	//INorton_full_chk->print();
+      }
     }// end of while
  }else {// p_biterative_solve_network = false
     if (flagP == 0) {
@@ -3506,11 +3503,13 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     }
     timer->stop(t_predictor);
 
+    
     if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
       p_factory->corrector_currentInjection(false);
     } else {
       p_factory->corrector_currentInjection(true);
     }
+    
 
     //INorton_full = nbusMap_sptr->mapToVector();
     t_cmIf = timer->createCategory("DS Solve: Modified Euler Corrector: Make INorton");
@@ -3526,6 +3525,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     // to calculate terminal volt: ----------
     t_csolve = timer->createCategory("DS Solve: Modified Euler Corrector: Linear Solver");
     timer->start(t_csolve);
+    
     volt_full->zero();
 
 //!!!!!!!!!!iteratively solve or not, rk!!!!
@@ -3622,29 +3622,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
     //if (Simu_Current_Step == simu_total_steps - 1) 
       //p_busIO->write();
 
-    if (Simu_Current_Step == steps1) {
-      solver_fy_sptr->solve(*INorton_full, *volt_full);
-//      printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
-//      printf("\n=== [Corrector] volt_full: ===\n");
-//      volt_full->print();
-      nbusMap_sptr->mapToBus(volt_full);
-      p_factory->setVolt(false);
-	  p_factory->updateBusFreq(h_sol1);
-    } else if (Simu_Current_Step == steps2) {
-      solver_posfy_sptr->solve(*INorton_full, *volt_full);
-//      printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
-//      printf("\n=== [Corrector] volt_full: ===\n");
-//      volt_full->print();
-      nbusMap_sptr->mapToBus(volt_full);
-      p_factory->setVolt(true);
-	  p_factory->updateBusFreq(h_sol1);
-    }
-    if (Simu_Current_Step == 1) {
-//      printf("\n Dynamic Step 1 [Corrector] volt_full: ===\n");
-//      volt_full->print();
-//      printf("\n Dynamic Step 1 [Corrector] Norton_full: ===\n");
-//      INorton_full->print();
-    }
+
     //printf("----------!renke debug, after solve INorton_full and map back voltage ----------\n");
     t_secure = timer->createCategory("DS Solve: Check Security");
     timer->start(t_secure);

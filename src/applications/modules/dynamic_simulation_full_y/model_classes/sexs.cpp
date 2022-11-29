@@ -175,6 +175,20 @@ void gridpack::dynamic_simulation::SexsModel::setFieldVoltage(double fldv)
  */
 double gridpack::dynamic_simulation::SexsModel::getFieldVoltage()
 {
+  double u1,y1;
+
+  u1 = Vref + Vs - Ec;
+
+  // Calculate first block output
+  y1 = leadlagblock.getoutput(u1);
+
+  // Calculate second block output
+  if(!zero_TE) {
+    Efd = filterblock.getoutput(y1);
+  } else {
+    Efd = gainblock.getoutput(y1);
+  }
+
   return Efd;
 }
 
