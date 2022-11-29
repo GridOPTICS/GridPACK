@@ -200,8 +200,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   Vd = Vr * sin(x1d) - Vi * cos(x1d); // convert to dq reference
   Vq = Vr * cos(x1d) + Vi * sin(x1d); // convert to dq reference
   
-  double Psiqpp = -Vd/ (1 + x2w);
-  double Psidpp = + Vq/ (1 + x2w);
+  double Psiqpp = -Vd;
+  double Psidpp = + Vq;
 
   // q-axis transient voltage
   x3Eqp = Vq + (Xdp - Xdpp)*Id;
@@ -300,8 +300,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
   double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
 
-  double Vd = - Psiqpp* (1 + x2w);
-  double Vq = + Psidpp* (1 + x2w);
+  double Vd = - Psiqpp; //* (1 + x2w);
+  double Vq = + Psidpp; //* (1 + x2w);
 
   Vterm = presentMag;
   Theta = presentAng;
@@ -375,8 +375,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
   double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
   double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
 
-  double Vd = - Psiqpp* (1 + x2w);
-  double Vq = + Psidpp* (1 + x2w);
+  double Vd = - Psiqpp;
+  double Vq = + Psidpp;
 
   Vterm = presentMag;
   Theta = presentAng;
@@ -481,8 +481,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
   double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
   
-  double Vd = -Psiqpp* (1 + x2w_1);
-  double Vq = +Psidpp* (1 + x2w_1);
+  double Vd = -Psiqpp;
+  double Vq = +Psidpp;
   
   Vterm = presentMag;
   Theta = presentAng;
@@ -555,8 +555,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
   double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
   double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
 
-  double Vd = - Psiqpp* (1 + x2w_1);
-  double Vq = + Psidpp* (1 + x2w_1);
+  double Vd = - Psiqpp;
+  double Vq = + Psidpp;
 
   
   Vterm = presentMag;
