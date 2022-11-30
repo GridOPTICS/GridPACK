@@ -38,7 +38,7 @@ class LoadParser33 : public BaseBlockParser {
    * parse load block
    * @param stream input stream that feeds lines from RAW file
    * @param data vector of data collection objects to store parameters
-   *             from RAW file for buses
+   *             from RAW file for loads
    */
   void parse(
       gridpack::stream::InputStream &stream,

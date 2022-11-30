@@ -41,6 +41,7 @@ add_library(gridpack_block_parsers
     block_parsers/case_parser33.cpp
     block_parsers/bus_parser33.cpp
     block_parsers/load_parser33.cpp
+    block_parsers/fixed_shunt_parser33.cpp
     )
 gridpack_set_library_version(gridpack_block_parsers)
 add_dependencies(gridpack_block_parsers external_build)
@@ -158,5 +159,6 @@ install (FILES
   block_parsers/case_parser33.hpp
   block_parsers/bus_parser33.hpp
   block_parsers/load_parser33.hpp
+  block_parsers/fixed_shunt_parser33.hpp
   DESTINATION include/gridpack/parser/block_parsers
 )
