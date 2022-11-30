@@ -107,6 +107,13 @@ class BaseBlockParser{
    */
   bool isBlank(std::string string);
 
+  /**
+   * Get bus index from bus name string. If the bus name string does not
+   * have quotes, assume it represents an integer index. If it does have
+   * quotes, find the corresponding index in the p_nameMap data structure
+   */
+  int getBusIndex(std::string str);
+  
 private:
   std::map<int,int> p_busMap;
   std::map<std::string,int> p_nameMap;

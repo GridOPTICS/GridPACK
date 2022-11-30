@@ -24,6 +24,9 @@ gridpack::parser::BusParser33::BusParser33(
     gridpack::parser::BaseBlockParser(
       bus_map, name_map, branch_map)
 {
+  p_busMap = bus_map;
+  p_nameMap = name_map;
+  p_branchMap = branch_map;
 }
 
 

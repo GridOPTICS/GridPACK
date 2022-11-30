@@ -34,6 +34,7 @@
 #include "gridpack/parser/base_pti_parser.hpp"
 #include "gridpack/parser/block_parsers/case_parser33.hpp"
 #include "gridpack/parser/block_parsers/bus_parser33.hpp"
+#include "gridpack/parser/block_parsers/load_parser33.hpp"
 
 #define TERM_CHAR '0'
 // SOURCE: http://www.ee.washington.edu/research/pstca/formats/pti.txt
@@ -225,7 +226,9 @@ class PTI33_parser : public BasePTIParser<_network>
             p_nameMap, p_branchMap);
         bus_parser.parse(p_istream,p_busData,p_case_sbase,p_case_id,
             &p_maxBusIndex);
-        find_loads();
+        gridpack::parser::LoadParser33 load_parser(p_busMap,
+            p_nameMap, p_branchMap);
+        load_parser.parse(p_istream,p_busData);
         find_fixed_shunts();
         find_generators();
         find_branches();

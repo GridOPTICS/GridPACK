@@ -20,7 +20,7 @@ class BusParser33 : public BaseBlockParser {
   public:
   /**
    * Constructor
-   * @param stream input stream that feeds lines from RAW file
+   * @param bus_map map indices in RAW file to internal indices
    * @param name_map map name in RAW file to internal indices
    * @param branch_map map bus index pair in RAW file to internal indices
    */
@@ -36,7 +36,7 @@ class BusParser33 : public BaseBlockParser {
 
   /**
    * parse bus block
-   * @param bus_map map indices in RAW file to internal indices
+   * @param stream input stream that feeds lines from RAW file
    * @param data vector of data collection objects to store parameters
    *             from RAW file for buses
    * @param p_case_sbase value of sbase from RAW file

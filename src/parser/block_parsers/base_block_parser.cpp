@@ -231,3 +231,26 @@ bool gridpack::parser::BaseBlockParser::isBlank(std::string string)
   if (idx != std::string::npos) return false;
   return true;
 }
+
+/**
+ * Get bus index from bus name string. If the bus name string does not
+ * have quotes, assume it represents an integer index. If it does have
+ * quotes, find the corresponding index in the p_nameMap data structure
+ */
+int gridpack::parser::BaseBlockParser::getBusIndex(std::string str)
+{
+  if (check_string(str)) {
+    std::string name;
+    double voltage;
+    parseBusName(str,name,voltage);
+    std::map<std::string,int>::iterator it;
+    it = p_nameMap.find(name);
+    if (it != p_nameMap.end()) {
+      return it->second;
+    } else {
+      return -1;
+    }
+  } else {
+    return abs(atoi(str.c_str()));
+  }
+}
