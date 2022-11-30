@@ -18,6 +18,7 @@
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #include "gridpack/stream/input_stream.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/utilities/string_utils.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include <string>
 #include <map>
@@ -90,6 +91,21 @@ class BaseBlockParser{
    * @param string line of text to be cleaned
    */
   void cleanComment(std::string &string);
+
+  /**
+   * Split PSS/E formatted lines into individual tokens using both blanks and
+   * commas as delimiters
+   * @param line input string from PSS/E file
+   * @return vector of tokens parsed from PSS/E line
+   */
+  std::vector<std::string> splitPSSELine (std::string line);
+
+  /**
+   * Check to see if string is blank
+   * @param string string that needs to checked for non-blank characters
+   * @return true if no non-blank characters are found
+   */
+  bool isBlank(std::string string);
 
 private:
   std::map<int,int> p_busMap;

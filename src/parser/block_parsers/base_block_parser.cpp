@@ -185,3 +185,49 @@ void gridpack::parser::BaseBlockParser::cleanComment(std::string &string)
     string.erase(idx,len);
   }
 }
+
+/**
+ * Split PSS/E formatted lines into individual tokens using both blanks and
+ * commas as delimiters
+ * @param line input string from PSS/E file
+ * @return vector of tokens parsed from PSS/E line
+ */
+std::vector<std::string> gridpack::parser::BaseBlockParser::splitPSSELine (
+    std::string line)
+{
+  std::vector<std::string> ret;
+  int i, j;
+  std::vector<std::string>  split_line;
+  // split line into tokens based on comma delimiters
+  boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
+      boost::token_compress_off);
+  int slen = split_line.size();
+  gridpack::utility::StringUtils p_util;
+  // parse each token based on blank spaces
+  for (i=0; i<slen; i++) {
+    if (isBlank(split_line[i])) {
+      // If two consecutive commas have nothing in between, replace it with
+      // a zero "0" character. This should be converted to 0 and 0.0 by the
+      // atoi and atof functions, respectively
+      ret.push_back("0");
+    } else {
+      std::vector<std::string> tokens;
+      tokens = p_util.blankTokenizer(split_line[i]);
+      int tlen = tokens.size();
+      for (j=0; j<tlen; j++) ret.push_back(tokens[j]);
+    }
+  }
+  return ret;
+}
+
+/**
+ * Check to see if string is blank
+ * @param string string that needs to checked for non-blank characters
+ * @return true if no non-blank characters are found
+ */
+bool gridpack::parser::BaseBlockParser::isBlank(std::string string)
+{
+  int idx = string.find_first_not_of(' ',0);
+  if (idx != std::string::npos) return false;
+  return true;
+}
