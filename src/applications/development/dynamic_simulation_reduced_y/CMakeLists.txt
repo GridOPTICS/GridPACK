@@ -27,6 +27,7 @@ set(target_libraries
     gridpack_configuration
     gridpack_timer
     gridpack_parallel
+    gridpack_block_parsers
 )
 
 if (GOSS_DIR)

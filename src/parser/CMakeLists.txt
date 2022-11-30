@@ -36,6 +36,13 @@ set(target_libraries
     gridpack_stream
     ${target_libraries})
 
+add_library(gridpack_block_parsers
+    block_parsers/base_block_parser.cpp
+    block_parsers/case_parser33.cpp
+    )
+gridpack_set_library_version(gridpack_block_parsers)
+add_dependencies(gridpack_block_parsers external_build)
+
 include_directories(AFTER parser_classes)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -142,4 +149,10 @@ install(FILES
   parser_classes/wtpta1.hpp
   parser_classes/wttqa1.hpp
   DESTINATION include/gridpack/parser/parser_classes
+)
+
+install (FILES
+  block_parsers/base_block_parser.hpp
+  block_parsers/case_parser33.hpp
+  DESTINATION include/gridpack/parser/block_parsers
 )

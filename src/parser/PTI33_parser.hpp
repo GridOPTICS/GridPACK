@@ -32,6 +32,7 @@
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/parser/base_parser.hpp"
 #include "gridpack/parser/base_pti_parser.hpp"
+#include "gridpack/parser/block_parsers/case_parser33.hpp"
 
 #define TERM_CHAR '0'
 // SOURCE: http://www.ee.washington.edu/research/pstca/formats/pti.txt
@@ -196,7 +197,9 @@ class PTI33_parser : public BasePTIParser<_network>
       int me(p_network->communicator().rank());
 
       if (me == 0) {
-        find_case();
+        gridpack::parser::CaseParser33 case_parser(p_busMap,
+            p_nameMap, p_branchMap);
+        case_parser.parse(p_istream,p_network_data,p_case_sbase,p_case_id);
       } else {
         p_case_sbase = 0.0;
         p_case_id = 0;
