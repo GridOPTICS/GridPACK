@@ -6,6 +6,7 @@ Cblock::Cblock()
   p_order = 1; // For future use
   p_xmin  = p_ymin = p_dxmin = -1000.0;
   p_xmax  = p_ymax = p_dxmax =  1000.0;
+  p_current_stage = PREDICTOR;
 }
 
 Cblock::~Cblock(void)
@@ -67,6 +68,7 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,double dxmin
     xout = x[0] + dt*p_dxdt[0];
     xout = std::max(xmin,std::min(xout,xmax));
     p_xhat[0] = xout;
+    p_current_stage = PREDICTOR;
   }
 
   if(stage == CORRECTOR) {
@@ -75,6 +77,7 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,double dxmin
     xout = x[0] + dt*dx_dt;
     xout = std::max(xmin,std::min(xout,xmax));
     x[0] = xout;
+    p_current_stage = CORRECTOR;
   }
 }
 
@@ -83,6 +86,19 @@ void Cblock::updatestate(double u,double dt,IntegrationStage stage)
   updatestate(u,dt,p_xmin,p_xmax,p_dxmin,p_dxmax,stage);
 }
 
+double Cblock::getoutput(double u)
+{
+  double x_n,y_n;
+  if(p_current_stage == PREDICTOR) x_n = x[0];
+  else x_n = p_xhat[0];
+  
+  y_n = p_C[0]*x_n + p_D[0]*u;
+
+  y_n = std::max(p_ymin,std::min(y_n,p_ymax));
+
+  return y_n;
+}
+  
 double Cblock::getoutput(double u,double dt,double xmin,double xmax,double ymin,double ymax,IntegrationStage stage, bool dostateupdate)
 {
   double x_n,y_n,x_n1;

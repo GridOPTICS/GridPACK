@@ -85,6 +85,8 @@ class Cblock
   double p_ymax,p_ymin; /* Max./Min. limits on output Y */
   double p_dxmax,p_dxmin; /* Rate-limiter */
 
+  IntegrationStage p_current_stage; // The current stage
+
   /**
      UPDATESTATE - Updates the linear control block state variable
 
@@ -219,6 +221,17 @@ class Cblock
        u           Expected input for the control block given the output y
   **/
   double init_given_y(double y);
+
+  /**
+     GETOUPUT - Returns output y of the control block. Does not do any state update
+
+     Inputs:
+       u                 Input to the control block
+
+     Output:
+       y                 Control block output
+  **/
+  double getoutput(double u);
 
   /**
      GETOUPUT - Returns output y of the control block and (optionally) updates the state

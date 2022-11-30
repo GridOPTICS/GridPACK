@@ -6,11 +6,11 @@
 // -------------------------------------------------------------
 /**
  * @file   tgov1.hpp
- * @author Renke Huang
- * @Last modified:   June 17, 20120
+ * @author Shrirang Abhyankar
+ * @Last modified:   November 29, 2022
  * 
  * @brief  
- * 
+ *  Turbine-governor model
  * 
  */
 
@@ -19,9 +19,10 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_governor_model.hpp"
-//#include "GainBlockClass.hpp"
-//#include "BackLashClass.hpp"
-//#include "DBIntClass.hpp"
+#include "cblock.hpp"
+#include "dblock.hpp"
+
+#define TS_THRESHOLD 4
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -87,42 +88,26 @@ class Tgov1Model : public BaseGovernorModel
      */
     double getMechanicalPower();
 
-    /** 
-     * Get the value of the rotor speed deviation
-     * @return value of rotor speed deviation
-     */
-    //double getRotorSpeedDeviation();
-	
-	/** 
-	 * Set the governor bus number
-	 */
-	//void setExtBusNum(int ExtBusNum);
-	
-	/** 
-	 * Set the governor generator id
-	 */
-	//void setExtGenId(std::string ExtGenId);
-
   private:
 
     // Governor Tgov1 Parameters read from dyr
     double R, T1, Vmax, Vmin, T2, T3, Dt;
 
-    // Tgov1 state variables
-    double x1pow, x2val;
-    double x1pow_1, x2val_1;
-    double dx1pow, dx2val;
-    double dx1pow_1, dx2val_1;
+    // Model inputs
+    double Pref; // Reference power (calculated by model)
+    double delta_w;     // Speed deviation (set by generator model)
 
-    // Outputs: Mechnical Power Gen1 and Gen 2
-    double Pmech;
+    // Model output
+    double Pmech;  // Mechanical power output
 
-    double Pref;
-    double delta_w;
-	bool  bdebugmodel;
-		//Renke added below 2020-7-24
-	//std::string p_ckt; // id of the generator where the governor is installed on
-    //int p_bus_id;  // bus number of the generator 
+    // Tgov1 blocks
+  LeadLag leadlag_blk;    // Lead-lag block
+  double  leadlag_blk_out;  // Output of lead lag block
+
+  Filter delay_blk; // Delay block
+  double delay_blk_out; // Output of delay block
+  
+  void computeModel(double t_inc, IntegrationStage int_flag);
 
 };
 }  // dynamic_simulation
