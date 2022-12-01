@@ -18,9 +18,9 @@
  internal indices
  */
 gridpack::parser::CaseParser33::CaseParser33(
-    std::map<int,int> &bus_map,
-    std::map<std::string,int> &name_map,
-    std::map<std::pair<int, int>, int> &branch_map) :
+    std::map<int,int> *bus_map,
+    std::map<std::string,int> *name_map,
+    std::map<std::pair<int, int>, int> *branch_map) :
     gridpack::parser::BaseBlockParser(
       bus_map, name_map, branch_map)
 {

@@ -17,9 +17,9 @@
  * @param branch_map map bus index pair in RAW file to internal indices
  */
 gridpack::parser::BaseBlockParser::BaseBlockParser(
-    std::map<int,int> &bus_map,
-    std::map<std::string,int> &name_map,
-    std::map<std::pair<int, int>, int> &branch_map)
+    std::map<int,int> *bus_map,
+    std::map<std::string,int> *name_map,
+    std::map<std::pair<int, int>, int> *branch_map)
 {
   p_busMap = bus_map;
   p_nameMap = name_map;
@@ -244,8 +244,8 @@ int gridpack::parser::BaseBlockParser::getBusIndex(std::string str)
     double voltage;
     parseBusName(str,name,voltage);
     std::map<std::string,int>::iterator it;
-    it = p_nameMap.find(name);
-    if (it != p_nameMap.end()) {
+    it = p_nameMap->find(name);
+    if (it != p_nameMap->end()) {
       return it->second;
     } else {
       return -1;

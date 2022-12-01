@@ -18,15 +18,12 @@
  internal indices
  */
 gridpack::parser::LoadParser33::LoadParser33(
-    std::map<int,int> &bus_map,
-    std::map<std::string,int> &name_map,
-    std::map<std::pair<int, int>, int> &branch_map) :
+    std::map<int,int> *bus_map,
+    std::map<std::string,int> *name_map,
+    std::map<std::pair<int, int>, int> *branch_map) :
     gridpack::parser::BaseBlockParser(
       bus_map, name_map, branch_map)
 {
-  p_busMap = bus_map;
-  p_nameMap = name_map;
-  p_branchMap = branch_map;
 }
 
 
@@ -67,8 +64,8 @@ void gridpack::parser::LoadParser33::parse(
       continue;
     }
     std::map<int, int>::iterator it;
-    it = p_busMap.find(o_idx);
-    if (it != p_busMap.end()) {
+    it = p_busMap->find(o_idx);
+    if (it != p_busMap->end()) {
       l_idx = it->second;
     } else {
       stream.nextLine(line);

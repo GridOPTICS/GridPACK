@@ -18,15 +18,12 @@
  internal indices
  */
 gridpack::parser::BusParser33::BusParser33(
-    std::map<int,int> &bus_map,
-    std::map<std::string,int> &name_map,
-    std::map<std::pair<int, int>, int> &branch_map) :
+    std::map<int,int> *bus_map,
+    std::map<std::string,int> *name_map,
+    std::map<std::pair<int, int>, int> *branch_map) :
     gridpack::parser::BaseBlockParser(
       bus_map, name_map, branch_map)
 {
-  p_busMap = bus_map;
-  p_nameMap = name_map;
-  p_branchMap = branch_map;
 }
 
 
@@ -75,7 +72,7 @@ void gridpack::parser::BusParser33::parse(
     if (*p_maxBusIndex<o_idx) *p_maxBusIndex = o_idx;
     data->addValue(BUS_NUMBER, o_idx);
     p_busData.push_back(data);
-    p_busMap.insert(std::pair<int,int>(o_idx,index));
+    p_busMap->insert(std::pair<int,int>(o_idx,index));
 
     // Add case parameters to data set
     data->addValue(CASE_SBASE, p_case_sbase);
@@ -89,7 +86,7 @@ void gridpack::parser::BusParser33::parse(
       check_string(bus_name);
       std::pair<std::string,int> name_pair;
       name_pair = std::pair<std::string,int>(bus_name,abs(o_idx));
-      p_nameMap.insert(name_pair);
+      p_nameMap->insert(name_pair);
     }
     if (split_line[1].find_first_of('\'',0) != std::string::npos) {
       gridpack::utility::StringUtils util;

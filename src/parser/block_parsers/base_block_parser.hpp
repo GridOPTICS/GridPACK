@@ -37,9 +37,9 @@ class BaseBlockParser{
    * @param branch_map map bus index pair in RAW file to internal indices
    */
   BaseBlockParser(
-            std::map<int,int> &bus_map,
-            std::map<std::string,int> &name_map,
-            std::map<std::pair<int, int>, int> &branch_map);
+            std::map<int,int> *bus_map,
+            std::map<std::string,int> *name_map,
+            std::map<std::pair<int, int>, int> *branch_map);
   /**
    * Simple destructor
    */
@@ -114,10 +114,10 @@ class BaseBlockParser{
    */
   int getBusIndex(std::string str);
   
-private:
-  std::map<int,int> p_busMap;
-  std::map<std::string,int> p_nameMap;
-  std::map<std::pair<int, int>, int> p_branchMap;
+protected:
+  std::map<int,int> *p_busMap;
+  std::map<std::string,int> *p_nameMap;
+  std::map<std::pair<int, int>, int> *p_branchMap;
 };
 
 } // parse

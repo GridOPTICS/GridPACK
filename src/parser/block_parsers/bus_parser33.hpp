@@ -25,9 +25,9 @@ class BusParser33 : public BaseBlockParser {
    * @param branch_map map bus index pair in RAW file to internal indices
    */
   BusParser33(
-      std::map<int,int> &bus_map,
-      std::map<std::string,int> &name_map,
-      std::map<std::pair<int, int>, int> &branch_map);
+      std::map<int,int> *bus_map,
+      std::map<std::string,int> *name_map,
+      std::map<std::pair<int, int>, int> *branch_map);
 
   /**
    * Simple Destructor
@@ -48,11 +48,6 @@ class BusParser33 : public BaseBlockParser {
       std::vector<boost::shared_ptr<gridpack::component::DataCollection> > &data,
       double p_case_sbase, int p_case_id, int *p_maxBusIndex);
 
-  private:
-
-  std::map<int,int> p_busMap;
-  std::map<std::string,int> p_nameMap;
-  std::map<std::pair<int, int>, int> p_branchMap;
 };
 
 } // parser

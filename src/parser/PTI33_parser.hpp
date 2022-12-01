@@ -36,6 +36,9 @@
 #include "gridpack/parser/block_parsers/bus_parser33.hpp"
 #include "gridpack/parser/block_parsers/load_parser33.hpp"
 #include "gridpack/parser/block_parsers/fixed_shunt_parser33.hpp"
+#include "gridpack/parser/block_parsers/generator_parser33.hpp"
+#include "gridpack/parser/block_parsers/branch_parser33.hpp"
+#include "gridpack/parser/block_parsers/transformer_parser33.hpp"
 
 #define TERM_CHAR '0'
 // SOURCE: http://www.ee.washington.edu/research/pstca/formats/pti.txt
@@ -200,8 +203,8 @@ class PTI33_parser : public BasePTIParser<_network>
       int me(p_network->communicator().rank());
 
       if (me == 0) {
-        gridpack::parser::CaseParser33 case_parser(p_busMap,
-            p_nameMap, p_branchMap);
+        gridpack::parser::CaseParser33 case_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
         case_parser.parse(p_istream,p_network_data,p_case_sbase,p_case_id);
       } else {
         p_case_sbase = 0.0;
@@ -223,19 +226,36 @@ class PTI33_parser : public BasePTIParser<_network>
       this->setCaseSBase(p_case_sbase);
 
       if (me == 0) {
-        gridpack::parser::BusParser33 bus_parser(p_busMap,
-            p_nameMap, p_branchMap);
+        gridpack::parser::BusParser33 bus_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
         bus_parser.parse(p_istream,p_busData,p_case_sbase,p_case_id,
             &p_maxBusIndex);
-        gridpack::parser::LoadParser33 load_parser(p_busMap,
-            p_nameMap, p_branchMap);
+        printf("Size of bus data: %d maxBusIndex: %d\n",p_busData.size(),
+            p_maxBusIndex);
+        printf("Size of bus map: %d size of name map: %d size of branch map: %d\n",
+            p_busMap.size(),p_nameMap.size(),p_branchMap.size());
+        gridpack::parser::LoadParser33 load_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
         load_parser.parse(p_istream,p_busData);
-        gridpack::parser::FixedShuntParser33 fixed_shunt_parser(p_busMap,
-            p_nameMap, p_branchMap);
+        gridpack::parser::FixedShuntParser33 fixed_shunt_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
         fixed_shunt_parser.parse(p_istream,p_busData);
-        find_generators();
-        find_branches();
-        find_transformer();
+        gridpack::parser::GeneratorParser33 generator_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        generator_parser.parse(p_istream,p_busData);
+        gridpack::parser::BranchParser33 branch_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        branch_parser.parse(p_istream,p_branchData);
+        gridpack::parser::TransformerParser33 transformer_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        transformer_parser.parse(p_istream,p_busData,p_branchData,p_case_sbase,
+            p_maxBusIndex);
+        //find_buses();
+        //find_loads();
+        //find_fixed_shunts();
+        //find_generators();
+        //find_branches();
+        //find_transformer();
         find_area();
         find_2term();
         find_vsc_line();

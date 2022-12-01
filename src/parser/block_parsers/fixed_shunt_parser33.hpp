@@ -25,9 +25,9 @@ class FixedShuntParser33 : public BaseBlockParser {
    * @param branch_map map bus index pair in RAW file to internal indices
    */
   FixedShuntParser33(
-      std::map<int,int> &bus_map,
-      std::map<std::string,int> &name_map,
-      std::map<std::pair<int, int>, int> &branch_map);
+      std::map<int,int> *bus_map,
+      std::map<std::string,int> *name_map,
+      std::map<std::pair<int, int>, int> *branch_map);
 
   /**
    * Simple Destructor
@@ -43,12 +43,6 @@ class FixedShuntParser33 : public BaseBlockParser {
   void parse(
       gridpack::stream::InputStream &stream,
       std::vector<boost::shared_ptr<gridpack::component::DataCollection> > &data);
-
-  private:
-
-  std::map<int,int> p_busMap;
-  std::map<std::string,int> p_nameMap;
-  std::map<std::pair<int, int>, int> p_branchMap;
 };
 
 } // parser
