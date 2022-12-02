@@ -20,7 +20,7 @@ class CaseParser33 : public BaseBlockParser {
   public:
   /**
    * Constructor
-   * @param stream input stream that feeds lines from RAW file
+   * @param bus_map map indices in RAW file to internal indices
    * @param name_map map name in RAW file to internal indices
    * @param branch_map map bus index pair in RAW file to internal indices
    */
@@ -36,7 +36,7 @@ class CaseParser33 : public BaseBlockParser {
 
   /**
    * parse case block
-   * @param bus_map map indices in RAW file to internal indices
+   * @param stream input stream that feeds lines from RAW file
    * @param data data collection object to store parameters from RAW file
    * @param sbase value of sbase from RAW file
    * @param id value if id from RAW file
@@ -45,16 +45,6 @@ class CaseParser33 : public BaseBlockParser {
       gridpack::stream::InputStream &stream,
       boost::shared_ptr<gridpack::component::DataCollection> &data,
       double &sbase, int &id);
-
-  private:
-
-  std::map<int,int> p_busMap;
-  std::map<std::string,int> p_nameMap;
-  std::map<std::pair<int, int>, int> p_branchMap;
-
-  double p_case_sbase;
-  int p_case_id;
-
 };
 
 } // parser

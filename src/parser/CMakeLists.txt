@@ -45,6 +45,10 @@ add_library(gridpack_block_parsers
     block_parsers/generator_parser33.cpp
     block_parsers/branch_parser33.cpp
     block_parsers/transformer_parser33.cpp
+    block_parsers/area_parser33.cpp
+    block_parsers/two_term_parser33.cpp
+    block_parsers/vsc_line_parser33.cpp
+    block_parsers/imped_corr_parser33.cpp
     )
 gridpack_set_library_version(gridpack_block_parsers)
 add_dependencies(gridpack_block_parsers external_build)
@@ -166,5 +170,9 @@ install (FILES
   block_parsers/generator_parser33.hpp
   block_parsers/branch_parser33.hpp
   block_parsers/transformer_parser33.hpp
+  block_parsers/area_parser33.hpp
+  block_parsers/two_term_parser33.hpp
+  block_parsers/vsc_line_parser33.hpp
+  block_parsers/imped_corr_parser33.hpp
   DESTINATION include/gridpack/parser/block_parsers
 )

@@ -14,8 +14,7 @@
  * Constructor
  * @param stream input stream that feeds lines from RAW file
  * @param name_map map name in RAW file to internal indices
- * @param branch_map map bus index pair in RAW file to
- internal indices
+ * @param branch_map map bus index pair in RAW file to internal indices
  */
 gridpack::parser::CaseParser33::CaseParser33(
     std::map<int,int> *bus_map,
@@ -64,8 +63,8 @@ void gridpack::parser::CaseParser33::parse(
   // CASE_SBASE          "SBASE"                float
   sbase = atof(split_line[1].c_str());
 
-  data->addValue(CASE_SBASE, p_case_sbase);
-  data->addValue(CASE_ID, p_case_id);
+  data->addValue(CASE_SBASE, sbase);
+  data->addValue(CASE_ID, id);
   /*  These do not appear in the dictionary
   // REVISION_ID
   if (split_line.size() > 2)

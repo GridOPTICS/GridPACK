@@ -39,6 +39,10 @@
 #include "gridpack/parser/block_parsers/generator_parser33.hpp"
 #include "gridpack/parser/block_parsers/branch_parser33.hpp"
 #include "gridpack/parser/block_parsers/transformer_parser33.hpp"
+#include "gridpack/parser/block_parsers/area_parser33.hpp"
+#include "gridpack/parser/block_parsers/two_term_parser33.hpp"
+#include "gridpack/parser/block_parsers/vsc_line_parser33.hpp"
+#include "gridpack/parser/block_parsers/imped_corr_parser33.hpp"
 
 #define TERM_CHAR '0'
 // SOURCE: http://www.ee.washington.edu/research/pstca/formats/pti.txt
@@ -250,16 +254,28 @@ class PTI33_parser : public BasePTIParser<_network>
             &p_nameMap, &p_branchMap);
         transformer_parser.parse(p_istream,p_busData,p_branchData,p_case_sbase,
             p_maxBusIndex);
+        gridpack::parser::AreaParser33 area_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        area_parser.parse(p_istream,p_network_data);
+        gridpack::parser::TwoTermParser33 two_term_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        two_term_parser.parse(p_istream);
+        gridpack::parser::VSCLineParser33 vsc_line_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        vsc_line_parser.parse(p_istream);
+        gridpack::parser::ImpedCorrParser33 imped_corr_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        imped_corr_parser.parse(p_istream,p_imp_corr_table);
         //find_buses();
         //find_loads();
         //find_fixed_shunts();
         //find_generators();
         //find_branches();
         //find_transformer();
-        find_area();
-        find_2term();
-        find_vsc_line();
-        find_imped_corr();
+        //find_area();
+        //find_2term();
+        //find_vsc_line();
+        //find_imped_corr();
         find_multi_term();
         find_multi_section();
         find_zone();
