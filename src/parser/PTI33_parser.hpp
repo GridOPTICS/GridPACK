@@ -43,6 +43,13 @@
 #include "gridpack/parser/block_parsers/two_term_parser33.hpp"
 #include "gridpack/parser/block_parsers/vsc_line_parser33.hpp"
 #include "gridpack/parser/block_parsers/imped_corr_parser33.hpp"
+#include "gridpack/parser/block_parsers/multi_term_parser33.hpp"
+#include "gridpack/parser/block_parsers/multi_section_parser33.hpp"
+#include "gridpack/parser/block_parsers/zone_parser33.hpp"
+#include "gridpack/parser/block_parsers/interarea_parser33.hpp"
+#include "gridpack/parser/block_parsers/owner_parser33.hpp"
+#include "gridpack/parser/block_parsers/facts_parser33.hpp"
+#include "gridpack/parser/block_parsers/switched_shunt_parser33.hpp"
 
 #define TERM_CHAR '0'
 // SOURCE: http://www.ee.washington.edu/research/pstca/formats/pti.txt
@@ -266,6 +273,27 @@ class PTI33_parser : public BasePTIParser<_network>
         gridpack::parser::ImpedCorrParser33 imped_corr_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         imped_corr_parser.parse(p_istream,p_imp_corr_table);
+        gridpack::parser::MultiTermParser33 multi_term_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        multi_term_parser.parse(p_istream);
+        gridpack::parser::MultiSectParser33 multi_section_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        multi_section_parser.parse(p_istream,p_branchData);
+        gridpack::parser::ZoneParser33 zone_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        zone_parser.parse(p_istream);
+        gridpack::parser::InterAreaParser33 interarea_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        interarea_parser.parse(p_istream);
+        gridpack::parser::OwnerParser33 owner_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        owner_parser.parse(p_istream);
+        gridpack::parser::FACTSParser33 facts_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        facts_parser.parse(p_istream);
+        gridpack::parser::SwitchedShuntParser33 switched_shunt_parser(&p_busMap,
+            &p_nameMap, &p_branchMap);
+        switched_shunt_parser.parse(p_istream,p_busData);
         //find_buses();
         //find_loads();
         //find_fixed_shunts();
@@ -276,13 +304,13 @@ class PTI33_parser : public BasePTIParser<_network>
         //find_2term();
         //find_vsc_line();
         //find_imped_corr();
-        find_multi_term();
-        find_multi_section();
-        find_zone();
-        find_interarea();
-        find_owner();
-        find_facts();
-        find_switched_shunt();
+        //find_multi_term();
+        //find_multi_section();
+        //find_zone();
+        //find_interarea();
+        //find_owner();
+        //find_facts();
+        //find_switched_shunt();
 
 #if 0
         // debug
