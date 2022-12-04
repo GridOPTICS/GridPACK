@@ -153,7 +153,7 @@ void gridpack::dynamic_simulation::SexsModel::corrector(double t_inc, bool flag)
   // Calculate second block output, last input flag = true
   // tells the block to do the state update (corrector update)
   if(!zero_TE) {
-    Efd = filterblock.getoutput(y1,t_inc,PREDICTOR,true);
+    Efd = filterblock.getoutput(y1,t_inc,CORRECTOR,true);
   } else {
     Efd = gainblock.getoutput(y1);
   }
