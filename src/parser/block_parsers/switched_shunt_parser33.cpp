@@ -62,11 +62,7 @@ void gridpack::parser::SwitchedShuntParser33::parse(
      */
     int l_idx, o_idx;
     l_idx = atoi(split_line[0].c_str());
-#ifdef OLD_MAP
     std::map<int, int>::iterator it;
-#else
-    boost::unordered_map<int, int>::iterator it;
-#endif
     it = p_busMap->find(l_idx);
     if (it != p_busMap->end()) {
       o_idx = it->second;

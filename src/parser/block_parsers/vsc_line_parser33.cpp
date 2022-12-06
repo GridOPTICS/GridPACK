@@ -54,11 +54,7 @@ void gridpack::parser::VSCLineParser33::parse(
     split_line = this->splitPSSELine(line);
     int l_idx, o_idx;
     o_idx = atoi(split_line[1].c_str());
-#ifdef OLD_MAP
     std::map<int, int>::iterator it;
-#else
-    boost::unordered_map<int, int>::iterator it;
-#endif
     it = p_busMap->find(o_idx);
     if (it != p_busMap->end()) {
       l_idx = it->second;

@@ -241,10 +241,6 @@ class PTI33_parser : public BasePTIParser<_network>
             &p_nameMap, &p_branchMap);
         bus_parser.parse(p_istream,p_busData,p_case_sbase,p_case_id,
             &p_maxBusIndex);
-        printf("Size of bus data: %d maxBusIndex: %d\n",p_busData.size(),
-            p_maxBusIndex);
-        printf("Size of bus map: %d size of name map: %d size of branch map: %d\n",
-            p_busMap.size(),p_nameMap.size(),p_branchMap.size());
         gridpack::parser::LoadParser33 load_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         load_parser.parse(p_istream,p_busData);

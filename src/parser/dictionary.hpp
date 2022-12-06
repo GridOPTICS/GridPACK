@@ -1727,6 +1727,13 @@
 #define GENERATOR_IREG "GENERATOR_IREG"
 
 /**
+ * Node number of bus IREG
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_NREG "GENERATOR_NREG"
+
+/**
  * Total MVA base of the units represented by this machine; entered in MVA. 
  * type: real float
  * indexed
@@ -1792,6 +1799,17 @@
  * indexed
  */
 #define GENERATOR_PMIN "GENERATOR_PMIN"
+
+/**
+ * Base loaded flag
+ *     0: normal, not base loaded
+ *     1: down only, machine can only be scaled down
+ *     2: neither up or down
+ *     3: up only, machine can only be scaled up
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_BASLOD "GENERATOR_BASLOD"
 
 /**
  * Generator owner number	
@@ -4060,6 +4078,13 @@
 #define BRANCH_CKT "BRANCH_CKT"
 
 /**
+ * Alphanumeric string assigned to branch
+ * type: string
+ * indexed
+ */
+#define BRANCH_NAME "BRANCH_NAME"
+
+/**
  * Branch resistance; entered in pu
  * type: real float
  * indexed
@@ -4100,6 +4125,24 @@
  * indexed
  */
 #define BRANCH_RATING_C "BRANCH_RATING_C"
+
+/**
+ * Nth rating for branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_RATE1 "BRANCH_RATE1"
+#define BRANCH_RATE2 "BRANCH_RATE2"
+#define BRANCH_RATE3 "BRANCH_RATE3"
+#define BRANCH_RATE4 "BRANCH_RATE4"
+#define BRANCH_RATE5 "BRANCH_RATE5"
+#define BRANCH_RATE6 "BRANCH_RATE6"
+#define BRANCH_RATE7 "BRANCH_RATE7"
+#define BRANCH_RATE8 "BRANCH_RATE8"
+#define BRANCH_RATE9 "BRANCH_RATE9"
+#define BRANCH_RATE10 "BRANCH_RATE10"
+#define BRANCH_RATE11 "BRANCH_RATE11"
+#define BRANCH_RATE12 "BRANCH_RATE12"
 
 /**
  * Transformer tap ratio in PTI 23 version
@@ -4766,6 +4809,13 @@
  * type: integer
  */
 #define SHUNT_SWREM "SHUNT_SWREM"
+#define SHUNT_SWREG "SHUNT_SWREG"
+
+/**
+ * A node number of bus SWREG
+ * type: integer
+ */
+#define SHUNT_NREG "SHUNT_NREG"
 
 /**
  * Percent of the total MVar required to hold the voltage at the bus controlled
@@ -4792,6 +4842,20 @@
  * type: real float
  */
 #define SHUNT_BINIT "SHUNT_BINIT"
+
+/**
+ * Initial switched shunt status for block i
+ * Default value: 1
+ * type: integer
+ */
+#define SHUNT_S1 "SHUNT_S1"
+#define SHUNT_S2 "SHUNT_S2"
+#define SHUNT_S3 "SHUNT_S3"
+#define SHUNT_S4 "SHUNT_S4"
+#define SHUNT_S5 "SHUNT_S5"
+#define SHUNT_S6 "SHUNT_S6"
+#define SHUNT_S7 "SHUNT_S7"
+#define SHUNT_S8 "SHUNT_S8"
 
 /**
  * Number of steps for block i. The first zero value of Ni or Bi is interpreted as

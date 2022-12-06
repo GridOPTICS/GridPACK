@@ -67,11 +67,7 @@ void gridpack::parser::BranchParser33::parse(
     // Check to see if pair has already been created
     int l_idx = 0;
     branch_pair = std::pair<int,int>(o_idx1, o_idx2);
-#ifdef OLD_MAP
     std::map<std::pair<int, int>, int>::iterator it;
-#else
-    boost::unordered_map<std::pair<int, int>, int>::iterator it;
-#endif
     it = p_branchMap->find(branch_pair);
 
     bool switched = false;
