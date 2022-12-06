@@ -21,6 +21,7 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/PTI35_parser.hpp"
 #include "gridpack/parser/MAT_parser.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/export/PSSE23Export.hpp"
@@ -46,7 +47,7 @@ gridpack::powerflow::PFAppModule::~PFAppModule(void)
 {
 }
 
-enum Parser{PTI23, PTI33, MAT_POWER, GOSS};
+enum Parser{PTI23, PTI33, PTI35, MAT_POWER, GOSS};
 
 /**
  * Read in and partition the powerflow network. The input file is read
@@ -85,6 +86,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     if (!cursor->get("networkConfiguration",&filename)) {
       if (cursor->get("networkConfiguration_v33",&filename)) {
         filetype = PTI33;
+      } else if (cursor->get("networkConfiguration_v35",&filename)) {
+        filetype = PTI35;
       } else if (cursor->get("networkConfiguration_mat",&filename)) {
         filetype = MAT_POWER;
       } else if (cursor->get("networkConfiguration_GOSS",&filename)) {
@@ -104,6 +107,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
       if (!files[idx]->get("networkConfiguration",&filename)) {
         if (files[idx]->get("networkConfiguration_v33",&filename)) {
           filetype = PTI33;
+        } else if (files[idx]->get("networkConfiguration_v35",&filename)) {
+          filetype = PTI35;
         } else if (cursor->get("networkConfiguration_mat",&filename)) {
           filetype = MAT_POWER;
         } else {
@@ -146,6 +151,21 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     }
   } else if (filetype == PTI33) {
     gridpack::parser::PTI33_parser<PFNetwork> parser(network);
+#ifdef USE_GOSS
+    char sbuf[256], sbuf2[256];
+    sprintf(sbuf,"{ \"simulation_id\": \"%s\"}",simID.c_str());
+    sprintf(sbuf2,"reply.%s.%s\n",filename.c_str(),p_simID.c_str());
+    p_goss_client.publish(networkFile,sbuf,sbuf2);
+    std::vector<std::string> fileVec = p_goss_client.subscribeFileAsVector(std::string(sbuf2));
+    parser.parse(fileVec);
+#else
+    parser.parse(filename.c_str());
+#endif
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
+  } else if (filetype == PTI35) {
+    gridpack::parser::PTI35_parser<PFNetwork> parser(network);
 #ifdef USE_GOSS
     char sbuf[256], sbuf2[256];
     sprintf(sbuf,"{ \"simulation_id\": \"%s\"}",simID.c_str());
