@@ -108,6 +108,9 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/wtdta1.cpp
   model_classes/wtpta1.cpp
   model_classes/wttqa1.cpp
+  model_classes/wtdta1_cblock.cpp
+  model_classes/wtpta1_cblock.cpp
+  model_classes/wttqa1_cblock.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -185,6 +188,9 @@ install(FILES
   model_classes/wtdta1.hpp
   model_classes/wtpta1.hpp
   model_classes/wttqa1.hpp
+  model_classes/wtdta1_cblock.hpp
+  model_classes/wtpta1_cblock.hpp
+  model_classes/wttqa1_cblock.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 ) 	      
 
