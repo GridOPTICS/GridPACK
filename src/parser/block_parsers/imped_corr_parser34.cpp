@@ -4,11 +4,11 @@
  *     in the LICENSE file in the top level directory of this distribution.
  *
  *
- * imped_corr_parser35.cpp
+ * imped_corr_parser34.cpp
  *       Created on: December 6, 2022
  *           Author: Bruce Palmer
  */
-#include "imped_corr_parser35.hpp"
+#include "imped_corr_parser34.hpp"
 
 /**
  * Constructor
@@ -17,7 +17,7 @@
  * @param branch_map map bus index pair in RAW file to
  internal indices
  */
-gridpack::parser::ImpedCorrParser35::ImpedCorrParser35(
+gridpack::parser::ImpedCorrParser34::ImpedCorrParser34(
     std::map<int,int> *bus_map,
     std::map<std::string,int> *name_map,
     std::map<std::pair<int, int>, int> *branch_map) :
@@ -30,7 +30,7 @@ gridpack::parser::ImpedCorrParser35::ImpedCorrParser35(
 /**
  * Simple Destructor
  */
-gridpack::parser::ImpedCorrParser35::~ImpedCorrParser35(void)
+gridpack::parser::ImpedCorrParser34::~ImpedCorrParser34(void)
 {
 }
 
@@ -40,7 +40,7 @@ gridpack::parser::ImpedCorrParser35::~ImpedCorrParser35(void)
  * @param data vector of data collection objects to store parameters
  *             from RAW file for impedence correction table
  */
-void gridpack::parser::ImpedCorrParser35::parse(
+void gridpack::parser::ImpedCorrParser34::parse(
     gridpack::stream::InputStream &stream,
     std::map<int,boost::shared_ptr<gridpack::component::DataCollection> > &p_imp_corr_table)
 {

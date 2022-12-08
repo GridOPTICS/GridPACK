@@ -39,22 +39,22 @@ set(target_libraries
 add_library(gridpack_block_parsers
     block_parsers/base_block_parser.cpp
     block_parsers/case_parser33.cpp
-    block_parsers/system_parser35.cpp
+    block_parsers/system_parser34.cpp
     block_parsers/bus_parser33.cpp
     block_parsers/load_parser33.cpp
     block_parsers/fixed_shunt_parser33.cpp
     block_parsers/generator_parser33.cpp
     block_parsers/generator_parser35.cpp
     block_parsers/branch_parser33.cpp
-    block_parsers/branch_parser35.cpp
-    block_parsers/sys_switch_parser35.cpp
+    block_parsers/branch_parser34.cpp
+    block_parsers/sys_switch_parser34.cpp
     block_parsers/transformer_parser33.cpp
     block_parsers/transformer_parser35.cpp
     block_parsers/area_parser33.cpp
     block_parsers/two_term_parser33.cpp
     block_parsers/vsc_line_parser33.cpp
     block_parsers/imped_corr_parser33.cpp
-    block_parsers/imped_corr_parser35.cpp
+    block_parsers/imped_corr_parser34.cpp
     block_parsers/multi_term_parser33.cpp
     block_parsers/multi_section_parser33.cpp
     block_parsers/zone_parser33.cpp
@@ -179,22 +179,22 @@ install(FILES
 install (FILES
   block_parsers/base_block_parser.hpp
   block_parsers/case_parser33.hpp
-  block_parsers/system_parser35.hpp
+  block_parsers/system_parser34.hpp
   block_parsers/bus_parser33.hpp
   block_parsers/load_parser33.hpp
   block_parsers/fixed_shunt_parser33.hpp
   block_parsers/generator_parser33.hpp
   block_parsers/generator_parser35.hpp
   block_parsers/branch_parser33.hpp
-  block_parsers/branch_parser35.hpp
-  block_parsers/sys_switch_parser35.hpp
+  block_parsers/branch_parser34.hpp
+  block_parsers/sys_switch_parser34.hpp
   block_parsers/transformer_parser33.hpp
   block_parsers/transformer_parser35.hpp
   block_parsers/area_parser33.hpp
   block_parsers/two_term_parser33.hpp
   block_parsers/vsc_line_parser33.hpp
   block_parsers/imped_corr_parser33.hpp
-  block_parsers/imped_corr_parser35.hpp
+  block_parsers/imped_corr_parser34.hpp
   block_parsers/multi_term_parser33.hpp
   block_parsers/multi_section_parser33.hpp
   block_parsers/zone_parser33.hpp

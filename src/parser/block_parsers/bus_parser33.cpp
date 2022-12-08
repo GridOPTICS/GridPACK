@@ -52,8 +52,6 @@ void gridpack::parser::BusParser33::parse(
   int                  index = 0;
   int                  o_idx;
   stream.nextLine(line);
-  stream.nextLine(line);
-  stream.nextLine(line);
 
   while(test_end(line)) {
     std::vector<std::string>  split_line;

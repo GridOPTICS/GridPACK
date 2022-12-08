@@ -8,15 +8,15 @@
  *       Created on: December 5, 2022
  *           Author: Bruce Palmer
  */
-#ifndef _SYS_SWITCH_PARSER35_H
-#define _SYS_SWITCH_PARSER35_H
+#ifndef _SYS_SWITCH_PARSER34_H
+#define _SYS_SWITCH_PARSER34_H
 
 #include "gridpack/parser/block_parsers/base_block_parser.hpp"
 
 namespace gridpack {
 namespace parser {
 
-class SysSwitchParser35 : public BaseBlockParser {
+class SysSwitchParser34 : public BaseBlockParser {
   public:
   /**
    * Constructor
@@ -24,7 +24,7 @@ class SysSwitchParser35 : public BaseBlockParser {
    * @param name_map map name in RAW file to internal indices
    * @param branch_map map bus index pair in RAW file to internal indices
    */
-  SysSwitchParser35(
+  SysSwitchParser34(
       std::map<int,int> *bus_map,
       std::map<std::string,int> *name_map,
       std::map<std::pair<int, int>, int> *branch_map);
@@ -32,7 +32,7 @@ class SysSwitchParser35 : public BaseBlockParser {
   /**
    * Simple Destructor
    */
-  virtual ~SysSwitchParser35(void);
+  virtual ~SysSwitchParser34(void);
 
   /**
    * parse SysSwitch block. Currently does not store data

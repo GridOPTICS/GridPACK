@@ -4,11 +4,11 @@
  *     in the LICENSE file in the top level directory of this distribution.
  *
  *
- * branch_parser35.cpp
+ * branch_parser34.cpp
  *       Created on: December 5, 2022
  *           Author: Bruce Palmer
  */
-#include "branch_parser35.hpp"
+#include "branch_parser34.hpp"
 
 /**
  * Constructor
@@ -17,7 +17,7 @@
  * @param branch_map map bus index pair in RAW file to
  internal indices
  */
-gridpack::parser::BranchParser35::BranchParser35(
+gridpack::parser::BranchParser34::BranchParser34(
     std::map<int,int> *bus_map,
     std::map<std::string,int> *name_map,
     std::map<std::pair<int, int>, int> *branch_map) :
@@ -30,7 +30,7 @@ gridpack::parser::BranchParser35::BranchParser35(
 /**
  * Simple Destructor
  */
-gridpack::parser::BranchParser35::~BranchParser35(void)
+gridpack::parser::BranchParser34::~BranchParser34(void)
 {
 }
 
@@ -40,7 +40,7 @@ gridpack::parser::BranchParser35::~BranchParser35(void)
  * @param data vector of data collection objects to store parameters
  *             from RAW file for branches
  */
-void gridpack::parser::BranchParser35::parse(
+void gridpack::parser::BranchParser34::parse(
     gridpack::stream::InputStream &stream,
     std::vector<boost::shared_ptr<gridpack::component::DataCollection> > &p_branchData)
 {
@@ -144,12 +144,24 @@ void gridpack::parser::BranchParser35::parse(
       }
     }
     // BRANCH_RATE1-12                              float
-    if (nstr > 7) p_branchData[l_idx]->addValue(BRANCH_RATE1,
+    if (nstr > 7) {
+      p_branchData[l_idx]->addValue(BRANCH_RATE1,
         atof(split_line[7].c_str()), nelems);
-    if (nstr > 8) p_branchData[l_idx]->addValue(BRANCH_RATE2,
+      p_branchData[l_idx]->addValue(BRANCH_RATING_A,
+        atof(split_line[7].c_str()), nelems);
+    }
+    if (nstr > 8) {
+      p_branchData[l_idx]->addValue(BRANCH_RATE2,
         atof(split_line[8].c_str()), nelems);
-    if (nstr > 9) p_branchData[l_idx]->addValue(BRANCH_RATE3,
+      p_branchData[l_idx]->addValue(BRANCH_RATING_B,
+        atof(split_line[8].c_str()), nelems);
+    }
+    if (nstr > 9) {
+      p_branchData[l_idx]->addValue(BRANCH_RATE3,
         atof(split_line[9].c_str()), nelems);
+      p_branchData[l_idx]->addValue(BRANCH_RATING_C,
+        atof(split_line[9].c_str()), nelems);
+    }
     if (nstr > 10) p_branchData[l_idx]->addValue(BRANCH_RATE4,
         atof(split_line[10].c_str()), nelems);
     if (nstr > 11) p_branchData[l_idx]->addValue(BRANCH_RATE5,

@@ -4,19 +4,19 @@
  *     in the LICENSE file in the top level directory of this distribution.
  *
  *
- * imped_corr_parser35.hpp
+ * imped_corr_parser34.hpp
  *       Created on: December 6, 2022
  *           Author: Bruce Palmer
  */
-#ifndef _IMPED_CORR_PARSER35_H
-#define _IMPED_CORR_PARSER35_H
+#ifndef _IMPED_CORR_PARSER34_H
+#define _IMPED_CORR_PARSER34_H
 
 #include "gridpack/parser/block_parsers/base_block_parser.hpp"
 
 namespace gridpack {
 namespace parser {
 
-class ImpedCorrParser35 : public BaseBlockParser {
+class ImpedCorrParser34 : public BaseBlockParser {
   public:
   /**
    * Constructor
@@ -24,7 +24,7 @@ class ImpedCorrParser35 : public BaseBlockParser {
    * @param name_map map name in RAW file to internal indices
    * @param branch_map map bus index pair in RAW file to internal indices
    */
-  ImpedCorrParser35(
+  ImpedCorrParser34(
       std::map<int,int> *bus_map,
       std::map<std::string,int> *name_map,
       std::map<std::pair<int, int>, int> *branch_map);
@@ -32,7 +32,7 @@ class ImpedCorrParser35 : public BaseBlockParser {
   /**
    * Simple Destructor
    */
-  virtual ~ImpedCorrParser35(void);
+  virtual ~ImpedCorrParser34(void);
 
   /**
    * parse impedence correction block

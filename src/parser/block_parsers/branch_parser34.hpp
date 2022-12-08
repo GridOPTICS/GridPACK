@@ -4,19 +4,19 @@
  *     in the LICENSE file in the top level directory of this distribution.
  *
  *
- * branch_parser35.hpp
+ * branch_parser34.hpp
  *       Created on: December 5, 2022
  *           Author: Bruce Palmer
  */
-#ifndef _BRANCH_PARSER35_H
-#define _BRANCH_PARSER35_H
+#ifndef _BRANCH_PARSER34_H
+#define _BRANCH_PARSER34_H
 
 #include "gridpack/parser/block_parsers/base_block_parser.hpp"
 
 namespace gridpack {
 namespace parser {
 
-class BranchParser35 : public BaseBlockParser {
+class BranchParser34 : public BaseBlockParser {
   public:
   /**
    * Constructor
@@ -24,7 +24,7 @@ class BranchParser35 : public BaseBlockParser {
    * @param name_map map name in RAW file to internal indices
    * @param branch_map map bus index pair in RAW file to internal indices
    */
-  BranchParser35(
+  BranchParser34(
       std::map<int,int> *bus_map,
       std::map<std::string,int> *name_map,
       std::map<std::pair<int, int>, int> *branch_map);
@@ -32,7 +32,7 @@ class BranchParser35 : public BaseBlockParser {
   /**
    * Simple Destructor
    */
-  virtual ~BranchParser35(void);
+  virtual ~BranchParser34(void);
 
   /**
    * parse branch block

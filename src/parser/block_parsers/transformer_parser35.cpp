@@ -228,6 +228,9 @@ void gridpack::parser::TransformerParser35::parse(
         data1->addValue(BRANCH_R,r1,0);
         data1->addValue(BRANCH_X,x1,0);
         data1->addValue(BRANCH_B,b1,0);
+        data1->addValue(BRANCH_RATING_A,rate[0],0);
+        data1->addValue(BRANCH_RATING_B,rate[1],0);
+        data1->addValue(BRANCH_RATING_C,rate[2],0);
         data1->addValue(BRANCH_RATE1,rate[0],0);
         data1->addValue(BRANCH_RATE2,rate[1],0);
         data1->addValue(BRANCH_RATE3,rate[2],0);
@@ -275,6 +278,9 @@ void gridpack::parser::TransformerParser35::parse(
         data2->addValue(BRANCH_R,r2,0);
         data2->addValue(BRANCH_X,x2,0);
         data2->addValue(BRANCH_B,b2,0);
+        data1->addValue(BRANCH_RATING_A,rate[0],0);
+        data1->addValue(BRANCH_RATING_B,rate[1],0);
+        data1->addValue(BRANCH_RATING_C,rate[2],0);
         data1->addValue(BRANCH_RATE1,rate[0],0);
         data1->addValue(BRANCH_RATE2,rate[1],0);
         data1->addValue(BRANCH_RATE3,rate[2],0);
@@ -322,6 +328,9 @@ void gridpack::parser::TransformerParser35::parse(
         data3->addValue(BRANCH_R,r3,0);
         data3->addValue(BRANCH_X,x3,0);
         data3->addValue(BRANCH_B,b3,0);
+        data1->addValue(BRANCH_RATING_A,rate[0],0);
+        data1->addValue(BRANCH_RATING_B,rate[1],0);
+        data1->addValue(BRANCH_RATING_C,rate[2],0);
         data1->addValue(BRANCH_RATE1,rate[0],0);
         data1->addValue(BRANCH_RATE2,rate[1],0);
         data1->addValue(BRANCH_RATE3,rate[2],0);
@@ -665,6 +674,71 @@ void gridpack::parser::TransformerParser35::parse(
        */
       p_branchData[l_idx]->addValue(TRANSFORMER_RMI,
           atof(split_line3[19].c_str()),nelems);
+
+      /*
+       * type: float
+       * TRANSFORMER_VMA
+       */
+      if (ntoken > 20) {
+        p_branchData[l_idx]->addValue(TRANSFORMER_VMA,
+            atof(split_line3[20].c_str()),nelems);
+      }
+
+      /* ignore line 4 for now */
+
+      /*
+       * type: float
+       * TRANSFORMER_VMI
+       */
+      if (ntoken > 21) {
+        p_branchData[l_idx]->addValue(TRANSFORMER_VMI,
+            atof(split_line3[21].c_str()),nelems);
+      }
+
+      /*
+       * type: integer
+       * TRANSFORMER_NPT
+       */
+      if (ntoken > 22) {
+        p_branchData[l_idx]->addValue(TRANSFORMER_NTP,
+            atoi(split_line3[22].c_str()),nelems);
+      }
+
+      /*
+       * type: integer
+       * TRANSFORMER_TAB
+       */
+      if (ntoken > 23) {
+        p_branchData[l_idx]->addValue(TRANSFORMER_TAB,
+            atoi(split_line3[23].c_str()),nelems);
+      }
+
+      /*
+       * type: float
+       * TRANSFORMER_CR
+       */
+      if (ntoken > 24) {
+        p_branchData[l_idx]->addValue(TRANSFORMER_CR,
+            atof(split_line3[24].c_str()),nelems);
+      }
+
+      /*
+       * type: float
+       * TRANSFORMER_CI
+       */
+      if (ntoken > 25) {
+        p_branchData[l_idx]->addValue(TRANSFORMER_CX,
+            atof(split_line3[25].c_str()),nelems);
+      }
+
+      /*
+       * type: float
+       * TRANSFORMER_CNXA
+       */
+      if (ntoken > 26) {
+        p_branchData[l_idx]->addValue(TRANSFORMER_CNXA,
+            atof(split_line3[26].c_str()),nelems);
+      }
 
       nelems++;
       p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
