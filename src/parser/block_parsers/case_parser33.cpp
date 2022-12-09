@@ -82,5 +82,7 @@ void gridpack::parser::CaseParser33::parse(
   if (split_line.size() > 5)
   p_base_freq = atof(split_line[5].c_str());
   */
+  stream.nextLine(line);
+  stream.nextLine(line);
 
 }

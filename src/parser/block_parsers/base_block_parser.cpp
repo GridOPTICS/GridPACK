@@ -44,9 +44,11 @@ bool gridpack::parser::BaseBlockParser::check_comment(std::string &str) const
   if (ntok != std::string::npos && ntok+1 != std::string::npos &&
       str[ntok] == '/' && str[ntok+1] == '/') {
     return true;
-  } else {
-    return false;
+  } else if (ntok != std::string::npos && ntok+1 != std::string::npos &&
+      str[ntok] == '@' && str[ntok+1] == '!') {
+    return true;
   }
+  return false;
 }
 
 /**

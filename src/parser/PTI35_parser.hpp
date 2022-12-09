@@ -32,7 +32,7 @@
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/parser/base_parser.hpp"
 #include "gridpack/parser/base_pti_parser.hpp"
-#include "gridpack/parser/block_parsers/case_parser33.hpp"
+#include "gridpack/parser/block_parsers/case_parser34.hpp"
 #include "gridpack/parser/block_parsers/system_parser34.hpp"
 #include "gridpack/parser/block_parsers/bus_parser33.hpp"
 #include "gridpack/parser/block_parsers/load_parser33.hpp"
@@ -216,7 +216,7 @@ class PTI35_parser : public BasePTIParser<_network>
       int me(p_network->communicator().rank());
 
       if (me == 0) {
-        gridpack::parser::CaseParser33 case_parser(&p_busMap,
+        gridpack::parser::CaseParser34 case_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         case_parser.parse(p_istream,p_network_data,p_case_sbase,p_case_id);
       } else {

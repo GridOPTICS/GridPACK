@@ -80,7 +80,7 @@ class TransformerParser35 : public BaseBlockParser {
     rate[10] = atof(split_line[13].c_str());
     rate[11] = atof(split_line[14].c_str());
     bool ret = true;
-    return ret && (split_line.size() > 5);
+    return ret && (split_line.size() > 14);
   }
 };
 
