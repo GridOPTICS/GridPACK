@@ -168,7 +168,7 @@ class Regca1Generator : public BaseGeneratorModel
     Slope Lvpl_blk;
     double Lvpl_out; // Output of Lvpl_blk
 
-    Gain    Iqlowlim_blk;
+    GainLimiter    Iqlowlim_blk;
   
     double  Ipout,Iqout; // inverter current output in inverter reference frame
   double  Irout, Iiout; // inverter current output in network reference frame

@@ -173,22 +173,22 @@ private:
   Deadband V_err_deadband;
   double V_err; // Output of voltage error block
 
-  Gain Iqv_limit_blk; // Limiter for Iqv
+  GainLimiter Iqv_limit_blk; // Limiter for Iqv
   double Iqv;           // Input for limiter block
   double Iqinj;         // Output of limiter block
 
-  Gain Iqcmd_limit_blk; // Limiter for Iqcmd
+  GainLimiter Iqcmd_limit_blk; // Limiter for Iqcmd
 
   Filter Pe_filter_blk; // Electrical power filter
   double Pe_filter;     // Output of electrical power filter
 
-  Gain Qlim_blk;   // Q limiter block with limits Qmin and Qmax
+  GainLimiter Qlim_blk;   // Q limiter block with limits Qmin and Qmax
   double Qlim_out; // output of Q limiter block
 
   PIControl Q_PI_blk; // PI control for reactive power
   double V_PI;        // Output of Q_PI_blk
 
-  Gain Vlim_blk;   // Voltage limiter block with limits Vmin and Vmax
+  GainLimiter Vlim_blk;   // Voltage limiter block with limits Vmin and Vmax
   double Vlim_out; // Output of voltage limiter block
 
   PIControl Verr_PI_blk; // PI Control for voltage error
@@ -197,7 +197,7 @@ private:
   Filter Iq_lag_blk; // Lag for Iq current block
   double Iq_lag_out; // Output of Iq lag block
 
-  Gain Vt_filter_lowcap_blk; // Lower cap for Vt_filter used in division (limit
+  GainLimiter Vt_filter_lowcap_blk; // Lower cap for Vt_filter used in division (limit
                              // 0.01)
   double Vt_filter_lowcap_out; // Output of Vt filter lower cap
 
@@ -207,13 +207,13 @@ private:
   PiecewiseSlope VDL2;
   double VDL2_out;
 
-  Gain Pref_limit_blk;   // Pref limiter
+  GainLimiter Pref_limit_blk;   // Pref limiter
   double Pref_limit_out; // Output of Pref limiter block
 
   Filter Pord_blk; // Pord filter block
   double Pord;     // Output of Pord filter block
 
-  Gain Ipcmd_limit_blk; // Limiter for Iqcmd
+  GainLimiter Ipcmd_limit_blk; // Limiter for Iqcmd
 
   bool p_has_drivetrain; // Is the model connected to drive train?
   double omega_g; // Input from drive train (1.0 if not available)

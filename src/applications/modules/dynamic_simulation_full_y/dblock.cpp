@@ -1,21 +1,21 @@
 #include "dblock.hpp"
 
 // ------------------------------------
-// Gain
+// GainLimiter
 // ------------------------------------
 
-Gain::Gain(void)
+GainLimiter::GainLimiter(void)
 {
 }
 
-void Gain::setparams(double K,double ymin,double ymax)
+void GainLimiter::setparams(double K,double ymin,double ymax)
 {
   p_K = K;
   p_ymin = ymin;
   p_ymax = ymax;
 }
 
-double Gain::getoutput(double u)
+double GainLimiter::getoutput(double u)
 {
   double yout;
 
@@ -24,7 +24,7 @@ double Gain::getoutput(double u)
   return yout;
 }
 
-double Gain::getoutput(double u, double ymin, double ymax)
+double GainLimiter::getoutput(double u, double ymin, double ymax)
 {
   double yout;
 
