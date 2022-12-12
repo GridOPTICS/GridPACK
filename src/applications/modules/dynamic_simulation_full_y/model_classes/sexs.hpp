@@ -134,7 +134,7 @@ class SexsModel : public BaseExciterModel
     // Linear control blocks
     LeadLag leadlagblock;
     Filter  filterblock;
-    Gain    gainblock;
+    GainLimiter    gainblock;
 
     // Model inputs
     double Ec; // Terminal voltage

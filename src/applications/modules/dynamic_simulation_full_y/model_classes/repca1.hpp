@@ -130,7 +130,7 @@ class Repca1Model : public BasePlantControllerModel
   Deadband VQerr_deadband; // Deadband for V or Q error
   double VQerr_deadband_out; // Output of VQerr_deadband block
 
-  Gain VQerr_limiter; // VQ err limiter block
+  GainLimiter VQerr_limiter; // VQ err limiter block
   double VQerr_limiter_out; // Output of VQerr limiter block
 
   PIControl Qext_PI_blk; // PI control for Qext
@@ -143,7 +143,7 @@ class Repca1Model : public BasePlantControllerModel
   Filter   Pbranch_filter_blk; // Pbranch filter block
   double   Pbranch_filter_blk_out; // Output of Pbranch filter block
 
-  Gain     Freqerr_limiter;   // Frequency error limiter
+  GainLimiter     Freqerr_limiter;   // Frequency error limiter
   double   Freqerr_limiter_out; // Output of frequency error limiter
   PIControl Pext_PI_blk;
   double    Pext_PI_blk_out; // Output of Pext PI block

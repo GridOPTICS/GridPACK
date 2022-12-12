@@ -135,7 +135,7 @@ class Exdc1Model : public BaseExciterModel
 
     Filter Regulator_blk; // Voltage regulator block
     double VR;  // Voltage regulator output
-    Gain Regulator_gain_blk; // Replaces Regulator block if TA = 0
+    GainLimiter Regulator_gain_blk; // Replaces Regulator block if TA = 0
   
   Cblock Feedback_blk; // Feedback block
   double VF; // Output of feedback block

@@ -40,10 +40,10 @@
    iii) Gain with limiter - Set the gain and limits appropriately
 
 */
-class Gain
+class GainLimiter
 {
  public:
-  Gain();
+  GainLimiter();
 
   /**
      GETOUTPUT - Returns the block output
