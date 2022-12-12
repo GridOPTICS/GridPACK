@@ -90,18 +90,16 @@ void gridpack::dynamic_simulation::Wtdta1Model::init(double mag, double ang, dou
 {
   double u;
 
-  dtheta_g = 0.0;
+  dtheta_g = ang;
   u = dthetag_blk.init_given_y(dtheta_g);
 
-  // Initial slip
-  s0 = 0.0;
-  domega_g = 0.0; // speed deviation
+  domega_g = s0; // speed deviation
   u = domegag_blk.init_given_y(domega_g);
 
-  Tm = Te;
+  Tm = Te + D*domega_g + u;
 
+  domega_t = domega_g;
   if(double_mass) {
-    domega_t = 0.0;
     domegat_blk.init_given_y(domega_t);
     Tshaft_blk.init_given_y(0.0);
   }
@@ -120,6 +118,7 @@ void gridpack::dynamic_simulation::Wtdta1Model::computeModel(double t_inc, Integ
   u = omega0*(domega_g - s0);
 
   dtheta_g = dthetag_blk.getoutput(u,t_inc,int_flag,true);
+
 }
 /**
  * Predict new state variables for time step
@@ -154,12 +153,22 @@ void gridpack::dynamic_simulation::Wtdta1Model::setTmech(double Tmech_in)
 /**
  * setTelec - sets electrical torque
  * @param Telec - electrical torque
- * From generator?
+ * From generator
    **/
 void gridpack::dynamic_simulation::Wtdta1Model::setTelec(double Telec_in)
 {
   Te = Telec_in;
 }
+
+/**
+ * getTmech - get initial mechanical torque
+ * @return Tm - initial mechanical torque
+   **/
+double gridpack::dynamic_simulation::Wtdta1Model::getTmech()
+{
+  return Tm;
+}
+
 
 /**
  * getTurbineSpeedDeviation - gets the turbine speed deviation
@@ -186,4 +195,13 @@ double gridpack::dynamic_simulation::Wtdta1Model::getGeneratorSpeedDeviation()
 double gridpack::dynamic_simulation::Wtdta1Model::getRotorAngleDeviation()
 {
   return dtheta_g;
+}
+
+/**
+ *  setOmegaref - Output of torque controller
+ * @param - omega_ref : reference speed
+ **/
+void gridpack::dynamic_simulation::Wtdta1Model::setOmegaref(double omega_ref)
+{
+  s0 = omega_ref - 1.0;
 }

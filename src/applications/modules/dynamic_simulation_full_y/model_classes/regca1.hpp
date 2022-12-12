@@ -110,7 +110,8 @@ class Regca1Generator : public BaseGeneratorModel
      */
     void setFreq(double dFreq);
 
-
+  // Called by both predictor and corrector to compute the model
+  void computeModel(double t_inc, IntegrationStage int_flag,bool flag);
     /**
 	* return true if trip generator successfully
 	* 

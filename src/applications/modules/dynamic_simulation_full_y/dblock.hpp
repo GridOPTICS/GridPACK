@@ -11,14 +11,14 @@
 #include <algorithm>
 
 /*
-  GAIN:
+  GAINLIMITER:
 
   input  : u 
   output : y
       
                  
                 
-                              ymax
+                              dymax,ymax
                              -----
         -------------       /
         |           |      /
@@ -26,18 +26,19 @@
         |           |    /
         -------------   /
                     ---
-                    ymin
+                    dymin, ymin
         
         
 
    Output:
-    y = K*u,  ymin <= y <= ymax
+    y = K*u,  ymin <= y <= ymax,dymin <= dydt <= dymax 
 
     Notes:
      This block can be used in various ways
      i) Simple Gain - Set limits = infty
     ii) Simple limiter - Set the gain K to 1.0, set the limits
-   iii) Gain with limiter - Set the gain and limits appropriately
+   iii) Gain with limiter - Set the gain and limits (ymin,ymax) appropriately
+    iv) Rate limiter - Set the gain and rate limits (dymin,dymax) appropriately
 
 */
 class GainLimiter
@@ -54,7 +55,7 @@ class GainLimiter
   **/
   double getoutput(double u);
 
-    /**
+  /**
      GETOUTPUT - Returns the block output, applies dynamic limits
 
      INPUTS:
@@ -78,11 +79,37 @@ class GainLimiter
   **/
   void setparams(double K, double ymin,double ymax);
 
+  /**
+     SETPARAMS - Set the gain and limits
+     
+     INPUTS:
+       K          Gain
+       ymin       Min. limit for output y
+       ymax       Max. limit for output y
+       dymin      Min. limit for rate of change of y
+       dymax      Max. limit for rate of change of y
+  **/
+  void setparams(double K, double ymin,double ymax,double dymin, double dymax);
+
+  /**
+     GETOUTPUT - Returns the block output
+
+     INPUTS:
+       u       - block input
+      dt       - time-step
+    isupdate   - move to next step?
+  **/
+  double getoutput(double u, double dt, bool isupdate);
+
   private:
 
   double p_K; // Gain
   double p_ymin; // Lower limit on output
   double p_ymax; // Upper limit on output
+  double p_dymin; // Lower limit on rate of change of output
+  double p_dymax; // Upper limit on rate of change of output
+  double p_dt;    // time-step
+  double p_yprev; // Output at the previous step
 };
 
 /*

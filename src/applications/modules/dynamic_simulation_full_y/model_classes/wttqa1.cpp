@@ -97,14 +97,19 @@ void gridpack::dynamic_simulation::Wttqa1Model::init(double mag, double ang, dou
   // Initialize Pelec filter block
   Pelec_filter_blk_out = Pelec_filter_blk.init_given_u(Pelec);
 
-  if(Tflag == 0) {
-    Pomega_blk_out = Pomega_blk.getoutput(Pelec_filter_blk_out);
-    omega_ref = wref_filter_blk.init_given_u(Pomega_blk_out);
-  }
+  Pomega_blk_out = Pomega_blk.getoutput(Pelec_filter_blk_out);
+  omega_ref = wref_filter_blk.init_given_u(Pomega_blk_out);
+  // omega_ref is the same as the generator speed that we want to
+  // keep the turbine at. This is the generator speed we want
+  // to drive at depending on the electric power input
 
+  // speed deviation
+  domega_g = omega_ref - 1.0; // note speed deviation is negative
+
+  Pref = Pelec;
+  
   Tref_pi_blk.init_given_y(Pelec/(1+domega_g));
  
-  Pref = Pelec;
 }
 
 void gridpack::dynamic_simulation::Wttqa1Model::computeModel(double t_inc, IntegrationStage int_flag)
@@ -114,12 +119,13 @@ void gridpack::dynamic_simulation::Wttqa1Model::computeModel(double t_inc, Integ
   
   Pelec_filter_blk_out = Pelec_filter_blk.getoutput(Pelec,t_inc,int_flag,true);
 
+  Pomega_blk_out = Pomega_blk.getoutput(Pelec_filter_blk_out);
+  omega_ref = wref_filter_blk.getoutput(Pomega_blk_out,t_inc,int_flag,true);
+
   if(Tflag == 1) {
     dtorque = (Pref0 - Pelec_filter_blk_out)/(1 + domega_g);
     Tref_pi_blk_out = Tref_pi_blk.getoutput(dtorque,t_inc,int_flag,updatestate);
   } else {
-    Pomega_blk_out = Pomega_blk.getoutput(Pelec_filter_blk_out);
-    omega_ref = wref_filter_blk.getoutput(Pomega_blk_out,t_inc,int_flag,true);
     Tref_pi_blk_out = Tref_pi_blk.getoutput(1+domega_g-omega_ref,t_inc,int_flag,updatestate);
   }
 

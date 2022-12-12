@@ -96,6 +96,12 @@ class Wtara1Model : public BaseMechanicalModel
    **/
    double getTaero();
 
+  /**
+   * getTheta - Get initial value of pitch controller
+   * @output theta0 - initial value of pitch controller
+   **/
+  double getTheta();
+
   private:
 
   // Parameters

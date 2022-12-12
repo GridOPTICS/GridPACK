@@ -133,10 +133,10 @@ class Repca1Model : public BasePlantControllerModel
   GainLimiter VQerr_limiter; // VQ err limiter block
   double VQerr_limiter_out; // Output of VQerr limiter block
 
-  PIControl Qext_PI_blk; // PI control for Qext
-  double Qext_PI_blk_out; // Output of PI control for Qext
+  PIControl Qref_PI_blk; // PI control for Qref
+  double Qref_PI_blk_out; // Output of PI control for Qref
 
-  LeadLag Qext_leadlag_blk; // Lead lag block for Qext
+  LeadLag Qref_leadlag_blk; // Lead lag block for Qref
 
   Deadband Freqerr_deadband; // Frequency error deadband
 
@@ -145,10 +145,10 @@ class Repca1Model : public BasePlantControllerModel
 
   GainLimiter     Freqerr_limiter;   // Frequency error limiter
   double   Freqerr_limiter_out; // Output of frequency error limiter
-  PIControl Pext_PI_blk;
-  double    Pext_PI_blk_out; // Output of Pext PI block
+  PIControl Pref_PI_blk;
+  double    Pref_PI_blk_out; // Output of Pref PI block
 
-  Filter    Pext_filter_blk;  // Pext filter block
+  Filter    Pref_filter_blk;  // Pref filter block
   
   // Model inputs
   double Pbranch, Qbranch; // Line flow on designated branch (on system MVAbase)
@@ -158,15 +158,9 @@ class Repca1Model : public BasePlantControllerModel
 
   double Freq_ref;         // Reference frequency
   // Model outputs
-  // Note the Pext and Qext are the power control signals sent to electrical controller
-  // (for type 4 model). Pref = Pref0 + Pext and Qref = Qref0 + Qext, where
-  // Pref0 and Qref0 are the Pref and Qref values obtained from electrical controller
-  // during initialization, and Pext, Qext are
-  // deviations from the steady-state value that are computed by the model.
-  // Pext and Qext are 0 at initialization.
   double Pref,Qref;        // Output signal
-  double Pext,Qext;
   double Pg, Qg;           // Generator active and reactive power (on machine Mbase
+  double Plant_ref;       // Reference plant active power output
 
   // Internal variables
   double Vt;
