@@ -86,6 +86,13 @@ public:
 
   double getIpcmd();
   double getIqcmd();
+
+  /*
+   * Return active power output Pord - Used by pitch controller model
+   */
+  double getPord();
+
+  
   // The next two methods should not be in this class. Since Pref and Qext is
   // not an output of this model. This is simply used because the plant
   // controller initialization gets done in the generator controller model. That

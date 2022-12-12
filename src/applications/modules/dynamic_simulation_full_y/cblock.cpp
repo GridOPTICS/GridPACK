@@ -155,7 +155,10 @@ double Cblock::init_given_u(double u)
   double y;
   if(fabs(p_B[0]) < 1e-10) {
     x[0] = 0;
-    y = p_C[0]*x[0] + p_D[0]*u;
+    y = p_D[0]*u;
+  } else if(fabs(p_A[0]) < 1e-10) {
+    x[0] = 0;
+    y = p_D[0]*u;
   } else {
     x[0] = -p_B[0]/p_A[0]*u;
     y    = p_C[0]*x[0] + p_D[0]*u;

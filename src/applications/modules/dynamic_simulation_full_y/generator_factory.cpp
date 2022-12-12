@@ -31,6 +31,10 @@
 #include "sexs.hpp"
 #include "gast.hpp"
 #include "hygov.hpp"
+#include "wtara1.hpp"
+#include "wtdta1.hpp"
+#include "wtpta1.hpp"
+#include "wttqa1.hpp"
 
 #include <stdio.h>
 
@@ -230,3 +234,47 @@ gridpack::dynamic_simulation::GeneratorFactory::createPlantControllerModel(
   return ret;
 
 }
+
+/**
+ * Create a wind mechanical model
+ * @param model string containing model type
+ * @return pointer to model. If string does not correspond to a wind mechanical model
+ * model, then return NULL pointer
+ */
+gridpack::dynamic_simulation::BaseMechanicalModel*
+gridpack::dynamic_simulation::GeneratorFactory::createMechanicalModel(
+    std::string model)
+{
+  std::string type = p_util.trimQuotes(model);
+  p_util.toUpper(type);
+
+  gridpack::dynamic_simulation::BaseMechanicalModel* ret;
+  if (type == "WTARA1" ) {
+    gridpack::dynamic_simulation::Wtara1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Wtara1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseMechanicalModel*>(tmp);
+  } else if(type == "WTDTA1" ) {
+    gridpack::dynamic_simulation::Wtdta1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Wtdta1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseMechanicalModel*>(tmp);
+
+  } else if(type == "WTPTA1" ) {
+    gridpack::dynamic_simulation::Wtpta1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Wtpta1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseMechanicalModel*>(tmp);
+
+  } else if(type == "WTTQA1" ) {
+    gridpack::dynamic_simulation::Wttqa1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Wttqa1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseMechanicalModel*>(tmp);
+    
+  } else  ret = NULL;
+  
+  return ret;
+
+}
+

@@ -11,7 +11,11 @@
  * @Last modified:   Oct 9, 2015
  * 
  * @Modified: November 21, 2022, Shri, Disable saturation if S10 and S12 are 0.
- * @brief  
+ *
+ * @Modified: November 27, 2022, Shri, Fixed the model to validate against PSSE
+ *
+ * @Modified: Dec 9, 2022, Shri, print voltage and generator power
+ * @brief  : Round rotor generator model
  * 
  * 
  */
@@ -707,7 +711,7 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
       } else {
 	tag = p_ckt[1];
       }
-      sprintf(buf,", %d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),
+      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
 	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
@@ -721,8 +725,8 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,",%f, %f, %f, %f",
-	      x1d_1, x2w_1+1.0, Efd,Pmech);
+      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f",
+	      Vterm,genP*MBase/p_sbase,genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
