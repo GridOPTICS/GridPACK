@@ -35,7 +35,8 @@ This command can be used to parse .dyr files containing dynamic simulation param
 
 As discussed in section~\ref{data_interface}, another key part of the parsing
 capability is the \texttt{\textbf{dictionary.hpp}} file. This is designed to provide a common nomenclature for parameters associated with power grid components.
-The definitions in the \texttt{\textbf{dictionary.hpp}} are used to extract
+The definitions in the \texttt{\textbf{dictionary.hpp}} and the files in the
+\texttt{\textbf{src/parser/variable\_defs}} subdirectory are used to extract
 parameters from the \texttt{\textbf{DataCollection}} objects created by the
 parser. For example, the parameter describing the resistance of a transmission
 element is given the common name \texttt{\textbf{BRANCH\_R}}. This string is

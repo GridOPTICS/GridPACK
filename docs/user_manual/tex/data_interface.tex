@@ -81,10 +81,23 @@ bool getValue(const char *name, ComplexType *value, const int idx)
 
 where \texttt{\textbf{idx}} is an index that identifies a particular instance of the key. In this case, the key is essentially a combination of the character string \texttt{\textbf{name}} and the index. An example is the parameter describing the generator active power output, \texttt{\textbf{GENERATOR\_PG}}. Because there can be more than one generator on the bus, it is necessary to include an additional index to indicate which generator values are required. Internally, the key then becomes the combination \texttt{\textbf{GENERATOR\_PG:idx}}. The index values are 0-based, so the first value has index 0, the second value has index 1 and so on up to N-1, where N is the total number of values. Note that because the combination of name and index is actually stored internally as a key, it is not necessary that all values of the index between 0 and N-1 be stored in the data collection. If some generators are missing some parameters, that is allowed. It is up to the application to account for these missing values.
 
-The data collection is generally filled with values after the parser is called to create the network. The nomenclature for these values can be found in the \texttt{\textbf{dictionary.hpp}} file located under \texttt{\textbf{src/parser}} under the main GridPACK directory. Users are encouraged to look at this file to find out what parameters might be available to their applications. Note that different parameters may be available depending on the source file that was used to create that calculation. The PSS/E version 23 and version 33 files currently supported in GridPACK have significant differences and values that are present in the version 33 files are often not available from a version 23 file.
+The data collection is generally filled with values after the parser is called
+to create the network. The nomenclature for these values can be found in the
+\texttt{\textbf{dictionary.hpp}} file located under \texttt{\textbf{src/parser}}
+under the main GridPACK directory. This file contains additional files that
+include definitions for bus variables, branch variables, etc. in the
+\texttt{\textbf{src/parser/variable\_defs}} directory. Users are encouraged to
+look at these files to find out what parameters might be available to their
+applications. Note that different parameters may be available depending on the
+source file that was used to create that calculation. The PSS/E version 23 and
+versions 33-35 files currently supported in GridPACK have significant
+differences and values that are present in the 33-35 files are often not available from a version 23 file.
 
 The aim of using the dictionary is to separate GridPACK applications from data sources so that applications can easily switch between different file formats without having to rewrite code within the application itself. The dictionary provides a common internal nomenclature for power grid parameters. Parsers for different file formats need to map the input data from those formats to the dictionary, but once this is done, all GridPACK applications should, in principle, be able to use any source of data.
-The \texttt{\textbf{dictionary.hpp}} file itself has a very simple structure and consists of parameter definitions and some supporting documentation. Some examples of entries to the \texttt{\textbf{dictionary.hpp}} file are given below.
+The definition files themselves have a very simple structure that consists of
+parameter definitions and some supporting documentation. Some examples of
+entries to the \texttt{\textbf{bus\_defs.hpp}} and
+\texttt{\textbf{generator\_defs.hpp}} files are given below.
 
 {
 \color{red}
