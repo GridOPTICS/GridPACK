@@ -213,3 +213,19 @@ install (FILES
   block_parsers/switched_shunt_parser35.hpp
   DESTINATION include/gridpack/parser/block_parsers
 )
+
+install (FILES
+  bus_defs.hpp
+  shunt_defs.hpp
+  load_defs.hpp
+  generator_defs.hpp
+  governor_defs.hpp
+  exciter_defs.hpp
+  branch_defs.hpp
+  transformer_defs.hpp
+  relay_defs.hpp
+  psssim_defs.hpp
+  wind_defs.hpp
+  misc_defs.hpp
+  DESTINATION include/gridpack/parser/variable_defs
+)
