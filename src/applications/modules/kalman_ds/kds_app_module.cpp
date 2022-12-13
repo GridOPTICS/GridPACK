@@ -17,6 +17,8 @@
 
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/PTI34_parser.hpp"
+#include "gridpack/parser/PTI35_parser.hpp"
 #include "gridpack/parallel/random.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -205,7 +207,7 @@ void gridpack::kalman_filter::KalmanApp::setTimeData(
 //  }
 }
 
-enum Parser {PTI23, PTI33};
+enum Parser {PTI23, PTI33, PTI34, PTI35};
 
 /**
  * Read in and partition the network. The input file is read
@@ -232,6 +234,10 @@ void gridpack::kalman_filter::KalmanApp::readNetwork(
   if (!cursor->get("networkConfiguration",&filename)) {
     if (cursor->get("networkConfiguration_v33",&filename)) {
       filetype = PTI33;
+    } else if (cursor->get("networkConfiguration_v34",&filename)) {
+      filetype = PTI34;
+    } else if (cursor->get("networkConfiguration_v35",&filename)) {
+      filetype = PTI35;
     } else {
       printf("No network configuration file specified\n");
       return;
@@ -247,6 +253,12 @@ void gridpack::kalman_filter::KalmanApp::readNetwork(
     parser.parse(filename.c_str());
   } else if (filetype == PTI33) {
     gridpack::parser::PTI33_parser<KalmanNetwork> parser(network);
+    parser.parse(filename.c_str());
+  } else if (filetype == PTI34) {
+    gridpack::parser::PTI34_parser<KalmanNetwork> parser(network);
+    parser.parse(filename.c_str());
+  } else if (filetype == PTI35) {
+    gridpack::parser::PTI35_parser<KalmanNetwork> parser(network);
     parser.parse(filename.c_str());
   }
 
