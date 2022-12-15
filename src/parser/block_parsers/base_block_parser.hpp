@@ -16,6 +16,7 @@
 #define _BASE_BLOCK_PARSER_H
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
+#include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/stream/input_stream.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/utilities/string_utils.hpp"
