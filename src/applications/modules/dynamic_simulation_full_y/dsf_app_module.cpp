@@ -15,7 +15,7 @@
  */
 // -------------------------------------------------------------
 //
-#define USE_TIMESTAMP
+//#define USE_TIMESTAMP
 
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
@@ -291,8 +291,10 @@ void gridpack::dynamic_simulation::DSFullApp::readSequenceData()
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   std::string filename = cursor->get("sequenceDataFile","");
-  gridpack::parser::PSSE_seq_parser<DSFullNetwork> parser(p_network);
-  parser.parse(filename);
+  if (filename != "") {
+    gridpack::parser::PSSE_seq_parser<DSFullNetwork> parser(p_network);
+    parser.parse(filename);
+  }
 }
 
 /**
