@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2022-12-15 06:21:20 d3g096
+# Last Change: 2022-12-15 08:24:03 d3g096
 # -------------------------------------------------------------
 
 import os
@@ -65,7 +65,6 @@ setup(
     long_description='',
     ext_modules=[CMakeExtension('gridpack')],
     cmdclass=dict(build_ext=CMakeBuild),
-    setup_requires=["mpi4py"],
     install_requires=["mpi4py"],
     zip_safe=False,
     scripts=[
