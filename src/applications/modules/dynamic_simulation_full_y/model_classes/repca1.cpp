@@ -102,11 +102,11 @@ void gridpack::dynamic_simulation::Repca1Model::load(
   // VQerror limiter
   VQerr_limiter.setparams(1.0,Emin,Emax);
 
-  // Qext PI controller
-  Qext_PI_blk.setparams(Kp,Ki,Qmin,Qmax,-1000.0,1000.0);
+  // Qref PI controller
+  Qref_PI_blk.setparams(Kp,Ki,Qmin,Qmax,-1000.0,1000.0);
 
-  // Qext lead lag
-  Qext_leadlag_blk.setparams(Tft,Tfv);
+  // Qref lead lag
+  Qref_leadlag_blk.setparams(Tft,Tfv);
 
   // Frequency error deadband
   Freqerr_deadband.setparams(fdbd1,fdbd2);
@@ -117,11 +117,11 @@ void gridpack::dynamic_simulation::Repca1Model::load(
   // Frequency error limiter
   Freqerr_limiter.setparams(1.0,femin,femax);
 
-  // Pext PI block
-  Pext_PI_blk.setparams(Kpg,Kig,Pmin,Pmax,-1000.0,1000.0);
+  // Pref PI block
+  Pref_PI_blk.setparams(Kpg,Kig,Pmin,Pmax,-1000.0,1000.0);
 
-  // Pext filter block
-  Pext_filter_blk.setparams(1.0,Tg);
+  // Pref filter block
+  Pref_filter_blk.setparams(1.0,Tg);
 }
 
 /**
@@ -132,13 +132,10 @@ void gridpack::dynamic_simulation::Repca1Model::load(
  */
 void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, double ts)
 {
-  // Assume Pext and Qext are 0
-  Pext = Qext = 0.0;
-
   if(FreqFLAG) {
     double ferr;
-    Pext_PI_blk_out = Pext_filter_blk.init_given_y(Pext);
-    ferr = Pext_PI_blk.init_given_y(Pext_PI_blk_out);
+    Pref_PI_blk_out = Pref_filter_blk.init_given_y(Pref);
+    ferr = Pref_PI_blk.init_given_y(Pref_PI_blk_out);
     
     // ***********
     // Need to use Pbranch if given, using Pg
@@ -149,9 +146,9 @@ void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, doubl
     Pbranch_filter_blk_out = Pbranch_filter_blk.init_given_u(Pbranch); 
   }
 
-  // Qext side now
-  Qext_PI_blk_out = Qext_leadlag_blk.init_given_y(Qext);
-  VQerr_limiter_out = Qext_PI_blk.init_given_y(Qext_PI_blk_out);
+  // Qref side now
+  Qref_PI_blk_out = Qref_leadlag_blk.init_given_y(Qref);
+  VQerr_limiter_out = Qref_PI_blk.init_given_y(Qref_PI_blk_out);
 
   if(!RefFLAG) {
     double temp;
@@ -183,7 +180,7 @@ void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,Integr
 {
   bool updateState = !Vfreeze; // Do not update state (freeze) when Vfreeze is true
   
-  // Pext part
+  // Pref part
   double ferr,dP;
 
   if(FreqFLAG) {
@@ -197,14 +194,14 @@ void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,Integr
     
     Pbranch_filter_blk_out = Pbranch_filter_blk.getoutput(Pbranch,t_inc,int_flag,true);
 
-    Freqerr_limiter_out = Freqerr_limiter.getoutput(Pref - Pbranch_filter_blk_out + dP);
+    Freqerr_limiter_out = Freqerr_limiter.getoutput(Plant_ref - Pbranch_filter_blk_out + dP);
 
-    Pext_PI_blk_out = Pext_PI_blk.getoutput(Freqerr_limiter_out,t_inc,int_flag,true);
+    Pref_PI_blk_out = Pref_PI_blk.getoutput(Freqerr_limiter_out,t_inc,int_flag,true);
 
-    Pext = Pext_filter_blk.getoutput(Pext_PI_blk_out,t_inc,int_flag,true);
+    Pref = Pref_filter_blk.getoutput(Pref_PI_blk_out,t_inc,int_flag,true);
   }
 
-  // Qext part
+  // Qref part
   double y_VCompFLAG=0.0; // value at VCompFLAG
   double y_RefFLAG = 0.0; // value at RefFLAG
 
@@ -224,7 +221,7 @@ void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,Integr
     Qbranch = Qg; // machine MVA base
 
     Qbranch_filter_blk_out = Qbranch_filter_blk.getoutput(Qbranch,t_inc,int_flag,true);
-    y_RefFLAG = (Qref + Qext) - Qbranch_filter_blk_out;
+    y_RefFLAG = Qref - Qbranch_filter_blk_out;
   } else {
     V_filter_blk_out = V_filter_blk.getoutput(y_VCompFLAG,t_inc,int_flag,true);
     y_RefFLAG = Vref - V_filter_blk_out;
@@ -236,11 +233,11 @@ void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,Integr
   // VQ error limiter block
   VQerr_limiter_out = VQerr_limiter.getoutput(VQerr_deadband_out);
 
-  // Qext PI control
-  Qext_PI_blk_out = Qext_PI_blk.getoutput(VQerr_limiter_out,t_inc,int_flag,updateState);
+  // Qref PI control
+  Qref_PI_blk_out = Qref_PI_blk.getoutput(VQerr_limiter_out,t_inc,int_flag,updateState);
 
-  // Qext lead lag block
-  Qext = Qext_leadlag_blk.getoutput(Qext_PI_blk_out,t_inc,int_flag,true);
+  // Qref lead lag block
+  Qref = Qref_leadlag_blk.getoutput(Qref_PI_blk_out,t_inc,int_flag,true);
   
 }
 /**
@@ -285,18 +282,18 @@ void gridpack::dynamic_simulation::Repca1Model::setBusFreq(double f)
 
 void gridpack::dynamic_simulation::Repca1Model::setPrefQext(double Pref_in, double Qref_in)
 {
-  Pref = Pref_in;
+  Pref = Plant_ref = Pref_in;
   Qref = Qref_in;
 }
 
 double gridpack::dynamic_simulation::Repca1Model::getPref( )
 {
-  return Pref + Pext;
+  return Pref;
 }
 
 double gridpack::dynamic_simulation::Repca1Model::getQext( )
 {
-  return Qref + Qext;
+  return Qref;
 }
 
 void gridpack::dynamic_simulation::Repca1Model::setExtBusNum(int ExtBusNum)

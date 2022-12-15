@@ -77,7 +77,13 @@ class Wtdta1Model : public BaseMechanicalModel
    * From aerodynamic model
    **/
    void setTmech(double Tmech);
-  
+
+  /**
+   * getTmech - gets initial mechanical torque
+   * @returnh Tmech- initial mechanical torque
+   **/
+   double getTmech();
+
   /**
    * setTelec - sets electrical torque
    * @param Telec - electrical torque
@@ -103,6 +109,12 @@ class Wtdta1Model : public BaseMechanicalModel
    **/
    double getRotorAngleDeviation();
 
+  /**
+   *  setOmegaref - Output of torque controller
+   * @param - omega_ref : reference speed
+   * Only set during initialization
+   **/
+  void setOmegaref(double omega_ref);
   
   private:
 

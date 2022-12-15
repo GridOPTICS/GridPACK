@@ -218,7 +218,7 @@ void gridpack::dynamic_simulation::Reeca1Model::load(
   VDL2.setparams(4,uin,yin);
 
   // Pref limiter block
-  Pref_limit_blk.setparams(1.0,dPmin,dPmax);
+  Pref_limit_blk.setparams(1.0,-1000.0,1000.0,dPmin,dPmax);
 
   // Pord block
   Pord_blk.setparams(1.0,Tpord,Pmin,Pmax,-1000.0,1000.0);
@@ -384,7 +384,12 @@ void gridpack::dynamic_simulation::Reeca1Model::computeModel(bool Voltage_dip,in
   CurrentLimitLogic(PQFLAG,Vt_filter,Ipcmd,Iqcmd,&Ipmin,&Ipmax,&Iqmin,&Iqmax);
 
   // Pref limiter output
-  Pref_limit_out = Pref_limit_blk.getoutput(Pref);
+  if(int_flag == PREDICTOR) {
+    Pref_limit_out = Pref_limit_blk.getoutput(Pref,t_inc,false);
+  } else {
+    // Update the previous value for the rate limiter block
+    Pref_limit_out = Pref_limit_blk.getoutput(Pref,t_inc,true);
+  }
 
   double Pord_blk_in;
 

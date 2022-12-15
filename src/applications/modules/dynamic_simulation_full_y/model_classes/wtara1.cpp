@@ -138,3 +138,10 @@ double gridpack::dynamic_simulation::Wtara1Model::getTaero()
   return Taero;
 }
 
+/**
+ * getTheta - Get initial value of pitch controller
+ * @output theta0 - initial value of pitch controller
+ **/
+double gridpack::dynamic_simulation::Wtara1Model::getTheta() {
+  return Theta0;
+}

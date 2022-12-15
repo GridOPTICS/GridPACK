@@ -198,6 +198,16 @@ void gridpack::dynamic_simulation::BaseMechanicalModel::setTmech(double Tmech) {
 }
 
 /**
+ * getTmech - sets mechanical torque
+ * @return Tmech - mechanical torque
+ **/
+double gridpack::dynamic_simulation::BaseMechanicalModel::getTmech()
+{
+  return 0.0;
+}
+
+
+/**
  * setTelec - sets electrical torque
  * @param Telec - electrical torque
  * From generator?

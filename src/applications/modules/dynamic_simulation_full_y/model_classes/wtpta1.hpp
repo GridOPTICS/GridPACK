@@ -98,6 +98,12 @@ class Wtpta1Model : public BaseMechanicalModel
    **/
    void setPord0(double Pord0);
 
+    /**
+   * setTheta - Set initial value of  pitch controller
+   * @param theta0 - initial value of pitch controller
+   **/
+   void setTheta(double Theta0);
+
   /**
    * getTheta - Get output of pitch controller
    * @output theta - output of pitch controller

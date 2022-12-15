@@ -194,14 +194,6 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
     p_plant->init(Vm, Va, ts);
   }
 
-  // Initialize drive train model
-  if(p_hasDriveTrainModel) {
-    p_drivetrainmodel = getDriveTrainModel();
-    p_drivetrainmodel->setTelec(p_pg);
-
-    p_drivetrainmodel->init(Vm, Va, ts);
-  }
-
   // Initialize torque controller model
   if(p_hasTorqueController) {
     p_torquecontroller = getTorqueController();
@@ -209,6 +201,38 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
     p_torquecontroller->setPelec(Pref);
 
     p_torquecontroller->init(Vm, Va, ts);
+  }
+
+  // Initialize drive train model
+  if(p_hasDriveTrainModel) {
+    if(p_hasTorqueController) {
+      omega_ref = p_torquecontroller->getOmegaref();
+    }
+    p_drivetrainmodel = getDriveTrainModel();
+    
+    p_drivetrainmodel->setOmegaref(omega_ref);
+    p_drivetrainmodel->setTelec(p_pg/omega_ref);
+
+    p_drivetrainmodel->init(Vm, Va, ts);
+  }
+
+  double Theta0 = 0.0;
+  // Initialize aerodynamic model
+  if(p_hasAeroDynamicModel) {
+    p_aerodynamicmodel = getAeroDynamicModel();
+
+    double Tm;
+    if(p_hasDriveTrainModel) {
+      domega_t = p_drivetrainmodel->getTurbineSpeedDeviation();
+      Tm = p_drivetrainmodel->getTmech();
+    }
+    p_aerodynamicmodel->setTurbineSpeedDeviation(domega_t);
+    p_aerodynamicmodel->setPmech(Tm*(1+domega_t));
+
+    p_aerodynamicmodel->init(Vm, Va, ts);
+
+    Taero = p_aerodynamicmodel->getTaero();
+    Theta0 = p_aerodynamicmodel->getTheta();
   }
 
   // Initialize pitch controller model
@@ -225,27 +249,11 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
     }
     p_pitchcontroller->setTurbineSpeedDeviation(domega_t);
     p_pitchcontroller->setOmegaref(omega_ref);
+    p_pitchcontroller->setTheta(Theta0);
 
     p_pitchcontroller->init(Vm, Va, ts);
   }
 
-  // Initialize aerodynamic model
-  if(p_hasAeroDynamicModel) {
-    p_aerodynamicmodel = getAeroDynamicModel();
-    if(p_hasPitchController) {
-      Thetapitch = p_pitchcontroller->getTheta();
-      p_aerodynamicmodel->setTheta(Thetapitch);
-    }
-    if(p_hasDriveTrainModel) {
-      domega_t = p_drivetrainmodel->getTurbineSpeedDeviation();
-    }
-    p_aerodynamicmodel->setTurbineSpeedDeviation(domega_t);
-    p_aerodynamicmodel->setPmech(p_pg);
-
-    p_aerodynamicmodel->init(Vm, Va, ts);
-
-    Taero = p_aerodynamicmodel->getTaero();
-  }
       
       
 
@@ -298,15 +306,9 @@ gridpack::ComplexType gridpack::dynamic_simulation::Regca1Generator::NortonImped
 void gridpack::dynamic_simulation::Regca1Generator::predictor_currentInjection(bool flag)
 {
   p_INorton = INorton();
-} 
+}
 
-/**
- * Predict new state variables for time step
- * @param t_inc time step increment
- * @param flag initial step if true
- */
-void gridpack::dynamic_simulation::Regca1Generator::predictor(
-    double t_inc, bool flag)
+void gridpack::dynamic_simulation::Regca1Generator::computeModel(double t_inc, IntegrationStage int_flag,bool flag)
 {
   double Pg,Qg;
   double Qext;
@@ -327,6 +329,7 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
 
   double domega_t = 0.0;
   double Pord = 0.0;
+  double Pref_plant;
 
   if(p_hasDriveTrainModel) {
     p_drivetrainmodel = getDriveTrainModel();
@@ -338,10 +341,14 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
     p_plant = getPlantController();
     p_plant->setGenPQV(Pg, Qg, Vt);
     p_plant->setBusFreq(busfreq);
+
+    if(int_flag == PREDICTOR) {
+      p_plant->predictor(t_inc, flag);
+    } else {
+      p_plant->corrector(t_inc,flag);
+    }
 		
-    p_plant->predictor(t_inc, flag);
-		
-    Pref = p_plant->getPref();
+    Pref = Pref_plant = p_plant->getPref();
     Qext = p_plant->getQext();
   }
 
@@ -354,9 +361,13 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
     Vdip = getExciter()->getVoltageDip(Vt);
 
     p_torquecontroller->setVdip(Vdip);
-    
-    p_torquecontroller->predictor(t_inc,flag);
 
+    if(int_flag == PREDICTOR) {
+      p_torquecontroller->predictor(t_inc,flag);
+    } else {
+      p_torquecontroller->corrector(t_inc,flag);
+    }
+    
     Pref = p_torquecontroller->getPref();
     omega_ref = p_torquecontroller->getOmegaref();
   }
@@ -368,7 +379,12 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
     p_exciter->setVterminal(Vt);
 
     p_exciter->setGeneratorPower(Pg,Qg);
-    p_exciter->predictor(t_inc, flag);
+
+    if(int_flag == PREDICTOR) {
+      p_exciter->predictor(t_inc, flag);
+    } else {
+      p_exciter->corrector(t_inc,flag);
+    }
 		
     Ipcmd = p_exciter->getIpcmd();
     Iqcmd = p_exciter->getIqcmd();
@@ -379,10 +395,15 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
   if(p_hasPitchController) {
     p_pitchcontroller = getPitchController();
     p_pitchcontroller->setPord(Pord);
-    p_pitchcontroller->setTurbineSpeedDeviation(domega_t);
+    p_pitchcontroller->setPord0(Pref_plant);
+    p_pitchcontroller->setTurbineSpeedDeviation(domega_g); // using domega_g instead of domega_g gives better response (why?)
     p_pitchcontroller->setOmegaref(omega_ref);
 
-    p_pitchcontroller->predictor(t_inc,flag);
+    if(int_flag == PREDICTOR) {
+      p_pitchcontroller->predictor(t_inc,flag);
+    } else {
+      p_pitchcontroller->corrector(t_inc,flag);
+    }
 
     Thetapitch = p_pitchcontroller->getTheta();
   }
@@ -392,7 +413,11 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
     p_aerodynamicmodel->setTheta(Thetapitch);
     p_aerodynamicmodel->setTurbineSpeedDeviation(domega_t);
 
-    p_aerodynamicmodel->predictor(t_inc,flag);
+    if(int_flag == PREDICTOR) {
+      p_aerodynamicmodel->predictor(t_inc,flag);
+    } else {
+      p_aerodynamicmodel->corrector(t_inc,flag);
+    }
 
     Taero = p_aerodynamicmodel->getTaero();
   }
@@ -400,24 +425,39 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor(
   if(p_hasDriveTrainModel) {
     p_drivetrainmodel = getDriveTrainModel();
 
-    p_drivetrainmodel->setTelec(Pg);
+    p_drivetrainmodel->setTelec(Pg/(1+domega_g));
     p_drivetrainmodel->setTmech(Taero);
 
-    p_drivetrainmodel->predictor(t_inc,flag);
+    if(int_flag == PREDICTOR) {
+      p_drivetrainmodel->predictor(t_inc,flag);
+    } else {
+      p_drivetrainmodel->corrector(t_inc,flag);
+    }      
   }
   
 
-  Vt_filter = Vt_filter_blk.getoutput(Vt,t_inc,PREDICTOR,true);
+  Vt_filter = Vt_filter_blk.getoutput(Vt,t_inc,int_flag,true);
 
   if(lvplsw) {
     Lvpl_out = Lvpl_blk.getoutput(Vt_filter);
 
-    Ip = Ip_blk.getoutput(Ipcmd,t_inc,-1000.0,1000.0,-1000.0,Lvpl_out*rrpwr,-1000.0,1000.0,PREDICTOR,true);
+    Ip = Ip_blk.getoutput(Ipcmd,t_inc,-1000.0,1000.0,-1000.0,Lvpl_out*rrpwr,-1000.0,1000.0,int_flag,true);
   } else {
-    Ip = Ip_blk.getoutput(Ipcmd,t_inc,PREDICTOR,true);
+    Ip = Ip_blk.getoutput(Ipcmd,t_inc,int_flag,true);
   }
 				   
-  Iq = Iq_blk.getoutput(Iqcmd,t_inc,PREDICTOR,true);
+  Iq = Iq_blk.getoutput(Iqcmd,t_inc,int_flag,true);
+}
+
+/**
+ * Predict new state variables for time step
+ * @param t_inc time step increment
+ * @param flag initial step if true
+ */
+void gridpack::dynamic_simulation::Regca1Generator::predictor(
+    double t_inc, bool flag)
+{
+  computeModel(t_inc,PREDICTOR,flag);
 }
 
 /**
@@ -437,116 +477,7 @@ void gridpack::dynamic_simulation::Regca1Generator::corrector_currentInjection(b
 void gridpack::dynamic_simulation::Regca1Generator::corrector(
     double t_inc, bool flag)
 {
-  double Pg,Qg;
-  double Qext;
-  double Iq_olim; // Current injection for over-voltage
-  bool   Vdip;
-  
-  Lvpnt_out = Lvpnt_blk.getoutput(Vt);
-
-  Ipout = Ip*Lvpnt_out;
-
-  Iq_olim = std::max(0.0,khv*(Vt - volim));
-
-  Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
-
-  // Pg,Qg on machine MVAbase
-  Pg = Vt*Ipout;
-  Qg = -Vt*Iqout;
-
-  double domega_t = 0.0;
-  double Pord = 0.0;
-
-  if(p_hasDriveTrainModel) {
-    p_drivetrainmodel = getDriveTrainModel();
-    domega_g = p_drivetrainmodel->getGeneratorSpeedDeviation();
-    domega_t = p_drivetrainmodel->getTurbineSpeedDeviation();
-  }
-
-  if (p_hasPlantController){
-    p_plant = getPlantController();
-    p_plant->setGenPQV(Pg, Qg, Vt);
-    p_plant->setBusFreq(busfreq);
-		
-    p_plant->corrector(t_inc, flag);
-		
-    Pref = p_plant->getPref();
-    Qext = p_plant->getQext();
-  }
-
-  if(p_hasTorqueController) {
-    p_torquecontroller = getTorqueController();
-    p_torquecontroller->setPref0(Pref);
-    p_torquecontroller->setPelec(Pg);
-    p_torquecontroller->setGeneratorSpeedDeviation(domega_g);
-
-    Vdip = getExciter()->getVoltageDip(Vt);
-
-    p_torquecontroller->setVdip(Vdip);
-    
-    p_torquecontroller->corrector(t_inc,flag);
-
-    Pref = p_torquecontroller->getPref();
-    omega_ref = p_torquecontroller->getOmegaref();
-  }
-
-  //get ipcmd and iqcmd from the exctier REECA1 MODEL
-  if (p_hasExciter){
-    p_exciter = getExciter();
-    p_exciter->setPrefQext(Pref, Qext);
-    p_exciter->setVterminal(Vt);
-
-    p_exciter->setGeneratorPower(Pg,Qg);
-    p_exciter->corrector(t_inc, flag);
-		
-    Ipcmd = p_exciter->getIpcmd();
-    Iqcmd = p_exciter->getIqcmd();
-
-    Pord = p_exciter->getPord();
-  }
-
-  if(p_hasPitchController) {
-    p_pitchcontroller = getPitchController();
-    p_pitchcontroller->setPord(Pord);
-    p_pitchcontroller->setTurbineSpeedDeviation(domega_t);
-    p_pitchcontroller->setOmegaref(omega_ref);
-
-    p_pitchcontroller->corrector(t_inc,flag);
-
-    Thetapitch = p_pitchcontroller->getTheta();
-  }
-
-  if(p_hasAeroDynamicModel) {
-    p_aerodynamicmodel = getAeroDynamicModel();
-    p_aerodynamicmodel->setTheta(Thetapitch);
-    p_aerodynamicmodel->setTurbineSpeedDeviation(domega_t);
-
-    p_aerodynamicmodel->corrector(t_inc,flag);
-
-    Taero = p_aerodynamicmodel->getTaero();
-  }
-
-  if(p_hasDriveTrainModel) {
-    p_drivetrainmodel = getDriveTrainModel();
-
-    p_drivetrainmodel->setTelec(Pg);
-    p_drivetrainmodel->setTmech(Taero);
-
-    p_drivetrainmodel->corrector(t_inc,flag);
-  }
-
-  Vt_filter = Vt_filter_blk.getoutput(Vt,t_inc,CORRECTOR,true);
-  
-  if(lvplsw) {
-    Lvpl_out = Lvpl_blk.getoutput(Vt_filter);
-
-    Ip = Ip_blk.getoutput(Ipcmd,t_inc,-1000.0,1000.0,-1000.0,Lvpl_out*rrpwr,-1000.0,1000.0,CORRECTOR,true);
-  } else {
-    Ip = Ip_blk.getoutput(Ipcmd,t_inc,CORRECTOR,true);
-  }
-				   
-  Iq = Iq_blk.getoutput(Iqcmd,t_inc,CORRECTOR,true);
-
+  computeModel(t_inc,CORRECTOR,flag);
 }
 
 bool gridpack::dynamic_simulation::Regca1Generator::tripGenerator()

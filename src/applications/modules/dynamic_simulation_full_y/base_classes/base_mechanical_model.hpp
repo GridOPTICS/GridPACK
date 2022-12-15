@@ -173,6 +173,12 @@ public:
   virtual void setTmech(double Tmech);
 
   /**
+   * getTmech - sets mechanical torque
+   * @return Tmech - mechanical torque
+   **/
+  virtual double getTmech();
+
+  /**
    * setTelec - sets electrical torque
    * @param Telec - electrical torque
    * From generator?

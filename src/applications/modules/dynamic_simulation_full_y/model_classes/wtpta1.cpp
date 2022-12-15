@@ -77,12 +77,12 @@ void gridpack::dynamic_simulation::Wtpta1Model::load(
  */
 void gridpack::dynamic_simulation::Wtpta1Model::init(double mag, double ang, double ts)
 {
-  double y1,y2;
+  double Thetacmd,u1,u2;
 
-  y1 = pitchcomp_blk.init_given_u(Pord-Pord0);
-  y2 = pitchctrl_blk.init_given_u((1+domega_t)-omega_ref + Kcc*(Pord - Pord0));
+  Thetacmd = lag_blk.init_given_y(Theta);
+  u1 = pitchcomp_blk.init_given_y(0.0);
+  u2 = pitchctrl_blk.init_given_y(Thetacmd);
 
-  Theta = lag_blk.init_given_u(y1+y2);
 }
 
 void gridpack::dynamic_simulation::Wtpta1Model::computeModel(double t_inc,IntegrationStage int_flag)
@@ -154,6 +154,14 @@ void gridpack::dynamic_simulation::Wtpta1Model::setOmegaref(double omega_ref_in)
   omega_ref = omega_ref_in;
 }
 
+/**
+ * setTheta - Set initial value of  pitch controller
+ * @param theta0 - initial value of pitch controller
+ **/
+void gridpack::dynamic_simulation::Wtpta1Model::setTheta(double Theta0)
+{
+  Theta = Theta0;
+}
 
 /**
  * getTheta - Get output of pitch controller
