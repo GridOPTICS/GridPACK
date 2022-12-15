@@ -28,6 +28,7 @@ set(target_libraries
     gridpack_analysis
     gridpack_parallel
     gridpack_environment
+    gridpack_block_parsers
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

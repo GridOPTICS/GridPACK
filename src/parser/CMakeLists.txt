@@ -36,6 +36,41 @@ set(target_libraries
     gridpack_stream
     ${target_libraries})
 
+add_library(gridpack_block_parsers
+    block_parsers/base_block_parser.cpp
+    block_parsers/case_parser33.cpp
+    block_parsers/case_parser34.cpp
+    block_parsers/system_parser34.cpp
+    block_parsers/bus_parser33.cpp
+    block_parsers/load_parser33.cpp
+    block_parsers/fixed_shunt_parser33.cpp
+    block_parsers/generator_parser33.cpp
+    block_parsers/generator_parser34.cpp
+    block_parsers/generator_parser35.cpp
+    block_parsers/branch_parser33.cpp
+    block_parsers/branch_parser34.cpp
+    block_parsers/sys_switch_parser34.cpp
+    block_parsers/transformer_parser33.cpp
+    block_parsers/transformer_parser34.cpp
+    block_parsers/transformer_parser35.cpp
+    block_parsers/area_parser33.cpp
+    block_parsers/two_term_parser33.cpp
+    block_parsers/vsc_line_parser33.cpp
+    block_parsers/imped_corr_parser33.cpp
+    block_parsers/imped_corr_parser34.cpp
+    block_parsers/multi_term_parser33.cpp
+    block_parsers/multi_section_parser33.cpp
+    block_parsers/zone_parser33.cpp
+    block_parsers/interarea_parser33.cpp
+    block_parsers/owner_parser33.cpp
+    block_parsers/facts_parser33.cpp
+    block_parsers/switched_shunt_parser33.cpp
+    block_parsers/switched_shunt_parser34.cpp
+    block_parsers/switched_shunt_parser35.cpp
+    )
+gridpack_set_library_version(gridpack_block_parsers)
+add_dependencies(gridpack_block_parsers external_build)
+
 include_directories(AFTER parser_classes)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -102,6 +137,7 @@ install(FILES
   dictionary.hpp
   PTI23_parser.hpp
   PTI33_parser.hpp
+  PTI35_parser.hpp
   PSSE_seq_parser.hpp
   GOSS_parser.hpp
   MAT_parser.hpp
@@ -142,4 +178,54 @@ install(FILES
   parser_classes/wtpta1.hpp
   parser_classes/wttqa1.hpp
   DESTINATION include/gridpack/parser/parser_classes
+)
+
+install (FILES
+  block_parsers/base_block_parser.hpp
+  block_parsers/case_parser33.hpp
+  block_parsers/case_parser34.hpp
+  block_parsers/system_parser34.hpp
+  block_parsers/bus_parser33.hpp
+  block_parsers/load_parser33.hpp
+  block_parsers/fixed_shunt_parser33.hpp
+  block_parsers/generator_parser33.hpp
+  block_parsers/generator_parser34.hpp
+  block_parsers/generator_parser35.hpp
+  block_parsers/branch_parser33.hpp
+  block_parsers/branch_parser34.hpp
+  block_parsers/sys_switch_parser34.hpp
+  block_parsers/transformer_parser33.hpp
+  block_parsers/transformer_parser34.hpp
+  block_parsers/transformer_parser35.hpp
+  block_parsers/area_parser33.hpp
+  block_parsers/two_term_parser33.hpp
+  block_parsers/vsc_line_parser33.hpp
+  block_parsers/imped_corr_parser33.hpp
+  block_parsers/imped_corr_parser34.hpp
+  block_parsers/multi_term_parser33.hpp
+  block_parsers/multi_section_parser33.hpp
+  block_parsers/zone_parser33.hpp
+  block_parsers/interarea_parser33.hpp
+  block_parsers/owner_parser33.hpp
+  block_parsers/facts_parser33.hpp
+  block_parsers/switched_shunt_parser33.hpp
+  block_parsers/switched_shunt_parser34.hpp
+  block_parsers/switched_shunt_parser35.hpp
+  DESTINATION include/gridpack/parser/block_parsers
+)
+
+install (FILES
+  bus_defs.hpp
+  shunt_defs.hpp
+  load_defs.hpp
+  generator_defs.hpp
+  governor_defs.hpp
+  exciter_defs.hpp
+  branch_defs.hpp
+  transformer_defs.hpp
+  relay_defs.hpp
+  psssim_defs.hpp
+  wind_defs.hpp
+  misc_defs.hpp
+  DESTINATION include/gridpack/parser/variable_defs
 )
