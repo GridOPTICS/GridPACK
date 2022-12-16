@@ -21,6 +21,7 @@ set(target_libraries
     gridpack_powerflow_module
     gridpack_components
     gridpack_stream
+    gridpack_block_parsers
     gridpack_partition
     gridpack_parallel
     gridpack_math
@@ -113,8 +114,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
 
 target_link_libraries(gridpack_dynamic_simulation_full_y_module
-  gridpack_dsmatrix_components
-  gridpack_powerflow_module
+  ${target_libraries}
   )
 
 # -------------------------------------------------------------
