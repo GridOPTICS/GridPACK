@@ -229,3 +229,9 @@ install (FILES
   variable_defs/misc_defs.hpp
   DESTINATION include/gridpack/parser/variable_defs
 )
+
+install(TARGETS 
+  gridpack_block_parsers
+  DESTINATION lib
+  )
+
