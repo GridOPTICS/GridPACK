@@ -9,7 +9,12 @@
  * @author Bruce Palmer
  * @date   2019-12-03 07:45:40 d3g096
  * 
- * @brief  
+ * @updated Shri Abhyankar
+ * Conversion of constant current, constant admittance values from raw file
+ * to constant power
+ * @date  2022-12-23
+
+ * @brief Methods used in power flow application
  * 
  * 
  */
@@ -544,8 +549,16 @@ void gridpack::powerflow::PFBus::load(
       p_load = true;
       p_load = p_load && data->getValue(LOAD_PL, &pl,i);
       p_load = p_load && data->getValue(LOAD_QL, &ql,i);
+      p_load = p_load && data->getValue(LOAD_IP, &ip,i);
+      p_load = p_load && data->getValue(LOAD_IQ, &iq,i);
+      p_load = p_load && data->getValue(LOAD_YP, &yp,i);
+      p_load = p_load && data->getValue(LOAD_YQ, &yq,i);
       p_load = p_load && data->getValue(LOAD_STATUS, &lstatus,i);
       if (p_load) {
+	/* Combine constant P, constant I, constant Y loads */
+	pl = pl + ip + yp;
+	ql = ql - iq - yq;
+	
         p_pl.push_back(pl);
         p_savePl.push_back(pl);
         p_ql.push_back(ql);
@@ -1002,8 +1015,19 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       }
     }
     for (i=0; i<ngen; i++) {
-      double pval = p_pFac[i]*(p_Pinj+pl/p_sbase);
-      double qval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+      double pval;
+      double qval;
+
+      if(getReferenceBus()) {
+	pval = p_pFac[i]*(p_Pinj*p_sbase+pl);
+	qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+      } else if (p_isPV) {
+	pval = p_pg[i];
+	qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+      } else {
+	pval = p_pg[i];
+	qval = p_qg[i];
+      }
       if (!strcmp(signal,"power")) {
         sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
             getOriginalIndex(),p_gid[i].c_str(),pval,qval);
@@ -1179,13 +1203,31 @@ void gridpack::powerflow::PFBus::saveData(
     }
   }
   for (i=0; i<ngen; i++) {
-    rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
-    if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
-      data->addValue("GENERATOR_PF_PGEN",rval,i);
-    }
-    rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
-    if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
-      data->addValue("GENERATOR_PF_QGEN",rval,i);
+    if(getReferenceBus()) {
+      rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
+      if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
+	data->addValue("GENERATOR_PF_PGEN",rval,i);
+      }
+      rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+      if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
+	data->addValue("GENERATOR_PF_QGEN",rval,i);
+      }
+    } else if (p_isPV) {
+      if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
+	data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+      }
+      rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+      if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
+	data->addValue("GENERATOR_PF_QGEN",rval,i);
+      }
+    } else {
+      if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
+	data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+      }
+
+      if (!data->setValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i)) {
+	data->addValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i);
+      }
     }
   }
 }
