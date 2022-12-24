@@ -1214,7 +1214,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   // add load model
   bool bdebug_load_model = false;
-  double pl, ql, totaldynReactivepower;
+  double pl, ql, ip, iq, yp, yq, totaldynReactivepower;
   p_powerflowload_p.clear();
   p_powerflowload_p_save.clear();
   p_powerflowload_q.clear();
@@ -1231,6 +1231,21 @@ void gridpack::dynamic_simulation::DSFullBus::load(
     for (i=0; i<p_npowerflow_load; i++) { 
       data->getValue(LOAD_PL, &pl, i);
       data->getValue(LOAD_QL, &ql, i);
+      data->getValue(LOAD_IP, &ip, i);
+      data->getValue(LOAD_IQ, &iq, i);
+      data->getValue(LOAD_YP, &yp, i);
+      data->getValue(LOAD_YQ, &yq, i);
+
+      /* Convert all load to constant power. Later on it will be
+	 converted to whatever load model it is. This is done because
+	 right now the dynamics simulation application expects the load
+	 to be specified as constant power in the data file. Using unity
+	 voltage magnitude for conversion
+      */
+      /* Combine constant P, constant I, constant Y loads */
+      pl = pl + ip + yp;
+      ql = ql - iq - yq;
+
       data->getValue(LOAD_ID, &loadid, i);
       istat = 1;
       data->getValue(LOAD_STATUS, &istat, i);
