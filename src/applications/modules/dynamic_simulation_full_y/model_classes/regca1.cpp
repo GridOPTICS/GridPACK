@@ -111,7 +111,7 @@ void gridpack::dynamic_simulation::Regca1Generator::load(
     Iq_blk.setdxlimits(-1000.0,iqrmax);
   } else {
     // Lower limit active when Qg < 0
-    Iq_blk.setdxlimits(iqrmin,-1000.0);
+    Iq_blk.setdxlimits(iqrmin,1000.0);
   }
   Vt_filter_blk.setparams(1.0,tfltr);
 
