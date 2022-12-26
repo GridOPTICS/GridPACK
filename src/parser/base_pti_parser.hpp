@@ -44,6 +44,7 @@
 #include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
 #include "parser_classes/exdc1.hpp"
+#include "parser_classes/ieeet1.hpp"
 #include "parser_classes/esst1a.hpp"
 #include "parser_classes/esst4b.hpp"
 #include "parser_classes/ggov1.hpp"
@@ -1077,6 +1078,8 @@ class BasePTIParser : public BaseParser<_network>
               !strcmp(gen_data[i].model,"EXDC2")) {
             Exdc1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+	  } else if (!strcmp(gen_data[i].model,"IEEET1")) {
+            Ieeet1Parser<gen_params> parser;
           } else if (!strcmp(gen_data[i].model,"ESST1A")) {
             Esst1aParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1406,6 +1409,7 @@ class BasePTIParser : public BaseParser<_network>
           device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
 	  device == "REPCTA1" ||
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
+	  device == "IEEET1" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
           device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM" ||
@@ -1573,6 +1577,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "EXDC1" || sval == "EXDC2") {
               Exdc1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+	    } else if (sval == "IEEET1") {
+              Ieeet1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
 	    } else if (sval == "SEXS") {
               SexsParser<gen_params> parser;
@@ -1798,6 +1805,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "EXDC1" || sval == "EXDC2") {
             Exdc1Parser<gen_params> parser;
+            parser.store(split_line,data);
+	  } else if (sval == "IEEET1") {
+            Ieeet1Parser<gen_params> parser;
             parser.store(split_line,data);
 	  } else if (sval == "SEXS") {
             SexsParser<gen_params> parser;

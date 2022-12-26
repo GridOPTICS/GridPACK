@@ -157,6 +157,7 @@ install(FILES
   parser_classes/repca1.hpp
   parser_classes/wsieg1.hpp
   parser_classes/exdc1.hpp
+  parser_classes/ieeet1.hpp
   parser_classes/esst1a.hpp
   parser_classes/esst4b.hpp
   parser_classes/ggov1.hpp
