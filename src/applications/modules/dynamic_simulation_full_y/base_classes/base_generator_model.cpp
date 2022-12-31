@@ -28,6 +28,7 @@ gridpack::dynamic_simulation::BaseGeneratorModel::BaseGeneratorModel(void) {
   p_hasExciter = false;
   p_hasGovernor = false;
   p_hasPss = false;
+  p_hasPlantController = false;
   p_hasTorqueController = false;
   p_hasPitchController = false;
   p_hasAeroDynamicModel = false;

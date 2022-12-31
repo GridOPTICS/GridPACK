@@ -77,6 +77,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/classical.cpp
   model_classes/gensal.cpp
   model_classes/exdc1.cpp
+  model_classes/ieeet1.cpp
   model_classes/wsieg1.cpp
   model_classes/GainBlockClass.cpp
   model_classes/BackLashClass.cpp
@@ -154,6 +155,7 @@ install(FILES
   model_classes/classical.hpp
   model_classes/DBIntClass.hpp
   model_classes/exdc1.hpp
+  model_classes/ieeet1.hpp
   model_classes/GainBlockClass.hpp
   model_classes/PIBlockwithLimit.hpp
   model_classes/DelayBlockwithLimit.hpp

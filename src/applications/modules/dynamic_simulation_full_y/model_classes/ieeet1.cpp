@@ -5,9 +5,9 @@
  */
 // -----------------------------------------------------------
 /**
- * @file   exdc1.cpp
+ * @file   ieeet1.cpp
  * @author Shrirang Abhyankar
- * @Updated:   Novemeber 26, 2022
+ * @Updated:   December 25, 2022
  * 
  * @brief  
  * 
@@ -24,20 +24,19 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "base_exciter_model.hpp"
-#include "exdc1.hpp"
+#include "ieeet1.hpp"
 
 #define TS_THRESHOLD 4
 
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::Exdc1Model::Exdc1Model(void)
+gridpack::dynamic_simulation::Ieeet1Model::Ieeet1Model(void)
 {
   Vs = 0.0;
   sat_A = 0.0;
   sat_B = 0.0;
   has_Sat = true;
-  has_leadlag = true;
   zero_TA = false;
   zero_TR = false;
 }
@@ -45,7 +44,7 @@ gridpack::dynamic_simulation::Exdc1Model::Exdc1Model(void)
 /**
  *  Basic destructor
  */
-gridpack::dynamic_simulation::Exdc1Model::~Exdc1Model(void)
+gridpack::dynamic_simulation::Ieeet1Model::~Ieeet1Model(void)
 {
 }
 
@@ -53,18 +52,14 @@ gridpack::dynamic_simulation::Exdc1Model::~Exdc1Model(void)
  * Load parameters from DataCollection object into exciter model
  * @param data collection of exciter parameters from input files
  * @param index of exciter on bus
- * TODO: might want to move this functionality to
- * Exdc1Model
  */
-void gridpack::dynamic_simulation::Exdc1Model::load(
+void gridpack::dynamic_simulation::Ieeet1Model::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
   if (!data->getValue(EXCITER_TR, &TR, idx)) TR = 0.0; // TR
   if (!data->getValue(EXCITER_KA, &KA, idx)) KA = 0.0; // KA 
   if (!data->getValue(EXCITER_TA, &TA, idx)) TA = 0.0; // TA
-  if (!data->getValue(EXCITER_TB, &TB, idx)) TB = 0.0; // TB
-  if (!data->getValue(EXCITER_TC, &TC, idx)) TC = 0.0; // TC
   if (!data->getValue(EXCITER_VRMAX, &Vrmax, idx)) Vrmax = 0.0; // Vrmax
   if (!data->getValue(EXCITER_VRMIN, &Vrmin, idx)) Vrmin = 0.0; // Vrmin
   if (!data->getValue(EXCITER_KE, &KE, idx)) KE = 0.0; // KE
@@ -77,7 +72,6 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
   if (!data->getValue(EXCITER_SE2, &SE2, idx)) SE2 = 0.0; // SE2
 
   if(fabs(SE1*SE2) < 1e-6) has_Sat = false;
-  if(fabs(TB*TC) < 1e-6)   has_leadlag = false;
   if(fabs(TA) < 1e-6) zero_TA = true;
   if(fabs(TR) < 1e-6) zero_TR = true;
 
@@ -92,10 +86,6 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
   // Set up blocks
   if(!zero_TR) {
     Vmeas_blk.setparams(1.0,TR);
-  }
-
-  if(has_leadlag) {
-    Leadlag_blk.setparams(TA,TB);
   }
 
   if(!zero_TA) {
@@ -119,7 +109,7 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
  *       S = B(x - A)^2/x if x > A
  *  else S = 0
  *    */
-double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
+double gridpack::dynamic_simulation::Ieeet1Model::Sat(double x)
 {
   double S;
 
@@ -135,7 +125,7 @@ double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::Exdc1Model::init(double Vm, double Va, double ts)
+void gridpack::dynamic_simulation::Ieeet1Model::init(double Vm, double Va, double ts)
 {
   VF = Feedback_blk.init_given_u(Efd);
 
@@ -149,33 +139,27 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double Vm, double Va, double
 
   VR = output_blk_in + sat_signal;
 
+  double Regulator_blk_in;
   if(zero_TA) {
-    VLL = VR/KA;
+    Regulator_blk_in = VR/KA;
   } else {
-    VLL = Regulator_blk.init_given_y(VR);
+    Regulator_blk_in = Regulator_blk.init_given_y(VR);
   }
 
-  double leadlag_blk_in;
-  if(has_leadlag) {
-    leadlag_blk_in = Leadlag_blk.init_given_y(VLL);
-  } else leadlag_blk_in = VLL;
-
   double Verr;
-  Verr = leadlag_blk_in - VF + Vs;
+  Verr = Regulator_blk_in + VF;
       
   if(!zero_TR) {
     Vmeas = Vmeas_blk.init_given_u(Ec);
   } else Vmeas = Ec;
 
-  Vref = Verr + Vmeas;
-
-  
+  Vref = Verr + Vmeas - Vs;
 }
 
 /**
  * computeModel - Updates the model states and gets the output
  */
-void gridpack::dynamic_simulation::Exdc1Model::computeModel(double t_inc,IntegrationStage int_flag)
+void gridpack::dynamic_simulation::Ieeet1Model::computeModel(double t_inc,IntegrationStage int_flag)
 {
   if(!zero_TR) {
     Vmeas = Vmeas_blk.getoutput(Ec,t_inc,int_flag,true);
@@ -187,17 +171,12 @@ void gridpack::dynamic_simulation::Exdc1Model::computeModel(double t_inc,Integra
 
   VF = Feedback_blk.getoutput(Efd,t_inc,int_flag,true);
 
-  double leadlag_blk_in = Verr - VF;
-  if(has_leadlag) {
-    VLL = Leadlag_blk.getoutput(leadlag_blk_in,t_inc,int_flag,true);
-  } else {
-    VLL = leadlag_blk_in;
-  }
+  double Regulator_blk_in = Verr - VF;
 
   if(zero_TA) {
-    VR = Regulator_gain_blk.getoutput(VLL);
+    VR = Regulator_gain_blk.getoutput(Regulator_blk_in);
   } else {
-    VR = Regulator_blk.getoutput(VLL,t_inc,int_flag,true);
+    VR = Regulator_blk.getoutput(Regulator_blk_in,t_inc,int_flag,true);
   }
 
   double sat_signal = KE*Efd;
@@ -214,7 +193,7 @@ void gridpack::dynamic_simulation::Exdc1Model::computeModel(double t_inc,Integra
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag)
+void gridpack::dynamic_simulation::Ieeet1Model::predictor(double t_inc, bool flag)
 {
   computeModel(t_inc,PREDICTOR);
 }
@@ -224,7 +203,7 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag)
+void gridpack::dynamic_simulation::Ieeet1Model::corrector(double t_inc, bool flag)
 {
   computeModel(t_inc,CORRECTOR);
 
@@ -234,7 +213,7 @@ void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag
  * Set the field voltage parameter inside the exciter
  * @param fldv value of the field voltage
  */
-void gridpack::dynamic_simulation::Exdc1Model::setFieldVoltage(double fldv)
+void gridpack::dynamic_simulation::Ieeet1Model::setFieldVoltage(double fldv)
 {
   Efd = fldv;
 }
@@ -243,7 +222,7 @@ void gridpack::dynamic_simulation::Exdc1Model::setFieldVoltage(double fldv)
  * Get the value of the field voltage parameter
  * @return value of field voltage
  */
-double gridpack::dynamic_simulation::Exdc1Model::getFieldVoltage()
+double gridpack::dynamic_simulation::Ieeet1Model::getFieldVoltage()
 {
   return Efd;
 }
@@ -251,7 +230,7 @@ double gridpack::dynamic_simulation::Exdc1Model::getFieldVoltage()
 /** 
  * Set the value of terminal voltage
  */
-void gridpack::dynamic_simulation::Exdc1Model::setVterminal(double Vm)
+void gridpack::dynamic_simulation::Ieeet1Model::setVterminal(double Vm)
 {
   Ec = Vm;
 }
@@ -259,7 +238,7 @@ void gridpack::dynamic_simulation::Exdc1Model::setVterminal(double Vm)
 /**
  * Set stabilizer signal input
  */
-void gridpack::dynamic_simulation::Exdc1Model::setVstab(double Vstab)
+void gridpack::dynamic_simulation::Ieeet1Model::setVstab(double Vstab)
 {
   Vs = Vstab;
 }
@@ -267,7 +246,7 @@ void gridpack::dynamic_simulation::Exdc1Model::setVstab(double Vstab)
 /** 
  * Set the exciter bus number
  */
-void gridpack::dynamic_simulation::Exdc1Model::setExtBusNum(int ExtBusNum)
+void gridpack::dynamic_simulation::Ieeet1Model::setExtBusNum(int ExtBusNum)
 {
   p_bus_num = ExtBusNum;
 }	
@@ -275,7 +254,7 @@ void gridpack::dynamic_simulation::Exdc1Model::setExtBusNum(int ExtBusNum)
 /** 
  * Set the exciter generator id
  */
-void gridpack::dynamic_simulation::Exdc1Model::setExtGenId(std::string ExtGenId)
+void gridpack::dynamic_simulation::Ieeet1Model::setExtGenId(std::string ExtGenId)
 {
   p_gen_id = ExtGenId;
 }
