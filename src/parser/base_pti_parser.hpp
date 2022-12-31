@@ -11,7 +11,7 @@
  *      Author: Shrirang Abhyankar
  * 
  *  Renamed REGCA1/regca1 to regc
- *
+ *  Added REGCB1
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -43,6 +43,7 @@
 #include "parser_classes/genrou.hpp"
 #include "parser_classes/gdform.hpp"
 #include "parser_classes/regca1.hpp"
+#include "parser_classes/regcb1.hpp"
 #include "parser_classes/reeca1.hpp"
 #include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
@@ -1065,6 +1066,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"REGCA1")) {
             Regca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+	  } else if (!strcmp(gen_data[i].model,"REGCB1")) {
+            Regcb1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"REECA1")) {
             Reeca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1410,7 +1414,7 @@ class BasePTIParser : public BaseParser<_network>
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "GDFORM" ||
           device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
-	  device == "REPCTA1" ||
+	  device == "REPCTA1" || device == "REGCB1" || 
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
 	  device == "IEEET1" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
@@ -1565,6 +1569,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "REGCA1") {
               Regca1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+	    } else if (sval == "REGCB1") {
+              Regcb1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "REECA1") {
               Reeca1Parser<gen_params> parser;
@@ -1793,6 +1800,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "REGCA1") {
             Regca1Parser<gen_params> parser;
+            parser.store(split_line,data);
+	  } else if (sval == "REGCB1") {
+            Regcb1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "REECA1") {
             Reeca1Parser<gen_params> parser;
