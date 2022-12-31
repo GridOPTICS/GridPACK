@@ -9,6 +9,9 @@
  *
  *  Added SEXS exciter model: Nov 7, 2022
  *      Author: Shrirang Abhyankar
+ * 
+ *  Renamed REGCA1/regca1 to regc
+ *
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -418,21 +421,21 @@ class BasePTIParser : public BaseParser<_network>
       double pset;
       double imax;
 	  
-      int regca1_lvplsw;
-      double regca1_tg;
-      double regca1_rrpwr;
-      double regca1_brkpt;
-      double regca1_zerox;
-      double regca1_lvpl1;
-      double regca1_volim;
-      double regca1_lvpnt1;
-      double regca1_lvpnt0;
-      double regca1_lolim;
-      double regca1_tfltr;
-      double regca1_khv;
-      double regca1_lqrmax;
-      double regca1_lqrmin;
-      double regca1_accel;
+      int regc_lvplsw;
+      double regc_tg;
+      double regc_rrpwr;
+      double regc_brkpt;
+      double regc_zerox;
+      double regc_lvpl1;
+      double regc_volim;
+      double regc_lvpnt1;
+      double regc_lvpnt0;
+      double regc_lolim;
+      double regc_tfltr;
+      double regc_khv;
+      double regc_lqrmax;
+      double regc_lqrmin;
+      double regc_accel;
 	  
       // Exciter parameters
       bool has_exciter;

@@ -537,14 +537,14 @@
  * type: integer
  * indexed
  */
-#define GENERATOR_REGCA_LVPLSW "GENERATOR_REGCA_LVPLSW"
+#define GENERATOR_REGC_LVPLSW "GENERATOR_REGC_LVPLSW"
 
 /**
  * Generator REGCA tg
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_TG "GENERATOR_REGCA_TG"
+#define GENERATOR_REGC_TG "GENERATOR_REGC_TG"
 
 
 /**
@@ -552,91 +552,91 @@
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_RRPWR "GENERATOR_REGCA_RRPWR"
+#define GENERATOR_REGC_RRPWR "GENERATOR_REGC_RRPWR"
 
 /**
  * Generator REGCA Brkpt
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_BRKPT "GENERATOR_REGCA_BRKPT"
+#define GENERATOR_REGC_BRKPT "GENERATOR_REGC_BRKPT"
 
 /**
  * Generator REGCA Zerox
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_ZEROX "GENERATOR_REGCA_ZEROX"
+#define GENERATOR_REGC_ZEROX "GENERATOR_REGC_ZEROX"
 
 /**
  * Generator REGCA Lvpl1
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_LVPL1 "GENERATOR_REGCA_LVPL1"
+#define GENERATOR_REGC_LVPL1 "GENERATOR_REGC_LVPL1"
 
 /**
  * Generator REGCA Volim
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_VOLIM "GENERATOR_REGCA_VOLIM"
+#define GENERATOR_REGC_VOLIM "GENERATOR_REGC_VOLIM"
 
 /**
  * Generator REGCA Lvpnt1
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_LVPNT1 "GENERATOR_REGCA_LVPNT1"
+#define GENERATOR_REGC_LVPNT1 "GENERATOR_REGC_LVPNT1"
 
 /**
  * Generator REGCA Lvpnt0
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_LVPNT0 "GENERATOR_REGCA_LVPNT0"
+#define GENERATOR_REGC_LVPNT0 "GENERATOR_REGC_LVPNT0"
 
 /**
  * Generator REGCA lolim
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_LOLIM "GENERATOR_REGCA_LOLIM"
+#define GENERATOR_REGC_LOLIM "GENERATOR_REGC_LOLIM"
 
 /**
  * Generator REGCA Tfltr
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_TFLTR "GENERATOR_REGCA_TFLTR"
+#define GENERATOR_REGC_TFLTR "GENERATOR_REGC_TFLTR"
 
 /**
  * Generator REGCA Khv
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_KHV "GENERATOR_REGCA_KHV"
+#define GENERATOR_REGC_KHV "GENERATOR_REGC_KHV"
 
 /**
  * Generator REGCA lqrmax
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_LQRMAX "GENERATOR_REGCA_LQRMAX"
+#define GENERATOR_REGC_LQRMAX "GENERATOR_REGC_LQRMAX"
 
 /**
  * Generator REGCA lqrmin
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_LQRMIN "GENERATOR_REGCA_LQRMIN"
+#define GENERATOR_REGC_LQRMIN "GENERATOR_REGC_LQRMIN"
 
 /**
  * Generator REGCA accel
  * type: real float
  * indexed
  */
-#define GENERATOR_REGCA_ACCEL "GENERATOR_REGCA_ACCEL"
+#define GENERATOR_REGC_ACCEL "GENERATOR_REGC_ACCEL"
 
 
 #define HAS_PLANT_CONTROLLER "HAS_PLANT_CONTROLLER"
