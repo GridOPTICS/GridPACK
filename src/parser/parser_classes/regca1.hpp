@@ -122,16 +122,16 @@ template <class _data_struct> class Regca1Parser
         data->setValue(GENERATOR_REGC_KHV, data_struct.regc_khv, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGC_LQRMAX,&rval,g_id)) {
-        data->addValue(GENERATOR_REGC_LQRMAX,data_struct.regc_lqrmax, g_id);
+	  if (!data->getValue(GENERATOR_REGC_IQRMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_IQRMAX,data_struct.regc_iqrmax, g_id);
       } else {
-        data->setValue(GENERATOR_REGC_LQRMAX, data_struct.regc_lqrmax, g_id);
+        data->setValue(GENERATOR_REGC_IQRMAX, data_struct.regc_iqrmax, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGC_LQRMIN,&rval,g_id)) {
-        data->addValue(GENERATOR_REGC_LQRMIN,data_struct.regc_lqrmin, g_id);
+	  if (!data->getValue(GENERATOR_REGC_IQRMIN,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_IQRMIN,data_struct.regc_iqrmin, g_id);
       } else {
-        data->setValue(GENERATOR_REGC_LQRMIN, data_struct.regc_lqrmin, g_id);
+        data->setValue(GENERATOR_REGC_IQRMIN, data_struct.regc_iqrmin, g_id);
       }  
 	  
 	  if (!data->getValue(GENERATOR_REGC_ACCEL,&rval,g_id)) {
@@ -275,19 +275,19 @@ template <class _data_struct> class Regca1Parser
 
 
       if (nstr > 15) {
-        if (!data->getValue(GENERATOR_REGC_LQRMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_REGC_LQRMAX, atof(split_line[15].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_IQRMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_IQRMAX, atof(split_line[15].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGC_LQRMAX, atof(split_line[15].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_IQRMAX, atof(split_line[15].c_str()), g_id);
         }
       } 
 	  
 
       if (nstr > 16) {
-        if (!data->getValue(GENERATOR_REGC_LQRMIN,&rval,g_id)) {
-          data->addValue(GENERATOR_REGC_LQRMIN, atof(split_line[16].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_IQRMIN,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_IQRMIN, atof(split_line[16].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGC_LQRMIN, atof(split_line[16].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_IQRMIN, atof(split_line[16].c_str()), g_id);
         }
       } 
 	  
@@ -388,11 +388,11 @@ template <class _data_struct> class Regca1Parser
 
 
       if (nstr > 15) {
-        data.regc_lqrmax = atof(split_line[15].c_str());
+        data.regc_iqrmax = atof(split_line[15].c_str());
       } 
 	  
-	  if (nstr > 16) {
-        data.regc_lqrmin = atof(split_line[16].c_str());
+      if (nstr > 16) {
+        data.regc_iqrmin = atof(split_line[16].c_str());
       } 
 	  
 	  if (nstr > 17) {

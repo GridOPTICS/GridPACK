@@ -618,18 +618,18 @@
 #define GENERATOR_REGC_KHV "GENERATOR_REGC_KHV"
 
 /**
- * Generator REGCA lqrmax
+ * Generator REGCA iqrmax
  * type: real float
  * indexed
  */
-#define GENERATOR_REGC_LQRMAX "GENERATOR_REGC_LQRMAX"
+#define GENERATOR_REGC_IQRMAX "GENERATOR_REGC_IQRMAX"
 
 /**
- * Generator REGCA lqrmin
+ * Generator REGCA iqrmin
  * type: real float
  * indexed
  */
-#define GENERATOR_REGC_LQRMIN "GENERATOR_REGC_LQRMIN"
+#define GENERATOR_REGC_IQRMIN "GENERATOR_REGC_IQRMIN"
 
 /**
  * Generator REGCA accel
@@ -637,6 +637,34 @@
  * indexed
  */
 #define GENERATOR_REGC_ACCEL "GENERATOR_REGC_ACCEL"
+
+/**
+ * Generator REGCB te
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_TE "GENERATOR_REGC_TE"
+
+/**
+ * Generator REGCB imax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_IMAX "GENERATOR_REGC_IMAX"
+
+/**
+ * Generator REGCB RateFlag
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REGC_RATEFLAG "GENERATOR_REGC_RATEFLAG"
+
+/**
+ * Generator REGCB PQFLAG
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REGC_PQFLAG "GENERATOR_REGC_PQFLAG"
 
 
 #define HAS_PLANT_CONTROLLER "HAS_PLANT_CONTROLLER"

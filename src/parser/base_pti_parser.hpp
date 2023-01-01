@@ -434,9 +434,13 @@ class BasePTIParser : public BaseParser<_network>
       double regc_lolim;
       double regc_tfltr;
       double regc_khv;
-      double regc_lqrmax;
-      double regc_lqrmin;
+      double regc_iqrmax;
+      double regc_iqrmin;
       double regc_accel;
+      int    regc_rateflag;
+      int    regc_pqflag;
+      double regc_te;
+      double regc_imax;
 	  
       // Exciter parameters
       bool has_exciter;

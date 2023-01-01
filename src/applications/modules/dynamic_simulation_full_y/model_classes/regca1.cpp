@@ -96,8 +96,8 @@ void gridpack::dynamic_simulation::Regca1Generator::load(
   if (!data->getValue(GENERATOR_REGC_LOLIM  , &lolim, idx))  lolim = -1.3; 
   if (!data->getValue(GENERATOR_REGC_TFLTR  , &tfltr, idx))  tfltr = 0.02; 
   if (!data->getValue(GENERATOR_REGC_KHV  ,   &khv, idx))    khv = 0.0; 
-  if (!data->getValue(GENERATOR_REGC_LQRMAX , &iqrmax, idx)) iqrmax = 999.0; 
-  if (!data->getValue(GENERATOR_REGC_LQRMIN , &iqrmin, idx)) iqrmin = -999.0; 
+  if (!data->getValue(GENERATOR_REGC_IQRMAX , &iqrmax, idx)) iqrmax = 999.0; 
+  if (!data->getValue(GENERATOR_REGC_IQRMIN , &iqrmin, idx)) iqrmin = -999.0; 
   if (!data->getValue(GENERATOR_REGC_ACCEL  , &accel, idx))  accel = 0.7;
 
   // Set up blocks
