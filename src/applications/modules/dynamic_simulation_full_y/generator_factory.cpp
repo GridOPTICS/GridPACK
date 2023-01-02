@@ -20,6 +20,7 @@
 #include "genrou.hpp"
 #include "gdform.hpp"
 #include "regca1.hpp"
+#include "regcb1.hpp"
 #include "reeca1.hpp"
 #include "repca1.hpp"
 #include "wsieg1.hpp"
@@ -89,6 +90,11 @@ gridpack::dynamic_simulation::BaseGeneratorModel*
   } else if (type == "REGCA1") {
     gridpack::dynamic_simulation::Regca1Generator *tmp;
     tmp =  new gridpack::dynamic_simulation::Regca1Generator;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+  } else if (type == "REGCB1") {
+    gridpack::dynamic_simulation::Regcb1Generator *tmp;
+    tmp =  new gridpack::dynamic_simulation::Regcb1Generator;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
   } else {

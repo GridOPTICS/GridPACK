@@ -101,6 +101,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/tgov1.cpp
   model_classes/gdform.cpp
   model_classes/regca1.cpp
+  model_classes/regcb1.cpp
   model_classes/reeca1.cpp
   model_classes/repca1.cpp
   model_classes/sexs.cpp
@@ -178,6 +179,7 @@ install(FILES
   model_classes/tgov1.hpp
   model_classes/gdform.hpp
   model_classes/regca1.hpp
+  model_classes/regcb1.hpp
   model_classes/reeca1.hpp
   model_classes/repca1.hpp
   model_classes/sexs.hpp
