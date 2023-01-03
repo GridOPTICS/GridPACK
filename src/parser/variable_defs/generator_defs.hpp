@@ -666,6 +666,47 @@
  */
 #define GENERATOR_REGC_PQFLAG "GENERATOR_REGC_PQFLAG"
 
+/**
+ * Generator REGCC kip
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_KIP "GENERATOR_REGC_KIP"
+
+/**
+ * Generator REGCC kii
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_KII "GENERATOR_REGC_KII"
+
+/**
+ * Generator REGCC kipll
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_KIPLL "GENERATOR_REGC_KIPLL"
+
+/**
+ * Generator REGCC kppll
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_KPPLL "GENERATOR_REGC_KPPLL"
+
+/**
+ * Generator REGCC wmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_WMAX "GENERATOR_REGC_WMAX"
+
+/**
+ * Generator REGCC wmin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGC_WMIN "GENERATOR_REGC_WMIN"
 
 #define HAS_PLANT_CONTROLLER "HAS_PLANT_CONTROLLER"
 

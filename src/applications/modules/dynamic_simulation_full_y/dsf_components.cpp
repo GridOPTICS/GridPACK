@@ -1034,7 +1034,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
-	if (model == "REGCA1" || model == "REGCB1"){
+	if (model == "REGCA1" || model == "REGCB1" || model == "REGCC1"){
 	  bcomputefreq = true;
 	}
         has_ex = false;
