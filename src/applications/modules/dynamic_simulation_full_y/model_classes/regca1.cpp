@@ -84,21 +84,21 @@ void gridpack::dynamic_simulation::Regca1Generator::load(
   if (!data->getValue(GENERATOR_MBASE, &p_mbase, idx))  p_mbase = 100.0; // MBase
   if(fabs(p_mbase) < 1e-6) p_mbase = p_pg; // Set mbase = p_pg if it is not given in file
 
-  if (!data->getValue(GENERATOR_REGCA_LVPLSW , &lvplsw, idx)) lvplsw = 0; 
-  if (!data->getValue(GENERATOR_REGCA_TG  ,    &tg, idx))     tg = 0.02; 
-  if (!data->getValue(GENERATOR_REGCA_RRPWR  , &rrpwr, idx))  rrpwr = 10.0; 
-  if (!data->getValue(GENERATOR_REGCA_BRKPT  , &brkpt, idx))  brkpt = 0.9; 
-  if (!data->getValue(GENERATOR_REGCA_ZEROX  , &zerox, idx))  zerox = 0.4; 
-  if (!data->getValue(GENERATOR_REGCA_LVPL1  , &lvpl1, idx))  lvpl1 = 1.22; 
-  if (!data->getValue(GENERATOR_REGCA_VOLIM  , &volim, idx))  volim = 1.2; 
-  if (!data->getValue(GENERATOR_REGCA_LVPNT1 , &lvpnt1, idx)) lvpnt1 = 0.8; 
-  if (!data->getValue(GENERATOR_REGCA_LVPNT0 , &lvpnt0, idx)) lvpnt0 = 0.4; 
-  if (!data->getValue(GENERATOR_REGCA_LOLIM  , &lolim, idx))  lolim = -1.3; 
-  if (!data->getValue(GENERATOR_REGCA_TFLTR  , &tfltr, idx))  tfltr = 0.02; 
-  if (!data->getValue(GENERATOR_REGCA_KHV  ,   &khv, idx))    khv = 0.0; 
-  if (!data->getValue(GENERATOR_REGCA_LQRMAX , &iqrmax, idx)) iqrmax = 999.0; 
-  if (!data->getValue(GENERATOR_REGCA_LQRMIN , &iqrmin, idx)) iqrmin = -999.0; 
-  if (!data->getValue(GENERATOR_REGCA_ACCEL  , &accel, idx))  accel = 0.7;
+  if (!data->getValue(GENERATOR_REGC_LVPLSW , &lvplsw, idx)) lvplsw = 0; 
+  if (!data->getValue(GENERATOR_REGC_TG  ,    &tg, idx))     tg = 0.02; 
+  if (!data->getValue(GENERATOR_REGC_RRPWR  , &rrpwr, idx))  rrpwr = 10.0; 
+  if (!data->getValue(GENERATOR_REGC_BRKPT  , &brkpt, idx))  brkpt = 0.9; 
+  if (!data->getValue(GENERATOR_REGC_ZEROX  , &zerox, idx))  zerox = 0.4; 
+  if (!data->getValue(GENERATOR_REGC_LVPL1  , &lvpl1, idx))  lvpl1 = 1.22; 
+  if (!data->getValue(GENERATOR_REGC_VOLIM  , &volim, idx))  volim = 1.2; 
+  if (!data->getValue(GENERATOR_REGC_LVPNT1 , &lvpnt1, idx)) lvpnt1 = 0.8; 
+  if (!data->getValue(GENERATOR_REGC_LVPNT0 , &lvpnt0, idx)) lvpnt0 = 0.4; 
+  if (!data->getValue(GENERATOR_REGC_LOLIM  , &lolim, idx))  lolim = -1.3; 
+  if (!data->getValue(GENERATOR_REGC_TFLTR  , &tfltr, idx))  tfltr = 0.02; 
+  if (!data->getValue(GENERATOR_REGC_KHV  ,   &khv, idx))    khv = 0.0; 
+  if (!data->getValue(GENERATOR_REGC_IQRMAX , &iqrmax, idx)) iqrmax = 999.0; 
+  if (!data->getValue(GENERATOR_REGC_IQRMIN , &iqrmin, idx)) iqrmin = -999.0; 
+  if (!data->getValue(GENERATOR_REGC_ACCEL  , &accel, idx))  accel = 0.7;
 
   // Set up blocks
 

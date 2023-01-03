@@ -366,11 +366,8 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
           values[0] += p_INorton[i];
 #else     
 	      if(p_generators[i]->getGenStatus()){ //renke add, if generator is not tripped by gen relay
-			 values[0] += p_generators[i]->INorton(); 
-			 
-			 ComplexType tmp = p_generators[i]->INorton();
-			// printf("DSFullBus::vectorValues, bus %d, generator Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
-		  } 
+		values[0] += p_generators[i]->INorton();		 
+	      } 
          
 #endif
         } // generator for loop
@@ -1037,7 +1034,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
-	if (model == "REGCA1"){
+	if (model == "REGCA1" || model == "REGCB1"){
 	  bcomputefreq = true;
 	}
         has_ex = false;

@@ -50,94 +50,94 @@ template <class _data_struct> class Regca1Parser
       }
 	  
 	  int ival;
-      if (!data->getValue(GENERATOR_REGCA_LVPLSW,&ival,g_id)) {
-        data->addValue(GENERATOR_REGCA_LVPLSW, data_struct.regca1_lvplsw, g_id);
+      if (!data->getValue(GENERATOR_REGC_LVPLSW,&ival,g_id)) {
+        data->addValue(GENERATOR_REGC_LVPLSW, data_struct.regc_lvplsw, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_LVPLSW, data_struct.regca1_lvplsw, g_id);
+        data->setValue(GENERATOR_REGC_LVPLSW, data_struct.regc_lvplsw, g_id);
       }
 
-      if (!data->getValue(GENERATOR_REGCA_TG,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_TG,data_struct.regca1_tg, g_id);
+      if (!data->getValue(GENERATOR_REGC_TG,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_TG,data_struct.regc_tg, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_TG, data_struct.regca1_tg, g_id);
+        data->setValue(GENERATOR_REGC_TG, data_struct.regc_tg, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_RRPWR,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_RRPWR,data_struct.regca1_rrpwr, g_id);
+	  if (!data->getValue(GENERATOR_REGC_RRPWR,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_RRPWR,data_struct.regc_rrpwr, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_RRPWR, data_struct.regca1_rrpwr, g_id);
+        data->setValue(GENERATOR_REGC_RRPWR, data_struct.regc_rrpwr, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_BRKPT,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_BRKPT,data_struct.regca1_brkpt, g_id);
+	  if (!data->getValue(GENERATOR_REGC_BRKPT,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_BRKPT,data_struct.regc_brkpt, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_BRKPT, data_struct.regca1_brkpt, g_id);
+        data->setValue(GENERATOR_REGC_BRKPT, data_struct.regc_brkpt, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_ZEROX,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_ZEROX,data_struct.regca1_zerox, g_id);
+	  if (!data->getValue(GENERATOR_REGC_ZEROX,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_ZEROX,data_struct.regc_zerox, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_ZEROX, data_struct.regca1_zerox, g_id);
+        data->setValue(GENERATOR_REGC_ZEROX, data_struct.regc_zerox, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_LVPL1,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_LVPL1,data_struct.regca1_lvpl1, g_id);
+	  if (!data->getValue(GENERATOR_REGC_LVPL1,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_LVPL1,data_struct.regc_lvpl1, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_LVPL1, data_struct.regca1_lvpl1, g_id);
+        data->setValue(GENERATOR_REGC_LVPL1, data_struct.regc_lvpl1, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_VOLIM,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_VOLIM,data_struct.regca1_volim, g_id);
+	  if (!data->getValue(GENERATOR_REGC_VOLIM,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_VOLIM,data_struct.regc_volim, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_VOLIM, data_struct.regca1_volim, g_id);
+        data->setValue(GENERATOR_REGC_VOLIM, data_struct.regc_volim, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_LVPNT1,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_LVPNT1,data_struct.regca1_lvpnt1, g_id);
+	  if (!data->getValue(GENERATOR_REGC_LVPNT1,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_LVPNT1,data_struct.regc_lvpnt1, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_LVPNT1, data_struct.regca1_lvpnt1, g_id);
+        data->setValue(GENERATOR_REGC_LVPNT1, data_struct.regc_lvpnt1, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_LVPNT0,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_LVPNT0,data_struct.regca1_lvpnt0, g_id);
+	  if (!data->getValue(GENERATOR_REGC_LVPNT0,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_LVPNT0,data_struct.regc_lvpnt0, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_LVPNT0, data_struct.regca1_lvpnt0, g_id);
+        data->setValue(GENERATOR_REGC_LVPNT0, data_struct.regc_lvpnt0, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_LOLIM,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_LOLIM,data_struct.regca1_lolim, g_id);
+	  if (!data->getValue(GENERATOR_REGC_LOLIM,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_LOLIM,data_struct.regc_lolim, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_LOLIM, data_struct.regca1_lolim, g_id);
+        data->setValue(GENERATOR_REGC_LOLIM, data_struct.regc_lolim, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_TFLTR,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_TFLTR,data_struct.regca1_tfltr, g_id);
+	  if (!data->getValue(GENERATOR_REGC_TFLTR,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_TFLTR,data_struct.regc_tfltr, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_TFLTR, data_struct.regca1_tfltr, g_id);
+        data->setValue(GENERATOR_REGC_TFLTR, data_struct.regc_tfltr, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_KHV,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_KHV,data_struct.regca1_khv, g_id);
+	  if (!data->getValue(GENERATOR_REGC_KHV,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_KHV,data_struct.regc_khv, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_KHV, data_struct.regca1_khv, g_id);
+        data->setValue(GENERATOR_REGC_KHV, data_struct.regc_khv, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_LQRMAX,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_LQRMAX,data_struct.regca1_lqrmax, g_id);
+	  if (!data->getValue(GENERATOR_REGC_IQRMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_IQRMAX,data_struct.regc_iqrmax, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_LQRMAX, data_struct.regca1_lqrmax, g_id);
+        data->setValue(GENERATOR_REGC_IQRMAX, data_struct.regc_iqrmax, g_id);
       }
 	  
-	  if (!data->getValue(GENERATOR_REGCA_LQRMIN,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_LQRMIN,data_struct.regca1_lqrmin, g_id);
+	  if (!data->getValue(GENERATOR_REGC_IQRMIN,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_IQRMIN,data_struct.regc_iqrmin, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_LQRMIN, data_struct.regca1_lqrmin, g_id);
+        data->setValue(GENERATOR_REGC_IQRMIN, data_struct.regc_iqrmin, g_id);
       }  
 	  
-	  if (!data->getValue(GENERATOR_REGCA_ACCEL,&rval,g_id)) {
-        data->addValue(GENERATOR_REGCA_ACCEL,data_struct.regca1_accel, g_id);
+	  if (!data->getValue(GENERATOR_REGC_ACCEL,&rval,g_id)) {
+        data->addValue(GENERATOR_REGC_ACCEL,data_struct.regc_accel, g_id);
       } else {
-        data->setValue(GENERATOR_REGCA_ACCEL, data_struct.regca1_accel, g_id);
+        data->setValue(GENERATOR_REGC_ACCEL, data_struct.regc_accel, g_id);
       }
 
 
@@ -167,135 +167,135 @@ template <class _data_struct> class Regca1Parser
 
       int ival;
       if (nstr > 3) {
-        if (!data->getValue(GENERATOR_REGCA_LVPLSW,&ival,g_id)) {
-          data->addValue(GENERATOR_REGCA_LVPLSW, atoi(split_line[3].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_LVPLSW,&ival,g_id)) {
+          data->addValue(GENERATOR_REGC_LVPLSW, atoi(split_line[3].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_LVPLSW, atoi(split_line[3].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_LVPLSW, atoi(split_line[3].c_str()), g_id);
         }
       } 
 
       if (nstr > 4) {
-        if (!data->getValue(GENERATOR_REGCA_TG,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_TG, atof(split_line[4].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_TG,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_TG, atof(split_line[4].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_TG, atof(split_line[4].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_TG, atof(split_line[4].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 5) {
-        if (!data->getValue(GENERATOR_REGCA_RRPWR,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_RRPWR, atof(split_line[5].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_RRPWR,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_RRPWR, atof(split_line[5].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_RRPWR, atof(split_line[5].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_RRPWR, atof(split_line[5].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 6) {
-        if (!data->getValue(GENERATOR_REGCA_BRKPT,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_BRKPT, atof(split_line[6].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_BRKPT,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_BRKPT, atof(split_line[6].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_BRKPT, atof(split_line[6].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_BRKPT, atof(split_line[6].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 7) {
-        if (!data->getValue(GENERATOR_REGCA_ZEROX,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_ZEROX, atof(split_line[7].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_ZEROX,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_ZEROX, atof(split_line[7].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_ZEROX, atof(split_line[7].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_ZEROX, atof(split_line[7].c_str()), g_id);
         }
       }
 
 
       if (nstr > 8) {
-        if (!data->getValue(GENERATOR_REGCA_LVPL1,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_LVPL1, atof(split_line[8].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_LVPL1,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_LVPL1, atof(split_line[8].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_LVPL1, atof(split_line[8].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_LVPL1, atof(split_line[8].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 9) {
-        if (!data->getValue(GENERATOR_REGCA_VOLIM,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_VOLIM, atof(split_line[9].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_VOLIM,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_VOLIM, atof(split_line[9].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_VOLIM, atof(split_line[9].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_VOLIM, atof(split_line[9].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 10) {
-        if (!data->getValue(GENERATOR_REGCA_LVPNT1,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_LVPNT1, atof(split_line[10].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_LVPNT1,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_LVPNT1, atof(split_line[10].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_LVPNT1, atof(split_line[10].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_LVPNT1, atof(split_line[10].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 11) {
-        if (!data->getValue(GENERATOR_REGCA_LVPNT0,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_LVPNT0, atof(split_line[11].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_LVPNT0,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_LVPNT0, atof(split_line[11].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_LVPNT0, atof(split_line[11].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_LVPNT0, atof(split_line[11].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 12) {
-        if (!data->getValue(GENERATOR_REGCA_LOLIM,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_LOLIM, atof(split_line[12].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_LOLIM,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_LOLIM, atof(split_line[12].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_LOLIM, atof(split_line[12].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_LOLIM, atof(split_line[12].c_str()), g_id);
         }
       } 
 
       if (nstr > 13) {
-        if (!data->getValue(GENERATOR_REGCA_TFLTR,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_TFLTR,
+        if (!data->getValue(GENERATOR_REGC_TFLTR,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_TFLTR,
               atof(split_line[13].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_TFLTR,
+          data->setValue(GENERATOR_REGC_TFLTR,
               atof(split_line[13].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 14) {
-        if (!data->getValue(GENERATOR_REGCA_KHV,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_KHV, atof(split_line[14].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_KHV,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_KHV, atof(split_line[14].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_KHV, atof(split_line[14].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_KHV, atof(split_line[14].c_str()), g_id);
         }
       } 
 
 
       if (nstr > 15) {
-        if (!data->getValue(GENERATOR_REGCA_LQRMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_LQRMAX, atof(split_line[15].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_IQRMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_IQRMAX, atof(split_line[15].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_LQRMAX, atof(split_line[15].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_IQRMAX, atof(split_line[15].c_str()), g_id);
         }
       } 
 	  
 
       if (nstr > 16) {
-        if (!data->getValue(GENERATOR_REGCA_LQRMIN,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_LQRMIN, atof(split_line[16].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_IQRMIN,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_IQRMIN, atof(split_line[16].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_LQRMIN, atof(split_line[16].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_IQRMIN, atof(split_line[16].c_str()), g_id);
         }
       } 
 	  
 	  if (nstr > 17) {
-        if (!data->getValue(GENERATOR_REGCA_ACCEL,&rval,g_id)) {
-          data->addValue(GENERATOR_REGCA_ACCEL, atof(split_line[17].c_str()), g_id);
+        if (!data->getValue(GENERATOR_REGC_ACCEL,&rval,g_id)) {
+          data->addValue(GENERATOR_REGC_ACCEL, atof(split_line[17].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REGCA_ACCEL, atof(split_line[17].c_str()), g_id);
+          data->setValue(GENERATOR_REGC_ACCEL, atof(split_line[17].c_str()), g_id);
         }
       } 
 	  
@@ -329,74 +329,74 @@ template <class _data_struct> class Regca1Parser
       int nstr = split_line.size();
      
       if (nstr > 3) {
-        data.regca1_lvplsw = atoi(split_line[3].c_str());
+        data.regc_lvplsw = atoi(split_line[3].c_str());
       } 
 
      
       if (nstr > 4) {
-        data.regca1_tg = atof(split_line[4].c_str());
+        data.regc_tg = atof(split_line[4].c_str());
       } 
 
     
       if (nstr > 5) {
-        data.regca1_rrpwr = atof(split_line[5].c_str());
+        data.regc_rrpwr = atof(split_line[5].c_str());
       } 
 
                              
       if (nstr > 6) {
-        data.regca1_brkpt = atof(split_line[6].c_str());
+        data.regc_brkpt = atof(split_line[6].c_str());
       } 
 
 
       if (nstr > 7) {
-        data.regca1_zerox = atof(split_line[7].c_str());
+        data.regc_zerox = atof(split_line[7].c_str());
       }
 
 
       if (nstr > 8) {
-        data.regca1_lvpl1 = atof(split_line[8].c_str());
+        data.regc_lvpl1 = atof(split_line[8].c_str());
       } 
 
 
       if (nstr > 9) {
-        data.regca1_volim = atof(split_line[9].c_str());
+        data.regc_volim = atof(split_line[9].c_str());
       } 
 
 
       if (nstr > 10) {
-        data.regca1_lvpnt1 = atof(split_line[10].c_str());
+        data.regc_lvpnt1 = atof(split_line[10].c_str());
       } 
 
       if (nstr > 11) {
-        data.regca1_lvpnt0 = atof(split_line[11].c_str());
+        data.regc_lvpnt0 = atof(split_line[11].c_str());
       } 
 
 
       if (nstr > 12) {
-        data.regca1_lolim = atof(split_line[12].c_str());
+        data.regc_lolim = atof(split_line[12].c_str());
       } 
 
 
       if (nstr > 13) {
-        data.regca1_tfltr = atof(split_line[13].c_str());
+        data.regc_tfltr = atof(split_line[13].c_str());
       } 
 
 
       if (nstr > 14) {
-        data.regca1_khv = atof(split_line[14].c_str());
+        data.regc_khv = atof(split_line[14].c_str());
       } 
 
 
       if (nstr > 15) {
-        data.regca1_lqrmax = atof(split_line[15].c_str());
+        data.regc_iqrmax = atof(split_line[15].c_str());
       } 
 	  
-	  if (nstr > 16) {
-        data.regca1_lqrmin = atof(split_line[16].c_str());
+      if (nstr > 16) {
+        data.regc_iqrmin = atof(split_line[16].c_str());
       } 
 	  
 	  if (nstr > 17) {
-        data.regca1_accel = atof(split_line[17].c_str());
+        data.regc_accel = atof(split_line[17].c_str());
       } 
     }
 	

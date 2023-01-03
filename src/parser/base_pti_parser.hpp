@@ -9,6 +9,9 @@
  *
  *  Added SEXS exciter model: Nov 7, 2022
  *      Author: Shrirang Abhyankar
+ * 
+ *  Renamed REGCA1/regca1 to regc
+ *  Added REGCB1
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -40,6 +43,7 @@
 #include "parser_classes/genrou.hpp"
 #include "parser_classes/gdform.hpp"
 #include "parser_classes/regca1.hpp"
+#include "parser_classes/regcb1.hpp"
 #include "parser_classes/reeca1.hpp"
 #include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
@@ -418,21 +422,25 @@ class BasePTIParser : public BaseParser<_network>
       double pset;
       double imax;
 	  
-      int regca1_lvplsw;
-      double regca1_tg;
-      double regca1_rrpwr;
-      double regca1_brkpt;
-      double regca1_zerox;
-      double regca1_lvpl1;
-      double regca1_volim;
-      double regca1_lvpnt1;
-      double regca1_lvpnt0;
-      double regca1_lolim;
-      double regca1_tfltr;
-      double regca1_khv;
-      double regca1_lqrmax;
-      double regca1_lqrmin;
-      double regca1_accel;
+      int regc_lvplsw;
+      double regc_tg;
+      double regc_rrpwr;
+      double regc_brkpt;
+      double regc_zerox;
+      double regc_lvpl1;
+      double regc_volim;
+      double regc_lvpnt1;
+      double regc_lvpnt0;
+      double regc_lolim;
+      double regc_tfltr;
+      double regc_khv;
+      double regc_iqrmax;
+      double regc_iqrmin;
+      double regc_accel;
+      int    regc_rateflag;
+      int    regc_pqflag;
+      double regc_te;
+      double regc_imax;
 	  
       // Exciter parameters
       bool has_exciter;
@@ -1062,6 +1070,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"REGCA1")) {
             Regca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+	  } else if (!strcmp(gen_data[i].model,"REGCB1")) {
+            Regcb1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"REECA1")) {
             Reeca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1407,7 +1418,7 @@ class BasePTIParser : public BaseParser<_network>
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "GDFORM" ||
           device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
-	  device == "REPCTA1" ||
+	  device == "REPCTA1" || device == "REGCB1" || 
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
 	  device == "IEEET1" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
@@ -1562,6 +1573,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "REGCA1") {
               Regca1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+	    } else if (sval == "REGCB1") {
+              Regcb1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "REECA1") {
               Reeca1Parser<gen_params> parser;
@@ -1790,6 +1804,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "REGCA1") {
             Regca1Parser<gen_params> parser;
+            parser.store(split_line,data);
+	  } else if (sval == "REGCB1") {
+            Regcb1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "REECA1") {
             Reeca1Parser<gen_params> parser;
