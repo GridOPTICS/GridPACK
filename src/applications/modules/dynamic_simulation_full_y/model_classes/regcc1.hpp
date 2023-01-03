@@ -11,9 +11,28 @@
  * 
  * This is a modified version of REGCB1 model.
  * Reference : https://www.powerworld.com/WebHelp/Content/TransientModels_HTML/Machine%20Model%20REGC_C.htm?TocPath=Transient%20Stability%20Add-On%20(TS)%7CTransient%20Models%7CGenerator%7CMachine%7C_____38
+ *
  * This model slightly differs from the reference implementation
  * The 4T_step time constant is replaced by user provided Tg time constant
  * The Rup/Rdown limits are set on the state derivative, not the input.
+ *
+ *
+ * REGCC1 has six more parameters in addition to the parameters from REGCB1
+ *  - Kip : Proportional gain for inner loop
+ *  - Kii : Integral gain for inner loop
+ *  - Kppll: Proportional gain for PLL
+ *  - Kipll: Integral gain for PLL
+ *  - wmax : Max. limit on PLL output
+ *  - wmin : Min. limit on PLL output
+ *
+ *
+ * The entry for REGCC1 model in the dyr file should be as follows:
+ *
+ * BUSNUM 'REGCC1' ID <REGCB1 paramers> Kip Kii Kppll Kipll wmax wmin
+ *
+ * where BUSNUM is the bus number, ID is the generator id. The ID is followed by
+ * all parameters for REGCB1 and then the additional six parameters in the above
+ * order.
  **/
 
 
