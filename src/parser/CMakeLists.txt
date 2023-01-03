@@ -154,6 +154,7 @@ install(FILES
   parser_classes/gdform.hpp
   parser_classes/regca1.hpp
   parser_classes/regcb1.hpp
+  parser_classes/regcc1.hpp
   parser_classes/reeca1.hpp
   parser_classes/repca1.hpp
   parser_classes/wsieg1.hpp
