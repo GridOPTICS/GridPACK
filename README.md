@@ -37,6 +37,11 @@ questions, feel free to [contact us](mailto:gridpack.account@pnnl.gov). We look 
 from you.
 
 ## Installing
+## User Information ##
+
+- [Gridpack User Manual](docs/user_manual/GridPACK.pdf)
+
+## Submodule(s) ##
 
 GridPACK can be built in a number of different ways. The `docs/notes` subdirectory has instructions for building GridPACK on different clusters. Also, it includes a [step-by-step guide](docs/notes/install.md) for building, installing GridPACK and its dependencies.
 
