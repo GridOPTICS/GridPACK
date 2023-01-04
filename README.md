@@ -33,7 +33,7 @@ also allow modules to be updated more easily without requiring modification of
 other modules or of the applications.
 
 If you have any difficulties building or installing GridPACK, or have any
-questions, feel free to contact us at <gridpack.account@pnnl.gov>. We look forward to hearing
+questions, feel free to [contact us](mailto:gridpack.account@pnnl.gov). We look forward to hearing
 from you.
 
 ## Installing
