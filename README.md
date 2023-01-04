@@ -39,7 +39,7 @@ from you.
 ## Installing
 ## User Information ##
 
-- [Gridpack User Manual](docs/user_manual/GridPACK.pdf)
+- [Gridpack User Manual](/docs/user_manual/GridPACK.pdf)
 
 ## Submodule(s) ##
 
