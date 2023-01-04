@@ -39,7 +39,8 @@ from you.
 ## Installing
 ## User Information ##
 
-- [Gridpack User Manual](https://github.com/GridOPTICS/GridPACK/blob/feature/documenation/docs/user_manual/GridPACK.pdf)
+- [GridPACK User Manual](https://github.com/GridOPTICS/GridPACK/blob/feature/documenation/docs/user_manual/GridPACK.pdf)
+- [Downloads](docs/markdown/DOWNLOADS.md)
 
 ## Submodule(s) ##
 
