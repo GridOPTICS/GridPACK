@@ -1,4 +1,4 @@
-# GridPACK
+# GridPACK<sup>TM</sup>
 
 GridPACK is a software framework to simplify the development of programs that model the power grid to run on parallel, high performance computing platforms. The
 modules are available as a library and consist of components for
@@ -33,14 +33,18 @@ also allow modules to be updated more easily without requiring modification of
 other modules or of the applications.
 
 If you have any difficulties building or installing GridPACK, or have any
-questions, feel free to [contact us](mailto:gridpack.account@pnnl.gov). We look forward to hearing
-from you.
+questions, feel free to contact us at
+[gridpack.account@pnnl.gov](mailto:gridpack.account@pnnl.gov). We look forward
+to hearing from you.
 
 ## Installing
 ## User Information ##
 
-- [GridPACK User Manual](https://github.com/GridOPTICS/GridPACK/blob/feature/documenation/docs/user_manual/GridPACK.pdf)
+- [GridPACK User Manual](https://github.com/GridOPTICS/GridPACK/blob/feature/documenation/docs/user_manual/GridPACK.pdf) (We recommend you download the GridPACK.pdf file to your computer)
 - [Downloads](docs/markdown/DOWNLOADS.md)
+- Installing Pre-built Versions of GridPACK
+  - [Ubuntu Linux](docs/markdown/DUMMY.md)
+- [Building GridPACK from Scratch](docs/markdown/DUMMY.md)
 
 ## Submodule(s) ##
 
