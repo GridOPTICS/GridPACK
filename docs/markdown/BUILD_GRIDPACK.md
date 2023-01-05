@@ -1,4 +1,4 @@
-##Overview
+## Overview
 
 This section will provide a brief overview of how to configure and build
 GridPACK and its associated libraries. More detail can be found by looking at
@@ -13,7 +13,7 @@ greater).
 
 More general information on configuring the GridPACK build can be found in the
 sections below and additional information on libraries used by GridPACK can be
-found [here](DUMMY.md) **Software Required to Build GridPACK**.
+found [here](REQUIRED_SOFTWARE.md).
 
 * [Ubuntu Linux 16.04](DUMMY.md)
 * [Ubuntu Linux 18.04](DUMMY.md)
@@ -33,20 +33,20 @@ supported at this time.
 
 Building GridPACK can be complicated, primarily because it depends on several
 third-party software packages.  These need to be built and installed prior to
-building GridPACK. Refer to the list of (required software](DUMMY.md)
+building GridPACK. Refer to the list of (required software](REQUIRED_SOFTWARE.md)
 for what is needed. Detailed information on
 building these packages on different platforms is available on the links listed
 above for building GridPACK on different platforms. More information on the
 individual libraries can be found on the
-[software required to build GridPACK page](DUMMY.md).
+[software required to build GridPACK page](REQUIRED_SOFTWARE.md).
 
 GridPACK requires the MPI, [Global Arrays](https://github.com/GlobalArrays/ga/releases),
 [Boost](https://www.boost.org/users/download),
 [PETSc](https://www.mcs.anl.gov/petsc/download/index.html) and
-[Parmetis](http://glaros.dtc.umn.edu/gkhome/metis/parmetis/download) libraries to
-build. The Parmetis libraries can usually be downloaded and built when
+[ParMETIS](http://glaros.dtc.umn.edu/gkhome/metis/parmetis/download) libraries to
+build. The ParMETIS libraries can usually be downloaded and built when
 configuring and building PETSc and this is the preferred way of obtaining
-Parmetis. If necessary, Parmetis can be downloaded and built separately.
+ParMETIS. If necessary, ParMETIS can be downloaded and built separately.
 
 Some version of MPI is already available on most clusters, but users may need to
 build their own copy of MPI if running on a workstation. Several versions of
@@ -137,7 +137,7 @@ Once in the build directory, execute the command
   cmake [options] gridpack/source/directory
 ```
 
-where `options` are used to locate [required software](DUMMY.md)
+where `options` are used to locate [required software](REQUIRED_SOFTWARE.md)
 and set compiler options. The shell script
 `example_configuration.sh` shows some examples of configuration
 options for a few systems. If you don't get the configure right the first time,
@@ -199,7 +199,7 @@ command are pointing to `GRIDPACK/src`. The directories that are arguments to op
 locations of these libraries on your system. The `PETSC_ARCH` variable is
 also likely to depend on the particular build and will need to be modified by
 the user to reflect their system. More information on the CMake options is
-available on the [required software](docs/dummy/DUMMY.md) page
+available on the [required software](REQUIRED_SOFTWARE.md) page
 as well as the GridPACK [overview document](docs/user_manual/GridPACK.pdf)
 (see the section on configuring and building GridPACK). Additional
 examples can also be found in the pages describing builds on different
