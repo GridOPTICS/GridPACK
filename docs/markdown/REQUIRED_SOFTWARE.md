@@ -338,7 +338,7 @@ configuration just needs to know where
 installed, which is specified by
 
 ```
-    -D PARMETIS_DIR:STRING="/pic/projects/gridpack/software" \
+    -D PARMETIS_DIR:STRING='/pic/projects/gridpack/software' \
 ```
 
 GridPACK requires version ParMETIS version 4.0.  Older versions will not work.
