@@ -20,7 +20,7 @@ found [here](REQUIRED_SOFTWARE.md).
 * [Debian Linux](DUMMY.md)
 * [CentOS or RHEL 7](DUMMY.md)
 * [CentOS or RHEL 6](DUMMY.md)
-* [PNNL RC Cluster (Linux cluster with Infiniband)](DUMMY.md)
+* [PNNL RC Cluster (Linux cluster with Infiniband)](RC_CLUSTER.md)
 * [Mac OS X (High Sierra) with MacPorts](DUMMY.md)
 
 If you run into problems, feel free to contact us for further help. You can also
