@@ -1,5 +1,5 @@
 GridPACK is relatively easy to install on an [Ubuntu Linux](https://www.ubuntu.com/)
-system. Working packages for most [GridPACK prerequisites](docs/markdown/DUMMY.md)
+system. Working packages for most [GridPACK prerequisites](DUMMY.md)
 are available from standard repositories. If you do not
 need to modify the GridPACK source, e.g. just use the GridPACK example
 applications or build your own application, you can install the binary package
