@@ -43,8 +43,8 @@ to hearing from you.
 - [GridPACK User Manual](https://github.com/GridOPTICS/GridPACK/blob/feature/documenation/docs/user_manual/GridPACK.pdf) (We recommend you download the GridPACK.pdf file to your computer)
 - [Downloads](docs/markdown/DOWNLOADS.md)
 - Installing Pre-built Versions of GridPACK
-  - [Ubuntu Linux](docs/markdown/DUMMY.md)
-- [Building GridPACK from Scratch](docs/markdown/DUMMY.md)
+  - [Ubuntu Linux](docs/markdown/UBUNTU_LINUX.md)
+- [Building GridPACK from Scratch](docs/markdown/BUILD_GRIDPACK.md)
 
 ## Submodule(s) ##
 
