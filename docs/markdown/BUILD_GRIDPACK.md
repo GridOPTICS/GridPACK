@@ -13,18 +13,18 @@ greater).
 
 More general information on configuring the GridPACK build can be found in the
 sections below and additional information on libraries used by GridPACK can be
-found [here](/docs/markdown/DUMMY.md) **Software Required to Build GridPACK**.
+found [here](DUMMY.md) **Software Required to Build GridPACK**.
 
-* [Ubuntu Linux 16.04](docs/markdown/DUMMY.md)
-* [Ubuntu Linux 18.04](docs/markdown/DUMMY.md)
-* [Debian Linux](docs/markdown/DUMMY.md)
-* [CentOS or RHEL 7](docs/markdown/DUMMY.md)
-* [CentOS or RHEL 6](docs/markdown/DUMMY.md)
-* [PNNL RC Cluster (Linux cluster with Infiniband)](docs/markdown/DUMMY.md)
-* [Mac OS X (High Sierra) with MacPorts](docs/markdown/DUMMY.md)
+* [Ubuntu Linux 16.04](DUMMY.md)
+* [Ubuntu Linux 18.04](DUMMY.md)
+* [Debian Linux](DUMMY.md)
+* [CentOS or RHEL 7](DUMMY.md)
+* [CentOS or RHEL 6](DUMMY.md)
+* [PNNL RC Cluster (Linux cluster with Infiniband)](DUMMY.md)
+* [Mac OS X (High Sierra) with MacPorts](DUMMY.md)
 
 If you run into problems, feel free to contact us for further help. You can also
-look at our [troubleshooting page](docs/markdown/DUMMY.md).
+look at our [troubleshooting page](DUMMY.md).
 
 ## Prerequisite Software
 
@@ -33,12 +33,12 @@ supported at this time.
 
 Building GridPACK can be complicated, primarily because it depends on several
 third-party software packages.  These need to be built and installed prior to
-building GridPACK. Refer to the list of (required software](docs/markdown/DUMMY.md)
+building GridPACK. Refer to the list of (required software](DUMMY.md)
 for what is needed. Detailed information on
 building these packages on different platforms is available on the links listed
 above for building GridPACK on different platforms. More information on the
 individual libraries can be found on the
-[software required to build GridPACK page](docs/markdown/DUMMY.md).
+[software required to build GridPACK page](DUMMY.md).
 
 GridPACK requires the MPI, [Global Arrays](https://github.com/GlobalArrays/ga/releases),
 [Boost](https://www.boost.org/users/download),
@@ -62,12 +62,12 @@ compilers. The instructions for building these libraries vary from one platform
 to the next. Users should consult the list of builds above and find one that
 most resembles the platform you wish to build on. The scripts in these builds
 can then be adapted for your system. For Linux workstations and clusters, the
-builds for a [Redhat workstation](docs/markdown/DUMMY.md) or an
-[Infiniband cluster](docs/markdown/DUMMY.md) are a good place to start.
-Builds for [CentOS](docs/markdown/DUMMY.md),
-[Debian](docs/markdown/DUMMY.md) and
-[Ubuntu](docs/markdown/DUMMY.md] Linux are also available. For the Apple computers,
-we have a [MacPorts build](docs/markdown/DUMMY.md) that has been
+builds for a [Redhat workstation](DUMMY.md) or an
+[Infiniband cluster](DUMMY.md) are a good place to start.
+Builds for [CentOS](DUMMY.md),
+[Debian](DUMMY.md) and
+[Ubuntu](DUMMY.md] Linux are also available. For the Apple computers,
+we have a [MacPorts build](DUMMY.md) that has been
 demonstrated on the High Sierra OS. These builds may require modifications if
 your system differs from those listed, but modifications should be small. If you
 have problems, feel free to contact us for additional help.
@@ -137,7 +137,7 @@ Once in the build directory, execute the command
   cmake [options] gridpack/source/directory
 ```
 
-where `options` are used to locate [required software](docs/markdown/DUMMY.md)
+where `options` are used to locate [required software](DUMMY.md)
 and set compiler options. The shell script
 `example_configuration.sh` shows some examples of configuration
 options for a few systems. If you don't get the configure right the first time,
@@ -503,7 +503,7 @@ trying to build GridPACK and have conditions that don't exactly match the
 descriptions [above](#Overview), so they remain online.
 **Read and follow and your own risk!**
 
-* [Red Hat Enterprise Linux Workstation](docs/markdown/DUMMY.md)
-* [Mac OS X (Yosemite) with MacPorts](docs/markdown/DUMMY.md)
+* [Red Hat Enterprise Linux Workstation](DUMMY.md)
+* [Mac OS X (Yosemite) with MacPorts](DUMMY.md)
 <!-- * [[Building_on_Windows | Native Windows Port]] -->
 
