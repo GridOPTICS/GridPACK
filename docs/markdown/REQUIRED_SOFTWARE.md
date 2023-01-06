@@ -1,12 +1,20 @@
-[Building on Specific Platforms](#Building on Specific Platforms)
-[CMake/CTest](#CMake/CTest)
+[Building on Specific Platforms](#Building)
+
+[CMake/CTest](#CMake)
+
 [MPI](#MPI)
-[Global Arrays](#Global Arrays)
+
+[Global Arrays](#Global)
+
 [Boost](#Boost)
+
 [PETSc](#PETSc)
+
 [ParMETIS](#ParMETIS)
+
 [Doxygen](#Doxygen)
-[Linux Basics](#Linux Basics)
+
+[Linux Basics](#Linux)
 
 ## Building on Specific Platforms
 
