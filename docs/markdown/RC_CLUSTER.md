@@ -91,8 +91,8 @@ environment has a consistent set of compilers and MPI libraries.
 
 A Boost tar file can be obtained from the [download
 page](https://www.boost.org/users/download/).
-Information on downloading files can be obtained [here](REQUIRED_SOFTWARE.md)
-(check the bottom of the page). Boost can configured and built
+Information on downloading files can be obtained
+[here](REQUIRED_SOFTWARE.md#linux-basics). Boost can configured and built
 using the GNU environment as follows:
 
 ```
