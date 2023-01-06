@@ -1,4 +1,14 @@
-== Building on Specific Platforms ==
+[Building on Specific Platforms](#Building on Specific Platforms)
+[CMake/CTest](#CMake/CTest)
+[MPI](#MPI)
+[Global Arrays](#Global Arrays)
+[Boost](#Boost)
+[PETSc](#PETSc)
+[ParMETIS](#ParMETIS)
+[Doxygen](#Doxygen)
+[Linux Basics](#Linux Basics)
+
+## Building on Specific Platforms
 
 Scripts or instructions for installing the libraries listed below on specific
 platforms can be found by following the links below. We highly recommend that
@@ -349,7 +359,7 @@ An example configuration script for ParMETIS can be found on the link below.
 
 *[Redhat Linux Workstation](DUMMY.md)
 
-== Doxygen ==
+## Doxygen
 
 GridPACK uses [Doxygen](http://www.doxygen.org/) to help document code. It's use
 is optional. [Doxygen](http://www.doxygen.org/) documentation can optionally be

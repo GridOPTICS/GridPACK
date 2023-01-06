@@ -66,7 +66,7 @@ builds for a [Redhat workstation](DUMMY.md) or an
 [Infiniband cluster](DUMMY.md) are a good place to start.
 Builds for [CentOS](DUMMY.md),
 [Debian](DUMMY.md) and
-[Ubuntu](DUMMY.md] Linux are also available. For the Apple computers,
+[Ubuntu](DUMMY.md) Linux are also available. For the Apple computers,
 we have a [MacPorts build](DUMMY.md) that has been
 demonstrated on the High Sierra OS. These builds may require modifications if
 your system differs from those listed, but modifications should be small. If you
