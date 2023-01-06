@@ -1,4 +1,4 @@
-s page describes a GridPACK build on a Linux cluster using an Infiniband network
+This page describes a GridPACK build on a Linux cluster using an Infiniband network
 for communication. This build is similar to the one described for building
 GridPACK on a Red Hat Enterprise Linux (RHEL) workstation, so many of the
 options will be similar. The scripts described below should work for a variety
@@ -234,7 +234,7 @@ using this runtime.
 
 ## GridPACK
 
-[Obtain the GridPACK release or development code](https://www.gridpack.org/wiki/index.php/Download_GridPACK)
+[Obtain the GridPACK release or development code](https://github.com/GridOPTICS/GridPACK/releases)
 and put it in a convenient directory.  The
 following commands can be used to configure and build GridPACK.
 
@@ -300,9 +300,8 @@ After configuring GridPACK, build it with
     make
 ```
 
-If compilation is successful, the [[How to Build GridPACK#Running Tests|unit
-tests]] and/or [[How to Build
-GridPACK#Running_the_Powerflow_Example.28s.29|example applications]] can be run.
+If compilation is successful, the [unit tests](BUILD_GRIDPACK.md) and/or
+[example applications](BUILD_GRIDPACK.md) can be run.
 
 
 ## Issues
@@ -311,8 +310,6 @@ This build has been tested on the PNNL institutional cluster using the software
 versions list at the top of this page. There are potential improvements that
 could be made to this build:
 
-* The GNU compilers can take advantage of the cluster hardware if certain
-* options are used. They were not.
-* The PETSc build should use the AMCL libraries for BLAS/LAPACK support rather
-* than downloading CBlas.
+* The GNU compilers can take advantage of the cluster hardware if certain options are used. They were not.
+* The PETSc build should use the AMCL libraries for BLAS/LAPACK support rather than downloading CBlas.
 
