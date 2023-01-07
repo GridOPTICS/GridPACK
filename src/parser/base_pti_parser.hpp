@@ -413,6 +413,7 @@ class BasePTIParser : public BaseParser<_network>
       double gn_s1;
       double s12;
       double vset;
+      double tf;
       double mq;
       double kpv;
       double kiv;
@@ -423,6 +424,8 @@ class BasePTIParser : public BaseParser<_network>
       double kipmax;
       double pset;
       double imax;
+      double wmax;
+      double wmin;
 	  
       int regc_lvplsw;
       double regc_tg;
