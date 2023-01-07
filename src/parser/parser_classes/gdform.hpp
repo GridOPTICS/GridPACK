@@ -56,11 +56,11 @@ template <class _data_struct> class GdformParser
         data->setValue(GENERATOR_XL, data_struct.gn_xl, g_id);
       }
 
-      // GENERATOR_VSET
-      if (!data->getValue(GENERATOR_VSET,&rval,g_id)) {
-        data->addValue(GENERATOR_VSET, data_struct.vset, g_id);
+      // GENERATOR_TF
+      if (!data->getValue(GENERATOR_TF,&rval,g_id)) {
+        data->addValue(GENERATOR_TF, data_struct.tf, g_id);
       } else {
-        data->setValue(GENERATOR_VSET, data_struct.vset, g_id);
+        data->setValue(GENERATOR_TF, data_struct.tf, g_id);
       }
 
       // GENERATOR_MQ
@@ -140,13 +140,26 @@ template <class _data_struct> class GdformParser
         data->setValue(GENERATOR_PMIN, data_struct.pmin, g_id);
       }
 	  
-	  // GENERATOR_IMAX
+      // GENERATOR_IMAX
       if (!data->getValue(GENERATOR_IMAX,&rval,g_id)) {
         data->addValue(GENERATOR_IMAX, data_struct.imax, g_id);
       } else {
         data->setValue(GENERATOR_IMAX, data_struct.imax, g_id);
       }
-	  
+
+      // GENERATOR_WMAX
+      if (!data->getValue(GENERATOR_WMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_WMAX, data_struct.wmax, g_id);
+      } else {
+        data->setValue(GENERATOR_WMAX, data_struct.wmax, g_id);
+      }
+
+      // GENERATOR_WMIN
+      if (!data->getValue(GENERATOR_WMIN,&rval,g_id)) {
+        data->addValue(GENERATOR_WMIN, data_struct.wmin, g_id);
+      } else {
+        data->setValue(GENERATOR_WMIN, data_struct.wmin, g_id);
+      }	  
     }
 
     /**
@@ -180,12 +193,12 @@ template <class _data_struct> class GdformParser
         }
       } 
 
-      // GENERATOR_VSET
+      // GENERATOR_TF
       if (nstr > 4) {
-        if (!data->getValue(GENERATOR_VSET,&rval,g_id)) {
-          data->addValue(GENERATOR_VSET, atof(split_line[4].c_str()), g_id);
+        if (!data->getValue(GENERATOR_TF,&rval,g_id)) {
+          data->addValue(GENERATOR_TF, atof(split_line[4].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_VSET, atof(split_line[4].c_str()), g_id);
+          data->setValue(GENERATOR_TF, atof(split_line[4].c_str()), g_id);
         }
       } 
 
@@ -290,15 +303,32 @@ template <class _data_struct> class GdformParser
         }
       } 
 	  
-	  // GENERATOR_IMAX
+      // GENERATOR_IMAX
       if (nstr > 16) {
         if (!data->getValue(GENERATOR_IMAX,&rval,g_id)) {
           data->addValue(GENERATOR_IMAX, atof(split_line[16].c_str()), g_id);
         } else {
           data->setValue(GENERATOR_IMAX, atof(split_line[16].c_str()), g_id);
         }
+      }
+
+      // GENERATOR_WMAX
+      if (nstr > 17) {
+        if (!data->getValue(GENERATOR_WMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_WMAX, atof(split_line[17].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_WMAX, atof(split_line[17].c_str()), g_id);
+        }
+      }
+
+      // GENERATOR_WMIN
+      if (nstr > 18) {
+        if (!data->getValue(GENERATOR_WMIN,&rval,g_id)) {
+          data->addValue(GENERATOR_WMIN, atof(split_line[18].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_WMIN, atof(split_line[18].c_str()), g_id);
+        }
       } 
-	  
     }
 
     /**
@@ -332,9 +362,9 @@ template <class _data_struct> class GdformParser
         data.gn_xl = atof(split_line[3].c_str());
       } 
 
-      // GENERATOR_VSET
+      // GENERATOR_TF
       if (nstr > 4) {
-        data.vset = atof(split_line[4].c_str());
+        data.tf = atof(split_line[4].c_str());
       } 
 
       // GENERATOR_MQ
@@ -392,11 +422,20 @@ template <class _data_struct> class GdformParser
         data.pmin = atof(split_line[15].c_str());
       } 
 	  
-	  // GENERATOR_IMAX
+      // GENERATOR_IMAX
       if (nstr > 16) {
         data.imax = atof(split_line[16].c_str());
+      }
+
+      // GENERATOR_WMAX
+      if (nstr > 17) {
+        data.wmax = atof(split_line[17].c_str());
       } 
-	  
+
+      // GENERATOR_WMIN
+      if (nstr > 18) {
+        data.wmin = atof(split_line[18].c_str());
+      }
     }
 };
 }  // parser
