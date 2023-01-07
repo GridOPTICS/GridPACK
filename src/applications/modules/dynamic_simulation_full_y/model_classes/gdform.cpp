@@ -30,7 +30,7 @@
 gridpack::dynamic_simulation::GridFormingGenerator::GridFormingGenerator(void)
 {
 	double pi = 4.0*atan(1.0);
-	omega0 = 1.0; // 2*pi*60.0;
+	omega0 = 2*pi*60.0;
 	zero_Tf = false;
 	p_tripped = false;
 }
