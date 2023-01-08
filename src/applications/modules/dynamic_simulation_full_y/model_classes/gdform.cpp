@@ -29,10 +29,10 @@
  */
 gridpack::dynamic_simulation::GridFormingGenerator::GridFormingGenerator(void)
 {
-	double pi = 4.0*atan(1.0);
-	omega0 = 2*pi*60.0;
-	zero_Tf = false;
-	p_tripped = false;
+  double pi = 4.0*atan(1.0);
+  omega0    = 2*pi*60.0;
+  zero_Tf   = false;
+  p_tripped = false;
 }
 
 /**
@@ -84,8 +84,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
   if (!data->getValue(GENERATOR_PMAX, &Pmax, idx)) Pmax=1.0; // 
   if (!data->getValue(GENERATOR_PMIN, &Pmin, idx)) Pmin=0.0; // 
   if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
-  if (!data->getValue(GENERATOR_WMAX, &wmax, idx)) wmax=0.4;
-  if (!data->getValue(GENERATOR_WMIN, &wmin, idx)) wmin=-0.4;
+  if (!data->getValue(GENERATOR_WMAX, &wmax, idx)) wmax=100.0;
+  if (!data->getValue(GENERATOR_WMIN, &wmin, idx)) wmin=-100.0;
 
   Ra = real(Zsource);
   XL = imag(Zsource);
@@ -106,6 +106,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
   Pmin_PI_blk.setparams(kppmax,kipmax,0.0,1000.0,0.0,1000.0);
 
   Delta_blk.setparams(1.0);
+
+  dOmega_lim_blk.setparams(1.0,wmin,wmax);
 }
 
 /**
@@ -167,7 +169,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::init(double Vm,
  */
 gridpack::ComplexType gridpack::dynamic_simulation::GridFormingGenerator::INorton()
 {
-  I = (E - V)/Zsource; // output current
+  I = (E - V)/Zsource; // total output current
 
   Im = abs(I);
 
@@ -243,8 +245,8 @@ void gridpack::dynamic_simulation::GridFormingGenerator::computeModel(double t_i
     Vmeas = Vt;
   }
 
-  Edroop = Edroop_PI_blk.getoutput(Vset-mq*Qinv-Vmeas,t_inc,Edroop_min,Edroop_max,Edroop_min,Edroop_max,int_flag,true);
-  
+  Edroop = Edroop_PI_blk.getoutput(Vset-mq*Qinv-Vmeas,t_inc,-1000.0,1000.0,Edroop_min,Edroop_max,int_flag,true);
+
   Pmax_PI_blk_out = Pmax_PI_blk.getoutput(Pmax-Pinv,t_inc,int_flag,true);
   Pmin_PI_blk_out = Pmin_PI_blk.getoutput(Pmin-Pinv,t_inc,int_flag,true);
 
@@ -252,10 +254,14 @@ void gridpack::dynamic_simulation::GridFormingGenerator::computeModel(double t_i
 
   domega = omega0*(mp*(Pset - Pinv) + Pmax_PI_blk_out + Pmin_PI_blk_out);
 
+  domega = dOmega_lim_blk.getoutput(domega);
+
   omega = omega0 + domega;
 
   delta = Delta_blk.getoutput(domega,t_inc,int_flag,true);
 
+  printf("%d: Vt = %6.5f, Edroop = %6.5f,delta = %6.5f, Igen = %6.5f\n",int_flag,Vt,Edroop,delta,abs(I));
+  
   double Er,Ei;
   Er = Edroop*cos(delta);
   Ei = Edroop*sin(delta);
@@ -375,8 +381,8 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f,%12.6f",
-	      Vt,Pg, Qg, busfreq,Im*p_mbase/p_sbase);
+      sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f, %12.6f,%12.6f,%12.6f",
+	      Vt,p_pg, p_qg, Edroop,delta,omega,Im);
       ret = true;
     }
   } else if(!strcmp(signal,"watch_header")) {
@@ -388,8 +394,8 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
       } else {
 	tag = p_gen_id[1];
       }
-      sprintf(buf,", %d_%s_V,%d_%s_Pg, %d_%s_Qg, %d_%s_freq, %d_%s_Igen",p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),
-	      p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),	      p_bus_num,tag.c_str());
+      sprintf(buf,", %d_%s_V,%d_%s_Pg, %d_%s_Qg, %d_%s_Edroop, %d_%s_delta,%d_%s_omega,%d_%s_Igen",p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),
+	      p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),	      p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str());
       
       if (strlen(buf) <= bufsize) {
 	sprintf(string,"%s",buf);
