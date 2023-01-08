@@ -25,6 +25,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_generator_model.hpp"
 #include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -178,6 +179,7 @@ class GridFormingGenerator : public BaseGeneratorModel
   Integrator Delta_blk; // Integrator block for PLL
   double delta;         // Output of integrator block
 
+  GainLimiter dOmega_lim_blk; // Limiter for Omega
 
   // Internal variables
   double busfreq;
@@ -190,6 +192,7 @@ class GridFormingGenerator : public BaseGeneratorModel
   double B, G;
   double Edroop_max,Edroop_min; // Only set when current exceeds Imax
   bool   zero_Tf;
+  double Vthresh; // Threshold below which states are frozen
 
   // Output
   gridpack::ComplexType p_INorton;
