@@ -24,7 +24,7 @@ structure.
 * [CentOS 6](DUMMY.md)
 * [Ubuntu Linux](UBUNTU_LINUX.md)
 * [Debian Linux](DUMMY.md)
-* [PNNL PIC Cluster (Linux cluster with Infiniband)](DUMMY.md)
+* [PNNL RC Cluster (Linux cluster with Infiniband)](RC_CLUSTER.md)
 <!-- * [[Building_on_Windows | Native Windows Port]] -->
 
 Notes on some additional builds can also be found in the docs/notes directory
@@ -137,13 +137,12 @@ using, you may be able to find out more information by typing
 ```
 
 Other options may be needed by CMake to specify the MPI environment.  See the
-documentation [http://www.cmake.org/cmake/help/v2.8.8/cmake.html#module:FindMPI
-here]. An example configuration script for building MPI can be found on the link
+documentation
+[here](http://www.cmake.org/cmake/help/v2.8.8/cmake.html#module:FindMPI).
+An example configuration script for building MPI can be found on the link
 below.
 
-```
 * [Redhat Linux Workstation](DUMMY.md)
-```
 
 On most systems it is possible to install MPI using modules or an installation
 capability such as `yum`.
@@ -209,7 +208,7 @@ Example scripts for configuring GA can be found in the links below.
 * [Mac High Sierra](DUMMY.md)
 * [Redhat Linux Workstation](DUMMY.md)
 * [CentOS 6](DUMMY.md)
-* [Redhat Linux Cluster](DUMMY.md)
+* [Redhat Linux Cluster](RC_CLUSTER.md)
 
 ## Boost
 
@@ -276,7 +275,7 @@ below.
 * [Mac Yosemite ](DUMMY.md)
 * [Redhat Linux Workstation](DUMMY.md)
 * [CentOS 6](DUMMY.md)
-* [Redhat Linux Cluster](DUMMY.md)
+* [Redhat Linux Cluster](RC_CLUSTER.md)
 
 ## PETSc
 
@@ -329,7 +328,7 @@ below.
 * [Mac High Sierra](DUMMY.md)
 * [Redhat Linux Workstation](DUMMY.md)
 * [CentOS 6](DUMMY.md)
-* [Redhat Linux Cluster](DUMMY.md)
+* [Redhat Linux Cluster](RC_CLUSTER.md)
 
 ## ParMETIS
 
@@ -357,7 +356,7 @@ the PETSc build. We highly recommend that you do this to access ParMETIS.
 
 An example configuration script for ParMETIS can be found on the link below.
 
-*[Redhat Linux Workstation](DUMMY.md)
+* [Redhat Linux Workstation](DUMMY.md)
 
 ## Doxygen
 
