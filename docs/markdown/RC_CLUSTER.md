@@ -1,3 +1,5 @@
+## Linux Cluster with Infiniband
+
 This page describes a GridPACK build on a Linux cluster using an Infiniband network
 for communication. This build is similar to the one described for building
 GridPACK on a Red Hat Enterprise Linux (RHEL) workstation, so many of the

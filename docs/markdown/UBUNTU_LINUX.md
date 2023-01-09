@@ -12,13 +12,14 @@ on a system or virtual machine, download the
 [16.04](http://releases.ubuntu.com/16.04)
 or [18.04](http://releases.ubuntu.com/18.04) LTS ''Desktop'' AMD64
 distribution and follow the
-[installation instructions](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubuntu-desktop#0)
+[installation
+instructions](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubuntu-desktop#0).
 GridPACK packages install a version of Global
 Arrays (GA) specifically for GridPACK use.  This will conflict with applications
 that depend on the Ubuntu GA packages, but this should be a rarity for GridPACK
 users. 
 
-`rgb(255, 0, 0)` You will need super user or sudo privileges for this installation.
+*You will need super user or sudo privileges for this installation.*
 
 ## GridPACK Installation on Ubuntu Linux 16.04 or 18.04 LTS
 
