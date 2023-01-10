@@ -260,7 +260,7 @@ void gridpack::dynamic_simulation::GridFormingGenerator::computeModel(double t_i
 
   delta = Delta_blk.getoutput(domega,t_inc,int_flag,true);
 
-  printf("%d: Vt = %6.5f, Edroop = %6.5f,delta = %6.5f, Igen = %6.5f\n",int_flag,Vt,Edroop,delta,abs(I));
+  printf("%d: Vt = %6.5f, Pg = %6.5f,Pmax_lim = %6.5f, Pmin_lim = %6.5f, delta = %6.5f,Igen = %6.5f\n",int_flag,Vt,p_pg,Pmax_PI_blk_out,Pmin_PI_blk_out,delta,abs(I));
   
   double Er,Ei;
   Er = Edroop*cos(delta);
@@ -382,7 +382,7 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
     if (getWatch()) {
       char buf[256];
       sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f, %12.6f,%12.6f,%12.6f",
-	      Vt,p_pg, p_qg, Edroop,delta,omega,Im);
+	      Vt,Pg, Qg, Edroop,delta,omega,Im);
       ret = true;
     }
   } else if(!strcmp(signal,"watch_header")) {
