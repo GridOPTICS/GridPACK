@@ -217,9 +217,9 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     return true;
   } else if (p_mode == onFY) {
     if (p_from_flag) {
-      //gridpack::ComplexType ret(0.0, -1.0e5);
+      //gridpack::ComplexType ret(0.0, -1.0e9);
 	  double tmp1 = p_ybusr;
-      double tmp2 = p_ybusi - 1.0e5;
+      double tmp2 = p_ybusi - 1.0e9;
       gridpack::ComplexType ret(tmp1, tmp2);
 	  
       values[0] = ret;
