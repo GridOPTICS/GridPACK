@@ -31,12 +31,8 @@ identified in the configuration. The `USE_PROGRESS_RANKS` variable
 depends on the runtime used to build GA and should only be set to `TRUE`
 if GA was configured using the `--with-mpi-pr` option.
 
-We have used three different configuration of GA to build and run GridPACK. If
-you are using GridPACK on a Linux cluster with an Infiniband interconnect, then
-you can use the OpenIB runtime by including the `--with-openib` option
-when configuring GA. This is the highest performing version of GA for clusters
-with Infiniband, although for large calculations you can run into problems with
-memory allocation. For any system with a working version of MPI, you can also
+We have used two different configurations of GA to build and run GridPACK.
+For any system with a working version of MPI, you can
 use the MPI two-sided runtime or the progress ranks runtime with GA. Use the
 `--with-mpi-ts` or `--with-mpi-pr` options when configuring GA.
 The two-sided runtime is the simplest runtime and is suitable for workstations
@@ -53,10 +49,30 @@ will only see 8 processes (4 on each node). To make sure that the GridPACK build
 is aware of this, the `USE_PROGRESS_RANKS` parameter should be set to
 `TRUE` when using the progress ranks build of GA.
 
-Example scripts for configuring GA can be found in the links below.
+Global Arrays is a relatively straightforward build if MPI is available on your
+system. To configure GA with a with the basic two-sided runtime (suitable for
+workstations with a limited number of cores) use the configuration line
 
-* [Mac Yosemite ](../DUMMY.md)
-* [Mac High Sierra](../DUMMY.md)
-* [Redhat Linux Workstation](../DUMMY.md)
-* [CentOS 6](../DUMMY.md)
-* [Redhat Linux Cluster](../RC_CLUSTER.md)
+```
+../configure --enable-i4 --enable-cxx --without-blas --disable-f77 \
+  --prefix=/path/to/my/local/build_ts CC=mpicc CXX=mpicxx \
+  CFLAGS=-g CXXFLAGS=-g
+```
+
+This configuration line assumes that the build directory is located directly
+below the top level GA directory. If you want to build someplace else, the `../`
+before `configure` needs to be replaced with the path to `configure`.
+The two-sided build will work with almost any version of MPI and is easy to use
+but is
+slow for more than a few processors. For higher performance, particularly on
+clusters with a high performance network, the progress ranks runtime is
+preferable. To configure GA with this runtime, use the configure command
+
+```
+../configure --enable-i4 --enable-cxx --with-mpi-pr --without-blas --disable-f77
+  --prefix=/pic/projects/gridpack/software/ga-5.8/build_pr CC=mpicc CXX=mpicxx
+  CFLAGS=-g CXXFLAGS=-g
+```
+
+If you want to build GA with shared libraries, include the option
+`--enable-shared=yes` in the configuration line.

@@ -4,23 +4,24 @@ GridPACK currently relies on the [Portable, Extensible Toolkit for Scientific
 Computation (PETSc)][http://www.mcs.anl.gov/petsc/index.html) for parallel
 linear algebra, and linear and nonlinear system solvers. The PETSc interface
 tends to change a bit as new releases come out, requiring adjustments in any
-applications that use it. We have currently used PETSc versions 3.4-3.8 with
+applications that use it. We currently recommend using PETSc version 3.16 with
 GridPACK.
 
 PETSc is a complicated package with numerous options.  PETSc needs to be built
 with MPI enabled and using the same MPI implementation used for GridPACK and the
-other libraries such as Boost and GA.  It also needs to use C++ as the base
-language. Originally, GridPACK could only use PETSc if it was configured for
+other libraries such as Boost and GA.
+Originally, GridPACK could only use PETSc if it was configured for
 complex support. The current GridPACK release can use either complex or real
 builds. However, most applications in GridPACK use complex matrices, so it is
-still preferable to configure PETSc to use complex variables. Refer to the
+still preferable to configure PETSc to use complex variables.
+Refer to the
 [PETSc installation documentation](http://www.mcs.anl.gov/petsc/documentation/installation.html)
 for additional information on how to configure PETSc.
 
 Configuring and building PETSc is done in the top level PETSc directory. One of
 the configuration variables that needs to be set when configuring and building
 PETSc is PETSC_ARCH. In the example below, PETSC_ARCH was set to
-`'arch-Darwin-cxx-opt'`. After the build is complete, there will be a
+`'arch-linux2-complex-opt'`. After the build is complete, there will be a
 directory beneath the top level directory with whatever name was assigned to
 PETSC_ARCH. This directory contains the include and lib directories for the
 PETSc libraries.
@@ -29,8 +30,8 @@ The GridPACK configuration must know where
 [PETSc](http://www.mcs.anl.gov/petsc/index.html) is installed.  This is specified
 by two options as shown below. 
 
-    -D PETSC_DIR:STRING='/Users/d3g096/ProjectStuff/petsc-3.4.0' \
-    -D PETSC_ARCH:STRING='arch-darwin-cxx-opt' \
+    -D PETSC_DIR:STRING='/Users/d3g096/ProjectStuff/petsc-3.16.3' \
+    -D PETSC_ARCH:STRING='arch-linux2-complex-opt' \
 
 Currently, the configuration will recognize and adjust the GridPACK build if the
 [PETSc](http://www.mcs.anl.gov/petsc/index.html) build includes
@@ -42,11 +43,54 @@ satisfied by including
 [SuperLU_DIST](http://crd-legacy.lbl.gov/~xiaoye/SuperLU/)
 or [MUMPS](http://mumps.enseeiht.fr/) in the PETSc build.
 
-Examples of complete scripts for configuring PETSc can be found on the links
-below.
+A typical configuration script for building PETSc is
 
-* [Mac Yosemite ](../DUMMY.md)
-* [Mac High Sierra](../DUMMY.md)
-* [Redhat Linux Workstation](../DUMMY.md)
-* [CentOS 6](../DUMMY.md)
-* [Redhat Linux Cluster](../RC_CLUSTER.md)
+```
+    ./configure \
+       PETSC_ARCH=arch-linux2-complex-opt \
+       --with-scalar-type=complex \
+       --download-superlu_dist \
+       --download-superlu \
+       --download-parmetis \
+       --download-metis \
+       --download-suitesparse \
+       --download-f2cblaslapack \
+       --with-clanguage=c++ \
+       --with-shared-libraries=0 \
+       --with-x=0 \
+       --with-mpiexec=mpiexec \
+       --with-debugging=0
+```
+
+The PETSC_ARCH variable can be set to whatever the user wants but should be
+descriptive of this particular build. PETSc can be reconfigured with another
+value of the PETSC_ARCH variable to support multiple different PETSc builds.
+
+At the end of the the configuration, you should see something similar to the
+following output
+
+```
+xxx=========================================================================xxx
+ Configure stage complete. Now build PETSc libraries with:
+   make PETSC_DIR=/pic/projects/gridpack/software/petsc-3.16.3 PETSC_ARCH=linux-openmpi-gnu-cxx-complex-opt all
+xxx=========================================================================xxx
+```
+
+Cut and paste the `make` command into the command line to compile the PETSc
+libraries. At the end of the build you will see
+
+```
+=========================================
+Now to check if the libraries are working do:
+make PETSC_DIR=/pic/projects/gridpack/software/petsc-3.16.3 PETSC_ARCH=linux-openmpi-gnu-cxx-complex-opt check
+=========================================
+```
+
+At this point, the build is done, but if you want to test the libraries, you can
+cut and paste the make command to run some quick tests to verify
+that the build was successful.
+
+If you want to build PETSc with shared libraries, change the argument of
+`--with-shared-libraries=` from 0 to 1. To build PETSc using
+real variables instead of complex, set the argument of `--with-scalar-type` from
+`complex` to `real`.

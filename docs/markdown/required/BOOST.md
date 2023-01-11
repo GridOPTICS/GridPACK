@@ -57,10 +57,58 @@ build script and then remove the existing Boost directory and create a new one
 by untarring the Boost tarball. Attempts to resume a failed Boost build after
 fixing the build script are usually unsuccessful.
 
-Example scripts for configuring and building Boost can be found on the links
-below.
+Download the Boost tarfile (e.g. boost_1_78_0.tar.gz). Older versions of Boost
+can be found [here](https://www.boost.org/users/history/). The following script
+should work with many versions of Boost. Information on downloading tar files
+and creating scripts can be found [here](LINUX_BASICS.md#linux-basics).
 
-* [Mac Yosemite ](../DUMMY.md)
-* [Redhat Linux Workstation](../DUMMY.md)
-* [CentOS 6](../DUMMY.md)
-* [Redhat Linux Cluster](../RC_CLUSTER.md)
+A basic script for build Boost using GNU compilers and creating static libraries
+is
+
+```
+    echo "using mpi ;" > ~/user-config.jam
+    sh ./bootstrap.sh \
+        --prefix="$PREFIX" \
+        --without-icu \
+        --with-toolset=gcc \
+        --without-libraries=python,log
+    ./b2 -a -d+2 link=static stage
+    ./b2 -a -d+2 link=static install
+    rm ~/user-config.jam
+```
+
+Run this script from the top level Boost directory. This should configure, build
+and install the Boost libraries.
+
+(In Boost 1.54,
+[Boost.log](http://www.boost.org/doc/libs/1_54_0/libs/log/doc/html/index.html)
+was added.  This uses some compiler capabilities not supported by the compilers
+that come with older versions of RHEL/CentOS, so Boost.Log is
+disabled.  Boost seems to work fine this way with older versions of RHEL.)
+
+To build using the Intel compilers, substitute
+`--with-toolset=intel-linux` for `--with-toolset=gcc`. You
+may also run into problems with the name of the MPI wrapper for the C++
+compiler. If it looks like configure is not finding `mpic++` then
+replace the first line in the above script with
+
+    echo "using mpi : /absolute/path/to/mpi/C++/wrapper ;" > ~/user-config.jam
+
+Make sure you include the spaces around ":" and before ";".
+
+Boost has a tendency to use cutting-edge features of the C++ compiler so it is a
+good idea to use a compiler version that was released at the same time as the
+Boost version you are working with. If you are having problems, you may have
+better luck moving to an earlier version of Boost. If the Boost build fails, you
+should delete the entire boost directory and start from scratch after making
+corrections to your build script. Restarting a failed Boost build does not
+appear to work in most instances.
+
+If you want to use Intel compilers modify the `--with-toolset=gcc` line to
+`--with-toolset=intel-linux`. For shared library builds, modify the two link lines
+to
+
+```
+    ./b2 -a -d+2 link=shared stage
+    ./b2 -a -d+2 link=shared install
+```
