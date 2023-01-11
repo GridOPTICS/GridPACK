@@ -27,13 +27,16 @@ is installed and any extra libraries that are required:
 ```
 
 The `GA_EXTRA_LIBS` variable is used to include required libraries not
-identified in the configuration. In most cases, this variable should not be
-needed. The `USE_PROGRESS_RANKS` variable
+identified in the configuration. The `USE_PROGRESS_RANKS` variable
 depends on the runtime used to build GA and should only be set to `TRUE`
 if GA was configured using the `--with-mpi-pr` option.
 
-We have used two different configurations of GA to build and run GridPACK.
-For any system with a working version of MPI, you can
+We have used three different configurations of GA to build and run GridPACK. If
+you are using GridPACK on a Linux cluster with an Infiniband interconnect, then
+you can use the OpenIB runtime by including the `--with-openib` option
+when configuring GA. This is the highest performing version of GA for clusters
+with Infiniband, although for large calculations you can run into problems with
+memory allocation. For any system with a working version of MPI, you can also
 use the MPI two-sided runtime or the progress ranks runtime with GA. Use the
 `--with-mpi-ts` or `--with-mpi-pr` options when configuring GA.
 The two-sided runtime is the simplest runtime and is suitable for workstations

@@ -54,9 +54,6 @@ You can check which version of CMake is on your machine by typing
   cmake -version
 ```
 
-Again, if the version is below 3.5.0, you may need to build your own version of
-CMake.
-
 [CMake](http://www.cmake.org/) projects are designed to be built outside of the
 source code location.  In the source directory of a GridPACK release
 (GRIDPACK/src) create a subdirectory to use as the location of the build. (In
@@ -102,9 +99,9 @@ executables.
 ## MPI
 
 A working MPI implementation is required for building GridPACK. We commonly use
-[OpenMPI](http://www.open-mpi.org/) and [MPICH](https://www.mpich.org).
-Other implementations, such as Intel MPI, have
-also been used successfully.  Most MPI installations have compiler
+[OpenMPI](http://www.open-mpi.org/) and [MPICH](https://www.mpich.org). Recent
+versions include OpenMPI 1.8.3 and MPICH 3.2. Other implementations have, such
+as Intel MPI, also been used successfully.  Most MPI installations have compiler
 wrappers, such as `mpicc` and `mpicxx` that combine the
 compiler with all the directives needed to link to the MPI libraries. These can
 be used directly in the GridPACK configuration.
