@@ -1,6 +1,6 @@
 GridPACK
 
-Copyright (c) 2020, Battelle Memorial Institute 
+Copyright &copy 2020, Battelle Memorial Institute 
 All rights reserved.
 
 1. Battelle Memorial Institute (hereinafter Battelle) hereby
@@ -24,6 +24,7 @@ subject to the following conditions:
     based on work performed using the software should include the
     following citation as reference:
 
+```
 @article{doi:10.1177/1094342015607609,
 author = {Bruce Palmer and William Perkins and Yousu Chen and Shuangshuang Jin
 and David C
@@ -42,6 +43,7 @@ year = {2016},
 doi = {10.1177/1094342015607609},
 URL = {https://doi.org/10.1177/1094342015607609},
 eprint = {https://doi.org/10.1177/1094342015607609}
+```
 
 2.      THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
 CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, 

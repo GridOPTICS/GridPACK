@@ -35,20 +35,31 @@ other modules or of the applications.
 If you have any difficulties building or installing GridPACK, or have any
 questions, feel free to contact us at
 [gridpack.account@pnnl.gov](mailto:gridpack.account@pnnl.gov). We look forward
-to hearing from you.
+to hearing from you. You can also post issues to the Github issue page for the
+GridPACK repository, located
+[here](https://github.com/GridOPTICS/GridPACK/issues).
 
-## Installing
-## User Information ##
+## User Information
 
-- [GridPACK User Manual](https://github.com/GridOPTICS/GridPACK/blob/feature/documenation/docs/user_manual/GridPACK.pdf) (We recommend you download the GridPACK.pdf file to your computer)
-- [Downloads](docs/markdown/DOWNLOADS.md)
-- Installing Pre-built Versions of GridPACK
-  - [Ubuntu Linux](docs/markdown/UBUNTU_LINUX.md)
+- [Installation](docs/markdown/BASIC_INSTALL.md)
+- [GridPACK User Manual](docs/user_manual/GridPACK.pdf) (We recommend you download the GridPACK.pdf file to your computer)
+- [Downloads](https://github.com/GridOPTICS/GridPACK/releases)
 - [Building GridPACK from Scratch](docs/markdown/BUILD_GRIDPACK.md)
+- [License](src/LICENSE.md)
 
-## Submodule(s) ##
+## Submodule(s)
 
-GridPACK can be built in a number of different ways. The `docs/notes` subdirectory has instructions for building GridPACK on different clusters. Also, it includes a [step-by-step guide](docs/notes/install.md) for building, installing GridPACK and its dependencies.
+If building a verions of GridPACK that has been cloned directly from the Github
+repository, it is first necessary to download some submodules. This can be done
+using the command
+
+```
+git submodule update --init
+```
+
+The CMake configuration will fail if this command has not been run. If you are
+building GridPACK from one of the releae tarballs, the submodules will already
+be included in the tarball and this command is not necessary.
 
 # GridPACK<sup>TM</sup>-->
 # GridPACK: High-Performance Electric Grid Simulation
@@ -122,7 +133,6 @@ Copyright &copy; 2013, Battelle Memorial Institute.
 GridPACK<sup>TM</sup> is a free software distributed under a BSD 2-clause license. You may reuse, modify, and redistribute the software. 
 
 See the [license](src/LICENSE.md) file for details.
-
 
 ## Disclaimer
 The Software was produced by Battelle under Contract No. DE-AC05-76RL01830 with
