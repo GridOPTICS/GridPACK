@@ -1,5 +1,14 @@
 # GridPACK installation instructions
-This document provides a step-by-step guide to install GridPACK and its dependencies. They are meant to be used with GridPACK's develop branch. The installation instructions have been tested on Linux, MacOS, and Ubuntu.
+This document provides a step-by-step guide to install GridPACK and its
+dependencies. They are meant to be used with GridPACK's develop branch. The
+installation instructions have been tested on Linux, MacOS, and Ubuntu. Before
+building GridPACK using these instructions, you will need to make sure that
+CMake is available on your system (version newer than 3.5.0) and that you have
+a GNU compiler installed. You will also need to have MPI installed on your
+platform. Most clusters already have MPI available, but if you are building
+GridPACK on a workstation or a virtual machine, you may need to install or build
+MPI on your own. More information on configuring your Linux platform
+can be found [here](required/LINUX_BASICS.md).
 
 ## Boost 1.78.0
 Step 1. Download boost 1.78.0
@@ -34,6 +43,9 @@ and
 
 Step 7. If boost installation goes through correctly, then you should see `include` and `lib` subdirectories in your installation directory `install_for_gridpack`
 
+If you run into difficulties more information on building and installing Boost
+can be found [here](required/BOOST.md)
+
 ## Install Global arrays
 Step 1. Download GA-5.8
 ```
@@ -56,6 +68,9 @@ Step 5. Compile GA and install
 make -j 10 install
 ```
 Step 6. If the compilation succeeds, `include`, `lib`, and `bin` directories should be created in your installation directory `${PWD}/install_for_gridpack`
+
+More information on building and installing GA can be found
+[here](required/GLOBAL_ARRAYS.md)
 
 ## Install PETSc 3.16.4
 Step 1. Download PETSc release
@@ -89,6 +104,9 @@ make check
 ```
 
 Step 6. Once PETSc installation is complete and all tests pass after running `make check`, you'll see three directories `include`, `lib`, and `bin` under the installation directory `${PWD}/install_for_gridpack`
+
+More information on building and installing PETSc can be found
+[here](required/PETSC.md)
 
 ## Building GridPACK
 Now that we have installed the needed dependencies, we can proceed with downloading and installing GridPACK.
