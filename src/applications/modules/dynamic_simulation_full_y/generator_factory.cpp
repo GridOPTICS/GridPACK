@@ -21,6 +21,7 @@
 #include "gdform.hpp"
 #include "regca1.hpp"
 #include "reeca1.hpp"
+#include "reecd1.hpp"
 #include "repca1.hpp"
 #include "wsieg1.hpp"
 #include "exdc1.hpp"
@@ -128,6 +129,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
   }else if (type == "REECA1") {
     gridpack::dynamic_simulation::Reeca1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Reeca1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  }else if (type == "REECD1") {
+    gridpack::dynamic_simulation::Reecd1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Reecd1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else {
