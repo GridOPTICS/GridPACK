@@ -1260,6 +1260,241 @@
 
 // finished generator REECA parameters definition
 
+// start generator REECD parameters here
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VCMPFLAG "GENERATOR_REECD_VCMPFLAG"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VQ5 "GENERATOR_REECD_VQ5"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IQ5 "GENERATOR_REECD_IQ5"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VQ6 "GENERATOR_REECD_VQ6"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IQ6 "GENERATOR_REECD_IQ6"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VQ7 "GENERATOR_REECD_VQ7"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IQ7 "GENERATOR_REECD_IQ7"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VQ8 "GENERATOR_REECD_VQ8"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IQ8 "GENERATOR_REECD_IQ8"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VQ9 "GENERATOR_REECD_VQ9"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IQ9 "GENERATOR_REECD_IQ9"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VQ10 "GENERATOR_REECD_VQ10"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IQ10 "GENERATOR_REECD_IQ10"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VP5 "GENERATOR_REECD_VP5"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IP5 "GENERATOR_REECD_IP5"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VP6 "GENERATOR_REECD_VP6"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IP6 "GENERATOR_REECD_IP6"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VP7 "GENERATOR_REECD_VP7"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IP7 "GENERATOR_REECD_IP7"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VP8 "GENERATOR_REECD_VP8"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IP8 "GENERATOR_REECD_IP8"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VP9 "GENERATOR_REECD_VP9"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IP9 "GENERATOR_REECD_IP9"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VP10 "GENERATOR_REECD_VP10"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_IP10 "GENERATOR_REECD_IP10"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_RC "GENERATOR_REECD_RC"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_XC "GENERATOR_REECD_XC"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_TR1 "GENERATOR_REECD_TR1"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_KC "GENERATOR_REECD_KC"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_KE "GENERATOR_REECD_KE"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VBIKL "GENERATOR_REECD_VBIKL"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_VBIKH "GENERATOR_REECD_VBIKH"
+
+/**
+ * Generator REECD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REECD_TBIK "GENERATOR_REECD_TBIK"
+
+// finished generator REECD parameters definition
+
 // Generator sequence parameters
 
 /**

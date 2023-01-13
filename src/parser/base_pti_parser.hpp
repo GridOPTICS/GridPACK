@@ -9,6 +9,8 @@
  *
  *  Added SEXS exciter model: Nov 7, 2022
  *      Author: Shrirang Abhyankar
+ *  Added reecd1 for wind model: December, 2022
+ *       Author: Shuangshuang Jin
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -41,6 +43,7 @@
 #include "parser_classes/gdform.hpp"
 #include "parser_classes/regca1.hpp"
 #include "parser_classes/reeca1.hpp"
+#include "parser_classes/reecd1.hpp"
 #include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
 #include "parser_classes/exdc1.hpp"
@@ -532,7 +535,42 @@ class BasePTIParser : public BaseParser<_network>
       double reeca1_ip3;
       double reeca1_vp4;
       double reeca1_ip4;
-	  
+	
+        int reecd1_vcmpflag;
+          
+          double reecd1_vq5;
+          double reecd1_iq5;
+          double reecd1_vq6;
+          double reecd1_iq6;
+          double reecd1_vq7;
+          double reecd1_iq7;
+          double reecd1_vq8;
+          double reecd1_iq8;
+          double reecd1_vq9;
+          double reecd1_iq9;
+          double reecd1_vq10;
+          double reecd1_iq10;
+          double reecd1_vp5;
+          double reecd1_ip5;
+          double reecd1_vp6;
+          double reecd1_ip6;
+          double reecd1_vp7;
+          double reecd1_ip7;
+          double reecd1_vp8;
+          double reecd1_ip8;
+          double reecd1_vp9;
+          double reecd1_ip9;
+          double reecd1_vp10;
+          double reecd1_ip10;
+          double reecd1_rc;
+          double reecd1_xc;
+          double reecd1_tr1;
+          double reecd1_kc;
+          double reecd1_ke;
+          double reecd1_vblkl;
+          double reecd1_vblkh;
+          double reecd1_tblk;
+        
       // Governor parameters
       bool has_governor;
       int jbus;
@@ -1064,6 +1102,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"REECA1")) {
             Reeca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"REECD1")) {
+              Reecd1Parser<gen_params> parser;
+              parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"REPCA1")) {
             Repca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1403,8 +1444,8 @@ class BasePTIParser : public BaseParser<_network>
       bool ret = false;
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "GDFORM" ||
-          device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
-	  device == "REPCTA1" ||
+          device == "REGCA1" || device == "REECA1" || device == "REECD1" ||
+          device == "REPCA1" || device == "REPCTA1" ||
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
@@ -1561,6 +1602,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "REECA1") {
               Reeca1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "REECD1") {
+              Reecd1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "REPCA1") {
               Repca1Parser<gen_params> parser;
@@ -1786,6 +1830,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "REECA1") {
             Reeca1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "REECD1") {
+            Reecd1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "REPCA1") {
             Repca1Parser<gen_params> parser;
