@@ -27,7 +27,8 @@ is installed and any extra libraries that are required:
 ```
 
 The `GA_EXTRA_LIBS` variable is used to include required libraries not
-identified in the configuration. The `USE_PROGRESS_RANKS` variable
+identified in the configuration. In most cases, this variable should not be
+needed. The `USE_PROGRESS_RANKS` variable
 depends on the runtime used to build GA and should only be set to `TRUE`
 if GA was configured using the `--with-mpi-pr` option.
 
