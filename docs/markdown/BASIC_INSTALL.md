@@ -106,7 +106,9 @@ make check
 Step 6. Once PETSc installation is complete and all tests pass after running `make check`, you'll see three directories `include`, `lib`, and `bin` under the installation directory `${PWD}/install_for_gridpack`
 
 More information on building and installing PETSc can be found
-[here](required/PETSC.md)
+[here](required/PETSC.md). In the unlikely event that PETSc cannot download and
+build ParMETIS, more information of building this library can be found
+[here](required/PARMETIS.md).
 
 ## Building GridPACK
 Now that we have installed the needed dependencies, we can proceed with downloading and installing GridPACK.
@@ -173,5 +175,7 @@ cp input_145.xml input.xml
 ./dsf.x
 ```
 
+More information on configuring and building GridPACK can be found
+[here](required/GRIDPACK.md)
 
 

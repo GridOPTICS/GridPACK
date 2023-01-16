@@ -94,3 +94,24 @@ If you want to build PETSc with shared libraries, change the argument of
 `--with-shared-libraries=` from 0 to 1. To build PETSc using
 real variables instead of complex, set the argument of `--with-scalar-type` from
 `complex` to `real`.
+
+## Cross-Compilation
+
+On some platforms, the backend hardware is different from the front end, meaning
+that software compiled on the front end can only be run on the back end (compute
+nodes). This is a problem for the PETSc build, which creates small programs and
+runs them as part of the configuration procedure to see identify properties of
+the system.
+
+The work-around for this is to configure PETSc using the
+
+```
+--with-batch=1
+```
+option. In older versions of PETSc, this would cause the configure process to
+generate a script with a name based on the `PETSC_ARCH` variable, (e.g.
+`conftest-arch-linux2-complex-opt`), that would then be submitted to the batch
+queuing system. After submission, the configure would then proceed normally. For
+newer versions of PETSc, including 3.16.x, this does not appear to be necessary,
+and including the `--with-batch` flag is the only modification necessary when
+cross-compiling.

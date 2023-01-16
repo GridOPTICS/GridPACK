@@ -31,12 +31,31 @@ of this page. Additional information is available on the web.
 
 GridPACK uses the [cross-platform build system](http://www.cmake.org/)
 cross-platform build system.  A
-reasonably modern version should be used. Currently, we require version 2.8.8 or
-above. You can check which version of CMake is on your machine by typing
+reasonably modern version should be used. Most Linux platforms come with a
+version of CMake installed, but the version may not be high enough.
+Currently, we require a version of 3.5.0 or
+above. You can test for CMake on your system by typing
+
+```
+  which cmake
+```
+
+You should see something like
+
+```
+  /usr/bin/cmake
+```
+
+If you get a message saying that command is not found, then CMake is not on your
+system and you will need to build it.
+You can check which version of CMake is on your machine by typing
 
 ```
   cmake -version
 ```
+
+Again, if the version is below 3.5.0, you may need to build your own version of
+CMake.
 
 [CMake](http://www.cmake.org/) projects are designed to be built outside of the
 source code location.  In the source directory of a GridPACK release
@@ -58,20 +77,34 @@ directory immediately above the build directory. The `..` appear in
 all example scripts listed in the builds on specific platforms. Make sure you
 include them in your configure script!
 
-Example configure scripts and other information on building CMake can be found
-on the link below.
-
-* [Redhat Linux Workstation](../DUMMY.md)
-
 For most systems, it is possible to install CMake using modules or an
-installation capability such as `yum`.
+installation capability such as `yum`.  In the case that this is not possible
+or your version is too old, you can build it using the
+commands below.
+
+You will need
+to start by downloading the CMake tar file (e.g. cmake-3.24.3.tar.gz) from the
+[download site](https://cmake.org/download/). Information on downloading tar
+files can be found [here](#linux-basics) (at the bottom of this page).
+
+```
+  tar xvzf cmake-3.24.3.tar.gz
+  cd cmake-3.24.3
+  ./bootstrap --prefix=$PREFIX
+  make
+  make test
+  make install
+```
+
+The `$PREFIX` represents the location that you want to put the CMake
+executables.
 
 ## MPI
 
 A working MPI implementation is required for building GridPACK. We commonly use
-[OpenMPI](http://www.open-mpi.org/) and [MPICH](https://www.mpich.org). Recent
-versions include OpenMPI 1.8.3 and MPICH 3.2. Other implementations have, such
-as Intel MPI, also been used successfully.  Most MPI installations have compiler
+[OpenMPI](http://www.open-mpi.org/) and [MPICH](https://www.mpich.org).
+Other implementations, such as Intel MPI, have
+also been used successfully.  Most MPI installations have compiler
 wrappers, such as `mpicc` and `mpicxx` that combine the
 compiler with all the directives needed to link to the MPI libraries. These can
 be used directly in the GridPACK configuration.
@@ -106,10 +139,6 @@ using, you may be able to find out more information by typing
 Other options may be needed by CMake to specify the MPI environment.  See the
 documentation
 [here](http://www.cmake.org/cmake/help/v2.8.8/cmake.html#module:FindMPI).
-An example configuration script for building MPI can be found on the link
-below.
-
-* [Redhat Linux Workstation](../DUMMY.md)
 
 On most systems it is possible to install MPI using modules or an installation
 capability such as `yum`.
