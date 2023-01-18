@@ -1,11 +1,11 @@
-This documents a GridPACK build on [CentOS](https://www.centos.org/ CentOS) 7.5.1804
+This documents a GridPACK build on [CentOS](https://www.centos.org/) 7.5.1804
 installed on a [VirtualBox](https://www.virtualbox.org/) virtual machine (VM).
 Virtual Box is not required and these instructions should work for any Linux
 system using the CentOS operating sytem.  They also work for
 [Red Hat Enterprise Linux](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)
 (RHEL) 7.
 
-== Requisite System Software
+## Requisite System Software
 
 In this build, some [prerequisite software](../required/BASIC_LINUX.md) was installed
 as system software packages. If you are using a workstation with a standard
@@ -35,7 +35,7 @@ Install a C++ compiler, [CMake](https://cmake.org/), and
 `cmake` is required to build some of the packages. `cmake3` is required for
 GridPACK.
 
-=== OpenMPI
+### OpenMPI
 
 Install OpenMPI (version 1.10) using
 
@@ -59,7 +59,7 @@ time a terminal session is started.* If you are using OpenMPI across multiple
 projects, you may want to put the module load command in `.cshrc` or `.bashrc` file
 so that it is automatically loaded whenever you create a new terminal.
 
-=== Boost
+### Boost
 
 Install [Boost](https://www.boost.org/) (version 1.53) with
 
@@ -69,7 +69,7 @@ Install [Boost](https://www.boost.org/) (version 1.53) with
 
 This will install the needed Boost libraries and headers.
 
-== Build Packages from Source
+## Build Packages from Source
 
 In this build, all packages built from source (and GridPACK) were installed in a
 common directory, `$HOME/gridpack`.
@@ -113,7 +113,7 @@ or in a Bourne shell
     export FFLAGS="-pthread"
 ```
 
-=== PETSc, version 3.16.3
+### PETSc, version 3.16.3
 
 A PETSc package is available through `yum` (EPEL), but its headers
 and libraries are installed in locations that the GridPACK configuration does
@@ -162,7 +162,7 @@ The installation can be tested with
     make PETSC_DIR=$PREFIX/petsc-3.16.3 PETSC_ARCH="" test
 ```
 
-=== Global Arrays, 5.8
+### Global Arrays, 5.8
 
 The EPEL repository also has a [Global Arrays](http://hpc.pnl.gov/globalarrays/)
 package that can be installed with `yum`. However, at the time of
@@ -181,7 +181,7 @@ install using
     make install
 ```
 
-== GridPACK
+## GridPACK
 
 [Obtain the GridPACK release or development code](https://www.gridpack.org/wiki/index.php/Download_GridPACK)
 and put it in a convenient directory, like `$HOME/gridpack/src`. 
