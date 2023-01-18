@@ -63,7 +63,7 @@ Once in the build directory, execute the command
   cmake [options] gridpack/source/directory
 ```
 
-where `options` are used to locate [required software](REQUIRED_SOFTWARE.md)
+where `options` are used to locate required software
 and set compiler options. The shell script
 `example_configuration.sh` shows some examples of configuration
 options for a few systems. If you don't get the configure right the first time,

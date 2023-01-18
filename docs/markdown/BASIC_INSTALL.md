@@ -10,6 +10,13 @@ GridPACK on a workstation or a virtual machine, you may need to install or build
 MPI on your own. More information on configuring your Linux platform
 can be found [here](required/LINUX_BASICS.md).
 
+The example below can be adapted to build GridPACK on many platforms. More
+specific examples, with detailed instructions, for builds using different
+variants of Linux can be found on the links below.
+
+* [CentOS7 of RHEL 7](../platforms/CENTOS7.md)
+* [Linux Cluster](../platforms/RC_CLUSTER.md)
+
 ## Boost 1.78.0
 Step 1. Download boost 1.78.0
 ```
