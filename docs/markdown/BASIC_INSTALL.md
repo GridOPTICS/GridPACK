@@ -15,6 +15,7 @@ specific examples, with detailed instructions, for builds using different
 variants of Linux can be found on the links below.
 
 * [CentOS7 of RHEL 7](platforms/CENTOS7.md)
+* [Ubuntu](platforms/UBUNTU.md)
 * [Linux Cluster](platforms/RC_CLUSTER.md)
 
 ## Boost 1.78.0
