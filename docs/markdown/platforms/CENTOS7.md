@@ -7,7 +7,7 @@ system using the CentOS operating sytem.  They also work for
 
 ## Requisite System Software
 
-In this build, some [prerequisite software](../required/BASIC_LINUX.md) was installed
+In this build, some [prerequisite software](../required/LINUX_BASICS.md) was installed
 as system software packages. If you are using a workstation with a standard
 configuration, there is a good chance that this software is already installed
 but if you are setting up a VM then you may need to add this software on your
@@ -56,7 +56,7 @@ wrappers, the correct module must be loaded using
 This makes the MPI compiler wrappers and `mpiexec` available to the
 command line. *The OpenMPI module must be loaded each
 time a terminal session is started.* If you are using OpenMPI across multiple
-projects, you may want to put the module load command in `.cshrc` or `.bashrc` file
+projects, you may want to put the module load command in your `.cshrc` or `.bashrc` file
 so that it is automatically loaded whenever you create a new terminal.
 
 ### Boost

@@ -31,14 +31,14 @@ release tarballs. The tarballs already have the third party modules included.
 ## Configuring GridPACK
 
 Configuration is the most complicated part of the process of actually building
-GridPACK once all the libraries listed above are available. We recommend that
-you use one of the systems list above as a guide to configuring and building
-GridPACK. The information in this section is a general overview for configuring
+GridPACK. Before attempting to configure and build GridPACK, make sure that all
+the [prerequisite software](PRERQUISITE.md) needed by GridPACK is in place.
+The information in this section is a general overview for configuring
 GridPACK and adjustments may be required to get the build to work on particular
 platforms. [CMake](https://cmake.org/download) is used to configure GridPACK for
 building. CMake is usually available on most Linux systems but older versions of
 Linux may have a version of Cmake that is too old to build GridPACK. GridPACK
-requires version 2.8.8 or newer. If the installed version of CMake is too old,
+requires version 3.5.0 or newer. If the installed version of CMake is too old,
 users will need to download CMake and build it themselves. The version of CMake
 can be found by typing
 
