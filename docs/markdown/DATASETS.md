@@ -64,7 +64,7 @@ Many of these test cases were created to test new models.
 * [case9_GENSAL_ESST1A.dyr](../../src/applications/data_sets/dyr/case9_GENSAL_ESST1A.dyr)
 * [case9_GENSAL_ESST1A_WSIEG1.dyr](../../src/applications/data_sets/dyr/case9_GENSAL_ESST1A_WSIEG1.dyr)
 * [case9_HYGOV.dyr](../../src/applications/data_sets/dyr/case9_HYGOV.dyr)
-* [case9_REGCA1_REECA1_REPCA1.dyr](../../src/applications/data_sets/dyr/case9_REGCA1_REECA1_REPCA1.dyr)case9_SEXS.dyr)
+* [case9_REGCA1_REECA1_REPCA1.dyr](../../src/applications/data_sets/dyr/case9_REGCA1_REECA1_REPCA1.dyr)
 * [case9_SEXS.dyr](../../src/applications/data_sets/dyr/case9_SEXS.dyr)
 * [case9_GAST.dyr](../../src/applications/data_sets/dyr/case9_GAST.dyr)
 * [9b3g_GENSAL.dyr](../../src/applications/data_sets/dyr/9b3g_GENSAL.dyr)
