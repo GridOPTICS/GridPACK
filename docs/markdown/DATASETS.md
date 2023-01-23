@@ -5,7 +5,9 @@ for testing of GridPACK. These are used in the input files that are typically
 included in each application directory when GridPACK is built. A brief
 description of these data sets is included here.
 
-## PSS/E raw files. Most of these files are in the version 23 format, but some
+## PSS/E raw files
+
+Most of these files are in the version 23 format, but some
 files use the version 33 format. Typically, files that don't specify a version
 are version 23. All of these files are open source and can be
 used freely.
@@ -31,6 +33,7 @@ used freely.
 * [IEEE_145bus_v23_PSLF.raw](../../src/applications/data_sets/raw/IEEE_145bus_v23_PSLF.raw)
 * [IEEE145.raw](../../src/applications/data_sets/raw/EEE145.raw])
 
+### Larger Networks
 * [240busWECC_2018_PSS_fixedshunt.raw](../../src/applications/data_sets/raw/240busWECC_2018_PSS_fixedshunt.raw)
 * [kundur-twoarea_v33.raw](../../src/applications/data_sets/raw/kundur-twoarea_v33.raw)
 * [300bus_v23_no0imp_pslf.raw](../../src/applications/data_sets/raw/300bus_v23_no0imp_pslf.raw)
