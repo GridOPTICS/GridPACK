@@ -1,6 +1,6 @@
 If you are downloading the source code for GridPACK then you will need to build both the GridPACK
 framework and the related libraries. Information on how to do this can be found
-on the [Building GridPACK from Scratch](DUMMY.md) page.
+on the [Basic Build](BASIC_BUILD.md) page and related links.
 
 Release notes for GridPACK are available for each GridPACK release on the
 release page. Go to
