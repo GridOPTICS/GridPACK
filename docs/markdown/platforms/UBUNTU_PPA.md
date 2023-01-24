@@ -1,5 +1,8 @@
-GridPACK is relatively easy to install on an [Ubuntu Linux](https://www.ubuntu.com/)
-system. Working packages for most [GridPACK prerequisites](DUMMY.md)
+## Ubuntu Personal Package Archives (PPA) Installation
+GridPACK is relatively easy to install on some older versions of the
+[Ubuntu Linux](https://www.ubuntu.com/)
+system. Working packages for most [GridPACK
+prerequisites](../required/PREREQUISITES.md)
 are available from standard repositories. If you do not
 need to modify the GridPACK source, e.g. just use the GridPACK example
 applications or build your own application, you can install the binary package
@@ -10,7 +13,7 @@ GridPACK packages are available for the long term support (LTS) 64-bit (AMD64)
 Ubuntu series 16.04 (xenial) and 18.04 (bionic).  If you are installing Ubuntu
 on a system or virtual machine, download the
 [16.04](http://releases.ubuntu.com/16.04)
-or [18.04](http://releases.ubuntu.com/18.04) LTS ''Desktop'' AMD64
+or [18.04](http://releases.ubuntu.com/18.04) LTS Desktop AMD64
 distribution and follow the
 [installation
 instructions](https://tutorials.ubuntu.com/tutorial/tutorial-install-ubuntu-desktop#0).
