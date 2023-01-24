@@ -44,6 +44,7 @@ GridPACK repository, located
 - [Installation](docs/markdown/BASIC_INSTALL.md)
 - [GridPACK User Manual](docs/user_manual/GridPACK.pdf) (We recommend you download the GridPACK.pdf file to your computer)
 - [Downloads](https://github.com/GridOPTICS/GridPACK/releases)
+- [FAQS](docs/markdown/FAQS.md)
 - [Tutorials](docs/markdown/TUTORIALS.md)
 - [Data Sets](docs/markdown/DATASETS.md)
 - [License](docs/markdown/LICENSE.md)

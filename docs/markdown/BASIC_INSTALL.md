@@ -16,9 +16,10 @@ variants of Linux can be found on the links below.
 
 * [CentOS7 or RHEL 7](platforms/CENTOS7.md)
 * [Ubuntu](platforms/UBUNTU.md)
+* [Ubuntu PPA Install](platforms/UBUNTU_PPA.md)
 * [Debian](platforms/Debian.md)
 * [Linux Cluster](platforms/RC_CLUSTER.md)
-* [Notes](../notes) GridPACK has been built on several leadership platforms.
+* [Notes](../notes): GridPACK has been built on several leadership platforms.
   These builds have typically been fairly complicated and require assistance
   from the support staff. Notes on these builds for individual platforms can be
   found in this directory and may be of use to those attempting to build on
