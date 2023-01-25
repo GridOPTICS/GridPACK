@@ -45,7 +45,7 @@ To use GridPACK via AWS it is first necessary to get an Amazon account. Once
 users have set up an AWS account and logged in they should end up on the AWS
 Management Console page.
 
-[image](aws_images/AWS_Page.png)
+![image](aws_images/AWS_Page.png)
 
 This page will list a variety of AWS services available to users. Before doing
 anything else, you need to make sure that you are using the correct service
@@ -61,12 +61,12 @@ also mention EC2).
 If you clicked on the "Launch a virtual machine" link you will end up an a page
 titled ("Step 1: Choose an Amazon Machine Image (AMI)").
 
-[image](aws_images/AWS_Step1.png)
+![image](aws_images/AWS_Step1.png)
 
 Select "Community AMIs" from the list on the left hand side and type in
 "gridpack" in the search field at the top. You should see some GridPACK AMIs.
 
-[image](aws_images/AWS_Choose.png)
+![image](aws_images/AWS_Choose.png)
 
 Select one of these images. The main difference between the different images is
 the operating system they represent. When you select one of these images, a page

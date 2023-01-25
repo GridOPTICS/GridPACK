@@ -29,11 +29,11 @@ describing builds on specific platforms.
 #### Where are examples of applications of GridPACK software
 Applications built using the GridPACK frameworks are included in the GridPACK
 distributon and can be found in the
-[`$GRIDPACK/src/applications`](../../src/applications) directory. Most
+[$GRIDPACK/src/applications](../../src/applications) directory. Most
 of the applications in this directory are built using GridPACK
 [modules](../../src/applications/modules), which
 represent fundamental power grid calculations such as power flow and dynamic
 simulation. Additional examples can be found in the
-[`$GRIDPACK/src/applications/examples](../../src/applications/examples)
+[$GRIDPACK/src/applications/examples](../../src/applications/examples)
 directory and represent more self-contained examples of applications built with
 GridPACK.
