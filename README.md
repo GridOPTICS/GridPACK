@@ -10,6 +10,7 @@ algebraic systems. Additional modules support input and output as well
 as basic profiling and error management.  
 
 <!---See the [GridPACK home page](https://www.gridpack.org) for more information.-->
+<!--
 The GridPACK framework will simplify parallel power grid application development
 by eliminating many of the index transformations and calculations required to
 distribute data in parallel applications and also to move data from one
@@ -31,6 +32,7 @@ modules in the framework are being designed to compartmentalize functionality in
 a way that will simplify future code maintenance. This compartmentalization will
 also allow modules to be updated more easily without requiring modification of
 other modules or of the applications.
+-->
 
 If you have any difficulties building or installing GridPACK, or have any
 questions, feel free to contact us at

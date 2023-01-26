@@ -73,7 +73,7 @@ the operating system they represent. When you select one of these images, a page
 will pop up that asks you to select a hardware configuration on which to run
 your instance.
 
-[[File:Select_Page.png|1000px]]
+![image](aws_images/AWS_Select.png)
 
 The different hardware configurations offer different numbers of processors,
 different amounts of memory and different speeds for network communication.
@@ -95,7 +95,7 @@ Add Storage" button. Set the "Size (GiB)" field to at least 30 GiB. Then click
 on "Review and Launch" at the bottom of the page. Next click on the "Launch"
 button at the bottom of the page.
 
-[[File:Config_Page.png|1000px]]
+![image](aws_images/AWS_Config.png)
 
 A dialog box will pop up asking you to "Select an existing key pair or create a
 new key pair". If you have created a key pair in the past, you can choose an
@@ -104,7 +104,7 @@ pair. Make sure to save the file with the new key pair that will be downloaded
 as part of this process. This file is required in order to log in to running
 instances.
 
-[[File:Key_Page.png|1000px]]
+![image](aws_images/AWS_Key.png)
 
 If you have used AWS in the past, you may already have a key file available. If
 so you can go to the "Select a key pair menu" and choose one of them. Otherwise,
@@ -116,7 +116,7 @@ box acknowledging that you have access to the key file and then click on the
 "Launch Instances" button. Go to the bottom of the page and click on the "View
 Instances" button. This will take you to a page listing your instances.
 
-[[File:Instance_Page.png|1000px]]
+![image](aws_images/AWS_Instance.png)
 
 Your newly created instance should show on this page. You can give the instance
 a name by mousing over the instance name field and clicking on the pencil icon.
@@ -131,7 +131,7 @@ selecting the instance, going to the "Actions" menu and clicking "Start" or
 running instance will be retained if you stop the instance and will be available
 the next time you restart it.
 
-[[File:Options_Page.png|1000px]]
+![image](aws_images/AWS_Stop.png)
 
 If you want to get rid of an instance entirely, you can select "Terminate". This
 will completely remove the instance and destroy all files, so make sure that
@@ -153,7 +153,7 @@ instance to develop your own applications and decide that you want to use a
 different sized instance, or perhaps you want to share it with others, you can
 save your instance as an AMI and then create a new instance from it on a
 different sized virtual machine. You can also create AMIs as a way to save your
-work, although you should also want to look at tools such as git and svn to make
+work, although you should also want to look at tools such as git to make
 a permanent record of your code development.
 
 There are a number of ways to access an instance once it is running. A few are
@@ -165,12 +165,16 @@ pair file that you are going to use to a directory on your Linux platform that
 you would like to use for logging in to the AWS instance. Change the permissions
 on the file using the command
 
+```
     chmod 600 keyfile.pem
+```
 
-where "`keyfile.pem`" is the key pair file name. SSH will not allow
+where `keyfile.pem` is the key pair file name. SSH will not allow
 you to use a key file that is world readable. Then type
 
+```
     ssh -i keyfile.pem -l ec2-user ip.add.re.ss
+```
 
 where `ip.add.re.ss` is the numerical IP address in the "Public IP"
 field on the EC2 Dashboard page. This will log you in as user ec2-user. You can
@@ -185,11 +189,11 @@ permissions on the key pair file.
 ### From Windows:
 A running instance can be accessed using Putty. A detailed description on how to
 do this is available
-[http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html here]. To use
+[here](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html). To use
 Putty you will need to download both the putty and puttygen executables. These
-are both freely available from the [http://www.putty.org/ Putty website].
+are both freely available from the [Putty website](http://www.putty.org/).
 
-Instances can also be accessed using [https://www.cygwin.com/ Cygwin]. After
+Instances can also be accessed using [Cygwin](https://www.cygwin.com/). After
 installing Cygwin, bring up a Cygwin window. This will behave largely like a
 Linux terminal. We will assume that the .pem file created when you started your
 AWS instance is located somewhere on your Windows desktop. If you just type
@@ -199,24 +203,25 @@ Windows. At least initially, these folders will not have anything in them. To
 find the .pem file, type `df` in the Cygwin window. You will probably see
 something like
 
+```
     Filesystem     1K-blocks      Used Available Use% Mounted on
     C:/cygwin64    209712124 205861652   3850472  99% /
     U:             524284924 390740552 133544372  75% /cygdrive/u
+```
 
 Your Windows desktop and other folders are located under the partition
 `/cygdrive/u`. If you type `cd /cygdrive/u` and then type
 `ls` you will again see a listing of folders such as `Desktop`,
 `Downloads` etc. but this time they will actually correspond to your
-Windows folders. Cd into the folder containing the .pem file and change the
+Windows folders. cd into the folder containing the .pem file and change the
 permissions on the .pem file using `chmod 600 keyfile.pem`. Use ssh as
 described above to log into your running instance.
 
 ### AWS Accounts:
 Information on setting up an AWS account can be found
-[https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/
-here] and information on billing can be found
-[http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/edit-payment-method.html
-here]. Additional information on the properties of different instances can be
-found [https://aws.amazon.com/ec2/instance-types/ here]. The properties page
+[here](https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/)
+and information on billing can be found
+[here](http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/edit-payment-method.html).
+Additional information on the properties of different instances can be
+found [here](https://aws.amazon.com/ec2/instance-types/). The properties page
 also has some information about setting up a free trial account with AWS.
-

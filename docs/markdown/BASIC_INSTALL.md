@@ -25,6 +25,20 @@ variants of Linux can be found on the links below.
   found in this directory and may be of use to those attempting to build on
   these platforms or similar platforms.
 
+## Submodule(s)
+
+If building a verions of GridPACK that has been cloned directly from the Github
+repository, it is first necessary to download some submodules. This can be done
+using the command
+
+```
+git submodule update --init
+```
+
+The CMake configuration will fail if this command has not been run. If you are
+building GridPACK from one of the releae tarballs, the submodules will already
+be included in the tarball and this command is not necessary.
+
 ## Boost 1.78.0
 Step 1. Download boost 1.78.0
 ```
