@@ -65,6 +65,7 @@ titled ("Step 1: Choose an Amazon Machine Image (AMI)").
 ![image](aws_images/AWS_AMI.png)
 -->
 <img src="aws_images/AWS_AMI.png" alt="drawing" width="1000"/>
+<img src="aws_images/AWS_Step1.png" alt="drawing" width="1000"/>
 
 Select "Community AMIs" from the list on the left hand side and type in
 "gridpack" in the search field at the top. You should see some GridPACK AMIs.
