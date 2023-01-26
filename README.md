@@ -54,6 +54,7 @@ GridPACK repository, located
 - [Building GridPACK from Scratch](docs/markdown/BUILD_GRIDPACK.md)
 -->
 
+<!--
 ## Submodule(s)
 
 If building a verions of GridPACK that has been cloned directly from the Github
@@ -67,6 +68,7 @@ git submodule update --init
 The CMake configuration will fail if this command has not been run. If you are
 building GridPACK from one of the releae tarballs, the submodules will already
 be included in the tarball and this command is not necessary.
+-->
 
 ## Usage
 See [User manual](docs/user_manual/GridPACK.pdf) for a deep dive on GridPACK internals. One can also use GridPACK through its Python interface.
