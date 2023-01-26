@@ -29,12 +29,13 @@ variants of Linux can be found on the links below.
 
 If building a verions of GridPACK that has been cloned directly from the Github
 repository, it is first necessary to download some submodules. This can be done
-using the command
+by running the command
 
 ```
 git submodule update --init
 ```
 
+in the top-level GridPACK directory.
 The CMake configuration will fail if this command has not been run. If you are
 building GridPACK from one of the releae tarballs, the submodules will already
 be included in the tarball and this command is not necessary.
