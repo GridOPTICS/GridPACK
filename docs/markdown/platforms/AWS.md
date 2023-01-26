@@ -45,7 +45,7 @@ To use GridPACK via AWS it is first necessary to get an Amazon account. Once
 users have set up an AWS account and logged in they should end up on the AWS
 Management Console page.
 
-![image](aws_images/AWS_Page.png =250x)
+![image](aws_images/AWS_Page.png =1000x)
 
 This page will list a variety of AWS services available to users. Before doing
 anything else, you need to make sure that you are using the correct service
