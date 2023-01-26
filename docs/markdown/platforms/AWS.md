@@ -45,7 +45,7 @@ To use GridPACK via AWS it is first necessary to get an Amazon account. Once
 users have set up an AWS account and logged in they should end up on the AWS
 Management Console page.
 
-![image](aws_images/AWS_Page.png)
+![image](aws_images/AWS_Page.png =250x)
 
 This page will list a variety of AWS services available to users. Before doing
 anything else, you need to make sure that you are using the correct service
@@ -99,19 +99,17 @@ button at the bottom of the page.
 
 A dialog box will pop up asking you to "Select an existing key pair or create a
 new key pair". If you have created a key pair in the past, you can choose an
-existing key pair. Otherwise follow the instructions for creating a new key
-pair. Make sure to save the file with the new key pair that will be downloaded
-as part of this process. This file is required in order to log in to running
-instances.
-
-![image](aws_images/AWS_Key.png)
-
+existing key pair.
 If you have used AWS in the past, you may already have a key file available. If
 so you can go to the "Select a key pair menu" and choose one of them. Otherwise,
 you will need to select the "Create a new key pair" option in the upper menu and
 follow the instructions for creating a key file. Make sure to store the
 resulting .pem file where it won't get lost or deleted, otherwise you will not
-be able to access your instance. Once the key file has been selected, check the
+be able to access your instance.
+
+![image](aws_images/AWS_Key.png)
+
+Once the key file has been selected, check the
 box acknowledging that you have access to the key file and then click on the
 "Launch Instances" button. Go to the bottom of the page and click on the "View
 Instances" button. This will take you to a page listing your instances.
