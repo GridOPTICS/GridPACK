@@ -62,9 +62,9 @@ If you clicked on the "Launch a virtual machine" link you will end up an a page
 titled ("Step 1: Choose an Amazon Machine Image (AMI)").
 
 <!--
-![image](aws_images/AWS_Step1.png)
+![image](aws_images/AWS_AMI.png)
 -->
-<img src="aws_images/AWS_Step1.png" alt="drawing" width="1000"/>
+<img src="aws_images/AWS_AMI.png" alt="drawing" width="1000"/>
 
 Select "Community AMIs" from the list on the left hand side and type in
 "gridpack" in the search field at the top. You should see some GridPACK AMIs.
@@ -76,7 +76,7 @@ the operating system they represent. When you select one of these images, a page
 will pop up that asks you to select a hardware configuration on which to run
 your instance.
 
-<img src="aws_images/AWS_Select.png" alt="drawing" width="1000"/>
+<img src="aws_images/AWS_Type.png" alt="drawing" width="1000"/>
 
 The different hardware configurations offer different numbers of processors,
 different amounts of memory and different speeds for network communication.
