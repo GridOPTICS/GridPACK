@@ -61,19 +61,22 @@ also mention EC2).
 If you clicked on the "Launch a virtual machine" link you will end up an a page
 titled ("Step 1: Choose an Amazon Machine Image (AMI)").
 
+<!--
 ![image](aws_images/AWS_Step1.png)
+-->
+<img src="aws_images/AWS_Step1.png" alt="drawing" width="1000"/>
 
 Select "Community AMIs" from the list on the left hand side and type in
 "gridpack" in the search field at the top. You should see some GridPACK AMIs.
 
-![image](aws_images/AWS_Choose.png)
+<img src="aws_images/AWS_Choose.png" alt="drawing" width="1000"/>
 
 Select one of these images. The main difference between the different images is
 the operating system they represent. When you select one of these images, a page
 will pop up that asks you to select a hardware configuration on which to run
 your instance.
 
-![image](aws_images/AWS_Select.png)
+<img src="aws_images/AWS_Select.png" alt="drawing" width="1000"/>
 
 The different hardware configurations offer different numbers of processors,
 different amounts of memory and different speeds for network communication.
@@ -95,7 +98,7 @@ Add Storage" button. Set the "Size (GiB)" field to at least 30 GiB. Then click
 on "Review and Launch" at the bottom of the page. Next click on the "Launch"
 button at the bottom of the page.
 
-![image](aws_images/AWS_Config.png)
+<img src="aws_images/AWS_Config.png" alt="drawing" width="1000"/>
 
 A dialog box will pop up asking you to "Select an existing key pair or create a
 new key pair". If you have created a key pair in the past, you can choose an
@@ -107,14 +110,14 @@ follow the instructions for creating a key file. Make sure to store the
 resulting .pem file where it won't get lost or deleted, otherwise you will not
 be able to access your instance.
 
-![image](aws_images/AWS_Key.png)
+<img src="aws_images/AWS_Key.png" alt="drawing" width="1000"/>
 
 Once the key file has been selected, check the
 box acknowledging that you have access to the key file and then click on the
 "Launch Instances" button. Go to the bottom of the page and click on the "View
 Instances" button. This will take you to a page listing your instances.
 
-![image](aws_images/AWS_Instance.png)
+<img src="aws_images/AWS_Instance.png" alt="drawing" width="1000"/>
 
 Your newly created instance should show on this page. You can give the instance
 a name by mousing over the instance name field and clicking on the pencil icon.
@@ -129,7 +132,7 @@ selecting the instance, going to the "Actions" menu and clicking "Start" or
 running instance will be retained if you stop the instance and will be available
 the next time you restart it.
 
-![image](aws_images/AWS_Stop.png)
+<img src="aws_images/AWS_Stop.png" alt="drawing" width="1000"/>
 
 If you want to get rid of an instance entirely, you can select "Terminate". This
 will completely remove the instance and destroy all files, so make sure that
