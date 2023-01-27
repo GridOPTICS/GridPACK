@@ -5,15 +5,15 @@ Building GridPACK on Windows is not for the faint of heart.
 The following are available as native Windows applications and can just be
 installed in the normal Windows way:
 * [Visual C++](https://www.visualstudio.com) in some form.
-** The "free" ones, Visual Studio Express and Community, should work.
-** To get the 64-bit compilers for Visual Studio 2015, you need to run the x64
+  The "free" ones, Visual Studio Express and Community, should work.
+  To get the 64-bit compilers for Visual Studio 2015, you need to run the x64
    Native Tools Command Prompt (you may need to go into the Visual Studios 2015
    folder and then into the Visual Studio Tools subfolder and then into the Windows
    Desktop Command Prompts folder under that to find it). Once you have opened an
    x64 Native Command Prompt, cd to C:\Program Files (x86)\Microsoft Visual Studio
    14.0\VC and type `vcvarsall amd64`. More information about this can be found
    [here](https://msdn.microsoft.com/en-us/library/x4d2c09s.aspx).
-* [Windows SDK](https://www.microsoft.com/en-us/download/details.aspx?id=8279)
+* [Windows SDK](https://www.microsoft.com/en-us/download/details.aspx?id=8279).
   Usually, this is just installed with Visual Studio
 * [CMake](https://cmake.org/download/) is required. During the installation
   process, the dialog will ask if you want CMake added to PATH variable. For
@@ -26,25 +26,23 @@ installed in the normal Windows way:
   `gcc` and `cmake` are already installed in Cygwin, you
   can rerun the installer and deselect these packages (they can be found under
   the developer category).
-** Minimum required packages:
-*** Base
-*** Python
-*** Make
-** Rename `/usr/bin/link.exe` so it does not interfere with Windows `LINK.EXE` 
-** If you want to use a Cygwin shell to build and/or debug GridPACK applications:
-*** Do not install a compiler set.
-*** Do not install CMake. 
-* [https://msdn.microsoft.com/en-us/library/windows/desktop/bb524831%28v=vs.85%29.aspx
-* Microsoft MPI: This appears to be the only modern implementation
+    * Minimum required packages:
+        - Base
+        - Python
+        - Make
+    - Rename `/usr/bin/link.exe` so it does not interfere with Windows `LINK.EXE`.
+    - If you want to use a Cygwin shell to build and/or debug GridPACK applications:
+        - Do not install a compiler set.
+    - Do not install CMake. 
+* [Microsoft MPI](https://msdn.microsoft.com/en-us/library/windows/desktop/bb524831%28v=vs.85%29.aspx): This appears to be the only modern implementation
   available for Windows.  In the past, the OpenMPI and MPICH implementations
   were available for Windows, but no more. You will need to download both the
   `.msi` and `.exe` files.
 * Some software to unpack `.zip`, `.gz`, and `tar`
   archives.  Commands to unpack all of these archives are available with Cygwin.
   Windows can handle  `.zip` archives natively. 
-* (optional) [MS-MPI Debugger * Extension](https://www.microsoft.com/en-us/download/details.aspx?id=48215)
-  useful for debugging problem with parallel
-  programs.
+* (optional) [MS-MPI Debugger Extension](https://www.microsoft.com/en-us/download/details.aspx?id=48215).
+  Useful for debugging problem with parallel programs.
 
 ## Build Required Libraries 
 
@@ -93,8 +91,7 @@ modified. It's in a different place depending on the version. In Boost 1.61 it
 is in `./tools/build/src/tools/mpi.jam`. Modify `mpi.jam` to
 make it work using the following patch:
      247a248,250
-     >     local win_ms_mpi_sdk = "C:\\Program Files (x86)\\Microsoft SDKs\\MPI"
-     >     ;
+     >     local win_ms_mpi_sdk = "C:\\Program Files (x86)\\Microsoft SDKs\\MPI" ;
      >     local win_ms_mpi = "C:\\Program Files\\Microsoft MPI" ;
      >
      249,251c252,254
@@ -103,8 +100,7 @@ make it work using the following patch:
      <     if [ GLOB $(cluster_pack_path_native)\\Include : mpi.h ]
      ---
      >     # local cluster_pack_path_native = "C:\\Program Files\\Microsoft >     Compute Cluster Pack" ;
-     >     # local cluster_pack_path = [ path.make $(cluster_pack_path_native) ]
-     >     ;
+     >     # local cluster_pack_path = [ path.make $(cluster_pack_path_native) ] ;
      >     if [ GLOB $(win_ms_mpi_sdk)\\Include : mpi.h ]
      255c258
      <         ECHO "Found Microsoft Compute Cluster Pack: $(cluster_pack_path_native)" ;
@@ -112,8 +108,7 @@ make it work using the following patch:
      >         ECHO "Found Microsoft Compute Cluster Pack: $(win_ms_mpi_sdk)" ;
      260,262c263,265
      <       options = <include>$(cluster_pack_path)/Include
-     <
-<address-model>64:<library-path>$(cluster_pack_path)/Lib/amd64
+     <                 <address-model>64:<library-path>$(cluster_pack_path)/Lib/amd64
      <                 <library-path>$(cluster_pack_path)/Lib/i386
      ---
      >       options = <include>$(win_ms_mpi_sdk)/Include
@@ -134,32 +129,32 @@ to replace the values
   `graph_parallel` fails to build (see
   [this ticket](https://svn.boost.org/trac/boost/ticket/11908)).  There are two
   options for building:  
-* Option 1: just build what GridPACK requires (header-only libraries are still
+    * Option 1: just build what GridPACK requires (header-only libraries are still
 installed)
 ```
-  .\b2
-    --prefix=%GridPACKDir%
-    --with-mpi
-    --with-serialization
-    --with-random
-    --with-filesystem
-    --with-system
-    --build-type=complete
-    threading=single
-    address-model=64
-    link=static runtime-link=shared
+  .\b2 ^
+    --prefix=%GridPACKDir% ^
+    --with-mpi ^
+    --with-serialization ^
+    --with-random ^
+    --with-filesystem ^
+    --with-system ^
+    --build-type=complete ^
+    threading=single ^
+    address-model=64 ^
+    link=static runtime-link=shared ^
     install
 ```
-* Option 2: build everything (except python -- I'm not sure what's required for
+    * Option 2: build everything (except python -- I'm not sure what's required for
 that) 
 ```
-  .\b2
-    --prefix=%GridPACKDir%
-    --without-python
-    --build-type=complete
-    threading=single
-    address-model=64
-    link=static runtime-link=shared
+  .\b2 ^
+    --prefix=%GridPACKDir% ^
+    --without-python ^
+    --build-type=complete ^
+    threading=single ^
+    address-model=64 ^
+    link=static runtime-link=shared ^
     install
 ```
 
@@ -167,18 +162,18 @@ Notes:
 
 * 1.58.0 works with VS 2013
 * 1.61.0 works with VS 2010, but requires update 5 for VS 2013 (see
-  [this * ticket](https://svn.boost.org/trac/boost/ticket/11885)) 
+  [this ticket](https://svn.boost.org/trac/boost/ticket/11885)) 
 * Boost decorates the library names with the compiler version, so explicitly
   specify the compiler and make sure that's the compiler you use for GridPACK.
   If multiple compilers are available, it is possible to force the boost
   configuration to pick a specific one by adding an option like
   `-toolchain=msvc-11.0` to `\.b2`.
   Some references for these instructions:
-** A pretty complete set of instructions for
-[build Boost on Windows with MPI](http://stackoverflow.com/questions/26147564/how-to-build-boost-mpi-for-ms-mpi-with-visual-studio-2012)
-** [Some additional details](http://stackoverflow.com/questions/9433311/error-in-building-boost-mpi-in-msvc-2010/32635378#32635378).
-** [Official Boost build instructions](http://www.boost.org/doc/libs/1_61_0/more/getting_started/windows.html)
-** A pertinent Boost [ticket](https://svn.boost.org/trac/boost/ticket/11908).
+    * A pretty complete set of instructions for
+      [build Boost on Windows with MPI](http://stackoverflow.com/questions/26147564/how-to-build-boost-mpi-for-ms-mpi-with-visual-studio-2012)
+    * [Some additional details](http://stackoverflow.com/questions/9433311/error-in-building-boost-mpi-in-msvc-2010/32635378#32635378).
+    * [Official Boost build instructions](http://www.boost.org/doc/libs/1_61_0/more/getting_started/windows.html)
+    * A pertinent Boost [ticket](https://svn.boost.org/trac/boost/ticket/11908).
 
 ## Algebra Libraries
 
@@ -197,7 +192,7 @@ require a Fortran compiler.  It is apparently *really* slow.  It will probably
 be necessary to install Intel compilers and MKL in order to get improvement in
 speed.  The Windows port of CLAPACK is described
 [here](http://icl.cs.utk.edu/lapack-for-windows/clapack/).
-* Get the source * [here](http://icl.cs.utk.edu/lapack-for-windows/clapack/clapack-3.2.1-CMAKE.tgz).
+* Get the source [here](http://icl.cs.utk.edu/lapack-for-windows/clapack/clapack-3.2.1-CMAKE.tgz).
   This is a gzip'd tar archive.  This can be unpacked by
   [7-zip](http://www.7-zip.org/download.html), if available. Since Cygwin is
   required to build and use PETSc, the command 
@@ -211,9 +206,9 @@ speed.  The Windows port of CLAPACK is described
     cd clapack-3.2.1-CMAKE
     mkdir build
     cd build
-    cmake -Wdev
-        -G "Visual Studio 10 2010 Win64"
-        -D CMAKE_INSTALL_PREFIX:PATH="%GridPACKDir%"
+    cmake -Wdev ^
+        -G "Visual Studio 10 2010 Win64" ^
+        -D CMAKE_INSTALL_PREFIX:PATH="%GridPACKDir%" ^
         ..
     cmake --build . --config Release
     cmake --build . --target install --config Release
@@ -246,14 +241,14 @@ speed.  The Windows port of CLAPACK is described
 ```
 * Configure, build, and install
 ```
-  cmake -Wdev
-      -G "Visual Studio 10 2010 Win64"
-      -D BUILD_METIS:BOOL=NO
-      -D SUITESPARSE_INSTALL_PREFIX:PATH="%GridPACKDir%"
-      -D SUITESPARSE_USE_CUSTOM_BLAS_LAPACK_LIBS:BOOL=ON
-      -D SUITESPARSE_CUSTOM_BLAS_LIB:PATH=%prefix%\lib\blas.lib
-      -D SUITESPARSE_CUSTOM_LAPACK_LIB:PATH=%prefix%\lib\lapack.lib
-      -D CMAKE_INSTALL_PREFIX:PATH="%GridPACKDir%"
+  cmake -Wdev ^
+      -G "Visual Studio 10 2010 Win64" ^
+      -D BUILD_METIS:BOOL=NO ^
+      -D SUITESPARSE_INSTALL_PREFIX:PATH="%GridPACKDir%" ^
+      -D SUITESPARSE_USE_CUSTOM_BLAS_LAPACK_LIBS:BOOL=ON ^
+      -D SUITESPARSE_CUSTOM_BLAS_LIB:PATH=%prefix%\lib\blas.lib ^
+      -D SUITESPARSE_CUSTOM_LAPACK_LIB:PATH=%prefix%\lib\lapack.lib ^
+      -D CMAKE_INSTALL_PREFIX:PATH="%GridPACKDir%" ^
       ..
   cmake --build . --config Release
   cmake --build . --target install --config Release
@@ -293,12 +288,9 @@ directory:
    add_subdirectory(include)
    add_subdirectory(libparmetis)
   Only in parmetis-4.0.3.fixed/: CMakeLists.txt~
-  diff -r -u parmetis-4.0.3/metis/include/metis.h
-parmetis-4.0.3.fixed/metis/include/metis.h
-  --- parmetis-4.0.3/metis/include/metis.h      2013-03-30 09:24:50.000000000
--0700
-  +++ parmetis-4.0.3.fixed/metis/include/metis.h        2016-06-30
-11:08:21.791160800 -0700
+  diff -r -u parmetis-4.0.3/metis/include/metis.h parmetis-4.0.3.fixed/metis/include/metis.h
+  --- parmetis-4.0.3/metis/include/metis.h              2013-03-30 09:24:50.000000000 -0700
+  +++ parmetis-4.0.3.fixed/metis/include/metis.h        2016-06-30 11:08:21.791160800 -0700
   @@ -40,7 +40,7 @@
       32 : single precission floating point (float)
       64 : double precission floating point (double)
@@ -309,11 +301,11 @@ parmetis-4.0.3.fixed/metis/include/metis.h
 
 * Configure and build
 ```
-  cmake
-      -G "Visual Studio 10 2010 Win64"
-      -D BUILD_SHARED_LIBS:BOOL=NO
-      -D METIS_INSTALL:BOOL=YES
-      -D CMAKE_INSTALL_PREFIX:PATH="C:\GridPACK"
+  cmake ^
+      -G "Visual Studio 10 2010 Win64" ^
+      -D BUILD_SHARED_LIBS:BOOL=NO ^
+      -D METIS_INSTALL:BOOL=YES ^
+      -D CMAKE_INSTALL_PREFIX:PATH="C:\GridPACK" ^
       ..
   cmake --build . --config Release
   cmake --build . --target install --config Release
@@ -327,8 +319,7 @@ get errors that look like
 
 ```
    C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt\math.h(520):
-   error C2059: syntax error: '('
-[C:\GridPACK\src\parmetis-4.0.3\build\libmetis\metis.vcxproj]
+   error C2059: syntax error: '(' [C:\GridPACK\src\parmetis-4.0.3\build\libmetis\metis.vcxproj]
 ```
 
 These can be fixed by going into the `parmetis-4.0.3/metis/GKlib`
@@ -349,27 +340,31 @@ of `gk_arch.h`
 ```
 
 ### PETSc
-These instructions mostly follow
-[the discussion here](https://github.com/INMOST-DEV/INMOST/wiki/0206-Compilation-PETSc-Windows)
-as well as the instructions for building
-[Suitesparse on Windows with CMake](https://github.com/jlblancoc/suitesparse-metis-for-windows)
+* These instructions mostly follow
+  [the discussion here](https://github.com/INMOST-DEV/INMOST/wiki/0206-Compilation-PETSc-Windows)
+  as well as the instructions for building
+  [Suitesparse on Windows with CMake](https://github.com/jlblancoc/suitesparse-metis-for-windows)
 
-PETSc must be built within a Cygwin shell.  In this case, Cygwin was installed
+* PETSc must be built within a Cygwin shell.  In this case, Cygwin was installed
 in `C:\cygwin64`
 As mentioned above, PETSc refuses to fetch and build many external packages
 when configured on Windows.  They need to be built individually.  See
 instructions above for the following:
-* BLAS/LAPACK
-* ParMETIS
-* SparseSuite
-Start a VS Command Prompt
+    * BLAS/LAPACK
+    * ParMETIS
+    * SparseSuite
+* Start a VS Command Prompt
 * Remember to set the Microsoft MPI environment
+```
   set msmpi
+```
 * Within the VS Command Prompt, start a minimal Cygwin terminal and get it ready
+```
   c:\cygwin64\bin\mintty.exe
+```
 * Within the Cygwin shell, review the contents of the `PATH` environment
   variable. Take out anything that is not directly related to the PETSc build.
-* Then, make sure Cygwin commands are available: 
+  Then, make sure Cygwin commands are available: 
 ```
   export PATH="/usr/bin:$PATH"
 ```
@@ -403,10 +398,8 @@ Start a VS Command Prompt
     --with-fc=0 \
     --with-precision=double \
     --with-scalar-type=real \
-    --with-mpi-include=/cygdrive/c/Program\ Files\ \(x86\)/Microsoft\
-SDKs/MPI/Include \
-    --with-mpi-lib=['/cygdrive/c/Program\ Files\ \(x86\)/Microsoft\
-SDKs/MPI/Lib/x64/msmpi.lib'] \
+    --with-mpi-include=/cygdrive/c/Program\ Files\ \(x86\)/Microsoft\ SDKs/MPI/Include \
+    --with-mpi-lib=['/cygdrive/c/Program\ Files\ \(x86\)/Microsoft\ SDKs/MPI/Lib/x64/msmpi.lib'] \
     --with-mpi-mpiexec=/cygdrive/c/Program\ Files/Microsoft\ MPI/Bin/mpiexec.exe
 \
     --with-debugging=0 \
@@ -453,13 +446,13 @@ to
   set path=%path%;c:\cygwin64\bin
   set CFLAGS="/D _ITERATOR_DEBUG_LEVEL=0"
   set CXXFLAGS="/D _ITERATOR_DEBUG_LEVEL=0"
-  cmake -Wdev
-    -D BOOST_ROOT:PATH=C:\GridPACK
-    -D Boost_USE_STATIC_LIBS:BOOL=ON
-    -D BOOST_INCLUDEDIR=C:\GridPACK\include\boost-1_61
-    -D PETSC_DIR:PATH="C:\GridPACK\src\petsc-3.6.4"
-    -D PETSC_ARCH:STRING='mswin-cxx-complex-opt'
-    -G "Visual Studio 10 2010 Win64"
+  cmake -Wdev ^
+    -D BOOST_ROOT:PATH=C:\GridPACK ^
+    -D Boost_USE_STATIC_LIBS:BOOL=ON ^
+    -D BOOST_INCLUDEDIR=C:\GridPACK\include\boost-1_61 ^
+    -D PETSC_DIR:PATH="C:\GridPACK\src\petsc-3.6.4" ^
+    -D PETSC_ARCH:STRING='mswin-cxx-complex-opt' ^
+    -G "Visual Studio 10 2010 Win64" ^
     ..
   cmake --build . --config Release
 ```
@@ -478,13 +471,13 @@ to
 ```
   set CFLAGS="/D _ITERATOR_DEBUG_LEVEL=0"
   set CXXFLAGS="/D _ITERATOR_DEBUG_LEVEL=0"
-  cmake -Wdev --debug-trycompile
-    -G "Visual Studio 10 2010 Win64"
-    -D ENABLE_BLAS:BOOL=No
-    -D ENABLE_FORTRAN:BOOL=No
-    -D ENABLE_CXX:BOOL=Yes
-    -D GA_RUNTIME:STRING=MPI_TS
-    -D CMAKE_INSTALL_PREFIX:PATH="%GridPACKDir%"
+  cmake -Wdev --debug-trycompile ^
+    -G "Visual Studio 10 2010 Win64" ^
+    -D ENABLE_BLAS:BOOL=No ^
+    -D ENABLE_FORTRAN:BOOL=No ^
+    -D ENABLE_CXX:BOOL=Yes ^
+    -D GA_RUNTIME:STRING=MPI_TS ^
+    -D CMAKE_INSTALL_PREFIX:PATH="%GridPACKDir%" ^
     ..
   cmake --build . --config Release
   cmake --build . --config Release --target install
@@ -495,12 +488,12 @@ to
 * Check w/ GridPACK sandbox. In the `sandbox/ga` directory, add a build
   directory and cd into it. Configure the GA test with
 ```
-  cmake -Wdev --debug-trycompile
-    -G "Visual Studio 10 2010 Win64"
-    -D BOOST_ROOT:PATH="%GridPACKDir%"
-    -D Boost_USE_STATIC_LIBS:BOOL=ON
-    -D BOOST_INCLUDEDIR="%GridPACKDir%\include\boost-1_61"
-    -D GA_DIR:PATH="%GridPACKDir"
+  cmake -Wdev --debug-trycompile ^
+    -G "Visual Studio 10 2010 Win64" ^
+    -D BOOST_ROOT:PATH="%GridPACKDir%" ^
+    -D Boost_USE_STATIC_LIBS:BOOL=ON ^
+    -D BOOST_INCLUDEDIR="%GridPACKDir%\include\boost-1_61" ^
+    -D GA_DIR:PATH="%GridPACKDir" ^
     ..
 ```
 
@@ -524,20 +517,20 @@ to
     set prefix="C:\GridPACK"
     set CFLAGS="/D _ITERATOR_DEBUG_LEVEL=0"
     set CXXFLAGS="/D _ITERATOR_DEBUG_LEVEL=0"
-    cmake -Wdev --debug-trycompile
-      -G "Visual Studio 10 2010 Win64"
-      -D USE_PROGRESS_RANKS:BOOL=OFF
-      -D BOOST_ROOT:PATH=C:\GridPACK
-      -D Boost_USE_STATIC_LIBS:BOOL=ON
-      -D Boost_USE_DEBUG_RUNTIME:BOOL=OFF
-      -D BOOST_INCLUDEDIR=C:\GridPACK\include\boost-1_61
-      -D PETSC_DIR:PATH="C:\GridPACK\src\petsc-3.6.4"
-      -D PETSC_ARCH:STRING='mswin-cxx-complex-opt'
-      -D GA_DIR:PATH='C:\GridPACK\ga-svn'
-      -D GA_TEST_RUNS:BOOL=YES
-      -D PARMETIS_DIR:PATH=C:\GridPACK
-      -D MPIEXEC_MAX_NUMPROCS:STRING="2"
-      -D GRIDPACK_TEST_TIMEOUT:STRING=60
+    cmake -Wdev --debug-trycompile ^
+      -G "Visual Studio 10 2010 Win64" ^
+      -D USE_PROGRESS_RANKS:BOOL=OFF ^
+      -D BOOST_ROOT:PATH=C:\GridPACK ^
+      -D Boost_USE_STATIC_LIBS:BOOL=ON ^
+      -D Boost_USE_DEBUG_RUNTIME:BOOL=OFF ^
+      -D BOOST_INCLUDEDIR=C:\GridPACK\include\boost-1_61 ^
+      -D PETSC_DIR:PATH="C:\GridPACK\src\petsc-3.6.4" ^
+      -D PETSC_ARCH:STRING='mswin-cxx-complex-opt' ^
+      -D GA_DIR:PATH='C:\GridPACK\ga-svn' ^
+      -D GA_TEST_RUNS:BOOL=YES ^
+      -D PARMETIS_DIR:PATH=C:\GridPACK ^
+      -D MPIEXEC_MAX_NUMPROCS:STRING="2" ^
+      -D GRIDPACK_TEST_TIMEOUT:STRING=60 ^
       ..
 ```
   Note: this is the contents of `gridpack/example_configuration.bat`
