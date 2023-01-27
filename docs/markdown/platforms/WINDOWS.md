@@ -33,8 +33,8 @@ installed in the normal Windows way:
     - Rename `/usr/bin/link.exe` so it does not interfere with Windows `LINK.EXE`.
     - If you want to use a Cygwin shell to build and/or debug GridPACK applications:
         - Do not install a compiler set.
-    - Do not install CMake. 
-* [Microsoft MPI](https://msdn.microsoft.com/en-us/library/windows/desktop/bb524831%28v=vs.85%29.aspx): This appears to be the only modern implementation
+        - Do not install CMake. 
+* [Microsoft MPI](https://msdn.microsoft.com/en-us/library/windows/desktop/bb524831%28v=vs.85%29.aspx). This appears to be the only modern implementation
   available for Windows.  In the past, the OpenMPI and MPICH implementations
   were available for Windows, but no more. You will need to download both the
   `.msi` and `.exe` files.
@@ -90,11 +90,8 @@ Consequently, it's a little out of date. The file `mpi.jam` needs to be
 modified. It's in a different place depending on the version. In Boost 1.61 it
 is in `./tools/build/src/tools/mpi.jam`. Modify `mpi.jam` to
 make it work using the following patch:
-     247a248,250
-     >     local win_ms_mpi_sdk = "C:\\Program Files (x86)\\Microsoft SDKs\\MPI" ;
-     >     local win_ms_mpi = "C:\\Program Files\\Microsoft MPI" ;
-     >
-     249,251c252,254
+
+```
      <     local cluster_pack_path_native = "C:\\Program Files\\Microsoft Compute Cluster Pack" ;
      <     local cluster_pack_path = [ path.make $(cluster_pack_path_native) ] ;
      <     if [ GLOB $(cluster_pack_path_native)\\Include : mpi.h ]
@@ -118,6 +115,7 @@ make it work using the following patch:
      <       .mpirun = "\"$(cluster_pack_path_native)\\Bin\\mpiexec.exe"\" ;
      ---
      >       .mpirun = "\"$(win_ms_mpi)\\Bin\\mpiexec.exe"\" ;
+```
 
 If you edit this file by hand, note that in addition to replacing the fields
 `cluster_pack_path` and `cluster_pack_path_native`, you also need
