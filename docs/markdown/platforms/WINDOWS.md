@@ -148,8 +148,10 @@ installed)
     link=static runtime-link=shared ^
     install
 ```
+
     * Option 2: build everything (except python -- I'm not sure what's required for
       that) 
+
 ```
   .\b2 ^
     --prefix=%GridPACKDir% ^
