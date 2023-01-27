@@ -92,11 +92,16 @@ is in `./tools/build/src/tools/mpi.jam`. Modify `mpi.jam` to
 make it work using the following patch:
 
 ```
+     247a248,250
+     >     local win_ms_mpi_sdk = "C:\\Program Files (x86)\\Microsoft SDKs\\MPI" ;
+     >     local win_ms_mpi = "C:\\Program Files\\Microsoft MPI" ;
+     >
+     249,251c252,254
      <     local cluster_pack_path_native = "C:\\Program Files\\Microsoft Compute Cluster Pack" ;
      <     local cluster_pack_path = [ path.make $(cluster_pack_path_native) ] ;
      <     if [ GLOB $(cluster_pack_path_native)\\Include : mpi.h ]
      ---
-     >     # local cluster_pack_path_native = "C:\\Program Files\\Microsoft >     Compute Cluster Pack" ;
+     >     # local cluster_pack_path_native = "C:\\Program Files\\Microsoft Compute Cluster Pack" ;
      >     # local cluster_pack_path = [ path.make $(cluster_pack_path_native) ] ;
      >     if [ GLOB $(win_ms_mpi_sdk)\\Include : mpi.h ]
      255c258
