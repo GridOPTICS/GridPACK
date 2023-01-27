@@ -132,7 +132,7 @@ to replace the values
   `graph_parallel` fails to build (see
   [this ticket](https://svn.boost.org/trac/boost/ticket/11908)).  There are two
   options for building:  
-* Option 1: just build what GridPACK requires (header-only libraries are still
+    * Option 1: just build what GridPACK requires (header-only libraries are still
 installed)
 ```
   .\b2 ^
