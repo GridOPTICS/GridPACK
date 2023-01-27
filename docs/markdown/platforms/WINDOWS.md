@@ -149,7 +149,7 @@ installed)
     install
 ```
     * Option 2: build everything (except python -- I'm not sure what's required for
-that) 
+      that) 
 ```
   .\b2 ^
     --prefix=%GridPACKDir% ^
@@ -258,7 +258,7 @@ speed.  The Windows port of CLAPACK is described
 ```
 
 
-== ParMETIS ==
+### ParMETIS
 
 * Get the official distribution from
   [here](http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-4.0.3.tar.gz).
@@ -272,8 +272,7 @@ directory:
 ```
   diff -r -u parmetis-4.0.3/CMakeLists.txt parmetis-4.0.3.fixed/CMakeLists.txt
   --- parmetis-4.0.3/CMakeLists.txt     2013-03-30 09:24:50.000000000 -0700
-  +++ parmetis-4.0.3.fixed/CMakeLists.txt       2016-06-30 11:32:38.691121400
--0700
+  +++ parmetis-4.0.3.fixed/CMakeLists.txt       2016-06-30 11:32:38.691121400 -0700
   @@ -15,6 +15,7 @@
    #   message(FATAL_ERROR "mpi is not found")
    # endif()
@@ -463,7 +462,7 @@ to
 ### Global Arrays
 
 * Get the source from the trunk Subversion repository (see the
-  [home page](http://www.emsl.pnl.gov/docs/global home page)):
+  [home page](http://www.emsl.pnl.gov/docs/global)):
 * Note that you need to use the CMake build for GA.
 * Make a directory in which to build and change to that directory
 ```
@@ -500,7 +499,7 @@ to
     ..
 ```
 
-= GridPACK =
+# GridPACK
 
 * Check out the [Windows GridPACK fork](https://github.com/wperkins/GridPACK/tree/windoze)
 ```
