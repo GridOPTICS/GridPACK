@@ -1,3 +1,5 @@
+![image](docs/markdown/image/Header.png)
+
 # GridPACK<sup>TM</sup>
 
 GridPACK is a software framework to simplify the development of programs that model the power grid to run on parallel, high performance computing platforms. The
