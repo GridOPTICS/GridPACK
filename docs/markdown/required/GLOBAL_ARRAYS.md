@@ -51,7 +51,7 @@ is aware of this, the `USE_PROGRESS_RANKS` parameter should be set to
 `TRUE` when using the progress ranks build of GA.
 
 Global Arrays is a relatively straightforward build if MPI is available on your
-system. To configure GA with a with the basic two-sided runtime (suitable for
+system. To configure GA with the basic two-sided runtime (suitable for
 workstations with a limited number of cores) use the configuration line
 
 ```

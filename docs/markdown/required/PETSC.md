@@ -100,7 +100,7 @@ real variables instead of complex, set the argument of `--with-scalar-type` from
 On some platforms, the backend hardware is different from the front end, meaning
 that software compiled on the front end can only be run on the back end (compute
 nodes). This is a problem for the PETSc build, which creates small programs and
-runs them as part of the configuration procedure to see identify properties of
+runs them as part of the configuration procedure to identify properties of
 the system.
 
 The work-around for this is to configure PETSc using the

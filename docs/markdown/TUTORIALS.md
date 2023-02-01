@@ -9,6 +9,6 @@ from the `$GRIDPACK/docs/tutorial` folder in the Github repository.
 * [Hello World Example](../tutorial/GridPACK_Tutorial_hello_world.pdf):
   Relatively  complete overview of Hello World example in GridPACK.
 * [GridPACK Tutorial](../tutorial/GridPACK_Tutorial_v2.pdf): Older tutorial
-  about 2014 but fairly comprehensive.
+  from 2014 but fairly comprehensive.
 * [GridPACK Webinar](../tutorial/GridPACK_IEEE_webinar_2018_v5.pdf): Short
   introduction to GridPACK from 2018.

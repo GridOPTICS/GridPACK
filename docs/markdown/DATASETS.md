@@ -40,7 +40,7 @@ used freely.
 * [kundur-twoarea_v33.raw](../../src/applications/data_sets/raw/kundur-twoarea_v33.raw)
 * [300bus_v23_no0imp_pslf.raw](../../src/applications/data_sets/raw/300bus_v23_no0imp_pslf.raw)
 * [TAMU_500_rmsmallgen_v23.raw](../../src/applications/data_sets/raw/TAMU_500_rmsmallgen_v23.raw):
-  The 500 bus network was created as part of the Texas A &amp M Electric Grid Datasets
+  The 500 bus network was created as part of the Texas A &amp; M Electric Grid Datasets
   project and is available
   [here](https://electricgrids.engr.tamu.edu/electric-grid-test-cases/)
 * [ACTIVSg500_rmsmallgen_pslfv23.raw](../../src/applications/data_sets/raw/ACTIVSg500_rmsmallgen_pslfv23.raw)
