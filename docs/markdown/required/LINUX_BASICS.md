@@ -181,7 +181,7 @@ Linux window.
 
 If you usually download files using a Windows machine, you can download a
 library tar file using Windows and then copy it to your Linux platform using the
-[https://winscp.net/eng/download.php WinSCP] utility. This will allow you to
+[WinSCP](https://winscp.net/eng/download.php) utility. This will allow you to
 transfer your files from Windows to Linux in a straightforward way. You may also
 be able to download directly to a Linux platform by bringing up a browser such
 as Firefox from the Linux command prompt, going to the appropriate download site
