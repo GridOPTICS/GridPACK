@@ -1,4 +1,4 @@
-![image](docs/markdown/image/Header.png)
+<img src="docs/markdown/images/Header.png" alt="drawing" width="1000"/>
 
 # GridPACK<sup>TM</sup>
 
