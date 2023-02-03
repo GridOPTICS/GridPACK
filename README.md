@@ -1,8 +1,8 @@
-<img src="docs/markdown/images/Header.png" alt="drawing" width="1000"/>
+<!---<img src="docs/markdown/images/Header.png" alt="drawing" width="1000"/>
 
-# GridPACK<sup>TM</sup>
+# GridPACK<sup>TM</sup>-->
 
-GridPACK is a software framework to simplify the development of programs that model the power grid to run on parallel, high performance computing platforms. The
+GridPACK is a software framework to simplify the development of programs that model the power grid to run on parallel, high performance computing platforms. GridPACK comes with a set of prebuilt applications (programs) that can be readily used. The
 modules are available as a library and consist of components for
 setting up and distributing power grid networks, support for modeling
 the behavior of individual buses and branches in the network,
@@ -38,10 +38,10 @@ other modules or of the applications.
 
 If you have any difficulties building or installing GridPACK, or have any
 questions, feel free to contact us at
-[gridpack.account@pnnl.gov](mailto:gridpack.account@pnnl.gov). We look forward
-to hearing from you. You can also post issues to the Github issue page for the
+[gridpack.account@pnnl.gov](mailto:gridpack.account@pnnl.gov). You can also post issues to the Github issue page for the
 GridPACK repository, located
-[here](https://github.com/GridOPTICS/GridPACK/issues).
+[here](https://github.com/GridOPTICS/GridPACK/issues). We look forward
+to hearing from you.
 
 ## User Information
 
@@ -73,10 +73,10 @@ be included in the tarball and this command is not necessary.
 -->
 
 ## Usage
-See [User manual](docs/user_manual/GridPACK.pdf) for a deep dive on GridPACK internals. One can also use GridPACK through its Python interface.
+See [User manual](docs/user_manual/GridPACK.pdf) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md). One can also use GridPACK through its Python interface.
 
 ## Applications
-GridPACK includes a number of different power system applications. The two most commonly used and well-developed are:
+GridPACK includes a number of different power system applications. The most commonly used and well-developed are:
 - AC Power Flow
 - Dynamics Simulation
 - Contingency Analysis
