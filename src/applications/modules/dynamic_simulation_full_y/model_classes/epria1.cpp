@@ -60,25 +60,30 @@ void gridpack::dynamic_simulation::Epria1Generator::load(
   if (!data->getValue(GENERATOR_MBASE, &p_mbase, idx))  p_mbase = 100.0; // MBase
   if(fabs(p_mbase) < 1e-6) p_mbase = p_pg; // Set mbase = p_pg if it is not given in file
 
-  if(!data->getValue(EPRIA1_PARAM1, &param1, idx)) param1 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM2, &param2, idx)) param2 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM3, &param3, idx)) param3 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM4, &param4, idx)) param4 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM5, &param5, idx)) param5 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM6, &param6, idx)) param6 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM7, &param7, idx)) param7 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM8, &param8, idx)) param8 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM9, &param9, idx)) param9 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM10, &param10, idx)) param10 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM11, &param11, idx)) param11 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM12, &param12, idx)) param12 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM13, &param13, idx)) param13 = 0;
-  if(!data->getValue(EPRIA1_PARAM14, &param14, idx)) param14 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM15, &param15, idx)) param15 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM16, &param16, idx)) param16 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM17, &param17, idx)) param17 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM18, &param18, idx)) param18 = 0.0;
-  if(!data->getValue(EPRIA1_PARAM19, &param19, idx)) param19 = 0.0;
+  if(!data->getValue(EPRIA1_PARAM1, &modelparams.Vbase, idx)) modelparams.Vbase = 0.0;
+  if(!data->getValue(EPRIA1_PARAM2, &modelparams.Sbase, idx)) modelparams.Sbase = 0.0;
+  if(!data->getValue(EPRIA1_PARAM3, &modelparams.Vdcbase, idx)) modelparams.Vdcbase = 0.0;
+  if(!data->getValue(EPRIA1_PARAM4, &modelparams.KpI, idx)) modelparams.KpI = 0.0;
+  if(!data->getValue(EPRIA1_PARAM5, &modelparams.KiI, idx)) modelparams.KiI = 0.0;
+  if(!data->getValue(EPRIA1_PARAM6, &modelparams.KpPLL, idx)) modelparams.KpPLL = 0.0;
+  if(!data->getValue(EPRIA1_PARAM7, &modelparams.KiPLL, idx)) modelparams.KiPLL = 0.0;
+  if(!data->getValue(EPRIA1_PARAM8, &modelparams.KpP, idx)) modelparams.KpP = 0.0;
+  if(!data->getValue(EPRIA1_PARAM9, &modelparams.KiP, idx)) modelparams.KiP = 0.0;
+  if(!data->getValue(EPRIA1_PARAM10, &modelparams.KpQ, idx)) modelparams.KpQ = 0.0;
+  if(!data->getValue(EPRIA1_PARAM11, &modelparams.KiQ, idx)) modelparams.KiQ = 0.0;
+  if(!data->getValue(EPRIA1_PARAM12, &modelparams.Imax, idx)) modelparams.Imax = 0.0;
+  if(!data->getValue(EPRIA1_PARAM13, &modelparams.PQflag, idx)) modelparams.PQflag = 0;
+  if(!data->getValue(EPRIA1_PARAM14, &modelparams.Vdip, idx)) modelparams.Vdip = 0.0;
+  if(!data->getValue(EPRIA1_PARAM15, &modelparams.Vup, idx)) modelparams.Vup = 0.0;
+  if(!data->getValue(EPRIA1_PARAM16, &modelparams.Rchoke, idx)) modelparams.Rchoke = 0.0;
+  if(!data->getValue(EPRIA1_PARAM17, &modelparams.Lchoke, idx)) modelparams.Lchoke = 0.0;
+  if(!data->getValue(EPRIA1_PARAM18, &modelparams.Cfilt, idx)) modelparams.Cfilt = 0.0;
+  if(!data->getValue(EPRIA1_PARAM19, &modelparams.Rdamp, idx)) modelparams.Rdamp = 0.0;
+
+  model.Parameters      = (void*)&modelparams;
+  model.ExternalInputs  = (void*)&modelinputs;
+  model.ExternalOutputs = (void*)&modeloutputs;
+  model.DoubleStates    = (double*)modelstates;
 
 }
 
@@ -92,14 +97,27 @@ void gridpack::dynamic_simulation::Epria1Generator::init(double Vm,
 {
   theta = Va; // save to local variable for later use
 
-  // Change of base from system MVA base to Machine base
-  p_pg *= p_sbase/p_mbase;
-  p_qg *= p_sbase/p_mbase;
-
-  
   // Real and imaginary components of voltage
   VR = Vm*cos(Va);
   VI = Vm*sin(Va);
+
+  // Conversion to MW and MVAr
+  p_pg *= p_sbase;
+  p_qg *= p_sbase;
+
+  // Prepare model inputs
+  modelinputs.Va = VR*modelparams.Vbase;
+  modelinputs.Vb = VI*modelparams.Vbase;
+
+  // Real and reactive power reference
+  modelinputs.Pref = p_pg;
+  modelinputs.Qref = p_qg;
+
+  // Voltage magnitude reference
+  modelinputs.Vref = Vm;
+
+  int ok = Model_Initialize(&model);
+
 }
 
 /**

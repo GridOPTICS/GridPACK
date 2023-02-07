@@ -135,18 +135,21 @@ class Epria1Generator : public BaseGeneratorModel
     gridpack::ComplexType p_INorton;
     gridpack::ComplexType p_Norton_Ya, Y_a;
   
-  double Vt, theta, VR, VI, busfreq;
+    double Vt, theta, VR, VI, busfreq;
 
     std::string p_gen_id;
     int p_bus_num;
 
-    // parameters
-  double param1, param2, param3, param4, param5;
-  double param6, param7, param8, param9, param10;
-  double param11, param12, param14, param15, param16;
-  double param17, param18, param19;
+    IEEE_Cigre_DLLInterface_Instance model;
 
-  int param13;
+    // Parameters
+    MyModelParameters modelparams;
+    // Inputs
+    MyModelInputs     modelinputs;
+    // Outputs
+    MyModelOutputs    modeloutputs;
+    // states
+    double            modelstates[15];
   
     friend class boost::serialization::access;
 
