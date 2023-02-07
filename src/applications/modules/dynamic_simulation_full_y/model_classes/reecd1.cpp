@@ -94,6 +94,7 @@ void gridpack::dynamic_simulation::Reecd1Model::load(
     PQFLAG = 0;
     if (!data->getValue(GENERATOR_REECD_VCMPFLAG, &VCMPFLAG, idx))
       VCMPFLAG = 0; // sj: set to 0?
+    printf("flags:%d %d %d %d %d %d\n", PFFLAG, VFLAG, QFLAG, PFLAG, PQFLAG, VCMPFLAG);
 
   if (!data->getValue(GENERATOR_REECA_TRV, &Trv, idx))
     Trv = 0.0;
@@ -107,6 +108,8 @@ void gridpack::dynamic_simulation::Reecd1Model::load(
     Vup = 99.0;
   if (!data->getValue(GENERATOR_REECA_KQV, &Kqv, idx))
     Kqv = 0.0;
+    
+    printf("%f %f %f %f %f %f\n", Trv, dbd1, dbd2, Vdip, Vup, Kqv);
 
   if (!data->getValue(GENERATOR_REECA_IQH1, &Iqh1, idx))
     Iqh1 = 1.05;
@@ -155,6 +158,8 @@ void gridpack::dynamic_simulation::Reecd1Model::load(
     Pmin = 0.0;
   if (!data->getValue(GENERATOR_REECA_TPORD, &Tpord, idx))
     Tpord = 0.02;
+    printf("Imax=%f,Tiq=%f,dPmax=%f,dPmin=%f,Pmax=%f,Pmin=%f,Tpord=%f\n",
+           Imax, Tiq, dPmax, dPmin, Pmax, Pmin, Tpord);
 
   if (!data->getValue(GENERATOR_REECA_VP1, &Vp1, idx))
     Vp1 = -1.0;
@@ -172,6 +177,8 @@ void gridpack::dynamic_simulation::Reecd1Model::load(
     Vp4 = 2.0;
   if (!data->getValue(GENERATOR_REECA_IP4, &Ip4, idx))
     Ip4 = 1.1;
+    
+    printf("Vp1~4, Ip1~4:%f,%f,%f,%f,%f,%f,%f,%f\n", Vp1, Ip1, Vp2, Ip2, Vp3, Ip3, Vp4, Ip4);
 
     // sj: check initial values?
     if (!data->getValue(GENERATOR_REECD_VP5, &Vp5, idx))
@@ -216,6 +223,8 @@ void gridpack::dynamic_simulation::Reecd1Model::load(
   if (!data->getValue(GENERATOR_REECA_IQ4, &Iq4, idx))
     Iq4 = 1.1;
     
+    printf("Vq1~4, Iq1~4:%f,%f,%f,%f,%f,%f,%f,%f\n", Vq1, Iq1, Vq2, Iq2, Vq3, Iq3, Vq4, Iq4);
+    
     // sj: check initial values?
     if (!data->getValue(GENERATOR_REECD_VP5, &Vq5, idx))
       Vq5 = 3.0;
@@ -259,6 +268,8 @@ void gridpack::dynamic_simulation::Reecd1Model::load(
       Vblkh = 0.0;
     if (!data->getValue(GENERATOR_REECD_TBIK, &Tblk, idx))
       Tblk = 0.0;
+    
+    printf("Vp5 = %f, Ip5 = %f, Vq5 = %f, Iq5 = %f, Tblk = %f\n", Vp5, Ip5, Vq5, Iq5, Tblk);
 
   Ipmax = Imax;
   Ipmin = 0.0;
