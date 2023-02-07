@@ -471,6 +471,44 @@ if(DOXYGEN_FOUND)
       )
 endif(DOXYGEN_FOUND)
 
+# ---------------------------------
+# EPRI IBR MODEL
+# ---------------------------------
+if(ENABLE_EPRI_IBR_MODEL)
+  # find EPRI_IBR_MODEL library
+  find_library(
+    EPRI_IBR_LIBRARY
+    NAMES epri1a
+    PATHS ${EPRI_IBR_DIR}
+          $ENV{EPRI_IBR_DIR}
+	  ENV
+	  LD_LIBRARY_PATH
+	  ENV
+	  DYLD_LIBRARY_PATH
+    PATH_SUFFIXES lib
+  )
+  if(EPRI_IBR_LIBRARY)
+    get_filename_component(EPRI_IBR_LIBRARY_DIR ${EPRI_IBR_LIBRARY} DIRECTORY)
+  endif()
+
+  find_path(
+    EPRI_IBR_INCLUDE_DIR
+    NAMES GFLIBR.h
+    PATHS ${EPRI_IBR_DIR} $ENV{EPRI_IBR_DIR}
+    PATH_SUFFIXES . include
+  )
+  if(EPRI_IBR_LIBRARY AND EPRI_IBR_INCLUDE_DIR)
+    message(STATUS "Found EPRI IBR Model library: ${EPRI_IBR_LIBRARY}")
+    message(STATUS "Found EPRI IBR Model include directory: ${EPRI_IBR_INCLUDE_DIR}")
+
+    add_definitions(-DENABLE_EPRI_IBR_MODEL=1)
+  else()
+    message(FATAL_ERROR "Did not find EPRI model. Please provide correct installation path -DEPRI_IBR_DIR=<path_to_library>")
+  endif()
+  
+  set(CMAKE_INSTALL_RPATH ${EPRI_IBR_LIBRARY_DIR} ${CMAKE_INSTALL_RPATH})
+endif(ENABLE_EPRI_IBR_MODEL)
+
 # -------------------------------------------------------------
 # Options for all Programs/Libraries
 # -------------------------------------------------------------

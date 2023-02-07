@@ -14,8 +14,14 @@
 # Last Change: 2022-11-07 Shrirang Abhyankar - added sexs, gast, and hygov models
 # -------------------------------------------------------------
 
+if(ENABLE_EPRI_IBR_MODEL)
+   set(target_libraries
+      ${EPRI_IBR_LIBRARY}
+   )
+endif()
 
 set(target_libraries
+    ${target_libraries}
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
     gridpack_powerflow_module
@@ -31,7 +37,8 @@ set(target_libraries
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    ${PETSC_LIBRARIES}
+    )
 
 if (GOSS_DIR)
   set(target_libraries
@@ -57,7 +64,7 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-add_library(gridpack_dynamic_simulation_full_y_module
+set(target_source
   dsf_app_module.cpp
   dsf_factory.cpp
   dsf_components.cpp
@@ -112,6 +119,19 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/wtdta1.cpp
   model_classes/wtpta1.cpp
   model_classes/wttqa1.cpp
+)
+
+if(ENABLE_EPRI_IBR_MODEL)
+  set(target_source
+     ${target_source}
+     model_classes/epria1.cpp
+     )
+
+  include_directories(AFTER ${EPRI_IBR_INCLUDE_DIR})
+endif(ENABLE_EPRI_IBR_MODEL)
+
+add_library(gridpack_dynamic_simulation_full_y_module
+   ${target_source}
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
@@ -192,7 +212,14 @@ install(FILES
   model_classes/wtpta1.hpp
   model_classes/wttqa1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
-) 	      
+)
+
+if(ENABLE_EPRI_IBR_MODEL)
+  install(FILES
+    model_classes/epria1.hpp
+    DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
+  )
+endif(ENABLE_EPRI_IBR_MODEL)
 
 install(TARGETS 
   gridpack_dynamic_simulation_full_y_module

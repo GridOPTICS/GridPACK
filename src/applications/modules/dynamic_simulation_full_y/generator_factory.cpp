@@ -22,6 +22,9 @@
 #include "regca1.hpp"
 #include "regcb1.hpp"
 #include "regcc1.hpp"
+#ifdef ENABLE_EPRI_IBR_MODEL
+ #include "epria1.hpp"
+#endif
 #include "reeca1.hpp"
 #include "repca1.hpp"
 #include "wsieg1.hpp"
@@ -103,6 +106,13 @@ gridpack::dynamic_simulation::BaseGeneratorModel*
     tmp =  new gridpack::dynamic_simulation::Regcc1Generator;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+#ifdef ENABLE_EPRI_IBR_MODEL
+  } else if (type == "EPRIA1") {
+    gridpack::dynamic_simulation::Epria1Generator *tmp;
+    tmp =  new gridpack::dynamic_simulation::Epria1Generator;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+#endif
   } else {
     ret = NULL;
   }

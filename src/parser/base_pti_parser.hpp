@@ -10,6 +10,9 @@
  *  Added SEXS exciter model: Nov 7, 2022
  *      Author: Shrirang Abhyankar
  * 
+ *
+ *  Added EPRI IBR Model
+ *
  *  Renamed REGCA1/regca1 parameters to regc
  *  Added REGCB1
  *  Added REGCC1
@@ -46,6 +49,9 @@
 #include "parser_classes/regca1.hpp"
 #include "parser_classes/regcb1.hpp"
 #include "parser_classes/regcc1.hpp"
+#ifdef ENABLE_EPRI_IBR_MODEL
+#include "parser_classes/epria1.hpp"
+#endif
 #include "parser_classes/reeca1.hpp"
 #include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
@@ -423,7 +429,29 @@ class BasePTIParser : public BaseParser<_network>
       double kipmax;
       double pset;
       double imax;
-	  
+
+#ifdef ENABLE_EPRI_IBR_MODEL
+      double epria1_param1;
+      double epria1_param2;
+      double epria1_param3;
+      double epria1_param4;
+      double epria1_param5;
+      double epria1_param6;
+      double epria1_param7;
+      double epria1_param8;
+      double epria1_param9;
+      double epria1_param10;
+      double epria1_param11;
+      double epria1_param12;
+      int    epria1_param13;
+      double epria1_param14;
+      double epria1_param15;
+      double epria1_param16;
+      double epria1_param17;
+      double epria1_param18;
+      double epria1_param19;
+#endif
+
       int regc_lvplsw;
       double regc_tg;
       double regc_rrpwr;
@@ -1084,6 +1112,11 @@ class BasePTIParser : public BaseParser<_network>
 	  } else if (!strcmp(gen_data[i].model,"REGCC1")) {
             Regcc1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+#ifdef ENABLE_EPRI_IBR_MODEL
+	  } else if (!strcmp(gen_data[i].model,"EPRIA1")) {
+            Epria1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+#endif
           } else if (!strcmp(gen_data[i].model,"REECA1")) {
             Reeca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1430,6 +1463,9 @@ class BasePTIParser : public BaseParser<_network>
           device == "GDFORM" ||
           device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
 	  device == "REPCTA1" || device == "REGCB1" || device == "REGCC1" ||
+#ifdef ENABLE_EPRI_IBR_MODEL
+	  device == "EPRIA1" ||
+#endif
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
 	  device == "IEEET1" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
@@ -1591,6 +1627,11 @@ class BasePTIParser : public BaseParser<_network>
 	    } else if (sval == "REGCC1") {
               Regcc1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
+#ifdef ENABLE_EPRI_IBR_MODEL
+	    } else if (sval == "EPRIA11") {
+              Epria1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+#endif
             } else if (sval == "REECA1") {
               Reeca1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
@@ -1825,6 +1866,11 @@ class BasePTIParser : public BaseParser<_network>
 	  } else if (sval == "REGCC1") {
             Regcc1Parser<gen_params> parser;
             parser.store(split_line,data);
+#ifdef ENABLE_EPRI_IBR_MODEL
+	  } else if (sval == "EPRIA1") {
+            Epria1Parser<gen_params> parser;
+            parser.store(split_line,data);
+#endif
           } else if (sval == "REECA1") {
             Reeca1Parser<gen_params> parser;
             parser.store(split_line,data);
