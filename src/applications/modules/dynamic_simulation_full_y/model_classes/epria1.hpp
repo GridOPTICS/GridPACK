@@ -133,8 +133,9 @@ class Epria1Generator : public BaseGeneratorModel
     bool p_tripped;
 
     gridpack::ComplexType p_INorton;
-    gridpack::ComplexType p_Norton_Ya, Y_a;
+    gridpack::ComplexType Y_a;
     gridpack::ComplexType Zsource; // Source impedance rs + j*xs
+    gridpack::ComplexType V;
   
     double Vt, theta, VR, VI, busfreq;
 

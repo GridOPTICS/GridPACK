@@ -156,6 +156,14 @@ void gridpack::dynamic_simulation::Epria1Generator::init(double Vm,
  */
 gridpack::ComplexType gridpack::dynamic_simulation::Epria1Generator::INorton()
 {
+  double ER, EI;
+  gridpack::ComplexType E;
+
+  ER = modeloutputs.Ea/modelparams.Vbase;
+  EI = modeloutputs.Eb/modelparams.Vbase;
+  E  = gridpack::ComplexType(ER,EI);
+
+  p_INorton = E/Zsource*p_mbase/p_sbase;
   return p_INorton;
 }
 
@@ -166,6 +174,8 @@ gridpack::ComplexType gridpack::dynamic_simulation::Epria1Generator::INorton()
  */
 gridpack::ComplexType gridpack::dynamic_simulation::Epria1Generator::NortonImpedence()
 {
+  // Norton impedance on system MVAbase
+  Y_a = (1.0/Zsource)*p_mbase/p_sbase;
   return Y_a;
 }
 
@@ -188,7 +198,10 @@ void gridpack::dynamic_simulation::Epria1Generator::predictor_currentInjection(b
 void gridpack::dynamic_simulation::Epria1Generator::predictor(
     double t_inc, bool flag)
 {
+  modelinputs.Va = VR*modelparams.Vbase;
+  modelinputs.Vb = VI*modelparams.Vbase;
 
+  int ok = Model_Outputs(&model);
 }
 
 /**
@@ -208,7 +221,7 @@ void gridpack::dynamic_simulation::Epria1Generator::corrector_currentInjection(b
 void gridpack::dynamic_simulation::Epria1Generator::corrector(
     double t_inc, bool flag)
 {
-
+  // Bypassing corrector as the model does a single integration step
 }
 
 bool gridpack::dynamic_simulation::Epria1Generator::tripGenerator()
@@ -226,6 +239,7 @@ void gridpack::dynamic_simulation::Epria1Generator::setVoltage(
   theta = atan2(imag(voltage), real(voltage));
   VR    = real(voltage);
   VI    = imag(voltage);
+  V     = gridpack::ComplexType(VR,VI);
 }
 
 /**
@@ -246,13 +260,35 @@ bool gridpack::dynamic_simulation::Epria1Generator::serialWrite(
 {
   bool ret = false;
   if (!strcmp(signal,"watch")) {
-    if(getWatch()) {
-      ret = true; 
+        if (getWatch()) {
+      char buf[256];
+      sprintf(buf,",%f",
+	      Vt);
+      if (strlen(buf) <= bufsize) {
+        sprintf(string,"%s",buf);
+        ret = true;
+      } else {
+        ret = false;
+      }
+    } else {
+      ret = false;
     }
   } else if(!strcmp(signal,"watch_header")) {
     if(getWatch()) {
       char buf[128];
-	ret = true;
+      std::string tag;
+      if(p_gen_id[0] != ' ') {
+	tag = p_gen_id;
+      } else {
+	tag = p_gen_id[1];
+      }
+      sprintf(buf,", %d_%s_V",p_bus_num,tag.c_str());
+      if (strlen(buf) <= bufsize) {
+        sprintf(string,"%s",buf);
+        ret = true;
+      } else {
+        ret = false;
+      }
     }
   }
   return ret;
