@@ -59,6 +59,7 @@ void gridpack::dynamic_simulation::Epria1Generator::load(
   if (!data->getValue(GENERATOR_STAT, &p_status,idx)) p_status = 0;
   if (!data->getValue(GENERATOR_MBASE, &p_mbase, idx))  p_mbase = 100.0; // MBase
   if(fabs(p_mbase) < 1e-6) p_mbase = p_pg; // Set mbase = p_pg if it is not given in file
+  if (!data->getValue(GENERATOR_ZSOURCE, &Zsource, idx)) Zsource = gridpack::ComplexType(0.0,0.15);
 
   if(!data->getValue(EPRIA1_PARAM1, &modelparams.Vbase, idx)) modelparams.Vbase = 0.0;
   if(!data->getValue(EPRIA1_PARAM2, &modelparams.Sbase, idx)) modelparams.Sbase = 0.0;
@@ -116,6 +117,35 @@ void gridpack::dynamic_simulation::Epria1Generator::init(double Vm,
   // Voltage magnitude reference
   modelinputs.Vref = Vm;
 
+  gridpack::ComplexType E, I,S,V;
+
+  // S is on machine MVAbase
+  V = gridpack::ComplexType(VR, VI);
+  S = gridpack::ComplexType(p_pg/p_mbase,p_qg/p_mbase);
+
+  I = (S/V);
+  I = conj(I);
+
+  E = V + Zsource*I;
+
+  gridpack::ComplexType Sint;
+  double ER, EI;
+
+  ER = E.real()*modelparams.Vbase;
+  EI = E.imag()*modelparams.Vbase;
+
+  Sint = E*conj(I)*p_mbase;
+
+  double Pout, Qout;
+
+  Pout = Sint.real();
+  Qout = Sint.imag();
+
+  modeloutputs.Ea = ER;
+  modeloutputs.Eb = EI;
+  modeloutputs.Pout = Pout;
+  modeloutputs.Qout = Qout;
+  
   int ok = Model_Initialize(&model);
 
 }
