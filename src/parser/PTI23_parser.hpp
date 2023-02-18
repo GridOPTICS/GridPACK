@@ -319,12 +319,18 @@ class PTI23_parser : public BasePTIParser<_network>
           ql = atof(split_line[3].c_str());
         }
         if (pl != 0.0 || ql != 0.0) {
-          data->addValue(LOAD_PL, atof(split_line[2].c_str()));
           data->addValue(LOAD_PL, atof(split_line[2].c_str()),0);
-          std::string tmp("1 ");
-          data->addValue(LOAD_ID,tmp.c_str(),0);
-          data->addValue(LOAD_QL, atof(split_line[3].c_str()));
           data->addValue(LOAD_QL, atof(split_line[3].c_str()),0);
+	  // No data given in v23 for IP, IQ, YP, YQ so we set it to zero
+	  double rval = 0.0;
+          data->addValue(LOAD_IP, rval,0);
+          data->addValue(LOAD_IQ, rval,0);
+          data->addValue(LOAD_YP, rval,0);
+          data->addValue(LOAD_YQ, rval,0);
+	  
+	  std::string tmp("1 ");
+          data->addValue(LOAD_ID,tmp.c_str(),0);
+
           int ival = 1;
           data->addValue(LOAD_NUMBER,ival);
           data->addValue(LOAD_STATUS,ival,0);
