@@ -107,8 +107,8 @@ void gridpack::dynamic_simulation::Epria1Generator::init(double Vm,
   p_qg *= p_sbase;
 
   // Prepare model inputs
-  modelinputs.Va = VR*modelparams.Vbase;
-  modelinputs.Vb = VI*modelparams.Vbase;
+  modelinputs.Va = VR;
+  modelinputs.Vb = VI;
 
   // Real and reactive power reference
   modelinputs.Pref = p_pg;
@@ -131,8 +131,8 @@ void gridpack::dynamic_simulation::Epria1Generator::init(double Vm,
   gridpack::ComplexType Sint;
   double ER, EI;
 
-  ER = E.real()*modelparams.Vbase;
-  EI = E.imag()*modelparams.Vbase;
+  ER = E.real();
+  EI = E.imag();
 
   Sint = E*conj(I)*p_mbase;
 
@@ -157,10 +157,9 @@ void gridpack::dynamic_simulation::Epria1Generator::init(double Vm,
 gridpack::ComplexType gridpack::dynamic_simulation::Epria1Generator::INorton()
 {
   double ER, EI;
-  gridpack::ComplexType E;
 
-  ER = modeloutputs.Ea/modelparams.Vbase;
-  EI = modeloutputs.Eb/modelparams.Vbase;
+  ER = modeloutputs.Ea;
+  EI = modeloutputs.Eb;
   E  = gridpack::ComplexType(ER,EI);
 
   p_INorton = E/Zsource*p_mbase/p_sbase;
@@ -198,8 +197,24 @@ void gridpack::dynamic_simulation::Epria1Generator::predictor_currentInjection(b
 void gridpack::dynamic_simulation::Epria1Generator::predictor(
     double t_inc, bool flag)
 {
-  modelinputs.Va = VR*modelparams.Vbase;
-  modelinputs.Vb = VI*modelparams.Vbase;
+  modelinputs.Va = VR;
+  modelinputs.Vb = VI;
+
+  gridpack::ComplexType Iout,E;
+  double ER, EI;
+
+  ER = modeloutputs.Ea;
+  EI = modeloutputs.Eb;
+
+  E = gridpack::ComplexType(ER,EI);
+
+  // On system MVA base
+  Iout = Y_a*(E - V);
+
+  modelinputs.Ia = Iout.real();
+  modelinputs.Ib = Iout.imag();
+
+ 
 
   int ok = Model_Outputs(&model);
 }
