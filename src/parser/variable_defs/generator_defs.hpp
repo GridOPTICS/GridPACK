@@ -390,13 +390,6 @@
 #define GENERATOR_VSET "GENERATOR_VSET"
 
 /**
- * Generator ts
- * type: real float
- * indexed
- */
-#define GENERATOR_TF "GENERATOR_TF"
-
-/**
  * Generator mq
  * type: real float
  * indexed
@@ -416,20 +409,6 @@
  * indexed
  */
 #define GENERATOR_KIV "GENERATOR_KIV"
-
-/**
- * Generator emax
- * type: real float
- * indexed
- */
-#define GENERATOR_EMAX "GENERATOR_EMAX"
-
-/**
- * Generator emin
- * type: real float
- * indexed
- */
-#define GENERATOR_EMIN "GENERATOR_EMIN"
 
 /**
  * Generator mp
@@ -453,11 +432,39 @@
 #define GENERATOR_KIPMAX "GENERATOR_KIPMAX"
 
 /**
- * Generator pset
+ * Generator pmax
  * type: real float
  * indexed
  */
-#define GENERATOR_PSET "GENERATOR_PSET"
+#define GENERATOR_PMAX "GENERATOR_PMAX"
+
+/**
+ * Generator pmin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_PMIN "GENERATOR_PMIN"
+
+/**
+ * Generator emax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_EMAX "GENERATOR_EMAX"
+
+/**
+ * Generator emin
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_EMIN "GENERATOR_EMIN"
+
+/**
+ * Generator tpf
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_TPF "GENERATOR_TPF"
 
 /**
  * Generator imax
@@ -467,18 +474,53 @@
 #define GENERATOR_IMAX "GENERATOR_IMAX"
 
 /**
- * Generator wmax
+ * Generator qmax
  * type: real float
  * indexed
  */
-#define GENERATOR_WMAX "GENERATOR_WMAX"
+#define GENERATOR_QMAX "GENERATOR_QMAX"
 
 /**
- * Generator wmin
+ * Generator qmin
  * type: real float
  * indexed
  */
-#define GENERATOR_WMIN "GENERATOR_WMIN"
+#define GENERATOR_QMIN "GENERATOR_QMIN"
+
+/**
+ * Generator kpqmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_KPQMAX "GENERATOR_KPQMAX"
+
+/**
+ * Generator kiqmax
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_KIQMAX "GENERATOR_KIQMAX"
+
+/**
+ * Generator tqf
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_TQF "GENERATOR_TQF"
+
+/**
+ * Generator tvf
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_TVF "GENERATOR_TVF"
+
+/**
+ * Generator vflag
+ * type: int
+ * indexed
+ */
+#define GENERATOR_VFLAG "GENERATOR_VFLAG"
 
 // start generator REGCA parameters here
 /**

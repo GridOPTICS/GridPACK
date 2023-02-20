@@ -7,8 +7,10 @@
 /**
  * @file   gdform.cpp
  * @author Shrirang Abhyankar
- * @Last modified:   Jan. 6, 2023
+ * @modified:   Jan. 6, 2023
  * 
+ * @Last Modified : Feb 19, 2023
+ * Updated model to include Q limiter and Vflag, new parameters
  * @brief  
  * 
  * 
@@ -31,7 +33,9 @@ gridpack::dynamic_simulation::GridFormingGenerator::GridFormingGenerator(void)
 {
   double pi = 4.0*atan(1.0);
   omega0    = 2*pi*60.0;
-  zero_Tf   = false;
+  zero_Tpf  = false;
+  zero_Tqf  = false;
+  zero_Tvf  = false;
   p_tripped = false;
 }
 
@@ -65,49 +69,71 @@ void gridpack::dynamic_simulation::GridFormingGenerator::load(
 
   if(fabs(p_mbase) < 1e-6) p_mbase = p_pg; // Set mbase = p_pg if it is not given in file
 
+  // Note this is on machine MVAbase
   if (!data->getValue(GENERATOR_ZSOURCE, &Zsource, idx)) Zsource = gridpack::ComplexType(0.01,0.02);
-  if (!data->getValue(GENERATOR_XL  , &XL, idx)) XL = 0.075; 
-  if (!data->getValue(GENERATOR_TF, &Tf, idx)) Tf = 0.01666; //
-  if(fabs(Tf) < 1e-6) zero_Tf = true;
+  Ra = real(Zsource);
+  Xl = imag(Zsource);
+
   if (!data->getValue(GENERATOR_MQ, &mq, idx)) mq=0.05; // 
   if (!data->getValue(GENERATOR_KPV, &kpv, idx)) kpv=0.0; // 
   if (!data->getValue(GENERATOR_KIV, &kiv, idx)) kiv=5.86; // 
+  if (!data->getValue(GENERATOR_MP, &mp, idx)) mp=3.77; // 
+  if (!data->getValue(GENERATOR_KPPMAX, &kppmax, idx)) kppmax=0.05; // 
+  if (!data->getValue(GENERATOR_KIPMAX, &kipmax, idx)) kipmax=0.2; // 
+  if (!data->getValue(GENERATOR_PMAX, &Pmax, idx)) Pmax=1.0; // 
+  if (!data->getValue(GENERATOR_PMIN, &Pmin, idx)) Pmin=0.0; // 
+
   if (!data->getValue(GENERATOR_EMAX, &Emax, idx)) Emax = 2.0; // 
   if (!data->getValue(GENERATOR_EMIN, &Emin, idx)) Emin = -2.0; //
 
   Edroop_min = Emin;
   Edroop_max = Emax;
-  if (!data->getValue(GENERATOR_MP, &mp, idx)) mp=3.77; // 
-  if (!data->getValue(GENERATOR_KPPMAX, &kppmax, idx)) kppmax=3.0; // 
-  if (!data->getValue(GENERATOR_KIPMAX, &kipmax, idx)) kipmax=30.0; // 
-  if (!data->getValue(GENERATOR_PSET, &Pset, idx)) Pset=0.44; // 
-  if (!data->getValue(GENERATOR_PMAX, &Pmax, idx)) Pmax=1.0; // 
-  if (!data->getValue(GENERATOR_PMIN, &Pmin, idx)) Pmin=0.0; // 
-  if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
-  if (!data->getValue(GENERATOR_WMAX, &wmax, idx)) wmax=100.0;
-  if (!data->getValue(GENERATOR_WMIN, &wmin, idx)) wmin=-100.0;
 
-  Ra = real(Zsource);
-  XL = imag(Zsource);
-  
-  mp_org = mp;
-  mq_org = mq;
+  if (!data->getValue(GENERATOR_TPF, &Tpf, idx)) Tpf = 0.01666; //
+  if(fabs(Tpf) < 1e-6) zero_Tpf = true;
+
+  if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
+  if (!data->getValue(GENERATOR_QMAX, &Qmax, idx)) Qmax=1.0;
+  if (!data->getValue(GENERATOR_QMIN, &Qmin, idx)) Qmin=-1.0;
+
+  if (!data->getValue(GENERATOR_KPQMAX, &kpqmax, idx)) kpqmax=0.1; // 
+  if (!data->getValue(GENERATOR_KIQMAX, &kiqmax, idx)) kiqmax=10; // 
+
+  if (!data->getValue(GENERATOR_TQF, &Tqf, idx)) Tqf=0.01666; //
+  if(fabs(Tqf) < 1e-6) zero_Tqf = true;
+
+  if (!data->getValue(GENERATOR_TVF, &Tvf, idx)) Tvf=0.01666; // 
+  if(fabs(Tvf) < 1e-6) zero_Tvf = true;
+
+  if(!data->getValue(GENERATOR_VFLAG,&Vflag, idx)) Vflag = 0;
 
   // Initialize blocks
-  if(!zero_Tf) {
-    P_filter_blk.setparams(1.0,Tf);
-    Q_filter_blk.setparams(1.0,Tf);
-    V_filter_blk.setparams(1.0,Tf);
+  if(!zero_Tpf) {
+    P_filter_blk.setparams(1.0,Tpf);
   }
 
-  Edroop_PI_blk.setparams(kpv,kiv);
+  if(!zero_Tqf) {
+    Q_filter_blk.setparams(1.0,Tqf);
+  }
+
+  if(!zero_Tvf) {
+    V_filter_blk.setparams(1.0,Tvf);
+  }
+
+  if(Vflag == 0) {
+    Edroop_limiter_blk.setparams(1.0,Emin,Emax);
+  } else {
+    Edroop_PI_blk.setparams(kpv,kiv);
+  }
 
   Pmax_PI_blk.setparams(kppmax,kipmax,-1000.0,0.0,-1000.0,0.0);
   Pmin_PI_blk.setparams(kppmax,kipmax,0.0,1000.0,0.0,1000.0);
 
-  Delta_blk.setparams(1.0);
+  Qmax_PI_blk.setparams(kpqmax,kiqmax,-1000.0,0.0,-1000.0,0.0);
+  Qmin_PI_blk.setparams(kpqmax,kiqmax,0.0,1000.0,0.0,1000.0);
 
-  dOmega_lim_blk.setparams(1.0,wmin,wmax);
+  Delta_blk.setparams(1.0);
+  
 }
 
 /**
@@ -140,25 +166,36 @@ void gridpack::dynamic_simulation::GridFormingGenerator::init(double Vm,
   delta  = arg(E);
 
   // Initialize blocks
-  Edroop_PI_blk.init_given_y(Edroop);
+  double Vref;
+  if(Vflag == 0) {
+    Vref = Edroop;
+  } else {
+    Vref = Edroop_PI_blk.init_given_y(Edroop);
+    Vref += Vm; 
+  }
+  
   Delta_blk.init_given_y(delta);
 
   Pmax_PI_blk.init_given_y(0.0);
   Pmin_PI_blk.init_given_y(0.0);
 
-  if(!zero_Tf) {
+  Qmax_PI_blk.init_given_y(0.0);
+  Qmin_PI_blk.init_given_y(0.0);
+
+  if(!zero_Tpf) {
     P_filter_blk.init_given_y(p_pg);
+  }
+
+  if(!zero_Tqf) {
     Q_filter_blk.init_given_y(p_qg);
+  }
+
+  if(!zero_Tvf) {
     V_filter_blk.init_given_y(Vm);
   }
   
-  Vset = Vm + p_qg*mq;
+  Vset = Vref + p_qg*mq;
   Pset = p_pg;
-  
-  mp_org = mp;
-  mq_org = mq;
-  Vset_org = Vset;
-  Pset_org = Pset;
   
   p_Norton_Ya = NortonImpedence();
 }
@@ -206,9 +243,9 @@ gridpack::ComplexType gridpack::dynamic_simulation::GridFormingGenerator::Norton
 {
   double den;
 
-  den = (Ra*Ra + XL*XL);
+  den = (Ra*Ra + Xl*Xl);
 
-  B = -XL/den;
+  B = -Xl/den;
   G = Ra/den;
 
   B *= p_mbase/p_sbase;
@@ -235,26 +272,38 @@ void gridpack::dynamic_simulation::GridFormingGenerator::computeModel(double t_i
   p_qg = imag(S);
   Vt   = abs(V);
 
-  if(!zero_Tf) {
+  if(!zero_Tpf) {
     Pinv = P_filter_blk.getoutput(p_pg,t_inc,int_flag,true);
-    Qinv = Q_filter_blk.getoutput(p_qg,t_inc,int_flag,true);
-    Vmeas = V_filter_blk.getoutput(Vt, t_inc,int_flag,true);
   } else {
     Pinv = p_pg;
+  }
+
+  if(!zero_Tqf) {
+    Qinv = Q_filter_blk.getoutput(p_qg,t_inc,int_flag,true);
+  } else {
     Qinv = p_qg;
+  }
+
+  if(!zero_Tvf) {
+    Vmeas = V_filter_blk.getoutput(Vt, t_inc,int_flag,true);
+  } else {
     Vmeas = Vt;
   }
 
-  Edroop = Edroop_PI_blk.getoutput(Vset-mq*Qinv-Vmeas,t_inc,-1000.0,1000.0,Edroop_min,Edroop_max,int_flag,true);
+  Qmax_PI_blk_out = Qmax_PI_blk.getoutput(Qmax-Qinv,t_inc,int_flag,true);
+  Qmin_PI_blk_out = Qmin_PI_blk.getoutput(Qmin-Qinv,t_inc,int_flag,true);
 
-  Pmax_PI_blk_out = Pmax_PI_blk.getoutput(Pmax-Pinv,t_inc,int_flag,true);
-  Pmin_PI_blk_out = Pmin_PI_blk.getoutput(Pmin-Pinv,t_inc,int_flag,true);
-
+  double Vref;
+  Vref = Vset - Qinv*mq + Qmax_PI_blk_out + Qmin_PI_blk_out;
+  if(Vflag == 0) {
+    Edroop = Edroop_limiter_blk.getoutput(Vref,Edroop_min,Edroop_max);
+  } else {
+    Edroop = Edroop_PI_blk.getoutput(Vref-Vmeas,t_inc,-1000.0,1000.0,Edroop_min,Edroop_max,int_flag,true);
+  }
+  
   double domega;
 
   domega = omega0*(mp*(Pset - Pinv) + Pmax_PI_blk_out + Pmin_PI_blk_out);
-
-  domega = dOmega_lim_blk.getoutput(domega);
 
   omega = omega0 + domega;
 
@@ -313,23 +362,10 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::tripGenerator()
 * input newParValScaletoOrg:  GFI new parameter scale factor to the very initial parameter value at the begining of dynamic simulation
 * 
 */
-bool gridpack::dynamic_simulation::GridFormingGenerator::applyGeneratorParAdjustment(int controlType, double newParValScaletoOrg){
-	
-  if (controlType == 0){
-    mp = mp_org * newParValScaletoOrg;
-    return true;
-  }else if(controlType == 1){
-    mq = mq_org * newParValScaletoOrg;
-    return true;
-  }else if(controlType == 2) {
-    Pset = Pset_org  * newParValScaletoOrg;
-    return true;
-  }else if(controlType == 3) {
-    Vset = Vset_org  * newParValScaletoOrg;
-    return true;
-  }else{
-    return false;
-  }	
+bool gridpack::dynamic_simulation::GridFormingGenerator::applyGeneratorParAdjustment(int controlType, double newParValScaletoOrg)
+{
+  return false;
+
 }
 
 /**
