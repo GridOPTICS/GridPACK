@@ -49,21 +49,7 @@ template <class _data_struct> class GdformParser
         data->setValue(GENERATOR_MODEL, data_struct.model, g_id);
       }
 
-      // GENERATOR_XL
-      if (!data->getValue(GENERATOR_XL,&rval,g_id)) {
-        data->addValue(GENERATOR_XL,data_struct.gn_xl, g_id);
-      } else {
-        data->setValue(GENERATOR_XL, data_struct.gn_xl, g_id);
-      }
-
-      // GENERATOR_TF
-      if (!data->getValue(GENERATOR_TF,&rval,g_id)) {
-        data->addValue(GENERATOR_TF, data_struct.tf, g_id);
-      } else {
-        data->setValue(GENERATOR_TF, data_struct.tf, g_id);
-      }
-
-      // GENERATOR_MQ
+            // GENERATOR_MQ
       if (!data->getValue(GENERATOR_MQ,&rval,g_id)) {
         data->addValue(GENERATOR_MQ, data_struct.mq, g_id);
       } else {
@@ -82,20 +68,6 @@ template <class _data_struct> class GdformParser
         data->addValue(GENERATOR_KIV, data_struct.kiv, g_id);
       } else {
         data->setValue(GENERATOR_KIV, data_struct.kiv, g_id);
-      }
-
-      // GENERATOR_EMAX
-      if (!data->getValue(GENERATOR_EMAX,&rval,g_id)) {
-        data->addValue(GENERATOR_EMAX, data_struct.emax, g_id);
-      } else {
-        data->setValue(GENERATOR_EMAX, data_struct.emax, g_id);
-      }
-
-      // GENERATOR_EMIN
-      if (!data->getValue(GENERATOR_EMIN,&rval,g_id)) {
-        data->addValue(GENERATOR_EMIN, data_struct.emin, g_id);
-      } else {
-        data->setValue(GENERATOR_EMIN, data_struct.emin, g_id);
       }
 
       // GENERATOR_MP
@@ -119,13 +91,6 @@ template <class _data_struct> class GdformParser
         data->setValue(GENERATOR_KIPMAX, data_struct.kipmax, g_id);
       }
 
-      // GENERATOR_PSET
-      if (!data->getValue(GENERATOR_PSET,&rval,g_id)) {
-        data->addValue(GENERATOR_PSET, data_struct.pset, g_id);
-      } else {
-        data->setValue(GENERATOR_PSET, data_struct.pset, g_id);
-      }
-
       // GENERATOR_PMAX
       if (!data->getValue(GENERATOR_PMAX,&rval,g_id)) {
         data->addValue(GENERATOR_PMAX, data_struct.pmax, g_id);
@@ -139,7 +104,29 @@ template <class _data_struct> class GdformParser
       } else {
         data->setValue(GENERATOR_PMIN, data_struct.pmin, g_id);
       }
-	  
+
+      // GENERATOR_EMAX
+      if (!data->getValue(GENERATOR_EMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_EMAX, data_struct.emax, g_id);
+      } else {
+        data->setValue(GENERATOR_EMAX, data_struct.emax, g_id);
+      }
+
+      // GENERATOR_EMIN
+      if (!data->getValue(GENERATOR_EMIN,&rval,g_id)) {
+        data->addValue(GENERATOR_EMIN, data_struct.emin, g_id);
+      } else {
+        data->setValue(GENERATOR_EMIN, data_struct.emin, g_id);
+      }
+
+
+      // GENERATOR_TPF
+      if (!data->getValue(GENERATOR_TPF,&rval,g_id)) {
+        data->addValue(GENERATOR_TPF, data_struct.tpf, g_id);
+      } else {
+        data->setValue(GENERATOR_TPF, data_struct.tpf, g_id);
+      }
+
       // GENERATOR_IMAX
       if (!data->getValue(GENERATOR_IMAX,&rval,g_id)) {
         data->addValue(GENERATOR_IMAX, data_struct.imax, g_id);
@@ -147,19 +134,56 @@ template <class _data_struct> class GdformParser
         data->setValue(GENERATOR_IMAX, data_struct.imax, g_id);
       }
 
-      // GENERATOR_WMAX
-      if (!data->getValue(GENERATOR_WMAX,&rval,g_id)) {
-        data->addValue(GENERATOR_WMAX, data_struct.wmax, g_id);
+      // GENERATOR_QMAX
+      if (!data->getValue(GENERATOR_QMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_QMAX, data_struct.qmax, g_id);
       } else {
-        data->setValue(GENERATOR_WMAX, data_struct.wmax, g_id);
+        data->setValue(GENERATOR_QMAX, data_struct.qmax, g_id);
       }
 
-      // GENERATOR_WMIN
-      if (!data->getValue(GENERATOR_WMIN,&rval,g_id)) {
-        data->addValue(GENERATOR_WMIN, data_struct.wmin, g_id);
+      // GENERATOR_QMIN
+      if (!data->getValue(GENERATOR_QMIN,&rval,g_id)) {
+        data->addValue(GENERATOR_QMIN, data_struct.qmin, g_id);
       } else {
-        data->setValue(GENERATOR_WMIN, data_struct.wmin, g_id);
-      }	  
+        data->setValue(GENERATOR_QMIN, data_struct.qmin, g_id);
+      }
+
+      // GENERATOR_KPQMAX
+      if (!data->getValue(GENERATOR_KPQMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_KPQMAX, data_struct.kpqmax, g_id);
+      } else {
+        data->setValue(GENERATOR_KPQMAX, data_struct.kpqmax, g_id);
+      }
+
+      // GENERATOR_KIQMAX
+      if (!data->getValue(GENERATOR_KIQMAX,&rval,g_id)) {
+        data->addValue(GENERATOR_KIQMAX, data_struct.kiqmax, g_id);
+      } else {
+        data->setValue(GENERATOR_KIQMAX, data_struct.kiqmax, g_id);
+      }
+
+      // GENERATOR_TQF
+      if (!data->getValue(GENERATOR_TQF,&rval,g_id)) {
+        data->addValue(GENERATOR_TQF, data_struct.tqf, g_id);
+      } else {
+        data->setValue(GENERATOR_TQF, data_struct.tqf, g_id);
+      }
+
+      // GENERATOR_TVF
+      if (!data->getValue(GENERATOR_TVF,&rval,g_id)) {
+        data->addValue(GENERATOR_TVF, data_struct.tvf, g_id);
+      } else {
+        data->setValue(GENERATOR_TVF, data_struct.tvf, g_id);
+      }
+
+      int ival;
+      // GENERATOR_VFLAG
+      if (!data->getValue(GENERATOR_VFLAG,&ival,g_id)) {
+        data->addValue(GENERATOR_VFLAG, data_struct.vflag, g_id);
+      } else {
+        data->setValue(GENERATOR_VFLAG, data_struct.vflag, g_id);
+      }
+      
     }
 
     /**
@@ -184,151 +208,180 @@ template <class _data_struct> class GdformParser
         data->setValue(GENERATOR_MODEL, model.c_str(), g_id);
       }
 
-      // GENERATOR_XL
+            // GENERATOR_MQ
       if (nstr > 3) {
-        if (!data->getValue(GENERATOR_XL,&rval,g_id)) {
-          data->addValue(GENERATOR_XL, atof(split_line[3].c_str()), g_id);
-        } else {
-          data->setValue(GENERATOR_XL, atof(split_line[3].c_str()), g_id);
-        }
-      } 
-
-      // GENERATOR_TF
-      if (nstr > 4) {
-        if (!data->getValue(GENERATOR_TF,&rval,g_id)) {
-          data->addValue(GENERATOR_TF, atof(split_line[4].c_str()), g_id);
-        } else {
-          data->setValue(GENERATOR_TF, atof(split_line[4].c_str()), g_id);
-        }
-      } 
-
-      // GENERATOR_MQ
-      if (nstr > 5) {
         if (!data->getValue(GENERATOR_MQ,&rval,g_id)) {
-          data->addValue(GENERATOR_MQ, atof(split_line[5].c_str()), g_id);
+          data->addValue(GENERATOR_MQ, atof(split_line[3].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_MQ, atof(split_line[5].c_str()), g_id);
+          data->setValue(GENERATOR_MQ, atof(split_line[3].c_str()), g_id);
         }
       } 
 
       // GENERATOR_KPV                           float
-      if (nstr > 6) {
+      if (nstr > 4) {
         if (!data->getValue(GENERATOR_KPV,&rval,g_id)) {
-          data->addValue(GENERATOR_KPV, atof(split_line[6].c_str()), g_id);
+          data->addValue(GENERATOR_KPV, atof(split_line[4].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_KPV, atof(split_line[6].c_str()), g_id);
+          data->setValue(GENERATOR_KPV, atof(split_line[4].c_str()), g_id);
         }
       } 
 
       // GENERATOR_KIV                           float
-      if (nstr > 7) {
+      if (nstr > 5) {
         if (!data->getValue(GENERATOR_KIV,&rval,g_id)) {
-          data->addValue(GENERATOR_KIV, atof(split_line[7].c_str()), g_id);
+          data->addValue(GENERATOR_KIV, atof(split_line[5].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_KIV, atof(split_line[7].c_str()), g_id);
+          data->setValue(GENERATOR_KIV, atof(split_line[5].c_str()), g_id);
         }
       }
 
-      // GENERATOR_EMAX
-      if (nstr > 8) {
-        if (!data->getValue(GENERATOR_EMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_EMAX, atof(split_line[8].c_str()), g_id);
-        } else {
-          data->setValue(GENERATOR_EMAX, atof(split_line[8].c_str()), g_id);
-        }
-      } 
-
-      // GENERATOR_EMIN
-      if (nstr > 9) {
-        if (!data->getValue(GENERATOR_EMIN,&rval,g_id)) {
-          data->addValue(GENERATOR_EMIN, atof(split_line[9].c_str()), g_id);
-        } else {
-          data->setValue(GENERATOR_EMIN, atof(split_line[9].c_str()), g_id);
-        }
-      } 
-
       // GENERATOR_MP
-      if (nstr > 10) {
+      if (nstr > 6) {
         if (!data->getValue(GENERATOR_MP,&rval,g_id)) {
-          data->addValue(GENERATOR_MP, atof(split_line[10].c_str()), g_id);
+          data->addValue(GENERATOR_MP, atof(split_line[6].c_str()), g_id);
         } else {
           data->setValue(GENERATOR_MP, atof(split_line[10].c_str()), g_id);
         }
       } 
 
       // GENERATOR_KPPMAX
-      if (nstr > 11) {
+      if (nstr > 7) {
         if (!data->getValue(GENERATOR_KPPMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_KPPMAX, atof(split_line[11].c_str()), g_id);
+          data->addValue(GENERATOR_KPPMAX, atof(split_line[7].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_KPPMAX, atof(split_line[11].c_str()), g_id);
+          data->setValue(GENERATOR_KPPMAX, atof(split_line[7].c_str()), g_id);
         }
       } 
 
       // GENERATOR_KIPMAX
-      if (nstr > 12) {
+      if (nstr > 8) {
         if (!data->getValue(GENERATOR_KIPMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_KIPMAX, atof(split_line[12].c_str()), g_id);
+          data->addValue(GENERATOR_KIPMAX, atof(split_line[8].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_KIPMAX, atof(split_line[12].c_str()), g_id);
+          data->setValue(GENERATOR_KIPMAX, atof(split_line[8].c_str()), g_id);
         }
-      } 
+      }
 
-      // GENERATOR_PSET
-      if (nstr > 13) {
-        if (!data->getValue(GENERATOR_PSET,&rval,g_id)) {
-          data->addValue(GENERATOR_PSET,
-              atof(split_line[13].c_str()), g_id);
-        } else {
-          data->setValue(GENERATOR_PSET,
-              atof(split_line[13].c_str()), g_id);
-        }
-      } 
 
       // GENERATOR_PMAX
-      if (nstr > 14) {
+      if (nstr > 9) {
         if (!data->getValue(GENERATOR_PMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_PMAX, atof(split_line[14].c_str()), g_id);
+          data->addValue(GENERATOR_PMAX, atof(split_line[9].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_PMAX, atof(split_line[14].c_str()), g_id);
+          data->setValue(GENERATOR_PMAX, atof(split_line[9].c_str()), g_id);
         }
       } 
 
       // GENERATOR_PMIN
-      if (nstr > 15) {
+      if (nstr > 10) {
         if (!data->getValue(GENERATOR_PMIN,&rval,g_id)) {
-          data->addValue(GENERATOR_PMIN, atof(split_line[15].c_str()), g_id);
+          data->addValue(GENERATOR_PMIN, atof(split_line[10].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_PMIN, atof(split_line[15].c_str()), g_id);
+          data->setValue(GENERATOR_PMIN, atof(split_line[10].c_str()), g_id);
         }
       } 
-	  
+
+      // GENERATOR_EMAX
+      if (nstr > 11) {
+        if (!data->getValue(GENERATOR_EMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_EMAX, atof(split_line[11].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_EMAX, atof(split_line[11].c_str()), g_id);
+        }
+      } 
+
+      // GENERATOR_EMIN
+      if (nstr > 12) {
+        if (!data->getValue(GENERATOR_EMIN,&rval,g_id)) {
+          data->addValue(GENERATOR_EMIN, atof(split_line[12].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_EMIN, atof(split_line[12].c_str()), g_id);
+        }
+      } 
+
+      // GENERATOR_TPF
+      if (nstr > 13) {
+        if (!data->getValue(GENERATOR_TPF,&rval,g_id)) {
+          data->addValue(GENERATOR_TPF, atof(split_line[13].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_TPF, atof(split_line[13].c_str()), g_id);
+        }
+      } 
+
       // GENERATOR_IMAX
-      if (nstr > 16) {
+      if (nstr > 14) {
         if (!data->getValue(GENERATOR_IMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_IMAX, atof(split_line[16].c_str()), g_id);
+          data->addValue(GENERATOR_IMAX, atof(split_line[14].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_IMAX, atof(split_line[16].c_str()), g_id);
+          data->setValue(GENERATOR_IMAX, atof(split_line[14].c_str()), g_id);
         }
       }
 
-      // GENERATOR_WMAX
+      // GENERATOR_QMAX
+      if (nstr > 15) {
+        if (!data->getValue(GENERATOR_QMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_QMAX, atof(split_line[15].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_QMAX, atof(split_line[15].c_str()), g_id);
+        }
+      }
+
+      // GENERATOR_QMIN
+      if (nstr > 16) {
+        if (!data->getValue(GENERATOR_QMIN,&rval,g_id)) {
+          data->addValue(GENERATOR_QMIN, atof(split_line[16].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_QMIN, atof(split_line[16].c_str()), g_id);
+        }
+      }
+
+      // GENERATOR_KPQMAX
       if (nstr > 17) {
-        if (!data->getValue(GENERATOR_WMAX,&rval,g_id)) {
-          data->addValue(GENERATOR_WMAX, atof(split_line[17].c_str()), g_id);
+        if (!data->getValue(GENERATOR_KPQMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_KPQMAX, atof(split_line[17].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_WMAX, atof(split_line[17].c_str()), g_id);
-        }
-      }
-
-      // GENERATOR_WMIN
-      if (nstr > 18) {
-        if (!data->getValue(GENERATOR_WMIN,&rval,g_id)) {
-          data->addValue(GENERATOR_WMIN, atof(split_line[18].c_str()), g_id);
-        } else {
-          data->setValue(GENERATOR_WMIN, atof(split_line[18].c_str()), g_id);
+          data->setValue(GENERATOR_KPQMAX, atof(split_line[17].c_str()), g_id);
         }
       } 
+
+      // GENERATOR_KIQMAX
+      if (nstr > 18) {
+        if (!data->getValue(GENERATOR_KIQMAX,&rval,g_id)) {
+          data->addValue(GENERATOR_KIQMAX, atof(split_line[18].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_KIQMAX, atof(split_line[18].c_str()), g_id);
+        }
+      }
+
+      // GENERATOR_TQF
+      if (nstr > 19) {
+        if (!data->getValue(GENERATOR_TQF,&rval,g_id)) {
+          data->addValue(GENERATOR_TQF, atof(split_line[19].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_TQF, atof(split_line[19].c_str()), g_id);
+        }
+      } 
+
+      // GENERATOR_TVF
+      if (nstr > 20) {
+        if (!data->getValue(GENERATOR_TVF,&rval,g_id)) {
+          data->addValue(GENERATOR_TVF, atof(split_line[20].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_TVF, atof(split_line[20].c_str()), g_id);
+        }
+      } 
+
+      // GENERATOR_VFLAG
+      if (nstr > 21) {
+        if (!data->getValue(GENERATOR_VFLAG,&rval,g_id)) {
+          data->addValue(GENERATOR_VFLAG,
+              atoi(split_line[21].c_str()), g_id);
+        } else {
+          data->setValue(GENERATOR_VFLAG,
+              atoi(split_line[21].c_str()), g_id);
+        }
+      } 
+
     }
 
     /**
@@ -357,85 +410,102 @@ template <class _data_struct> class GdformParser
       strcpy(data.model, sval.c_str());
 
       int nstr = split_line.size();
-      // GENERATOR_XL
-      if (nstr > 3) {
-        data.gn_xl = atof(split_line[3].c_str());
-      } 
-
-      // GENERATOR_TF
-      if (nstr > 4) {
-        data.tf = atof(split_line[4].c_str());
-      } 
 
       // GENERATOR_MQ
-      if (nstr > 5) {
-        data.mq = atof(split_line[5].c_str());
+      if (nstr > 3) {
+        data.mq = atof(split_line[3].c_str());
       } 
 
       // GENERATOR_KPV                           float
-      if (nstr > 6) {
-        data.kpv = atof(split_line[6].c_str());
+      if (nstr > 4) {
+        data.kpv = atof(split_line[4].c_str());
       } 
 
       // GENERATOR_KIV                           float
-      if (nstr > 7) {
-        data.kiv = atof(split_line[7].c_str());
+      if (nstr > 5) {
+        data.kiv = atof(split_line[5].c_str());
       }
 
-      // GENERATOR_EMAX
-      if (nstr > 8) {
-        data.emax = atof(split_line[8].c_str());
-      } 
-
-      // GENERATOR_EMIN
-      if (nstr > 9) {
-        data.emin = atof(split_line[9].c_str());
-      } 
-
       // GENERATOR_MP
-      if (nstr > 10) {
-        data.mp = atof(split_line[10].c_str());
+      if (nstr > 6) {
+        data.mp = atof(split_line[6].c_str());
       } 
 
       // GENERATOR_KPPMAX
-      if (nstr > 11) {
-        data.kppmax = atof(split_line[11].c_str());
+      if (nstr > 7) {
+        data.kppmax = atof(split_line[7].c_str());
       } 
 
       // GENERATOR_KIPMAX
-      if (nstr > 12) {
-        data.kipmax = atof(split_line[12].c_str());
-      } 
-
-      // GENERATOR_PSET
-      if (nstr > 13) {
-        data.pset = atof(split_line[13].c_str());
+      if (nstr > 8) {
+        data.kipmax = atof(split_line[8].c_str());
       } 
 
       // GENERATOR_PMAX
-      if (nstr > 14) {
-        data.pmax = atof(split_line[14].c_str());
+      if (nstr > 9) {
+        data.pmax = atof(split_line[9].c_str());
       } 
 
       // GENERATOR_PMIN
-      if (nstr > 15) {
-        data.pmin = atof(split_line[15].c_str());
+      if (nstr > 10) {
+        data.pmin = atof(split_line[10].c_str());
       } 
-	  
+
+
+      // GENERATOR_EMAX
+      if (nstr > 11) {
+        data.emax = atof(split_line[11].c_str());
+      } 
+
+      // GENERATOR_EMIN
+      if (nstr > 12) {
+        data.emin = atof(split_line[12].c_str());
+      } 
+
+      // GENERATOR_TPF
+      if (nstr > 13) {
+        data.tpf = atof(split_line[13].c_str());
+      } 
+
       // GENERATOR_IMAX
-      if (nstr > 16) {
-        data.imax = atof(split_line[16].c_str());
+      if (nstr > 14) {
+        data.imax = atof(split_line[14].c_str());
       }
 
-      // GENERATOR_WMAX
-      if (nstr > 17) {
-        data.wmax = atof(split_line[17].c_str());
+      // GENERATOR_QMAX
+      if (nstr > 15) {
+        data.qmax = atof(split_line[15].c_str());
       } 
 
-      // GENERATOR_WMIN
-      if (nstr > 18) {
-        data.wmin = atof(split_line[18].c_str());
+      // GENERATOR_QMIN
+      if (nstr > 16) {
+        data.qmin = atof(split_line[16].c_str());
       }
+
+      // GENERATOR_KPQMAX
+      if (nstr > 17) {
+        data.kpqmax = atof(split_line[17].c_str());
+      } 
+
+      // GENERATOR_KIQMAX
+      if (nstr > 18) {
+        data.kiqmax = atof(split_line[18].c_str());
+      }
+
+      // GENERATOR_TQF
+      if (nstr > 19) {
+        data.tqf = atof(split_line[19].c_str());
+      } 
+
+      // GENERATOR_TVF
+      if (nstr > 20) {
+        data.tvf = atof(split_line[20].c_str());
+      }
+
+      // GENERATOR_VFLAG
+      if (nstr > 21) {
+        data.vflag = atoi(split_line[21].c_str());
+      } 
     }
 };
 }  // parser

@@ -10,12 +10,13 @@
  * 
  * @brief  
  * Grid-Forming inverter model 
- * Reference: https://www.wecc.org/Administrative/Model%20Specification%20of%20Droop-Controlled,%20Grid-Forming%20Inverters_PNNL.pdf
  * 
  * @updated
  * @author Shrirang Abhyankar
  * Model re-implementation with cblocks
  * Jan. 6, 2023
+ *
+ * Updated version of model including Qlimit dynamics and Vflag
  */
 
 
@@ -149,10 +150,14 @@ class GridFormingGenerator : public BaseGeneratorModel
   bool p_tripped;
 
   // parameters
-  double Ra, XL, Tf, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin, Imax, wmax, wmin;
-  gridpack::ComplexType Zsource;
+  double Ra, Xl, mq, kpv, kiv, mp, kppmax, kipmax, Pmax, Pmin;
+  double Emax, Emin, Tpf, Imax, Qmax, Qmin;
+  double kpqmax,kiqmax,Tqf,Tvf;
+  int    Vflag;
 
-  double mp_org, mq_org, Vset_org, Pset_org;
+  // Inputs set at steady-state (t=0)
+  double Vset,Pset;
+  gridpack::ComplexType Zsource;
 
   // Constants
   double omega0; // base angular velocity
@@ -168,18 +173,25 @@ class GridFormingGenerator : public BaseGeneratorModel
   double Vmeas; // Output of V filter block
 
   PIControl Edroop_PI_blk; // PI control for E
-  double Edroop; // Output of Edroop PI block
 
+  GainLimiter Edroop_limiter_blk; // Limiter for E when Vflag = 0
+
+  double Edroop; // Output of Edroop PI block OR Edroop limiter block
+  
   PIControl Pmax_PI_blk; // PI controller for Pmax limit
   double Pmax_PI_blk_out; // Output of PI controller for Pmax limit
 
   PIControl Pmin_PI_blk; // PI controller for Pmin limit
   double Pmin_PI_blk_out; // Output of PI controller for Pmin limit
 
+  PIControl Qmax_PI_blk; // PI controller for Qmax limit
+  double Qmax_PI_blk_out; // Output of PI controller for Qmax limit
+
+  PIControl Qmin_PI_blk; // PI controller for Qmin limit
+  double Qmin_PI_blk_out; // Output of PI controller for Qmin limit
+
   Integrator Delta_blk; // Integrator block for PLL
   double delta;         // Output of integrator block
-
-  GainLimiter dOmega_lim_blk; // Limiter for Omega
 
   // Internal variables
   double busfreq;
@@ -191,7 +203,7 @@ class GridFormingGenerator : public BaseGeneratorModel
   gridpack::ComplexType p_Norton_Ya;
   double B, G;
   double Edroop_max,Edroop_min; // Only set when current exceeds Imax
-  bool   zero_Tf;
+  bool   zero_Tpf,zero_Tqf,zero_Tvf;
   double Vthresh; // Threshold below which states are frozen
 
   // Output
