@@ -300,6 +300,10 @@ void gridpack::dynamic_simulation::GridFormingGenerator::computeModel(double t_i
   } else {
     Edroop = Edroop_PI_blk.getoutput(Vref-Vmeas,t_inc,-1000.0,1000.0,Edroop_min,Edroop_max,int_flag,true);
   }
+
+  Pmax_PI_blk_out = Pmax_PI_blk.getoutput(Pmax-Pinv,t_inc,int_flag,true);
+  Pmin_PI_blk_out = Pmin_PI_blk.getoutput(Pmin-Pinv,t_inc,int_flag,true);
+
   
   double domega;
 
