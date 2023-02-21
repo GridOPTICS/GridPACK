@@ -127,24 +127,16 @@ void gridpack::dynamic_simulation::Epria1Generator::init(double Vm,
   I = conj(I);
 
   E = V + Zsource*I;
-
-  gridpack::ComplexType Sint;
+  
   double ER, EI;
 
   ER = E.real();
   EI = E.imag();
 
-  Sint = E*conj(I)*p_mbase;
-
-  double Pout, Qout;
-
-  Pout = Sint.real();
-  Qout = Sint.imag();
-
   modeloutputs.Ea = ER;
   modeloutputs.Eb = EI;
-  modeloutputs.Pout = Pout;
-  modeloutputs.Qout = Qout;
+  modeloutputs.Pout = p_pg;
+  modeloutputs.Qout = p_qg;
   
   int ok = Model_Initialize(&model);
 
@@ -213,8 +205,6 @@ void gridpack::dynamic_simulation::Epria1Generator::predictor(
 
   modelinputs.Ia = Iout.real();
   modelinputs.Ib = Iout.imag();
-
- 
 
   int ok = Model_Outputs(&model);
 }
