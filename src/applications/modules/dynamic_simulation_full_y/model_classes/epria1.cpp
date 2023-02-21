@@ -81,6 +81,9 @@ void gridpack::dynamic_simulation::Epria1Generator::load(
   if(!data->getValue(EPRIA1_PARAM18, &modelparams.Cfilt, idx)) modelparams.Cfilt = 0.0;
   if(!data->getValue(EPRIA1_PARAM19, &modelparams.Rdamp, idx)) modelparams.Rdamp = 0.0;
 
+  // Overwrite Zsource with values from the model
+  Zsource = gridpack::ComplexType(modelparams.Rchoke,modelparams.Lchoke);
+  
   model.Parameters      = (void*)&modelparams;
   model.ExternalInputs  = (void*)&modelinputs;
   model.ExternalOutputs = (void*)&modeloutputs;
