@@ -200,6 +200,33 @@ void gridpack::dynamic_simulation::GridFormingGenerator::init(double Vm,
   p_Norton_Ya = NortonImpedence();
 }
 
+gridpack::ComplexType gridpack::dynamic_simulation::GridFormingGenerator::CurrentLimitLogic(gridpack::ComplexType I)
+{
+  gridpack::ComplexType Iout;
+  
+  Im = abs(I);
+
+  if(Im > Imax) {
+    double Ir,Ii,Ia;
+    Ia = arg(I);
+    Ir = Imax*cos(Ia);
+    Ii = Imax*sin(Ia);
+    Iout = gridpack::ComplexType(Ir,Ii);
+    
+    E = V + Zsource*Iout;
+
+    Edroop_max = abs(E);
+    Edroop_min = 0.0;
+  } else {
+    Edroop_max = Emax;
+    Edroop_min = Emin;
+    Iout = I;
+  }
+
+  return Iout;
+}
+  
+
 /**
  * Return contribution to Norton current
  * @return contribution to Norton vector
@@ -208,23 +235,8 @@ gridpack::ComplexType gridpack::dynamic_simulation::GridFormingGenerator::INorto
 {
   I = (E - V)/Zsource; // total output current
 
-  Im = abs(I);
-
-  if(Im > Imax) {
-    double Ir,Ii,Ia;
-    Ia = arg(I);
-    Ir = Imax*cos(Ia);
-    Ii = Imax*sin(Ia);
-    I = gridpack::ComplexType(Ir,Ii);
+  I = CurrentLimitLogic(I);
     
-    E = V + Zsource*I;
-    Edroop_max = abs(E);
-    Edroop_min = 0.0;
-  } else {
-    Edroop_max = Emax;
-    Edroop_min = Emin;
-  }
-
   gridpack::ComplexType Ie;
 
   Ie = I + V/Zsource; // Current from internal voltage source
@@ -266,8 +278,9 @@ void gridpack::dynamic_simulation::GridFormingGenerator::predictor_currentInject
 
 void gridpack::dynamic_simulation::GridFormingGenerator::computeModel(double t_inc, IntegrationStage int_flag, bool flag)
 {
+    
   S = V*conj(I);
-
+  
   p_pg = real(S);
   p_qg = imag(S);
   Vt   = abs(V);
@@ -313,8 +326,6 @@ void gridpack::dynamic_simulation::GridFormingGenerator::computeModel(double t_i
 
   delta = Delta_blk.getoutput(domega,t_inc,int_flag,true);
 
-  printf("%d: Vt = %6.5f, Pg = %6.5f,Pmax_lim = %6.5f, Pmin_lim = %6.5f, delta = %6.5f,Igen = %6.5f\n",int_flag,Vt,p_pg,Pmax_PI_blk_out,Pmin_PI_blk_out,delta,abs(I));
-  
   double Er,Ei;
   Er = Edroop*cos(delta);
   Ei = Edroop*sin(delta);
@@ -404,7 +415,7 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
 {
   double Pg,Qg;
   bool   ret=false;
-
+    
   Pg = p_pg*p_mbase/p_sbase;
   Qg = p_qg*p_mbase/p_sbase;
   

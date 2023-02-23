@@ -111,7 +111,9 @@ class GridFormingGenerator : public BaseGeneratorModel
     // Called by both predictor and corrector to compute the model
   void computeModel(double t_inc, IntegrationStage int_flag,bool flag);
 
-  
+  // Update the limits on E for current limiting
+
+  gridpack::ComplexType CurrentLimitLogic(gridpack::ComplexType I);
     /**
 	* return true if trip generator successfully
 	* 
