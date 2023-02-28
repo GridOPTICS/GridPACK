@@ -204,3 +204,27 @@ void gridpack::dynamic_simulation::HygovModel::setExtGenId(std::string ExtGenId)
 	p_ckt = ExtGenId;
 }
 */
+
+/** 
+ * Set internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::HygovModel::setState(std::string name,
+    double value)
+{
+  return false; 
+}
+
+/** 
+ * Get internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::HygovModel::getState(std::string name,
+    double *value)
+{
+  return false; 
+}

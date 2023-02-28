@@ -883,3 +883,35 @@ void gridpack::hadrec::HADRECAppModule::exportPSSE23(std::string filename)
 	pf_app_sptr->exportPSSE23(filename);
 }
 
+/**
+ * Set the state of some device on the network
+ * @param bus_id bus ID
+ * @param dev_id two character identifier of device
+ * @param type of device (GENERATOR, EXCITER, OR GOVERNOR)
+ * @param name of the state variable (ANGLE,SPEED_DEV)
+ * @param value new value of parameter
+ * @return false if this device or
+ parameter not found
+ */
+bool gridpack::hadrec::HADRECAppModule::setState(int bus_id,
+    std::string dev_id, std::string device,
+    std::string name, double value)
+{
+  return ds_app_sptr->setState(bus_id, dev_id, device, name, value);
+}
+
+/**
+ * Get the state of some device on the network
+ * @param  bus_id bus ID
+ * @param  dev_id two character identifier of device
+ * @param  type of device (GENERATOR, EXCITER, OR GOVERNOR)
+ * @param  name of the state variable (ANGLE, SPEED_DEV)
+ * @return value current value of parameter
+ * @return false if this device or state variable not found
+ */
+bool gridpack::hadrec::HADRECAppModule::getState(int bus_id,
+    std::string dev_id, std::string device,
+    std::string name, double *value)
+{
+  return ds_app_sptr->getState(bus_id, dev_id, device, name, value);
+}

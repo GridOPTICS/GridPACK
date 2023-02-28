@@ -4647,3 +4647,164 @@ bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionBusParam(
 {
   return p_modifyDataCollectionBusParam<int>(bus_id,busParam,value);
 }
+
+/**
+ * Set the state of some device on the network
+ * @param bus_id bus ID
+ * @param dev_id two character identifier of device
+ * @param type of device (GENERATOR, EXCITER, OR GOVERNOR)
+ * @param name of the state variable (ANGLE,SPEED_DEV)
+ * @param value new value of parameter
+ * @return false if this device or
+ parameter not found
+ */
+bool gridpack::dynamic_simulation::DSFullApp::setState(int bus_id,
+    std::string dev_id, std::string device, std::string name, double value)
+{
+  gridpack::utility::StringUtils util;
+  bool ret = false;
+  util.toUpper(device);
+  util.trim(device);
+  util.trim(dev_id);
+  util.trim(name);
+  dev_id = util.clean2Char(dev_id);
+  /* return false if ther is no buse corresponding to this bus ID */
+  std::vector<int> buses = p_network->getLocalBusIndices(bus_id);
+  if (buses.size() > 0) {
+    ret = true;
+  }
+  if (!p_factory->checkTrueSomewhere(ret)) {
+    return false;
+  }
+  ret = false;
+  /* search for device corresponding to this dev_id and device type. */
+  int i;
+  for (i=0; i<buses.size(); i++) {
+    DSFullBus *bus = p_network->getBus(buses[i]).get();
+    if (device == "GENERATOR"  || device == "GOVERNOR" || device == "EXCITER") {
+      BaseGeneratorModel *generator = bus->getGenerator(dev_id);
+      if (generator != NULL) {
+        if (device == "GOVERNOR") {
+          BaseGovernorModel *governor = generator->getGovernor().get();
+          if (governor != NULL) {
+            ret = governor->setState(name, value);
+          }
+          if (!ret) {
+            std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
+          }
+        } else if (device == "EXCITER") {
+          BaseExciterModel *exciter = generator->getExciter().get();
+          if (exciter != NULL) {
+            ret = exciter->setState(name, value);
+          }
+          if (!ret) {
+            std::cout<<"No parameter "<<name<<" found on exciter"<<std::endl;
+          }
+        } else {
+          ret = generator->setState(name, value);
+          if (!ret) {
+            std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
+          }
+        }
+      } else {
+        ret = false;
+        if (!ret) {
+          std::cout<<"No generator "<<dev_id<<" found on bus "<<bus_id<<std::endl;
+        }
+      }
+    } else if (device == "RELAY") {
+      std::cout<<"No setState function implemented for relays "<<std::endl;
+    } else if (device == "LOAD") {
+      std::cout<<"No setState function implemented for loads "<<std::endl;
+    } else if (device == "PLANT") {
+      std::cout<<"No setState function implemented for plants "<<std::endl;
+    } else if (device == "PSS") {
+      std::cout<<"No setState function implemented for PPS "<<std::endl;
+    } else {
+      std::cout<<"Device not found on bus "<<bus_id<<
+        " for device "<<dev_id<<std::endl;
+    } 
+  }
+  return ret;
+}
+
+/**
+ * Get the state of some device on the network
+ * @param  bus_id bus ID
+ * @param  dev_id two character identifier of device
+ * @param  type of device (GENERATOR, EXCITER, OR GOVERNOR)
+ * @param  name of the state variable (ANGLE, SPEED_DEV)
+ * @return value current value of parameter
+ * @return false if this device or state variable not found
+ */
+bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_id,
+    std::string dev_id, std::string device, std::string name, double *value)
+{
+  gridpack::utility::StringUtils util;
+  bool ret = false;
+  util.toUpper(device);
+  util.trim(device);
+  util.trim(dev_id);
+  util.trim(name);
+  dev_id = util.clean2Char(dev_id);
+  /* return false if ther is no buse corresponding to this bus ID */
+  std::vector<int> buses = p_network->getLocalBusIndices(bus_id);
+  if (buses.size() > 0) {
+    ret = true;
+  }
+  if (!p_factory->checkTrueSomewhere(ret)) {
+    return false;
+  }
+  ret = false;
+  /* search for device corresponding to this dev_id and device type. */
+  int i;
+  for (i=0; i<buses.size(); i++) {
+    if (p_network->getActiveBus(buses[i])) {
+      DSFullBus *bus = p_network->getBus(buses[i]).get();
+      if (device == "GENERATOR"  || device == "GOVERNOR" || device == "EXCITER") {
+        BaseGeneratorModel *generator = bus->getGenerator(dev_id);
+        if (generator != NULL) {
+          if (device == "GOVERNOR") {
+            BaseGovernorModel *governor = generator->getGovernor().get();
+            if (governor != NULL) {
+              ret = governor->getState(name, value);
+            }
+            if (!ret) {
+              std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
+            }
+          } else if (device == "EXCITER") {
+            BaseExciterModel *exciter = generator->getExciter().get();
+            if (exciter != NULL) {
+              ret = exciter->getState(name, value);
+            }
+            if (!ret) {
+              std::cout<<"No parameter "<<name<<" found on exciter"<<std::endl;
+            }
+          } else {
+            ret = generator->getState(name, value);
+            if (!ret) {
+              std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
+            }
+          }
+        } else {
+          ret = false;
+          if (!ret) {
+            std::cout<<"No generator "<<dev_id<<" found on bus "<<bus_id<<std::endl;
+          }
+        }
+      } else if (device == "RELAY") {
+        std::cout<<"No getState function implemented for relays "<<std::endl;
+      } else if (device == "LOAD") {
+        std::cout<<"No getState function implemented for loads "<<std::endl;
+      } else if (device == "PLANT") {
+        std::cout<<"No getState function implemented for plants "<<std::endl;
+      } else if (device == "PSS") {
+        std::cout<<"No getState function implemented for PPS "<<std::endl;
+      } else {
+        std::cout<<"Device not found on bus "<<bus_id<<
+          " for device "<<dev_id<<std::endl;
+      } 
+    }
+  }
+  return ret;
+}

@@ -95,6 +95,22 @@ class HygovModel : public BaseGovernorModel
      */
     //void setExtGenId(std::string ExtGenId);
 
+    /** 
+     * Set internal state parameter in governor
+     * @param name character string corresponding to state variable
+     * @param value new value for state parameter
+     * @return false if no variable corresponding to name is found
+     */
+    bool setState(std::string name, double value);
+
+    /** 
+     * Get internal state parameter in governor
+     * @param name character string corresponding to state variable
+     * @param value current value for state parameter
+     * @return false if no variable corresponding to name is found
+     */
+    bool getState(std::string name, double *value);
+
   private:
 
     // Governor Hygov Parameters read from dyr

@@ -2874,6 +2874,51 @@ void gridpack::dynamic_simulation::DSFullBus::setScale(double scale)
 }
 
 /**
+ * Return pointer to generator corresponding to two-character id
+ * @param id two character id labeling generator
+ * @return pointer to generator device
+ */
+gridpack::dynamic_simulation::BaseGeneratorModel
+*gridpack::dynamic_simulation::DSFullBus::getGenerator(std::string id)
+{
+  int i;
+  for (i=0; i<p_generators.size(); i++) {
+    if (id == p_genid[i]) {
+      return p_generators[i].get();
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Return pointer to load corresponding to two-character id
+ * @param id two character id labeling load
+ * @return pointer to load device
+ */
+gridpack::dynamic_simulation::BaseLoadModel
+*gridpack::dynamic_simulation::DSFullBus::getLoad(std::string id)
+{
+  int i;
+  for (i=0; i<p_loadmodels.size(); i++) {
+    if (id == p_loadid[i]) {
+      return p_loadmodels[i].get();
+    }
+  }
+  return NULL;
+}
+
+/**
+ * Return pointer to relay corresponding to two-character id
+ * @param id two character id labeling relay
+ * @return pointer to relay device
+ */
+gridpack::dynamic_simulation::BaseRelayModel
+*gridpack::dynamic_simulation::DSFullBus::getRelay(std::string id)
+{
+}
+
+
+/**
  * Get list of generator IDs
  * @return vector of generator IDs
  */

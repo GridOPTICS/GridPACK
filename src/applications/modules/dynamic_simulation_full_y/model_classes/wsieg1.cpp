@@ -372,6 +372,30 @@ double gridpack::dynamic_simulation::Wsieg1Model::getMechanicalPower()
   return Pmech1; 
 }
 
+/**
+ * Set internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Wsieg1Model::setState(std::string name,
+    double value)
+{
+  return false;
+}
+
+/**
+ * Get internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Wsieg1Model::getState(std::string name,
+    double *value)
+{
+  return false;
+}
+
 /** 
  * Get the value of the rotor speed deviation
  * 
