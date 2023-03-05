@@ -1102,6 +1102,7 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(gen_data[i], data, g_id);
 	  } else if (!strcmp(gen_data[i].model,"IEEET1")) {
             Ieeet1Parser<gen_params> parser;
+	    parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"ESST1A")) {
             Esst1aParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
