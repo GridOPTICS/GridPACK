@@ -296,8 +296,7 @@ void gridpack::dynamic_simulation::Reeca1Model::init(double Vm, double Va,
       Q_Pfflag = V_err_PI_blk_in + Vt_filter - Vbias;
     } else {
       Q_PI_blk_in = Q_PI_blk.init_given_y(V_err_PI_blk_in + Vt_filter);
-      // ***** TO BE IMPLEMENTED ***
-      // Need to get Qelec
+      Q_Pfflag = Q_PI_blk_in + Qgen;
     }
   }
 
@@ -427,10 +426,9 @@ void gridpack::dynamic_simulation::Reeca1Model::computeModel(bool Voltage_dip,in
     if(!VFLAG) {
       Vlim_blk_in = Qext + Vbias;
     } else {
-      // ******* Not implemented yet
-      // Need to get Qelec
-      // Calculate Vlim_blk_in
-      // *************
+      double Qlim_blk_out;
+      Qlim_blk_out = Qlim_blk.getoutput(Qext);
+      Vlim_blk_in = Q_PI_blk.getoutput(Qlim_blk_out - Qgen);
     }
     double Verr_PI_blk_in;
     Verr_PI_blk_in = Vlim_blk.getoutput(Vlim_blk_in);
