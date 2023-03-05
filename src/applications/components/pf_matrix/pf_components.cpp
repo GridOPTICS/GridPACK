@@ -493,14 +493,16 @@ void gridpack::powerflow::PFBus::load(
       ok =  data->getValue(GENERATOR_PMAX,&pt,i);
       ok =  data->getValue(GENERATOR_PMIN,&pb,i);
       if (lgen) {
-        p_pg.push_back(pg);
-        p_savePg.push_back(pg);
-        p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
         if (gstatus == 0) {
           qmax = 0.0;
           qmin = 0.0;
+	  pg = 0.0;
+	  qg = 0.0;
         }
+	p_pg.push_back(pg);
+        p_savePg.push_back(pg);
+        p_qg.push_back(qg);
         p_pFac.push_back(qmax);
         p_qmax.push_back(qmax);
         qtot += qmax;
@@ -1015,15 +1017,17 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       }
     }
     for (i=0; i<ngen; i++) {
-      double pval;
-      double qval;
+      double pval = 0.0;
+      double qval = 0.0;
 
       if(getReferenceBus()) {
 	pval = p_pFac[i]*(p_Pinj*p_sbase+pl);
 	qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
       } else if (p_isPV) {
 	pval = p_pg[i];
-	qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	if(p_gstatus[i]) {
+	  qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	}
       } else {
 	pval = p_pg[i];
 	qval = p_qg[i];
