@@ -456,8 +456,9 @@ void gridpack::parser::TransformerParser35::parse(
        * type: integer
        * TRANSFORMER_CW
        */
+      int cw = atoi(split_line[4].c_str()); 
       p_branchData[l_idx]->addValue(TRANSFORMER_CW,
-          atoi(split_line[4].c_str()),nelems);
+         cw,nelems);
 
       /*
        * type: integer
@@ -579,6 +580,12 @@ void gridpack::parser::TransformerParser35::parse(
       ntoken = split_line3.size();
       double windv1 = atof(split_line3[0].c_str());
       double windv2 = atof(split_line4[0].c_str());
+      if(cw == 2) {
+	double nomv1 = atof(split_line3[1].c_str());
+	double nomv2 = atof(split_line4[1].c_str());
+	windv1 = windv1/nomv1;
+	windv2 = windv2/nomv2;
+      }
       double tap = windv1/windv2;
       p_branchData[l_idx]->addValue(BRANCH_TAP,tap,nelems);
       p_branchData[l_idx]->addValue(TRANSFORMER_WINDV1,windv1,nelems);

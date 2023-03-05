@@ -1795,6 +1795,9 @@ class BasePTIParser : public BaseParser<_network>
 
           // Clean up 2 character tag for generator ID
           std::string tag = util.clean2Char(split_line[2]);
+	  
+
+	  
           strcpy(data.gen_id, tag.c_str());
 
           double rval;

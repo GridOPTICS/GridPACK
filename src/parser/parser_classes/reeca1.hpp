@@ -841,6 +841,7 @@ template <class _data_struct> class Reeca1Parser
       // Clean up 2 character tag for generator ID
       gridpack::utility::StringUtils util;
       std::string tag = util.clean2Char(split_line[2]);
+      
       strcpy(data.gen_id, tag.c_str());
 
       std::string sval;
