@@ -161,18 +161,19 @@ void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, doubl
     
     temp = Qbranch_filter_blk.init_given_u(Qbranch);
   } else {
+    double V_VFLAG;
     if(!VCompFLAG) {
-      double V_VFLAG;
+
       Qbranch = Qg;
       V_VFLAG = Qbranch*Kc + Vt;
-
-      V_filter_blk_out = V_filter_blk.init_given_u(V_VFLAG);
-      Vref = V_filter_blk_out;
     } else {
-      // **************
-      // **** TO BE IMPLEMENTED
-      // *************
+      // Only considering Vt, line drop compensation
+      // needs to be implemented in full implementation
+      // This also means Rc = Xc = 0 in the file
+      V_VFLAG = Vt;
     }
+    V_filter_blk_out = V_filter_blk.init_given_u(V_VFLAG);
+    Vref = V_filter_blk_out;
   }
 }
 
@@ -210,8 +211,10 @@ void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,Integr
     y_VCompFLAG = Qbranch*Kc + Vt;
   } else {
     // **************
-    // *** Not implemented yet
+    // Line drop compensation not implemented,
+    // Only considering voltage control
     // *************
+    y_VCompFLAG = Vt;
   }
 
   if(!RefFLAG) {

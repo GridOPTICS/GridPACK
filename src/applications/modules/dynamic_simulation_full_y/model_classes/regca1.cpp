@@ -272,7 +272,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::Regca1Generator::INorton()
 
   Iq_olim = std::max(0.0,khv*(Vt - volim));
 
-  Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
+  Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
   transform(Ipout,Iqout,theta,&Irout,&Iiout);
 
@@ -321,7 +321,7 @@ void gridpack::dynamic_simulation::Regca1Generator::computeModel(double t_inc, I
 
   Iq_olim = std::max(0.0,khv*(Vt - volim));
 
-  Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
+  Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
   // Pg, Qg on machine MVAbase
   Pg = Vt*Ipout;
@@ -441,9 +441,9 @@ void gridpack::dynamic_simulation::Regca1Generator::computeModel(double t_inc, I
   if(lvplsw) {
     Lvpl_out = Lvpl_blk.getoutput(Vt_filter);
 
-    Ip = Ip_blk.getoutput(Ipcmd,t_inc,-1000.0,1000.0,-1000.0,Lvpl_out*rrpwr,-1000.0,1000.0,int_flag,true);
+    Ip = Ip_blk.getoutput(Ipcmd,t_inc,-1000.0,Lvpl_out,-1000.0,rrpwr,-1000.0,1000.0,int_flag,true);
   } else {
-    Ip = Ip_blk.getoutput(Ipcmd,t_inc,int_flag,true);
+    Ip = Ip_blk.getoutput(Ipcmd,t_inc,-1000.0,1000.0,-1000.0,rrpwr,-1000.0,1000.0,int_flag,true);
   }
 				   
   Iq = Iq_blk.getoutput(Iqcmd,t_inc,int_flag,true);

@@ -60,6 +60,12 @@ public:
       ntok++;
       ntok = str.find('\t',ntok);
     }
+    ntok = str.find('\r',0);
+    while (ntok != std::string::npos) {
+      str[ntok] = ' ';
+      ntok++;
+      ntok = str.find('\r',ntok);
+    }
     boost::trim(str);
   };
 
@@ -129,6 +135,11 @@ public:
     } else {
       clean_tag = tag;
     }
+
+    // Some systems put \r if the id is at the end of the line. remove it and put a space.
+      if(clean_tag.size() == 2 && clean_tag[clean_tag.size() - 1] == '\r')
+	clean_tag[1] = ' ';
+
     return clean_tag;
   }
 

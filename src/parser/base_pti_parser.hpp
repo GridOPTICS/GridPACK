@@ -1102,6 +1102,7 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(gen_data[i], data, g_id);
 	  } else if (!strcmp(gen_data[i].model,"IEEET1")) {
             Ieeet1Parser<gen_params> parser;
+	    parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"ESST1A")) {
             Esst1aParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1795,6 +1796,9 @@ class BasePTIParser : public BaseParser<_network>
 
           // Clean up 2 character tag for generator ID
           std::string tag = util.clean2Char(split_line[2]);
+	  
+
+	  
           strcpy(data.gen_id, tag.c_str());
 
           double rval;
