@@ -2,14 +2,7 @@
 
 # GridPACK<sup>TM</sup>-->
 
-GridPACK is a software framework to simplify the development of programs that model the power grid to run on parallel, high performance computing platforms. GridPACK comes with a set of prebuilt applications (programs) that can be readily used. The
-modules are available as a library and consist of components for
-setting up and distributing power grid networks, support for modeling
-the behavior of individual buses and branches in the network,
-converting the network models to the corresponding algebraic
-equations, and parallel routines for manipulating and solving large
-algebraic systems. Additional modules support input and output as well
-as basic profiling and error management.  
+GridPACK is an open-source high-performance (HPC) package for simulation of large-scale electrical grids. Powered by distributed (parallel) computing and high-performance numerical solvers, GridPACK offers fast simulation of electrical transmission systems. It comes with a set of prebuilt applications (programs) for transmission system analysis that can be readily used.  In addition, GridPACK is also a framework to simplify the development of new applications on HPC platforms. To ease the development, GridPACK offers several building blocks such as setting up and distributing (partitioning) power grid networks, support for custom components on buses and branches, converting the network models to the corresponding algebraic equations, parallel routines for manipulating and solving large algebraic systems, and input and output modules as well as basic profiling and error management.  
 
 <!---See the [GridPACK home page](https://www.gridpack.org) for more information.-->
 <!--
