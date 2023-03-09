@@ -1,66 +1,51 @@
-# GridPACK installation instructions
+# GridPACK step=by-step installation instructions
 This document provides a step-by-step guide to install GridPACK and its
 dependencies. They are meant to be used with GridPACK's develop branch. The
-installation instructions have been tested on Linux, MacOS, and Ubuntu. Before
-building GridPACK using these instructions, you will need to make sure that
-CMake is available on your system (version newer than 3.5.0) and that you have
-a GNU compiler installed. You will also need to have MPI installed on your
-platform. Most clusters already have MPI available, but if you are building
-GridPACK on a workstation or a virtual machine, you may need to install or build
-MPI on your own. More information on configuring your Linux platform
-can be found [here](required/LINUX_BASICS.md).
+installation instructions have been tested on Linux, MacOS, and Ubuntu. 
 
-The example below can be adapted to build GridPACK on many platforms. More
-specific examples, with detailed instructions, for builds using different
-variants of Linux can be found on the links below.
-
-* [CentOS7 or RHEL 7](platforms/CENTOS7.md)
-* [Ubuntu](platforms/UBUNTU.md)
-* [Ubuntu PPA Install](platforms/UBUNTU_PPA.md)
-* [Debian](platforms/Debian.md)
-* [Linux Cluster](platforms/RC_CLUSTER.md)
-* [Notes](../notes): GridPACK has been built on several leadership platforms.
-  These builds have typically been fairly complicated and require assistance
-  from the support staff. Notes on these builds for individual platforms can be
-  found in this directory and may be of use to those attempting to build on
-  these platforms or similar platforms.
+## Prerequisite software
+Before building GridPACK using these instructions, you will need to make sure that
+- CMake is available on your system (version newer than 3.5.0) 
+- you have a GNU compiler installed,
+- you will also need to have MPI installed on your
+platform. Most clusters already have MPI available, but if you are building GridPACK on a workstation or a virtual machine, you may need to install or build
+MPI on your own. More information on configuring your Linux platform can be found [here](required/LINUX_BASICS.md).
 
 ## Submodule(s)
-
-If building a verions of GridPACK that has been cloned directly from the Github
-repository, it is first necessary to download some submodules. This can be done
-by running the command
-
+If building a verions of GridPACK that has been cloned directly from the Github repository, it is first necessary to download some submodules. This can be done by running the following command in the top-level GridPACK directory.
 ```
 git submodule update --init
 ```
 
-in the top-level GridPACK directory.
-The CMake configuration will fail if this command has not been run. If you are
+<!--The CMake configuration will fail if this command has not been run. If you are
 building GridPACK from one of the releae tarballs, the submodules will already
 be included in the tarball and this command is not necessary.
+-->
 
-## Boost 1.78.0
-Step 1. Download boost 1.78.0
+## Detailed installation instructions
+The instructions below install GridPACK and all its dependencies. If the dependencies are already installed then one can directly go to step 4.
+
+### <b>Step 1: Install Boost 1.78.0</b>
+Step 1.1 Download boost 1.78.0
 ```
 wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.tar.gz
 ```
-Step 2. Untar file
+Step 1.2. Untar file
 ```
 tar -xvf boost_1_78_0.tar.gz
 ```
-Step 3. `cd boost_1_78_0`
+Step 1.3. `cd boost_1_78_0`
 
-Step 4. Build Boost with the needed libraries and set the installation directory. Here, we'll use `install_for_gridpack` as the installation directory.
+Step 1.4. Build Boost with the needed libraries and set the installation directory. Here, we'll use `install_for_gridpack` as the installation directory.
 
 ```
 ./bootstrap.sh --prefix=install_for_gridpack --with-libraries=mpi,serialization,random,filesystem,system
 
 ```
-Step 5. Edit `project-config.jam` file and add a line to it with the text
+Step 1.5. Edit `project-config.jam` file and add a line to it with the text
 `using mpi ;`
 
-Step 6. Install Boost. This is done by the following two commands
+Step 1.6. Install Boost. This is done by the following two commands
 ```
 ./b2 -a -d+2 link=static stage
 ```
@@ -71,52 +56,52 @@ and
 
 **Note:** To build shared libraries for Boost, use the flag `link=shared` instead of `link=static`.
 
-Step 7. If boost installation goes through correctly, then you should see `include` and `lib` subdirectories in your installation directory `install_for_gridpack`
+Step 1.7. If boost installation goes through correctly, then you should see `include` and `lib` subdirectories in your installation directory `install_for_gridpack`
 
 If you run into difficulties more information on building and installing Boost
 can be found [here](required/BOOST.md)
 
-## Install Global arrays
-Step 1. Download GA-5.8
+## <b>Step 2: Install Global arrays</b>
+Step 2.1. Download GA-5.8
 ```
 wget https://github.com/GlobalArrays/ga/releases/download/v5.8/ga-5.8.tar.gz
 ```
-Step 2. Untar file
+Step 2.2. Untar file
 ```
 tar -xvf ga-5.8.tar.gz
 ```
-Step 3. `cd ga-5.8`
+Step 2.3. `cd ga-5.8`
 
-Step 4. Configure ga and set the installation directory
+Step 2.4. Configure ga and set the installation directory
 ```
 ./configure --with-mpi-ts --disable-f77 --without-blas --enable-cxx --enable-i4 --prefix=${PWD}/install_for_gridpack
 ```
 **Note:** To build shared libraries for GA, add the flag `--enable-shared`
 
-Step 5. Compile GA and install
+Step 2.5. Compile GA and install
 ```
 make -j 10 install
 ```
-Step 6. If the compilation succeeds, `include`, `lib`, and `bin` directories should be created in your installation directory `${PWD}/install_for_gridpack`
+Step 2.6. If the compilation succeeds, `include`, `lib`, and `bin` directories should be created in your installation directory `${PWD}/install_for_gridpack`
 
 More information on building and installing GA can be found
 [here](required/GLOBAL_ARRAYS.md)
 
-## Install PETSc 3.16.4
-Step 1. Download PETSc release
+## <b>Step 3: Install PETSc 3.16.4</b>
+Step 3.1. Download PETSc release
 
 ```
 git clone https://gitlab.com/petsc/petsc.githttps://gitlab.com/petsc/petsc.git
 git checkout v3.16.4
 ```
-Step 2. `cd petsc`
+Step 3.2. `cd petsc`
 
-Step 3. Set environment variables needed for PETSc
+Step 3.3. Set environment variables needed for PETSc
 ```
 export PETSC_DIR=${PWD}
 export PETSC_ARCH=build-dir
 ```
-Step 4. Build PETSc. GridPACK needs a few other libraries installed with PETSc. We'll install them during configure stage of PETSc.
+Step 3.4. Build PETSc. GridPACK needs a few other libraries installed with PETSc. We'll install them during configure stage of PETSc.
 ```
 ./configure --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake --prefix=${PWD}/install_for_gridpack
 ```
@@ -126,36 +111,36 @@ Step 4. Build PETSc. GridPACK needs a few other libraries installed with PETSc. 
 
 This step will take a few minutes.
 
-Step 5. Once the configuration is complete, run the following commands to compile and test PETSc
+Step 3.5. Once the configuration is complete, run the following commands to compile and test PETSc
 ```
 make
 make install
 make check
 ```
 
-Step 6. Once PETSc installation is complete and all tests pass after running `make check`, you'll see three directories `include`, `lib`, and `bin` under the installation directory `${PWD}/install_for_gridpack`
+Step 3.6. Once PETSc installation is complete and all tests pass after running `make check`, you'll see three directories `include`, `lib`, and `bin` under the installation directory `${PWD}/install_for_gridpack`
 
 More information on building and installing PETSc can be found
 [here](required/PETSC.md). In the unlikely event that PETSc cannot download and
 build ParMETIS, more information of building this library can be found
 [here](required/PARMETIS.md).
 
-## Building GridPACK
+## <b>Step 4: Install GridPACK</b>
 Now that we have installed the needed dependencies, we can proceed with downloading and installing GridPACK.
 
-Step 1. Download GridPACK
+Step 4.1. Download GridPACK
 ```
 git clone https://github.com/GridOPTICS/GridPACK.git
 ```
-Step 2. Change branch to develop
+Step 4.2. Change branch to develop
 ```
 git checkout develop
 ```
-Step 3. `cd GridPACK/src`
+Step 4.3. `cd GridPACK/src`
 
-Step 4. Create build directory `mkdir build`, and cd to it - `cd build`
+Step 4.4. Create build directory `mkdir build`, and cd to it - `cd build`
 
-Step 5. Copy the following GridPACK configuration commands to a file (name it for e.g. `build.sh`)
+Step 4.5. Copy the following GridPACK configuration commands to a file (name it for e.g. `build.sh`)
 ```
 rm -rf CMake*                                                                               
 cmake \                                                                                     
@@ -180,32 +165,48 @@ cmake \
 
 **Note:** If you do not use `--prefix=${PWD}/install_for_gridpack` flag for PETSc install then PETSc will write the installation files in `$PETSC_DIR/$PETSC_ARCH`. So, you'll need to add `-D PETSC_ARCH=<PETSC_ARCH_NAME>` to the above CMake commands.
 
-Step 6. Make the file executable `chmod +x build.sh`
+Step 4.6. Make the file executable `chmod +x build.sh`
 
-Step 7. Run `build.sh`
+Step 4.7. Run `build.sh`
 ```
 ./build.sh
 ```
-Step 8. Compile and install
+Step 4.8. Compile and install
 ```
 make -j 10 install
 ```
 During installation, you may see several warnings generated. This is typical of GridPACK install. You can ignore them.
 
-Step 9. Test GridPACK install by running tests.
+Step 4.9. Test GridPACK install by running tests.
 ```
 make test
 ```
 You may perhaps see several of the tests failing. This is fine. We'll test in the next step whether the dynamics simulation application is running correctly.
 
-Step 10. Test GridPACK install by running dynamics simulation
+Step 4.10. Test GridPACK install by running dynamics simulation
 ```
 cd applications/dynamic_simulation_full_y
 cp input_145.xml input.xml
 ./dsf.x
 ```
+If the application runs smoothly then you should see the timing stats printed out after the run.
+
+**This completes the installation and testing of GridPACK**
+
+<!--
 
 More information on configuring and building GridPACK can be found
 [here](required/GRIDPACK.md)
 
+## Notes on selected platforms
+The example above can be adapted to build GridPACK on many platforms. More specific examples, with detailed instructions, for builds using different
+variants of Linux can be found on the links below.
+**Note** The instructions below are for older builds of GridPACK that may not work
+* [CentOS7 or RHEL 7](platforms/CENTOS7.md)
+* [Ubuntu](platforms/UBUNTU.md)
+* [Ubuntu PPA Install](platforms/UBUNTU_PPA.md)
+* [Debian](platforms/Debian.md)
+* [Linux Cluster](platforms/RC_CLUSTER.md)
+* [Notes](../notes): GridPACK has been built on several leadership platforms.
+These builds have typically been fairly complicated and require assistance from the support staff. Notes on these builds for individual platforms can be found in this directory and may be of use to those attempting to build on these platforms or similar platforms.
 
