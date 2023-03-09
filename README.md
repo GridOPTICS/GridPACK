@@ -32,7 +32,7 @@ See [User manual](docs/user_manual/GridPACK.pdf) for a deep dive on GridPACK int
 -->
 
 ## Contact us
-The best (and fastest) way to reach us for any technical questions is by posting an issue [here]https://github.com/GridOPTICS/GridPACK/issues. You can also reach us via email   gridpack.account@pnnl.gov.
+The best (and fastest) way to reach us for any technical questions is by posting an issue [here](https://github.com/GridOPTICS/GridPACK/issues). You can also reach us via email   gridpack.account@pnnl.gov.
 
 ## Citing GridPACK
 ```
