@@ -416,13 +416,20 @@ class BasePTIParser : public BaseParser<_network>
       double mq;
       double kpv;
       double kiv;
-      double emax;
-      double emin;
       double mp;
       double kppmax;
       double kipmax;
-      double pset;
+      double emax;
+      double emin;
+      double tpf;
       double imax;
+      double qmax;
+      double qmin;
+      double kpqmax;
+      double kiqmax;
+      double tqf;
+      double tvf;
+      int    vflag;
 	  
       int regc_lvplsw;
       double regc_tg;

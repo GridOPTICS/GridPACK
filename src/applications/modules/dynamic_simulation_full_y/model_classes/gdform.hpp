@@ -7,11 +7,16 @@
 /**
  * @file   gdform.hpp
  * @author Renke Huang
- * @Last modified:   Jan. 16, 2021
  * 
  * @brief  
+ * Grid-Forming inverter model 
  * 
- * 
+ * @updated
+ * @author Shrirang Abhyankar
+ * Model re-implementation with cblocks
+ * Jan. 6, 2023
+ *
+ * Updated version of model including Qlimit dynamics and Vflag
  */
 
 
@@ -20,6 +25,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_generator_model.hpp"
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -97,6 +104,17 @@ class GridFormingGenerator : public BaseGeneratorModel
     void setVoltage(gridpack::ComplexType voltage);
 
     /**
+     * Set frequency
+     */
+    void setFreq(double dFreq);
+
+    // Called by both predictor and corrector to compute the model
+  void computeModel(double t_inc, IntegrationStage int_flag,bool flag);
+
+  // Update the limits on E for current limiting
+
+  gridpack::ComplexType CurrentLimitLogic(gridpack::ComplexType I);
+    /**
 	* return true if trip generator successfully
 	* 
 	*/
@@ -127,41 +145,73 @@ class GridFormingGenerator : public BaseGeneratorModel
 
   private:
 
-    double p_sbase;
-    double p_pg, p_qg;
-    int p_status;
-	bool p_tripped;
-	bool bmodel_debug;
-	bool bCurrentLimitFlag;
-    
-    double MVABase;
-    double XL, Ts, Vset, mq, kpv, kiv, Emax, Emin, mp, kppmax, kipmax, Pset, Pmax, Pmin, Imax;
-    double fset, Ra;
-	double delta_omega_lim;
-	double mp_org, mq_org, Vset_org, Pset_org;
-    
-    //double Vterm, Theta, Ir, Ii;
-    
-    double x1E_0, x2d_0, x3_0, x4_0, xvterm_0, xp_0, xq_0;
-    double x1E_1, x2d_1, x3_1, x4_1, xvterm_1, xp_1, xq_1;
-    double dx1E_0, dx2d_0, dx3_0, dx4_0, dxvterm_0, dxp_0, dxq_0;
-    double dx1E_1, dx2d_1, dx3_1, dx4_1, dxvterm_1, dxp_1, dxq_1;
+  double p_sbase;
+  double p_mbase;
+  double p_pg, p_qg;
+  int p_status;
+  bool p_tripped;
 
-    double E_term, E_delta, IrNorton, IiNorton, omega, genP, genQ;
-	double Poutctrl;
-	double Vterm_delay, genP_delay, genQ_delay;
-    
-    gridpack::ComplexType p_INorton;
-	gridpack::ComplexType p_Norton_Ya;
+  // parameters
+  double Ra, Xl, mq, kpv, kiv, mp, kppmax, kipmax, Pmax, Pmin;
+  double Emax, Emin, Tpf, Imax, Qmax, Qmin;
+  double kpqmax,kiqmax,Tqf,Tvf;
+  int    Vflag;
 
-    double presentMag, presentAng;
-	double Ir, Ii, Iinjr, Iinji, Vterm, Theta, Igen_mag;
-	double B, G;
+  // Inputs set at steady-state (t=0)
+  double Vset,Pset;
+  gridpack::ComplexType Zsource;
 
-    std::string p_ckt;
-    int p_bus_id;
+  // Constants
+  double omega0; // base angular velocity
 
-    friend class boost::serialization::access;
+  // Blocks
+  Filter P_filter_blk;
+  double Pinv; // Output of P filter block
+
+  Filter Q_filter_blk;
+  double Qinv; // Output of Q filter block
+
+  Filter V_filter_blk;
+  double Vmeas; // Output of V filter block
+
+  PIControl Edroop_PI_blk; // PI control for E
+
+  GainLimiter Edroop_limiter_blk; // Limiter for E when Vflag = 0
+
+  double Edroop; // Output of Edroop PI block OR Edroop limiter block
+  
+  PIControl Pmax_PI_blk; // PI controller for Pmax limit
+  double Pmax_PI_blk_out; // Output of PI controller for Pmax limit
+
+  PIControl Pmin_PI_blk; // PI controller for Pmin limit
+  double Pmin_PI_blk_out; // Output of PI controller for Pmin limit
+
+  PIControl Qmax_PI_blk; // PI controller for Qmax limit
+  double Qmax_PI_blk_out; // Output of PI controller for Qmax limit
+
+  PIControl Qmin_PI_blk; // PI controller for Qmin limit
+  double Qmin_PI_blk_out; // Output of PI controller for Qmin limit
+
+  Integrator Delta_blk; // Integrator block for PLL
+  double delta;         // Output of integrator block
+
+  // Internal variables
+  double busfreq;
+  std::string p_gen_id;
+  int p_bus_num;
+  double Vt, theta, VR, VI, Im;
+  gridpack::ComplexType E,V,I,S;
+  double omega;
+  gridpack::ComplexType p_Norton_Ya;
+  double B, G;
+  double Edroop_max,Edroop_min; // Only set when current exceeds Imax
+  bool   zero_Tpf,zero_Tqf,zero_Tvf;
+  double Vthresh; // Threshold below which states are frozen
+
+  // Output
+  gridpack::ComplexType p_INorton;
+  
+  friend class boost::serialization::access;
 
     template<class Archive>
       void serialize(Archive & ar, const unsigned int version)
@@ -170,9 +220,9 @@ class GridFormingGenerator : public BaseGeneratorModel
           & p_sbase
           & p_pg & p_qg
           & p_status
-          & MVABase 
+          & p_mbase 
           & p_INorton
-          & p_bus_id;
+          & p_bus_num;
       }
 
 };
