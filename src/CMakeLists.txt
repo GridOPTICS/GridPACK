@@ -392,12 +392,6 @@ endif()
 # Only versions > 4.0 have been used
 # -------------------------------------------------------------
 message(STATUS "Checking ParMETIS ...")
-
-# If ParMETIS is included in PETSc, use that installation. This will
-# override any specification on the command line.  
-if (PETSC_HAVE_PARMETIS) 
-  set(PARMETIS_DIR "${PETSC_DIR}/${PETSC_ARCH}")
-endif()
 find_package(ParMETIS REQUIRED)
 
 
