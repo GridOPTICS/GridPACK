@@ -479,7 +479,7 @@ void gridpack::powerflow::PFBus::load(
   int ngen = 0;
   p_ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
-    double qtot = 0.0;
+    double pcaptot = 0.0;
     for (i=0; i<ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
@@ -503,15 +503,20 @@ void gridpack::powerflow::PFBus::load(
 	p_pg.push_back(pg);
         p_savePg.push_back(pg);
         p_qg.push_back(qg);
-        p_pFac.push_back(qmax);
         p_qmax.push_back(qmax);
-        qtot += qmax;
         p_qmin.push_back(qmin);
-        p_pFac_orig.push_back(qmax);
         p_qmax_orig.push_back(qmax);
         p_qmin_orig.push_back(qmin);
         p_pt.push_back(pt);
         p_pb.push_back(pb);
+	if(gstatus) {
+	  p_pFac.push_back(pt - pb);
+	  pcaptot += pt - pb;
+	} else {
+	  p_pFac.push_back(0.0);
+	}
+	p_pFac_orig.push_back(pt - pb);
+
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
           if (p_type == 2) p_isPV = true;
@@ -522,9 +527,9 @@ void gridpack::powerflow::PFBus::load(
         p_ngen++;
       }
     }
-    if (qtot != 0.0 && p_ngen > 1) {
+    if (pcaptot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
-        p_pFac[i] = p_pFac[i]/qtot;
+        p_pFac[i] = p_pFac[i]/pcaptot;
         p_pFac_orig[i] = p_pFac[i];
       }
     } else {
