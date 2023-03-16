@@ -155,6 +155,22 @@ class Regcc1Generator : public BaseGeneratorModel
      * @param vals vector of watched values
      */
     void getWatchValues(std::vector<double> &vals);
+
+    /**
+     * Set internal state parameter in generator
+     * @param name character string corresponding to state variable
+     * @param value new value for state parameter
+     * @return false if no variable corresponding to name is found
+     */
+    bool setState(std::string name, double value);
+
+    /**
+     * Get internal state parameter in generator
+     * @param name character string corresponding to state variable
+     * @param value current value for state parameter
+     * @return false if no variable corresponding to name is found
+     */
+    bool getState(std::string name, double *value);
 		
   private:
 

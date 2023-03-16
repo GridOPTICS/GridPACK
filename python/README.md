@@ -7,7 +7,7 @@ is the main capability currently exposed.
 ## Requirements
 
   * GridPACK >= 3.4
-  * Python >= 2.7
+  * Python >= 2.7 (but use >= 3.x)
   * pybind11 >= 2.4
   * Python `setuptools` package
   * Python `nose` package
@@ -26,9 +26,9 @@ git submodule update --init
 
 ### GridPACK
 
-GridPACK, `feature/hadrec` branch, must be built and *installed* as
-*shared* libraries. This requires that any GridPACK dependencies
-(e.g. PETSc, Global Arrays, Boost) also be built as shared libraries.
+GridPACK must be built and *installed* as *shared* libraries. This
+requires that any GridPACK dependencies (e.g. PETSc, Global Arrays,
+Boost) also be built as shared libraries.
 
 ## Build and Test
 

@@ -485,6 +485,27 @@ class DSFullBus
         std::vector<double> &ql, std::vector<int> &status);
 
     /**
+     * Return pointer to generator corresponding to two-character id
+     * @param id two character id labeling generator
+     * @return pointer to generator device
+     */
+    gridpack::dynamic_simulation::BaseGeneratorModel *getGenerator(std::string id);
+
+    /**
+     * Return pointer to load corresponding to two-character id
+     * @param id two character id labeling load
+     * @return pointer to load device
+     */
+    gridpack::dynamic_simulation::BaseLoadModel *getLoad(std::string id);
+
+    /**
+     * Return pointer to relay corresponding to two-character id
+     * @param id two character id labeling relay
+     * @return pointer to relay device
+     */
+    gridpack::dynamic_simulation::BaseRelayModel *getRelay(std::string id);
+
+    /**
      * Get list of generator IDs
      * @return vector of generator IDs
      */

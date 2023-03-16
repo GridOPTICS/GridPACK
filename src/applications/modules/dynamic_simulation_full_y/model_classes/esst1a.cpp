@@ -423,3 +423,26 @@ void gridpack::dynamic_simulation::Esst1aModel::setVstab(double vtmp)
   Vstab = vtmp;
 }
 
+/**
+ * Set internal state parameter in exciter
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Esst1aModel::setState(std::string name,
+    double value)
+{
+  return false;
+}
+
+/**
+ * Get internal state parameter in exciter
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Esst1aModel::getState(std::string name,
+    double *value)
+{
+  return false;
+}

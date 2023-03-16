@@ -616,3 +616,27 @@ void gridpack::dynamic_simulation::Regcb1Generator::getWatchValues(
     vals.push_back(Qg);  //output at generator mva base
   }
 }
+
+/**
+ * Set internal state parameter in generator
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */   
+bool gridpack::dynamic_simulation::Regcb1Generator::setState(std::string name,
+    double value)
+{
+  return false;
+}
+
+/**
+ * Get internal state parameter in generator
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */   
+bool gridpack::dynamic_simulation::Regcb1Generator::getState(std::string name,
+    double *value)
+{
+  return false;
+}

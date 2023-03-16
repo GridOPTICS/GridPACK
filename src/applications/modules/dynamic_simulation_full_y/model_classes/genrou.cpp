@@ -763,3 +763,43 @@ void gridpack::dynamic_simulation::GenrouGenerator::getWatchValues(
   
   
 }
+
+/**
+ * Set internal state parameter in generator
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::GenrouGenerator::setState(std::string name,
+    double value)
+{
+  if(name == "ANGLE") {
+    x1d = x1d_1 = value;
+    return true;
+  } else if(name == "SPEED_DEV") {
+    x2w = x2w_1 = value;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Get internal state parameter in generator
+ * @param name character string corresponding to state variable
+ * @return value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::GenrouGenerator::getState(std::string name,
+    double *value)
+{
+  if(name == "ANGLE") {
+    *value = x1d;
+    return true;
+  } else if(name == "SPEED_DEV") {
+    *value = x2w;
+    return true;
+  } else {
+    return false;
+  }
+}

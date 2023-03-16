@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2022-10-11 13:51:43 d3g096
+// Last Change: 2023-03-06 11:58:00 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -399,6 +399,31 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::arg("BusFaults") = std::vector<gpds::Event>(),
          py::arg("pfcase_idx") = -1,
          py::arg("dscase_idx")
+         )
+    .def("setState",
+         [](gph::HADRECAppModule& self, const int& bus_id, const std::string& dev_id,
+            const std::string& device, const std::string& name,
+            const double& value) {
+           bool status;
+           status = self.setState(bus_id, dev_id, device, name, value);
+           return status;
+         }
+         )
+    .def("getState",
+         [](gph::HADRECAppModule& self, const int& bus_id, const std::string& dev_id,
+            const std::string& device, const std::string& name) -> py::object {
+           bool status;
+           double value;
+           status = self.getState(bus_id, dev_id, device, name, &value);
+
+           // Value is returned if successful.
+           if (status) {
+             return  py::cast(value);
+           }
+
+           // Otherwise, None is returned. 
+           return py::object();
+         }
          )
     ;
 

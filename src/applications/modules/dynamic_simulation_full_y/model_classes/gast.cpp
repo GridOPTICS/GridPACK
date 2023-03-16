@@ -200,3 +200,27 @@ void gridpack::dynamic_simulation::GastModel::setExtGenId(std::string ExtGenId)
 	p_ckt = ExtGenId;
 }
 */
+
+/** 
+ * Set internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::GastModel::setState(std::string name,
+    double value)
+{
+  return false; 
+}
+
+/** 
+ * Get internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::GastModel::getState(std::string name,
+    double *value)
+{
+  return false; 
+}

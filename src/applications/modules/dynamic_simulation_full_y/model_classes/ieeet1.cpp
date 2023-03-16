@@ -259,3 +259,26 @@ void gridpack::dynamic_simulation::Ieeet1Model::setExtGenId(std::string ExtGenId
   p_gen_id = ExtGenId;
 }
 
+/**
+ * Set internal state parameter in exciter
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Ieeet1Model::setState(std::string name,
+    double value)
+{
+  return false;
+}
+
+/**
+ * Get internal state parameter in exciter
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Ieeet1Model::getState(std::string name,
+    double *value)
+{
+  return false;
+}

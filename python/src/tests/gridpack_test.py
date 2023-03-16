@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-08-25 08:12:57 d3g096
+# Last Change: 2023-03-09 14:54:16 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -68,6 +68,10 @@ class GridPACKTester(TestCase):
         print (hadapp.getGeneratorPower(3, "1"))
         print (hadapp.getGeneratorPower(3, "14")) # should be None
         print (hadapp.getGeneratorPower(-1, "1")) # should be None
+
+        # We need some actual tests of get/setState() that work
+        # print (hadapp.getState(1, "1", "Device", "ANGLE"))
+        # print (hadapp.setState(1, "1", "Device", "ANGLE", 0.0))
 
         loadshedact = gridpack.hadrec.Action()
         loadshedact.actiontype = 0

@@ -143,6 +143,22 @@ class BaseExciterModel
 	virtual void setExtGenId(std::string ExtGenId);
 	// Yuan added above 2020-6-23
 
+   /**
+    * Set internal state parameter in exciter
+    * @param name character string corresponding to state variable
+    * @param value new value for state parameter
+    * @return false if no variable corresponding to name is found
+    */
+   virtual bool setState(std::string name, double value);
+
+   /**
+    * Get internal state parameter in exciter
+    * @param name character string corresponding to state variable
+    * @param value current value for state parameter
+    * @return false if no variable corresponding to name is found
+    */
+   virtual bool getState(std::string name, double *value);
+
   private:
     
     //double Vterminal, w;

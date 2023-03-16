@@ -131,3 +131,29 @@ void gridpack::dynamic_simulation::BaseGovernorModel::setExtGenId(std::string Ex
 {
 }	
 // Yuan added above 2020-6-23
+
+/**
+ * Set internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is
+ found
+ */
+bool gridpack::dynamic_simulation::BaseGovernorModel::setState(
+    std::string name, double value)
+{
+  return false;
+}
+
+/**
+ * Get internal state parameter in governor
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is
+ found
+ */
+bool gridpack::dynamic_simulation::BaseGovernorModel::getState(
+    std::string name, double *value)
+{
+  return false;
+}
