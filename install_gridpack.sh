@@ -12,7 +12,11 @@ install_gridpack=true
 install_gridpack_python=true
 
 # Set your python executable here
-python_exe=`which python3`
+python_exe=`which python`
+if[ -z ${python_exe}]
+then
+    python_exe=`which python3`
+fi
 
 # Install log file
 install_log_file=${PWD}/install.log
@@ -126,6 +130,7 @@ then
 fi  
 
 GRIDPACK_INSTALL_DIR=${GRIDPACK_ROOT_DIR}/src/install
+export GRIDPACK_DIR=${GRIDPACK_INSTALL_DIR}
 
 if ${install_gridpack}
 then
@@ -168,7 +173,6 @@ then
     
     git submodule update --init
 
-    export GRIDPACK_DIR=${GRIDPACK_INSTALL_DIR}
     echo ${GRIDPACK_DIR}
     cd python
 
