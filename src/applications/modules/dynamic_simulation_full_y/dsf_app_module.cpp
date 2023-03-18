@@ -1292,7 +1292,7 @@ void gridpack::dynamic_simulation::DSFullApp::write(const char* signal)
  */
 std::vector<gridpack::dynamic_simulation::Event>
 gridpack::dynamic_simulation::DSFullApp::
-getFaults(gridpack::utility::Configuration::CursorPtr cursor)
+getEvents(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("faultEvents");

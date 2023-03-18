@@ -261,7 +261,7 @@ class DSFullApp
      * @return a list of fault events
      */
     std::vector<gridpack::dynamic_simulation::Event>
-      getFaults(gridpack::utility::Configuration::CursorPtr cursor);
+      getEvents(gridpack::utility::Configuration::CursorPtr cursor);
 
     /**
      * Read in generators that should be monitored during simulation
@@ -597,23 +597,39 @@ class DSFullApp
   private:
 
   double p_current_time; /* Current time */
-  double p_final_time;  /* Final time */
+  double p_sim_time;    // Simulation time
   double p_time_step;    /* Time-step */
   
-    /**
-      run one step of dynamics simulation
-    **/
+  /**
+     run one step of dynamics simulation
+  **/
   void runonestep();
-  
-    /**
-     * Utility function to convert faults that are in event list into
-     * internal data structure that can be used by code
-     */
-    void setFaultEvents();
 
-    /**
-     * Open file (specified in input deck) to write generator results to.
-     * Rotor angle and speeds from generators specified in input deck will be
+  /*
+    Update Norton current injected in the network
+    predcorrflag = 0 => Predictor stage
+    predcorrflag = 1 => Corrector stage
+  */
+  void getCurrent(int predcorrflag);
+
+  /*
+    Solve Network equations
+    predcorrflag = 0 => Predictor stage
+    predcorrflag = 1 => Corrector stage
+    returns true if netwok converged
+  */
+  bool solveNetwork(int predcorrflag);
+
+
+  /**
+   * Utility function to convert faults that are in event list into
+   * internal data structure that can be used by code
+   */
+  void setFaultEvents();
+  
+  /**
+   * Open file (specified in input deck) to write generator results to.
+   * Rotor angle and speeds from generators specified in input deck will be
      * written to this file at specified time intervals
      */
     void openGeneratorWatchFile();
@@ -786,7 +802,7 @@ class DSFullApp
       return false;
     }
 
-    std::vector<gridpack::dynamic_simulation::Event> p_faults;
+    std::vector<gridpack::dynamic_simulation::Event> p_events;
 
     // pointer to network
     boost::shared_ptr<DSFullNetwork> p_network;
@@ -808,11 +824,6 @@ class DSFullApp
 	//for the generator observations, output the generator power based on system base or generator base
 	bool p_generator_observationpower_systembase;
 
-    // Simulation time
-    double p_sim_time;
-
-    // Time step
-    double p_time_step;
 
     // Current step count?
     int p_S_Steps;

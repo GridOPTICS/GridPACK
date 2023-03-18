@@ -329,7 +329,7 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
   cursor = config_sptr->getCursor("Configuration.Dynamic_simulation");
   
   if (faults.empty()){
-	faults = ds_app_sptr->getFaults(cursor);
+	faults = ds_app_sptr->getEvents(cursor);
   }
 
   // run dynamic simulation

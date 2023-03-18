@@ -113,7 +113,7 @@ class WindDriver
      * @return a list of fault events
      */
     std::vector<gridpack::dynamic_simulation::Event>
-      getFaults(gridpack::utility::Configuration::CursorPtr cursor);
+      getEvents(gridpack::utility::Configuration::CursorPtr cursor);
 
     /**
      * Modify real power parameters in DS network based on values in

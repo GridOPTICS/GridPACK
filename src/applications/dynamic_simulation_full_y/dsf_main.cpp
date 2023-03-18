@@ -135,7 +135,7 @@ main(int argc, char **argv)
     //gridpack::utility::Configuration::CursorPtr cursor;
     cursor = config->getCursor("Configuration.Dynamic_simulation");
     std::vector<gridpack::dynamic_simulation::Event> faults;
-    faults = ds_app.getFaults(cursor);
+    faults = ds_app.getEvents(cursor);
 
     // run dynamic simulation
     ds_app.setNetwork(ds_network, config);

@@ -384,7 +384,7 @@ void gridpack::contingency_analysis::WindDriver::resetData(
  */
 std::vector<gridpack::dynamic_simulation::Event>
 gridpack::contingency_analysis::WindDriver::
-getFaults(gridpack::utility::Configuration::CursorPtr cursor)
+getEvents(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("faultEvents");
@@ -695,7 +695,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   timer->start(t_flts);
   cursor = config->getCursor("FaultList.Dynamic_simulation");
   std::vector<gridpack::dynamic_simulation::Event>
-    faults = getFaults(cursor);
+    faults = getEvents(cursor);
 
   if (world.rank() == 0) {
     int idx;
