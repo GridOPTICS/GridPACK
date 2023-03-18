@@ -13,7 +13,7 @@ install_gridpack_python=true
 
 # Set your python executable here
 python_exe=`which python`
-if[ -z ${python_exe}]
+if test -z ${python_exe}
 then
     python_exe=`which python3`
 fi
