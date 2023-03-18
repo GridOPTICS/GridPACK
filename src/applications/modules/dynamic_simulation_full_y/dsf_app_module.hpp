@@ -112,12 +112,22 @@ class DSFullApp
      * initialization before the time step integration starts 
      */
     void solvePreInitialize(gridpack::dynamic_simulation::Event fault);
-	
+
+     /**
+	Setup before the dynamic simulation begins
+     **/
+  void setup();
 	/**
      * Execute only one simulation time step 
      */
     void executeOneSimuStep();
-	
+
+     /**
+	Run upto a given time
+     **/
+  void run(double tend);
+
+     
 	/**
 	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
 	 * the vector  vloadP and vloadQ
@@ -559,7 +569,42 @@ class DSFullApp
     bool getState(int bus_id, std::string dev_id, std::string device,
         std::string name, double *value);
 
+    /*
+      Get the time-step
+    */
+    double getTimeStep();
+
+    /*
+      Set the time-step
+    */
+    void setTimeStep(double time_step);
+
+    /*
+      Set simulation end time
+    */
+    void setFinalTime(double final_time);
+
+    /*
+      Get simulation end time
+    */
+    double getFinalTime();
+
+    /*
+      Get current time
+    */
+    double getCurrentTime();
+  
   private:
+
+  double p_current_time; /* Current time */
+  double p_final_time;  /* Final time */
+  double p_time_step;    /* Time-step */
+  
+    /**
+      run one step of dynamics simulation
+    **/
+  void runonestep();
+  
     /**
      * Utility function to convert faults that are in event list into
      * internal data structure that can be used by code
