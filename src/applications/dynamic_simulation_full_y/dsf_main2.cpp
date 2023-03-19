@@ -13,25 +13,8 @@
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
 #include <vector>
 
-
-// Calling program for the dynamis simulation applications
-
-int
-main(int argc, char **argv)
+void run_dynamics(int argc, char **argv)
 {
-  gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
-  noprint_ins->setStatus(false);
-  
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
-
-  // Intialize Math libraries
-  gridpack::math::Initialize(&argc,&argv);
-
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
@@ -100,7 +83,27 @@ main(int argc, char **argv)
   //ds_app.write();
   timer->stop(t_total);
   timer->dump();
+}
 
+// Calling program for the dynamis simulation applications
+
+int main(int argc, char **argv)
+{
+  gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
+  noprint_ins->setStatus(false);
+  
+  // Initialize MPI libraries
+  int ierr = MPI_Init(&argc, &argv);
+
+  GA_Initialize();
+  int stack = 200000, heap = 200000;
+  MA_init(C_DBL, stack, heap);
+
+  // Intialize Math libraries
+  gridpack::math::Initialize(&argc,&argv);
+
+  run_dynamics(argc,argv);
+  
   GA_Terminate();
 
   // Terminate Math libraries
