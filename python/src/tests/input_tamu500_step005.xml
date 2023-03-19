@@ -59,14 +59,14 @@
     <!--generatorParameters> classical_model_0Imp_Out333.dyr  </generatorParameters-->                 
     <simulationTime>20</simulationTime>
     <timeStep>0.005</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 5.0</beginFault>
         <endFault>   5.1</endFault>
         <faultBranch>7 262</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <observations>
       <observation> 
         <type> generator </type>

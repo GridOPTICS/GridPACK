@@ -59,7 +59,7 @@
     <generatorParameters> 300bus_detail_model_cmpld_combine.dyr </generatorParameters>
     <simulationTime>10</simulationTime>
     <timeStep>0.001</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 2.0</beginFault>
         <endFault>   2.04</endFault>
@@ -67,7 +67,7 @@
 
         <timeStep>   0.001</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <generatorWatch>
       <generator>
        <busID> 10063 </busID>

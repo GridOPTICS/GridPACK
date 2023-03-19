@@ -59,7 +59,7 @@
     <generatorParameters> 3g9b_gensal_esst1a_wsieg1_1acmotor_bus5smallload.dyr </generatorParameters>
     <simulationTime>10</simulationTime>
     <timeStep>0.001</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 2.0</beginFault>
         <endFault>   2.1</endFault>
@@ -67,7 +67,7 @@
 
         <timeStep>   0.001</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
 	<observations>
       <observation> 
 	  <type> generator </type>

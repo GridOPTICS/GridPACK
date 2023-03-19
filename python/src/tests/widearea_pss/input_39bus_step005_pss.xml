@@ -68,14 +68,14 @@
 	
     <simulationTime>30.0</simulationTime>
     <timeStep>0.005</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 41.00</beginFault>
         <endFault>   41.10</endFault>
         <faultBranch>16 17</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
 	
 	<reportNonExistingElements> false </reportNonExistingElements> 
 	

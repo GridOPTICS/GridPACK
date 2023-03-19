@@ -57,14 +57,14 @@
     <simulationTime>20</simulationTime>
     <!---<iterativeNetworkInterface>true</iterativeNetworkInterface>-->
     <timeStep>0.005</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 1.0</beginFault>
         <endFault>   1.1</endFault>
         <faultBranch>5 6</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <generatorWatch>
       <generator>
         <busID> 1 </busID>

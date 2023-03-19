@@ -48,14 +48,14 @@
     <generatorParameters>IEEE14.dyr</generatorParameters>
     <simulationTime>1.0</simulationTime>
     <timeStep>0.01</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 0.03</beginFault>
         <endFault>   0.06</endFault>
         <faultBranch>6 7</faultBranch>
         <timeStep>   0.01</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <generatorWatch>
       <generator>
        <busID> 1 </busID>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FaultList>
   <Dynamic_simulation>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 2.00</beginFault>
         <endFault>   2.05</endFault>
@@ -26,6 +26,6 @@
         <faultBranch>6 7</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
   </Dynamic_simulation>
 </FaultList>

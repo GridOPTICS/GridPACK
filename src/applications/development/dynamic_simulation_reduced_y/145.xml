@@ -4,14 +4,14 @@
     <networkConfiguration> 145bus_V23_with_dynamics.raw </networkConfiguration>
     <simulationTime>20.0</simulationTime>
     <timeStep>0.005</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 3.00</beginFault>
         <endFault>   3.05</endFault>
         <faultBranch>33 34</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <LinearMatrixSolver>
       <!--
         These options are used if SuperLU was built into PETSc 

@@ -67,14 +67,14 @@ The dynamic simulation module uses an input deck of the form
     <generatorParameters>IEEE_145.dyr</generatorParameters>
     <simulationTime>30</simulationTime>
     <timeStep>0.005</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 2.00</beginFault>
         <endFault>   2.05</endFault>
         <faultBranch>6 7</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <generatorWatch>
       <generator>
        <busID> 60 </busID>
@@ -101,7 +101,7 @@ The dynamic simulation module uses an input deck of the form
 \end{Verbatim}
 }
 
-The input for dynamic simulation module is contained in the \texttt{\textbf{Dynamic\_simulation}} block. Two features are important, the blocks describing faults and the blocks describing monitored generators. Faults are described in the \texttt{\textbf{faultEvent}}s block. The code currently only handles faults on branches. Inside the \texttt{\textbf{faultEvents}} block are individual faults, described by a \texttt{\textbf{faultEvent}} block. Multiple \texttt{\textbf{faultEvent}} blocks can be contained within the \texttt{\textbf{faultEvents }}block. As will be described below, it is possible for the faults to be listed in a separate file. This can be convenient for describing a task-based calculation that may contain a lot of faults. The parameters describing the fault include the time (in seconds) that the fault is initiated, the time that it is terminated, the timestep used while integrating the fault and the indices of the two buses at either end of the fault branch.
+The input for dynamic simulation module is contained in the \texttt{\textbf{Dynamic\_simulation}} block. Two features are important, the blocks describing faults and the blocks describing monitored generators. Faults are described in the \texttt{\textbf{Event}}s block. The code currently only handles faults on branches. Inside the \texttt{\textbf{Events}} block are individual faults, described by a \texttt{\textbf{faultEvent}} block. Multiple \texttt{\textbf{faultEvent}} blocks can be contained within the \texttt{\textbf{Events }}block. As will be described below, it is possible for the faults to be listed in a separate file. This can be convenient for describing a task-based calculation that may contain a lot of faults. The parameters describing the fault include the time (in seconds) that the fault is initiated, the time that it is terminated, the timestep used while integrating the fault and the indices of the two buses at either end of the fault branch.
 
 When running a dynamic simulation, it is generally desirable to monitor the behavior of a few generators in the system and this can be done by setting generator watch parameters. The \texttt{\textbf{generatorWatch}} block specifies which generators are to be monitored. Each generator is described within a \texttt{\textbf{generator}} block that contains the index of the bus that the generator is located on and the character string ID of the generator. The results of monitoring the generator are written to the file listed in the \texttt{\textbf{generatorWatchFileName}} field and the frequency for storing generator parameters in this file is set in the \texttt{\textbf{generatorWatchFrequency}} field. This parameter describes the time step interval for writing results (an integer), not the actual time interval.
 
@@ -162,7 +162,7 @@ std::vector<gridpack::dynamic_simulation::DSFullBranch::Event>
 \end{Verbatim}
 }
 
-If the cursor variable is pointed at a \texttt{\textbf{Dynamic\_simulation}} block inside the input file (as in the example input block above) then this function will return a list of faults from the input deck. However, it is also possible that the cursor could be pointed to the contents of another file. As long as it is pointed to a block containing a \texttt{\textbf{faultEvents}} block, this function will return a list of faults. This allows users to declare a large list of faults in a separate file and then access the list by including the external file name as a parameter in the input deck of their application.
+If the cursor variable is pointed at a \texttt{\textbf{Dynamic\_simulation}} block inside the input file (as in the example input block above) then this function will return a list of faults from the input deck. However, it is also possible that the cursor could be pointed to the contents of another file. As long as it is pointed to a block containing a \texttt{\textbf{Events}} block, this function will return a list of faults. This allows users to declare a large list of faults in a separate file and then access the list by including the external file name as a parameter in the input deck of their application.
 
 The monitoring of generators specified in the input deck can be set up by calling
 
