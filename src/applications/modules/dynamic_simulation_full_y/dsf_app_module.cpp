@@ -1298,7 +1298,7 @@ gridpack::dynamic_simulation::DSFullApp::
 getEvents(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
-  list = cursor->getCursor("faultEvents");
+  list = cursor->getCursor("Events");
   gridpack::utility::Configuration::ChildCursors events;
   std::vector<gridpack::dynamic_simulation::Event> ret;
   if (list) {
