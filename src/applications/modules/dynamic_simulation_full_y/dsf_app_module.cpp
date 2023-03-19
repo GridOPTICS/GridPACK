@@ -70,6 +70,9 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_generator_observationpower_systembase = true;
   ITER_TOL = 1.0e-7;
   MAX_ITR_NO = 8;
+
+  p_current_time = 0.0;
+  p_time_step = 0.005;
   
 }
 

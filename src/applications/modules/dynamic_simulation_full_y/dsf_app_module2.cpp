@@ -314,5 +314,7 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
 **/
 void gridpack::dynamic_simulation::DSFullApp::run(double tend)
 {
-
+  while(fabs(tend - p_current_time) > 1e-6) {
+    runonestep();
+  }
 }
