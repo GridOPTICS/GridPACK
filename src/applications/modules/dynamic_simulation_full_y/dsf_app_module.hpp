@@ -24,6 +24,7 @@
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/parallel/global_vector.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "dsf_factory.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
@@ -593,6 +594,18 @@ class DSFullApp
       Get current time
     */
     double getCurrentTime();
+
+  /**
+   * Transfer data from power flow to dynamic simulation
+   * @param pf_network power flow network
+   * @param ds_network dynamic simulation network
+   */
+  void transferPFtoDS(
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network,
+    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+    ds_network);
+
   
   private:
 

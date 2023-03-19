@@ -4808,3 +4808,42 @@ bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_id,
   }
   return ret;
 }
+
+/**
+ * Transfer data from power flow to dynamic simulation
+ * @param pf_network power flow network
+ * @param ds_network dynamic simulation network
+ */
+void gridpack::dynamic_simulation::DSFullApp::transferPFtoDS(
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network,
+    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+    ds_network)
+{
+  int numBus = pf_network->numBuses();
+  int i;
+  gridpack::component::DataCollection *pfData;
+  gridpack::component::DataCollection *dsData;
+  double rval;
+  for (i=0; i<numBus; i++) {
+    pfData = pf_network->getBusData(i).get();
+    dsData = ds_network->getBusData(i).get();
+    pfData->getValue("BUS_PF_VMAG",&rval);
+    dsData->setValue(BUS_VOLTAGE_MAG,rval);
+    ///printf("Step0 bus%d mag = %f\n", i+1, rval);
+    pfData->getValue("BUS_PF_VANG",&rval);
+    dsData->setValue(BUS_VOLTAGE_ANG,rval);
+    int ngen = 0;
+    if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
+      int j;
+      for (j=0; j<ngen; j++) {
+        pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
+        dsData->setValue(GENERATOR_PG,rval,j);
+        //printf("save PGEN: %f\n", rval);
+        pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
+        dsData->setValue(GENERATOR_QG,rval,j);
+        //printf("save QGEN: %f\n", rval);
+      }
+    }
+  }
+}
