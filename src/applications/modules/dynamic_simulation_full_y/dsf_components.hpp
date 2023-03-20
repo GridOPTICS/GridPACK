@@ -122,6 +122,13 @@ class DSFullBus
     void setValues(ComplexType *values);
 
     /**
+     * Add shunt
+     * @param gs shunt Gshunt value
+     * @param bs shunt Bshunt value
+     */
+  void addShunt(double gs,double bs);
+
+    /**
      * Set values of YBus matrix. These can then be used in subsequent
      * calculations
      */

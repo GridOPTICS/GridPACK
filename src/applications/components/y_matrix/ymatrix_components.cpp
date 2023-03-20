@@ -211,6 +211,19 @@ void gridpack::ymatrix::YMBus::getShuntValues(double *bl,
 }
 
 /**
+ * Set shunt values
+ * @param gs shunt GL value
+ * @param bs shunt BL value
+ */
+void gridpack::ymatrix::YMBus::addShuntValues(double gs,double bs)
+{
+  p_shunt = true;
+  p_shunt_bs += bs;
+  p_shunt_gs += gs;
+}
+
+
+/**
  * Set internal parameters inside the Y-bus component
  * @param name character string describing component to be modified
  * @param value of parameter to be modified

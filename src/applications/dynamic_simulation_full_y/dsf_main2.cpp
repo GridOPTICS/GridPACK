@@ -78,7 +78,7 @@ void run_dynamics(int argc, char **argv)
 	
   ds_app.setup();
 
-  ds_app.run(0.5);
+  ds_app.run();
 
   //ds_app.write();
   timer->stop(t_total);

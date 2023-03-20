@@ -516,6 +516,17 @@ void gridpack::dynamic_simulation::DSFullBus::setYBus(void)
   p_ybusi = imag(ret);
 }
 
+/**
+ * Add shunt
+ * @param gs shunt Gshunt value
+ * @param bs shunt Bshunt value
+ */
+void gridpack::dynamic_simulation::DSFullBus::addShunt(double gs, double bs)
+{
+  YMBus::addShuntValues(gs,bs);
+}
+
+
 void gridpack::dynamic_simulation::DSFullBus::setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase)
 {
 	if (p_ngen > 0) {

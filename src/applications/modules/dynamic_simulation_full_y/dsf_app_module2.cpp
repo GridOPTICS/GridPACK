@@ -310,11 +310,24 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
 }
 
 /**
- ** Run
+ ** Run till time tend
 **/
 void gridpack::dynamic_simulation::DSFullApp::run(double tend)
 {
   while(fabs(tend - p_current_time) > 1e-6) {
+
+    // Process events
+    handleEvents();
+    
+    // advance one step
     runonestep();
   }
+}
+
+/**
+ ** Run till end time
+**/
+void gridpack::dynamic_simulation::DSFullApp::run()
+{
+  run(p_sim_time);
 }

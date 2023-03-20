@@ -128,6 +128,11 @@ class DSFullApp
      **/
   void run(double tend);
 
+  /**
+     Run till end time
+  **/
+  void run();
+
      
 	/**
 	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
@@ -612,7 +617,11 @@ class DSFullApp
   double p_current_time; /* Current time */
   double p_sim_time;    // Simulation time
   double p_time_step;    /* Time-step */
-  
+
+  /**
+     Handle any events
+  **/
+  void handleEvents();
   /**
      run one step of dynamics simulation
   **/
