@@ -3,22 +3,10 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
-/**
- * @file   dsf_components.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   May 13, 2015
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
 
 #ifndef _dsf_components_h_
 #define _dsf_components_h_
 
-//#define USE_FNCS
 /**
  * Some preprocessor string declarations. These will need to be put in an
  * include file someplace else. Just declare them here for the time being.
@@ -36,22 +24,35 @@ namespace dynamic_simulation {
 
 enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q};
 
-// Small utility structure to encapsulate information about fault events
+// Utility structure to encapsulate information about fault events
 struct Event{
-  double start;         // start times of fault
-  double end;           // end times of fault
-  double step;          // time increment of fault (not used?)
+  bool isGenerator;     // event is a generator status change
+  bool isBus;           // event is on the bus
+  bool isLine;          // event is a line status change
+  bool isBusFault;      // event is a bus fault
+  bool isLineStatus;    // event is a line status change
+
+  // fault information
+  double start;         // start time of fault
+  double end;           // end time of fault
+  int bus_idx;          // fault or generator bus number
+  double Gfault;       // Fault conductance 
+  double Bfault;       // Fault susceptance
+
+  // Line status change
+  double time;          // line or generator status change time
   std::string tag;      // 2-character identifier of line or generator
-  bool isGenerator;     // fault is a generator failure
-  bool isBus;           // fault is a bus failure
-  bool isLine;          // fault is a line failure
-  int bus_idx;          // index of fault bus, corresponding to the bus fault
-  int from_idx;         // "from" bus of line
-  int to_idx;           // "to" bus of line
+  int from_idx;      // "from" bus of line
+  int to_idx;        // "to" bus of line
+
+  int status;        // Line or generator status
+
+  double step;
   Event(void)
-    : start(0.0), end(0.0), step(0.005),
-      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false),
-      bus_idx(-1), from_idx(-1), to_idx(-1)
+    : start(0.0), end(0.0), time(0.0),
+      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false), isBusFault(false), isLineStatus(false) ,
+      bus_idx(-1), from_idx(-1), to_idx(-1), Gfault(0.0),
+      Bfault(99999), status(1)
   {
     tag = "1";
   }

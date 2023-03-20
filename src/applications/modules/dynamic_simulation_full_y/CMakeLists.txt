@@ -62,6 +62,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   dsf_app_module2.cpp
   dsf_factory.cpp
   dsf_components.cpp
+  dsf_events.cpp
   generator_factory.cpp
   load_factory.cpp
   relay_factory.cpp

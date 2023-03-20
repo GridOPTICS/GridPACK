@@ -136,7 +136,7 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
 
   // Get events from input file
-  p_events = getEvents(cursor);
+  p_events = getEvents();
 
   p_factory->setMode(YBUS);
   
