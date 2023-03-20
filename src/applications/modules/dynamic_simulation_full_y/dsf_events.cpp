@@ -182,3 +182,51 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
     }
   }
 }
+
+/**
+ * handleEvents - handle any events
+**/
+void gridpack::dynamic_simulation::DSFullApp::handleEvents()
+{
+  int nevents = p_events.size();
+  int i;
+
+  for(i = 0; i < nevents; i++) {
+    gridpack::dynamic_simulation::Event event = p_events[i];
+
+    if(event.isBusFault) {
+      if(fabs(event.start - p_current_time) < 1e-6) {
+	/* Fault start */
+	std::vector<int> bus_internal_idx;
+	gridpack::dynamic_simulation::DSFullBus *bus;
+	bus_internal_idx = p_network->getLocalBusIndices(event.bus_idx);
+	if(bus_internal_idx.size()) {
+	  bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(bus_internal_idx[0]).get());
+	  bus->addShunt(-event.Gfault,-event.Bfault);
+	}
+
+	// Update Ybus
+	p_factory->setMode(YBUS);
+	p_factory->setYBus();
+	ybusMap_sptr->overwriteMatrix(ybus);
+      } else if(fabs(event.end - p_current_time) < 1e-6) {
+	/* Fault end */
+	std::vector<int> bus_internal_idx;
+	gridpack::dynamic_simulation::DSFullBus *bus;
+	bus_internal_idx = p_network->getLocalBusIndices(event.bus_idx);
+	if(bus_internal_idx.size()) {
+	  bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(bus_internal_idx[0]).get());
+	  bus->addShunt(event.Gfault,event.Bfault);
+	}
+	// Update Ybus
+	p_factory->setMode(YBUS);
+	p_factory->setYBus();
+	ybusMap_sptr->overwriteMatrix(ybus);
+      }
+    } else if(event.isLineStatus) {
+      if(fabs(event.time - p_current_time) < 1e-6) {
+	/* Line status change */
+      }
+    }
+  }
+}
