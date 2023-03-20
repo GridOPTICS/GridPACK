@@ -703,6 +703,15 @@ class DSFullApp
   */
   bool solveNetwork(int predcorrflag);
 
+  /**
+   * Read events set in the config file and form a list of events
+   * @return a list of events
+   * Note : The configuration needs to be already set
+          : readNetwork methods sets it currently
+   *
+   */
+    std::vector<gridpack::dynamic_simulation::Event>
+      getEvents();
 
   /**
    * Utility function to convert faults that are in event list into
