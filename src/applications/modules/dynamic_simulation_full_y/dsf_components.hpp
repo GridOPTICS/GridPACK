@@ -22,7 +22,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q};
+  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF};
 
 // Utility structure to encapsulate information about fault events
 struct Event{
@@ -127,6 +127,21 @@ class DSFullBus
      * @param bs shunt Bshunt value
      */
   void addShunt(double gs,double bs);
+
+  /**
+     * set fault
+     * @param flag => true = fault on, false otherwise
+     * @param gfault => fault conductance (pu)
+     * @param bfault => fault susceptance (pu)
+     */
+  void setFault(double gfault, double bfault);
+
+  /**
+   * clear fault
+   */
+  void clearFault();
+
+
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -655,6 +670,8 @@ class DSFullBus
 #endif
 
   private:
+    double p_gfault; // Fault conductance
+    double p_bfault; // Fault susceptance
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
@@ -772,6 +789,7 @@ class DSFullBus
     std::vector<double> p_downIntervalStart;
     std::vector<bool> p_downStartedMonitoring;
 
+    bool p_busfault; // Flag for bus fault
 
     friend class boost::serialization::access;
 
@@ -780,6 +798,8 @@ class DSFullBus
       {
         ar &
           boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
+	  & p_gfault
+	  & p_bfault
           & p_shunt_gs
           & p_shunt_bs
           & p_shunt

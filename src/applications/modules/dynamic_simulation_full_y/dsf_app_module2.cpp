@@ -55,7 +55,7 @@ bool gridpack::dynamic_simulation::DSFullApp::solveNetwork(int predcorrflag)
 {
   bool converged = false;
   
-  volt_full->zero();
+  //  volt_full->zero();
 
   int its=0;
   //bool p_iterative_network_debug = false;
@@ -117,9 +117,9 @@ void gridpack::dynamic_simulation::DSFullApp::getCurrent(int predcorrflag)
     }    
   } else { /* Corrector */
     if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
-      p_factory->predictor_currentInjection(false);
+      p_factory->corrector_currentInjection(false);
     } else {
-      p_factory->predictor_currentInjection(true);
+      p_factory->corrector_currentInjection(true);
     }
   }
   /* Norton current injection vector */
@@ -234,7 +234,7 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
   bool flagBranch = p_factory->updateBranchRelay(false, p_time_step);
 	
   // update dynamic load internal relay functions here
-  p_factory->dynamicload_post_process(h_sol1, false);
+  p_factory->dynamicload_post_process(p_time_step, false);
     
   // if bus relay trips, modify the corresponding Ymatrix
   if (flagBus) {
@@ -265,7 +265,7 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
   converged = solveNetwork(1);
 
   /* Update frequency */
-  p_factory->updateBusFreq(h_sol1);
+  p_factory->updateBusFreq(p_time_step);
 
   /* Correct update */
   if (last_S_Steps != S_Steps) {
@@ -321,6 +321,8 @@ void gridpack::dynamic_simulation::DSFullApp::run(double tend)
     
     // advance one step
     runonestep();
+
+    printf("Time = %5.4f\n",p_current_time);
   }
 }
 

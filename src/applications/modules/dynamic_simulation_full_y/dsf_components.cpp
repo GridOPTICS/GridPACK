@@ -3,20 +3,6 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
-/**
- * @file   dsf_components.cpp
- * @author Shuangshuang Jin 
- * @date   2017-10-05 08:25:33 d3g096
- * @date   2014-03-06 15:22:00 d3m956
- * @last modified date   2015-05-13 12:01:00 d3m956
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-
 #include <vector>
 #include <iostream>
 
@@ -34,6 +20,9 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
 {
   p_shunt_gs = 0.0;
   p_shunt_bs = 0.0;
+  p_busfault = false;
+  p_gfault = 0.0;
+  p_bfault = 0.0;
   p_mode = YBUS;
   setReferenceBus(false);
   p_ngen = 0;
@@ -92,6 +81,28 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
 gridpack::dynamic_simulation::DSFullBus::~DSFullBus(void)
 {
 }
+
+  /**
+     * set fault
+     * @param flag => true = fault on, false otherwise
+     * @param gfault => fault conductance (pu)
+     * @param bfault => fault susceptance (pu)
+     */
+void gridpack::dynamic_simulation::DSFullBus::setFault(double gfault, double bfault)
+{
+  p_busfault = true;
+  p_gfault = gfault;
+  p_bfault = bfault;
+}
+
+/**
+ * clear fault
+ */
+void gridpack::dynamic_simulation::DSFullBus::clearFault()
+{
+  p_busfault = false;
+}
+
 
 /**
  *  Return size of matrix block contributed by the component
@@ -215,6 +226,33 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     //printf("idx: %d Real: %f Imag: %f\n",getOriginalIndex(),
       //real(values[0]), imag(values[0]));
     return true;
+  } else if(p_mode == BUSFAULTON) {
+    // Note this should be only used with
+    // incrementMatrix method
+    if(p_busfault) {
+      /* Fault on */
+      // Values to be added to Ybus
+      // Note negative values since the current
+      // flows out of the bus
+      gridpack::ComplexType ret(-p_gfault,-p_bfault);
+      values[0] = ret;
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == BUSFAULTOFF) {
+    if(p_busfault) {
+      /* Fault off */
+      p_ybusr += p_gfault;
+      p_ybusi += p_bfault;
+      // Values to be added to Ybus
+      gridpack::ComplexType ret(p_gfault,p_bfault);
+      values[0] = ret;
+      clearFault();
+      return true;
+    } else {
+      return false;
+    }
   } else if (p_mode == onFY) {
     if (p_from_flag) {
       //gridpack::ComplexType ret(0.0, -1.0e9);
