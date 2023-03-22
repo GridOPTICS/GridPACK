@@ -224,7 +224,10 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
       }
     } else if(event.isLineStatus) {
       if(fabs(event.time - p_current_time) < 1e-6) {
-	/* Line status change */
+	setLineStatus(event.from_idx,event.to_idx,event.tag,event.status);
+	p_factory->setMode(LINESTATUSCHANGE);
+	ybusMap_sptr->incrementMatrix(ybus);
+
       }
     }
   }
