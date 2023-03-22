@@ -732,6 +732,24 @@ std::vector<bool> gridpack::ymatrix::YMBranch::getLineStatus()
 }
 
 /**
+ * Return status of a transmission element based on its tag name
+ * @param tag name of transmission element
+ * @return status of that transmission element
+ */
+bool gridpack::ymatrix::YMBranch::getLineStatus(std::string tag)
+{
+  int i;
+  bool found = false;
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      return p_branch_status[i];
+    }
+  }
+  return found;
+}
+
+
+/**
  * Return tags of all transmission elements
  * @return vector containging tag of transmission elements
  */

@@ -619,6 +619,24 @@ class DSFullApp
   double p_time_step;    /* Time-step */
 
   /**
+     setLineStatus - Sets the line status and updates the associated
+     branch and bus objects. 
+
+     @param: from_idx - from bus number
+     @param: to_idx - to bus number
+     @param: ckt_id - circuit id
+     @param: status - new line status
+
+     Note: This method is called by handleEvents method to
+           update the branch status and update the bus/branch
+	   objects. It sets up values in the bus and branch objects
+	   so that incrementMatrix method called on the network Ybus
+	   uses these values to remove the branch contributions from
+	   the Y-bus matrix
+  **/
+  void setLineStatus(int from_idx, int to_idx, std::string ckt_id, int status);
+  
+  /**
      Handle any events
   **/
   void handleEvents();

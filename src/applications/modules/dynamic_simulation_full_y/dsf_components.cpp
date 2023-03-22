@@ -72,6 +72,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_relaytrippedbranch = NULL;
   p_Yload_change_r = 0.0;
   p_Yload_change_i = 0.0;
+
+  p_line_status_change = false;
   //p_tripactionbranch.clear();
 }
 
@@ -253,6 +255,12 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     } else {
       return false;
     }
+  } else if(p_mode == LINESTATUSCHANGE) {
+    if(p_line_status_change) {
+      values[0] = p_yii;
+      p_line_status_change = false; // Clear line status change flag
+      return true;
+    } else return false;
   } else if (p_mode == onFY) {
     if (p_from_flag) {
       //gridpack::ComplexType ret(0.0, -1.0e9);
@@ -3235,6 +3243,17 @@ bool gridpack::dynamic_simulation::DSFullBus::getGeneratorPower(std::string tag,
 }
 
 /**
+   update the diag value contributions on line status change
+   @param : ybr_self - contribution for line status change
+**/
+void gridpack::dynamic_simulation::DSFullBus::diagValuesInsertForLineStatusChange(gridpack::ComplexType Ybr_self)
+{
+  p_line_status_change = true;
+  p_yii = Ybr_self;
+}
+
+
+/**
  *  Simple constructor
  */
 gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)
@@ -3260,6 +3279,8 @@ gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)
   p_branchrelaytripflag = false;
   p_branchactiontripflag = false;
   p_bextendedloadbranch = -1;
+
+  p_line_status_change = false;
 }
 
 /**
@@ -3278,7 +3299,7 @@ gridpack::dynamic_simulation::DSFullBranch::~DSFullBranch(void)
 bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardSize(int *isize, int *jsize) const
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY || p_mode == branch_trip_action
-  || p_mode == jxd || p_mode == YDYNLOAD ||p_mode == bus_relay || p_mode == branch_relay) { 
+  || p_mode == jxd || p_mode == YDYNLOAD ||p_mode == bus_relay || p_mode == branch_relay || p_mode == LINESTATUSCHANGE) { 
     return YMBranch::matrixForwardSize(isize,jsize);
   } else {
     return false;
@@ -3287,7 +3308,7 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardSize(int *isize, i
 bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY || p_mode == branch_trip_action
-  || p_mode == jxd || p_mode == YDYNLOAD || p_mode == bus_relay || p_mode == branch_relay) { 
+  || p_mode == jxd || p_mode == YDYNLOAD || p_mode == bus_relay || p_mode == branch_relay || p_mode == LINESTATUSCHANGE) { 
     return YMBranch::matrixReverseSize(isize,jsize);
   } else {
     return false;
@@ -3314,6 +3335,11 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType
 	//return bstatus;  
 	
     return YMBranch::matrixForwardValues(values);
+  } else if(p_mode == LINESTATUSCHANGE) {
+    if(p_line_status_change) {
+      values[0] = p_yft;
+      return true;
+    } else return false;
   } else if (p_mode == posFY) {
     if (p_event) {
       values[0] = -getUpdateFactor();
@@ -3369,6 +3395,12 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseValues(ComplexType
 	// return bstatus;  
 	  
     return YMBranch::matrixReverseValues(values);
+  } else if (p_mode == LINESTATUSCHANGE) {
+    if(p_line_status_change) {
+      values[0] = p_ytf;
+      p_line_status_change = false; // Clear line status change flag
+      return true;
+    } else return false;
   } else if (p_mode == posFY) {
     if (p_event) {
       values[0] = -getUpdateFactor();
@@ -4155,3 +4187,80 @@ int gridpack::dynamic_simulation::DSFullBranch::checkExtendedLoadBranchType(void
 {
 	return p_bextendedloadbranch;
 }
+
+/**
+ * Return contributions to Y-matrix from a specific transmission element
+ * @param tag character string for transmission element
+ * @param Yjj contribution at "to" bus
+ * @param Yji contribution for ji_th Y-matrix element
+ */
+void gridpack::dynamic_simulation::DSFullBranch::getRvrsLineElements(const std::string tag,
+   gridpack::ComplexType *Yjj, gridpack::ComplexType *Yji)
+{
+  YMBranch::getRvrsLineElements(tag, Yjj, Yji);
+}
+
+/**
+ * Return contributions to Y-matrix from a specific transmission element
+ * @param tag character string for transmission element
+ * @param Yii contribution at "from" bus
+ * @param Yij contribution for ij_th Y-matrix element
+ */
+void gridpack::dynamic_simulation::DSFullBranch::getLineElements(const std::string tag,
+   gridpack::ComplexType *Yii, gridpack::ComplexType *Yij)
+{
+  YMBranch::getLineElements(tag, Yii, Yij);
+}
+
+/**
+   setLineStatus - Sets the line status and updates the associated
+   branch and bus objects. 
+   
+   @param: ckt_id - circuit id
+   @param: status - new line status
+   
+   Note: This method is used to
+   update the branch status and update the bus/branch
+   objects. It sets up values in the bus and branch objects
+   so that incrementMatrix method called on the network Ybus
+   uses these values to remove the branch contributions from
+   the Y-bus matrix
+**/
+void gridpack::dynamic_simulation::DSFullBranch::setLineStatus(std::string id, int status)
+{
+  std::string ckt_id;
+  gridpack::utility::StringUtils util;
+  ckt_id = util.clean2Char(id);
+
+  bool line_status = getLineStatus(ckt_id);
+  if(line_status != (bool)status) {
+    
+    gridpack::ComplexType yii,yij,yji,yjj;
+    getLineElements(ckt_id,&yii,&yij);
+    getRvrsLineElements(ckt_id,&yjj,&yji);
+    gridpack::dynamic_simulation::DSFullBus *bus1
+      = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
+    gridpack::dynamic_simulation::DSFullBus *bus2
+      = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
+
+    if(!status) {
+      /* Negative sign for removing these values */
+      p_yft = -yij;
+      p_ytf = -yji;
+      bus1->diagValuesInsertForLineStatusChange(-yii);
+      bus2->diagValuesInsertForLineStatusChange(-yjj);
+    } else {
+      p_yft = yij;
+      p_ytf = yji;
+      bus1->diagValuesInsertForLineStatusChange(yii);
+      bus2->diagValuesInsertForLineStatusChange(yjj);
+    }
+
+    p_line_status_change = true;
+
+    YMBranch::setLineStatus(ckt_id,status);
+  }
+}
+  
+
+

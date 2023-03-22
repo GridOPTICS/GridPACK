@@ -22,7 +22,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF};
+  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF, LINESTATUSCHANGE};
 
 // Utility structure to encapsulate information about fault events
 struct Event{
@@ -659,6 +659,12 @@ class DSFullBus
     */
     void getTotalGeneratorPower(double &total_p, double &total_q) const;
 
+  /**
+     update the diag value contributions on line status change
+     @param : ybr_self - contribution for line status change
+  **/
+  void diagValuesInsertForLineStatusChange(gridpack::ComplexType Ybr_self);
+  
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.
@@ -670,8 +676,12 @@ class DSFullBus
 #endif
 
   private:
+    // Used for faults only
     double p_gfault; // Fault conductance
     double p_bfault; // Fault susceptance
+    // Used for line status change only
+  bool p_line_status_change; // A line connected to this bus is changing its status
+  gridpack::ComplexType p_yii; // This value must be inserted in the Ybus matrix for the line status change
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
@@ -976,7 +986,39 @@ class DSFullBranch
      */
 	int checkExtendedLoadBranchType(void);
 	
+     /**
+      * Return contributions to Y-matrix from a specific transmission element
+      * @param tag character string for transmission element
+      * @param Yjj contribution at "to" bus
+      * @param Yji contribution for ji_th Y-matrix element
+      */
+  void getRvrsLineElements(const std::string tag,gridpack::ComplexType *Yjj, gridpack::ComplexType *Yji);
 
+  /**
+   * Return contributions to Y-matrix from a specific transmission element
+   * @param tag character string for transmission element
+   * @param Yii contribution at "from" bus
+   * @param Yij contribution for ij_th Y-matrix element
+   */
+  void getLineElements(const std::string tag,
+		       gridpack::ComplexType *Yii, gridpack::ComplexType *Yij);
+
+  /**
+     setLineStatus - Sets the line status and updates the associated
+     branch and bus objects. 
+   
+     @param: ckt_id - circuit id
+     @param: status - new line status
+   
+     Note: This method is used to
+     update the branch status and update the bus/branch
+     objects. It sets up values in the bus and branch objects
+     so that incrementMatrix method called on the network Ybus
+     uses these values to remove the branch contributions from
+     the Y-bus matrix
+  **/
+  void setLineStatus(std::string ckt_id, int status);
+  
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
@@ -1016,6 +1058,8 @@ class DSFullBranch
 	gridpack::ComplexType p_branchfrombusvolt; //renke add
 	gridpack::ComplexType p_branchtobusvolt; //renke add
 
+  bool p_line_status_change; // Flag to indicate line status change
+  gridpack::ComplexType p_yft,p_ytf; // Ybus off-diagonal contributions from this line
     friend class boost::serialization::access;
 
     template<class Archive>

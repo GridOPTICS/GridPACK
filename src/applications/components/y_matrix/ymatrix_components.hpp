@@ -258,6 +258,13 @@ class YMBranch
      */
     std::vector<bool> getLineStatus();
 
+  /**
+   * Return status of transmission element given its tag
+   * @param ckt_id of the transmission element
+     * @return status of given transmission elements
+     */
+  bool getLineStatus(std::string ckt_id);
+
     /**
      * Return tags of all transmission elements
      * @return vector containging tag of transmission elements

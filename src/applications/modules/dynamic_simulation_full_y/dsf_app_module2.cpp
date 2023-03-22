@@ -310,6 +310,38 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
 }
 
 /**
+   setLineStatus - Sets the line status and updates the associated
+   branch and bus objects. 
+   
+   @param: from_idx - from bus number
+   @param: to_idx - to bus number
+   @param: ckt_id - circuit id
+   @param: status - new line status
+   
+   Note: This method is called by handleEvents method to
+   update the branch status and update the bus/branch
+   objects. It sets up values in the bus and branch objects
+   so that incrementMatrix method called on the network Ybus
+   uses these values to remove the branch contributions from
+   the Y-bus matrix
+**/
+void gridpack::dynamic_simulation::DSFullApp::setLineStatus(int from_idx, int to_idx, std::string ckt_id, int status)
+{
+  /* Get Branch */
+  std::vector<int> vec_branchintidx;
+  vec_branchintidx = p_network->getLocalBranchIndices(from_idx,to_idx);
+  int ibr, nbr;
+  gridpack::dynamic_simulation::DSFullBranch *pbranch;	
+  nbr = vec_branchintidx.size();
+  pbranch = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>
+    (p_network->getBranch(vec_branchintidx[0]).get());
+  if(pbranch) {
+    pbranch->setLineStatus(ckt_id,status);
+  }
+}
+
+
+/**
  ** Run till time tend
 **/
 void gridpack::dynamic_simulation::DSFullApp::run(double tend)
