@@ -39,19 +39,22 @@ then
   rm -rf $GRIDPACK_BUILD_DIR
   mkdir $GRIDPACK_BUILD_DIR
 
+  rm -rf ${GRIDPACK_INSTALL_DIR}
+
   cd ${GRIDPACK_BUILD_DIR}
     
   ## GridPACK installation
-  echo "Building GridPACK develop branch"
+  echo "Building GridPACK"
 
-  git checkout develop
+#  git checkout develop
 
   rm -rf CMake*
 
   cmake_args="-D GA_DIR:STRING=${GP_EXT_DEPS}/ga-5.8/install_for_gridpack \
    -D BOOST_ROOT:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack \    
-   -D Boost_DIR:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib/cmake/Boost-1.78.0 \   
-   -D BOOST_LIBRARIES:STRING=${GP_EXT_DEPS}/boost_1_78_0/build/lib \   
+   -D Boost_DIR:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib/cmake/Boost-1.78.0 \
+   -D Boost_LIBRARIES:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib \   
+   -D Boost_INCLUDE_DIRS:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/include \
    -D PETSC_DIR:PATH=${GP_EXT_DEPS}/petsc/install_for_gridpack \                  
    -D MPI_CXX_COMPILER:STRING='mpicxx' \     
    -D MPI_C_COMPILER:STRING='mpicc' \                                         
@@ -82,6 +85,8 @@ then
 
     export RHEL_OPENMPI_HACK=yes
 
+    rm -rf build
+    
     ${python_exe} setup.py build
 
     rm -rf ${GRIDPACK_INSTALL_DIR}/lib/python
@@ -92,5 +97,7 @@ then
     ${python_exe} setup.py install --home="$GRIDPACK_DIR"
     
 fi
+
+cd ${GRIDPACK_ROOT_DIR}
 
 echo "Completed GridPACK installation"
