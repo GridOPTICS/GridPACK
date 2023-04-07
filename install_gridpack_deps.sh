@@ -23,7 +23,14 @@ then
      export GP_EXT_DEPS=${GRIDPACK_ROOT_DIR}/external-dependencies
      rm -rf ${GP_EXT_DEPS}
      mkdir ${GP_EXT_DEPS}
-    echo "GRIDPACK_EXT_DEPENDENCIES_DIR=${GP_EXT_DEPS}"
+     echo "GRIDPACK_EXT_DEPENDENCIES_DIR=${GP_EXT_DEPS}"
+else
+    if test -d ${GP_EXT_DEPS}
+    then
+	echo "GRIDPACK_EXT_DEPENDENCIES_DIR=${GP_EXT_DEPS}"
+    else
+	mkdir ${GP_EXT_DEPS}
+    fi		
 fi
 
 cd ${GP_EXT_DEPS}
