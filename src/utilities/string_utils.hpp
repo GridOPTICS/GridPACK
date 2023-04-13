@@ -135,11 +135,10 @@ public:
     } else {
       clean_tag = tag;
     }
-
-    // Some systems put \r if the id is at the end of the line. remove it and put a space.
-      if(clean_tag.size() == 2 && clean_tag[clean_tag.size() - 1] == '\r')
-	clean_tag[1] = ' ';
-
+    // Some systems put \r if the id is at the end of the line. Remove
+    // it and put a space.
+    if (clean_tag.size() == 2 && clean_tag[clean_tag.size() - 1] == '\r')
+      clean_tag[1] = ' ';
     return clean_tag;
   }
 
@@ -216,28 +215,31 @@ public:
     ret.push_back(strcpy.substr(ntok1,ntok2-ntok1));
     while (ntok2 < slen-1 && ntok1 != std::string::npos) {
       ntok1 = strcpy.find_first_not_of(' ',ntok2);
-      if (strcpy[ntok1] == '\'') {
-        ntok2 = strcpy.find('\'',ntok1+1);
-        if (ntok2 != std::string::npos) {
-          ntok2++;
-        } else {
-          ntok2 = slen;
-        }
-      } else if (strcpy[ntok1] == '\"') {
-        ntok2 = strcpy.find('\"',ntok1+1);
-        if (ntok2 != std::string::npos) {
-          ntok2++;
-        } else {
-          ntok2 = slen;
-        }
-      } else if (ntok1 != std::string::npos) {
-        ntok2 = strcpy.find(' ',ntok1);
-        if (ntok2 == std::string::npos) ntok2 = slen;
-      } 
+      if (ntok1 != std::string::npos) {
+        if (strcpy[ntok1] == '\'') {
+          ntok2 = strcpy.find('\'',ntok1+1);
+          if (ntok2 != std::string::npos) {
+            ntok2++;
+          } else {
+            ntok2 = slen;
+          }
+        } else if (strcpy[ntok1] == '\"') {
+          ntok2 = strcpy.find('\"',ntok1+1);
+          if (ntok2 != std::string::npos) {
+            ntok2++;
+          } else {
+            ntok2 = slen;
+          }
+        } else if (ntok1 != std::string::npos) {
+          ntok2 = strcpy.find(' ',ntok1);
+          if (ntok2 == std::string::npos) ntok2 = slen;
+        } 
+      }
       if (ntok1 != std::string::npos && ntok2 != std::string::npos) {
-	std::string field = strcpy.substr(ntok1,ntok2-ntok1);
-	if((field.find_first_not_of(' ',0) != std::string::npos) &&  (field.find_first_not_of('\r',0) != std::string::npos))
-	  ret.push_back(field);
+        std::string field = strcpy.substr(ntok1,ntok2-ntok1);
+        if((field.find_first_not_of(' ',0) != std::string::npos) &&
+            (field.find_first_not_of('\r',0) != std::string::npos))
+          ret.push_back(field);
       }
     }
     return ret;
