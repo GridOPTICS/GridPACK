@@ -112,7 +112,7 @@ void gridpack::dynamic_simulation::DSFullBus::clearFault()
    @return: status - generator status
    
 **/
-int gridpack::dynamic_simulation::DSFullBus::getGenStatus(std::string id, int status)
+int gridpack::dynamic_simulation::DSFullBus::getGenStatus(std::string id)
 {
   int gstatus=0;
   for(int i=0; i < p_ngen; i++) {

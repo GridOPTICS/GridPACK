@@ -144,7 +144,7 @@ class DSFullBus
      @return: status - generator status
    
   **/
-  int getGenStatus(std::string id, int status);
+  int getGenStatus(std::string id);
 
     /**
      * set generator status
