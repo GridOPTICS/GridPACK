@@ -129,6 +129,13 @@ gridpack::dynamic_simulation::DSFullApp::getEvents()
 
 	event.isLineStatus = true;
 	ret.push_back(event);
+      } else if(strcmp(events[idx].name.c_str(),"GenStatus") == 0) {
+	// Gen status change event
+	event.time = events[idx].cursor->get("time",0.0);
+	event.tag = events[idx].cursor->get("id","1");
+	event.status = events[idx].cursor->get("status",1);
+	event.isGenStatus = true;
+	ret.push_back(event);
       }
     }
   }
@@ -180,7 +187,17 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
 	setLineStatus(event.from_idx,event.to_idx,event.tag,event.status);
 	p_factory->setMode(LINESTATUSCHANGE);
 	ybusMap_sptr->incrementMatrix(ybus);
-
+      }
+    } else if(event.isGenStatus) {
+      if(fabs(event.start - p_current_time) < 1e-6) {
+	/* Generator status change */
+	std::vector<int> bus_internal_idx;
+	gridpack::dynamic_simulation::DSFullBus *bus;
+	bus_internal_idx = p_network->getLocalBusIndices(event.bus_idx);
+	if(bus_internal_idx.size()) {
+	  bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(bus_internal_idx[0]).get());
+	  bus->setGenStatus(event.tag,event.status);
+	}
       }
     }
   }

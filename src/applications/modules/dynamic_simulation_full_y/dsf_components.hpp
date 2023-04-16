@@ -31,6 +31,7 @@ struct Event{
   bool isLine;          // event is a line status change
   bool isBusFault;      // event is a bus fault
   bool isLineStatus;    // event is a line status change
+  bool isGenStatus;     // event is a gen status change
 
   // fault information
   double start;         // start time of fault
@@ -50,7 +51,7 @@ struct Event{
   double step;
   Event(void)
     : start(0.0), end(0.0), time(0.0),
-      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false), isBusFault(false), isLineStatus(false) ,
+      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false), isBusFault(false), isLineStatus(false), isGenStatus(false) ,
       bus_idx(-1), from_idx(-1), to_idx(-1), Gfault(0.0),
       Bfault(99999), status(1)
   {
@@ -135,6 +136,22 @@ class DSFullBus
      * @param bfault => fault susceptance (pu)
      */
   void setFault(double gfault, double bfault);
+
+  /**
+     getGenStatus - Get the generator status 
+   
+     @param: ckt_id - generator id
+     @return: status - generator status
+   
+  **/
+  int getGenStatus(std::string id, int status);
+
+    /**
+     * set generator status
+     * @param id => generator id
+     * @param status => generator status
+     */
+  void setGenStatus(std::string id, int status);
 
   /**
    * clear fault

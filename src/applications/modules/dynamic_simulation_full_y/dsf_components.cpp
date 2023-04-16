@@ -105,6 +105,49 @@ void gridpack::dynamic_simulation::DSFullBus::clearFault()
   p_busfault = false;
 }
 
+/**
+   getGenStatus - Get the generator status 
+   
+   @param: ckt_id - generator id
+   @return: status - generator status
+   
+**/
+int gridpack::dynamic_simulation::DSFullBus::getGenStatus(std::string id, int status)
+{
+  int gstatus=0;
+  for(int i=0; i < p_ngen; i++) {
+    if(p_genid[i] == id) {
+      gstatus = p_gstatus[i];
+      break;
+    }
+  }
+  return gstatus;
+}
+
+/**
+   setGenStatus - Sets the generator status 
+   
+   @param: ckt_id - generator id
+   @param: status - new generator status
+   
+   Note: This method is used to
+   update the generator status and update the bus/branch
+   objects. It sets up values in the bus objects
+   so that incrementMatrix method called on the network Ybus
+   uses these values to remove the generator admittance contributions from
+   the Y-bus matrix
+**/
+void gridpack::dynamic_simulation::DSFullBus::setGenStatus(std::string id, int status)
+{
+  std::string ckt_id;
+  gridpack::utility::StringUtils util;
+  ckt_id = util.clean2Char(id);
+
+  int gen_status = getGenStatus(id);
+
+  if(status != gen_status) {
+  }
+}
 
 /**
  *  Return size of matrix block contributed by the component
