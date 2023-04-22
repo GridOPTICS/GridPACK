@@ -340,6 +340,33 @@ void gridpack::dynamic_simulation::DSFullApp::setLineStatus(int from_idx, int to
   }
 }
 
+/**
+   setGenStatus - Sets the generator status and updates the associated
+   bus objects. 
+
+   @param: bus_idx - bus number
+   @param: gen_id - generator id
+   @param: status - new generator status
+   
+   Note: This method is called by handleEvents method to
+   update the generator status and update the bus
+   object. It sets up values in the bus objects
+   so that incrementMatrix method called on the network Ybus
+   uses these values to remove the generator contributions from
+   the Y-bus matrix
+**/
+void gridpack::dynamic_simulation::DSFullApp::setGenStatus(int bus_idx, std::string gen_id, int status)
+{
+  std::vector<int> bus_internal_idx;
+  gridpack::dynamic_simulation::DSFullBus *bus;
+  bus_internal_idx = p_network->getLocalBusIndices(bus_idx);
+  if(bus_internal_idx.size()) {
+    bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(bus_internal_idx[0]).get());
+    bus->setGenStatus(gen_id,status);
+  }
+}
+
+
 
 /**
  ** Run till time tend

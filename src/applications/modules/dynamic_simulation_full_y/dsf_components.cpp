@@ -74,6 +74,7 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_Yload_change_i = 0.0;
 
   p_line_status_change = false;
+  p_gen_status_change = false;
   //p_tripactionbranch.clear();
 }
 
@@ -125,6 +126,25 @@ int gridpack::dynamic_simulation::DSFullBus::getGenStatus(std::string id)
 }
 
 /**
+   getGenNum - Get the generator number given generator id
+   
+   @param: gen_id - generator id
+   @return:  idx - the internal index for the generator that can be used to access its parameters (-1 if not found)
+**/
+int gridpack::dynamic_simulation::DSFullBus::getGenNum(std::string id)
+{
+  int gennum=-1;
+  for(int i=0; i < p_ngen; i++) {
+    if(p_genid[i] == id) {
+      gennum = i;
+      break;
+    }
+  }
+  return gennum;
+}
+
+
+/**
    setGenStatus - Sets the generator status 
    
    @param: ckt_id - generator id
@@ -143,9 +163,15 @@ void gridpack::dynamic_simulation::DSFullBus::setGenStatus(std::string id, int s
   gridpack::utility::StringUtils util;
   ckt_id = util.clean2Char(id);
 
-  int gen_status = getGenStatus(id);
+  int gen_i = getGenNum(ckt_id);
+  int gen_status = p_generators[gen_i]->getGenStatus();
 
   if(status != gen_status) {
+    p_ygen = p_generators[gen_i]->NortonImpedence();
+    if(!status) p_ygen = -p_ygen; // Negative sign here for removing the generator admittance in the Ybus
+    p_gstatus[gen_i] = status;
+    p_generators[gen_i]->SetGenServiceStatus((bool)status);
+    p_gen_status_change = true;
   }
 }
 
@@ -304,6 +330,12 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
       p_line_status_change = false; // Clear line status change flag
       return true;
     } else return false;
+  } else if(p_mode == GENSTATUSCHANGE) {
+    if(p_gen_status_change) {
+      values[0] = p_ygen;
+      p_gen_status_change = false;
+      return true;
+    } else return false;
   } else if (p_mode == onFY) {
     if (p_from_flag) {
       //gridpack::ComplexType ret(0.0, -1.0e9);
@@ -451,14 +483,9 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
       values[0] = 0;
       if (p_ngen > 0) {
         for (int i = 0; i < p_ngen; i++) {
-#if 0
-          values[0] += p_INorton[i];
-#else     
-	      if(p_generators[i]->getGenStatus()){ //renke add, if generator is not tripped by gen relay
-		values[0] += p_generators[i]->INorton();		 
-	      } 
-         
-#endif
+	  if(p_generators[i]->getGenStatus()){
+	    values[0] += p_generators[i]->INorton();
+	  } 
         } // generator for loop
       }  // if p_ngen>0
 	  
@@ -3342,7 +3369,7 @@ gridpack::dynamic_simulation::DSFullBranch::~DSFullBranch(void)
 bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardSize(int *isize, int *jsize) const
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == onFY || p_mode == posFY || p_mode == branch_trip_action
-  || p_mode == jxd || p_mode == YDYNLOAD ||p_mode == bus_relay || p_mode == branch_relay || p_mode == LINESTATUSCHANGE) { 
+  || p_mode == jxd || p_mode == YDYNLOAD ||p_mode == bus_relay || p_mode == branch_relay || p_mode == LINESTATUSCHANGE || p_mode == GENSTATUSCHANGE) { 
     return YMBranch::matrixForwardSize(isize,jsize);
   } else {
     return false;

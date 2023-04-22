@@ -22,7 +22,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF, LINESTATUSCHANGE};
+  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF, LINESTATUSCHANGE, GENSTATUSCHANGE};
 
 // Utility structure to encapsulate information about fault events
 struct Event{
@@ -138,9 +138,17 @@ class DSFullBus
   void setFault(double gfault, double bfault);
 
   /**
+     getGenNum - Get the generator number given generator id
+     
+     @param:   gen_id - generator id
+     @return:  idx - the internal index for the generator that can be used to access its parameters (-1 if not found)
+  **/
+  int getGenNum(std::string id);
+
+  /**
      getGenStatus - Get the generator status 
    
-     @param: ckt_id - generator id
+     @param:  ckt_id - generator id
      @return: status - generator status
    
   **/
@@ -697,8 +705,12 @@ class DSFullBus
     double p_gfault; // Fault conductance
     double p_bfault; // Fault susceptance
     // Used for line status change only
-  bool p_line_status_change; // A line connected to this bus is changing its status
+    bool p_line_status_change; // A line connected to this bus is changing its status
   gridpack::ComplexType p_yii; // This value must be inserted in the Ybus matrix for the line status change
+    // Used for generator status change only
+    bool p_gen_status_change; // A generaator connected to this bus is changing its status
+  gridpack::ComplexType p_ygen; // This value must be inserted in the Ybus matrix for the gen status change
+
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;

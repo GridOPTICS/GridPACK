@@ -635,7 +635,24 @@ class DSFullApp
 	   the Y-bus matrix
   **/
   void setLineStatus(int from_idx, int to_idx, std::string ckt_id, int status);
-  
+
+  /**
+     setGenStatus - Sets the generator status and updates the associated
+     bus objects. 
+
+     @param: bus_idx - bus number
+     @param: gen_id - generator id
+     @param: status - new generator status
+
+     Note: This method is called by handleEvents method to
+           update the generator status and update the bus
+	   object. It sets up values in the bus objects
+	   so that incrementMatrix method called on the network Ybus
+	   uses these values to remove the generator contributions from
+	   the Y-bus matrix
+  **/
+  void setGenStatus(int bus_idx, std::string gen_id, int status);
+
   /**
      Handle any events
   **/
