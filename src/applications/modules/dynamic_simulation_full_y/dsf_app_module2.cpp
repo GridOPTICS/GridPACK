@@ -1,6 +1,4 @@
 #include "dsf_app_module.hpp"
-//#include "gridpack/component/base_component.hpp"
-//#include "hadrec_app_module.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -381,7 +379,8 @@ void gridpack::dynamic_simulation::DSFullApp::run(double tend)
     // advance one step
     runonestep();
 
-    printf("Time = %5.4f\n",p_current_time);
+    if(!p_comm.rank())
+      printf("Time = %5.4f\n",p_current_time);
   }
 }
 
