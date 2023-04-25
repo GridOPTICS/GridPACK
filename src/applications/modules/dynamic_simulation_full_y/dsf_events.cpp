@@ -100,9 +100,13 @@ gridpack::dynamic_simulation::DSFullApp::getEvents()
 	if(line_ends.c_str() != NULL) {
 	  sscanf(line_ends.c_str(),"%d %d",&event.from_idx, &event.to_idx);
 	}
+	event.bus_idx = event.from_idx;
 	event.tag = events[idx].cursor->get("id","1");
 
-	event.isLine = true;
+	event.Gfault = 0.0;
+	event.Bfault = 99999.0;
+	
+	event.isBusFault = true;
 	ret.push_back(event);
       } else if(strcmp(events[idx].name.c_str(),"BusFault") == 0) {
 	// Bus fault event
