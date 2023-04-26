@@ -761,7 +761,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 
   // Create distributed storage object
   gridpack::contingency_analysis::QuantileAnalysis analysis(world,
-      4*bus_ids.size(),ntasks*numConfigs,nsteps);
+      4*bus_ids.size(),ntasks*numConfigs,nsteps-1);
   // Construct variable names
   std::vector<std::string> var_names;
   char sbuf[128];
