@@ -651,6 +651,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     } else {
       p_factory->predictor_currentInjection(true);
     }
+    printf("p[%d] (step) Got to 1\n",p_comm.worldRank());
 
 #ifdef MAP_PROFILE
   timer->configTimer(true);
@@ -736,6 +737,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			}
     }
 #else
+    printf("p[%d] (step) Got to 2\n",p_comm.worldRank());
     if (flagP == 0) {
       solver_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 1) {
@@ -743,6 +745,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     } else if (flagP == 2) {
       solver_posfy_sptr->solve(*INorton_full, *volt_full);
     }
+    printf("p[%d] (step) Got to 3\n",p_comm.worldRank());
 #endif
     timer->stop(t_psolve);
 
@@ -783,6 +786,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	//		vwideareafreqs[0], vwideareafreqs[1], vwideareafreqs[2]);
 	int tmp = vwideareafreqs.size();
 	double widearea_deltafreq = vwideareafreqs[tmp-1];
+    printf("p[%d] (step) Got to 4\n",p_comm.worldRank());
 
 #ifdef USE_HELICS
 	 
@@ -838,6 +842,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	
 	// update dynamic load internal relay functions here
 	p_factory->dynamicload_post_process(h_sol1, false);
+    printf("p[%d] (step) Got to 5\n",p_comm.worldRank());
     
 	// if bus relay trips, modify the corresponding Ymatrix, renke modified
     if (flagBus) {
@@ -894,6 +899,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
         }
     }
+    printf("p[%d] (step) Got to 6\n",p_comm.worldRank());
 	
 	// if branch relay trips, modify the corresponding Ymatrix, renke modified
 	if (flagBranch) {
@@ -951,6 +957,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
         }
     }
+    printf("p[%d] (step) Got to 7\n",p_comm.worldRank());
 	
     //renke add, update old busvoltage first
     p_factory->updateoldbusvoltage(); //renke add
@@ -993,6 +1000,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     t_csolve = timer->createCategory("DS Solve: Modified Euler Corrector: Linear Solver");
     timer->start(t_csolve);
     volt_full->zero();
+    printf("p[%d] (step) Got to 8\n",p_comm.worldRank());
 
 #if 0
     flag_chk = true;
@@ -1081,6 +1089,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       p_factory->corrector(h_sol2, true);
     }
     timer->stop(t_corrector);
+    printf("p[%d] (step) Got to 9\n",p_comm.worldRank());
 
     //if (Simu_Current_Step == simu_total_steps - 1) 
       //p_busIO->write();
@@ -1207,6 +1216,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       if (!p_frequencyOK) Simu_Current_Step = simu_total_steps;
     }
   }
+    printf("p[%d] (step) Got to 10\n",p_comm.worldRank());
   
 #if 0
   printf("\n=== ybus after simu: ============\n");
@@ -1254,6 +1264,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     }
   }
   p_busIO->header(secureBuf);
+    printf("p[%d] (step) Got to 11\n",p_comm.worldRank());
 
 #ifdef MAP_PROFILE
   timer->configTimer(true);

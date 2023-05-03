@@ -2493,6 +2493,30 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorStatus(
 }
 
 /**
+ * Set status variable on individual generators
+ * @param tag generator ID
+ * @param value new value of status
+ * @param data data collection object associated with bus
+ */
+void gridpack::dynamic_simulation::DSFullBus::setGeneratorStatus(
+    std::string tag, int status, gridpack::component::DataCollection *data)
+{
+  int i, idx;
+  idx = -1;
+  for (i=0; i<p_ngen; i++) {
+    if (p_genid[i] == tag) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx != -1) {
+    data->setValue(GENERATOR_STAT,status,idx);
+  } else {
+    printf("No generator found for tag: (%s)\n",tag.c_str());
+  }
+}
+
+/**
  * Set value of real power on individual loads
  * @param tag load ID
  * @param value new value of real power
