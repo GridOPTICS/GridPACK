@@ -1637,6 +1637,33 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
 }
 
 /**
+ * Set generator status
+ * @param tag generator ID
+ * @param status new value of status
+ * @param data data collection object associated with
+ bus
+ */
+void gridpack::powerflow::PFBus::setGeneratorStatus(
+    std::string tag, int status, gridpack::component::DataCollection *data)
+{
+  int i, idx;
+  idx = -1;
+  for (i=0; i<p_ngen; i++) {
+    if (p_gid[i] == tag) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx != -1) {
+    if (!data->setValue(GENERATOR_STAT,status,idx)) {
+      data->addValue(GENERATOR_STAT,status,idx);
+    }
+  } else {
+    printf("No generator found for tag: (%s)\n",tag.c_str());
+  }
+}
+
+/**
  * Scale value of real power on all generators
  * @param character ID for generator
  * @param value scale factor for real power

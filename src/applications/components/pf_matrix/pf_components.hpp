@@ -361,6 +361,15 @@ class PFBus
         gridpack::component::DataCollection *data);
 
     /**
+     * Set generator status
+     * @param tag generator ID
+     * @param status new value of status
+     * @param data data collection object associated with bus
+     */
+    void setGeneratorStatus(std::string tag, int status,
+        gridpack::component::DataCollection *data);
+
+    /**
      * Scale value of real power on all generators
      * @param character ID for generator
      * @param value scale factor for real power

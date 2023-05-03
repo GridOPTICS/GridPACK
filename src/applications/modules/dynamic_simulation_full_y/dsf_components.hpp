@@ -443,6 +443,15 @@ class DSFullBus
         gridpack::component::DataCollection *data);
 
     /**
+     * Set status variable on individual generators
+     * @param tag generator ID
+     * @param value new value of status
+     * @param data data collection object associated with bus
+     */
+    void setGeneratorStatus(std::string tag, int status,
+        gridpack::component::DataCollection *data);
+
+    /**
      * Set value of real power on individual loads
      * @param tag load ID
      * @param value new value of real power

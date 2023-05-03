@@ -536,6 +536,7 @@ bool gridpack::dynamic_simulation::Regcb1Generator::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
   bool ret = false;
+  string[0] = '\0';
   if (!strcmp(signal,"watch")) {
     if(getWatch()) {
       double Pg,Qg;
@@ -544,15 +545,16 @@ bool gridpack::dynamic_simulation::Regcb1Generator::serialWrite(
       Pg = Vt*Ipout*p_mbase/p_sbase; 
       Qg = -Vt*Iqout*p_mbase/p_sbase;
 
-      sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f, %12.6f ",Vt,Pg, Qg, busfreq,Pref);
+      sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f, %12.6f ",
+          Vt,Pg, Qg, busfreq,Pref);
       if(p_hasPitchController) {
-	sprintf(string + strlen(string),",%12.6f,%12.6f ", Thetapitch,omega_ref);
+        sprintf(string + strlen(string),",%12.6f,%12.6f ", Thetapitch,omega_ref);
       }
       if(p_hasDriveTrainModel) {
-	sprintf(string + strlen(string),",%12.6f ", 1+domega_g);
+        sprintf(string + strlen(string),",%12.6f ", 1+domega_g);
       }
       if(p_hasAeroDynamicModel) {
-	sprintf(string + strlen(string),",%12.6f ", Taero);
+        sprintf(string + strlen(string),",%12.6f ", Taero);
       }
 
       ret = true; 
@@ -562,28 +564,30 @@ bool gridpack::dynamic_simulation::Regcb1Generator::serialWrite(
       char buf[128];
       std::string tag;
       if(p_gen_id[0] != ' ') {
-	tag = p_gen_id;
+        tag = p_gen_id;
       } else {
-	tag = p_gen_id[1];
+        tag = p_gen_id[1];
       }
-      sprintf(buf,", %d_%s_V,%d_%s_Pg, %d_%s_Qg, %d_%s_freq, %d_%s_Pref",p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),
-	      p_bus_num,tag.c_str(),p_bus_num,tag.c_str(), p_bus_num, tag.c_str());
+      sprintf(buf,", %d_%s_V,%d_%s_Pg, %d_%s_Qg, %d_%s_freq, %d_%s_Pref",
+          p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),
+          p_bus_num,tag.c_str(),p_bus_num,tag.c_str(), p_bus_num, tag.c_str());
       if(p_hasPitchController) {
-	sprintf(buf + strlen(buf),", %d_%s_Tpitch,%d_%s_Omegaref",p_bus_num, tag.c_str(),p_bus_num, tag.c_str());
+        sprintf(buf + strlen(buf),", %d_%s_Tpitch,%d_%s_Omegaref",
+            p_bus_num, tag.c_str(),p_bus_num, tag.c_str());
       }
       if(p_hasDriveTrainModel) {
-	sprintf(buf + strlen(buf),", %d_%s_Omega_g",p_bus_num, tag.c_str());
+        sprintf(buf + strlen(buf),", %d_%s_Omega_g",p_bus_num, tag.c_str());
       }
       if(p_hasAeroDynamicModel) {
-	sprintf(buf + strlen(buf),", %d_%s_Taero",p_bus_num, tag.c_str());
+        sprintf(buf + strlen(buf),", %d_%s_Taero",p_bus_num, tag.c_str());
       }
 
-      
+
       if (strlen(buf) <= bufsize) {
-	sprintf(string,"%s",buf);
-	ret = true;
+        sprintf(string,"%s",buf);
+        ret = true;
       } else {
-	ret = false;
+        ret = false;
       }
     }
   }

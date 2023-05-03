@@ -357,6 +357,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::setVoltage(
 bool gridpack::dynamic_simulation::ClassicalGenerator::
 serialWrite(char *string, const int bufsize, const char *signal)
 {
+  string[0] = '\0';
   bool ret = false;
   if (!strcmp(signal,"watch_header")) {
     if (getWatch()) {

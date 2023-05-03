@@ -665,6 +665,7 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
   bool ret = false;
+  string[0] = '\0';
   if (!strcmp(signal,"standard")) {
     sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f  %12.6f\n",
 	    p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1.0, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
