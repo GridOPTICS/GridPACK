@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FaultList>
+  <Dynamic_simulation>
+   <faultEvents>
+      <faultEvent>
+        <beginFault> 5.0</beginFault>
+        <endFault>   5.1</endFault>
+        <faultBranch>1001 1064</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+      <faultEvent>
+        <beginFault> 5.0</beginFault>
+        <endFault>   5.1</endFault>
+        <faultBranch>1017 1047</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+    </faultEvents>
+  </Dynamic_simulation>
+</FaultList>
