@@ -180,6 +180,7 @@ install(FILES
   parser_classes/wtdta1.hpp
   parser_classes/wtpta1.hpp
   parser_classes/wttqa1.hpp
+  parser_classes/stab1.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )
 

@@ -392,8 +392,8 @@ template <class _data_struct> class GenrouParser
 
       // GENERATOR_TQOPP
       if (nstr > 6) {
-        data.tqopp = atof(split_line[6].c_str());
-      } 
+        data.tqopp = atof(split_line[6].c_str()); 
+      }
 
       // GENERATOR_INERTIA_CONSTANT_H                           float
       if (nstr > 7) {
@@ -442,7 +442,7 @@ template <class _data_struct> class GenrouParser
 
       // GENERATOR_S12
       if (nstr > 16) {
-        data.s12 = atof(split_line[16].c_str());
+        data.s12 = atof(split_line[16].c_str()); 
       } 
     }
 };

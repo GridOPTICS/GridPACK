@@ -112,6 +112,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/wtdta1.cpp
   model_classes/wtpta1.cpp
   model_classes/wttqa1.cpp
+  model_classes/stab1.cpp
 )
 
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)

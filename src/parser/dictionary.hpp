@@ -34,5 +34,6 @@
 #include "variable_defs/psssim_defs.hpp"
 #include "variable_defs/wind_defs.hpp"
 #include "variable_defs/misc_defs.hpp"
+#include "variable_defs/stab1_defs.hpp"
 
 #endif /* DICTIONARY_HPP_ */

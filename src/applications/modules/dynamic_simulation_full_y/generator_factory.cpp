@@ -38,6 +38,7 @@
 #include "wtdta1.hpp"
 #include "wtpta1.hpp"
 #include "wttqa1.hpp"
+#include "stab1.hpp"
 
 #include <stdio.h>
 
@@ -217,6 +218,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createPssModel(
   if (type == "PSSSIM") {
     gridpack::dynamic_simulation::PsssimModel *tmp;
     tmp =  new gridpack::dynamic_simulation::PsssimModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else if (type == "STAB1") {
+    gridpack::dynamic_simulation::Stab1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Stab1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
   } else {

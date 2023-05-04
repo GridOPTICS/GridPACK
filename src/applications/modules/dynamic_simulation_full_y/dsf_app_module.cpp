@@ -315,7 +315,7 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
   // p_factory->dumpData();
-  p_factory->load();
+  p_factory->load();     
 
   // set network components using factory
   p_factory->setComponents();
@@ -2873,7 +2873,7 @@ std::vector<int> gridpack::dynamic_simulation::DSFullApp::getFrequencyFailures()
  */
 void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
     gridpack::dynamic_simulation::Event fault)
-{
+{ 
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
 

@@ -13,6 +13,9 @@
  *  Renamed REGCA1/regca1 parameters to regc
  *  Added REGCB1
  *  Added REGCC1
+ *
+ *  Added STAB1 PSS model: April 04, 2023
+ *      Author: Shuangshuang Jin
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -64,6 +67,7 @@
 #include "parser_classes/ieelbl.hpp"
 #include "parser_classes/cmldblu1.hpp"
 #include "parser_classes/psssim.hpp"
+#include "parser_classes/stab1.hpp"
 #include "parser_classes/sexs.hpp"
 #include "parser_classes/gast.hpp"
 #include "parser_classes/hygov.hpp"
@@ -670,6 +674,14 @@ class BasePTIParser : public BaseParser<_network>
       double psssim_t4;
       double psssim_maxout;
       double psssim_minout;
+      // STAB1 parameters
+        double stab1_j;
+        double stab1_j1;
+        double stab1_j2;
+        double stab1_j3;
+        double stab1_j4;
+        double stab1_j5;
+        double stab1_j6;
 
       // plant controller parameters
       int repca1_ireg;
@@ -1137,6 +1149,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"PSSSIM")) {
             PsssimParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"STAB1")) {
+            Stab1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"WTDTA1")) {
             Wtdta1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1443,6 +1458,7 @@ class BasePTIParser : public BaseParser<_network>
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
           device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM" ||
+          device == "STAB1" ||
           device == "WTDTA1" || device == "WTARA1" || device == "WTPTA1" ||
           device == "WTTQA1") {
         ret = true;
@@ -1643,6 +1659,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "PSSSIM") {
               PsssimParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "STAB1") {
+              Stab1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "WTDTA1") {
               Wtdta1Parser<gen_params> parser;
@@ -1880,6 +1899,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "PSSSIM") {
             PsssimParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "STAB1") {
+            Stab1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "WTDTA1") {
             Wtdta1Parser<gen_params> parser;
