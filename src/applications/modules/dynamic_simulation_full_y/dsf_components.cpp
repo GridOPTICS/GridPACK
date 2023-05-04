@@ -2457,6 +2457,7 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorRealPower(
   if (idx != -1) {
     p_pg[idx] = value;
     data->setValue(GENERATOR_PG,value,idx);
+    if (value == 0.0) data->setValue(GENERATOR_QG,0.0,idx);
   } else {
     printf("DSsetGeneratorRealPower: No generator found on bus %d with id: (%s)\n",getOriginalIndex(),tag.c_str());
   }
