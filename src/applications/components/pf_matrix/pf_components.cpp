@@ -1631,6 +1631,7 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
     p_pg[idx] = value;
     if (!data->setValue(GENERATOR_PG,value,idx)) {
       data->addValue(GENERATOR_PG,value,idx);
+      if (value == 0.0) data->setValue(GENERATOR_QG,0.0,idx);
     }
   } else {
     printf("setGeneratorRealPower: No generator found on bus %d with id: (%s)\n",getOriginalIndex(),tag.c_str());
