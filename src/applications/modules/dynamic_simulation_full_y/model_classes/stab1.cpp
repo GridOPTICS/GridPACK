@@ -81,8 +81,6 @@ void gridpack::dynamic_simulation::Stab1Model::load(
     // Gain limit blocks
     Hlim_blk.setparams(1.0, -Hlim, Hlim); 
 
-    //printf("%f %f %f %f %f %f %f\n", j, j1, j2, j3, j4, j5, j6);
-  
 }
 
 /**

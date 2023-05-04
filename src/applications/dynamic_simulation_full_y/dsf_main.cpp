@@ -150,9 +150,7 @@ main(int argc, char **argv)
     //printf("ds_app.solve:\n");
     //ds_app.solve(faults[0]);
 	
-  //printf("sssssssssstart\n");
 	ds_app.solvePreInitialize(faults[0]);
-  //printf("eeeeeeeeeend\n");
 	
 	//std::vector<gridpack::dynamic_simulation::Event> action_list;
 	//action_list.clear();
