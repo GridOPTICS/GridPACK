@@ -2479,6 +2479,7 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
   char buf[128];
   char *ptr = string;
   int idx = getOriginalIndex();
+  buf[0] = '\0';
   if (signal == NULL) {
     return false;
   } else if (!strcmp(signal,"watch_header") ||
@@ -2658,6 +2659,7 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorRealPower(
   }
   if (idx != -1) {
     data->setValue(GENERATOR_PG,value,idx);
+    if (value == 0.0) data->setValue(GENERATOR_QG,0.0,idx);
   } else {
     printf("No generator found for tag: (%s)\n",tag.c_str());
   }

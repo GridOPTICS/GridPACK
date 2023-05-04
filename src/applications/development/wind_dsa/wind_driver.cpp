@@ -780,10 +780,8 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   taskmgr.set(ntasks*numConfigs);
 
   // Create distributed storage object
-#if 0
   gridpack::contingency_analysis::QuantileAnalysis analysis(world,
       4*bus_ids.size(),ntasks*numConfigs,nsteps-1);
-#endif
   // Construct variable names
   std::vector<std::string> var_names;
   char sbuf[128];
@@ -799,7 +797,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     sprintf(sbuf, "%d_%s_GENQ", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
   }
-//  analysis.saveVarNames(var_names);
+  analysis.saveVarNames(var_names);
   world.barrier();
 
   // evaluate faults
@@ -883,11 +881,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     all_series = ds_app.getGeneratorTimeSeries();
     std::vector<int> gen_idx = ds_app.getTimeSeriesMap();
     int iseries;
-#if 0
     for (iseries=0; iseries<gen_idx.size(); iseries++) {
       analysis.saveData(task_id, gen_idx[iseries],all_series[iseries]);
     }
-#endif
   printf("p[%d] (execute) Got to 14: task %d\n",world.rank(),task_id);
     ds_app.close();
     timer->stop(t_file);
@@ -968,7 +964,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     delete [] lq;
   }
 
-//  analysis.exportQuantiles(quantiles, time_step);
+  analysis.exportQuantiles(quantiles, time_step);
   timer->stop(t_total);
   if (ntasks*numConfigs >= world.size()/task_comm.size()) {
     timer->dump();

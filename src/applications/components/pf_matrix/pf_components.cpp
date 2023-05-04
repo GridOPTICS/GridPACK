@@ -1630,6 +1630,7 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
   if (idx != -1) {
     if (!data->setValue(GENERATOR_PG,value,idx)) {
       data->addValue(GENERATOR_PG,value,idx);
+      if (value == 0.0) data->setValue(GENERATOR_QG,0.0,idx);
     }
   } else {
     printf("No generator found for tag: (%s)\n",tag.c_str());
