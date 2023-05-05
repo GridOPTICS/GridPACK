@@ -591,13 +591,10 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   bool use_loads = true;
   cursor->get("windFile",&windFile);
   use_loads = cursor->get("loadFile",&loadFile);
-  printf("p[%d] (execute) Got to 1 use_loads: %d\n",world.rank(),(int)use_loads);
 
   cursor = config->getCursor("Configuration.Powerflow");
   bool useNonLinear = false;
   useNonLinear = cursor->get("UseNonLinear", useNonLinear);
-  printf("p[%d] (execute) Got to 1a useNonLinear: %d\n",world.rank(),
-      (int)useNonLinear);
   // Find branches to monitor in power flow calculation
   getWatchLines(cursor);
   if (world.rank() == 0) {
@@ -753,7 +750,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     if (world.rank()==0)
       printf("Unable to open wind file: %s\n",windFile.c_str());
   }
-  printf("p[%d] (execute) Got to 2 use_loads: %d\n",world.rank(),(int)use_loads);
   if (use_loads) {
     if (!load.readTable(loadFile)) {
       use_loads = false;
@@ -761,7 +757,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
         printf("Unable to open load file: %s\n",loadFile.c_str());
     }
   }
-  printf("p[%d] (execute) Got to 3 use_loads: %d\n",world.rank(),(int)use_loads);
   std::vector<int> busIDs;
   std::vector<int> loadIDs;
   std::vector<std::string> busTags;
@@ -770,7 +765,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   std::vector<double> loadVals;
   wind.getLocalIndices(busIDs);
   wind.getTags(busTags);
-  printf("p[%d] (execute) Got to 4 use_loads: %d\n",world.rank(),(int)use_loads);
   if (use_loads) {
     load.getLocalIndices(loadIDs);
     load.getTags(loadTags);
@@ -830,13 +824,11 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     printf("p[%d] Executing task %d scenario: %d contingency: %d\n",
         world.rank(),task_id,ncnfg,nfault);
     wind.getValues(ncnfg,windVals);
-  printf("p[%d] (execute) Got to 6: task %d\n",world.rank(),task_id);
     if (use_loads) {
       load.getValues(ncnfg,loadVals);
     } else {
       loadVals.clear();
     }
-  printf("p[%d] (execute) Got to 7: task %d\n",world.rank(),task_id);
     pf_app.reload();
     resetData(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,
 	      pf_network,p_network);
@@ -864,13 +856,11 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
       pf_results.addVector(2*task_id+2,pf_p);
       pf_results.addVector(2*task_id+3,pf_q);
     }
-  printf("p[%d] (execute) Got to 10: task %d\n",world.rank(),task_id);
 
     // transfer results from PF calculation to DS calculation
 //    setDSConfig(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,p_network);
     transferPFtoDS(pf_network, p_network);
     ds_app.reload();
-  printf("p[%d] (execute) Got to 11: task %d\n",world.rank(),task_id);
 
 
     timer->start(t_file);
@@ -884,9 +874,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 //    ds_app.solvePreInitialize(faults[nfault]);
     timer->start(t_solve);
 
-  printf("p[%d] (execute) Got to 12: task %d\n",world.rank(),task_id);
     ds_app.solve(faults[nfault]);
-  printf("p[%d] (execute) Got to 13: task %d\n",world.rank(),task_id);
 
     /*
     while(!ds_app.isDynSimuDone()) {
@@ -907,7 +895,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     timer->stop(t_quantile);
     ds_app.close();
     timer->stop(t_file);
-  printf("p[%d] (execute) Got to 15: task %d\n",world.rank(),task_id);
   }
   taskmgr.printStats();
 
