@@ -618,7 +618,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   } else {
     pf_app.solve();
   }
-  //  pf_app.write();
+  pf_app.write();
   pf_app.saveData();
 
   getWatchedBranches(pf_p, pf_q, pf_network);
@@ -821,7 +821,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
       pf_app.solve();
     }
     
-    //    pf_app.write();
+    pf_app.write();
     pf_app.saveData();
 
     getWatchedBranches(pf_p, pf_q, pf_network);
