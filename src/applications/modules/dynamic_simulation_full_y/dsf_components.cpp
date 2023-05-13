@@ -2449,7 +2449,6 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorRealPower(
   int i, idx;
   idx = -1;
   for (i=0; i<p_ngen; i++) {
-    printf("Bus %d\n",getOriginalIndex());
     if (p_genid[i] == tag) {
       idx = i;
       break;
