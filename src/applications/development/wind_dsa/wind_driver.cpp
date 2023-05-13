@@ -374,7 +374,7 @@ void gridpack::contingency_analysis::WindDriver::resetData(
   }
   
   nsize = loadVals.size();
-  printf("LOADVALS: %d\n",nsize);
+  //  printf("LOADVALS: %d\n",nsize);
   for (i=0; i<nsize; i++) {
     if (loadIDs[i] < 0 || loadIDs[i] >= pf_network->numBuses()) {
       printf("Invalid local load Index: ",loadIDs[i]);
@@ -618,7 +618,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   } else {
     pf_app.solve();
   }
-  pf_app.write();
+  //  pf_app.write();
   pf_app.saveData();
 
   getWatchedBranches(pf_p, pf_q, pf_network);
@@ -813,6 +813,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     pf_app.reload();
     resetData(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,
 	      pf_network,p_network);
+
     // Recalculate powerflow for new values of generators and loads
  
     if (useNonLinear) {
@@ -821,7 +822,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
       pf_app.solve();
     }
     
-    pf_app.write();
+    //    pf_app.write();
     pf_app.saveData();
 
     getWatchedBranches(pf_p, pf_q, pf_network);
