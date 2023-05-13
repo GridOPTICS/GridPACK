@@ -1628,9 +1628,9 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
     }
   }
   if (idx != -1) {
+    p_pg[idx] = value;
     if (!data->setValue(GENERATOR_PG,value,idx)) {
       data->addValue(GENERATOR_PG,value,idx);
-      if (value == 0.0) data->setValue(GENERATOR_QG,0.0,idx);
     }
   } else {
     printf("No generator found for tag: (%s)\n",tag.c_str());
@@ -1656,9 +1656,21 @@ void gridpack::powerflow::PFBus::setGeneratorStatus(
     }
   }
   if (idx != -1) {
+    p_gstatus[idx] = status;
+    p_pg[idx] = 0.0;
+    p_qg[idx] = 0.0;
+    data->setValue(GENERATOR_PG,0.0,idx);
+    data->setValue(GENERATOR_QG,0.0,idx);
     if (!data->setValue(GENERATOR_STAT,status,idx)) {
       data->addValue(GENERATOR_STAT,status,idx);
     }
+
+    // Check PV status and change it if all generators are off
+    p_isPV = p_gstatus[0];
+    for (i=1; i<p_ngen; i++) {
+      p_isPV = p_isPV || p_gstatus[i];
+    }
+    setIsPV(p_isPV);
   } else {
     printf("No generator found for tag: (%s)\n",tag.c_str());
   }
