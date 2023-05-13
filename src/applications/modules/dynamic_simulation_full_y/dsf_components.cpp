@@ -2449,6 +2449,7 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorRealPower(
   int i, idx;
   idx = -1;
   for (i=0; i<p_ngen; i++) {
+    printf("Bus %d\n",getOriginalIndex());
     if (p_genid[i] == tag) {
       idx = i;
       break;
@@ -2516,7 +2517,7 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorStatus(
     data->setValue(GENERATOR_QG, 0.0, idx);
     data->setValue(GENERATOR_STAT,status,idx);
   } else {
-    printf("No generator found for tag: (%s)\n",tag.c_str());
+    printf("DSsetGeneratorStatus: No generator found on bus %d with id: (%s)\n",getOriginalIndex(),tag.c_str());
   }
 }
 
