@@ -1712,7 +1712,7 @@ void gridpack::powerflow::PFBus::setGeneratorStatus(
     }
     setIsPV(p_isPV);
   } else {
-    printf("No generator found for tag: (%s)\n",tag.c_str());
+    printf("setGenertorStatus: No generator found on bus %d with id: (%s)\n",getOriginalIndex(),tag.c_str());
   }
 }
 
