@@ -1704,7 +1704,12 @@ void gridpack::powerflow::PFBus::setGeneratorStatus(
     if (!data->setValue(GENERATOR_STAT,status,idx)) {
       data->addValue(GENERATOR_STAT,status,idx);
     }
-
+    if(!status) {
+      p_pg[idx] = 0.0;
+      p_qg[idx] = 0.0;
+      data->setValue(GENERATOR_PG,0.0,idx);
+      data->setValue(GENERATOR_QG,0.0,idx);
+    }
     // Check PV status and change it if all generators are off
     p_isPV = p_gstatus[0];
     for (i=1; i<p_ngen; i++) {
