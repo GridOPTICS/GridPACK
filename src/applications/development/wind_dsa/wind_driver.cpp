@@ -296,6 +296,7 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
     dsData->setValue(BUS_VOLTAGE_ANG,rval);
     rval = rval * pi/180.0;
     pfData->getValue("BUS_TYPE", &ival);
+    /*
     if (ival != 4) {
       itmp ++;
       if ( temp*sin(rval) < 0) {
@@ -304,6 +305,7 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
         printf("Powerflow bus%d mag = %f +%fi\n", itmp, temp*cos(rval), temp*sin(rval));
       }
     }
+    */
     pfData->getValue("LOAD_PL",&rval,0);
     dsData->setValue(LOAD_PL,rval);
     int ngen = 0;
@@ -312,12 +314,12 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
       int j;
       for (j=0; j<ngen; j++) {
         pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
-        printf ("Bus:%d, ---PF_PG = %e \n", i, rval);
+	//  printf ("Bus:%d, ---PF_PG = %e \n", i, rval);
         dsData->setValue(GENERATOR_PG,rval,j);
-        if (ngen >1) printf("save PGEN: %f\n", rval);
+	//        if (ngen >1) printf("save PGEN: %f\n", rval);
         pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
         dsData->setValue(GENERATOR_QG,rval,j);
-        if (ngen > 1) printf("save QGEN: %f\n", rval);
+	//        if (ngen > 1) printf("save QGEN: %f\n", rval);
       }
     }
   }
@@ -616,7 +618,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   } else {
     pf_app.solve();
   }
-  pf_app.write();
+  //  pf_app.write();
   pf_app.saveData();
 
   getWatchedBranches(pf_p, pf_q, pf_network);
@@ -819,7 +821,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
       pf_app.solve();
     }
     
-    pf_app.write();
+    //    pf_app.write();
     pf_app.saveData();
 
     getWatchedBranches(pf_p, pf_q, pf_network);
