@@ -608,6 +608,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::powerflow::PFNetwork>
     pf_network(new gridpack::powerflow::PFNetwork(task_comm));
 
+  bool      pf_converged;
   gridpack::powerflow::PFAppModule pf_app;
   pf_app.readNetwork(pf_network, config);
   pf_app.initialize();
@@ -817,11 +818,16 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     // Recalculate powerflow for new values of generators and loads
  
     if (useNonLinear) {
-      pf_app.nl_solve();
+      pf_converged = pf_app.nl_solve();
     } else {
-      pf_app.solve();
+      pf_converged = pf_app.solve();
     }
-    
+
+    if(!pf_converged) {
+      printf("p[%d] Power flow diverged %d scenario: %d contingency: %d, skipping this task\n",
+	     world.rank(),task_id,ncnfg,nfault);
+      continue;
+    }
     //    pf_app.write();
     pf_app.saveData();
 
