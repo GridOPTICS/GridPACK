@@ -229,8 +229,8 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor_currentInjection(b
   double Psiqpp = x5Psiqpp_0; // this will be different for GENROU
   double Psidpp = + x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl)
     + x4Psidp_0* (Xdp - Xdpp) / (Xdp - Xl);
-  double Vd = -Psiqpp * (1 + x2w_0);
-  double Vq = +Psidpp * (1 + x2w_0);
+  double Vd = -Psiqpp;// * (1 + x2w_0);
+  double Vq = +Psidpp;// * (1 + x2w_0);
   Vterm = presentMag;
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
@@ -396,8 +396,8 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector_currentInjection(b
   double Psiqpp = x5Psiqpp_1; // this will be different for GENROU
   double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl)
     + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
-  double Vd = -Psiqpp * (1 + x2w_1);
-  double Vq = +Psidpp * (1 + x2w_1);
+  double Vd = -Psiqpp;// * (1 + x2w_1);
+  double Vq = +Psidpp;// * (1 + x2w_1);
   Vterm = presentMag;
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
