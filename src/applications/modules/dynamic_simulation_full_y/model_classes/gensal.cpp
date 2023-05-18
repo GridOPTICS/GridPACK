@@ -316,8 +316,29 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
     x5Psiqpp_0 = x5Psiqpp_1; 
   }  
   
-  double Psidpp;
+  B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
+  G = Ra / (Ra * Ra + Xdpp * Xdpp);
+
+  // Setup
+  double Psiqpp = x5Psiqpp_0; // this will be different for GENROU
+  double Psidpp = + x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl)
+    + x4Psidp_0* (Xdp - Xdpp) / (Xdp - Xl);
+  double Vd = -Psiqpp;// * (1 + x2w_0);
+  double Vq = +Psidpp;// * (1 + x2w_0);
+  Vterm = presentMag;
+  Theta = presentAng;
+  double Vrterm = Vterm * cos(Theta);
+  double Viterm = Vterm * sin(Theta);
   
+  double Vdterm = Vrterm * sin(x1d_0) - Viterm * cos(x1d_0);
+  double Vqterm = Vrterm * cos(x1d_0) + Viterm * sin(x1d_0);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
+  
+  //DQ Axis
+  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
+  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
+
   double pi = 4.0*atan(1.0);
   double Psiq = x5Psiqpp_0 - Iq * Xdpp;
   Psidpp = x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl) 
@@ -475,7 +496,28 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
   } else {
     Pmech = Pmechinit;
   } 
-  double Psidpp;
+
+  B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
+  G = Ra / (Ra * Ra + Xdpp * Xdpp);
+
+  // Setup
+  double Psiqpp = x5Psiqpp_1; // this will be different for GENROU
+  double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl)
+    + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
+  double Vd = -Psiqpp;// * (1 + x2w_1);
+  double Vq = +Psidpp;// * (1 + x2w_1);
+  Vterm = presentMag;
+  Theta = presentAng;
+  double Vrterm = Vterm * cos(Theta);
+  double Viterm = Vterm * sin(Theta);
+  double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
+  double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
+  
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
+	
+  //DQ Axis
+  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
+  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
 
   double pi = 4.0*atan(1.0);
   double Psiq = x5Psiqpp_1 - Iq * Xdpp;
