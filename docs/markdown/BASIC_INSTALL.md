@@ -89,12 +89,15 @@ More information on building and installing GA can be found
 
 ## <b>Step 3: Install PETSc 3.16.4</b>
 Step 3.1. Download PETSc release
-
 ```
 git clone https://gitlab.com/petsc/petsc.git
+```
+
+Step 3.2.
+```
+cd petsc
 git checkout v3.16.4
 ```
-Step 3.2. `cd petsc`
 
 Step 3.3. Set environment variables needed for PETSc
 ```
