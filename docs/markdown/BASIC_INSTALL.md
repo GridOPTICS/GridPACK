@@ -92,9 +92,12 @@ Step 3.1. Download PETSc release
 
 ```
 git clone https://gitlab.com/petsc/petsc.githttps://gitlab.com/petsc/petsc.git
+```
+Step 3.2.
+```
+cd petsc
 git checkout v3.16.4
 ```
-Step 3.2. `cd petsc`
 
 Step 3.3. Set environment variables needed for PETSc
 ```
