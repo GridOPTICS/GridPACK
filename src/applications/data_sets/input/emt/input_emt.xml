@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Dynamic_simulation>
+    <networkConfiguration> case9.raw </networkConfiguration>
+    <generatorParameters> case9_GENROU_ESST1A.dyr </generatorParameters>
+    <simulationTime>10.0</simulationTime>
+    <timeStep>0.01</timeStep>
+    <faultbus>1</faultbus>
+    <faultontime>1</faultofftime>
+    <faultofftime>1.05</faultofftime>
+    <Gfault>0.0</Gfault>
+    <Bfault>999</Bfault>
+    <DAESolver>
+      <PETScPrefix>dsim_</PETScPrefix>
+    </DAESolver>
+  </Dynamic_simulation>
+</Configuration>
