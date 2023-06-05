@@ -181,9 +181,9 @@ template <class _data_struct> class Reeca1Parser
       }
 	  
 	  if (!data->getValue(GENERATOR_REECA_QMIN,&rval,g_id)) {
-        data->addValue(GENERATOR_REECA_QMIN,data_struct.repca1_qmin, g_id);
+        data->addValue(GENERATOR_REECA_QMIN,data_struct.reeca1_qmin, g_id);
       } else {
-        data->setValue(GENERATOR_REECA_QMIN, data_struct.repca1_qmin, g_id);
+        data->setValue(GENERATOR_REECA_QMIN, data_struct.reeca1_qmin, g_id);
       }
 	  
 	  if (!data->getValue(GENERATOR_REECA_VMAX,&rval,g_id)) {
