@@ -1,5 +1,3 @@
-
-
 #include <iostream>
 #include <algorithm>
 #include <stdio.h>
@@ -129,7 +127,6 @@ protected:
   }
 }
 
-
 };
 
 
@@ -157,9 +154,76 @@ Emt::~Emt(void)
   delete(p_factory);
   delete(p_VecMapper);
   delete(p_MatMapper);
+  delete(p_pfapp);
   delete(p_daesolver);
   delete(p_nlsolver);
   if(!rank()) printf("Emt: Finished running simulation\n");
+}
+
+/**
+ * Transfer data from power flow to dynamic simulation
+ * @param pf_network power flow network
+ * @param ds_network dynamic simulation network
+ */
+void transferPFtoDS(
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network,
+    EmtNetwork 
+    *emt_network)
+{
+  int numBus = pf_network->numBuses();
+  int i;
+  gridpack::component::DataCollection *pfData;
+  gridpack::component::DataCollection *emtData;
+  double rval;
+  for (i=0; i<numBus; i++) {
+    pfData = pf_network->getBusData(i).get();
+    emtData = emt_network->getBusData(i).get();
+    pfData->getValue("BUS_PF_VMAG",&rval);
+    emtData->setValue(BUS_VOLTAGE_MAG,rval);
+    ///printf("Step0 bus%d mag = %f\n", i+1, rval);
+    pfData->getValue("BUS_PF_VANG",&rval);
+    emtData->setValue(BUS_VOLTAGE_ANG,rval);
+    int ngen = 0;
+    if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
+      int j;
+      for (j=0; j<ngen; j++) {
+        pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
+        emtData->setValue(GENERATOR_PG,rval,j);
+        //printf("save PGEN: %f\n", rval);
+        pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
+        emtData->setValue(GENERATOR_QG,rval,j);
+        //printf("save QGEN: %f\n", rval);
+      }
+    }
+  }
+}
+
+
+void Emt::solvepowerflow(void)
+{
+  p_config = gridpack::utility::Configuration::configuration();
+  p_config->open(p_configfile,p_comm);
+
+  p_configcursor = p_config->getCursor("Configuration.Powerflow");
+  bool useNonLinear = false;
+  useNonLinear = p_configcursor->get("UseNonLinear", useNonLinear);
+
+  boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network(new gridpack::powerflow::PFNetwork(p_comm));
+  
+  p_pfapp = new gridpack::powerflow::PFAppModule;
+  p_pfapp->readNetwork(pf_network, p_config);
+  p_pfapp->initialize();
+  if (useNonLinear) {
+    p_pfapp->nl_solve();
+  } else {
+    p_pfapp->solve();
+  }
+  p_pfapp->write();
+  p_pfapp->saveData();
+
+  pf_network->clone<EmtBus,EmtBranch>(p_network);
 }
 
 void Emt::readnetworkdatafromconfig(void)
