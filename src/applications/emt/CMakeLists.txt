@@ -102,7 +102,7 @@ add_custom_target(emt.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/petscoptions/.petscrc
+  ${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
@@ -124,7 +124,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${GRIDPACK_DATA_DIR}/raw/case9.raw
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
-  ${GRIDPACK_DATA_DIR}/petscoptions/.petscrc
+  ${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/emt_app.cpp
   DESTINATION share/gridpack/example/emt
 )
