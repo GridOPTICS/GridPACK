@@ -52,8 +52,8 @@ int main(int argc, char **argv)
   // Set the configuration file
   emt->setconfigurationfile(inputfile);
 
-  // Read the data. File names given in config file.
-  emt->readnetworkdatafromconfig();
+  // Solve Power flow
+  emt->solvepowerflow();
 
   // Set up dynamic simulation
   emt->setup();

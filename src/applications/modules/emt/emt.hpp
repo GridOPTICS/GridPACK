@@ -67,6 +67,8 @@ public:
 
   void readnetworkdatafromconfig();
 
+  void solvepowerflow(void);
+
   /// Build the DAE Jacobian
   void operator() (const double& time, 
 		   const gridpack::math::Vector& X, 
@@ -174,6 +176,9 @@ public:
 
   // Network pointer
   boost::shared_ptr<EmtNetwork> p_network;
+
+  // Power flow application pointer
+  gridpack::powerflow::PFAppModule *p_pfapp;
   
   // Factory
   EmtFactory *p_factory;
