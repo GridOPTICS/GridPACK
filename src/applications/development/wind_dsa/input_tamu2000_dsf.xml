@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Powerflow>
-    <!-- <networkConfiguration_v33> IEEE39bus_v33_chg_to_renew_in_rawfile_v2.raw </networkConfiguration_v33> -->
-	<!-- <networkConfiguration> texas2000_hr_4375_v23_mod.raw </networkConfiguration> -->
-	<networkConfiguration_v33> tamu_2000_PTI_v33_mod2.raw </networkConfiguration_v33>
+	<networkConfiguration_v33> texas2000_hr_4882_mod_33.raw </networkConfiguration_v33>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
     <LinearSolver>
       <PETScOptions>
-        <!-ksp_view>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package superlu_dist
+        -pc_factor_mat_solver_type superlu_dist
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
@@ -33,8 +30,6 @@
           -ksp_type bicg
           -pc_type bjacobi
           -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly
-          <!-ksp_monitor
-          -ksp_view>
         </PETScOptions>
       </LinearSolver>
     </NewtonRaphsonSolver>
@@ -46,63 +41,34 @@
         -ksp_type bicg
         -pc_type bjacobi
         -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly
-        <!-snes_view
-        -snes_monitor
-        -ksp_monitor
-        -ksp_view>
       </PETScOptions>
     </NonlinearSolver>
   </Powerflow>
   <Dynamic_simulation>
-    <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
-    <!-- <generatorParameters> IEEE39bus_renewables_genrou_exdc1_tgov1_shri_renew_data_vmax_no_mech_v3.dyr </generatorParameters> -->
-	<!-- <generatorParameters> IEEE39bus_renewables_genrou_exdc1_tgov1_shri_renew_data_vmax_only_regca1_v3.dyr </generatorParameters> -->
-	<generatorParameters> texas2000_v23_fullsys_noac.dyr </generatorParameters>
-	<!-- <generatorParameters> IEEE39bus_renewables_genrou_exdc1_tgov1_shri_renew_data_vmax_v3.dyr </generatorParameters> -->
-    <simulationTime>20</simulationTime>
+	<generatorParameters> texas2000_v23_fullsys_noac_wind_mod.dyr </generatorParameters>
+    <simulationTime>10</simulationTime>
     <!---<iterativeNetworkInterface>true</iterativeNetworkInterface>-->
     <timeStep>0.005</timeStep>
-    <!--windFile>wind_2000.txt</windFile-->
-    <windFile>texas_2k_scenfile_5.txt</windFile>
+    <windFile>texas_2k_scenfile_5_full.txt</windFile>
     <!--loadFile>load_2000.txt</loadFile-->
     <faultList> tamu_2000_faults.xml </faultList>
     <generatorWatch>
       <generator>
-        <busID> 1004 </busID>
+        <busID> 1048 </busID>
         <generatorID> 1 </generatorID>
       </generator>
       <generator>
-        <busID> 1009 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 1021 </busID>
+        <busID> 2004 </busID>
         <generatorID> 1 </generatorID>
       </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
     <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
     <LinearSolver>
-      <!--SolutionTolerance>1.0E-12 </SolutionTolerance>
-      <ForceSerial>true</ForceSerial>
-      <InitialGuessZero>true</InitialGuessZero>
-      <SerialMatrixConstant>true</SerialMatrixConstant-->
       <PETScOptions>
-        <!-ksp_view>
-        <!--
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package superlu_dist 
-        -ksp_max_it 1
-        -->
-        <!--
-        -ksp_type preonly
-        -pc_type lu
-        -pc_factor_mat_ordering_type amd
-        -->
-        -ksp_type richardson
-        -pc_type lu
-        -pc_factor_mat_solver_package petsc
+        -pc_factor_mat_solver_type petsc
         -pc_factor_shift_type NONZERO
         -ksp_max_it 1
       </PETScOptions>
@@ -115,15 +81,6 @@
       <Package>superlu_dist</Package>
       <Iterations>1</Iterations>
       <Fill>5</Fill>
-      <!--<PETScOptions>
-        These options are used for the LinearSolver if SuperLU is not available
-        -ksp_atol 1.0e-18
-        -ksp_rtol 1.0e-10
-        -ksp_monitor
-        -ksp_max_it 200
-        -ksp_view
-      </PETScOptions>
-      -->
     </LinearMatrixSolver>
   </Dynamic_simulation>
 </Configuration>

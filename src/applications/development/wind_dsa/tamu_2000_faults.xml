@@ -3,15 +3,15 @@
   <Dynamic_simulation>
    <Events>
       <faultEvent>
-        <beginFault> 5.0</beginFault>
-        <endFault>   5.1</endFault>
+        <beginFault> 0.1</beginFault>
+        <endFault>   0.2</endFault>
         <faultBranch>1001 1064</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
       <faultEvent>
-        <beginFault> 5.0</beginFault>
-        <endFault>   5.1</endFault>
-        <faultBranch>1017 1047</faultBranch>
+        <beginFault> 0.1</beginFault>
+        <endFault>   0.2</endFault>
+        <faultBranch>1002 1007</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
     </Events>
