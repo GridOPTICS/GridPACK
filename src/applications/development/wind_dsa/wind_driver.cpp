@@ -157,10 +157,13 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
       weight[nvals-1] = 1.0;
     } else {
       double ratio = static_cast<double>(partition[i])/static_cast<double>(p_nconf);
-      weight[i] = 1.0 - (ratio - quantiles[i]);
+      weight[i] = 1.0 - (quantiles[i]-ratio);
     }
   }
   int lo[3], hi[3], ld[2];
+  printf("Quantiles: [%d,%f] [%d,%f] [%d,%f] [%d,%f] [%d,%f]\n",
+      partition[0],weight[0],partition[1],weight[1],partition[2],weight[2],
+      partition[3],weight[3],partition[4],weight[4]);
   // nconf, nwatch, nsteps
   std::vector<double> time_slice(p_nconf*p_nwatch);
   lo[0] = 0;
@@ -630,7 +633,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     pf_results.addVector(1,pf_q);
   }
 #endif
-
  
   timer->stop(t_init_pf);
   // Create dynamic simulation applications on each task communicator
@@ -649,7 +651,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   ds_app.initialize();
   timer->stop(t_init);
   ds_app.saveTimeSeries(true);
-  /* turn and generator watch and set file name */
+  /* turn on generator watch and set file name */
   ds_app.setGeneratorWatch("watch.txt");
   std::vector<int> bus_ids;
   std::vector<std::string> gen_ids;
@@ -671,9 +673,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     printf(" Number of time steps: %d\n",nsteps);
   }
 
-  if (!cursor->get("faultList",&faultfile)) {
-    faultfile = "faults.xml";
-  }
   // Read in quantile values
   gridpack::utility::StringUtils util;
   std::string quantiles_str;
@@ -686,11 +685,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   std::vector<double> quantiles;
   for (i=0; i<tokens.size(); i++) {
     quantiles.push_back(atof(tokens[i].c_str()));
-  }
-  if (!config->open(faultfile,world) && world.rank() == 0) {
-    printf("\nUnable to open fault file: %s\n",faultfile.c_str());
-  } else if (world.rank() == 0) {
-    printf("\nFaults located in file: %s\n",faultfile.c_str());
   }
 
 
@@ -707,6 +701,14 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   // get a list of faults
   int t_flts = timer->createCategory("Read Faults");
   timer->start(t_flts);
+  if (!cursor->get("faultList",&faultfile)) {
+    faultfile = "faults.xml";
+  }
+  if (!config->open(faultfile,world) && world.rank() == 0) {
+    printf("\nUnable to open fault file: %s\n",faultfile.c_str());
+  } else if (world.rank() == 0) {
+    printf("\nFaults located in file: %s\n",faultfile.c_str());
+  }
   cursor = config->getCursor("FaultList.Dynamic_simulation");
   std::vector<gridpack::dynamic_simulation::Event>
     faults = getEvents(cursor);
@@ -816,7 +818,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 	      pf_network,p_network);
 
     // Recalculate powerflow for new values of generators and loads
- 
     if (useNonLinear) {
       pf_converged = pf_app.nl_solve();
     } else {
