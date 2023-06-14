@@ -331,7 +331,6 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
     // Save off time series to watch file
     sprintf(sbuf,"Gen_watch_scn_%d_flt_%d.csv",ncnfg,nfault);
     ds_app.setGeneratorWatch(sbuf);
-//    ds_app.solvePreInitialize(faults[nfault]);
     timer->start(t_solve);
 
     ds_app.setup();
