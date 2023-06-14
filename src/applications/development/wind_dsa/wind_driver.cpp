@@ -156,8 +156,9 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
     } else if (i == nvals-1 && quantiles[i] == 1.0) {
       weight[nvals-1] = 1.0;
     } else {
-      double ratio = static_cast<double>(partition[i])/static_cast<double>(p_nconf);
-      weight[i] = 1.0 - (quantiles[i]-ratio);
+      double lo = static_cast<double>(partition[i])/static_cast<double>(p_nconf);
+      double hi = static_cast<double>(partition[i]+1)/static_cast<double>(p_nconf);
+      weight[i] = 1.0 - (quantiles[i]-lo)/(hi-lo);
     }
   }
   int lo[3], hi[3], ld[2];
