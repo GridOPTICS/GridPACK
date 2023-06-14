@@ -6,8 +6,6 @@
 // -------------------------------------------------------------
 /**
  * @file   dsf_app_module.hpp
- * @author Shuangshuang Jin
- * @date   2020-02-12 12:17:37 d3g096
  *
  * @brief
  *
@@ -103,6 +101,12 @@ class DSFullApp
      * Reinitialize calculation from data collections
      */
     void reload();
+
+  /**
+     * Reset data structures
+     */
+    void reset();
+
 
     /**
      * Execute the time integration portion of the application
@@ -268,6 +272,22 @@ class DSFullApp
      */
     std::vector<gridpack::dynamic_simulation::Event>
       getEvents(gridpack::utility::Configuration::CursorPtr cursor);
+
+      /**
+   * Read events set in the config file and form a list of events
+   * @return a list of events
+   * Note : The configuration needs to be already set
+          : with the setNetwork method
+   *
+   */
+    std::vector<gridpack::dynamic_simulation::Event>
+      getEvents();
+
+  /**
+   * Set an event for the dynamic simulation
+   * @param event info
+   */
+  void setEvent(gridpack::dynamic_simulation::Event event);
 
     /**
      * Read in generators that should be monitored during simulation
@@ -610,7 +630,6 @@ class DSFullApp
     pf_network,
     boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
     ds_network);
-
   
   private:
 
@@ -677,15 +696,6 @@ class DSFullApp
   */
   bool solveNetwork(int predcorrflag);
 
-  /**
-   * Read events set in the config file and form a list of events
-   * @return a list of events
-   * Note : The configuration needs to be already set
-          : readNetwork methods sets it currently
-   *
-   */
-    std::vector<gridpack::dynamic_simulation::Event>
-      getEvents();
 
   /**
    * Utility function to convert faults that are in event list into

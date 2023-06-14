@@ -159,6 +159,13 @@ class WindDriver
      */
     void execute(int argc, char** argv);
 
+  /**
+     * Execute application
+     * @param argc number of arguments
+     * @param argv list of character strings
+     */
+    void execute2(int argc, char** argv);
+
     private:
 
     boost::shared_ptr<DSFullNetwork> p_network;
@@ -172,6 +179,6 @@ class WindDriver
     std::vector<std::string> p_tags;
 };
 
-} // contingency analysis 
+} // dynamic contingency analysis 
 } // gridpack
 #endif

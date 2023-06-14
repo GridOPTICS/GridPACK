@@ -702,7 +702,8 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   // get a list of faults
   int t_flts = timer->createCategory("Read Faults");
   timer->start(t_flts);
-  if (!cursor->get("faultList",&faultfile)) {
+
+  if (!cursor->get("EventList",&faultfile)) {
     faultfile = "faults.xml";
   }
   if (!config->open(faultfile,world) && world.rank() == 0) {
@@ -710,7 +711,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   } else if (world.rank() == 0) {
     printf("\nFaults located in file: %s\n",faultfile.c_str());
   }
-  cursor = config->getCursor("FaultList.Dynamic_simulation");
+
+  cursor = config->getCursor("EventList.Dynamic_simulation");
+
   std::vector<gridpack::dynamic_simulation::Event>
     faults = getEvents(cursor);
 

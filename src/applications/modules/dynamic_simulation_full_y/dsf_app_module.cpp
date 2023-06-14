@@ -4766,10 +4766,18 @@ void gridpack::dynamic_simulation::DSFullApp::transferPFtoDS(
     pfData = pf_network->getBusData(i).get();
     dsData = ds_network->getBusData(i).get();
     pfData->getValue("BUS_PF_VMAG",&rval);
+    dsData->setValue("BUS_PF_VMAG", rval);
     dsData->setValue(BUS_VOLTAGE_MAG,rval);
     ///printf("Step0 bus%d mag = %f\n", i+1, rval);
     pfData->getValue("BUS_PF_VANG",&rval);
+    dsData->setValue("BUS_PF_VANG",rval);
     dsData->setValue(BUS_VOLTAGE_ANG,rval);
+
+    pfData->getValue("LOAD_PL", &rval, 0);
+    dsData->setValue(LOAD_PL, rval);
+    pfData->getValue("LOAD_QL", &rval, 0);
+    dsData->setValue(LOAD_QL, rval);
+    
     int ngen = 0;
     if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
       int j;

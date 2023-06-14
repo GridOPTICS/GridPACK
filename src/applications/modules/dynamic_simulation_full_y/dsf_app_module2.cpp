@@ -44,6 +44,32 @@ double gridpack::dynamic_simulation::DSFullApp::getCurrentTime()
   return p_current_time;
 }
 
+/**
+ * Reset data structures
+ */
+void gridpack::dynamic_simulation::DSFullApp::reset()
+{
+  orgYbus.reset();
+  ybusyl.reset();
+  ybuspg.reset();
+  ybus_jxd.reset();
+  ybus.reset();
+
+  ybusMap_sptr.reset();
+  ngenMap_sptr.reset();
+  nbusMap_sptr.reset();
+
+  volt.reset();
+  INorton_full.reset();
+  INorton_full_chk.reset();
+  volt_full.reset();
+
+  solver_sptr.reset();
+
+  p_factory->load();
+}
+
+
 /*
   solve network equations
   predcorrflag = 0 => Predictor stage
@@ -129,6 +155,8 @@ void gridpack::dynamic_simulation::DSFullApp::getCurrent(int predcorrflag)
  */
 void gridpack::dynamic_simulation::DSFullApp::setup()
 {
+  p_current_time = 0.0;
+  
   // Get cursor for setting solver options
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
