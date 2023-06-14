@@ -6,7 +6,6 @@
 // -------------------------------------------------------------
 /**
  * @file   dsf_main.cpp
- * @author Shuangshuang Jin
  * @date   2016-07-14 14:23:30 d3g096
  *
  * @brief
@@ -93,12 +92,6 @@ main(int argc, char **argv)
     // transfer results from PF calculation to DS calculation
     ds_app.transferPFtoDS(pf_network, ds_network); 
 
-    // read in faults from input file
-    //gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = config->getCursor("Configuration.Dynamic_simulation");
-    std::vector<gridpack::dynamic_simulation::Event> faults;
-    faults = ds_app.getEvents(cursor);
-
     // run dynamic simulation
     ds_app.setNetwork(ds_network, config);
     //ds_app.readNetwork(ds_network,config);
@@ -111,22 +104,19 @@ main(int argc, char **argv)
     //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
     //printf("ds_app.solve:\n");
     //ds_app.solve(faults[0]);
+
+    // read in faults from input file
+    //gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Dynamic_simulation");
+    std::vector<gridpack::dynamic_simulation::Event> faults;
+    faults = ds_app.getEvents(cursor);
+
 	
-	ds_app.solvePreInitialize(faults[0]);
+    ds_app.solvePreInitialize(faults[0]);
 	
-	//std::vector<gridpack::dynamic_simulation::Event> action_list;
-	//action_list.clear();
-	
-	/*
-	for (ds_app.Simu_Current_Step = 0; ds_app.Simu_Current_Step < ds_app.simu_total_steps - 1; ds_app.Simu_Current_Step++){
-		ds_app.execute_one_simu_step(action_list);
-	}
-	*/
-	
-	while(!ds_app.isDynSimuDone()){
-		//ds_app.executeOneSimuStep(action_list);
-		ds_app.executeOneSimuStep( );
-	}
+    while(!ds_app.isDynSimuDone()){
+      ds_app.executeOneSimuStep( );
+    }
 
     //ds_app.write();
     timer->stop(t_total);

@@ -22,83 +22,18 @@ setEvent(gridpack::dynamic_simulation::Event event)
 }
 
 /**
- * Read faults from external file and form a list of faults
- * @param cursor pointer to open file contain fault or faults
- * @return a list of fault events
-
- * Note: This function is retained for backward compatibility only
- *       It should be removed once the new event functionality is
- *       implemented
- */
-std::vector<gridpack::dynamic_simulation::Event>
-gridpack::dynamic_simulation::DSFullApp::
-getEvents(gridpack::utility::Configuration::CursorPtr cursor)
-{
-  gridpack::utility::Configuration::CursorPtr list;
-  list = cursor->getCursor("Events");
-  gridpack::utility::Configuration::ChildCursors events;
-  std::vector<gridpack::dynamic_simulation::Event> ret;
-  if (list) {
-    list->children(events);
-    int size = events.size();
-    int idx;
-    // Parse fault events
-    for (idx=0; idx<size; idx++) {
-      gridpack::dynamic_simulation::Event event;
-      event.start = events[idx]->get("beginFault",0.0);
-      event.end = events[idx]->get("endFault",0.0);
-      event.tag = events[idx]->get("id","1");
-      std::string indices = events[idx]->get("faultBranch","0 0");
-      //Parse indices to get from and to indices of branch
-      int ntok1 = indices.find_first_not_of(' ',0);
-      int ntok2 = indices.find(' ',ntok1);
-      if (ntok2 - ntok1 > 0 && ntok1 != std::string::npos && ntok2 !=
-          std::string::npos) {
-        event.from_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
-        ntok1 = indices.find_first_not_of(' ',ntok2);
-        ntok2 = indices.find(' ',ntok1);
-        if (ntok1 != std::string::npos && ntok1 < indices.length()) {
-          if (ntok2 == std::string::npos) {
-            ntok2 = indices.length();
-          }
-          event.to_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
-        } else {
-          event.from_idx = 0;
-          event.to_idx = 0;
-        }
-        event.isBus = false;
-        event.isLine = true;
-	event.isBusFault = true;
-      } else {
-        event.from_idx = 0;
-        event.to_idx = 0;
-      }
-      event.bus_idx = event.from_idx;
-      event.Gfault = 0.0;
-      event.Bfault = 99999.0;
-
-      event.step = events[idx]->get("timeStep",0.0);
-      if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
-        ret.push_back(event);
-      }
-    }
-  }
-  return ret;
-}
-
-/**
- * Read events set in the config file and form a list of events
+ * Read events starting at the config cursor  and form a list of events
+ * @param  cursor to Events in input.xml file
  * @return a list of events
  * Note : The configuration needs to be already set
- : readNetwork methods sets it currently
+ : setNetwork method
  *
  */
 std::vector<gridpack::dynamic_simulation::Event>
-gridpack::dynamic_simulation::DSFullApp::getEvents()
+gridpack::dynamic_simulation::DSFullApp::getEvents(gridpack::utility::Configuration::CursorPtr cursor)
 {
-
   gridpack::utility::Configuration::CursorPtr list;
-  list = p_config->getCursor("Configuration.Dynamic_simulation.Events");
+  list = cursor->getCursor("Events");
   gridpack::utility::Configuration::ChildElements events;
   std::vector<gridpack::dynamic_simulation::Event> ret;
   if (list) {
@@ -122,7 +57,8 @@ gridpack::dynamic_simulation::DSFullApp::getEvents()
 
 	event.Gfault = 0.0;
 	event.Bfault = 99999.0;
-	
+
+	event.isLine = true;
 	event.isBusFault = true;
 	ret.push_back(event);
       } else if(strcmp(events[idx].name.c_str(),"BusFault") == 0) {
@@ -166,6 +102,23 @@ gridpack::dynamic_simulation::DSFullApp::getEvents()
   return ret;
 
 }
+
+/**
+ * Read events set in the config file and form a list of events
+ * @return a list of events
+ * Note : The configuration needs to be already set
+ : setNetwork method
+ *
+ */
+std::vector<gridpack::dynamic_simulation::Event>
+gridpack::dynamic_simulation::DSFullApp::getEvents()
+{
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+
+  return getEvents(cursor);
+}
+
 
 /**
  * handleEvents - handle any events

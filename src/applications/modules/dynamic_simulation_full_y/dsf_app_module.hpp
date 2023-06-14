@@ -265,11 +265,14 @@ class DSFullApp
      */
     void write(const char *signal);
 
-    /**
-     * Read faults from external file and form a list of faults
-     * @param cursor pointer to open file contain fault or faults
-     * @return a list of fault events
-     */
+  /**
+ * Read events starting at the config cursor  and form a list of events
+ * @param  cursor to Events in input.xml file
+ * @return a list of events
+ * Note : The configuration needs to be already set
+ : setNetwork method
+ *
+ */
     std::vector<gridpack::dynamic_simulation::Event>
       getEvents(gridpack::utility::Configuration::CursorPtr cursor);
 
