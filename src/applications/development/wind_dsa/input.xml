@@ -79,7 +79,7 @@
     <generatorParameters> 3g9b_classical.dyr </generatorParameters>
     <windFile>wind.txt</windFile>
     <loadFile>load.txt</loadFile>
-    <faultList> 3g9b_faults.xml </faultList>
+    <EventList> 3g9b_faults.xml </EventList>
     <channelURI>tcp://constance03.pnl.gov:61616</channelURI>
     <username> system </username>
     <password> manager </password>

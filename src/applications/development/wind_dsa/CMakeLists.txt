@@ -70,6 +70,7 @@ endif()
 add_executable(wind.x
   wind_main.cpp
   wind_driver.cpp
+  wind_driver2.cpp
 )
 target_link_libraries(wind.x ${target_libraries})
 

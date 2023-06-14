@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FaultList>
+<EventList>
   <Dynamic_simulation>
    <Events>
       <faultEvent>
@@ -16,4 +16,4 @@
       </faultEvent>
     </Events>
   </Dynamic_simulation>
-</FaultList>
+</EventList>

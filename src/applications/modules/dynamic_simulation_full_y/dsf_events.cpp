@@ -11,6 +11,17 @@
 #include "gridpack/utilities/string_utils.hpp"
 
 /**
+   Set an event for the dynamic simulation
+*/
+
+void gridpack::dynamic_simulation::DSFullApp::
+setEvent(gridpack::dynamic_simulation::Event event)
+{
+  p_events.clear();
+  p_events.push_back(event);
+}
+
+/**
  * Read faults from external file and form a list of faults
  * @param cursor pointer to open file contain fault or faults
  * @return a list of fault events
@@ -36,6 +47,7 @@ getEvents(gridpack::utility::Configuration::CursorPtr cursor)
       gridpack::dynamic_simulation::Event event;
       event.start = events[idx]->get("beginFault",0.0);
       event.end = events[idx]->get("endFault",0.0);
+      event.tag = events[idx]->get("id","1");
       std::string indices = events[idx]->get("faultBranch","0 0");
       //Parse indices to get from and to indices of branch
       int ntok1 = indices.find_first_not_of(' ',0);
@@ -56,10 +68,15 @@ getEvents(gridpack::utility::Configuration::CursorPtr cursor)
         }
         event.isBus = false;
         event.isLine = true;
+	event.isBusFault = true;
       } else {
         event.from_idx = 0;
         event.to_idx = 0;
       }
+      event.bus_idx = event.from_idx;
+      event.Gfault = 0.0;
+      event.Bfault = 99999.0;
+
       event.step = events[idx]->get("timeStep",0.0);
       if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
         ret.push_back(event);
