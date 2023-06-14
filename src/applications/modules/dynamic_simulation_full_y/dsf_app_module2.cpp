@@ -223,6 +223,7 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
     if (p_loadWatch) p_loadIO->header("\n");
   }
 
+
   p_frequencyOK = true;
 }
 
@@ -317,6 +318,7 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
       if (p_loadWatch) p_loadIO->header("\n");
     }
   }
+  saveTimeStep();
   
   if ((!p_factory->securityCheck()) && p_insecureAt == -1)  
     p_insecureAt = Simu_Current_Step;
