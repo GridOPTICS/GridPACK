@@ -29,7 +29,7 @@ main(int argc, char **argv)
 
   {
     gridpack::contingency_analysis::WindDriver driver;
-    driver.execute(argc, argv);
+    driver.execute2(argc, argv);
   }
 
   return 0;

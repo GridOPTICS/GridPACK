@@ -70,9 +70,16 @@ endif()
 add_executable(wind.x
   wind_main.cpp
   wind_driver.cpp
+)
+
+add_executable(wind2.x
+  wind_main2.cpp
+  wind_driver.cpp
   wind_driver2.cpp
 )
 target_link_libraries(wind.x ${target_libraries})
+target_link_libraries(wind2.x ${target_libraries})
+
 
 # Put files necessary to run powerflow2 in binary directory.
 # gridpack.petscrc is temporary -- it will be incorporated into
@@ -114,6 +121,7 @@ add_custom_target(wind.x.input
 
 )
 add_dependencies(wind.x wind.x.input)
+add_dependencies(wind2.x wind.x.input)
 
 # -------------------------------------------------------------
 # run applications as tests
