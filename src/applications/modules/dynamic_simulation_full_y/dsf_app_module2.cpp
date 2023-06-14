@@ -56,10 +56,8 @@ void gridpack::dynamic_simulation::DSFullApp::reset()
   ybus.reset();
 
   ybusMap_sptr.reset();
-  ngenMap_sptr.reset();
   nbusMap_sptr.reset();
 
-  volt.reset();
   INorton_full.reset();
   INorton_full_chk.reset();
   volt_full.reset();

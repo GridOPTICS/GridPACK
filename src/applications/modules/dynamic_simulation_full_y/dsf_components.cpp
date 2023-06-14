@@ -203,11 +203,10 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagSize(int *isize, int *js
 bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBUS) {
-    //bool status = YMBus::matrixDiagValues(values);
-    //if (status) printf("idx: %d Real: %f Imag: %f\n",getOriginalIndex(),
-    // real(values[0]), imag(values[0]));
-    //return status;
-    return YMBus::matrixDiagValues(values);	
+    bool status =  YMBus::matrixDiagValues(values);
+    p_ybusr = values->real();
+    p_ybusi = values->imag();
+    return status;
   } else if (p_mode == YL) {
     //printf("DSFullBus::matrixDiagValues, bus %d: p_pl = %f, p_ql = %f, p_voltage = %f\n", getOriginalIndex(), p_pl, p_ql, p_voltage);
     //printf("p_ybusr = %f, p_ybusi = %f\n", p_ybusr, p_ybusi);
