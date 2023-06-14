@@ -154,6 +154,7 @@ void gridpack::dynamic_simulation::DSFullApp::getCurrent(int predcorrflag)
 void gridpack::dynamic_simulation::DSFullApp::setup()
 {
   p_current_time = 0.0;
+  Simu_Current_Step = last_S_Steps = S_Steps = 0;
   
   // Get cursor for setting solver options
   gridpack::utility::Configuration::CursorPtr cursor;
