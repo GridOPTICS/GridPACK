@@ -123,7 +123,7 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
     gridpack::dynamic_simulation::DSFullBranch>(p_network);
 
   // transfer results from PF calculation to DS calculation
-  transferPFtoDS(pf_network, p_network);
+  ds_app.transferPFtoDS(pf_network, p_network);
 
   ds_app.setNetwork(p_network,config);
   ds_app.readGenerators();
@@ -320,7 +320,7 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
 
     // transfer results from PF calculation to DS calculation
 //    setDSConfig(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,p_network);
-    transferPFtoDS(pf_network, p_network);
+    ds_app.transferPFtoDS(pf_network, p_network);
     ds_app.reset();
 
     timer->start(t_file);

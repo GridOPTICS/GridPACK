@@ -491,7 +491,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   sw1[2] = fault.end;
   sw1[3] = p_sim_time;
   sw7[0] = p_time_step;
-  sw7[1] = fault.step;
+  sw7[1] = p_time_step;
   sw7[2] = p_time_step;
   sw7[3] = p_time_step;
   simu_total_steps = 0;
@@ -2950,7 +2950,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   sw1[2] = fault.end;
   sw1[3] = p_sim_time;
   sw7[0] = p_time_step;
-  sw7[1] = fault.step;
+  sw7[1] = p_time_step;
   sw7[2] = p_time_step;
   sw7[3] = p_time_step;
   simu_total_steps = 0;
