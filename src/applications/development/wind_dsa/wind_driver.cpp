@@ -145,7 +145,8 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
 
   // find indices that bracket quantiles
   for (i=0; i<nvals; i++) {
-    partition[i] = static_cast<int>(quantiles[i]*static_cast<double>(p_nconf));
+    partition[i] = static_cast<int>(quantiles[i]
+        * static_cast<double>(p_nconf-1));
   }
   if (quantiles[0] == 0.0) partition[0] = 0;
   if (quantiles[nvals-1] == 1.0) partition[nvals-1] = p_nconf-1;
@@ -156,9 +157,15 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
     } else if (i == nvals-1 && quantiles[i] == 1.0) {
       weight[nvals-1] = 1.0;
     } else {
-      double lo = static_cast<double>(partition[i])/static_cast<double>(p_nconf);
-      double hi = static_cast<double>(partition[i]+1)/static_cast<double>(p_nconf);
-      weight[i] = 1.0 - (quantiles[i]-lo)/(hi-lo);
+      if (p_nconf > 1) {
+        double lo = static_cast<double>(partition[i])
+          / static_cast<double>(p_nconf-1);
+        double hi = static_cast<double>(partition[i]+1)
+          / static_cast<double>(p_nconf-1);
+        weight[i] = 1.0 - (quantiles[i]-lo)/(hi-lo);
+      } else {
+        weight[i] = 1.0;
+      }
     }
   }
   int lo[3], hi[3], ld[2];
