@@ -304,6 +304,8 @@ class DSFullApp
     void setGeneratorWatch(const char *filename);
     void setGeneratorWatch(std::vector<int> &buses, std::vector<std::string> &tags,
         bool writeFile = true);
+    void setGeneratorWatch(gridpack::utility::Configuration::CursorPtr cursor);
+
 
     /**
      * Read in loads that should be monitored during simulation
