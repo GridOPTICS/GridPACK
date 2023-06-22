@@ -1279,16 +1279,11 @@ void gridpack::dynamic_simulation::DSFullApp::write(const char* signal)
 
 /**
  * Read in generators that should be monitored during simulation
- */
-void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
+   with a cursor ptr given
+*/
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(gridpack::utility::Configuration::CursorPtr cursor)
 {
-  bool noprint = gridpack::NoPrint::instance()->status();														 
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
-    p_generatorWatchFrequency = 1;
-  }
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
+  bool noprint = gridpack::NoPrint::instance()->status();
   gridpack::utility::Configuration::ChildCursors generators;
   if (cursor) cursor->children(generators);
   int i, j, idx, id, len;
@@ -1310,6 +1305,20 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
     tags.push_back(clean_tag);
   }
   setGeneratorWatch(buses,tags,true);
+}
+
+/**
+ * Read in generators that should be monitored during simulation
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
+{
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
+    p_generatorWatchFrequency = 1;
+  }
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
+  setGeneratorWatch(cursor);  
 }
 
 /**
