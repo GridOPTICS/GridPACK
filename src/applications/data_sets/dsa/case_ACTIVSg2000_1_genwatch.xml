@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Dynamic_simulation>
+	<generatorWatch>
+		<generator>
+			<busID> 1004 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1006 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1009 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1021 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1023 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1026 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1033 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1035 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1039 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1043 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1050 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1051 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1052 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1066 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1070 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1072 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1073 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1074 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1075 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1078 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1079 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1080 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1082 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1084 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1088 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1090 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1090 </busID>
+			<generatorID> 2 </generatorID>
+		</generator>
+	</generatorWatch>
+</Dynamic_simulation>

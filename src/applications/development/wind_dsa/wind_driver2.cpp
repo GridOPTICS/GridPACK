@@ -148,8 +148,51 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
     printf(" Number of time steps: %d\n",nsteps);
   }
 
-  // Read in events
   cursor = config->getCursor("Configuration.Dynamic_simulation");
+
+  // Read in quantile values
+  gridpack::utility::StringUtils util;
+  std::string quantiles_str;
+  if (!cursor->get("quantiles",&quantiles_str)) {
+    quantiles_str = "0.0 0.25 0.5 0.75 1.0";
+  }
+  std::vector<std::string> tokens;
+  tokens = util.blankTokenizer(quantiles_str);
+  int i, j;
+  std::vector<double> quantiles;
+  for (i=0; i<tokens.size(); i++) {
+    quantiles.push_back(atof(tokens[i].c_str()));
+  }
+
+    /* Get list of generator watch */
+  std::string watchlistfile;
+  gridpack::utility::Configuration *config_watch
+    = gridpack::utility::Configuration::configuration();
+
+  gridpack::utility::Configuration::CursorPtr cursor_watch;
+  if (cursor->get("generatorWatchList",&watchlistfile)) {
+    if (!config_watch->open(watchlistfile,world) && world.rank() == 0) {
+      printf("\nUnable to open watchlist file: %s\n",watchlistfile.c_str());
+    } else if (world.rank() == 0) {
+      printf("\nWatchlist located in file: %s\n",watchlistfile.c_str());
+    }
+
+    cursor_watch = config_watch->getCursor("Dynamic_simulation.generatorWatch");
+    ds_app.setGeneratorWatch(cursor_watch);
+    ds_app.getListWatchedGenerators(bus_ids, gen_ids);
+  } else {
+    // Find number of generators being watched
+    gridpack::utility::Configuration::CursorPtr list;
+    list = cursor->getCursor("generatorWatch");
+    gridpack::utility::Configuration::ChildCursors watch;
+    int num_watch_gen;
+    if (list) {
+      list->children(watch);
+      num_watch_gen = watch.size();
+    }
+  }
+
+  // Read in events
   std::string eventfile;
 
   if (!cursor->get("EventList",&eventfile)) {
@@ -181,31 +224,7 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
     }
   }
   timer->stop(t_evts);
-
-  // Read in quantile values
-  gridpack::utility::StringUtils util;
-  std::string quantiles_str;
-  if (!cursor->get("quantiles",&quantiles_str)) {
-    quantiles_str = "0.0 0.25 0.5 0.75 1.0";
-  }
-  std::vector<std::string> tokens;
-  tokens = util.blankTokenizer(quantiles_str);
-  int i, j;
-  std::vector<double> quantiles;
-  for (i=0; i<tokens.size(); i++) {
-    quantiles.push_back(atof(tokens[i].c_str()));
-  }
   
-  // Find number of generators being watched
-  gridpack::utility::Configuration::CursorPtr list;
-  list = cursor->getCursor("generatorWatch");
-  gridpack::utility::Configuration::ChildCursors watch;
-  int num_watch_gen;
-  if (list) {
-    list->children(watch);
-    num_watch_gen = watch.size();
-  }
-
   int me = world.rank();
  
   // read in wind and load tables
@@ -330,7 +349,7 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
     timer->stop(t_file);
     // Save off time series to watch file
     sprintf(sbuf,"Gen_watch_scn_%d_flt_%d.csv",ncnfg,nfault);
-    ds_app.setGeneratorWatch(sbuf);
+    ds_app.setGeneratorWatch(sbuf,cursor_watch);
     timer->start(t_solve);
 
     ds_app.setup();

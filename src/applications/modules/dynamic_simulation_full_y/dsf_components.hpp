@@ -472,6 +472,13 @@ class DSFullBus
      */
     std::vector<double> getWatchedValues();
 
+   /**
+     * Return a vector of watched values
+     * @return rotor angle and speed for generator with given tag (id)
+     */
+   std::vector<double> getWatchedValues(std::string tag);
+
+
     /**
      * Return rotor speed and angle for a specific generator
      * @param idx index of generator

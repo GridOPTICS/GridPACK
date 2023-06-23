@@ -1335,6 +1335,19 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *file
 
 /**
  * Read in generators that should be monitored during simulation
+ * @param filename set filename from calling program instead of input
+ *        deck
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *filename,gridpack::utility::Configuration::CursorPtr cursor)
+{
+  p_gen_watch_file = filename;
+  p_internal_watch_file_name = true;
+  setGeneratorWatch(cursor);
+}
+
+
+/**
+ * Read in generators that should be monitored during simulation
  * @param buses IDs of buses containing generators
  * @param tags generator IDs for watched generators
  * @param writeFile true if external file is to be written
@@ -1614,7 +1627,7 @@ void gridpack::dynamic_simulation::DSFullApp::saveTimeStep()
     if (p_network->getActiveBus(p_gen_buses[i])) {
       bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
         (p_network->getBus(p_gen_buses[i]).get());
-      std::vector<double> vals = bus->getWatchedValues();
+      std::vector<double> vals = bus->getWatchedValues(p_gen_ids[i]);
       for (j=0; j<vals.size(); j++) {
         p_time_series[icnt].push_back(vals[j]);
         icnt++;
