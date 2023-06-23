@@ -302,6 +302,8 @@ class DSFullApp
      */
     void setGeneratorWatch();
     void setGeneratorWatch(const char *filename);
+    void setGeneratorWatch(const char *filename,gridpack::utility::Configuration::CursorPtr cursor);
+
     void setGeneratorWatch(std::vector<int> &buses, std::vector<std::string> &tags,
         bool writeFile = true);
     void setGeneratorWatch(gridpack::utility::Configuration::CursorPtr cursor);

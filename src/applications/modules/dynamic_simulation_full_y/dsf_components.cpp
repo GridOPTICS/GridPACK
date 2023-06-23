@@ -2579,7 +2579,7 @@ std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
   std::vector<double> ret;
   int i, j;
   for (i=0; i<p_ngen; i++) {
-    if(!p_gstatus[i] || !p_generators.size()) continue;
+    if(!p_generators.size()) continue;
     if (p_generators[i]->getWatch()) {
       std::vector<double> vals;
       p_generators[i]->getWatchValues(vals);
@@ -2588,6 +2588,28 @@ std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
   }
   return ret;
 }
+
+/**
+ * Return a vector of watched values
+ * @return vector of watched values for the given generator tag (id) at a bus
+ */
+std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues(std::string tag)
+{
+  std::vector<double> ret;
+  int i, j;
+  for (i=0; i<p_ngen; i++) {
+    if(!p_generators.size()) continue;
+    if (p_generators[i]->getWatch()) {
+      if (p_genid[i] == tag) {
+	std::vector<double> vals;
+	p_generators[i]->getWatchValues(vals);
+	for (j=0; j<vals.size(); j++) ret.push_back(vals[j]);
+      }
+    }
+  }
+  return ret;
+}
+
 
 /**
  * Return rotor speed and angle for a specific generator
