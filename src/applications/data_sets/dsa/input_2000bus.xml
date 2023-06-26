@@ -52,7 +52,7 @@
     <windFile>case_ACTIVSg2000_1_wind.txt</windFile>
     <!--loadFile>load_2000.txt</loadFile-->
     <EventList> case_ACTIVSg2000_1_faults.xml </EventList>
-    <generatorWatchList> case_ACTIVSg2000_1_genwatch.xml> </generatorWatchList>
+    <generatorWatchList> case_ACTIVSg2000_1_genwatch.xml </generatorWatchList>
     <generatorWatch>
       <generator>
         <busID> 1004 </busID>

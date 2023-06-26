@@ -219,8 +219,15 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
       printf("Fault %d\n",idx);
       printf(" Begin fault: %12.6f End fault: %12.6f\n",
           events[idx].start, events[idx].end);
-      printf(" From bus: %8d  To bus: %8d\n",
-          events[idx].from_idx,events[idx].to_idx);
+      if (events[idx].isBusFault) {
+        printf(" Bus ID: %8d\n", events[idx].bus_idx);
+      } else if (events[idx].isLineStatus) {
+        printf(" From bus: %d To bus: %d\n",
+            events[idx].from_idx, events[idx].to_idx);
+      } else if (events[idx].isGenStatus) {
+      printf(" Gen ID: %s Bus ID: %d\n",
+          events[idx].tag.c_str(),events[idx].bus_idx);
+      }
     }
   }
   timer->stop(t_evts);
@@ -343,8 +350,19 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
     ds_app.reset();
 
     timer->start(t_file);
-    sprintf(sbuf,"Event_scn_%d_flt_%d_%d_%d.out",ncnfg,nfault,events[nfault].from_idx,
-        events[nfault].to_idx);
+    if (events[nfault].isBusFault) {
+      sprintf(sbuf,"Event_scn_%d_flt_%d_bus_%d.out",ncnfg,nfault,
+          events[nfault].bus_idx);
+    } else if (events[nfault].isLineStatus) {
+      sprintf(sbuf,"Event_scn_%d_flt_%d_line_%d_%d.out",ncnfg,nfault,
+          events[nfault].from_idx,
+          events[nfault].to_idx);
+    } else if (events[nfault].isGenStatus) {
+      std::string chk = events[nfault].tag;
+      util.trim(chk);
+      sprintf(sbuf,"Event_scn_%d_flt_%d_gen_%d_%s.out",ncnfg,nfault,
+          events[nfault].bus_idx,chk.c_str());
+    }
     ds_app.open(sbuf);
     timer->stop(t_file);
     // Save off time series to watch file

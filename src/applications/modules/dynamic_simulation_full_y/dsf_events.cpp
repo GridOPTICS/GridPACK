@@ -43,59 +43,66 @@ gridpack::dynamic_simulation::DSFullApp::getEvents(gridpack::utility::Configurat
     // Parse events
     for (idx=0; idx<size; idx++) {
       gridpack::dynamic_simulation::Event event;
+      event.isBus = false;
+      event.isBusFault = false;
+      event.isLine = false;
+      event.isLineStatus = false;
+      event.isGenerator = false;
+      event.isGenStatus = false;
       if(strcmp(events[idx].name.c_str(),"faultEvent") == 0) {
-	// This is kept for backward compatibility only and should be removed
-	// once all the dynamic simulation input.xml files are updated with the new format
-	event.start = events[idx].cursor->get("beginFault",0.0);
-	event.end = events[idx].cursor->get("endFault",0.0);
-	std::string line_ends = events[idx].cursor->get("faultBranch","0 0");
-	if(line_ends.c_str() != NULL) {
-	  sscanf(line_ends.c_str(),"%d %d",&event.from_idx, &event.to_idx);
-	}
-	event.bus_idx = event.from_idx;
-	event.tag = events[idx].cursor->get("id","1");
+        // This is kept for backward compatibility only and should be removed
+        // once all the dynamic simulation input.xml files are updated
+        // with the new format
+        event.start = events[idx].cursor->get("beginFault",0.0);
+        event.end = events[idx].cursor->get("endFault",0.0);
+        std::string line_ends = events[idx].cursor->get("faultBranch","0 0");
+        if(line_ends.c_str() != NULL) {
+          sscanf(line_ends.c_str(),"%d %d",&event.from_idx, &event.to_idx);
+        }
+        event.bus_idx = event.from_idx;
+        event.tag = events[idx].cursor->get("id","1");
 
-	event.Gfault = 0.0;
-	event.Bfault = 99999.0;
+        event.Gfault = 0.0;
+        event.Bfault = 99999.0;
 
-	event.isLine = true;
-	event.isBusFault = true;
-	ret.push_back(event);
-      } else if(strcmp(events[idx].name.c_str(),"BusFault") == 0) {
-	// Bus fault event
-	event.start = events[idx].cursor->get("begin",0.0);
-	event.end = events[idx].cursor->get("end",0.0);
-	event.bus_idx = events[idx].cursor->get("bus",0);
-
-	std::string Yfault = events[idx].cursor->get("yfault","0 0");
-	if(Yfault.c_str() != NULL) {
-	  sscanf(Yfault.c_str(),"%lf %lf",&event.Gfault, &event.Bfault);
-	}
-	
+        event.isLine = true;
         event.isBusFault = true;
-	ret.push_back(event);
+        ret.push_back(event);
+      } else if(strcmp(events[idx].name.c_str(),"BusFault") == 0) {
+        // Bus fault event
+        event.start = events[idx].cursor->get("begin",0.0);
+        event.end = events[idx].cursor->get("end",0.0);
+        event.bus_idx = events[idx].cursor->get("bus",0);
+
+        std::string Yfault = events[idx].cursor->get("yfault","0 0");
+        if(Yfault.c_str() != NULL) {
+          sscanf(Yfault.c_str(),"%lf %lf",&event.Gfault, &event.Bfault);
+        }
+
+        event.isBusFault = true;
+        ret.push_back(event);
       } else if(strcmp(events[idx].name.c_str(),"LineStatus") == 0) {
-	// Line status change event
-	event.time = events[idx].cursor->get("time",0.0);
-	std::string line = events[idx].cursor->get("line","0 0");
-	if(line.c_str() != NULL) {
-	  sscanf(line.c_str(),"%d %d",&event.from_idx, &event.to_idx);
-	}
-	event.tag = events[idx].cursor->get("id","1");
-	event.status = events[idx].cursor->get("status",1);
+        // Line status change event
+        event.time = events[idx].cursor->get("time",0.0);
+        std::string line = events[idx].cursor->get("line","0 0");
+        if(line.c_str() != NULL) {
+          sscanf(line.c_str(),"%d %d",&event.from_idx, &event.to_idx);
+        }
+        event.tag = events[idx].cursor->get("id","1");
+        event.status = events[idx].cursor->get("status",1);
 
-	event.isLineStatus = true;
-	ret.push_back(event);
+        event.isLineStatus = true;
+        ret.push_back(event);
       } else if(strcmp(events[idx].name.c_str(),"GenStatus") == 0) {
-	// Gen status change event
-	event.time = events[idx].cursor->get("time",0.0);
-	event.bus_idx = events[idx].cursor->get("bus",0);
-	event.tag = events[idx].cursor->get("id","1");
-	event.status = events[idx].cursor->get("status",1);
-	
+        // Gen status change event
+        event.time = events[idx].cursor->get("time",0.0);
+        event.bus_idx = events[idx].cursor->get("bus",0);
+        event.tag = events[idx].cursor->get("id","1");
+        event.status = events[idx].cursor->get("status",1);
 
-	event.isGenStatus = true;
-	ret.push_back(event);
+
+        event.isGenStatus = true;
+        ret.push_back(event);
       }
     }
   }
