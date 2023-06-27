@@ -145,7 +145,8 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
 
   // find indices that bracket quantiles
   for (i=0; i<nvals; i++) {
-    partition[i] = static_cast<int>(quantiles[i]*static_cast<double>(p_nconf));
+    partition[i] = static_cast<int>(quantiles[i]
+        * static_cast<double>(p_nconf-1));
   }
   if (quantiles[0] == 0.0) partition[0] = 0;
   if (quantiles[nvals-1] == 1.0) partition[nvals-1] = p_nconf-1;
@@ -156,9 +157,15 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
     } else if (i == nvals-1 && quantiles[i] == 1.0) {
       weight[nvals-1] = 1.0;
     } else {
-      double lo = static_cast<double>(partition[i])/static_cast<double>(p_nconf);
-      double hi = static_cast<double>(partition[i]+1)/static_cast<double>(p_nconf);
-      weight[i] = 1.0 - (quantiles[i]-lo)/(hi-lo);
+      if (p_nconf > 1) {
+        double lo = static_cast<double>(partition[i])
+          / static_cast<double>(p_nconf-1);
+        double hi = static_cast<double>(partition[i]+1)
+          / static_cast<double>(p_nconf-1);
+        weight[i] = 1.0 - (quantiles[i]-lo)/(hi-lo);
+      } else {
+        weight[i] = 1.0;
+      }
     }
   }
   int lo[3], hi[3], ld[2];
@@ -782,8 +789,11 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   taskmgr.set(ntasks*numConfigs);
 
   // Create distributed storage object
+  int t_quantile = timer->createCategory("Quantile Analysis");
+  timer->start(t_quantile);
   gridpack::contingency_analysis::QuantileAnalysis analysis(world,
       4*bus_ids.size(),ntasks*numConfigs,nsteps-1);
+  timer->stop(t_quantile);
   // Construct variable names
   std::vector<std::string> var_names;
   char sbuf[128];
@@ -799,7 +809,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     sprintf(sbuf, "%d_%s_GENQ", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
   }
+  timer->start(t_quantile);
   analysis.saveVarNames(var_names);
+  timer->stop(t_quantile);
   world.barrier();
 
   // evaluate faults
@@ -876,9 +888,11 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     all_series = ds_app.getGeneratorTimeSeries();
     std::vector<int> gen_idx = ds_app.getTimeSeriesMap();
     int iseries;
+    timer->start(t_quantile);
     for (iseries=0; iseries<gen_idx.size(); iseries++) {
       analysis.saveData(task_id, gen_idx[iseries],all_series[iseries]);
     }
+    timer->stop(t_quantile);
     ds_app.close();
     timer->stop(t_file);
   }
@@ -957,7 +971,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     delete [] lq;
   }
 
+  timer->start(t_quantile);
   analysis.exportQuantiles(quantiles, time_step);
+  timer->stop(t_quantile);
   timer->stop(t_total);
   if (ntasks*numConfigs >= world.size()/task_comm.size()) {
     timer->dump();
