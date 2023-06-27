@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Dynamic_simulation>
+	<generatorWatch>
+		<generator>
+			<busID> 1004 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1006 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1009 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1021 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1023 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1026 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1033 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1035 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1039 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1043 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1066 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1070 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1082 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1084 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1088 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1090 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 1090 </busID>
+			<generatorID> 2 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2013 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2042 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2059 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2062 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2071 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2076 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2078 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2089 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2099 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2100 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2123 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 2127 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3004 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3017 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3020 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3028 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3034 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3039 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3055 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3056 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3057 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3060 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3061 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3062 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3063 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3065 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3068 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3071 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3074 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3081 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3084 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3086 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3092 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3095 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3098 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3110 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3112 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3113 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3117 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3118 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3122 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3127 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3129 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3131 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3137 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 3141 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4010 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4050 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4105 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4142 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4153 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4166 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4177 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4181 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4183 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 4194 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 5020 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 5170 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 5198 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 5238 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 5243 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+		<generator>
+			<busID> 5399 </busID>
+			<generatorID> 1 </generatorID>
+		</generator>
+	</generatorWatch>
+</Dynamic_simulation>

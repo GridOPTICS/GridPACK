@@ -220,13 +220,16 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
       printf(" Begin fault: %12.6f End fault: %12.6f\n",
           events[idx].start, events[idx].end);
       if (events[idx].isBusFault) {
+        printf(" Bus fault\n");
         printf(" Bus ID: %8d\n", events[idx].bus_idx);
       } else if (events[idx].isLineStatus) {
+        printf(" Line fault\n");
         printf(" From bus: %d To bus: %d\n",
             events[idx].from_idx, events[idx].to_idx);
       } else if (events[idx].isGenStatus) {
-      printf(" Gen ID: %s Bus ID: %d\n",
-          events[idx].tag.c_str(),events[idx].bus_idx);
+        printf(" Generator fault\n");
+        printf(" Bus ID: %8d  Gen ID: %s\n",
+            events[idx].bus_idx, events[idx].tag.c_str());
       }
     }
   }

@@ -1767,7 +1767,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
   if (!p_internal_watch_file_name) {
     if (!p_suppress_watch_files) {
       if (cursor->get("generatorWatchFileName",&filename)) {
-        p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
+        p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
               p_network));
         p_generatorIO->open(filename.c_str());
       } else {
@@ -1780,7 +1780,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
     }
   } else {
     if (!p_suppress_watch_files) {
-      p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
+      p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
             p_network));
       p_generatorIO->open(p_gen_watch_file.c_str());
     }

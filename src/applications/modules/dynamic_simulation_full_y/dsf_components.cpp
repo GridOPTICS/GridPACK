@@ -2282,14 +2282,12 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
   } else if (!strcmp(signal,"watch_header") ||
       !strcmp(signal,"watch")) {
     if (p_ngen == 0) return false;
-    int i;
-    char buf[128];
-    char *ptr = string;
     int len = 0;
     bool ok;
     for (i=0; i<p_ngen; i++) {
       if(!p_generators.size()) continue;
       if (p_generators[i]->getWatch()) {
+	char buf[128];
         ///printf("(DSFull::serialWrite) Got to 1\n");
         ok = p_generators[i]->serialWrite(buf,128,signal);
         ///printf("(DSFull::serialWrite) Got to 2\n");

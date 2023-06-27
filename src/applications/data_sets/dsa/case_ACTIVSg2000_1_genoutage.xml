@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EventList>
+	<Dynamic_simulation>
+		<Events>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8046 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8048 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8049 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8071 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8077 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8078 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8079 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8080 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8088 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8117 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8129 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8130 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8131 </bus>
+				<id> 1 </id>
+				<status>   0 </status>
+			</GenStatus>
+			<GenStatus>
+				<time> 1.00 </time>
+				<bus> 8155 </bus>
+				<id> 2 </id>
+				<status>   0 </status>
+			</GenStatus>
+		</Events>
+	</Dynamic_simulation>
+</EventList>
