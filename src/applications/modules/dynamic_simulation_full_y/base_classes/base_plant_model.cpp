@@ -109,4 +109,28 @@ double gridpack::dynamic_simulation::BasePlantControllerModel::getQext( )
 	return 0.0;
 }
 
+/**
+ * Set internal state parameter in plant controller
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is
+ found
+ */
+bool gridpack::dynamic_simulation::BasePlantControllerModel::setState( std::string name,
+    double value)
+{
+  return false;
+}
 
+/**
+ * Get internal state parameter in plant controller
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is
+ found
+ */
+bool gridpack::dynamic_simulation::BasePlantControllerModel::getState( std::string name,
+    double *value)
+{
+  return false;
+}

@@ -80,6 +80,23 @@ class BasePlantControllerModel
 	
 	virtual double getQext( );
 
+  /**
+    * Set internal state parameter in plant controller
+    * @param name character string corresponding to state variable
+    * @param value new value for state parameter
+    * @return false if no variable corresponding to name is found
+    */
+   virtual bool setState(std::string name, double value);
+
+   /**
+    * Get internal state parameter in plant controller
+    * @param name character string corresponding to state variable
+    * @param value current value for state parameter
+    * @return false if no variable corresponding to name is found
+    */
+   virtual bool getState(std::string name, double *value);
+
+
   private:
     
     //double Vterminal, w;

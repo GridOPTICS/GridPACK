@@ -198,9 +198,6 @@ double gridpack::dynamic_simulation::BaseExciterModel::getIqcmd(){
 	return 0.0;
 }
 
-
-// Yuan added above 2020-6-23
-
 /**
  * Set internal state parameter in exciter
  * @param name character string corresponding to state variable

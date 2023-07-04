@@ -309,4 +309,63 @@ void gridpack::dynamic_simulation::Repca1Model::setExtGenId(std::string ExtGenId
   p_gen_id = ExtGenId;
 }
 
+/**
+ * Set internal state parameter in plant controller
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Repca1Model::setState(std::string name,
+    double value)
+{
+  bool ret = true;
+  if(name == "S0") {
+    V_filter_blk.setstate(value);
+  } else if(name == "S1") {
+    Qbranch_filter_blk.setstate(value);
+  } else if(name == "S2") {
+    Qref_PI_blk.setstate(value);
+  } else if(name == "S3") {
+    Qref_leadlag_blk.setstate(value);
+  } else if(name == "S4") {
+    Pbranch_filter_blk.setstate(value);
+  } else if(name == "S5") {
+    Pref_PI_blk.setstate(value);
+  } else if(name == "S6") {
+    Pref_filter_blk.setstate(value);
+  } else ret = false;
+  return ret;
+}
+
+/**
+ * Get internal state parameter in plant controller
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Repca1Model::getState(std::string name,
+    double *value)
+{
+  bool ret = true;
+  double state_value = -1E19; // Large negative value is set only when return flag is false, i.e., the name is not found
+
+  if(name == "S0") {
+    state_value = V_filter_blk.getstate();
+  } else if(name == "S1") {
+    state_value = Qbranch_filter_blk.getstate();
+  } else if(name == "S2") {
+    state_value = Qref_PI_blk.getstate();
+  } else if(name == "S3") {
+    state_value = Qref_leadlag_blk.getstate();
+  } else if(name == "S4") {
+    state_value = Pbranch_filter_blk.getstate();
+  } else if(name == "S5") {
+    state_value = Pref_PI_blk.getstate();
+  } else if(name == "S6") {
+    state_value = Pref_filter_blk.getstate();
+  } else ret = false;
+
+  *value = state_value;
+  return ret;
+}
 

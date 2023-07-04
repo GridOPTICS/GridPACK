@@ -188,6 +188,17 @@ double Cblock::getstate(IntegrationStage stage)
   return xout;
 }
 
+double Cblock::getstate()
+{
+  return x[0];
+}
+
+
+void Cblock::setstate(double xin)
+{
+  x[0] = xin;
+}
+
 // ------------------------------------
 // PI Controller
 // ------------------------------------

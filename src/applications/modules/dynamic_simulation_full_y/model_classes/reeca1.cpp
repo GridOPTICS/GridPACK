@@ -572,7 +572,17 @@ double gridpack::dynamic_simulation::Reeca1Model::getPord()
 bool gridpack::dynamic_simulation::Reeca1Model::setState(std::string name,
     double value)
 {
-  return false;
+  bool ret = true;
+
+  if(name == "S0") {
+    Vt_filter_blk.setstate(value);
+  } else if(name == "S1") {
+    Pe_filter_blk.setstate(value);
+  } else if(name == "S2") {
+    Q_PI_blk.setstate(value);
+  } else ret = false;
+  
+  return ret;
 }
 
 /**
@@ -584,5 +594,17 @@ bool gridpack::dynamic_simulation::Reeca1Model::setState(std::string name,
 bool gridpack::dynamic_simulation::Reeca1Model::getState(std::string name,
     double *value)
 {
-  return false;
+  bool ret = true;
+  double state_value = -1E19;
+
+  if(name == "S0") {
+    state_value = Vt_filter_blk.getstate();
+  } else if(name == "S1") {
+    state_value = Pe_filter_blk.getstate();
+  } else if(name == "S2") {
+    state_value = Q_PI_blk.getstate();
+  } else ret = false;
+  
+  *value = state_value;
+  return ret;
 }

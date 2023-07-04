@@ -859,33 +859,36 @@ void gridpack::hadrec::HADRECAppModule::exportPSSE23(std::string filename)
 
 /**
  * Set the state of some device on the network
- * @param bus_id bus ID
+ * @param bus_num bus number
  * @param dev_id two character identifier of device
- * @param type of device (GENERATOR, EXCITER, OR GOVERNOR)
- * @param name of the state variable (ANGLE,SPEED_DEV)
+ * @param device type of device to be modified
+ * @param name string labeling parameter to be modified
  * @param value new value of parameter
- * @return false if this device or
- parameter not found
+ * @return false if this device or parameter not found
+ *
+ * Device type is one of GENERATOR,EXCITER,GOVERNOR,ELECTRICAL_CONTROLLER,PLANT_CONTROLLER
  */
-bool gridpack::hadrec::HADRECAppModule::setState(int bus_id,
+bool gridpack::hadrec::HADRECAppModule::setState(int bus_num,
     std::string dev_id, std::string device,
     std::string name, double value)
 {
-  return ds_app_sptr->setState(bus_id, dev_id, device, name, value);
+  return ds_app_sptr->setState(bus_num, dev_id, device, name, value);
 }
 
 /**
  * Get the state of some device on the network
- * @param  bus_id bus ID
- * @param  dev_id two character identifier of device
- * @param  type of device (GENERATOR, EXCITER, OR GOVERNOR)
- * @param  name of the state variable (ANGLE, SPEED_DEV)
- * @return value current value of parameter
- * @return false if this device or state variable not found
+ * @param bus_num bus number
+ * @param dev_id two character identifier of device
+ * @param device type of device to be modified
+ * @param name string labeling parameter to be modified
+ * @param value current value of parameter
+ *
+ * Device type is one of GENERATOR,EXCITER,GOVERNOR,ELECTRICAL_CONTROLLER,PLANT_CONTROLLER
+ * @return false if this device or parameter not found
  */
-bool gridpack::hadrec::HADRECAppModule::getState(int bus_id,
+bool gridpack::hadrec::HADRECAppModule::getState(int bus_num,
     std::string dev_id, std::string device,
     std::string name, double *value)
 {
-  return ds_app_sptr->getState(bus_id, dev_id, device, name, value);
+  return ds_app_sptr->getState(bus_num, dev_id, device, name, value);
 }
