@@ -278,7 +278,9 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlow(){
  * transfer data from power flow to dynamic simulation 
  */
 void gridpack::hadrec::HADRECAppModule::transferPFtoDS()
-{	  
+{
+  ds_app_sptr.reset(new gridpack::dynamic_simulation::DSFullApp());
+  
   pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
 		    gridpack::dynamic_simulation::DSFullBranch>(ds_network);
 
