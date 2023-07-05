@@ -264,7 +264,7 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
     gridpack::utility::Configuration::ChildCursors files;
     if (dyr_cursor) dyr_cursor->children(files);
     if (ds_idx < files.size()) {
-      if (!files[ds_idx]->get("generatorParams",&filename)) {
+      if (!files[ds_idx]->get("generatorParameters",&filename)) {
         printf("Unknown generator parameter file specified\n");
         return;
       }
