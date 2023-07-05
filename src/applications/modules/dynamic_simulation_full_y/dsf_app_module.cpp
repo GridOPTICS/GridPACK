@@ -4735,7 +4735,7 @@ bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_num,
 	  if (device == "PLANT_CONTROLLER") {
 	    BasePlantControllerModel *plantcontroller = generator->getPlantController().get();
 	    if (plantcontroller != NULL) {
-	      ret = generator->getState(name, value);
+	      ret = plantcontroller->getState(name, value);
 	    }
 	    if (!ret) {
 	      std::cout<<"No parameter "<<name<<" found on plant controller"<<std::endl;
