@@ -133,7 +133,7 @@ protected:
 Emt::Emt(void)
 {
   p_isSetUp = 0;
-  p_network.reset(new EmtNetwork(p_comm));
+  emt_network.reset(new EmtNetwork(p_comm));
 }
 
 Emt::Emt(gridpack::parallel::Communicator comm)
@@ -161,15 +161,15 @@ Emt::~Emt(void)
 }
 
 /**
- * Transfer data from power flow to dynamic simulation
+ * Transfer data from power flow to EMT simulattion
  * @param pf_network power flow network
- * @param ds_network dynamic simulation network
+ * @param emt_network EMT simulation network
  */
-void transferPFtoDS(
+void Emt::transferPFtoEMT(
     boost::shared_ptr<gridpack::powerflow::PFNetwork>
     pf_network,
-    EmtNetwork 
-    *emt_network)
+    boost::shared_ptr<EmtNetwork>
+    emt_network)
 {
   int numBus = pf_network->numBuses();
   int i;
@@ -223,18 +223,19 @@ void Emt::solvepowerflow(void)
   p_pfapp->write();
   p_pfapp->saveData();
 
-  pf_network->clone<EmtBus,EmtBranch>(p_network);
+  pf_network->clone<EmtBus,EmtBranch>(emt_network);
+
+  transferPFtoEMT(pf_network,emt_network);
 }
 
 void Emt::readnetworkdatafromconfig(void)
 {
-  gridpack::parser::PTI23_parser<EmtNetwork> parser(p_network);
+  gridpack::parser::PTI23_parser<EmtNetwork> parser(emt_network);
   std::string netfilename; //Network file name
   std::string dyrfilename; // Dynamic data (.dyr) file
 
   p_config = gridpack::utility::Configuration::configuration();
   p_config->open(p_configfile,p_comm);
-  p_configcursor = p_config->getCursor("Configuration.Dynamic_simulation");
 
   // Start data read timer 
   p_profiler.startdatareadtimer();
@@ -250,12 +251,26 @@ void Emt::setup()
 {
   if(p_isSetUp) return;
   p_profiler.startsetuptimer();
-  /* Partition network */
-  p_network->partition();
-  if(!rank()) printf("Emt:Finished partitioning network\n");
 
+  p_configcursor = p_config->getCursor("Configuration.Dynamic_simulation");
+
+  // Read generator data
+  std::string filename;
+  gridpack::parser::PTI23_parser<EmtNetwork> parser(emt_network);
+
+  filename = p_configcursor->get("generatorParameters","");
+  try {
+    if(filename.size() > 0) parser.externalParse(filename.c_str());
+    else {
+      throw(filename.size());
+    }
+  }
+  catch(int size) {
+    std::cout << "Cannot read dynamic data file %s\n" << filename;
+  }
+    
   /* Create factory */
-  p_factory = new EmtFactory(p_network);
+  p_factory = new EmtFactory(emt_network);
 
   /* Load data from Data Collection objects to Bus and Branch components */
   p_factory->load();
@@ -269,13 +284,13 @@ void Emt::setup()
   if(!rank()) printf("Emt:Finished setting up factory\n");
 
   // Create bus data exchange
-  p_network->initBusUpdate();
+  emt_network->initBusUpdate();
 
   /* Create mappers and vectors, matrices */
-  p_VecMapper = new gridpack::mapper::BusVectorMap<EmtNetwork>(p_network);
+  p_VecMapper = new gridpack::mapper::BusVectorMap<EmtNetwork>(emt_network);
   p_X = p_VecMapper->mapToVector();
 
-  p_MatMapper = new gridpack::mapper::FullMatrixMap<EmtNetwork>(p_network);
+  p_MatMapper = new gridpack::mapper::FullMatrixMap<EmtNetwork>(emt_network);
   p_J = p_MatMapper->mapToMatrix();
 
   if(!rank()) printf("Emt:Finished setting up mappers\n");
@@ -319,6 +334,18 @@ void Emt::setup()
   p_nlsolver = new gridpack::math::NonlinearSolver(*(this->p_J),jbuildf,fbuildf);
   p_nlsolver->configure(p_configcursor);
 
+  // Get simulation time length
+  double t(0.0),tstep,tmax;
+
+  // Get simulation time frame from input
+  p_configcursor->get("timeStep",&tstep);
+  p_configcursor->get("simulationTime",&tmax);
+  p_simparams.setTimeStep(tstep);
+  p_simparams.setFinalTime(tmax);
+
+  p_daesolver->initialize(t,tstep,*(p_X.get()));
+
+
   if(!rank()) printf("Emt:Finished setting up DAE solver\n");
 
   p_isSetUp = 1;
@@ -332,7 +359,7 @@ void Emt::initialize()
   p_VecMapper->mapToVector(p_X);
   p_X->ready();
   
-  p_network->updateBuses();
+  emt_network->updateBuses();
   //p_X->print();
 }
 
@@ -343,30 +370,11 @@ void Emt::initialize()
 */
 void Emt::solve()
 {
-  // Get simulation time length
-  double t(0.0), tstep, tmax;
   int maxsteps(10000);
-
-  // Get simulation time frame from input
-  p_configcursor->get("timeStep",&tstep);
-  p_configcursor->get("simulationTime",&tmax);
-
-  p_daesolver->initialize(t,tstep,*(p_X.get()));
+  double final_time;
   p_profiler.startsolvetimer();
-  p_daesolver->solve(tmax,maxsteps);
+  p_simparams.getFinalTime(&final_time);
+  p_daesolver->solve(final_time,maxsteps);
   p_profiler.stopsolvetimer();
-  /*
-  while (t < tmax) {
-    double tout(tmax);
-    int maxsteps(10000);
-   
-    p_daesolver->initialize(t, tstep, *p_X);
-    p_daesolver->solve(tout, maxsteps);
-    std::cout << "Time requested = " << tmax << ", "
-              << "actual time = " << tout << ", "
-              << "Steps = " << maxsteps << std::endl;
-    t = tout;
-  } 
-  */ 
 }
 
