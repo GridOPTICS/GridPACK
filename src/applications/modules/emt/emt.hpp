@@ -69,6 +69,8 @@ public:
 
   void solvepowerflow(void);
 
+  void transferPFtoEMT(boost::shared_ptr<gridpack::powerflow::PFNetwork> pf_network,boost::shared_ptr<EmtNetwork> emt_network);
+
   /// Build the DAE Jacobian
   void operator() (const double& time, 
 		   const gridpack::math::Vector& X, 
@@ -85,7 +87,7 @@ public:
     p_VecMapper->mapToBus(Xdot);
 
     // Update ghost buses
-    //    p_network->updateBuses();
+    //    emt_network->updateBuses();
 
     // Evaluate the DAE Jacobian
     //    J.zero();
@@ -108,7 +110,7 @@ public:
     p_VecMapper->mapToBus(Xdot);
 
     // Update ghost buses
-    p_network->updateBuses();
+    emt_network->updateBuses();
 
     // Evaluate the residual f(x) - xdot
     p_factory->setMode(RESIDUAL_EVAL);
@@ -128,7 +130,7 @@ public:
     p_VecMapper->mapToBus(X);
 
     // Update ghost buses
-    p_network->updateBuses();
+    emt_network->updateBuses();
 
     // Evaluate the residual f(x) - xdot
     p_factory->setMode(FAULT_EVAL);
@@ -145,7 +147,7 @@ public:
     p_VecMapper->mapToBus(X);
 
     // Update ghost buses
-    p_network->updateBuses();
+    emt_network->updateBuses();
 
     // Evaluate the fault residual Jacobian
     J.zero();
@@ -175,7 +177,7 @@ public:
   int p_isSetUp;
 
   // Network pointer
-  boost::shared_ptr<EmtNetwork> p_network;
+  boost::shared_ptr<EmtNetwork> emt_network;
 
   // Power flow application pointer
   gridpack::powerflow::PFAppModule *p_pfapp;
