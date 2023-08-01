@@ -32,17 +32,17 @@ class EmtProfiler
   {
     p_timer = gridpack::utility::CoarseTimer::instance();
     // Set up timers
-    p_ttotal = p_timer->createCategory("Dynamic Simulation: Total Application");
-    p_tsetup = p_timer->createCategory("Dynamic Simulation: Set up");
-    p_tsolve = p_timer->createCategory("Dynamic Simulation: Solve");
-    p_tpostprocess = p_timer->createCategory("Dynamic Simulation: Post Processing");
+    p_ttotal = p_timer->createCategory("EMT Simulation: Total Application");
+    p_tsetup = p_timer->createCategory("EMT Simulation: Set up");
+    p_tsolve = p_timer->createCategory("EMT Simulation: Solve");
+    p_tpostprocess = p_timer->createCategory("EMT Simulation: Post Processing");
 
     p_timer->start(p_ttotal);
   }
 
   void startdatareadtimer(void) 
   {
-    p_treaddata = p_timer->createCategory("Dynamic Simulation: Data read");
+    p_treaddata = p_timer->createCategory("EMT Simulation: Data read");
     p_timer->start(p_treaddata);
   }
 
@@ -53,7 +53,7 @@ class EmtProfiler
 
   void startsetuptimer(void) 
   {
-    p_tsetup = p_timer->createCategory("Dynamic Simulation: Set Up");
+    p_tsetup = p_timer->createCategory("EMT Simulation: Set Up");
     p_timer->start(p_tsetup);
   }
 
@@ -64,7 +64,7 @@ class EmtProfiler
 
   void startsolvetimer(void) 
   {
-    p_tsolve = p_timer->createCategory("Dynamic Simulation: Solve");
+    p_tsolve = p_timer->createCategory("EMT Simulation: Solve");
     p_timer->start(p_tsolve);
   }
 
@@ -101,7 +101,11 @@ class EmtParams
   /** 
       Basic constructor
   */
-  EmtParams(void) {};
+  EmtParams(void) {
+    setTimeStep(0.00005);
+    setFinalTime(1); // default 50 microsecond time step and 1 second simulation time
+
+  };
 
   /** 
       Basic constructor with simulation time and initial time-step
@@ -111,6 +115,27 @@ class EmtParams
     p_dt0 = dt0;
     p_final_time = final_time;
   }
+
+  void setTimeStep(double dt)
+  {
+    p_dt0 = dt;
+  }
+
+  void getTimeStep(double *dt)
+  {
+    *dt = p_dt0;
+  }
+
+  void setFinalTime(double final_time)
+  {
+    p_final_time = final_time;
+  }
+
+  void getFinalTime(double *final_time)
+  {
+    *final_time = p_final_time;
+  }
+
   private:
   double p_dt0; // Initial time-step
   double p_final_time; // Final time
