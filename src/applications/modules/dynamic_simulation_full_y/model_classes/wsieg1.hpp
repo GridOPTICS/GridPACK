@@ -8,6 +8,7 @@
  * @file   wsieg1.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
+ * @Latested modification with control blocks: Jul 26, 2023
  * 
  * @brief  
  * 
@@ -19,10 +20,12 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_governor_model.hpp"
-#include "GainBlockClass.hpp"
+/*#include "GainBlockClass.hpp"
 #include "BackLashClass.hpp"
-#include "DBIntClass.hpp"
+#include "DBIntClass.hpp"*/
 #include <string>
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -88,6 +91,8 @@ class Wsieg1Model : public BaseGovernorModel
      */
     double getMechanicalPower();
 
+    void setGV0(double gv);
+
     /**
      * Set internal state parameter in governor
      * @param name character string corresponding to state variable
@@ -104,21 +109,6 @@ class Wsieg1Model : public BaseGovernorModel
      */
     bool getState(std::string name, double *value);
 
-    /** 
-     * Get the value of the rotor speed deviation
-     * @return value of rotor speed deviation
-     */
-    //double getRotorSpeedDeviation();
-	
-		/** 
-	 * Set the governor bus number
-	 */
-	//void setExtBusNum(int ExtBusNum);
-	
-	/** 
-	 * Set the governor generator id
-	 */
-	//void setExtGenId(std::string ExtGenId);
 
   private:
 
@@ -126,29 +116,42 @@ class Wsieg1Model : public BaseGovernorModel
     double K, T1, T2, T3, Uo, Uc, Pmax, Pmin;
     double T4, K1, K2, T5, K3, K4, T6, K5, K6, T7, K7, K8;
     double Db1, Err, Db2;
-    //double Gv1, PGv1, Gv2, PGv2, Gv3, PGv3, Gv4, PGv4, Gv5, PGv5;
+    double Gv1, PGv1, Gv2, PGv2, Gv3, PGv3, Gv4, PGv4, Gv5, PGv5;
     double Iblock;
 
+    double GV0;
+
     // WSIEG1 state variables
-    double x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4;
+    /*double x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4;
     double x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1;
     double dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4;
-    double dx1LL_1, dx2GovOut_1, dx3Turb1_1, dx4Turb2_1, dx5Turb3_1, dx6Turb4_1;
+    double dx1LL_1, dx2GovOut_1, dx3Turb1_1, dx4Turb2_1, dx5Turb3_1, dx6Turb4_1;*/
 
     // Outputs: Mechnical Power Gen1 and Gen 2
     double Pmech1, Pmech2;
 
     bool SecondGenExists, OptionToModifyLimitsForInitialStateLimitViolation;
 
-    GainBlockClass GainBlock;
+    /*GainBlockClass GainBlock;
     BackLashClass BackLash;
-    DBIntClass DBInt;
+    DBIntClass DBInt;*/
 
     double Pref;
     double w;
-	//Renke added below 2020-7-24
-	//std::string p_ckt; // id of the generator where the governor is installed on
-    //int p_bus_id;  // bus number of the generator 
+
+    Deadband Db1_blk; // is DBInt (Intentional Deadband) implemented in Deadband block?
+    LeadLag Leadlag_blk;
+    Integrator P_blk;
+    Deadband Db2_blk; // is BackLash (Unintentional Deadband) implemented in Deadband block?
+    PiecewiseSlope NGV_blk; // is GainBlock a PiecewiseSlope block? yes
+    Filter Filter_blk1;
+    Filter Filter_blk2;
+    Filter Filter_blk3;
+    Filter Filter_blk4;
+
+    double GV;
+
+    void computeModel(double t_inc, IntegrationStage int_flag);
 
 };
 }  // dynamic_simulation

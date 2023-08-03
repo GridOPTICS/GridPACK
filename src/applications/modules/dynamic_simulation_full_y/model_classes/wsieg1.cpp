@@ -6,6 +6,9 @@
 // -----------------------------------------------------------
 /**
  * @file   wsieg1.cpp
+ * @author Shuangshuang Jin 
+ * @Last modified:   June 11, 2015
+ * @Latested modification with control blocks: Jul 26, 2023
  * 
  * @brief: WSIEG1 governor moddel implementation  
  * 
@@ -30,7 +33,7 @@ gridpack::dynamic_simulation::Wsieg1Model::Wsieg1Model(void)
   SecondGenExists = false;
   OptionToModifyLimitsForInitialStateLimitViolation = true;
   w = 0.0;
-  dx1LL = 0;
+  /*dx1LL = 0;
   dx2GovOut = 0;
   dx3Turb1 = 0;
   dx4Turb2 = 0;
@@ -41,7 +44,7 @@ gridpack::dynamic_simulation::Wsieg1Model::Wsieg1Model(void)
   dx3Turb1_1 = 0;
   dx4Turb2_1 = 0;
   dx5Turb3_1 = 0;
-  dx6Turb4_1 = 0;
+  dx6Turb4_1 = 0;*/
 }
 
 /**
@@ -87,7 +90,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
   if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; // Err
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
-  /*if (!data->getValue(GOVERNOR_GV1, &Gv1, idx)) Gv1 = 0.0; // Gv1
+  if (!data->getValue(GOVERNOR_GV1, &Gv1, idx)) Gv1 = 0.0; // Gv1
   if (!data->getValue(GOVERNOR_PGV1, &PGv1, idx)) PGv1 = 0.0; // PGv1
   if (!data->getValue(GOVERNOR_GV2, &Gv2, idx)) Gv2 = 0.0; // Gv2
   if (!data->getValue(GOVERNOR_PGV2, &PGv2, idx)) PGv2 = 0.0; // PGv2
@@ -96,8 +99,28 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_GV4, &Gv4, idx)) Gv4 = 0.0; // Gv4
   if (!data->getValue(GOVERNOR_PGV4, &PGv4, idx)) PGv4 = 0.0; // PGv4
   if (!data->getValue(GOVERNOR_GV5, &Gv5, idx)) Gv5 = 0.0; // Gv5
-  if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5*/
+  if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
+
+  Db1_blk.setparams(Db1, Err);
+  Leadlag_blk.setparams(T2, T1);
+  P_blk.setparams(1.0, Pmin, Pmax); // need another method to take Pmax and Pmin
+  Db2_blk.setparams(Db2, Db2);
+
+  // Initialize NGV 
+  double uin[5], yin[5];
+  uin[0] = Gv1; yin[0] = PGv1;
+  uin[1] = Gv2; yin[0] = PGv2;
+  uin[2] = Gv3; yin[0] = PGv3;
+  uin[3] = Gv4; yin[0] = PGv4;
+  uin[4] = Gv5; yin[0] = PGv5;
+  NGV_blk.setparams(5, uin, yin);
+
+  Filter_blk1.setparams(1.0, T4);
+  Filter_blk2.setparams(1.0, T5);
+  Filter_blk3.setparams(1.0, T6);
+  Filter_blk4.setparams(1.0, T7);
+
 }
 
 /**
@@ -108,7 +131,51 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
  */
 void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, double ts)
 {
-  double PGV;
+  double u1, u2, u3, u4, u5, u6, u7, u8, u9; 
+  /*// Forward initialization
+  // We can only do forward initialization because NGV_blk, Db2_blk and
+  // Db1_blk do not have .int_given_y() method?
+  // They only have getoutput() method.
+  u1 = Db1_blk.getoutput(w);
+  u2 = Leadlag_blk.init_given_u(u1*K);
+  u3 = P_blk.init_given_u((GV0-u2-u4)*1/T3); // Q: u3 depends on u4
+  u4 = Db2_blk.getoutput(u3); // Q: but u4 also depends on u3, deadlock?
+  u5 = NGV_blk.getoutput(u4);
+
+  u6 = Filter_blk1.init_given_u(u5);
+  u7 = Filter_blk2.init_given_u(u6);
+  u8 = Filter_blk3.init_given_u(u7);
+  u9 = Filter_blk4.init_given_u(u8);
+
+  Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
+  Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
+
+  GV = u4;*/ 
+ 
+  // Backword initialization 
+  if (K1 + K3 + K5 + K7 > 0) {
+     u9 = Pmech1 / (K1 + K3 + K5 + K7);
+     u8 = Filter_blk4.init_given_y(u9);
+     u7 = Filter_blk3.init_given_y(u8);
+     u6 = Filter_blk2.init_given_y(u7);
+     u5 = Filter_blk1.init_given_y(u6);
+  } else if (K2 + K4 + K6 + K8 > 0) {
+     u9 = Pmech2 / (K2 + K4 + K6 + K8);
+     u8 = Filter_blk4.init_given_y(u9);
+     u7 = Filter_blk3.init_given_y(u8);
+     u6 = Filter_blk2.init_given_y(u7);
+     u5 = Filter_blk1.init_given_y(u6);
+  } else 
+     u5 = 0;
+   
+  u4 = NGV_blk.init_given_y(u5); // Implemented a .int_given_y method for PiecewiseSlope in dblock
+  u3 = u4; // Deadband Db2_blk's input equails the output
+  u2 = P_blk.init_given_y(u3);
+  u1 = Leadlag_blk.init_given_y(GV0-u2*T3-u4);
+
+  GV = u4; 
+
+ /*double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
     PGV = Pmech1 / (K1 + K3 + K5 + K7);
   else if (K2 + K4 + K6 + K8 > 0) 
@@ -150,7 +217,39 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (GV > Uo) Uo = GV+0.1;
     if (GV < Uc) Uc = GV-0.1;
-  }
+  }*/
+}
+
+/**
+ * computeModel - Updates the model states and gets the output
+ */
+void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,IntegrationStage int_flag)
+{
+    double u1, y1, u2, y2, u3, y3, u4, y4, u5, y5, u6, y6, u7, y7, u8, y8, u9, y9; 
+    u1 = w;
+    y1 = Db1_blk.getoutput(u1);
+    u2 = y1 * K;
+    y2 = Leadlag_blk.getoutput(u2, t_inc, int_flag, true);
+    y4 = GV;
+    u3 = (GV0 -y2 - y4) * 1 / T3; 
+    if (u3 > Uo)
+      u3 = Uo;
+    else if (u3 < Uc) 
+      u3 = Uc;
+    y3 = P_blk.getoutput(u3, t_inc, int_flag, true); 
+    u4 = y3;
+    y4 = Db2_blk.getoutput(u4); 
+    GV = y4;
+    u5 = y4;
+    y5 = NGV_blk.getoutput(u5);
+
+    u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
+    u7 = Filter_blk2.getoutput(u6, t_inc, int_flag, true);
+    u8 = Filter_blk3.getoutput(u7, t_inc, int_flag, true);
+    u9 = Filter_blk4.getoutput(u8, t_inc, int_flag, true);
+
+    Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
+    Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
 }
 
 /**
@@ -160,7 +259,8 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
  */
 void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool flag)
 {
-  if (!flag) {
+   computeModel(t_inc,PREDICTOR);
+  /*if (!flag) {
     x1LL = x1LL_1;
     x2GovOut = x2GovOut_1;
     x3Turb1 = x3Turb1_1;
@@ -235,7 +335,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
   x6Turb4_1 = x6Turb4 + dx6Turb4 * t_inc;
 
   Pmech1 = x3Turb1_1 * K1 + x4Turb2_1 * K3 + x5Turb3_1 * K5 + x6Turb4_1 * K7;
-  Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;
+  Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;*/
   
 }
 
@@ -246,7 +346,8 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
  */
 void gridpack::dynamic_simulation::Wsieg1Model::corrector(double t_inc, bool flag)
 {
-  // State 1
+   computeModel(t_inc,CORRECTOR);
+  /*// State 1
   double TempIn1 = K * w;//DBInt.Output(w);
   double TempOut;
   if (T1 > 4 * t_inc) {
@@ -302,7 +403,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::corrector(double t_inc, bool fla
   x6Turb4_1 = x6Turb4 + (dx6Turb4 + dx6Turb4_1) / 2.0 * t_inc;
  
   Pmech1 = x3Turb1_1 * K1 + x4Turb2_1 * K3 + x5Turb3_1 * K5 + x6Turb4_1 * K7;
-  Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;
+  Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;*/
 
 }
 
@@ -323,6 +424,11 @@ void gridpack::dynamic_simulation::Wsieg1Model::setMechanicalPower(double pmech)
 void gridpack::dynamic_simulation::Wsieg1Model::setRotorSpeedDeviation(double delta_o)
 {
   w = delta_o;
+}
+
+void gridpack::dynamic_simulation::Wsieg1Model::setGV0(double gv)
+{
+  GV0 = gv;
 }
 
 /** 
