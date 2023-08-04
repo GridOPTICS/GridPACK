@@ -46,7 +46,41 @@ public:
    *  @param values a 2-d array of Jacobian block for the bus
    */
   bool setJacobian(gridpack::ComplexType **values);
-  
+
+  /**
+   * Set Jacobian values
+   * @param value_map standard map containing indices and values of matrix
+   *                   elements
+   */
+  bool setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType>
+      &value_map);
+
+  /**
+   * Number of rows (equations) contributed to by generator
+   * @return number of rows
+   */
+  virtual int matrixNumRows();
+
+  /**
+   * Number of rows (equations) contributed to by generator
+   * @return number of rows
+   */
+  virtual int matrixNumCols();
+
+  /**
+   * Get number of matrix values contributed by generator
+   * @return number of matrix values
+   */
+  virtual int matrixNumValues();
+
+  /**
+   * Get list of matrix values contributed by generator
+   * @params values list of matrix values
+   * @params rows list of local row indices
+   */
+  virtual void matrixGetValues(gridpack::ComplexType *values,
+      int *rows, int *cols);
+
   /**
    * Initialize generator model before calculation
    * @param [output] values - array where initialized generator variables should be set

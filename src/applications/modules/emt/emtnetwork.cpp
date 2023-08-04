@@ -38,10 +38,13 @@ EmtBus::EmtBus(void)
   p_mode = NONE;
   p_VDQptr = NULL;
   p_nvar = 2;
+  p_nrows = 2;
+  p_ncols = 2;
   p_neqsgen = NULL;
   p_neqsexc= NULL;
   p_neqsgov= NULL;
   p_gen     = NULL;
+  p_num_vals = -1;
 }
 
 /**
@@ -200,7 +203,7 @@ void EmtBus::load(const
   // Get Voltage magnitude and angle
   data->getValue(BUS_VOLTAGE_ANG,&Va); // This is in degress
   data->getValue(BUS_VOLTAGE_MAG,&Vm);
- 
+
   /* Convert from polar to rectangular */
   Va *= pi/180.0;
 
@@ -220,13 +223,13 @@ void EmtBus::load(const
   if(p_bustype == 4) p_isolated = true;
 
   if(p_isolated) return;
-  
+
   // Read shunts
   data->getValue(BUS_SHUNT_GL,&p_gl);
   data->getValue(BUS_SHUNT_BL,&p_bl);
   p_gl /= p_sbase;
   p_bl /= p_sbase;
-  
+
   gridpack::utility::StringUtils util;
   bool has_ex;
   bool has_gv;
@@ -243,9 +246,9 @@ void EmtBus::load(const
     for(i=0; i < p_ngen; i++) {
       data->getValue(GENERATOR_STAT,&gstatus,i); // Generator status
       if(!gstatus) {
-	p_gen[i] = new BaseGenModel;
-	p_gen[i]->setGenStatus(0);
-	continue;
+        p_gen[i] = new BaseGenModel;
+        p_gen[i]->setGenStatus(0);
+        continue;
       }
 
       p_gen[i] = NULL;
@@ -259,17 +262,17 @@ void EmtBus::load(const
       util.toUpper(type);
 
       if(type == "GENCLS") {
-	ClassicalGen *clgen;
-	clgen = new ClassicalGen;
-	p_gen[i] = clgen;
+        ClassicalGen *clgen;
+        clgen = new ClassicalGen;
+        p_gen[i] = clgen;
       } else if (type == "GENROU") {
         GenrouGen *grgen;
         grgen = new GenrouGen;
         p_gen[i] = grgen;
       } else if (type == "GENSAL") {
-	GensalGen *gsgen;
-	gsgen = new GensalGen;
-	p_gen[i] = gsgen;
+        GensalGen *gsgen;
+        gsgen = new GensalGen;
+        p_gen[i] = gsgen;
       }
 
       has_ex = false;
@@ -281,21 +284,21 @@ void EmtBus::load(const
           if (type == "EXDC1") { 
             Exdc1Exc *e1Exc;
             e1Exc = new Exdc1Exc;
-	    e1Exc->setGenerator(p_gen[i]);
+            e1Exc->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseExcModel> ex;
             ex.reset(e1Exc);
             p_gen[i]->setExciter(ex);
           } else if (type == "ESST1A") { 
             Esst1aExc *e1Exc;
             e1Exc = new Esst1aExc;
-	    e1Exc->setGenerator(p_gen[i]);
+            e1Exc->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseExcModel> ex;
             ex.reset(e1Exc);
             p_gen[i]->setExciter(ex);
           }
         }
       } 
-        
+
       has_gv = false;
       data->getValue(HAS_GOVERNOR, &has_gv, i);
       if (has_gv) {
@@ -305,7 +308,7 @@ void EmtBus::load(const
           if (type == "WSIEG1") { 
             Wsieg1Gov *w1Gov;
             w1Gov = new Wsieg1Gov;
-	    w1Gov->setGenerator(p_gen[i]);
+            w1Gov->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseGovModel> gv;
             gv.reset(w1Gov);
             p_gen[i]->setGovernor(gv);
@@ -325,16 +328,18 @@ void EmtBus::load(const
       // Set the offset for the first variable in the bus variable array 
       p_gen[i]->setBusOffset(p_nvar);
       if (has_ex) {
-	p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
-	p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
+        p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
+        p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
       }
       if (has_gv) {
-	p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
-	p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
+        p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+        p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
       }
 
       /* Update number of variables for this bus */
       p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
+      p_nrows += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
+      p_ncols += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
       //      printf("p_nvar = %d (ngen:%d,nexc:%d,ngov:%d)\n",p_nvar,p_neqsgen[i],p_neqsexc[i],p_neqsgov[i]);
     }
   }
@@ -364,6 +369,233 @@ bool EmtBus::matrixDiagSize(int *isize, int *jsize) const
 }
 
 /**
+ * Return number of rows (dependent variables) that bus contributes
+ * to matrix
+ * @return number of dependent variables (equations)
+ */
+int EmtBus::matrixNumRows()
+{
+  return p_nrows;
+}
+
+/**
+ * Return number of columns (independent variables) that bus contributes
+ * to matrix
+ * @return number of independent variables
+ */
+int EmtBus::matrixNumCols()
+{
+  return p_ncols;
+}
+
+/** 
+ * Set global row index
+ * @param irow local row index
+ * @param idx global row index
+ */
+void EmtBus::matrixSetRowIndex(int irow, int idx)
+{
+  if (p_rowidx.size() == 0) {
+    p_rowidx.resize(p_nrows);
+    int i;
+    for (i=0; i<p_nrows; i++) p_rowidx[i] = -1;
+  }
+  p_rowidx[irow] = idx;
+}
+
+/** 
+ * Set global column index
+ * @param icol local column index
+ * @param idx global column index
+ */
+void EmtBus::matrixSetColIndex(int icol, int idx)
+{
+  if (p_colidx.size() == 0) {
+    p_colidx.resize(p_ncols);
+    int i;
+    for (i=0; i<p_ncols; i++) p_colidx[i] = -1;
+  }
+  p_colidx[icol] = idx;
+}
+
+/**
+ * Return global row index given local row index
+ * @param irow local row index
+ * @return global row index
+ */
+int EmtBus::matrixGetRowIndex(int irow)
+{
+  return p_rowidx[irow];
+}
+
+/**
+ * Return global column index given local column index
+ * @param icol local column index
+ * @return global column index
+ */
+int EmtBus::matrixGetColIndex(int icol)
+{
+  return p_colidx[icol];
+}
+
+/**
+ * Total number of matrix elements returned by bus
+ * @return number of matrix elements
+ */
+int EmtBus::matrixNumValues()
+{
+//  if (p_num_vals == -1) {
+    if (p_isolated) {
+      p_num_vals = 2;
+    } else {
+      std::map<std::pair<int,int>,gridpack::ComplexType> value_map;
+      matrixGetValueMap(value_map);
+      p_num_vals = value_map.size();
+    }
+//  }
+  return p_num_vals;
+}
+
+
+/**
+ * Get value map for generalized matrix interface
+ * @param value_map standard map structure that contains all non-zero
+ *                  matrix elements
+ */
+void EmtBus::matrixGetValueMap(std::map<std::pair<int,int>,
+    gridpack::ComplexType> &value_map)
+{
+  int i,j;
+  int nvar = p_nvar;
+  int VD_col_start = 0; // Starting col index for VD
+  int VQ_col_start = nvar; // Starting col index for VQ
+  int VD_idx=0; // Location of VD in the solution vector for this bus
+  int VQ_idx=1; // Location of VQ in the solution vector for this bus
+  double p_VD,p_VQ;
+
+  // Make sure value_map is empty
+  value_map.clear();
+
+  getVoltagesRectangular(&p_VD,&p_VQ);
+
+#define MAP_PAIR(_i, _j, _val)                                     \
+{                                                                  \
+  std::map<std::pair<int,int>,gridpack::ComplexType>::iterator it; \
+  it = value_map.find(std::pair<int,int>(_i,_j));                  \
+  if (it != value_map.end()) {                                     \
+    it->second += _val;                                            \
+  } else {                                                         \
+    value_map.insert(                                              \
+      std::pair<std::pair<int,int>,gridpack::ComplexType>(         \
+      std::pair<int,int>(_i,_j),_val));                            \
+  }                                                                \
+}
+
+  if(p_isolated) {
+    MAP_PAIR(0,0,1.0);
+    MAP_PAIR(1,1,1.0);
+    return;
+  }
+
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  // Get the edges connected to this bus
+  gridpack::component::BaseBusComponent::getNeighborBranches(branches);
+  // Number of branches connected to this
+  int nconnbranch = branches.size();
+  for(i=0; i < nconnbranch; i++) {
+    EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+    EmtBus *busf = dynamic_cast<EmtBus*>((branch->getBus1()).get());
+    EmtBus *bust = dynamic_cast<EmtBus*>((branch->getBus2()).get());
+
+    if(this == busf) {
+      /* This bus is the from bus of branch[i] */
+      double Gff=0.0,Bff=0.0;
+      branch->getForwardSelfAdmittance(&Gff,&Bff);
+      MAP_PAIR(0,0,-Bff);
+      MAP_PAIR(0,1,-Gff);
+      MAP_PAIR(1,0,-Gff);
+      MAP_PAIR(1,1, Bff);
+    } else {
+      double Gtt=0.0,Btt=0.0;
+      /* This bus is the to bus of branch[i] */
+      branch->getReverseSelfAdmittance(&Gtt,&Btt);
+      MAP_PAIR(0,0,-Btt);
+      MAP_PAIR(0,1,-Gtt);
+      MAP_PAIR(1,0,-Gtt);
+      MAP_PAIR(1,1, Btt);
+    }
+  }
+  // Partials of contributions from shunt elements
+  MAP_PAIR(0,0,-p_bl);
+  MAP_PAIR(0,1,-p_gl);
+  MAP_PAIR(1,0,-p_gl);
+  MAP_PAIR(1,1, p_bl);
+
+  // Partials of contributions from load
+  // Assuming constant impedance load
+  double yp,yq;
+  yp = p_pl/(p_Vm0*p_Vm0);
+  yq = p_ql/(p_Vm0*p_Vm0);
+
+  MAP_PAIR(0,0, yq);
+  MAP_PAIR(0,1,-yp);
+  MAP_PAIR(1,0,-yp);
+  MAP_PAIR(1,1,-yq);
+
+  // Partials of generator equations and contributions to the network<->generator 
+  EMTMode dsmode;
+  for(i=0; i < p_ngen; i++) {
+    if(!p_gen[i]->getGenStatus()) continue;
+
+    p_gen[i]->setMode(p_mode);
+    p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+    p_gen[i]->setTSshift(p_TSshift);
+
+    p_gen[i]->setJacobian(value_map);
+
+    if(p_gen[i]->hasExciter()) {
+      p_gen[i]->getExciter()->setMode(p_mode);
+      p_gen[i]->getExciter()->setTSshift(p_TSshift);
+      p_gen[i]->getExciter()->setJacobian(value_map);
+    }
+
+    if(p_gen[i]->hasGovernor()) {
+      p_gen[i]->getGovernor()->setMode(p_mode);
+      p_gen[i]->getGovernor()->setTSshift(p_TSshift);
+      p_gen[i]->getGovernor()->setJacobian(value_map);
+    }
+  } 
+#undef MAP_PAIR
+}
+
+/**
+ * Return list of matrix values and their locations generated by the bus
+ * @param values list of matrix values
+ * @param rows list of row indices
+ * @param cols list of column indices
+ */
+void EmtBus::matrixGetValues(gridpack::ComplexType *values,
+    int *rows, int *cols)
+{
+  int i,j;
+  // Get value map for all non-zero indices
+  std::map<std::pair<int,int>,gridpack::ComplexType> value_map;
+  matrixGetValueMap(value_map);
+
+  int nvals = value_map.size();
+  std::map<std::pair<int,int>,gridpack::ComplexType>::iterator it;
+  it = value_map.begin();
+  int ncnt = 0;
+  while (it != value_map.end()) {
+    rows[ncnt] = p_rowidx[it->first.first];
+    cols[ncnt] = p_colidx[it->first.second];
+    values[ncnt] = it->second;
+    ncnt++;
+    it++;
+  }
+}
+
+/**
  * Return the values of for a diagonal matrix block. The values are
  * returned in row-major order
  * @param values: pointer to matrix block values
@@ -386,7 +618,7 @@ bool EmtBus::matrixDiagValues(gridpack::ComplexType *values)
   gridpack::ComplexType **matvalues = p_matvalues;
 
   getVoltagesRectangular(&p_VD,&p_VQ);
-  
+
   // Zero out values first in case they haven't been zeroed out.
   for(i=0; i < nvar; i++) {
     matvalues[i] = values + i*p_nvar;
@@ -394,82 +626,82 @@ bool EmtBus::matrixDiagValues(gridpack::ComplexType *values)
       values[nvar*i + j] = 0.0;
     }
   }
-   
- if(p_isolated) {
-   matvalues[0][0] = matvalues[1][1] = 1.0;
-   return true;
- }
- 
- std::vector<boost::shared_ptr<BaseComponent> > branches;
- // Get the edges connected to this bus
- gridpack::component::BaseBusComponent::getNeighborBranches(branches);
- // Number of branches connected to this
- int nconnbranch = branches.size();
- for(i=0; i < nconnbranch; i++) {
-   EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
-   EmtBus *busf = dynamic_cast<EmtBus*>((branch->getBus1()).get());
-   EmtBus *bust = dynamic_cast<EmtBus*>((branch->getBus2()).get());
-   
-   if(this == busf) {
-     /* This bus is the from bus of branch[i] */
-     double Gff=0.0,Bff=0.0;
-     branch->getForwardSelfAdmittance(&Gff,&Bff);
-     matvalues[0][0] += -Bff;
-     matvalues[0][1] += -Gff;
-     matvalues[1][0] += -Gff;
-     matvalues[1][1] +=  Bff;
-   } else {
-     double Gtt=0.0,Btt=0.0;
-     /* This bus is the to bus of branch[i] */
-     branch->getReverseSelfAdmittance(&Gtt,&Btt);
-     matvalues[0][0] += -Btt;
-     matvalues[0][1] += -Gtt;
-     matvalues[1][0] += -Gtt;
-     matvalues[1][1] +=  Btt;
-   }
- }
- // Partials of contributions from shunt elements
- matvalues[0][0] += -p_bl;
- matvalues[0][1] += -p_gl;
- matvalues[1][0] += -p_gl;
- matvalues[1][1] +=  p_bl;
 
- // Partials of contributions from load
- // Assuming constant impedance load
- double yp,yq;
- yp = p_pl/(p_Vm0*p_Vm0);
- yq = p_ql/(p_Vm0*p_Vm0);
+  if(p_isolated) {
+    matvalues[0][0] = matvalues[1][1] = 1.0;
+    return true;
+  }
 
- matvalues[0][0] +=  yq;
- matvalues[0][1] += -yp;
- matvalues[1][0] += -yp;
- matvalues[1][1] += -yq;
- 
- // Partials of generator equations and contributions to the network<->generator 
- EMTMode dsmode;
- for(i=0; i < p_ngen; i++) {
-   if(!p_gen[i]->getGenStatus()) continue;
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  // Get the edges connected to this bus
+  gridpack::component::BaseBusComponent::getNeighborBranches(branches);
+  // Number of branches connected to this
+  int nconnbranch = branches.size();
+  for(i=0; i < nconnbranch; i++) {
+    EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+    EmtBus *busf = dynamic_cast<EmtBus*>((branch->getBus1()).get());
+    EmtBus *bust = dynamic_cast<EmtBus*>((branch->getBus2()).get());
 
-   p_gen[i]->setMode(p_mode);
-   p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-   p_gen[i]->setTSshift(p_TSshift);
+    if(this == busf) {
+      /* This bus is the from bus of branch[i] */
+      double Gff=0.0,Bff=0.0;
+      branch->getForwardSelfAdmittance(&Gff,&Bff);
+      matvalues[0][0] += -Bff;
+      matvalues[0][1] += -Gff;
+      matvalues[1][0] += -Gff;
+      matvalues[1][1] +=  Bff;
+    } else {
+      double Gtt=0.0,Btt=0.0;
+      /* This bus is the to bus of branch[i] */
+      branch->getReverseSelfAdmittance(&Gtt,&Btt);
+      matvalues[0][0] += -Btt;
+      matvalues[0][1] += -Gtt;
+      matvalues[1][0] += -Gtt;
+      matvalues[1][1] +=  Btt;
+    }
+  }
+  // Partials of contributions from shunt elements
+  matvalues[0][0] += -p_bl;
+  matvalues[0][1] += -p_gl;
+  matvalues[1][0] += -p_gl;
+  matvalues[1][1] +=  p_bl;
 
-   p_gen[i]->setJacobian(matvalues);
+  // Partials of contributions from load
+  // Assuming constant impedance load
+  double yp,yq;
+  yp = p_pl/(p_Vm0*p_Vm0);
+  yq = p_ql/(p_Vm0*p_Vm0);
 
-   if(p_gen[i]->hasExciter()) {
-     p_gen[i]->getExciter()->setMode(p_mode);
-     p_gen[i]->getExciter()->setTSshift(p_TSshift);
-     p_gen[i]->getExciter()->setJacobian(matvalues);
-   }
+  matvalues[0][0] +=  yq;
+  matvalues[0][1] += -yp;
+  matvalues[1][0] += -yp;
+  matvalues[1][1] += -yq;
 
-   if(p_gen[i]->hasGovernor()) {
-     p_gen[i]->getGovernor()->setMode(p_mode);
-     p_gen[i]->getGovernor()->setTSshift(p_TSshift);
-     p_gen[i]->getGovernor()->setJacobian(matvalues);
-   }
- } 
+  // Partials of generator equations and contributions to the network<->generator 
+  EMTMode dsmode;
+  for(i=0; i < p_ngen; i++) {
+    if(!p_gen[i]->getGenStatus()) continue;
 
- return true;
+    p_gen[i]->setMode(p_mode);
+    p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+    p_gen[i]->setTSshift(p_TSshift);
+
+    p_gen[i]->setJacobian(matvalues);
+
+    if(p_gen[i]->hasExciter()) {
+      p_gen[i]->getExciter()->setMode(p_mode);
+      p_gen[i]->getExciter()->setTSshift(p_TSshift);
+      p_gen[i]->getExciter()->setJacobian(matvalues);
+    }
+
+    if(p_gen[i]->hasGovernor()) {
+      p_gen[i]->getGovernor()->setMode(p_mode);
+      p_gen[i]->getGovernor()->setTSshift(p_TSshift);
+      p_gen[i]->getGovernor()->setJacobian(matvalues);
+    }
+  } 
+
+  return true;
 }
 
 /**
@@ -511,24 +743,24 @@ bool EmtBus::vectorValues(gridpack::ComplexType *values)
       p_VDQptr[1] = real(values[1]);
 
       for(i=0; i < p_ngen; i++) {
-	if(!p_gen[i]->getGenStatus()) continue;
+        if(!p_gen[i]->getGenStatus()) continue;
 
-	p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-	p_gen[i]->init(fgen);
+        p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+        p_gen[i]->init(fgen);
 
-	has_ex = p_gen[i]->hasExciter();
-	if (has_ex) {
-  	  fgen += p_neqsgen[i];
-	  p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-    	  p_gen[i]->getExciter()->init(fgen);
-  	}	
+        has_ex = p_gen[i]->hasExciter();
+        if (has_ex) {
+          fgen += p_neqsgen[i];
+          p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+          p_gen[i]->getExciter()->init(fgen);
+        }	
 
-	has_gv = p_gen[i]->hasGovernor();
-	if (has_gv) {
- 	  if (has_ex) fgen += p_neqsexc[i];
- 	  else fgen += p_neqsgen[i];
-	  p_gen[i]->getGovernor()->init(fgen);
-  	}	
+        has_gv = p_gen[i]->hasGovernor();
+        if (has_gv) {
+          if (has_ex) fgen += p_neqsexc[i];
+          else fgen += p_neqsgen[i];
+          p_gen[i]->getGovernor()->init(fgen);
+        }	
       }
     }	  
   } else if(p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) { /* Values go in F */
@@ -543,7 +775,7 @@ bool EmtBus::vectorValues(gridpack::ComplexType *values)
       fbus[VQ_idx] = p_VQ - p_Vm0*sin(p_Va0); // f(VQ)
       return true;
     }
-      
+
     fbus[VD_idx] = fbus[VQ_idx] = 0.0;
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     // Get the edges connected to this bus
@@ -557,33 +789,33 @@ bool EmtBus::vectorValues(gridpack::ComplexType *values)
       EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
       EmtBus *busf = dynamic_cast<EmtBus*>((branch->getBus1()).get());
       EmtBus *bust = dynamic_cast<EmtBus*>((branch->getBus2()).get());
-      
+
       int busfnum = branch->getBus1OriginalIndex();
       int bustnum = branch->getBus2OriginalIndex();
 
       if(busfnum == thisbusnum) { 	  /* This bus is the from bus of branch[i] */
-	double VDf,VQf,VDt,VQt;
-	VDf = p_VD; VQf = p_VQ;
-	/* Get to bus voltages */
-	bust->getVoltagesRectangular(&VDt,&VQt);
-	
-	double Gff=0.0,Bff=0.0,Gft=0.0,Bft=0.0;
-	branch->getForwardSelfAdmittance(&Gff,&Bff);
-	branch->getForwardTransferAdmittance(&Gft,&Bft);
+        double VDf,VQf,VDt,VQt;
+        VDf = p_VD; VQf = p_VQ;
+        /* Get to bus voltages */
+        bust->getVoltagesRectangular(&VDt,&VQt);
 
-	IbrD += Gff*VDf - Bff*VQf + Gft*VDt - Bft*VQt;
-	IbrQ += Bff*VDf + Gff*VQf + Bft*VDt + Gft*VQt;
+        double Gff=0.0,Bff=0.0,Gft=0.0,Bft=0.0;
+        branch->getForwardSelfAdmittance(&Gff,&Bff);
+        branch->getForwardTransferAdmittance(&Gft,&Bft);
+
+        IbrD += Gff*VDf - Bff*VQf + Gft*VDt - Bft*VQt;
+        IbrQ += Bff*VDf + Gff*VQf + Bft*VDt + Gft*VQt;
       } else { 	/* This bus is the to bus of branch[i] */
-	double VDf,VQf,VDt,VQt;
-	VDt = p_VD; VQt = p_VQ;
-	/* Get from bus voltages */
-	busf->getVoltagesRectangular(&VDf,&VQf);
-	double Gtt=0.0,Btt=0.0,Gtf=0.0,Btf=0.0;
-	branch->getReverseSelfAdmittance(&Gtt,&Btt);
-	branch->getReverseTransferAdmittance(&Gtf,&Btf);
+        double VDf,VQf,VDt,VQt;
+        VDt = p_VD; VQt = p_VQ;
+        /* Get from bus voltages */
+        busf->getVoltagesRectangular(&VDf,&VQf);
+        double Gtt=0.0,Btt=0.0,Gtf=0.0,Btf=0.0;
+        branch->getReverseSelfAdmittance(&Gtt,&Btt);
+        branch->getReverseTransferAdmittance(&Gtf,&Btf);
 
-	IbrD += Gtt*VDt - Btt*VQt + Gtf*VDf - Btf*VQf;
-	IbrQ += Btt*VDt + Gtt*VQt + Btf*VDf + Gtf*VQf;
+        IbrD += Gtt*VDt - Btt*VQt + Gtf*VDf - Btf*VQf;
+        IbrQ += Btt*VDt + Gtt*VQt + Btf*VDf + Gtf*VQf;
       }
     }
 
@@ -591,7 +823,7 @@ bool EmtBus::vectorValues(gridpack::ComplexType *values)
     double IshuntD,IshuntQ;
     IshuntD = p_gl*p_VD - p_bl*p_VQ;
     IshuntQ = p_bl*p_VD + p_gl*p_VQ;
-    
+
     // Load current injections
     // Assuming constant impedance load
     double yp,yq;
@@ -617,19 +849,19 @@ bool EmtBus::vectorValues(gridpack::ComplexType *values)
 
       has_ex = p_gen[i]->hasExciter();
       if (has_ex) {
-	p_gen[i]->getExciter()->setMode(p_mode);
-	p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-	p_gen[i]->getExciter()->vectorValues(fgen);
-	fgen += p_neqsexc[i];
+        p_gen[i]->getExciter()->setMode(p_mode);
+        p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
+        p_gen[i]->getExciter()->vectorValues(fgen);
+        fgen += p_neqsexc[i];
       }	
 
       has_gv = p_gen[i]->hasGovernor();
       if (has_gv) {
-	p_gen[i]->getGovernor()->setMode(p_mode);
-	p_gen[i]->getGovernor()->vectorValues(fgen);
-	fgen += p_neqsgov[i];
+        p_gen[i]->getGovernor()->setMode(p_mode);
+        p_gen[i]->getGovernor()->vectorValues(fgen);
+        fgen += p_neqsgov[i];
       }	
-	
+
       IgenD += IGD;
       IgenQ += IGQ;
     }
@@ -661,7 +893,7 @@ int EmtBus::getXCBufSize(void)
 void EmtBus::setXCBuf(void *buf)
 {
   p_VDQptr = static_cast<double*>(buf);
-  
+
 }
 
 /**
@@ -684,7 +916,7 @@ void EmtBus::setValues(gridpack::ComplexType *values)
     *p_VDQptr = real(values[0]);
     *(p_VDQptr+1) = real(values[1]);
   }
-  
+
   genvals = values + 2;
   for(i=0; i < p_ngen; i++) {
     if(!p_gen[i]->getGenStatus()) continue;
@@ -700,7 +932,7 @@ void EmtBus::setValues(gridpack::ComplexType *values)
       p_gen[i]->getExciter()->setValues(genvals);
       genvals += p_neqsexc[i];
     }	
-    
+
     has_gv = p_gen[i]->hasGovernor();
     if (has_gv) {
       p_gen[i]->getGovernor()->setMode(p_mode);
@@ -730,6 +962,9 @@ bool EmtBus::serialWrite(char *string,
 EmtBranch::EmtBranch(void)
 {
   p_nparlines = 0;
+  p_nrows = 0;
+  p_ncols = 0;
+  p_num_vals = 0;
   p_mode = NONE;
 }
 
@@ -783,7 +1018,7 @@ void EmtBranch::load(
     data->getValue(BRANCH_TAP,&tap,i);
     data->getValue(BRANCH_SHIFT,&shift,i);
     data->getValue(BRANCH_CKT,&cktid,i);
-    
+
     p_cktid.push_back(cktid);
     p_status.push_back(status);
     // We calculate the two-port network elements for the branch irrespecitive
@@ -858,6 +1093,98 @@ bool EmtBranch::matrixForwardSize(int *isize, int *jsize) const
   return true;
 }
 
+/**
+ * Return number of rows (dependent variables) that branch contributes
+ * to matrix
+ * @return number of dependent variables (equations)
+ */
+int EmtBranch::matrixNumRows()
+{
+  return p_nrows;
+}
+
+/**
+ * Return number of columns (independent variables) that branch contributes
+ * to matrix
+ * @return number of independent variables
+ */
+int EmtBranch::matrixNumCols()
+{
+  return p_ncols;
+}
+
+/** 
+ * Set global row index
+ * @param irow local row index
+ * @param global row index
+ */
+void EmtBranch::matrixSetRowIndex(int irow, int idx)
+{
+  if (p_rowidx.size() == 0) {
+    p_rowidx.resize(p_nrows);
+    int i;
+    for (i=0; i<p_nrows; i++) p_rowidx[i] = -1;
+  }
+  p_rowidx[irow] = idx;
+}
+
+/** 
+ * Set global column index
+ * @param icol local column index
+ * @param global column index
+ */
+void EmtBranch::matrixSetColIndex(int icol, int idx)
+{
+  if (p_colidx.size() == 0) {
+    p_colidx.resize(p_ncols);
+    int i;
+    for (i=0; i<p_ncols; i++) p_colidx[i] = -1;
+  }
+  p_colidx[icol] = idx;
+}
+
+/**
+ * Return global row index given local row index
+ * @param irow local row index
+ * @return global row index
+ */
+int EmtBranch::matrixGetRowIndex(int irow)
+{
+  return p_rowidx[irow];
+}
+
+/**
+ * Return global column index given local column index
+ * @param icol local column index
+ * @return global column index
+ */
+int EmtBranch::matrixGetColIndex(int icol)
+{
+  return p_colidx[icol];
+}
+
+/**
+ * Total number of matrix elements returned by branch
+ * @return number of matrix elements
+ */
+int EmtBranch::matrixNumValues()
+{
+  if (p_num_vals == 0) {
+  }
+  return p_num_vals;
+}
+
+/**
+ * Return list of matrix values and their locations generated by the branch
+ * @param values list of matrix values
+ * @param rows list of row indices
+ * @param cols list of column indices
+ */
+void EmtBranch::matrixGetValues(gridpack::ComplexType *values,
+    int *rows, int *cols)
+{
+}
+
 bool EmtBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   // Get from and to buses
@@ -872,7 +1199,7 @@ bool EmtBranch::matrixReverseSize(int *isize, int *jsize) const
   bust->getNvar(&nvart);
   *isize = nvart;
   *jsize = nvarf;
-  
+
   return true;
 }
 
@@ -903,10 +1230,10 @@ bool EmtBranch::matrixForwardValues(gridpack::ComplexType *values)
   if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) {
     for(i=0; i < p_nparlines;i++) {
       if(p_status[i]) {
-	values[0]       += -p_Bft[i];
-	values[nvarf]   += -p_Gft[i];
-	values[1]       += -p_Gft[i];
-	values[nvarf+1] +=  p_Bft[i];
+        values[0]       += -p_Bft[i];
+        values[nvarf]   += -p_Gft[i];
+        values[1]       += -p_Gft[i];
+        values[nvarf+1] +=  p_Bft[i];
       }
     }
   }  
@@ -933,10 +1260,10 @@ bool EmtBranch::matrixReverseValues(gridpack::ComplexType *values)
   if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) {
     for(i=0; i < p_nparlines;i++) {
       if(p_status[i]) {
-	values[0]       += -p_Btf[i];
-	values[nvart]   += -p_Gtf[i];
-	values[1]       += -p_Gtf[i];
-	values[nvart+1] +=  p_Btf[i];
+        values[0]       += -p_Btf[i];
+        values[nvart]   += -p_Gtf[i];
+        values[1]       += -p_Gtf[i];
+        values[nvart+1] +=  p_Btf[i];
       }
     }
   }  
