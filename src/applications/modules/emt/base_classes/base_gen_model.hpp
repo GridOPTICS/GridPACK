@@ -113,6 +113,82 @@ public:
   virtual bool setJacobian(gridpack::ComplexType **values);
 
   /**
+   * Set Jacobian block
+   * @param value_map standard map containing indices and values of matrix
+   *        elements
+   */
+  virtual bool setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType>
+      &value_map);
+
+#if 0
+  /**
+   * Set the number of rows contributed by this generator
+   * @param nrows number of rows
+   */
+  virtual void matrixSetNumRows(int nrows);
+
+  /**
+   * Set the number of columns contributed by this generator
+   * @param ncols number of columns
+   */
+  virtual void matrixSetNumCols(int ncols);
+
+  /**
+   * Number of rows (equations) contributed to by generator
+   * @return number of rows
+   */
+  int matrixNumRows();
+
+  /**
+   * Number of rows (equations) contributed to by generator
+   * @return number of rows
+   */
+  int matrixNumCols();
+
+  /** 
+   * Set global row index
+   * @param irow local row index
+   * @param global row index
+   */
+  void matrixSetRowIndex(int irow, int idx);
+
+  /** 
+   * Set global column index
+   * @param icol local column index
+   * @param global column index
+   */
+  void matrixSetColIndex(int icol, int idx);
+
+  /**
+   * Return global row index given local row index
+   * @param irow local row index
+   * @return global row index
+   */
+  int matrixGetRowIndex(int irow);
+
+  /**
+   * Return global column index given local column index
+   * @param icol local column index
+   * @return global column index
+   */
+  int matrixGetColIndex(int icol);
+
+  /**
+   * Get number of matrix values contributed by generator
+   * @return number of matrix values
+   */
+  int matrixNumValues();
+
+  /**
+   * Get list of matrix values contributed by generator
+   * @params values list of matrix values
+   * @params rows list of local row indices
+   */
+  void matrixGetValues(gridpack::ComplexType *values,
+      int *rows, int *cols);
+#endif
+
+  /**
    * Set the field current parameter inside the exciter
    * @param fldc value of the field current
    */
@@ -223,6 +299,10 @@ to be overwritten by the implementation */
   // Arrays used in coupling blocks between generator and governor. These should be allocated and destroyed by the derived class
   int           *xgov_loc;   // locations for governor variables in the bus variables array
   double        *dPmech_dxgov; // Partial derivatives of mechanical power Pmech w.r.t. governor variables (size = nxgov)
+  int           p_nrows;  // number of rows (equations) contributed by this generator
+  int           p_ncols;  // number of columns (variables) contributed by this generator
+  std::vector<int>   p_rowidx; // global index for rows
+  std::vector<int>   p_colidx; // global index for columns
 };
 
 #endif
