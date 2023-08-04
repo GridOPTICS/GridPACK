@@ -102,6 +102,82 @@ public:
   virtual bool setJacobian(gridpack::ComplexType **values);
 
   /**
+   * Set Jacobian block
+   * @param value_map standard map containing indices and values of matrix
+   *        elements
+   */
+  virtual bool setJacobian(std::map<std::pair<int,int>,
+      gridpack::ComplexType> &value_map);
+
+#if 0
+  /**
+   * Set the number of rows contributed by this excitor
+   * @param nrows number of rows
+   */
+  virtual void matrixSetNumRows(int nrows);
+
+  /**
+   * Set the number of columns contributed by this excitor
+   * @param ncols number of columns
+   */
+  virtual void matrixSetNumCols(int ncols);
+
+  /**
+   * Number of rows (equations) contributed to by excitor
+   * @return number of rows
+   */
+  virtual int matrixNumRows();
+
+  /**
+   * Number of rows (equations) contributed to by excitor
+   * @return number of rows
+   */
+  int matrixNumCols();
+
+  /** 
+   * Set global row index
+   * @param irow local row index
+   * @param global row index
+   */
+  void matrixSetRowIndex(int irow, int idx);
+
+  /** 
+   * Set global column index
+   * @param icol local column index
+   * @param global column index
+   */
+  void matrixSetColIndex(int icol, int idx);
+
+  /**
+   * Return global row index given local row index
+   * @param irow local row index
+   * @return global row index
+   */
+  int matrixGetRowIndex(int irow);
+
+  /**
+   * Return global column index given local column index
+   * @param icol local column index
+   * @return global column index
+   */
+  int matrixGetColIndex(int icol);
+
+  /**
+   * Get number of matrix values contributed by excitor
+   * @return number of matrix values
+   */
+  int matrixNumValues();
+
+  /**
+   * Get list of matrix values contributed by excitor
+   * @params values list of matrix values
+   * @params rows list of local row indices
+   */
+  void matrixGetValues(gridpack::ComplexType *values,
+      int *rows, int *cols);
+#endif
+
+  /**
    * Set the initial field voltage (at t = tstart) for the exciter
    * @param fldv value of the field voltage
    */
@@ -184,6 +260,10 @@ protected:
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           nxexc;    /** Number of variables for the exciter model */
   int           p_busoffset; /** Starting location for bus variables in the local state vector */
+  int           p_nrows;  // number of rows (equations) contributed by this excitor
+  int           p_ncols;  // number of columns (variables) contributed by this excitor
+  std::vector<int>   p_rowidx; // global index for rows
+  std::vector<int>   p_colidx; // global index for columns
 
 };
 

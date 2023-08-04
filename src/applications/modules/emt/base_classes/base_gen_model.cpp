@@ -18,6 +18,8 @@ BaseGenModel::BaseGenModel(void)
 
 BaseGenModel::~BaseGenModel(void)
 {
+  p_nrows = 0;
+  p_ncols = 0;
 }
 
 /**
@@ -28,6 +30,124 @@ bool BaseGenModel::setJacobian(gridpack::ComplexType **values)
 {
   return false;
 }
+
+/**
+ * Set Jacobian block
+ * @param value_map standard map containing indices and values of matrix
+ *        elements
+ */
+bool BaseGenModel::setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType>
+    &value_map)
+{
+  return false;
+}
+
+#if 0
+/**
+ * Set the number of rows contributed by this generator
+ * @param nrows number of rows
+ */
+void BaseGenModel::matrixSetNumRows(int nrows)
+{
+  p_nrows = nrows;
+}
+
+/**
+ * Set the number of columns contributed by this generator
+ * @param ncols number of columns
+ */
+void BaseGenModel::matrixSetNumCols(int ncols)
+{
+  p_ncols = ncols;
+}
+
+/**
+ * Number of rows (equations) contributed to by generator
+ * @return number of rows
+ */
+int BaseGenModel::matrixNumRows()
+{
+  return p_nrows;
+}
+
+/**
+ * Number of rows (equations) contributed to by generator
+ * @return number of rows
+ */
+int BaseGenModel::matrixNumCols()
+{
+  return p_ncols;
+}
+
+/** 
+ * Set global row index
+ * @param irow local row index
+ * @param global row index
+ */
+void BaseGenModel::matrixSetRowIndex(int irow, int idx)
+{
+  if (p_rowidx.size() == 0) {
+    p_rowidx.resize(p_nrows);
+    int i;
+    for (i=0; i<p_nrows; i++) p_rowidx[i] = -1;
+  }
+  p_rowidx[irow] = idx;
+}
+
+/** 
+ * Set global column index
+ * @param icol local column index
+ * @param global column index
+ */
+void BaseGenModel::matrixSetColIndex(int icol, int idx)
+{
+  if (p_colidx.size() == 0) {
+    p_colidx.resize(p_ncols);
+    int i;
+    for (i=0; i<p_ncols; i++) p_colidx[i] = -1;
+  }
+  p_colidx[icol] = idx;
+}
+
+/**
+ * Return global row index given local row index
+ * @param irow local row index
+ * @return global row index
+ */
+int BaseGenModel::matrixGetRowIndex(int irow)
+{
+  return p_rowidx[irow];
+}
+
+/**
+ * Return global column index given local column index
+ * @param icol local column index
+ * @return global column index
+ */
+int BaseGenModel::matrixGetColIndex(int icol)
+{
+  return p_colidx[icol];
+}
+
+/**
+ * Get number of matrix values contributed by generator
+ * @return number of matrix values
+ */
+int BaseGenModel::matrixNumValues()
+{
+  return 0;
+}
+
+/**
+ * Get list of matrix values contributed by generator
+ * @params values list of matrix values
+ * @params rows list of local row indices
+ */
+void BaseGenModel::matrixGetValues(gridpack::ComplexType *values,
+    int *rows, int *cols)
+{
+}
+#endif
 
 /**
  * Load parameters from DataCollection object into generator model
