@@ -187,11 +187,19 @@ public:
 
   // Mappers for creating vectors and matrices
   gridpack::mapper::BusVectorMap<EmtNetwork> *p_VecMapper;
+#if USE_GEN_MAT_INTERFACE
+  gridpack::mapper::GenMatrixMap<EmtNetwork> *p_MatMapper;
+#else
   gridpack::mapper::FullMatrixMap<EmtNetwork> *p_MatMapper;
+#endif
 
   boost::shared_ptr<gridpack::math::Vector> p_X; // Solution vector
   boost::shared_ptr<gridpack::math::Vector> p_R; // Residual vector
+#if USE_GEN_MAT_INTERFACE
   boost::shared_ptr<gridpack::math::Matrix> p_J; // Jacobian matrix
+#else
+  boost::shared_ptr<gridpack::math::Matrix> p_J; // Jacobian matrix
+#endif
 
   // DAE solver
   gridpack::math::DAESolver *p_daesolver;

@@ -290,8 +290,14 @@ void Emt::setup()
   p_VecMapper = new gridpack::mapper::BusVectorMap<EmtNetwork>(emt_network);
   p_X = p_VecMapper->mapToVector();
 
+#if USE_GEN_MAT_INTERFACE
+  p_factory->setMode(RESIDUAL_EVAL);
+  p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
+  p_J = p_MatMapper->mapToMatrix();
+#else
   p_MatMapper = new gridpack::mapper::FullMatrixMap<EmtNetwork>(emt_network);
   p_J = p_MatMapper->mapToMatrix();
+#endif
 
   if(!rank()) printf("Emt:Finished setting up mappers\n");
 
