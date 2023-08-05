@@ -8,6 +8,7 @@
  * @file   esst1a.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   Oct 12, 2015
+ * @Last modified with control block: Aug 4, 2023
  * 
  * @brief  
  * 
@@ -19,6 +20,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_exciter_model.hpp"
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -116,7 +119,11 @@ class Esst1aModel : public BaseExciterModel
      */
     void setVcomp(double vtmp);
 
-    void setVstab(double vstab);
+    void setVstab(double vtmp);
+
+    void setVothsg(double vtmp);
+
+    void setVuel(double vtmp);
 
     /**
      * Set internal state parameter in exciter
@@ -142,27 +149,40 @@ class Esst1aModel : public BaseExciterModel
     double UEL, VOS, Tr, Vimax, Vimin, Tc, Tb;
     double Tc1, Tb1, Ka, Ta, Vamax, Vamin;
     double Vrmax, Vrmin, Kc, Kf, Tf, Klr, Ilr;
-    double Ta1;
     
-    // ESST1A state variables
+    /*// ESST1A state variables
     double x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv;    
     double x1Va_1, x2Vcomp_1, x3LL1_1, x4LL2_1, x5Deriv_1;    
     double dx1Va, dx2Vcomp, dx3LL1, dx4LL2, dx5Deriv;    
-    double dx1Va_1, dx2Vcomp_1, dx3LL1_1, dx4LL2_1, dx5Deriv_1;    
+    double dx1Va_1, dx2Vcomp_1, dx3LL1_1, dx4LL2_1, dx5Deriv_1;*/    
    
     // ESST1A inputs
-    double Vcomp, Vterm, LadIfd, Vstab;
+    double Vcomp, Vterm, LadIfd, Vstab, Vothsg, Vuel;
  
     // Field Voltage Output
     double Efd;
 
-    // Keep around 
-    double Vref;
-
-    double presentMag, presentAng;
+    //double presentMag, presentAng;
   
-    bool OptionToModifyLimitsForInitialStateLimitViolation;
+    //bool OptionToModifyLimitsForInitialStateLimitViolation;
 
+    void computeModel(double t_inc, IntegrationStage int_flag);
+
+    Filter Filter_blkR;
+    LeadLag Leadlag_blkBC;
+    LeadLag Leadlag_blkBC1;
+    Filter Regulator_blk;
+    GainLimiter Regulator_gain_blk;
+    Cblock Feedback_blkF;
+
+    double Vf; // Output of Feedback block
+    bool   zero_TA;      // Time constant TA for regulator block zero, no transfer function
+    bool   zero_TR;      // Time constant TR for measurement block is zero, no transfer function
+    double VA; // Output of Regulator blk
+    double VLL1; // Output of LeadLag blk BC1
+    double VLL; // Output of LeadLag blk BC
+    double Vref; // Reference voltage
+    double Vmeas; // Output of voltage measurement block
 };
 }  // dynamic_simulation
 }  // gridpack

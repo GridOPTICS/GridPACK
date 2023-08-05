@@ -8,6 +8,7 @@
  * @file   esst1a.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   Oct 12, 2015
+ * @Last modified with control block: Aug 5, 2023
  * 
  * @brief  
  * 
@@ -30,7 +31,7 @@
  */
 gridpack::dynamic_simulation::Esst1aModel::Esst1aModel(void)
 {
-  dx1Va = 0;
+  /*dx1Va = 0;
   dx2Vcomp = 0;
   dx3LL1 = 0; 
   dx4LL2 = 0; 
@@ -40,7 +41,10 @@ gridpack::dynamic_simulation::Esst1aModel::Esst1aModel(void)
   dx3LL1_1 = 0;
   dx4LL2_1 = 0;
   dx5Deriv_1 = 0;
-  OptionToModifyLimitsForInitialStateLimitViolation = true;
+  OptionToModifyLimitsForInitialStateLimitViolation = true;*/
+
+  zero_TA = false;
+  zero_TR = false;
 }
 
 /**
@@ -81,9 +85,30 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
   if (!data->getValue(EXCITER_TF, &Tf, idx)) Tf = 0.0; // Tf
   if (!data->getValue(EXCITER_KLR, &Klr, idx)) Klr = 0.0; // TBD: Klr
   if (!data->getValue(EXCITER_ILR, &Ilr, idx)) Ilr = 0.0; // TBD: Ilr
-  //if (!data->getValue(EXCITER_TA1, &Ta1, idx)) Ta1 = 0.0; // Ta1
 
-  printf("UEL=%f,VOS=%f,Tr=%f,Vimax=%f,Vimin=%f,Tc=%f,Tb=%f,Tc1=%f,Tb1=%f,Ka=%f,Ta=%f,Vamax=%f,Vamin=%f,Vrmax=%f,Vrmin=%f,Kc=%f,Kf=%f,Tf=%f,Klr=%f,Ilr=%f\n",UEL,VOS,Tr,Vimax,Vimin,Tc,Tb,Tc1,Tb1,Ka,Ta,Vamax,Vamin,Vrmax,Vrmin,Kc,Kf,Tf,Klr,Ilr);
+  //printf("UEL=%f,VOS=%f,Tr=%f,Vimax=%f,Vimin=%f,Tc=%f,Tb=%f,Tc1=%f,Tb1=%f,Ka=%f,Ta=%f,Vamax=%f,Vamin=%f,Vrmax=%f,Vrmin=%f,Kc=%f,Kf=%f,Tf=%f,Klr=%f,Ilr=%f\n",UEL,VOS,Tr,Vimax,Vimin,Tc,Tb,Tc1,Tb1,Ka,Ta,Vamax,Vamin,Vrmax,Vrmin,Kc,Kf,Tf,Klr,Ilr);
+
+  if(fabs(Ta) < 1e-6) zero_TA = true;
+  if(fabs(Tr) < 1e-6) zero_TR = true;
+
+  if(!zero_TR) {
+    Filter_blkR.setparams(1.0, Tr);
+  }
+
+  Leadlag_blkBC.setparams(Tc, Tb);
+  Leadlag_blkBC1.setparams(Tc1, Tb1);
+
+  if(!zero_TA) {
+    Regulator_blk.setparams(Ka,Ta,Vrmin,Vrmax,-1000.0,1000.0);
+  } else {
+    Regulator_gain_blk.setparams(Ka,Vrmin,Vrmax);
+  }
+
+  double a[2], b[2];
+  a[0] = Tf; a[1] = 1.0;
+  b[0] = Kf; b[1] = 0.0;
+  Feedback_blkF.setcoeffs(a, b);
+
 }
 
 /**
@@ -116,7 +141,35 @@ double gridpack::dynamic_simulation::Esst1aModel::sqr(double x)
  */
 void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, double ts)
 {
-  // Parameter cleanup
+  Vf = Feedback_blkF.init_given_u(Efd);
+  
+  // LV Gate?
+
+  // HV Gate?
+
+  VA = (Ilr - LadIfd) / Klr - Vothsg - Efd;
+  
+  if (zero_TA) {
+    VLL1 = VA/Ka;
+  } else {
+    VLL1 = Regulator_blk.init_given_y(VA);
+  }
+
+  VLL = Leadlag_blkBC1.init_given_y(VLL1);
+  double u1 = Leadlag_blkBC.init_given_y(VLL);
+
+  // HV Gate?
+
+  double Verr = u1 - Vf + Vothsg + Vuel; 
+
+  if(!zero_TR) {
+    Vmeas = Filter_blkR.init_given_u(Vterm);
+  } else 
+    Vmeas = Vterm;
+
+  Vref = Verr + Vmeas; 
+
+ /* // Parameter cleanup
   // Just to make the code simpler below we will do the following cleanup 
   // on the input parameters and also store some variables.
   if (Tb == 0) Tc = 0;
@@ -127,9 +180,7 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
 
   Vterm = mag;
   presentMag = mag;
-  //Theta = ang;
-  //presentAng = ang;
-//  printf("esst1a: Efd = %f\n", Efd);
+
   //State 1
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (Efd > (Vterm * Vrmax - Kc * LadIfd)) Vrmax = (Efd + Kc * LadIfd) / Vterm+0.21;
@@ -166,6 +217,51 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   Vstab = 0.0;
 
   //printf("test: esst1a init:  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv); 
+  */
+}
+
+/**
+ * computeModel - Updates the model states and gets the output
+ */
+void gridpack::dynamic_simulation::Esst1aModel::computeModel(double t_inc,IntegrationStage int_flag)
+{
+  if(!zero_TR) {
+    Vmeas = Filter_blkR.getoutput(Vterm, t_inc, int_flag, true);
+  } else {
+    Vmeas = Vterm;
+  }
+
+  double Verr = Vref - Vmeas + Vothsg + Vuel; 
+
+  Vf = Feedback_blkF.getoutput(Efd, t_inc, int_flag, true);
+
+  double leadlag_blk_in = Verr - Vf;
+
+  if (leadlag_blk_in > Vimax)
+    leadlag_blk_in = Vimax;
+  else if (leadlag_blk_in < Vimin)
+    leadlag_blk_in = Vimin;
+
+  // HV Gate? 
+
+  VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
+  
+  VLL1 = Leadlag_blkBC1.getoutput(VLL, t_inc, int_flag, true); 
+
+  if (zero_TA) {
+    VA = Regulator_gain_blk.getoutput(VLL1);
+  } else {
+    VA = Regulator_blk.getoutput(VLL, t_inc, int_flag, true);
+  }
+
+  VA = VA + Vothsg - (LadIfd - Ilr) * Klr; 
+
+  // HV Gate?
+
+  // LV Gate?
+
+  // Efd = 
+
 }
 
 /**
@@ -175,7 +271,8 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
  */
 void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool flag)
 {
-  //printf ("esst1a predictor Vterm=%f, Vcomp=%f, LadIfd=%f\n", Vterm, Vcomp, LadIfd);
+  computeModel(t_inc,PREDICTOR);
+ /* //printf ("esst1a predictor Vterm=%f, Vcomp=%f, LadIfd=%f\n", Vterm, Vcomp, LadIfd);
   if (!flag) {
     x1Va = x1Va_1;
     x2Vcomp = x2Vcomp_1;
@@ -264,7 +361,7 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
   if (Temp < (Vterm * Vrmin)) Temp = Vterm * Vrmin;
   Efd = Temp;
 
-  //printf("esst1a Efd: %f\n", Efd);
+  //printf("esst1a Efd: %f\n", Efd);*/
 }
 
 /**
@@ -274,7 +371,8 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
  */
 void gridpack::dynamic_simulation::Esst1aModel::corrector(double t_inc, bool flag)
 {
-  // State 2
+  computeModel(t_inc,CORRECTOR);
+ /* // State 2
   if (Tr < TS_THRESHOLD * t_inc) {
     x2Vcomp_1 = Vcomp; // Must propogate input value instantaneously
     dx2Vcomp_1 = 0;
@@ -351,7 +449,7 @@ void gridpack::dynamic_simulation::Esst1aModel::corrector(double t_inc, bool fla
   if (Temp < (Vterm * Vrmin)) Temp = Vterm * Vrmin;
   Efd = Temp;
 
-  //printf("esst1a Efd: %f\n", Efd);
+  //printf("esst1a Efd: %f\n", Efd);*/
 }
 
 /**
@@ -421,6 +519,16 @@ void gridpack::dynamic_simulation::Esst1aModel::setVcomp(double vtmp)
 void gridpack::dynamic_simulation::Esst1aModel::setVstab(double vtmp)
 {
   Vstab = vtmp;
+}
+
+void gridpack::dynamic_simulation::Esst1aModel::setVothsg(double vtmp)
+{
+  Vothsg = vtmp;
+}
+
+void gridpack::dynamic_simulation::Esst1aModel::setVuel(double vtmp)
+{
+  Vuel = vtmp;
 }
 
 /**
