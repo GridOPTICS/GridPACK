@@ -8,6 +8,7 @@
  * @file   wshygp.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
+ * @Latested modification with control blocks: Aug 2, 2023
  * 
  * @brief  
  * 
@@ -30,10 +31,10 @@
  */
 gridpack::dynamic_simulation::WshygpModel::WshygpModel(void)
 {
-  SecondGenExists = false;
-  OptionToModifyLimitsForInitialStateLimitViolation = true;
+  //SecondGenExists = false;
+  //OptionToModifyLimitsForInitialStateLimitViolation = true;
   w = 0.0;
-  dx1Pmech = 0;
+  /*dx1Pmech = 0;
   dx2Td = 0;
   dx3Int = 0;
   dx4Der = 0;
@@ -46,7 +47,7 @@ gridpack::dynamic_simulation::WshygpModel::WshygpModel(void)
   dx4Der_1 = 0;
   dx5Pelec_1 = 0;
   dx6Valve_1 = 0;
-  dx7Gate_1 = 0;
+  dx7Gate_1 = 0;*/
 }
 
 /**
@@ -67,50 +68,64 @@ void gridpack::dynamic_simulation::WshygpModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
-  if (!data->getValue(GOVERNOR_TD, &TD, idx)) TD = 0.0; // TBD: TD
-  printf ("TD = %8.4f \n", TD);
-  if (!data->getValue(GOVERNOR_KI, &KI, idx)) KI = 0.0; // TBD: KI
-  printf ("KI = %8.4f \n", KI);
-  if (!data->getValue(GOVERNOR_KD, &KD, idx)) KD = 0.0; // TBD: KD
-  printf ("KD = %8.4f \n", KD);
-  if (!data->getValue(GOVERNOR_KP, &Kp, idx)) Kp = 0.0; // TBD: Kp
-  printf ("Kp = %8.4f \n", Kp);
-  if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.0; // TBD: R
-  printf ("R = %8.4f \n", R);
-  if (!data->getValue(GOVERNOR_TT, &Tt, idx)) Tt = 0.0; // TBD: Tt
-  Tt = 0.0; // TBD: Tt
-  printf ("Tt = %8.4f \n", Tt);
-  if (!data->getValue(GOVERNOR_KG, &KG, idx)) KG = 0.0; // TBD: KG
-  printf ("KG = %8.4f \n", KG);
-  if (!data->getValue(GOVERNOR_TP, &TP, idx)) TP = 0.0; // TBD: TP
-  printf ("TP = %8.4f \n", TP);
-  if (!data->getValue(GOVERNOR_VELOPEN, &VELopen, idx)) VELopen = 0.0; 
-  printf ("VELopen = %8.4f \n", VELopen);
-  if (!data->getValue(GOVERNOR_VELCLOSE, &VELclose, idx)) VELclose = 0.0; 
-  printf ("VELclose = %8.4f \n", VELclose);
-  if (!data->getValue(GOVERNOR_PMAX, &Pmax, idx)) Pmax = 0.0; // Pmax
-  printf ("Pmax = %8.4f \n", Pmax);
-  if (!data->getValue(GOVERNOR_PMIN, &Pmin, idx)) Pmin = 0.0; // Pmin
-  printf ("Pmin = %8.4f \n", Pmin);
-  if (!data->getValue(GOVERNOR_TF, &TF, idx)) TF = 0.0; 
-  printf ("TF = %8.4f \n", TF);
-  if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) Trate = 0.0; 
-  printf ("Trate = %8.4f \n", Trate);
-  if (!data->getValue(GOVERNOR_ATURB, &Aturb, idx)) Aturb = 0.0; 
-  printf ("Aturb = %8.4f \n", Aturb);
-  if (!data->getValue(GOVERNOR_BTURB, &Bturb, idx)) Bturb = 0.0; 
-  printf ("Bturb = %8.4f \n", Bturb);
-  if (!data->getValue(GOVERNOR_TTURB, &Tturb, idx)) Tturb = 0.0; 
-  printf ("Tturb = %8.4f \n", Tturb);
-  if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
-  printf ("Db1 = %8.4f \n", Db1);
-  if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; // Err
-  printf ("Err = %8.4f \n", Err);
-  if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
-  printf ("Db2 = %8.4f \n", Db2);
+  if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; //printf ("Db1 = %8.4f \n", Db1);
+  if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; //printf ("Err = %8.4f \n", Err);
+  if (!data->getValue(GOVERNOR_TD, &Td, idx)) Td = 0.0; //printf ("TD = %8.4f \n", TD);
+  if (!data->getValue(GOVERNOR_KI, &KI, idx)) KI = 0.0; //printf ("KI = %8.4f \n", KI);
+  if (!data->getValue(GOVERNOR_TF, &Tf, idx)) Tf = 0.0; //printf ("TF = %8.4f \n", TF);
+  if (!data->getValue(GOVERNOR_KD, &KD, idx)) KD = 0.0; //printf ("KD = %8.4f \n", KD);
+  if (!data->getValue(GOVERNOR_KP, &KP, idx)) KP = 0.0; //printf ("Kp = %8.4f \n", Kp);
+  if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.0;    //printf ("R = %8.4f \n", R);
+  if (!data->getValue(GOVERNOR_TT, &Tt, idx)) Tt = 0.0; //printf ("Tt = %8.4f \n", Tt);
+  if (!data->getValue(GOVERNOR_KG, &KG, idx)) KG = 0.0; //printf ("KG = %8.4f \n", KG);
+  if (!data->getValue(GOVERNOR_TP, &Tp, idx)) Tp = 0.0; //printf ("TP = %8.4f \n", TP);
+  if (!data->getValue(GOVERNOR_VELOPEN, &VELopen, idx)) VELopen = 0.0; //printf ("VELopen = %8.4f \n", VELopen);
+  if (!data->getValue(GOVERNOR_VELCLOSE, &VELclose, idx)) VELclose = 0.0; //printf ("VELclose = %8.4f \n", VELclose);
+  if (!data->getValue(GOVERNOR_PMAX, &Pmax, idx)) Pmax = 0.0; //printf ("Pmax = %8.4f \n", Pmax);
+  if (!data->getValue(GOVERNOR_PMIN, &Pmin, idx)) Pmin = 0.0; //printf ("Pmin = %8.4f \n", Pmin);
+  if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; //printf ("Db2 = %8.4f \n", Db2);
+  if (!data->getValue(GOVERNOR_GV1, &Gv1, idx)) Gv1 = 0.0; // Gv1
+  if (!data->getValue(GOVERNOR_PGV1, &PGv1, idx)) PGv1 = 0.0; // PGv1
+  if (!data->getValue(GOVERNOR_GV2, &Gv2, idx)) Gv2 = 0.0; // Gv2
+  if (!data->getValue(GOVERNOR_PGV2, &PGv2, idx)) PGv2 = 0.0; // PGv2
+  if (!data->getValue(GOVERNOR_GV3, &Gv3, idx)) Gv3 = 0.0; // Gv3
+  if (!data->getValue(GOVERNOR_PGV3, &PGv3, idx)) PGv3 = 0.0; // PGv3
+  if (!data->getValue(GOVERNOR_GV4, &Gv4, idx)) Gv4 = 0.0; // Gv4
+  if (!data->getValue(GOVERNOR_PGV4, &PGv4, idx)) PGv4 = 0.0; // PGv4
+  if (!data->getValue(GOVERNOR_GV5, &Gv5, idx)) Gv5 = 0.0; // Gv5
+  if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5
+  if (!data->getValue(GOVERNOR_ATURB, &Aturb, idx)) Aturb = 0.0; //printf ("Aturb = %8.4f \n", Aturb);
+  if (!data->getValue(GOVERNOR_BTURB, &Bturb, idx)) Bturb = 0.0; //printf ("Bturb = %8.4f \n", Bturb);
+  if (!data->getValue(GOVERNOR_TTURB, &Tturb, idx)) Tturb = 0.0; //printf ("Tturb = %8.4f \n", Tturb);
+  if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) Trate = 0.0; //printf ("Trate = %8.4f \n", Trate);
 
-  if (!data->getValue(GENERATOR_MBASE, &GenMVABase, idx)) GenMVABase = 0.0;
-  printf ("Mbase = %8.4f \n", GenMVABase);
+  if (!data->getValue(GENERATOR_MBASE, &GenMVABase, idx)) GenMVABase = 0.0; //printf ("Mbase = %8.4f \n", GenMVABase);
+
+  Db1_blk.setparams(Db1, Err); 
+  Filter_blk_d.setparams(1.0, Td);
+  PIControl_blk.setparams(KP, KI);
+
+  double a[2], b[2];
+  a[0] = Tf; a[1] = 1.0;
+  b[0] = KD; b[1] = 0.0;
+  Feedback_blk_f.setcoeffs(a, b);
+
+  Filter_blk_t.setparams(1.0, Tt);
+
+  Filter_blk_p.setparams(KG, Tp, VELclose, VELopen, 0.0, 0.0);
+
+  Integrator_blk.setparams(1.0);
+  Db2_blk.setparams(Db2, Db2);  
+
+  double uin[5], yin[5];
+  uin[0] = Gv1; yin[0] = PGv1;
+  uin[1] = Gv2; yin[0] = PGv2;
+  uin[2] = Gv3; yin[0] = PGv3;
+  uin[3] = Gv4; yin[0] = PGv4;
+  uin[4] = Gv5; yin[0] = PGv5;
+  NGV_blk.setparams(5, uin, yin);
+
+  Leadlag_blk.setparams(Aturb*Tturb, Bturb*Tturb);
 
 }
 
@@ -122,7 +137,26 @@ void gridpack::dynamic_simulation::WshygpModel::load(
  */
 void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, double ts)
 {
-  printf("wshygp: Pmech = %f\n", Pmech);
+  double u1, u2, u3, u4, u5, u6, u7, u8, u9, u10;
+
+  u10 = Pmech / (Trate / GenMVABase);
+
+  u9 = Leadlag_blk.init_given_y(u10);
+
+  u8 = 0; //NGV_blk.init_given_y(u9); // Uncomment when updated cblock with the init_given_y method.
+  GV = u8;
+
+  u7 = u8; // db2
+
+  u6 = Integrator_blk.init_given_y(u7);
+
+  u5 = Filter_blk_p.init_given_y(u6);
+
+  u4 = Filter_blk_t.init_given_y(Pelec);
+
+
+
+  /*printf("wshygp: Pmech = %f\n", Pmech);
   // State 1
   double PGV = Pmech * GenMVABase / Trate;
   if (Bturb * Tturb < TS_THRESHOLD * ts) x1Pmech = 0;
@@ -161,7 +195,40 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
   }
   // Initialize the Intentional Deadband
   DBInt.Initialize(Db1, Err, w);
-  printf("wshygp init: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pmech, x2Td, x3Int, x4Der, x5Pelec, x6Valve, x7Gate);
+  printf("wshygp init: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pmech, x2Td, x3Int, x4Der, x5Pelec, x6Valve, x7Gate);*/
+}
+
+/**
+ * computeModel - Updates the model states and gets the output
+ */
+void gridpack::dynamic_simulation::WshygpModel::computeModel(double t_inc,IntegrationStage int_flag)
+{
+  double u0, u1, u2, u3, u4, u5, u6, u7, u8, u9, u10;
+
+  u0 = Db1_blk.getoutput(w);
+  
+  u1 = 0; //Filter_blk_d.getoutput(u0+Pref-?, t_inc, int_flag, true);
+
+  u2 = PIControl_blk.getoutput(u1, t_inc, int_flag, true);
+
+  u3 = Feedback_blk_f.getoutput(u1, t_inc, int_flag, true);
+
+  u5 = u2 + u3 + Filter_blk_t.getoutput(Pelec, t_inc, int_flag, true); // TBD
+
+  u5 = u5 - GV;
+
+  u6 = Filter_blk_p.getoutput(u5, t_inc, int_flag, true);
+
+  u7 = Integrator_blk.getoutput(u6, t_inc, int_flag, true);
+
+  u8 = Db2_blk.getoutput(u7);
+
+  u9 = NGV_blk.getoutput(u8);
+
+  u10 = Leadlag_blk.getoutput(u9, t_inc, int_flag, true);
+
+  Pmech = u10 * Trate / GenMVABase;
+
 }
 
 /**
@@ -171,7 +238,8 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
  */
 void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool flag)
 {
-  if (!flag) {
+  computeModel(t_inc,PREDICTOR);
+  /*if (!flag) {
     x1Pmech = x1Pmech_1;
     x2Td = x2Td_1;
     x3Int = x3Int_1;
@@ -254,7 +322,7 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
     Pmech = (PGV * Aturb / Bturb + x1Pmech) * Trate / GenMVABase;
   } 
   
- // printf("wshygp Pmech = %f\n", Pmech);
+ // printf("wshygp Pmech = %f\n", Pmech);*/
 }
 
 /**
@@ -264,7 +332,8 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
  */
 void gridpack::dynamic_simulation::WshygpModel::corrector(double t_inc, bool flag)
 {
-  // State 5
+  computeModel(t_inc,CORRECTOR);
+  /*// State 5
   if (Tt > TS_THRESHOLD * t_inc) {
     dx5Pelec_1 = (GenPelec * GenMVABase /Trate - x5Pelec_1) / Tt;
   } else {
@@ -334,7 +403,7 @@ void gridpack::dynamic_simulation::WshygpModel::corrector(double t_inc, bool fla
     Pmech = (PGV * Aturb / Bturb + x1Pmech) * Trate / GenMVABase;
   } 
   
- // printf("wshygp Pmech = %f\n", Pmech);
+ // printf("wshygp Pmech = %f\n", Pmech);*/
 }
 
 /**
@@ -344,6 +413,11 @@ void gridpack::dynamic_simulation::WshygpModel::corrector(double t_inc, bool fla
 void gridpack::dynamic_simulation::WshygpModel::setMechanicalPower(double pmech)
 {
   Pmech = pmech; 
+}
+
+void gridpack::dynamic_simulation::WshygpModel::setPelec(double pelec)
+{
+  Pelec = pelec; 
 }
 
 /**
