@@ -8,6 +8,7 @@
  * @file   wshygp.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
+ * @Latested modification with control blocks: Aug 2, 2023
  * 
  * @brief  
  * 
@@ -19,9 +20,11 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_governor_model.hpp"
-#include "GainBlockClass.hpp"
+/*#include "GainBlockClass.hpp"
 #include "BackLashClass.hpp"
-#include "DBIntClass.hpp"
+#include "DBIntClass.hpp"*/
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -75,6 +78,8 @@ class WshygpModel : public BaseGovernorModel
      */
     void setMechanicalPower(double pmech);
 
+    void setPelec(double pelec);
+
     /**
      * Set the rotor speed deviation inside the governor
      * @param delta_o value of the rotor speed deviation
@@ -112,16 +117,17 @@ class WshygpModel : public BaseGovernorModel
   private:
 
     // Governor WSHYGP Parameters read from dyr
-    double TD, KI, KD, Kp, R, Tt, KG, TP;
-    double VELopen, VELclose, Pmax, Pmin, TF;
+    double Td, KI, KD, KP, R, Tt, KG, Tp;
+    double VELopen, VELclose, Pmax, Pmin, Tf;
     double Trate, Aturb, Bturb, Tturb;
     
     double Db1, Err, Db2;
-    double Gvx, PGvx;
+    double Gv1, PGv1, Gv2, PGv2, Gv3, PGv3, Gv4, PGv4, Gv5, PGv5;
+    //double GenMVABase; 
     //double Iblock;
 
     // WSHYGP state variables
-    double x1Pmech, x2Td, x3Int, x4Der, x5Pelec, x6Valve, x7Gate;
+    /*double x1Pmech, x2Td, x3Int, x4Der, x5Pelec, x6Valve, x7Gate;
     double x1Pmech_1, x2Td_1, x3Int_1, x4Der_1, x5Pelec_1, x6Valve_1, x7Gate_1;
     double dx1Pmech, dx2Td, dx3Int, dx4Der, dx5Pelec, dx6Valve, dx7Gate;
     double dx1Pmech_1, dx2Td_1, dx3Int_1, dx4Der_1, dx5Pelec_1, dx6Valve_1, dx7Gate_1;
@@ -137,7 +143,26 @@ class WshygpModel : public BaseGovernorModel
 
     double Pref;
     double w;
-    double GenMVABase, GenPelec;
+    double GenMVABase, GenPelec;*/
+
+    double GenMVABase;
+
+    Deadband Db1_blk; // is DBInt (Intentional Deadband) implemented in Deadband block?
+    Filter Filter_blk_d;
+    PIControl PIControl_blk;
+    Cblock Feedback_blk_f;
+    Filter Filter_blk_t;
+    Filter Filter_blk_p;
+    Integrator Integrator_blk;
+    Deadband Db2_blk; // is BackLash (Unintentional Deadband) implemented in Deadband block?
+    PiecewiseSlope NGV_blk; // 
+    LeadLag Leadlag_blk;
+
+    double Pmech, Pelec;
+    double w;
+    double GV;
+
+    void computeModel(double t_inc, IntegrationStage int_flag);
 
 };
 }  // dynamic_simulation
