@@ -84,7 +84,11 @@ public:
 
     // Push current values in Xdot vector back into network components
     p_factory->setMode(XDOTVECTOBUS);
+#if USE_GEN_MAT_INTERFACE
+    p_VecMapper->mapToNetwork(Xdot);
+#else
     p_VecMapper->mapToBus(Xdot);
+#endif
 
     // Update ghost buses
     //    emt_network->updateBuses();
@@ -93,7 +97,15 @@ public:
     //    J.zero();
     p_factory->setMode(RESIDUAL_EVAL);
     p_MatMapper->mapToMatrix(J);
-    J.ready();
+//    J.ready();
+#if 0
+#if USE_GEN_MAT_INTERFACE
+    J.print("Gen_mat.m");
+#else
+    J.print("Std_mat.m");
+#endif
+    exit(0);
+#endif
   }
 
   /// Build the DAE RHS function
@@ -103,11 +115,19 @@ public:
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
+#if USE_GEN_MAT_INTERFACE
+    p_VecMapper->mapToNetwork(X);
+#else
     p_VecMapper->mapToBus(X);
+#endif
 
     // Push current values in Xdot vector back into network components
     p_factory->setMode(XDOTVECTOBUS);
+#if USE_GEN_MAT_INTERFACE
+    p_VecMapper->mapToNetwork(Xdot);
+#else
     p_VecMapper->mapToBus(Xdot);
+#endif
 
     // Update ghost buses
     emt_network->updateBuses();
@@ -127,7 +147,11 @@ public:
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
+#if USE_GEN_MAT_INTERFACE
+    p_VecMapper->mapToNetwork(X);
+#else
     p_VecMapper->mapToBus(X);
+#endif
 
     // Update ghost buses
     emt_network->updateBuses();
@@ -144,7 +168,11 @@ public:
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
+#if USE_GEN_MAT_INTERFACE
+    p_VecMapper->mapToNetwork(X);
+#else
     p_VecMapper->mapToBus(X);
+#endif
 
     // Update ghost buses
     emt_network->updateBuses();
@@ -186,20 +214,17 @@ public:
   EmtFactory *p_factory;
 
   // Mappers for creating vectors and matrices
-  gridpack::mapper::BusVectorMap<EmtNetwork> *p_VecMapper;
 #if USE_GEN_MAT_INTERFACE
+  gridpack::mapper::GenVectorMap<EmtNetwork> *p_VecMapper;
   gridpack::mapper::GenMatrixMap<EmtNetwork> *p_MatMapper;
 #else
+  gridpack::mapper::BusVectorMap<EmtNetwork> *p_VecMapper;
   gridpack::mapper::FullMatrixMap<EmtNetwork> *p_MatMapper;
 #endif
 
   boost::shared_ptr<gridpack::math::Vector> p_X; // Solution vector
   boost::shared_ptr<gridpack::math::Vector> p_R; // Residual vector
-#if USE_GEN_MAT_INTERFACE
   boost::shared_ptr<gridpack::math::Matrix> p_J; // Jacobian matrix
-#else
-  boost::shared_ptr<gridpack::math::Matrix> p_J; // Jacobian matrix
-#endif
 
   // DAE solver
   gridpack::math::DAESolver *p_daesolver;
@@ -214,8 +239,5 @@ public:
   friend class EmtTimedFaultEvent;
   friend class EmtEventManager;
 };
-
-
-
 
 #endif

@@ -44,6 +44,10 @@ GenVectorMap(boost::shared_ptr<_network> network)
   : p_network(network)
 {
   p_Offsets = NULL;
+  p_BusSizes = NULL;
+  p_BusLocOffsets = NULL;
+  p_BranchSizes = NULL;
+  p_BranchLocOffsets = NULL;
 
   p_timer = NULL;
   //p_timer = gridpack::utility::CoarseTimer::instance();
@@ -66,6 +70,10 @@ GenVectorMap(boost::shared_ptr<_network> network)
 ~GenVectorMap()
 {
   if (p_Offsets != NULL) delete [] p_Offsets;
+  if (p_BusSizes != NULL) delete [] p_BusSizes;
+  if (p_BusLocOffsets != NULL) delete [] p_BusLocOffsets;
+  if (p_BranchSizes != NULL) delete [] p_BranchSizes;
+  if (p_BranchLocOffsets != NULL) delete [] p_BranchLocOffsets;
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -177,6 +185,32 @@ void mapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
   mapToNetwork(*vector);
 }
 
+/**
+ * Get the local offset of the array values and the number of the values
+ * contributed by each bus
+ * @param idx local index of the bus
+ * @param offset local offset of bus values in the vector
+ * @param size number of values contributed by bus
+ */
+void getLocalBusOffset(int idx, int *offset, int *size)
+{
+  *offset = p_BusLocOffsets[idx];
+  *size = p_BusSizes[idx];
+}
+
+/**
+ * Get the local offset of the array values and the number of the values
+ * contributed by each branch
+ * @param idx local index of the branch
+ * @param offset local offset of branch values in the vector
+ * @param size number of values contributed by branch
+ */
+void getLocalBranchOffset(int idx, int *offset, int *size)
+{
+  *offset = p_BranchLocOffsets[idx];
+  *size = p_BranchSizes[idx];
+}
+
 private:
 
 /**
@@ -261,10 +295,20 @@ void setOffsets(void)
   }
   int icnt = 0;
   int nsize;
+  p_BusSizes = new int[p_nBuses];
+  p_BusLocOffsets = new int[p_nBuses];
+  for (i=0; i<p_nBuses; i++) p_BusSizes[i] = 0;
+  for (i=0; i<p_nBuses; i++) p_BusLocOffsets[i] = 0;
+  p_BranchSizes = new int[p_nBranches];
+  p_BranchLocOffsets = new int[p_nBuses];
+  for (i=0; i<p_nBranches; i++) p_BranchSizes[i] = 0;
+  for (i=0; i<p_nBranches; i++) p_BranchLocOffsets[i] = 0;
   // Evaluate offsets for individual network components
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       i_bus_offsets[i] = icnt;
+      p_BranchLocOffsets[i] = icnt;
+      p_BusSizes[i] = p_network->getBus(i)->vectorNumElements();
       icnt += p_network->getBus(i)->vectorNumElements();
       std::vector<int> nghbrs = p_network->getConnectedBranches(i);
       nsize = nghbrs.size();
@@ -278,11 +322,15 @@ void setOffsets(void)
           p_network->getBranchEndpoints(jdx,&jdx1,&jdx2);
           if (jdx1 == i) {
             i_branch_offsets[jdx] = icnt;
+            p_BranchLocOffsets[jdx] = icnt;
+            p_BranchSizes[jdx] = p_network->getBranch(jdx)->vectorNumElements();
             icnt += p_network->getBranch(jdx)->vectorNumElements();
           }
         } else {
           if (p_network->getActiveBranch(jdx)) {
             i_branch_offsets[jdx] = icnt;
+            p_BranchLocOffsets[jdx] = icnt;
+            p_BranchSizes[jdx] = p_network->getBranch(jdx)->vectorNumElements();
             icnt += p_network->getBranch(jdx)->vectorNumElements();
           }
         }
@@ -536,6 +584,13 @@ int*                        p_Offsets;
 int                         g_bus_offsets;
 int                         g_branch_offsets;
 int                         p_GAgrp;
+
+// local offset arrays
+int                         *p_BusLocOffsets;
+int                         *p_BusSizes;
+int                         *p_BranchLocOffsets;
+int                         *p_BranchSizes;
+
 
     // pointer to timer
 gridpack::utility::CoarseTimer *p_timer;

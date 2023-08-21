@@ -781,7 +781,7 @@ bool GenrouGen::setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType> &
 
 #define MAP_PAIR(_i, _j, _val) \
   std::pair<std::pair<int,int>,gridpack::ComplexType>( \
-      std::pair<int,int>(_i,_j),_val)
+      std::pair<int,int>(_j,_i),_val)
   if(p_mode == FAULT_EVAL) {
     // Generator variables held constant
     // dF_dX
@@ -1001,7 +1001,7 @@ bool GenrouGen::setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType> &
         if (it != value_map.end()) {
           it->second += zval;
         } else {
-          value_map.insert(MAP_PAIR(VQ_idx,Eqp_idx,zval));
+          value_map.insert(MAP_PAIR(offsetb+i,Eqp_idx,zval));
         }
       }
     }
@@ -1109,12 +1109,12 @@ bool GenrouGen::setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType> &
 
     // Note the values are added, since different components
     // (bus, load, etc.) add contributions to these locations
-    it = value_map.find(std::pair<int,int>(VD_idx,IGQ_idx));
+    it = value_map.find(std::pair<int,int>(VD_idx,IGD_idx));
     if (it != value_map.end())  {
       zval = dId_dVD*cos(theta) - dIq_dVD*sin(theta);
       it->second += zval;
     }
-    it = value_map.find(std::pair<int,int>(VQ_idx,IGQ_idx));
+    it = value_map.find(std::pair<int,int>(VQ_idx,IGD_idx));
     if (it != value_map.end())  {
       zval = dId_dVQ*cos(theta) - dIq_dVQ*sin(theta);
       it->second += zval;
