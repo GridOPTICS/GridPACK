@@ -166,6 +166,39 @@ public:
    * @param values array containing voltage magnitude and angle
    */
   void setValues(gridpack::ComplexType *values);
+
+  /**
+   * Set value of global index for corresponding local index
+   * @param ielem local index for element
+   * @param idx global index of element
+   */
+  void vectorSetElementIndex(int ielem, int idx);
+
+  /**
+   * Return a set of element indices that map the local indices to
+   * global indices
+   * @param idx array of global indices
+   */
+  void vectorGetElementIndices(int *idx);
+
+  /**
+   * Return number elements contributed by this bus
+   * @return number of elements
+   */
+  int vectorNumElements() const;
+
+  /**
+   * Return the elements and their global indices in the vector
+   * @param values array of element values
+   * @param idx array of element indices
+   */
+  void vectorGetElementValues(gridpack::ComplexType *values, int *idx);
+
+  /**
+   * Set network elements based on values in vector
+   * @param array containing vector values
+   */
+  void vectorSetElementValues(gridpack::ComplexType *values);
   
   /**
    * Write output from buses to standard out
@@ -244,6 +277,7 @@ private:
   int    p_ncols;      // Number of independent variables for this bus
   std::vector<int>    p_rowidx;   // array holding row indices
   std::vector<int>    p_colidx;   // array holding column indices
+  std::vector<int>    p_vecidx;   // array holding vector indices
   int    p_num_vals;   // total number of matrix elements returned by bus
   
   // Variables

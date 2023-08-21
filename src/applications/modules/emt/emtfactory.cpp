@@ -40,7 +40,13 @@ void EmtFactory::setTSshift(double shift)
 /** 
  * Add events from buses and branches to the event manager 
 */
-void EmtFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,gridpack::mapper::BusVectorMap<EmtNetwork> *vecmap)
+void EmtFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,
+#if USE_GEN_MAT_INTERFACE
+    gridpack::mapper::GenVectorMap<EmtNetwork> *vecmap
+#else
+    gridpack::mapper::BusVectorMap<EmtNetwork> *vecmap
+#endif
+    )
 {
   int numBuses = p_network->numBuses();
   int i;
@@ -50,7 +56,11 @@ void EmtFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,gridp
   for(i=0; i < numBuses; i++) {
     bus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
     bus->setEvent(eman);
+#if USE_GEN_MAT_INTERFACE
+    vecmap->getLocalBusOffset(i,&offset,&size);
+#else
     vecmap->getLocalOffset(i,&offset,&size);
+#endif
     bus->setLocalOffset(offset);
   }
 }

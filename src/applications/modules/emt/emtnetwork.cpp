@@ -512,23 +512,23 @@ void EmtBus::matrixGetValueMap(std::map<std::pair<int,int>,
       double Gff=0.0,Bff=0.0;
       branch->getForwardSelfAdmittance(&Gff,&Bff);
       MAP_PAIR(0,0,-Bff);
-      MAP_PAIR(0,1,-Gff);
       MAP_PAIR(1,0,-Gff);
+      MAP_PAIR(0,1,-Gff);
       MAP_PAIR(1,1, Bff);
     } else {
       double Gtt=0.0,Btt=0.0;
       /* This bus is the to bus of branch[i] */
       branch->getReverseSelfAdmittance(&Gtt,&Btt);
       MAP_PAIR(0,0,-Btt);
-      MAP_PAIR(0,1,-Gtt);
       MAP_PAIR(1,0,-Gtt);
+      MAP_PAIR(0,1,-Gtt);
       MAP_PAIR(1,1, Btt);
     }
   }
   // Partials of contributions from shunt elements
   MAP_PAIR(0,0,-p_bl);
-  MAP_PAIR(0,1,-p_gl);
   MAP_PAIR(1,0,-p_gl);
+  MAP_PAIR(0,1,-p_gl);
   MAP_PAIR(1,1, p_bl);
 
   // Partials of contributions from load
@@ -538,8 +538,8 @@ void EmtBus::matrixGetValueMap(std::map<std::pair<int,int>,
   yq = p_ql/(p_Vm0*p_Vm0);
 
   MAP_PAIR(0,0, yq);
-  MAP_PAIR(0,1,-yp);
   MAP_PAIR(1,0,-yp);
+  MAP_PAIR(0,1,-yp);
   MAP_PAIR(1,1,-yq);
 
   // Partials of generator equations and contributions to the network<->generator 
@@ -593,6 +593,13 @@ void EmtBus::matrixGetValues(gridpack::ComplexType *values,
     ncnt++;
     it++;
   }
+#if 0
+  for (i=0; i<ncnt; i++) {
+    if (values[i] != std::complex(0.0,0.0))
+    printf("Gen matrix[%d,%d]: (%f,%f)\n",rows[i],cols[i],real(values[i]),
+        imag(values[i]));
+  }
+#endif
 }
 
 /**
@@ -647,23 +654,23 @@ bool EmtBus::matrixDiagValues(gridpack::ComplexType *values)
       double Gff=0.0,Bff=0.0;
       branch->getForwardSelfAdmittance(&Gff,&Bff);
       matvalues[0][0] += -Bff;
-      matvalues[0][1] += -Gff;
       matvalues[1][0] += -Gff;
+      matvalues[0][1] += -Gff;
       matvalues[1][1] +=  Bff;
     } else {
       double Gtt=0.0,Btt=0.0;
       /* This bus is the to bus of branch[i] */
       branch->getReverseSelfAdmittance(&Gtt,&Btt);
       matvalues[0][0] += -Btt;
-      matvalues[0][1] += -Gtt;
       matvalues[1][0] += -Gtt;
+      matvalues[0][1] += -Gtt;
       matvalues[1][1] +=  Btt;
     }
   }
   // Partials of contributions from shunt elements
   matvalues[0][0] += -p_bl;
-  matvalues[0][1] += -p_gl;
   matvalues[1][0] += -p_gl;
+  matvalues[0][1] += -p_gl;
   matvalues[1][1] +=  p_bl;
 
   // Partials of contributions from load
@@ -673,8 +680,8 @@ bool EmtBus::matrixDiagValues(gridpack::ComplexType *values)
   yq = p_ql/(p_Vm0*p_Vm0);
 
   matvalues[0][0] +=  yq;
-  matvalues[0][1] += -yp;
   matvalues[1][0] += -yp;
+  matvalues[0][1] += -yp;
   matvalues[1][1] += -yq;
 
   // Partials of generator equations and contributions to the network<->generator 
@@ -701,6 +708,15 @@ bool EmtBus::matrixDiagValues(gridpack::ComplexType *values)
     }
   } 
 
+#if 0
+  for(j=0; j<nvar; j++) {
+    for (i=0; i<nvar; i++) {
+      if (values[j+nvar*i] != std::complex(0.0,0.0))
+      printf("Std matrix[%d,%d] (%f,%f)\n",j,i,real(values[j+nvar*i]),
+          imag(values[j+nvar*i]));
+    }
+  }
+#endif
   return true;
 }
 
@@ -943,6 +959,67 @@ void EmtBus::setValues(gridpack::ComplexType *values)
 }
 
 /**
+ * Set value of global index for corresponding local index
+ * @param ielem local index for element
+ * @param idx global index of element
+ */
+void EmtBus::vectorSetElementIndex(int ielem, int idx)
+{
+  if (p_vecidx.size() == 0) {
+    p_vecidx.resize(p_ncols);
+    int i;
+    for (i=0; i<p_ncols; i++) p_vecidx[i] = -1;
+  }
+  p_vecidx[ielem] = idx;
+}
+
+/**
+ * Return a set of element indices that map the local indices to
+ * global indices
+ * @param idx array of global indices
+ */
+void EmtBus::vectorGetElementIndices(int *idx)
+{
+  int size = p_vecidx.size();
+  int i;
+  for (i=0; i<size; i++) {
+    idx[i] = p_vecidx[i];
+  }
+}
+
+/**
+ * Return number elements contributed by this bus
+ * @return number of elements
+ */
+int EmtBus::vectorNumElements() const
+{
+  return p_ncols;
+}
+
+/**
+ * Return the elements and their global indices in the vector
+ * @param values array of element values
+ * @param idx array of element indices
+ */
+void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
+{
+  vectorValues(values);
+  int i;
+  for (i=0; i<p_ncols; i++) {
+    idx[i] = p_vecidx[i];
+  }
+}
+
+/**
+ * Set network elements based on values in vector
+ * @param array containing vector values
+ */
+void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
+{
+  setValues(values);
+}
+
+/**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
  * @param bufsize size of string buffer in bytes
@@ -1093,6 +1170,24 @@ bool EmtBranch::matrixForwardSize(int *isize, int *jsize) const
   return true;
 }
 
+bool EmtBranch::matrixReverseSize(int *isize, int *jsize) const
+{
+  // Get from and to buses
+  EmtBus *busf = dynamic_cast<EmtBus*>(getBus1().get());
+  EmtBus *bust = dynamic_cast<EmtBus*>(getBus2().get());
+  // If either the from or to bus is isolated then there is no contribution to the matrix as there
+  // is no flow on the branch
+  if(busf->isIsolated() || bust->isIsolated()) return false;
+
+  int nvarf,nvart;
+  busf->getNvar(&nvarf);
+  bust->getNvar(&nvart);
+  *isize = nvart;
+  *jsize = nvarf;
+
+  return true;
+}
+
 /**
  * Return number of rows (dependent variables) that branch contributes
  * to matrix
@@ -1169,7 +1264,16 @@ int EmtBranch::matrixGetColIndex(int icol)
  */
 int EmtBranch::matrixNumValues()
 {
-  if (p_num_vals == 0) {
+
+  // Get from and to buses
+  EmtBus *busf = dynamic_cast<EmtBus*>(getBus1().get());
+  EmtBus *bust = dynamic_cast<EmtBus*>(getBus2().get());
+  if(busf->isIsolated() || bust->isIsolated()) {
+    p_num_vals = 0;
+  } else {
+    p_num_vals = 0;
+    if (!busf->isGhost()) p_num_vals += 4;
+    if (!bust->isGhost()) p_num_vals += 4;
   }
   return p_num_vals;
 }
@@ -1183,24 +1287,92 @@ int EmtBranch::matrixNumValues()
 void EmtBranch::matrixGetValues(gridpack::ComplexType *values,
     int *rows, int *cols)
 {
-}
-
-bool EmtBranch::matrixReverseSize(int *isize, int *jsize) const
-{
+  int i;
+  int ncnt;
   // Get from and to buses
   EmtBus *busf = dynamic_cast<EmtBus*>(getBus1().get());
   EmtBus *bust = dynamic_cast<EmtBus*>(getBus2().get());
-  // If either the from or to bus is isolated then there is no contribution to the matrix as there
-  // is no flow on the branch
-  if(busf->isIsolated() || bust->isIsolated()) return false;
 
-  int nvarf,nvart;
-  busf->getNvar(&nvarf);
-  bust->getNvar(&nvart);
-  *isize = nvart;
-  *jsize = nvarf;
+  // If either the from or to bus is isolated then there is no
+  // contribution to the matrix as there is no flow on the branch
+  if(busf->isIsolated() || bust->isIsolated()) {
+    return;
+  }
 
-  return true;
+  std::vector<int> f_idx;
+  std::vector<int> t_idx;
+  std::vector<int> f_jdx;
+  std::vector<int> t_jdx;
+
+  // row indices correspond to equations
+  f_idx.push_back(busf->matrixGetRowIndex(0));
+  f_idx.push_back(busf->matrixGetRowIndex(1));
+  // Column indices correspond to variables
+  f_jdx.push_back(busf->matrixGetColIndex(0));
+  f_jdx.push_back(busf->matrixGetColIndex(1));
+  // row indices correspond to equations
+  t_idx.push_back(bust->matrixGetRowIndex(0));
+  t_idx.push_back(bust->matrixGetRowIndex(1));
+  // Column indices correspond to variables
+  t_jdx.push_back(bust->matrixGetColIndex(0));
+  t_jdx.push_back(bust->matrixGetColIndex(1));
+
+  ncnt = 0;
+  if(!busf->isGhost()) {
+    rows[0] = f_idx[0];
+    cols[0] = t_jdx[0];   // [0][0]
+    rows[1] = f_idx[1];
+    cols[1] = t_jdx[0];   // [1][0]
+    rows[2] = f_idx[0];
+    cols[2] = t_jdx[1];   // [0][1]
+    rows[3] = f_idx[1];
+    cols[3] = t_jdx[1];   // [1][1]
+    ncnt += 4;
+  }
+  if(!bust->isGhost()) {
+    rows[ncnt] = t_idx[0];
+    cols[ncnt] = f_jdx[0];   // [0][0]
+    rows[ncnt+1] = t_idx[1];
+    cols[ncnt+1] = f_jdx[0]; // [1][0]
+    rows[ncnt+2] = t_idx[0];
+    cols[ncnt+2] = f_jdx[1]; // [0][1]
+    rows[ncnt+3] = t_idx[1];
+    cols[ncnt+3] = f_jdx[1]; // [1][1]
+  }
+
+  if(!busf->isGhost()) {
+    values[0] = values[1] = values[2] = values[3] = 0.0;
+    if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) {
+      for(i=0; i < p_nparlines;i++) {
+        if(p_status[i]) {
+          values[0]       += -p_Bft[i];
+          values[1]       += -p_Gft[i];
+          values[2]       += -p_Gft[i];
+          values[3]       +=  p_Bft[i];
+        }
+      }
+    }
+  }
+
+  if(!bust->isGhost()) {
+    values[ncnt] = values[ncnt+1] = values[ncnt+2] = values[ncnt+3] = 0.0;
+    if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) {
+      for(i=0; i < p_nparlines;i++) {
+        if(p_status[i]) {
+          values[ncnt]         += -p_Btf[i];
+          values[ncnt+1]       += -p_Gtf[i];
+          values[ncnt+2]       += -p_Gtf[i];
+          values[ncnt+3]       +=  p_Btf[i];
+        }
+      }
+    }
+  }
+#if 0
+  for (i=0; i<p_num_vals; i++) {
+    printf("Gen matrix[%d,%d]: (%f,%f)\n",rows[i],cols[i],real(values[i]),
+        imag(values[i]));
+  }
+#endif
 }
 
 /**
@@ -1237,6 +1409,14 @@ bool EmtBranch::matrixForwardValues(gridpack::ComplexType *values)
       }
     }
   }  
+  printf("Std fwd matrix[%d,%d]: (%f,%f)\n",0,0,real(values[0]),
+        imag(values[0]));
+  printf("Std fwd matrix[%d,%d]: (%f,%f)\n",1,0,real(values[nvarf]),
+        imag(values[nvarf]));
+  printf("Std fwd matrix[%d,%d]: (%f,%f)\n",0,1,real(values[1]),
+        imag(values[1]));
+  printf("Std fwd matrix[%d,%d]: (%f,%f)\n",1,1,real(values[nvarf+1]),
+        imag(values[nvarf+1]));
   return true;
 }
 
@@ -1267,6 +1447,14 @@ bool EmtBranch::matrixReverseValues(gridpack::ComplexType *values)
       }
     }
   }  
+  printf("Std rvs matrix[%d,%d]: (%f,%f)\n",0,0,real(values[0]),
+        imag(values[0]));
+  printf("Std rvs matrix[%d,%d]: (%f,%f)\n",1,0,real(values[nvart]),
+        imag(values[nvart]));
+  printf("Std rvs matrix[%d,%d]: (%f,%f)\n",0,1,real(values[1]),
+        imag(values[1]));
+  printf("Std rvs matrix[%d,%d]: (%f,%f)\n",1,1,real(values[nvart+1]),
+        imag(values[nvart+1]));
   return true;
 }
 
