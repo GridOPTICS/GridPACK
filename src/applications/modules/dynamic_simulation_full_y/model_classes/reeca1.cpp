@@ -608,3 +608,26 @@ bool gridpack::dynamic_simulation::Reeca1Model::getState(std::string name,
   *value = state_value;
   return ret;
 }
+
+/**
+ * Write output from exciter to a string.
+ * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if governor is contributing string to output, false otherwise
+ */
+bool gridpack::dynamic_simulation::Reeca1Model::serialWrite(char *string,
+    const int bufsize, const char *signal)
+{
+  char *ptr = string;
+  bool ret = false;
+  if (!strcmp(signal,"watch_header")) {
+    // TODO: Added variable labels
+    ret = true;
+  } else if (!strcmp(signal,"watch")) {
+    // TODO: Added variable values
+    ret = true;
+  }
+  return ret;
+}

@@ -145,6 +145,16 @@ public:
    **/ 
   void computeModel(bool Voltage_dip, int Iqinj_sw,double t_inc, IntegrationStage int_flag);
   
+  /**
+   * Write output from exciter to a string.
+   * @param string (output) string with information to be printed out
+   * @param bufsize size of string buffer in bytes
+   * @param signal an optional character string to signal to this
+   * routine what about kind of information to write
+   * @return true if governor is contributing string to output, false otherwise
+   */
+  bool serialWrite(char *string, const int bufsize, const char *signal);
+
 private:
   double Vt;               // Terminal voltage magnitude
   double p_sbase, p_mbase; // System and machine MVA base

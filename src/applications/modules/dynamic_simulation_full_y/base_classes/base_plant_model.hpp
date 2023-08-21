@@ -96,6 +96,15 @@ class BasePlantControllerModel
     */
    virtual bool getState(std::string name, double *value);
 
+   /**
+    * Write output from plant model to a string.
+    * @param string (output) string with information to be printed out
+    * @param bufsize size of string buffer in bytes
+    * @param signal an optional character string to signal to this
+    * routine what about kind of information to write
+    * @return true if governor is contributing string to output, false otherwise
+    */
+   virtual bool serialWrite(char *string, const int bufsize, const char *signal);
 
   private:
     

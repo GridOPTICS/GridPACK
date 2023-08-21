@@ -162,7 +162,7 @@ double gridpack::dynamic_simulation::BaseGeneratorModel::getFieldVoltage() {
  */
 bool gridpack::dynamic_simulation::BaseGeneratorModel::serialWrite(
     char *string, const int bufsize, const char *signal) {
-  string[0] = '\0';
+  if (bufsize > 0) string[0] = '\0';
   return false;
 }
 
