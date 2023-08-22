@@ -136,6 +136,14 @@ public:
     p_factory->setMode(RESIDUAL_EVAL);
     p_VecMapper->mapToVector(F);
     F.ready();
+#if 0
+#if USE_GEN_MAT_INTERFACE
+    F.print("Gen_vec.v");
+#else
+    F.print("Std_vec.v");
+#endif
+    exit(0);
+#endif
     /*    printf("F.print():\n");
     F.print();
     exit(0);
