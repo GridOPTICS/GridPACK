@@ -1409,6 +1409,7 @@ bool EmtBranch::matrixForwardValues(gridpack::ComplexType *values)
       }
     }
   }  
+#if 0
   printf("Std fwd matrix[%d,%d]: (%f,%f)\n",0,0,real(values[0]),
         imag(values[0]));
   printf("Std fwd matrix[%d,%d]: (%f,%f)\n",1,0,real(values[nvarf]),
@@ -1417,6 +1418,7 @@ bool EmtBranch::matrixForwardValues(gridpack::ComplexType *values)
         imag(values[1]));
   printf("Std fwd matrix[%d,%d]: (%f,%f)\n",1,1,real(values[nvarf+1]),
         imag(values[nvarf+1]));
+#endif
   return true;
 }
 
@@ -1447,6 +1449,7 @@ bool EmtBranch::matrixReverseValues(gridpack::ComplexType *values)
       }
     }
   }  
+#if 0
   printf("Std rvs matrix[%d,%d]: (%f,%f)\n",0,0,real(values[0]),
         imag(values[0]));
   printf("Std rvs matrix[%d,%d]: (%f,%f)\n",1,0,real(values[nvart]),
@@ -1455,6 +1458,7 @@ bool EmtBranch::matrixReverseValues(gridpack::ComplexType *values)
         imag(values[1]));
   printf("Std rvs matrix[%d,%d]: (%f,%f)\n",1,1,real(values[nvart+1]),
         imag(values[nvart+1]));
+#endif
   return true;
 }
 
