@@ -8,7 +8,7 @@
  * @file   wshygp.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
- * @Latested modification with control blocks: Aug 2, 2023
+ * @Latested modification with control blocks: Aug 23, 2023
  * 
  * @brief  
  * 
@@ -79,6 +79,8 @@ class WshygpModel : public BaseGovernorModel
     void setMechanicalPower(double pmech);
 
     void setPelec(double pelec);
+
+    void setPref(double pref);
 
     /**
      * Set the rotor speed deviation inside the governor
@@ -161,6 +163,10 @@ class WshygpModel : public BaseGovernorModel
     double Pmech, Pelec;
     double w;
     double GV;
+
+    double Pref;
+
+    double lastValue;
 
     void computeModel(double t_inc, IntegrationStage int_flag);
 

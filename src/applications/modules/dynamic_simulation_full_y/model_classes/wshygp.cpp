@@ -8,7 +8,7 @@
  * @file   wshygp.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
- * @Latested modification with control blocks: Aug 2, 2023
+ * @Latested modification with control blocks: Aug 23, 2023
  * 
  * @brief  
  * 
@@ -143,7 +143,7 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
 
   u9 = Leadlag_blk.init_given_y(u10);
 
-  u8 = 0; //NGV_blk.init_given_y(u9); // Uncomment when updated cblock with the init_given_y method.
+  u8 = NGV_blk.init_given_y(u9); 
   GV = u8;
 
   u7 = u8; // db2
@@ -153,6 +153,16 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
   u5 = Filter_blk_p.init_given_y(u6);
 
   u4 = Filter_blk_t.init_given_y(Pelec);
+
+  u3 = u5 - PIControl_blk.init_given_y(u4) - Feedback_blk_f.init_given_y(u4);
+
+  u2 = Filter_blk_d.init_given_y(u3);
+
+  u1 = Pref - u2 - u4 / R; // or: u1 = Pref - u2 - u5 / R
+
+  lastValue = u4 / R; // or: lastValue = u5 / R;
+
+  w = u1;
 
 
 
@@ -207,13 +217,13 @@ void gridpack::dynamic_simulation::WshygpModel::computeModel(double t_inc,Integr
 
   u0 = Db1_blk.getoutput(w);
   
-  u1 = 0; //Filter_blk_d.getoutput(u0+Pref-?, t_inc, int_flag, true);
+  u1 = Filter_blk_d.getoutput(u0 + Pref - lastValue, t_inc, int_flag, true);
 
   u2 = PIControl_blk.getoutput(u1, t_inc, int_flag, true);
 
   u3 = Feedback_blk_f.getoutput(u1, t_inc, int_flag, true);
 
-  u5 = u2 + u3 + Filter_blk_t.getoutput(Pelec, t_inc, int_flag, true); // TBD
+  u5 = u2 + u3; // or u5 = u2 + u3 + Filter_blk_t.getoutput(Pelec, t_inc, int_flag, true); 
 
   u5 = u5 - GV;
 
@@ -418,6 +428,11 @@ void gridpack::dynamic_simulation::WshygpModel::setMechanicalPower(double pmech)
 void gridpack::dynamic_simulation::WshygpModel::setPelec(double pelec)
 {
   Pelec = pelec; 
+}
+
+void gridpack::dynamic_simulation::WshygpModel::setPref(double pref)
+{
+  Pref = pref; 
 }
 
 /**

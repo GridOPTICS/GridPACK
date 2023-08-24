@@ -275,6 +275,8 @@ class PiecewiseSlope
   **/
   void setparams(int, double *, double *);
 
+  double init_given_y(double yout);
+
   private:
     Slope p_slopes[4];
     double p_u[5]; // Input points for slope calculations
