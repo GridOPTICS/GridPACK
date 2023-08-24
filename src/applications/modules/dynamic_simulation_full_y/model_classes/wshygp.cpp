@@ -48,6 +48,7 @@ gridpack::dynamic_simulation::WshygpModel::WshygpModel(void)
   dx5Pelec_1 = 0;
   dx6Valve_1 = 0;
   dx7Gate_1 = 0;*/
+  GenMVABase = 100.0; 
 }
 
 /**
@@ -99,8 +100,6 @@ void gridpack::dynamic_simulation::WshygpModel::load(
   if (!data->getValue(GOVERNOR_TTURB, &Tturb, idx)) Tturb = 0.0; //printf ("Tturb = %8.4f \n", Tturb);
   if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) Trate = 0.0; //printf ("Trate = %8.4f \n", Trate);
 
-  if (!data->getValue(GENERATOR_MBASE, &GenMVABase, idx)) GenMVABase = 0.0; //printf ("Mbase = %8.4f \n", GenMVABase);
-
   Db1_blk.setparams(Db1, Err); 
   Filter_blk_d.setparams(1.0, Td);
   PIControl_blk.setparams(KP, KI);
@@ -151,20 +150,25 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
   u6 = Integrator_blk.init_given_y(u7);
 
   u5 = Filter_blk_p.init_given_y(u6);
+  CV = u5;
 
-  u4 = Filter_blk_t.init_given_y(Pelec);
+  u4 = Filter_blk_t.init_given_u(Pelec);
 
-  u3 = u5 - PIControl_blk.init_given_y(u4) - Feedback_blk_f.init_given_y(u4);
+  u1 = w;
 
-  u2 = Filter_blk_d.init_given_y(u3);
+  if (Tt == 0) 
+    u2 = Pref - u1 - u5 * R;
+  else if (Tt > 0)
+    u2 = Pref - u1 - u4 * R; 
+  
+  u3 = Filter_blk_d.init_given_u(u2);
+  
+  double temp1, temp2;
+  
+  temp1 = PIControl_blk.init_given_u(u3);
+  temp2 = Feedback_blk_f.init_given_u(u3);
 
-  u1 = Pref - u2 - u4 / R; // or: u1 = Pref - u2 - u5 / R
-
-  lastValue = u4 / R; // or: lastValue = u5 / R;
-
-  w = u1;
-
-
+  // Checkpoint: temp1 + temp2 == u5 ?
 
   /*printf("wshygp: Pmech = %f\n", Pmech);
   // State 1
@@ -217,8 +221,13 @@ void gridpack::dynamic_simulation::WshygpModel::computeModel(double t_inc,Integr
 
   u0 = Db1_blk.getoutput(w);
   
-  u1 = Filter_blk_d.getoutput(u0 + Pref - lastValue, t_inc, int_flag, true);
-
+  if (Tt == 0)
+    u1 = Filter_blk_d.getoutput(u0 + Pref - CV, t_inc, int_flag, true);
+  else if (Tt > 0) {
+    u4 = Filter_blk_t.getoutput(Pelec);
+    u1 = Filter_blk_d.getoutput(u0 + Pref - u4 * R, t_inc, int_flag, true);
+  }
+    
   u2 = PIControl_blk.getoutput(u1, t_inc, int_flag, true);
 
   u3 = Feedback_blk_f.getoutput(u1, t_inc, int_flag, true);
