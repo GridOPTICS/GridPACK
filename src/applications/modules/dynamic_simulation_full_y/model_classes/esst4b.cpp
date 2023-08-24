@@ -8,6 +8,7 @@
  * @file   esst4b.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   Oct 12, 2015
+ * @Last modified with control block: Aug 24, 2023
  * 
  * @brief  
  * 
@@ -30,14 +31,14 @@
  */
 gridpack::dynamic_simulation::Esst4bModel::Esst4bModel(void)
 {
-  dx1Vm = 0;
+  /*dx1Vm = 0;
   dx2Vcomp = 0;
   dx3Va = 0; 
   dx4Vr = 0; 
   dx1Vm_1 = 0;
   dx2Vcomp_1 = 0;
   dx3Va_1 = 0;
-  dx4Vr_1 = 0;
+  dx4Vr_1 = 0;*/
 }
 
 /**
@@ -59,37 +60,38 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
     data, int idx)
 {
   if (!data->getValue(EXCITER_TR, &Tr, idx)) Tr = 0.0; // Tr
-  //if (!data->getValue(EXCITER_KPR, &Kpr, idx)) 
-  Kpr = 0.0; // TBD: Kpr
-  //if (!data->getValue(EXCITER_KIR, &Kir, idx)) 
-  Kir = 0.0; // TBD: Kir
+  if (!data->getValue(EXCITER_KPR, &Kpr, idx)) Kpr = 0.0; // Kpr
+  if (!data->getValue(EXCITER_KIR, &Kir, idx)) Kir = 0.0; // Kir
   if (!data->getValue(EXCITER_VRMAX, &Vrmax, idx)) Vrmax = 0.0; // Vrmax
   if (!data->getValue(EXCITER_VRMIN, &Vrmin, idx)) Vrmin = 0.0; // Vrmin
   if (!data->getValue(EXCITER_TA, &Ta, idx)) Ta = 0.0; // Ta
-  //if (!data->getValue(EXCITER_KPM, &Kpm, idx)) 
-  Kpm = 0.0; // TBD: Kpm
-  //if (!data->getValue(EXCITER_KIM, &Kim, idx)) 
-  Kim = 0.0; // TBD: Kim
-  //if (!data->getValue(EXCITER_VMMAX, &Vmmax, idx)) 
-  Vmmax = 0.0; // TBD: Vmmax
-  //if (!data->getValue(EXCITER_VMMIN, &Vmmin, idx)) 
-  Vmmin = 0.0; // TBD: Vmmin
-  //if (!data->getValue(EXCITER_KG, &Kg, idx)) 
-  Kg = 0.0; // TBD: Kg
-  //if (!data->getValue(EXCITER_KP, &Kp, idx)) 
-  Kp = 0.0; // TBD: Kp
-  //if (!data->getValue(EXCITER_KI, &KI, idx)) 
-  KI = 0.0; // TBD: KI
-  //if (!data->getValue(EXCITER_VBMAX, &Vbmax, idx)) 
-  Vbmax = 0.0; // TBD: Vbmax
-  //if (!data->getValue(EXCITER_KC, &Kc, idx)) 
-  Kc = 0.0; // TBD: Kc
-  //if (!data->getValue(EXCITER_XL, &Xl, idx)) 
-  Xl = 0.0; // TBD: Xl
-  //if (!data->getValue(EXCITER_KPANG, &Kpang, idx)) 
-  Kpang = 0.0; // TBD: Kpang
-  //if (!data->getValue(EXCITER_VGMAX, &Vgmax, idx)) 
-  Vgmax = 0.0; // TBD: Vgmax
+  if (!data->getValue(EXCITER_KPM, &Kpm, idx)) Kpm = 0.0; // Kpm
+  if (!data->getValue(EXCITER_KPM, &Kim, idx)) Kim = 0.0; // Kim
+  if (!data->getValue(EXCITER_VMMAX, &Vmmax, idx)) Vmmax = 0.0; // Vmmax
+  if (!data->getValue(EXCITER_VMMIN, &Vmmin, idx)) Vmmin = 0.0; // Vmax
+  if (!data->getValue(EXCITER_KG, &Kg, idx)) Kg = 0.0; // Kg
+  if (!data->getValue(EXCITER_KP, &Kp, idx)) Kp = 0.0; // Kp
+  if (!data->getValue(EXCITER_KI, &KI, idx)) KI = 0.0; // KI
+  if (!data->getValue(EXCITER_VBMAX, &Vbmax, idx)) Vbmax = 0.0; // Vbmax
+  if (!data->getValue(EXCITER_KC, &Kc, idx)) Kc = 0.0; // Kc
+  if (!data->getValue(EXCITER_XL, &Xl, idx)) Xl = 0.0; // Xl
+  if (!data->getValue(EXCITER_THETAP, &Thetap, idx)) Thetap = 0.0; // Thetap
+
+  if(fabs(Tr) < 1e-6) zero_TR = true;
+  if(fabs(Tr) < 1e-6) zero_TA = true;
+
+  if (!zero_TR) {
+    Filter_blkR.setparams(1.0, Tr);
+  }
+
+  PIControl_blkR.setparams(Kpr, Kir, Vrmin, Vrmax, -10000.0, 10000.0);
+
+  if (!zero_TA) {
+    Filter_blkA.setparams(1.0, Ta);
+  }
+
+  PIControl_blkR.setparams(Kpm, Kim, Vmmin, Vmmax, -10000.0, 10000.0);
+
 }
 
 /**
@@ -138,7 +140,7 @@ double gridpack::dynamic_simulation::Esst4bModel::CalculateVb(double Vterm,
 {
   double pi = 4.0 * atan(1.0);
   // Calculate complex values for VE Calculation
-  Kpvr = Kp * cos(Kpang * 180 / pi); 
+  Kpvr = Kp * cos(Kpang * 180 / pi); // Kpang and Vgmax was read in from Parser in the original implementation.
   Kpvi = Kp * sin(Kpang * 180 / pi); 
   Kpir = - Kpvi * Xl;
   Kpii = + Kpvr * Xl + KI;
@@ -160,7 +162,33 @@ double gridpack::dynamic_simulation::Esst4bModel::CalculateVb(double Vterm,
  */
 void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, double ts)
 {
-  Vterm = mag;
+  double u1, u2, u3, u4;
+
+  Vterm = mag; // Ec
+  Theta = ang;
+
+  double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
+
+  u1 = Efd / Vb;
+
+  // LV Gate?
+  
+  u2 = PIControl_blmM.init_given_y(u1);
+
+  u3 = Filter_blkA.init_given_y(u2 + Efd * Kg);
+
+  u4 = PIControl_blkR.init_given_y(u3);
+
+  double Verr = u4 + Vuel + Vs;
+
+  if(!zero_TR) {
+    Vmeas = Filter_blkR.init_given_u(Vterm);
+  } else 
+    Vmeas = Vterm;
+
+  Vref = Verr + Vmeas; 
+
+  /*Vterm = mag;
   presentMag = mag;
   Theta = ang;
   presentAng = ang;
@@ -206,7 +234,15 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   // Vref
   Vref = Vcomp + TempIn;
 
-  printf("esst4b init:  %f\t%f\t%f\t%f\n", x1Vm, x2Vcomp, x3Va, x4Vr); 
+  printf("esst4b init:  %f\t%f\t%f\t%f\n", x1Vm, x2Vcomp, x3Va, x4Vr); */
+}
+
+/**
+ * computeModel - Updates the model states and gets the output
+ */
+void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,IntegrationStage int_flag)
+{
+
 }
 
 /**
@@ -216,7 +252,7 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
  */
 void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool flag)
 {
-  if (!flag) {
+  /*if (!flag) {
     x1Vm = x1Vm_1;
     x2Vcomp = x2Vcomp_1;
     x3Va = x3Va_1;
@@ -271,7 +307,7 @@ void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool fla
   //else Efd = x1Vm_1 * Vb;
   Efd = x1Vm_1 * Vb; // TBD: temporailly
 
-  printf("esst4b Efd: %f\n", Efd);
+  printf("esst4b Efd: %f\n", Efd);*/
 }
 
 /**
@@ -281,7 +317,7 @@ void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool fla
  */
 void gridpack::dynamic_simulation::Esst4bModel::corrector(double t_inc, bool flag)
 {
-  // State 2
+  /*// State 2
   if (Tr < TS_THRESHOLD * t_inc) {
     x2Vcomp_1 = Vcomp; // Must propogate input value instantaneously
     dx2Vcomp_1 = 0;
@@ -330,7 +366,7 @@ void gridpack::dynamic_simulation::Esst4bModel::corrector(double t_inc, bool fla
   //else Efd = x1Vm_1 * Vb;
   Efd = x1Vm_1 * Vb; // TBD: temporially
 
-  printf("esst4b Efd: %f\n", Efd);
+  printf("esst4b Efd: %f\n", Efd);*/
 }
 
 /**
@@ -385,5 +421,15 @@ void gridpack::dynamic_simulation::Esst4bModel::setVterminal(double mag)
 void gridpack::dynamic_simulation::Esst4bModel::setOmega(double omega)
 {
   //w = omega;
+}
+
+void gridpack::dynamic_simulation::Esst4bModel::setVuel(double vtmp)
+{
+  Vuel = vtmp;
+}
+
+void gridpack::dynamic_simulation::Esst4bModel::setVs(double vtmp)
+{
+  Vs = vtmp;
 }
 
