@@ -8,7 +8,7 @@
  * @file   esst1a.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   Oct 12, 2015
- * @Last modified with control block: Aug 5, 2023
+ * @Last modified with control block: Aug 24, 2023
  * 
  * @brief  
  * 
@@ -147,7 +147,7 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
 
   // HV Gate?
 
-  VA = (Ilr - LadIfd) / Klr - Vothsg - Efd;
+  VA = (LadIfd - Ilr) * Klr - Vothsg - Efd;
   
   if (zero_TA) {
     VLL1 = VA/Ka;
@@ -254,13 +254,21 @@ void gridpack::dynamic_simulation::Esst1aModel::computeModel(double t_inc,Integr
     VA = Regulator_blk.getoutput(VLL, t_inc, int_flag, true);
   }
 
-  VA = VA + Vothsg - (LadIfd - Ilr) * Klr; 
+  double u1 = VA + Vothsg - (LadIfd - Ilr) * Klr; 
 
   // HV Gate?
 
   // LV Gate?
 
-  // Efd = 
+  double u2 = u1; // to be updated
+
+  double VT; // to be updated since VT is not a parameter that has been given.
+  if (u2 > VT * Vrmax - Kc * LadIfd)
+    u2 = VT * Vrmax - Kc * LadIfd;
+  else if (u2 < VT * Vrmin)
+    u2 = VT * Vrmin;
+
+  Efd = u2; 
 
 }
 

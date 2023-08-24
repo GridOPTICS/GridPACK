@@ -157,7 +157,9 @@ class Esst1aModel : public BaseExciterModel
     double dx1Va_1, dx2Vcomp_1, dx3LL1_1, dx4LL2_1, dx5Deriv_1;*/    
    
     // ESST1A inputs
-    double Vcomp, Vterm, LadIfd, Vstab, Vothsg, Vuel;
+    double Vcomp, LadIfd, Vstab, Vothsg, Vuel;
+
+    double Vterm; // Terminal voltage (Ec)
  
     // Field Voltage Output
     double Efd;
