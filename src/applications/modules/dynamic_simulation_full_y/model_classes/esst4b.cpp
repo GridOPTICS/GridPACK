@@ -242,6 +242,27 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
  */
 void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,IntegrationStage int_flag)
 {
+  double u1, u2, u3, u4;
+
+  if(!zero_TR) {
+    Vmeas = Filter_blkR.getoutput(Vterm, t_inc, int_flag, true);
+  } else {
+    Vmeas = Vterm;
+  }
+
+  u1 = Vref - Vmeas + Vuel + Vs;
+
+  u2 = PIControl_blkR.getoutput(u1);
+
+  u3 = Filter_blkA.getoutput(u2);
+
+  u4 = PIControl_blmM.getoutput(u3 + Efd * Kg);
+
+  // LV Gate?
+
+  double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
+
+  Efd = u4 * Vb;
 
 }
 
@@ -431,5 +452,11 @@ void gridpack::dynamic_simulation::Esst4bModel::setVuel(double vtmp)
 void gridpack::dynamic_simulation::Esst4bModel::setVs(double vtmp)
 {
   Vs = vtmp;
+}
+
+void gridpack::dynamic_simulation::Esst4bModel::setIri(double vIr, double vIi)
+{
+  Ir = vIr;
+  Ii = vIi;
 }
 

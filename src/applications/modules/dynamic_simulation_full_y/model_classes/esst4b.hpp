@@ -129,6 +129,11 @@ class Esst4bModel : public BaseExciterModel
 
     void setVs(double vtmp);
 
+    /** 
+     * Set the value of the terminal current
+     */
+    void setIri(double vIr, double vIi);
+
   private:
 
     //double S10, S12; 
@@ -159,7 +164,7 @@ class Esst4bModel : public BaseExciterModel
     double dx1Vm_1, dx2Vcomp_1, dx3Va_1, dx4Vr_1;*/
    
     // ESST4B inputs
-    double Vcomp, Vterm, Theta, Ir, Ii, LadIfd, Vstab;
+    double Vcomp, Vterm, Theta, Ir, Ii, LadIfd, Vstab; // Ir, Ii: terminal current
  
     // Field Voltage Output
     double Efd;
