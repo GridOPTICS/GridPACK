@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2019-09-13 13:56:23 d3g096
+ * @date   2023-08-24 09:47:21 d3g096
  * 
  * @brief  
  * 
@@ -362,16 +362,11 @@ petsc_print_vector(const Vec vec, const char* filename, PetscViewerFormat format
     } else {
       ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
     }
-#if PETSC_VERSION_GE(3,7,0)
     ierr = PetscViewerPushFormat(viewer, format);
-#else
-    ierr = PetscViewerSetFormat(viewer, format);
-#endif
     CHKERRXX(ierr);
     ierr = VecView(vec, viewer); CHKERRXX(ierr);
-#if PETSC_VERSION_GE(3,7,0)
     ierr = PetscViewerPopFormat(viewer); CHKERRXX(ierr);
-#endif
+
     if (filename != NULL) {
       ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
     }

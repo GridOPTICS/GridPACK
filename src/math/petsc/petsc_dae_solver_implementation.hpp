@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-05 10:01:29 d3g096
+ * @date   2023-08-24 09:42:12 d3g096
  * 
  * @brief  
  * 
@@ -156,15 +156,9 @@ protected:
           pterm[i] = (gterm[i] ? PETSC_TRUE : PETSC_FALSE);
         }
 
-#if PETSC_VERSION_LT(3,7,0)
-        ierr = TSSetEventMonitor(p_ts, ne, &(pdir[0]), &(pterm[0]),
-                                 &EventHandler, &PostEventHandler,
-                                 NULL);
-#else
         ierr = TSSetEventHandler(p_ts, ne, &(pdir[0]), &(pterm[0]),
                                  &EventHandler, &PostEventHandler,
                                  NULL);
-#endif
       }
 
       ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
@@ -201,12 +195,8 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-#if PETSC_VERSION_LT(3,8,0)
-      ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr);
-#else
       ierr = TSSetTime(p_ts, t0); CHKERRXX(ierr);
       ierr = TSSetTimeStep(p_ts, deltat0); CHKERRXX(ierr);
-#endif
       Vec *xvec(PETScVector(x0));
       ierr = TSSetSolution(p_ts, *xvec);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -221,13 +211,8 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-#if PETSC_VERSION_LT(3,8,0)
-      ierr = TSSetDuration(p_ts, maxsteps, maxtime); CHKERRXX(ierr);
-#else
       ierr = TSSetMaxSteps(p_ts, maxsteps); CHKERRXX(ierr);
       ierr = TSSetMaxTime(p_ts, maxtime); CHKERRXX(ierr);
-#endif
-      
       ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr); 
       ierr = TSSolve(p_ts, PETSC_NULL);
       // std::cout << this->processor_rank() << ": "
@@ -239,11 +224,7 @@ protected:
       ierr = TSGetConvergedReason(p_ts, &reason); CHKERRXX(ierr);
 
       PetscInt nstep;
-#if PETSC_VERSION_LT(3,8,0)
-      ierr = TSGetTimeStepNumber(p_ts,&nstep);CHKERRXX(ierr);
-#else
       ierr = TSGetStepNumber(p_ts,&nstep);CHKERRXX(ierr);
-#endif
       maxsteps = nstep;
 
       if (reason >= 0) {
@@ -285,42 +266,6 @@ protected:
     }
   }
 
-
-#if PETSC_VERSION_LT(3,5,0)
-
-  /// Routine to assemble Jacobian that is sent to PETSc
-  static PetscErrorCode FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
-                                      PetscReal a, Mat *jac, Mat *B, 
-                                      MatStructure *flag, void *dummy)
-  {
-    PetscErrorCode ierr(0);
-
-    // Necessary C cast
-    PETScDAESolverImplementation *solver =
-      (PETScDAESolverImplementation *)dummy;
-
-    // Copy PETSc's current estimate into 
-
-    // Should be the case, but just make sure
-    BOOST_ASSERT(*jac == *solver->p_petsc_J);
-    BOOST_ASSERT(*B == *solver->p_petsc_J);
-
-    boost::scoped_ptr<VectorType> 
-      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
-      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false)));
-
-    // Call the user-specified function (object) to form the Jacobian
-    (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, *(solver->p_J));
-
-    *flag = SAME_NONZERO_PATTERN;
-
-    return ierr;
-  
-  }
-
-
-#else
-
   /// Routine to assemble Jacobian that is sent to PETSc
   static PetscErrorCode FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
                                       PetscReal a, Mat jac, Mat B, 
@@ -349,8 +294,6 @@ protected:
   
   }
 
-
-#endif
 
   /// Routine to assemble RHS that is sent to PETSc
   static PetscErrorCode FormIFunction(TS ts, PetscReal t, Vec x, Vec xdot, 

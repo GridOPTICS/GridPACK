@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2023-08-23 13:14:17 d3g096
+ * @date   2023-08-24 09:45:38 d3g096
  * 
  * @brief  
  * 
@@ -559,16 +559,10 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
                                  filename,
                                  FILE_MODE_READ,
                                  &viewer); CHKERRXX(ierr);
-#if PETSC_VERSION_GE(3,7,0)
     ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
-#else
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
-#endif
     ierr = MatLoad(mat, viewer); CHKERRXX(ierr);
 
-#if PETSC_VERSION_GE(3,7,0)
     ierr = PetscViewerPopFormat(viewer); CHKERRXX(ierr);
-#endif
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
 
     PETScMatrixImplementation<T, I> *result_impl = 
