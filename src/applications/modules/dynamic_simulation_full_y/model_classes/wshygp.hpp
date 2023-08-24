@@ -163,10 +163,9 @@ class WshygpModel : public BaseGovernorModel
     double Pmech, Pelec;
     double w;
     double GV;
+    double CV;
 
     double Pref;
-
-    double lastValue;
 
     void computeModel(double t_inc, IntegrationStage int_flag);
 
