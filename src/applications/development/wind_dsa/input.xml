@@ -79,21 +79,21 @@
     <generatorParameters> 3g9b_classical.dyr </generatorParameters>
     <windFile>wind.txt</windFile>
     <loadFile>load.txt</loadFile>
-    <faultList> 3g9b_faults.xml </faultList>
+    <EventList> 3g9b_faults.xml </EventList>
     <channelURI>tcp://constance03.pnl.gov:61616</channelURI>
     <username> system </username>
     <password> manager </password>
     <simulationTime>30.0</simulationTime>
     <timeStep>0.005</timeStep>
     <quantiles> 0.0 0.25 0.5 0.75 1.0 </quantiles>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 2.00</beginFault>
         <endFault>   2.05</endFault>
         <faultBranch>6 7</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <generatorWatch>
       <generator>
        <busID> 1 </busID>
@@ -110,7 +110,8 @@
       <PETScOptions>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_type superlu_dist 
+        -pc_factor_mat_solver_type petsc
+        -pc_factor_shift_type NONZERO
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>

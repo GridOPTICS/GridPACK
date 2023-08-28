@@ -7,14 +7,12 @@
 // -----------------------------------------------------------
 /**
  * @file   genrou.cpp
- * @author Shuangshuang Jin 
- * @Last modified:   Oct 9, 2015
  * 
- * @Modified: November 21, 2022, Shri, Disable saturation if S10 and S12 are 0.
+ * @Modified: November 21, 2022, Disable saturation if S10 and S12 are 0.
  *
- * @Modified: November 27, 2022, Shri, Fixed the model to validate against PSSE
+ * @Modified: November 27, 2022, Fixed the model to validate against PSSE
  *
- * @Modified: Dec 9, 2022, Shri, print voltage and generator power
+ * @Modified: Dec 9, 2022, print voltage and generator power
  * @brief  : Round rotor generator model
  * 
  * 
@@ -353,119 +351,119 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     double t_inc, bool flag)
 {
 
-  if (getGenStatus()){
-	  
-  if (p_hasExciter) {
-    p_exciter = getExciter();
-    p_exciter->setOmega(x2w);
-    p_exciter->setVterminal(presentMag);
-    p_exciter->setVcomp(presentMag);
-    p_exciter->setFieldCurrent(LadIfd);
-
-    Efd = p_exciter->getFieldVoltage();
+  if (getGenStatus()) {
+    
+    if (p_hasExciter) {
+      p_exciter = getExciter();
+      p_exciter->setOmega(x2w);
+      p_exciter->setVterminal(presentMag);
+      p_exciter->setVcomp(presentMag);
+      p_exciter->setFieldCurrent(LadIfd);
+      
+      Efd = p_exciter->getFieldVoltage();
+    } else {
+      Efd = Efdinit;
+    }
+    
+    if (p_hasGovernor) {
+      p_governor = getGovernor();
+      p_governor->setRotorSpeedDeviation(x2w);
+      Pmech = p_governor->getMechanicalPower();
+    } else {
+      Pmech = Pmechinit;
+    }
+    
+    double pi = 4.0*atan(1.0);
+    double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
+    double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
+    
+    double Vd = - Psiqpp;
+    double Vq = + Psidpp;
+    
+    Vterm = presentMag;
+    Theta = presentAng;
+    double Vrterm = Vterm * cos(Theta);
+    double Viterm = Vterm * sin(Theta);
+    double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
+    double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
+    
+    //DQ Axis currents
+    Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
+    Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
+    
+    
+    double Telec = Psidpp * Iq - Psiqpp * Id;
+    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
+      * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
+    LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
+    //printf("Psiqpp=%f,Psidpp=%f,Telec=%f,TempD=%f,LadIfd=%f\n",Psiqpp,Psidpp,Telec,TempD,LadIfd);
+    //printf("Id=%f, Iq=%f\n", Id, Iq);
+    
+    dx1d = x2w * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
+    //printf("H = %f, Pmech = %f, D = %f, x2w = %f, Telec = %f\n", H, Pmech, D, x2w, Telec);
+    dx2w = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec); //TBD: call Governor for Pmech (Done)
+    dx3Eqp = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
+    dx4Psidp = (-x4Psidp - (Xdp - Xl) * Id + x3Eqp) / Tdopp;
+    dx5Psiqp = (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp) / Tqopp;
+    double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl))
+      * (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp);
+    //dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqopp;  // SJin: in pdf, its Tqop, I use Tqopp?
+    // Yuan modified below 20201002
+    dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop;  // SJin: in pdf, its Tqop, I use Tqopp?
+    // Yuan modified end
+    
+    x1d_1 = x1d + dx1d * t_inc;
+    x2w_1 = x2w + dx2w * t_inc;
+    x3Eqp_1 = x3Eqp + dx3Eqp * t_inc;
+    x4Psidp_1 = x4Psidp + dx4Psidp * t_inc;
+    x5Psiqp_1 = x5Psiqp + dx5Psiqp * t_inc;
+    x6Edp_1 = x6Edp + dx6Edp * t_inc;
+    
+    if (printFlag) {
+      printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, x6Edp);
+      printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
+    }
+    
+    if (p_hasExciter) {
+      p_exciter->predictor(t_inc, flag);
+    }
+    
+    if (p_hasGovernor) {
+      p_governor->predictor(t_inc, flag);
+    }
+    
+    if (p_tripped){
+      x1d = 0.0;
+      x2w = -1.0;
+      x3Eqp = 0.0;
+      x4Psidp = 0.0;
+      x5Psiqp = 0.0;
+      x6Edp = 0.0;
+      x1d_1 = 0.0;
+      x2w_1 = -1.0;
+      x3Eqp_1 = 0.0;
+      x4Psidp_1 = 0.0;
+      x5Psiqp_1 = 0.0;	
+      x6Edp_1 = 0.0;
+      genP = 0.0;
+      genQ = 0.0;
+    }
   } else {
-    Efd = Efdinit;
-  }
-  
-  if (p_hasGovernor) {
-    p_governor = getGovernor();
-    p_governor->setRotorSpeedDeviation(x2w);
-    Pmech = p_governor->getMechanicalPower();
-  } else {
-    Pmech = Pmechinit;
-  }
-  
-  double pi = 4.0*atan(1.0);
-  double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
-  double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
-
-  double Vd = - Psiqpp;
-  double Vq = + Psidpp;
-
-  Vterm = presentMag;
-  Theta = presentAng;
-  double Vrterm = Vterm * cos(Theta);
-  double Viterm = Vterm * sin(Theta);
-  double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
-  double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
-
-  //DQ Axis currents
-  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
-  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
-
-  
-  double Telec = Psidpp * Iq - Psiqpp * Id;
-  double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
-               * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
-  LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
-  //printf("Psiqpp=%f,Psidpp=%f,Telec=%f,TempD=%f,LadIfd=%f\n",Psiqpp,Psidpp,Telec,TempD,LadIfd);
-  //printf("Id=%f, Iq=%f\n", Id, Iq);
-
-  dx1d = x2w * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
-  //printf("H = %f, Pmech = %f, D = %f, x2w = %f, Telec = %f\n", H, Pmech, D, x2w, Telec);
-  dx2w = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec); //TBD: call Governor for Pmech (Done)
-  dx3Eqp = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
-  dx4Psidp = (-x4Psidp - (Xdp - Xl) * Id + x3Eqp) / Tdopp;
-  dx5Psiqp = (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp) / Tqopp;
-  double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl))
-               * (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp);
-  //dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqopp;  // SJin: in pdf, its Tqop, I use Tqopp?
-  // Yuan modified below 20201002
-  dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop;  // SJin: in pdf, its Tqop, I use Tqopp?
-  // Yuan modified end
-
-  x1d_1 = x1d + dx1d * t_inc;
-  x2w_1 = x2w + dx2w * t_inc;
-  x3Eqp_1 = x3Eqp + dx3Eqp * t_inc;
-  x4Psidp_1 = x4Psidp + dx4Psidp * t_inc;
-  x5Psiqp_1 = x5Psiqp + dx5Psiqp * t_inc;
-  x6Edp_1 = x6Edp + dx6Edp * t_inc;
-  
-  if (printFlag) {
-	  printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, x6Edp);
-	  printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
-  }
-  
-  if (p_hasExciter) {
-    p_exciter->predictor(t_inc, flag);
-  }
-
-  if (p_hasGovernor) {
-    p_governor->predictor(t_inc, flag);
-  }
-  
-  	if (p_tripped){
-		x1d = 0.0;
-		x2w = -1.0;
-		x3Eqp = 0.0;
-		x4Psidp = 0.0;
-		x5Psiqp = 0.0;
-		x6Edp = 0.0;
-		x1d_1 = 0.0;
-		x2w_1 = -1.0;
-		x3Eqp_1 = 0.0;
-		x4Psidp_1 = 0.0;
-		x5Psiqp_1 = 0.0;	
-		x6Edp_1 = 0.0;
-		genP = 0.0;
-		genQ = 0.0;
-	}
-  }else {
-	x1d = 0.0;
+    x1d = 0.0;
     x2w = -1.0;
     x3Eqp = 0.0;
     x4Psidp = 0.0;
     x5Psiqp = 0.0;
-	x6Edp = 0.0;
-	x1d_1 = 0.0;
+    x6Edp = 0.0;
+    x1d_1 = 0.0;
     x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqp_1 = 0.0;
-	x6Edp_1 = 0.0;
-	genP = 0.0;
-	genQ = 0.0;
-  
+    x6Edp_1 = 0.0;
+    genP = 0.0;
+    genQ = 0.0;
+    
   }
   
 }
@@ -508,14 +506,14 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   //gridpack::ComplexType INorton(IrNorton, IiNorton);
   //p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
   
-  if (getGenStatus()){	  
-      if (p_tripped){
-		  p_INorton = p_Norton_Ya*vt_complex_tmp;
-	  }else{
-		  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);		
-	  }	 	  
+  if (getGenStatus()) {	  
+    if (p_tripped){
+      p_INorton = p_Norton_Ya*vt_complex_tmp;
+    } else {
+      p_INorton = gridpack::ComplexType(IrNorton, IiNorton);		
+    }	 	  
   }else {
-	  p_INorton = gridpack::ComplexType(0.0, 0.0);
+    p_INorton = gridpack::ComplexType(0.0, 0.0);
   }
 }
 
@@ -527,126 +525,123 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
 void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     double t_inc, bool flag)
 {
- 
-  if (getGenStatus()){
-	  
-  if (p_hasExciter) {
-    p_exciter = getExciter();
-    p_exciter->setOmega(x2w_1);
-    p_exciter->setVterminal(presentMag);
-    p_exciter->setVcomp(presentMag);
-    p_exciter->setFieldCurrent(LadIfd);
+  if (getGenStatus()) {
+    if (p_hasExciter) {
+      p_exciter = getExciter();
+      p_exciter->setOmega(x2w_1);
+      p_exciter->setVterminal(presentMag);
+      p_exciter->setVcomp(presentMag);
+      p_exciter->setFieldCurrent(LadIfd);
+      
+      Efd = p_exciter->getFieldVoltage();
+    } else {
+      Efd = Efdinit;
+    }
     
-    Efd = p_exciter->getFieldVoltage();
+    if (p_hasGovernor) {
+      p_governor = getGovernor();
+      p_governor->setRotorSpeedDeviation(x2w_1);
+      Pmech = p_governor->getMechanicalPower();
+    } else {
+      Pmech = Pmechinit;
+    }
+    
+    double pi = 4.0*atan(1.0);
+    double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
+    double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
+    
+    double Vd = - Psiqpp;
+    double Vq = + Psidpp;
+    
+    Vterm = presentMag;
+    Theta = presentAng;
+    double Vrterm = Vterm * cos(Theta);
+    double Viterm = Vterm * sin(Theta);
+    double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
+    double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
+
+    //DQ Axis
+    Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
+    Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
+    
+    double Telec = Psidpp * Iq - Psiqpp * Id;
+    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
+      * (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1);
+    LadIfd = x3Eqp_1 * (1 + Sat(x3Eqp_1)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
+    dx1d_1 = x2w_1 * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
+    //printf("H = %f, Pmech = %f, D = %f, x2w_1 = %f, Telec = %f\n", H, Pmech, D, x2w_1, Telec);
+    dx2w_1 = 1 / (2 * H) * ((Pmech - D * x2w_1) / (1 + x2w_1) - Telec); //TBD: call Governor for Pmech (Done)
+    dx3Eqp_1 = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
+    dx4Psidp_1 = (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1) / Tdopp;
+    dx5Psiqp_1 = (-x5Psiqp_1 + (Xqp - Xl) * Iq + x6Edp_1) / Tqopp;
+    double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl))
+      * (-x5Psiqp_1 + (Xqp - Xl) * Iq + x6Edp_1);
+    
+    dx6Edp_1 = (-x6Edp_1 + (Xq - Xqp) * (Iq - TempQ)) / Tqop;
+    
+    x1d = x1d + (dx1d + dx1d_1) / 2.0 * t_inc;
+    x2w = x2w + (dx2w + dx2w_1) / 2.0 * t_inc;
+    x3Eqp = x3Eqp + (dx3Eqp + dx3Eqp_1) / 2.0 * t_inc;
+    x4Psidp = x4Psidp + (dx4Psidp + dx4Psidp_1) / 2.0 * t_inc;
+    x5Psiqp = x5Psiqp + (dx5Psiqp + dx5Psiqp_1) / 2.0 * t_inc;
+    x6Edp = x6Edp + (dx6Edp + dx6Edp_1) / 2.0 * t_inc;
+    
+    if (p_hasExciter) {
+      p_exciter->corrector(t_inc, flag);
+    }
+    
+    if (p_hasGovernor) {
+      p_governor->corrector(t_inc, flag);
+    }
+    
+    if (p_tripped){
+      x1d = 0.0;
+      x2w = -1.0;
+      x3Eqp = 0.0;
+      x4Psidp = 0.0;
+      x5Psiqp = 0.0;
+      x6Edp = 0.0;
+      x1d_1 = 0.0;
+      x2w_1 = -1.0;
+      x3Eqp_1 = 0.0;
+      x4Psidp_1 = 0.0;
+      x5Psiqp_1 = 0.0;
+      x6Edp_1 = 0.0;
+      genP = 0.0;
+      genQ = 0.0;	
+    }
+    
   } else {
-    Efd = Efdinit;
-  }
-  
-  if (p_hasGovernor) {
-    p_governor = getGovernor();
-    p_governor->setRotorSpeedDeviation(x2w_1);
-    Pmech = p_governor->getMechanicalPower();
-  } else {
-    Pmech = Pmechinit;
-  }
-
-  double pi = 4.0*atan(1.0);
-  double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
-  double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
-
-  double Vd = - Psiqpp;
-  double Vq = + Psidpp;
-
-  
-  Vterm = presentMag;
-  Theta = presentAng;
-  double Vrterm = Vterm * cos(Theta);
-  double Viterm = Vterm * sin(Theta);
-  double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
-  double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
-
-  //DQ Axis
-  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
-  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
-  
-  double Telec = Psidpp * Iq - Psiqpp * Id;
-  double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
-               * (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1);
-  LadIfd = x3Eqp_1 * (1 + Sat(x3Eqp_1)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
-  dx1d_1 = x2w_1 * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
-  //printf("H = %f, Pmech = %f, D = %f, x2w_1 = %f, Telec = %f\n", H, Pmech, D, x2w_1, Telec);
-  dx2w_1 = 1 / (2 * H) * ((Pmech - D * x2w_1) / (1 + x2w_1) - Telec); //TBD: call Governor for Pmech (Done)
-  dx3Eqp_1 = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
-  dx4Psidp_1 = (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1) / Tdopp;
-  dx5Psiqp_1 = (-x5Psiqp_1 + (Xqp - Xl) * Iq + x6Edp_1) / Tqopp;
-  double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl))
-               * (-x5Psiqp_1 + (Xqp - Xl) * Iq + x6Edp_1);
-
-  dx6Edp_1 = (-x6Edp_1 + (Xq - Xqp) * (Iq - TempQ)) / Tqop;
-
-  x1d = x1d + (dx1d + dx1d_1) / 2.0 * t_inc;
-  x2w = x2w + (dx2w + dx2w_1) / 2.0 * t_inc;
-  x3Eqp = x3Eqp + (dx3Eqp + dx3Eqp_1) / 2.0 * t_inc;
-  x4Psidp = x4Psidp + (dx4Psidp + dx4Psidp_1) / 2.0 * t_inc;
-  x5Psiqp = x5Psiqp + (dx5Psiqp + dx5Psiqp_1) / 2.0 * t_inc;
-  x6Edp = x6Edp + (dx6Edp + dx6Edp_1) / 2.0 * t_inc;
-
-  if (p_hasExciter) {
-    p_exciter->corrector(t_inc, flag);
-  }
-
-  if (p_hasGovernor) {
-    p_governor->corrector(t_inc, flag);
-  }
-
- 	if (p_tripped){
-		x1d = 0.0;
-		x2w = -1.0;
-		x3Eqp = 0.0;
-		x4Psidp = 0.0;
-		x5Psiqp = 0.0;
-		x6Edp = 0.0;
-		x1d_1 = 0.0;
-		x2w_1 = -1.0;
-		x3Eqp_1 = 0.0;
-		x4Psidp_1 = 0.0;
-		x5Psiqp_1 = 0.0;
-		x6Edp_1 = 0.0;
-		genP = 0.0;
-		genQ = 0.0;	
-	}
-
-  }else {
-	x1d = 0.0;
+    x1d = 0.0;
     x2w = -1.0;
     x3Eqp = 0.0;
     x4Psidp = 0.0;
     x5Psiqp = 0.0;
-	x6Edp = 0.0;
-	x1d_1 = 0.0;
+    x6Edp = 0.0;
+    x1d_1 = 0.0;
     x2w_1 = -1.0;
     x3Eqp_1 = 0.0;
     x4Psidp_1 = 0.0;
     x5Psiqp_1 = 0.0;
-	x6Edp_1 = 0.0;
-	genP = 0.0;
-	genQ = 0.0; 
+    x6Edp_1 = 0.0;
+    genP = 0.0;
+    genQ = 0.0; 
   }
   
 }
 
 bool gridpack::dynamic_simulation::GenrouGenerator::tripGenerator()
 {
-	p_tripped = true;
-	
-	return true;
+  p_tripped = true;
+  
+  return true;
 }
 
 /**
  * Set voltage on each generator
  */
 void gridpack::dynamic_simulation::GenrouGenerator::setVoltage(
-    gridpack::ComplexType voltage)
+							       gridpack::ComplexType voltage)
 {
   presentMag = abs(voltage);
   presentAng = atan2(imag(voltage), real(voltage));  
@@ -661,28 +656,6 @@ double gridpack::dynamic_simulation::GenrouGenerator::getFieldVoltage()
   return Efd;
 }
 
-
-/**
- * Write out generator state
- * @param signal character string used to determine behavior
- * @param string buffer that contains output
- */
-// Yuan commented out the below 20201011
-/*
-void gridpack::dynamic_simulation::GenrouGenerator::write(
-    const char* signal, char *string)
-{
-  if (!strcmp(signal,"standard")) {
-    //sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
-    //    p_bus_id,p_ckt.c_str(),real(p_mac_ang_s1),real(p_mac_spd_s1),real(p_mech),
-    //    real(p_pelect));
-    sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f	%12.6f\n",
-          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
-  }
-}
-*/
-// Yuan commented end
-
 /**
  * Write out generator state
  * @param signal character string used to determine behavior
@@ -692,9 +665,10 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
   bool ret = false;
+  string[0] = '\0';
   if (!strcmp(signal,"standard")) {
     sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f  %12.6f\n",
-          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1.0, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
+	    p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1.0, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
     ret = true;
   } else if (!strcmp(signal,"init_debug")) {
     sprintf(string," %8d  %2s Something\n",p_bus_id,p_ckt.c_str());
@@ -748,20 +722,18 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
  * @param vals vector of watched values
  */
 void gridpack::dynamic_simulation::GenrouGenerator::getWatchValues(
-    std::vector<double> &vals)
+								   std::vector<double> &vals)
 {
   vals.clear();
   vals.push_back(x1d_1);
   vals.push_back(x2w_1+1.0);
-  if (p_generatorObservationPowerSystemBase){
-	vals.push_back(genP*MBase/p_sbase);  //output at system mva base
-	vals.push_back(genQ*MBase/p_sbase);  //output at system mva base
-  }else{
-	vals.push_back(genP);  //output at generator mva base
-	vals.push_back(genQ);  //output at generator mva base
+  if (p_generatorObservationPowerSystemBase) {
+    vals.push_back(genP*MBase/p_sbase);  //output at system mva base
+    vals.push_back(genQ*MBase/p_sbase);  //output at system mva base
+  } else {
+    vals.push_back(genP);  //output at generator mva base
+    vals.push_back(genQ);  //output at generator mva base
   }
-  
-  
 }
 
 /**
@@ -791,7 +763,7 @@ bool gridpack::dynamic_simulation::GenrouGenerator::setState(std::string name,
  * @return false if no variable corresponding to name is found
  */
 bool gridpack::dynamic_simulation::GenrouGenerator::getState(std::string name,
-    double *value)
+							     double *value)
 {
   if(name == "ANGLE") {
     *value = x1d;

@@ -211,6 +211,19 @@ void gridpack::ymatrix::YMBus::getShuntValues(double *bl,
 }
 
 /**
+ * Set shunt values
+ * @param gs shunt GL value
+ * @param bs shunt BL value
+ */
+void gridpack::ymatrix::YMBus::addShuntValues(double gs,double bs)
+{
+  p_shunt = true;
+  p_shunt_bs += bs;
+  p_shunt_gs += gs;
+}
+
+
+/**
  * Set internal parameters inside the Y-bus component
  * @param name character string describing component to be modified
  * @param value of parameter to be modified
@@ -717,6 +730,24 @@ std::vector<bool> gridpack::ymatrix::YMBranch::getLineStatus()
 {
   return p_branch_status;
 }
+
+/**
+ * Return status of a transmission element based on its tag name
+ * @param tag name of transmission element
+ * @return status of that transmission element
+ */
+bool gridpack::ymatrix::YMBranch::getLineStatus(std::string tag)
+{
+  int i;
+  bool found = false;
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      return p_branch_status[i];
+    }
+  }
+  return found;
+}
+
 
 /**
  * Return tags of all transmission elements

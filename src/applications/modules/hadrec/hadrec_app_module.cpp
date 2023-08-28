@@ -277,38 +277,12 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlow(){
 /**
  * transfer data from power flow to dynamic simulation 
  */
-void gridpack::hadrec::HADRECAppModule::transferPFtoDS(){
-	  
-    //ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(world));
-	pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
-      gridpack::dynamic_simulation::DSFullBranch>(ds_network);
-	
-    int numBus = pf_network->numBuses();
-    int i;
-    gridpack::component::DataCollection *pfData;
-    gridpack::component::DataCollection *dsData;
-    double rval;
-    for (i=0; i<numBus; i++) {
-      pfData = pf_network->getBusData(i).get();
-      dsData = ds_network->getBusData(i).get();
-      pfData->getValue("BUS_PF_VMAG",&rval);
-      dsData->setValue(BUS_VOLTAGE_MAG,rval);
-      ///printf("Step0 bus%d mag = %f\n", i+1, rval);
-      pfData->getValue("BUS_PF_VANG",&rval);
-      dsData->setValue(BUS_VOLTAGE_ANG,rval);
-      int ngen = 0;
-      if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
-        int j;
-        for (j=0; j<ngen; j++) {
-          pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
-          dsData->setValue(GENERATOR_PG,rval,j);
-          //printf("save PGEN: %f\n", rval);
-          pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
-          dsData->setValue(GENERATOR_QG,rval,j);
-          //printf("save QGEN: %f\n", rval);
-        }
-      }
-  }	
+void gridpack::hadrec::HADRECAppModule::transferPFtoDS()
+{	  
+  pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
+		    gridpack::dynamic_simulation::DSFullBranch>(ds_network);
+
+  ds_app_sptr->transferPFtoDS(pf_network,ds_network);
 }
 
 /**
@@ -329,7 +303,7 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
   cursor = config_sptr->getCursor("Configuration.Dynamic_simulation");
   
   if (faults.empty()){
-	faults = ds_app_sptr->getFaults(cursor);
+	faults = ds_app_sptr->getEvents(cursor);
   }
 
   // run dynamic simulation

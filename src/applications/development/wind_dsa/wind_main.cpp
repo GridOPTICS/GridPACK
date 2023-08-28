@@ -5,11 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ca_main.cpp
- * @author Yousu Chen 
- * @date   2014-12-09 14:40:10 d3g096
+ * @file   wind_main.cpp
  *
- * @brief
+ * @brief Main driver for Wind DSA application
  */
 // -------------------------------------------------------------
 
@@ -19,7 +17,7 @@
 #include "gridpack/include/gridpack.hpp"
 #include "wind_driver.hpp"
 
-// Calling program for the contingency_analysis applications
+// Calling program for dynamic security analysis
 
 const char *help = "Dynamic Security Assessment Application for Wind Energy";
 

@@ -58,14 +58,14 @@
     <generatorParameters> classical_model_3000bus.dyr </generatorParameters>
     <simulationTime>20</simulationTime>
     <timeStep>0.001</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 1.0</beginFault>
         <endFault>   1.05</endFault>
         <faultBranch>188 190</faultBranch>
         <timeStep>   0.001</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <generatorWatch>
       <generator>
        <busID> 190 </busID>

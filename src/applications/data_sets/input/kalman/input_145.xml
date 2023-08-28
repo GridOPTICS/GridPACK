@@ -23,14 +23,14 @@
     <KnownFault> 1 </KnownFault>
     <TimeOffset> 0 </TimeOffset> <!--skip initial measurement data -->
     <CheckEqn>   0 </CheckEqn> <!-- only DAE equations no EnKF when = 1 -->
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 1 </beginFault>
         <endFault>   1.15</endFault>
         <faultBranch>25 33</faultBranch>
         <timeStep>   0.001</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <LinearMatrixSolver>
       <!--
         These options are used if SuperLU was built into PETSc

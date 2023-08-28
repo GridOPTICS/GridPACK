@@ -3,22 +3,10 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
-/**
- * @file   dsf_components.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   May 13, 2015
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
 
 #ifndef _dsf_components_h_
 #define _dsf_components_h_
 
-//#define USE_FNCS
 /**
  * Some preprocessor string declarations. These will need to be put in an
  * include file someplace else. Just declare them here for the time being.
@@ -34,24 +22,38 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q};
+  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF, LINESTATUSCHANGE, GENSTATUSCHANGE};
 
-// Small utility structure to encapsulate information about fault events
+// Utility structure to encapsulate information about fault events
 struct Event{
-  double start;         // start times of fault
-  double end;           // end times of fault
-  double step;          // time increment of fault (not used?)
+  bool isGenerator;     // event is a generator status change
+  bool isBus;           // event is on the bus
+  bool isLine;          // event is a line status change
+  bool isBusFault;      // event is a bus fault
+  bool isLineStatus;    // event is a line status change
+  bool isGenStatus;     // event is a gen status change
+
+  // fault information
+  double start;         // start time of fault
+  double end;           // end time of fault
+  int bus_idx;          // fault or generator bus number
+  double Gfault;       // Fault conductance 
+  double Bfault;       // Fault susceptance
+
+  // Line status change
+  double time;          // line or generator status change time
   std::string tag;      // 2-character identifier of line or generator
-  bool isGenerator;     // fault is a generator failure
-  bool isBus;           // fault is a bus failure
-  bool isLine;          // fault is a line failure
-  int bus_idx;          // index of fault bus, corresponding to the bus fault
-  int from_idx;         // "from" bus of line
-  int to_idx;           // "to" bus of line
+  int from_idx;      // "from" bus of line
+  int to_idx;        // "to" bus of line
+
+  int status;        // Line or generator status
+
+  double step;
   Event(void)
-    : start(0.0), end(0.0), step(0.005),
-      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false),
-      bus_idx(-1), from_idx(-1), to_idx(-1)
+    : start(0.0), end(0.0), time(0.0),
+      tag(3, '\0'), isGenerator(false), isBus(false), isLine(false), isBusFault(false), isLineStatus(false), isGenStatus(false) ,
+      bus_idx(-1), from_idx(-1), to_idx(-1), Gfault(0.0),
+      Bfault(99999), status(1)
   {
     tag = "1";
   }
@@ -119,6 +121,52 @@ class DSFullBus
     bool vectorValues(ComplexType *values);
 
     void setValues(ComplexType *values);
+
+    /**
+     * Add shunt
+     * @param gs shunt Gshunt value
+     * @param bs shunt Bshunt value
+     */
+  void addShunt(double gs,double bs);
+
+  /**
+     * set fault
+     * @param flag => true = fault on, false otherwise
+     * @param gfault => fault conductance (pu)
+     * @param bfault => fault susceptance (pu)
+     */
+  void setFault(double gfault, double bfault);
+
+  /**
+     getGenNum - Get the generator number given generator id
+     
+     @param:   gen_id - generator id
+     @return:  idx - the internal index for the generator that can be used to access its parameters (-1 if not found)
+  **/
+  int getGenNum(std::string id);
+
+  /**
+     getGenStatus - Get the generator status 
+   
+     @param:  ckt_id - generator id
+     @return: status - generator status
+   
+  **/
+  int getGenStatus(std::string id);
+
+    /**
+     * set generator status
+     * @param id => generator id
+     * @param status => generator status
+     */
+  void setGenStatus(std::string id, int status);
+
+  /**
+   * clear fault
+   */
+  void clearFault();
+
+
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -395,6 +443,15 @@ class DSFullBus
         gridpack::component::DataCollection *data);
 
     /**
+     * Set status variable on individual generators
+     * @param tag generator ID
+     * @param value new value of status
+     * @param data data collection object associated with bus
+     */
+    void setGeneratorStatus(std::string tag, int status,
+        gridpack::component::DataCollection *data);
+
+    /**
      * Set value of real power on individual loads
      * @param tag load ID
      * @param value new value of real power
@@ -414,6 +471,13 @@ class DSFullBus
      * @return rotor angle and speed for all watched generators on bus
      */
     std::vector<double> getWatchedValues();
+
+   /**
+     * Return a vector of watched values
+     * @return rotor angle and speed for generator with given tag (id)
+     */
+   std::vector<double> getWatchedValues(std::string tag);
+
 
     /**
      * Return rotor speed and angle for a specific generator
@@ -636,6 +700,12 @@ class DSFullBus
     */
     void getTotalGeneratorPower(double &total_p, double &total_q) const;
 
+  /**
+     update the diag value contributions on line status change
+     @param : ybr_self - contribution for line status change
+  **/
+  void diagValuesInsertForLineStatusChange(gridpack::ComplexType Ybr_self);
+  
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.
@@ -647,6 +717,16 @@ class DSFullBus
 #endif
 
   private:
+    // Used for faults only
+    double p_gfault; // Fault conductance
+    double p_bfault; // Fault susceptance
+    // Used for line status change only
+    bool p_line_status_change; // A line connected to this bus is changing its status
+  gridpack::ComplexType p_yii; // This value must be inserted in the Ybus matrix for the line status change
+    // Used for generator status change only
+    bool p_gen_status_change; // A generaator connected to this bus is changing its status
+  gridpack::ComplexType p_ygen; // This value must be inserted in the Ybus matrix for the gen status change
+
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
@@ -764,6 +844,7 @@ class DSFullBus
     std::vector<double> p_downIntervalStart;
     std::vector<bool> p_downStartedMonitoring;
 
+    bool p_busfault; // Flag for bus fault
 
     friend class boost::serialization::access;
 
@@ -772,6 +853,8 @@ class DSFullBus
       {
         ar &
           boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
+	  & p_gfault
+	  & p_bfault
           & p_shunt_gs
           & p_shunt_bs
           & p_shunt
@@ -948,7 +1031,39 @@ class DSFullBranch
      */
 	int checkExtendedLoadBranchType(void);
 	
+     /**
+      * Return contributions to Y-matrix from a specific transmission element
+      * @param tag character string for transmission element
+      * @param Yjj contribution at "to" bus
+      * @param Yji contribution for ji_th Y-matrix element
+      */
+  void getRvrsLineElements(const std::string tag,gridpack::ComplexType *Yjj, gridpack::ComplexType *Yji);
 
+  /**
+   * Return contributions to Y-matrix from a specific transmission element
+   * @param tag character string for transmission element
+   * @param Yii contribution at "from" bus
+   * @param Yij contribution for ij_th Y-matrix element
+   */
+  void getLineElements(const std::string tag,
+		       gridpack::ComplexType *Yii, gridpack::ComplexType *Yij);
+
+  /**
+     setLineStatus - Sets the line status and updates the associated
+     branch and bus objects. 
+   
+     @param: ckt_id - circuit id
+     @param: status - new line status
+   
+     Note: This method is used to
+     update the branch status and update the bus/branch
+     objects. It sets up values in the bus and branch objects
+     so that incrementMatrix method called on the network Ybus
+     uses these values to remove the branch contributions from
+     the Y-bus matrix
+  **/
+  void setLineStatus(std::string ckt_id, int status);
+  
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
@@ -988,6 +1103,8 @@ class DSFullBranch
 	gridpack::ComplexType p_branchfrombusvolt; //renke add
 	gridpack::ComplexType p_branchtobusvolt; //renke add
 
+  bool p_line_status_change; // Flag to indicate line status change
+  gridpack::ComplexType p_yft,p_ytf; // Ybus off-diagonal contributions from this line
     friend class boost::serialization::access;
 
     template<class Archive>

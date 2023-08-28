@@ -325,5 +325,6 @@ void gridpack::dynamic_simulation::IeelLoad::setFreq(double dFreq)
 bool gridpack::dynamic_simulation::IeelLoad::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
+  string[0] = '\0';
   return false;
 }

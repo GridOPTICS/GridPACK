@@ -343,7 +343,7 @@ void gridpack::kalman_filter::KalmanApp::initialize()
   int idx;
   // Read in information about fault events and store them in internal data
   // structure
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation.faultEvents");
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.Events");
   gridpack::utility::Configuration::ChildCursors events;
   if (cursor) cursor->children(events);
   p_faults = setFaultEvents(events);

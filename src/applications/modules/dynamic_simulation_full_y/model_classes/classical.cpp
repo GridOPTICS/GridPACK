@@ -383,9 +383,11 @@ serialWrite(char *string, const int bufsize, const char *signal)
         sprintf(string,"%s",buf);
         ret = true;
       } else {
+        string[0] = '\0';
         ret = false;
       }
     } else {
+      string[0] = '\0';
       ret = false;
     }
   } else if (!strcmp(signal,"watch")) {
@@ -396,9 +398,11 @@ serialWrite(char *string, const int bufsize, const char *signal)
         sprintf(string,"%s",buf);
         ret = true;
       } else {
+        string[0] = '\0';
         ret = false;
       }
     } else {
+      string[0] = '\0';
       ret = false;
     }
   } else if (!strcmp(signal,"debug_initial")) {

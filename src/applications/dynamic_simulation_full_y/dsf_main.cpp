@@ -6,7 +6,6 @@
 // -------------------------------------------------------------
 /**
  * @file   dsf_main.cpp
- * @author Shuangshuang Jin
  * @date   2016-07-14 14:23:30 d3g096
  *
  * @brief
@@ -22,44 +21,6 @@
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
 #include <vector>
 
-/**
- * Transfer data from power flow to dynamic simulation
- * @param pf_network power flow network
- * @param ds_network dynamic simulation network
- */
-void transferPFtoDS(
-    boost::shared_ptr<gridpack::powerflow::PFNetwork>
-    pf_network,
-    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
-    ds_network)
-{
-  int numBus = pf_network->numBuses();
-  int i;
-  gridpack::component::DataCollection *pfData;
-  gridpack::component::DataCollection *dsData;
-  double rval;
-  for (i=0; i<numBus; i++) {
-    pfData = pf_network->getBusData(i).get();
-    dsData = ds_network->getBusData(i).get();
-    pfData->getValue("BUS_PF_VMAG",&rval);
-    dsData->setValue(BUS_VOLTAGE_MAG,rval);
-    ///printf("Step0 bus%d mag = %f\n", i+1, rval);
-    pfData->getValue("BUS_PF_VANG",&rval);
-    dsData->setValue(BUS_VOLTAGE_ANG,rval);
-    int ngen = 0;
-    if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
-      int j;
-      for (j=0; j<ngen; j++) {
-        pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
-        dsData->setValue(GENERATOR_PG,rval,j);
-        //printf("save PGEN: %f\n", rval);
-        pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
-        dsData->setValue(GENERATOR_QG,rval,j);
-        //printf("save QGEN: %f\n", rval);
-      }
-    }
-  }
-}
 
 // Calling program for the dynamis simulation applications
 
@@ -129,13 +90,7 @@ main(int argc, char **argv)
       gridpack::dynamic_simulation::DSFullBranch>(ds_network);
 
     // transfer results from PF calculation to DS calculation
-    transferPFtoDS(pf_network, ds_network); 
-
-    // read in faults from input file
-    //gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = config->getCursor("Configuration.Dynamic_simulation");
-    std::vector<gridpack::dynamic_simulation::Event> faults;
-    faults = ds_app.getFaults(cursor);
+    ds_app.transferPFtoDS(pf_network, ds_network); 
 
     // run dynamic simulation
     ds_app.setNetwork(ds_network, config);
@@ -149,22 +104,19 @@ main(int argc, char **argv)
     //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
     //printf("ds_app.solve:\n");
     //ds_app.solve(faults[0]);
+
+    // read in faults from input file
+    //gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Dynamic_simulation");
+    std::vector<gridpack::dynamic_simulation::Event> faults;
+    faults = ds_app.getEvents(cursor);
+
 	
-	ds_app.solvePreInitialize(faults[0]);
+    ds_app.solvePreInitialize(faults[0]);
 	
-	//std::vector<gridpack::dynamic_simulation::Event> action_list;
-	//action_list.clear();
-	
-	/*
-	for (ds_app.Simu_Current_Step = 0; ds_app.Simu_Current_Step < ds_app.simu_total_steps - 1; ds_app.Simu_Current_Step++){
-		ds_app.execute_one_simu_step(action_list);
-	}
-	*/
-	
-	while(!ds_app.isDynSimuDone()){
-		//ds_app.executeOneSimuStep(action_list);
-		ds_app.executeOneSimuStep( );
-	}
+    while(!ds_app.isDynSimuDone()){
+      ds_app.executeOneSimuStep( );
+    }
 
     //ds_app.write();
     timer->stop(t_total);

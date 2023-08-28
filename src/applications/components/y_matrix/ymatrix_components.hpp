@@ -116,6 +116,13 @@ class YMBus
     void getShuntValues(double *bl, double *gl) const;
 
     /**
+     * Add shunt values
+     * @param gl shunt GL value
+     * @param bl shunt BL value
+     */
+    void addShuntValues(double gs, double bs);
+
+    /**
      * Set internal parameters inside the Y-bus component
      * @param name character string describing component to be modified
      * @param value of parameter to be modified
@@ -250,6 +257,13 @@ class YMBranch
      * @return vector containing status of transmission elements
      */
     std::vector<bool> getLineStatus();
+
+  /**
+   * Return status of transmission element given its tag
+   * @param ckt_id of the transmission element
+     * @return status of given transmission elements
+     */
+  bool getLineStatus(std::string ckt_id);
 
     /**
      * Return tags of all transmission elements

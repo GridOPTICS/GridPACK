@@ -569,6 +569,7 @@ bool gridpack::dynamic_simulation::Regcc1Generator::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
   bool ret = false;
+  string[0] = '\0';
   if (!strcmp(signal,"watch")) {
     if(getWatch()) {
       double Pg,Qg;
@@ -613,10 +614,10 @@ bool gridpack::dynamic_simulation::Regcc1Generator::serialWrite(
 
       
       if (strlen(buf) <= bufsize) {
-	sprintf(string,"%s",buf);
-	ret = true;
+        sprintf(string,"%s",buf);
+        ret = true;
       } else {
-	ret = false;
+        ret = false;
       }
     }
   }

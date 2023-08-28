@@ -67,8 +67,12 @@ add_executable(dsf.x
    dsf_main.cpp
 )
 
-target_link_libraries(dsf.x ${target_libraries})
+add_executable(dsf2.x
+  dsf_main2.cpp
+)
 
+target_link_libraries(dsf.x ${target_libraries})
+target_link_libraries(dsf2.x ${target_libraries})
 
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_145.xml"
@@ -160,6 +164,7 @@ add_custom_target(dsf.x.input
 )
 
 add_dependencies(dsf.x dsf.x.input)
+add_dependencies(dsf2.x dsf.x.input)
 
 # -------------------------------------------------------------
 # install as an example
@@ -182,13 +187,13 @@ install(FILES
   ${GRIDPACK_DATA_DIR}/raw/bus3000_gen_no0imp_v23_pslf.raw
   ${GRIDPACK_DATA_DIR}/dyr/classical_model_3000bus.dyr
   ${CMAKE_CURRENT_SOURCE_DIR}/dsf_main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/dsf_main2.cpp
   DESTINATION share/gridpack/example/dynamic_simulation_full_y
 )
 
 install(TARGETS dsf.x DESTINATION bin)
+install(TARGETS dsf2.x DESTINATION bin)
   
-
-
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------

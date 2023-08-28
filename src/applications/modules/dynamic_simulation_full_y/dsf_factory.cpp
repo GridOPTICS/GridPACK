@@ -3,18 +3,6 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
-/**
- * @file   dsf_factory.cpp
- * @author Shuangshuang Jin 
- * @date   2022-08-16 08:07:47 d3g096
- * @last modified date   May 13, 2015
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"

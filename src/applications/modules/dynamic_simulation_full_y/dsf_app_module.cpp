@@ -3,18 +3,7 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
-/**
- * @file   ds_app.cpp
- * @author Shuangshuang Jin
- * @Last modified:  May 13, 2015
- *
- * @brief
- *
- *
- */
-// -------------------------------------------------------------
-//
+
 //#define USE_TIMESTAMP
 
 #include "gridpack/parser/PTI23_parser.hpp"
@@ -70,6 +59,9 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_generator_observationpower_systembase = true;
   ITER_TOL = 1.0e-7;
   MAX_ITR_NO = 8;
+
+  p_current_time = 0.0;
+  p_time_step = 0.005;
   
 }
 
@@ -499,7 +491,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   sw1[2] = fault.end;
   sw1[3] = p_sim_time;
   sw7[0] = p_time_step;
-  sw7[1] = fault.step;
+  sw7[1] = p_time_step;
   sw7[2] = p_time_step;
   sw7[3] = p_time_step;
   simu_total_steps = 0;
@@ -1286,72 +1278,12 @@ void gridpack::dynamic_simulation::DSFullApp::write(const char* signal)
 }
 
 /**
- * Read faults from external file and form a list of faults
- * @param cursor pointer to open file contain fault or faults
- * @return a list of fault events
- */
-std::vector<gridpack::dynamic_simulation::Event>
-gridpack::dynamic_simulation::DSFullApp::
-getFaults(gridpack::utility::Configuration::CursorPtr cursor)
-{
-  gridpack::utility::Configuration::CursorPtr list;
-  list = cursor->getCursor("faultEvents");
-  gridpack::utility::Configuration::ChildCursors events;
-  std::vector<gridpack::dynamic_simulation::Event> ret;
-  if (list) {
-    list->children(events);
-    int size = events.size();
-    int idx;
-    // Parse fault events
-    for (idx=0; idx<size; idx++) {
-      gridpack::dynamic_simulation::Event event;
-      event.start = events[idx]->get("beginFault",0.0);
-      event.end = events[idx]->get("endFault",0.0);
-      std::string indices = events[idx]->get("faultBranch","0 0");
-      //Parse indices to get from and to indices of branch
-      int ntok1 = indices.find_first_not_of(' ',0);
-      int ntok2 = indices.find(' ',ntok1);
-      if (ntok2 - ntok1 > 0 && ntok1 != std::string::npos && ntok2 !=
-          std::string::npos) {
-        event.from_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
-        ntok1 = indices.find_first_not_of(' ',ntok2);
-        ntok2 = indices.find(' ',ntok1);
-        if (ntok1 != std::string::npos && ntok1 < indices.length()) {
-          if (ntok2 == std::string::npos) {
-            ntok2 = indices.length();
-          }
-          event.to_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
-        } else {
-          event.from_idx = 0;
-          event.to_idx = 0;
-        }
-        event.isBus = false;
-        event.isLine = true;
-      } else {
-        event.from_idx = 0;
-        event.to_idx = 0;
-      }
-      event.step = events[idx]->get("timeStep",0.0);
-      if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
-        ret.push_back(event);
-      }
-    }
-  }
-  return ret;
-}
-
-/**
  * Read in generators that should be monitored during simulation
- */
-void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
+   with a cursor ptr given
+*/
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(gridpack::utility::Configuration::CursorPtr cursor)
 {
-  bool noprint = gridpack::NoPrint::instance()->status();														 
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
-    p_generatorWatchFrequency = 1;
-  }
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
+  bool noprint = gridpack::NoPrint::instance()->status();
   gridpack::utility::Configuration::ChildCursors generators;
   if (cursor) cursor->children(generators);
   int i, j, idx, id, len;
@@ -1377,6 +1309,20 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
 
 /**
  * Read in generators that should be monitored during simulation
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
+{
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
+    p_generatorWatchFrequency = 1;
+  }
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
+  setGeneratorWatch(cursor);  
+}
+
+/**
+ * Read in generators that should be monitored during simulation
  * @param filename set filename from calling program instead of input
  *        deck
  */
@@ -1386,6 +1332,19 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *file
   p_internal_watch_file_name = true;
   setGeneratorWatch();
 }
+
+/**
+ * Read in generators that should be monitored during simulation
+ * @param filename set filename from calling program instead of input
+ *        deck
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *filename,gridpack::utility::Configuration::CursorPtr cursor)
+{
+  p_gen_watch_file = filename;
+  p_internal_watch_file_name = true;
+  setGeneratorWatch(cursor);
+}
+
 
 /**
  * Read in generators that should be monitored during simulation
@@ -1668,7 +1627,7 @@ void gridpack::dynamic_simulation::DSFullApp::saveTimeStep()
     if (p_network->getActiveBus(p_gen_buses[i])) {
       bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
         (p_network->getBus(p_gen_buses[i]).get());
-      std::vector<double> vals = bus->getWatchedValues();
+      std::vector<double> vals = bus->getWatchedValues(p_gen_ids[i]);
       for (j=0; j<vals.size(); j++) {
         p_time_series[icnt].push_back(vals[j]);
         icnt++;
@@ -1808,7 +1767,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
   if (!p_internal_watch_file_name) {
     if (!p_suppress_watch_files) {
       if (cursor->get("generatorWatchFileName",&filename)) {
-        p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
+        p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
               p_network));
         p_generatorIO->open(filename.c_str());
       } else {
@@ -1821,7 +1780,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
     }
   } else {
     if (!p_suppress_watch_files) {
-      p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
+      p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
             p_network));
       p_generatorIO->open(p_gen_watch_file.c_str());
     }
@@ -3013,7 +2972,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   sw1[2] = fault.end;
   sw1[3] = p_sim_time;
   sw7[0] = p_time_step;
-  sw7[1] = fault.step;
+  sw7[1] = p_time_step;
   sw7[2] = p_time_step;
   sw7[3] = p_time_step;
   simu_total_steps = 0;
@@ -4807,4 +4766,51 @@ bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_id,
     }
   }
   return ret;
+}
+
+/**
+ * Transfer data from power flow to dynamic simulation
+ * @param pf_network power flow network
+ * @param ds_network dynamic simulation network
+ */
+void gridpack::dynamic_simulation::DSFullApp::transferPFtoDS(
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network,
+    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+    ds_network)
+{
+  int numBus = pf_network->numBuses();
+  int i;
+  gridpack::component::DataCollection *pfData;
+  gridpack::component::DataCollection *dsData;
+  double rval;
+  for (i=0; i<numBus; i++) {
+    pfData = pf_network->getBusData(i).get();
+    dsData = ds_network->getBusData(i).get();
+    pfData->getValue("BUS_PF_VMAG",&rval);
+    dsData->setValue("BUS_PF_VMAG", rval);
+    dsData->setValue(BUS_VOLTAGE_MAG,rval);
+    ///printf("Step0 bus%d mag = %f\n", i+1, rval);
+    pfData->getValue("BUS_PF_VANG",&rval);
+    dsData->setValue("BUS_PF_VANG",rval);
+    dsData->setValue(BUS_VOLTAGE_ANG,rval);
+
+    pfData->getValue("LOAD_PL", &rval, 0);
+    dsData->setValue(LOAD_PL, rval);
+    pfData->getValue("LOAD_QL", &rval, 0);
+    dsData->setValue(LOAD_QL, rval);
+    
+    int ngen = 0;
+    if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
+      int j;
+      for (j=0; j<ngen; j++) {
+        pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
+        dsData->setValue(GENERATOR_PG,rval,j);
+        //printf("save PGEN: %f\n", rval);
+        pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
+        dsData->setValue(GENERATOR_QG,rval,j);
+        //printf("save QGEN: %f\n", rval);
+      }
+    }
+  }
 }

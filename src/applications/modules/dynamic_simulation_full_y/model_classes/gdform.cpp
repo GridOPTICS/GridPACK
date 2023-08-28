@@ -416,6 +416,7 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
   double Pg,Qg;
   bool   ret=false;
     
+  string[0] = '\0';
   Pg = p_pg*p_mbase/p_sbase;
   Qg = p_qg*p_mbase/p_sbase;
   
@@ -452,7 +453,7 @@ bool gridpack::dynamic_simulation::GridFormingGenerator::serialWrite(
 	sprintf(string,"%s",buf);
 	ret = true;
       } else {
-      	ret = false;
+        ret = false;
       }
     }
   } else if (!strcmp(signal,"debug_initial")) {

@@ -107,7 +107,7 @@ std::vector<gridpack::dynamic_simulation_r::DSBranch::Event>
   getFaults(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
-  list = cursor->getCursor("faultEvents");
+  list = cursor->getCursor("Events");
   gridpack::utility::Configuration::ChildCursors events;
   std::vector<gridpack::dynamic_simulation_r::DSBranch::Event> ret;
   if (list) {
@@ -1198,7 +1198,7 @@ void gridpack::dynamic_simulation_r::DSAppModule::closeGeneratorWatchFile()
 void gridpack::dynamic_simulation_r::DSAppModule::setFaultEvents()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation.faultEvents");
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.Events");
   gridpack::utility::Configuration::ChildCursors events;
   if (cursor) cursor->children(events);
   int size = events.size();

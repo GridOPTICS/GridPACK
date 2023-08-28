@@ -6,8 +6,6 @@
 // -------------------------------------------------------------
 /**
  * @file   dsf_app_module.hpp
- * @author Shuangshuang Jin
- * @date   2020-02-12 12:17:37 d3g096
  *
  * @brief
  *
@@ -24,6 +22,7 @@
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/parallel/global_vector.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "dsf_factory.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
@@ -103,6 +102,12 @@ class DSFullApp
      */
     void reload();
 
+  /**
+     * Reset data structures
+     */
+    void reset();
+
+
     /**
      * Execute the time integration portion of the application
      */
@@ -112,12 +117,27 @@ class DSFullApp
      * initialization before the time step integration starts 
      */
     void solvePreInitialize(gridpack::dynamic_simulation::Event fault);
-	
+
+     /**
+	Setup before the dynamic simulation begins
+     **/
+  void setup();
 	/**
      * Execute only one simulation time step 
      */
     void executeOneSimuStep();
-	
+
+     /**
+	Run upto a given time
+     **/
+  void run(double tend);
+
+  /**
+     Run till end time
+  **/
+  void run();
+
+     
 	/**
 	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
 	 * the vector  vloadP and vloadQ
@@ -245,13 +265,32 @@ class DSFullApp
      */
     void write(const char *signal);
 
-    /**
-     * Read faults from external file and form a list of faults
-     * @param cursor pointer to open file contain fault or faults
-     * @return a list of fault events
-     */
+  /**
+ * Read events starting at the config cursor  and form a list of events
+ * @param  cursor to Events in input.xml file
+ * @return a list of events
+ * Note : The configuration needs to be already set
+ : setNetwork method
+ *
+ */
     std::vector<gridpack::dynamic_simulation::Event>
-      getFaults(gridpack::utility::Configuration::CursorPtr cursor);
+      getEvents(gridpack::utility::Configuration::CursorPtr cursor);
+
+      /**
+   * Read events set in the config file and form a list of events
+   * @return a list of events
+   * Note : The configuration needs to be already set
+          : with the setNetwork method
+   *
+   */
+    std::vector<gridpack::dynamic_simulation::Event>
+      getEvents();
+
+  /**
+   * Set an event for the dynamic simulation
+   * @param event info
+   */
+  void setEvent(gridpack::dynamic_simulation::Event event);
 
     /**
      * Read in generators that should be monitored during simulation
@@ -263,8 +302,12 @@ class DSFullApp
      */
     void setGeneratorWatch();
     void setGeneratorWatch(const char *filename);
+    void setGeneratorWatch(const char *filename,gridpack::utility::Configuration::CursorPtr cursor);
+
     void setGeneratorWatch(std::vector<int> &buses, std::vector<std::string> &tags,
         bool writeFile = true);
+    void setGeneratorWatch(gridpack::utility::Configuration::CursorPtr cursor);
+
 
     /**
      * Read in loads that should be monitored during simulation
@@ -559,16 +602,117 @@ class DSFullApp
     bool getState(int bus_id, std::string dev_id, std::string device,
         std::string name, double *value);
 
-  private:
-    /**
-     * Utility function to convert faults that are in event list into
-     * internal data structure that can be used by code
-     */
-    void setFaultEvents();
+    /*
+      Get the time-step
+    */
+    double getTimeStep();
 
-    /**
-     * Open file (specified in input deck) to write generator results to.
-     * Rotor angle and speeds from generators specified in input deck will be
+    /*
+      Set the time-step
+    */
+    void setTimeStep(double time_step);
+
+    /*
+      Set simulation end time
+    */
+    void setFinalTime(double final_time);
+
+    /*
+      Get simulation end time
+    */
+    double getFinalTime();
+
+    /*
+      Get current time
+    */
+    double getCurrentTime();
+
+  /**
+   * Transfer data from power flow to dynamic simulation
+   * @param pf_network power flow network
+   * @param ds_network dynamic simulation network
+   */
+  void transferPFtoDS(
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network,
+    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+    ds_network);
+  
+  private:
+
+  double p_current_time; /* Current time */
+  double p_sim_time;    // Simulation time
+  double p_time_step;    /* Time-step */
+
+  /**
+     setLineStatus - Sets the line status and updates the associated
+     branch and bus objects. 
+
+     @param: from_idx - from bus number
+     @param: to_idx - to bus number
+     @param: ckt_id - circuit id
+     @param: status - new line status
+
+     Note: This method is called by handleEvents method to
+           update the branch status and update the bus/branch
+	   objects. It sets up values in the bus and branch objects
+	   so that incrementMatrix method called on the network Ybus
+	   uses these values to remove the branch contributions from
+	   the Y-bus matrix
+  **/
+  void setLineStatus(int from_idx, int to_idx, std::string ckt_id, int status);
+
+  /**
+     setGenStatus - Sets the generator status and updates the associated
+     bus objects. 
+
+     @param: bus_idx - bus number
+     @param: gen_id - generator id
+     @param: status - new generator status
+
+     Note: This method is called by handleEvents method to
+           update the generator status and update the bus
+	   object. It sets up values in the bus objects
+	   so that incrementMatrix method called on the network Ybus
+	   uses these values to remove the generator contributions from
+	   the Y-bus matrix
+  **/
+  void setGenStatus(int bus_idx, std::string gen_id, int status);
+
+  /**
+     Handle any events
+  **/
+  void handleEvents();
+  /**
+     run one step of dynamics simulation
+  **/
+  void runonestep();
+
+  /*
+    Update Norton current injected in the network
+    predcorrflag = 0 => Predictor stage
+    predcorrflag = 1 => Corrector stage
+  */
+  void getCurrent(int predcorrflag);
+
+  /*
+    Solve Network equations
+    predcorrflag = 0 => Predictor stage
+    predcorrflag = 1 => Corrector stage
+    returns true if netwok converged
+  */
+  bool solveNetwork(int predcorrflag);
+
+
+  /**
+   * Utility function to convert faults that are in event list into
+   * internal data structure that can be used by code
+   */
+  void setFaultEvents();
+  
+  /**
+   * Open file (specified in input deck) to write generator results to.
+   * Rotor angle and speeds from generators specified in input deck will be
      * written to this file at specified time intervals
      */
     void openGeneratorWatchFile();
@@ -741,7 +885,7 @@ class DSFullApp
       return false;
     }
 
-    std::vector<gridpack::dynamic_simulation::Event> p_faults;
+    std::vector<gridpack::dynamic_simulation::Event> p_events;
 
     // pointer to network
     boost::shared_ptr<DSFullNetwork> p_network;
@@ -763,11 +907,6 @@ class DSFullApp
 	//for the generator observations, output the generator power based on system base or generator base
 	bool p_generator_observationpower_systembase;
 
-    // Simulation time
-    double p_sim_time;
-
-    // Time step
-    double p_time_step;
 
     // Current step count?
     int p_S_Steps;

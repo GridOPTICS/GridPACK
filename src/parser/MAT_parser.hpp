@@ -725,6 +725,7 @@ class MAT_parser : public BaseParser<_network>
         p_util.trim(line);
         return true;
       }
+      return false;
     }
 
     /**

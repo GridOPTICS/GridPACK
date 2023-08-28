@@ -55,14 +55,14 @@
     <generatorParameters> IEEE_145b_classical_model.dyr </generatorParameters>
     <simulationTime>30</simulationTime>
     <timeStep>0.005</timeStep>
-    <faultEvents>
+    <Events>
       <faultEvent>
         <beginFault> 2.00</beginFault>
         <endFault>   2.05</endFault>
         <faultBranch>6 7</faultBranch>
         <timeStep>   0.005</timeStep>
       </faultEvent>
-    </faultEvents>
+    </Events>
     <generatorWatch>
       <generator>
         <busID> 60 </busID>

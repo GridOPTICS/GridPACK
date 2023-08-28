@@ -145,7 +145,8 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
 
   // find indices that bracket quantiles
   for (i=0; i<nvals; i++) {
-    partition[i] = static_cast<int>(quantiles[i]*static_cast<double>(p_nconf));
+    partition[i] = static_cast<int>(quantiles[i]
+        * static_cast<double>(p_nconf-1));
   }
   if (quantiles[0] == 0.0) partition[0] = 0;
   if (quantiles[nvals-1] == 1.0) partition[nvals-1] = p_nconf-1;
@@ -156,11 +157,21 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
     } else if (i == nvals-1 && quantiles[i] == 1.0) {
       weight[nvals-1] = 1.0;
     } else {
-      double ratio = static_cast<double>(partition[i])/static_cast<double>(p_nconf);
-      weight[i] = 1.0 - (ratio - quantiles[i]);
+      if (p_nconf > 1) {
+        double lo = static_cast<double>(partition[i])
+          / static_cast<double>(p_nconf-1);
+        double hi = static_cast<double>(partition[i]+1)
+          / static_cast<double>(p_nconf-1);
+        weight[i] = 1.0 - (quantiles[i]-lo)/(hi-lo);
+      } else {
+        weight[i] = 1.0;
+      }
     }
   }
   int lo[3], hi[3], ld[2];
+  printf("Quantiles: [%d,%f] [%d,%f] [%d,%f] [%d,%f] [%d,%f]\n",
+      partition[0],weight[0],partition[1],weight[1],partition[2],weight[2],
+      partition[3],weight[3],partition[4],weight[4]);
   // nconf, nwatch, nsteps
   std::vector<double> time_slice(p_nconf*p_nwatch);
   lo[0] = 0;
@@ -296,6 +307,7 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
     dsData->setValue(BUS_VOLTAGE_ANG,rval);
     rval = rval * pi/180.0;
     pfData->getValue("BUS_TYPE", &ival);
+    /*
     if (ival != 4) {
       itmp ++;
       if ( temp*sin(rval) < 0) {
@@ -304,6 +316,7 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
         printf("Powerflow bus%d mag = %f +%fi\n", itmp, temp*cos(rval), temp*sin(rval));
       }
     }
+    */
     pfData->getValue("LOAD_PL",&rval,0);
     dsData->setValue(LOAD_PL,rval);
     int ngen = 0;
@@ -312,12 +325,12 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
       int j;
       for (j=0; j<ngen; j++) {
         pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
-        printf ("Bus:%d, ---PF_PG = %e \n", i, rval);
+	//  printf ("Bus:%d, ---PF_PG = %e \n", i, rval);
         dsData->setValue(GENERATOR_PG,rval,j);
-        if (ngen >1) printf("save PGEN: %f\n", rval);
+	//        if (ngen >1) printf("save PGEN: %f\n", rval);
         pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
         dsData->setValue(GENERATOR_QG,rval,j);
-        if (ngen > 1) printf("save QGEN: %f\n", rval);
+	//        if (ngen > 1) printf("save QGEN: %f\n", rval);
       }
     }
   }
@@ -355,13 +368,24 @@ void gridpack::contingency_analysis::WindDriver::resetData(
       (pf_network->getBus(genIDs[i]).get());
     data = pf_network->getBusData(genIDs[i]).get();
     pf_bus->setGeneratorRealPower(genTags[i],windVals[i],data);
+    if (windVals[i] == 0.0) {
+      pf_bus->setGeneratorStatus(genTags[i],0,data);
+    } else {
+      pf_bus->setGeneratorStatus(genTags[i],1,data);
+    }
     ds_bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
       (ds_network->getBus(genIDs[i]).get());
     data = ds_network->getBusData(genIDs[i]).get();
     ds_bus->setGeneratorRealPower(genTags[i],windVals[i],data);
+    if (windVals[i] == 0.0) {
+      ds_bus->setGeneratorStatus(genTags[i],0,data);
+    } else {
+      ds_bus->setGeneratorStatus(genTags[i],1,data);
+    }
   }
   
   nsize = loadVals.size();
+  //  printf("LOADVALS: %d\n",nsize);
   for (i=0; i<nsize; i++) {
     if (loadIDs[i] < 0 || loadIDs[i] >= pf_network->numBuses()) {
       printf("Invalid local load Index: ",loadIDs[i]);
@@ -384,10 +408,10 @@ void gridpack::contingency_analysis::WindDriver::resetData(
  */
 std::vector<gridpack::dynamic_simulation::Event>
 gridpack::contingency_analysis::WindDriver::
-getFaults(gridpack::utility::Configuration::CursorPtr cursor)
+getEvents(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
-  list = cursor->getCursor("faultEvents");
+  list = cursor->getCursor("Events");
   gridpack::utility::Configuration::ChildCursors events;
   std::vector<gridpack::dynamic_simulation::Event> ret;
   if (list) {
@@ -595,6 +619,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::powerflow::PFNetwork>
     pf_network(new gridpack::powerflow::PFNetwork(task_comm));
 
+  bool      pf_converged;
   gridpack::powerflow::PFAppModule pf_app;
   pf_app.readNetwork(pf_network, config);
   pf_app.initialize();
@@ -605,7 +630,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   } else {
     pf_app.solve();
   }
-  pf_app.write();
+  //  pf_app.write();
   pf_app.saveData();
 
   getWatchedBranches(pf_p, pf_q, pf_network);
@@ -616,7 +641,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     pf_results.addVector(1,pf_q);
   }
 #endif
-
  
   timer->stop(t_init_pf);
   // Create dynamic simulation applications on each task communicator
@@ -635,7 +659,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   ds_app.initialize();
   timer->stop(t_init);
   ds_app.saveTimeSeries(true);
-  /* turn and generator watch and set file name */
+  /* turn on generator watch and set file name */
   ds_app.setGeneratorWatch("watch.txt");
   std::vector<int> bus_ids;
   std::vector<std::string> gen_ids;
@@ -657,9 +681,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     printf(" Number of time steps: %d\n",nsteps);
   }
 
-  if (!cursor->get("faultList",&faultfile)) {
-    faultfile = "faults.xml";
-  }
   // Read in quantile values
   gridpack::utility::StringUtils util;
   std::string quantiles_str;
@@ -672,11 +693,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   std::vector<double> quantiles;
   for (i=0; i<tokens.size(); i++) {
     quantiles.push_back(atof(tokens[i].c_str()));
-  }
-  if (!config->open(faultfile,world) && world.rank() == 0) {
-    printf("\nUnable to open fault file: %s\n",faultfile.c_str());
-  } else if (world.rank() == 0) {
-    printf("\nFaults located in file: %s\n",faultfile.c_str());
   }
 
 
@@ -693,9 +709,20 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   // get a list of faults
   int t_flts = timer->createCategory("Read Faults");
   timer->start(t_flts);
-  cursor = config->getCursor("FaultList.Dynamic_simulation");
+
+  if (!cursor->get("EventList",&faultfile)) {
+    faultfile = "faults.xml";
+  }
+  if (!config->open(faultfile,world) && world.rank() == 0) {
+    printf("\nUnable to open fault file: %s\n",faultfile.c_str());
+  } else if (world.rank() == 0) {
+    printf("\nFaults located in file: %s\n",faultfile.c_str());
+  }
+
+  cursor = config->getCursor("EventList.Dynamic_simulation");
+
   std::vector<gridpack::dynamic_simulation::Event>
-    faults = getFaults(cursor);
+    faults = getEvents(cursor);
 
   if (world.rank() == 0) {
     int idx;
@@ -744,13 +771,15 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   }
 
   int numConfigs = wind.getNumColumns();
-  if (load.getNumColumns() != wind.getNumColumns()) {
-    if (world.rank() == 0) {
-      printf("Number of columns in wind file (%d) do not match load file (%d)\n",
-          numConfigs, load.getNumColumns());
-      printf("Loads are ignored\n");
+  if (use_loads) {
+    if (load.getNumColumns() != wind.getNumColumns()) {
+      if (world.rank() == 0) {
+        printf("Number of columns in wind file (%d) do not match load file (%d)\n",
+            numConfigs, load.getNumColumns());
+        printf("Loads are ignored\n");
+      }
+      use_loads = false;
     }
-    use_loads = false;
   }
 
   
@@ -760,8 +789,11 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   taskmgr.set(ntasks*numConfigs);
 
   // Create distributed storage object
+  int t_quantile = timer->createCategory("Quantile Analysis");
+  timer->start(t_quantile);
   gridpack::contingency_analysis::QuantileAnalysis analysis(world,
-      4*bus_ids.size(),ntasks*numConfigs,nsteps);
+      4*bus_ids.size(),ntasks*numConfigs,nsteps-1);
+  timer->stop(t_quantile);
   // Construct variable names
   std::vector<std::string> var_names;
   char sbuf[128];
@@ -777,7 +809,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     sprintf(sbuf, "%d_%s_GENQ", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
   }
+  timer->start(t_quantile);
   analysis.saveVarNames(var_names);
+  timer->stop(t_quantile);
   world.barrier();
 
   // evaluate faults
@@ -798,15 +832,20 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     pf_app.reload();
     resetData(busIDs,busTags,windVals,loadIDs,loadTags,loadVals,
 	      pf_network,p_network);
+
     // Recalculate powerflow for new values of generators and loads
- 
     if (useNonLinear) {
-      pf_app.nl_solve();
+      pf_converged = pf_app.nl_solve();
     } else {
-      pf_app.solve();
+      pf_converged = pf_app.solve();
     }
-    
-    pf_app.write();
+
+    if(!pf_converged) {
+      printf("p[%d] Power flow diverged %d scenario: %d contingency: %d, skipping this task\n",
+	     world.rank(),task_id,ncnfg,nfault);
+      continue;
+    }
+    //    pf_app.write();
     pf_app.saveData();
 
     getWatchedBranches(pf_p, pf_q, pf_network);
@@ -849,9 +888,11 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     all_series = ds_app.getGeneratorTimeSeries();
     std::vector<int> gen_idx = ds_app.getTimeSeriesMap();
     int iseries;
+    timer->start(t_quantile);
     for (iseries=0; iseries<gen_idx.size(); iseries++) {
       analysis.saveData(task_id, gen_idx[iseries],all_series[iseries]);
     }
+    timer->stop(t_quantile);
     ds_app.close();
     timer->stop(t_file);
   }
@@ -930,7 +971,9 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     delete [] lq;
   }
 
+  timer->start(t_quantile);
   analysis.exportQuantiles(quantiles, time_step);
+  timer->stop(t_quantile);
   timer->stop(t_total);
   if (ntasks*numConfigs >= world.size()/task_comm.size()) {
     timer->dump();
