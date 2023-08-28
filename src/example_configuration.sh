@@ -256,13 +256,13 @@ elif [ $host == "tlaloc" ]; then
     export CC CXX CFLAGS CXXFLAGS
 
     # Custom built 3.16, complex:
-    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
-    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-3.16.6" \
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
     # Custom built 3.16, real:
-    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
-    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.16.6" \
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
     # Custom built 3.14, complex:
@@ -270,14 +270,19 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
+    # Custom built 3.14, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+    
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
 
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
-          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
-          -D PETSC_ARCH:STRING="ubuntu-complex-shared-3.16.6" \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared" \
           -D USE_OLD_PETSC:BOOL=OFF \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
