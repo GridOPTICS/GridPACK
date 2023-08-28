@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-08-28 13:11:06 d3g096
+# Last Change: 2023-08-28 13:21:26 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -74,55 +74,30 @@ add_executable(dsf2.x
 target_link_libraries(dsf.x ${target_libraries})
 target_link_libraries(dsf2.x ${target_libraries})
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_145.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_145.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_145.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_145.xml"
-  )
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_145.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_145.xml"
+)
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_9b3g.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_9b3g.xml"
-  )
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_9b3g.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml"
+)
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_300_cmpld.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_300_cmpld.xml"
-  )
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_300_cmpld.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml"
+)
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_3000.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_3000.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_3000.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_3000.xml"
-  )
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_3000.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_3000.xml"
+)
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_240bus.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_240bus.xml"
-  )
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_240bus.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml"
+)
 
 add_custom_target(dsf.x.input
  
