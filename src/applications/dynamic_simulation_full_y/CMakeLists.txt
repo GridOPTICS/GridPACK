@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-08-28 13:21:26 d3g096
+# Last Change: 2023-08-28 14:29:22 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -99,6 +99,11 @@ gridpack_set_lu_solver(
   "${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml"
 )
 
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_twoarea.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_twoarea.xml"
+)
+
 add_custom_target(dsf.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -141,6 +146,14 @@ add_custom_target(dsf.x.input
   ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_fixedshunt.raw
   ${CMAKE_CURRENT_BINARY_DIR}  
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/kundur-twoarea_v33.raw
+  ${CMAKE_CURRENT_BINARY_DIR}  
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
@@ -157,6 +170,9 @@ add_custom_target(dsf.x.input
   ${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml
   ${GRIDPACK_DATA_DIR}/dyr/240busWECC_2018_PSS_mod.dyr
   ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_fixedshunt.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_twoarea.xml
+  ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea.dyr
+  ${GRIDPACK_DATA_DIR}/raw/kundur-twoarea_v33.raw
 )
 
 add_dependencies(dsf.x dsf.x.input)
@@ -195,4 +211,5 @@ install(TARGETS dsf2.x DESTINATION bin)
 # -------------------------------------------------------------
 gridpack_add_run_test("dynamic_simulation_full_y_145_bus" dsf.x input_145.xml)
 gridpack_add_run_test("dynamic_simulation_full_y_240_bus" dsf.x input_240bus.xml)
+gridpack_add_run_test("dynamic_simulation_two_area" dsf.x input_twoarea.xml)
 

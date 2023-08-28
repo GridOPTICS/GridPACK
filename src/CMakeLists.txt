@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2022-10-05 09:26:46 d3g096
+# Last Change: 2023-08-28 13:46:15 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -313,44 +313,43 @@ endif()
 message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (NOT USE_OLD_PETSC)
-if(EXISTS "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
-  set(petscconf "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
-elseif(EXISTS "${PETSC_DIR}/include/petscconf.h")
-  set(petscconf "${PETSC_DIR}/include/petscconf.h")
- else()
-  message(FATAL_ERROR "Could not find PETSc configuration header file
+  if(EXISTS "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+    set(petscconf "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+  elseif(EXISTS "${PETSC_DIR}/include/petscconf.h")
+    set(petscconf "${PETSC_DIR}/include/petscconf.h")
+  else()
+    message(FATAL_ERROR "Could not find PETSc configuration header file
 petscconf.h")
-endif()
+  endif()
 
-# checks
-# define PETSc variables                                                                                           
-include(CheckSymbolExists)
-check_symbol_exists(PETSC_HAVE_PARMETIS ${petscconf} PETSC_HAVE_PARMETIS)
-check_symbol_exists(PETSC_USE_REAL_DOUBLE ${petscconf} PETSC_USE_REAL_DOUBLE)
-check_symbol_exists(PETSC_USE_COMPLEX ${petscconf} PETSC_USE_COMPLEX)
-check_symbol_exists(PETSC_LANGUAGE_CXX ${petscconf} PETSC_CLANGUAGE_Cxx)
-check_symbol_exists(PETSC_HAVE_SUPERLU_DIST ${petscconf}
-PETSC_HAVE_SUPERLU_DIST)
-check_symbol_exists(PETSC_HAVE_MUMPS ${petscconf} PETSC_HAVE_MUMPS)
+  # checks
+  # define PETSc variables                                                                                           
+  include(CheckSymbolExists)
+  check_symbol_exists(PETSC_HAVE_PARMETIS ${petscconf} PETSC_HAVE_PARMETIS)
+  check_symbol_exists(PETSC_USE_REAL_DOUBLE ${petscconf} PETSC_USE_REAL_DOUBLE)
+  check_symbol_exists(PETSC_USE_COMPLEX ${petscconf} PETSC_USE_COMPLEX)
+  check_symbol_exists(PETSC_LANGUAGE_CXX ${petscconf} PETSC_CLANGUAGE_Cxx)
+  check_symbol_exists(PETSC_HAVE_SUPERLU_DIST ${petscconf}
+    PETSC_HAVE_SUPERLU_DIST)
+  check_symbol_exists(PETSC_HAVE_MUMPS ${petscconf} PETSC_HAVE_MUMPS)
 else()
-if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
-  include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
-elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
-  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
-elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
-  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
-else()
-  message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
-endif()
+  if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+    include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+  elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+    include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+  elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+    include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+  else()
+    message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
+  endif()
 
-message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
+  message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
 
+  # checks 
 
-# checks 
-
-if (NOT PETSC_HAVE_MPI)
-  message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
-endif()
+  if (NOT PETSC_HAVE_MPI)
+    message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
+  endif()
 endif()
 
 # PETSc can be compiled for double precsion (--with-precision=double)
