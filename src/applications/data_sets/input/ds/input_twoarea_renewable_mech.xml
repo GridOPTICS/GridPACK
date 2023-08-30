@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Powerflow>
-    <networkConfiguration_v33> Benchmark_twoarea_v33.raw </networkConfiguration_v33>
+    <networkConfiguration_v33> kundur-twoarea_v33.raw </networkConfiguration_v33>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
     <LinearSolver>
@@ -53,7 +53,7 @@
   </Powerflow>
   <Dynamic_simulation>
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
-    <generatorParameters> Benchmark_twoarea_4renewable_mech.dyr </generatorParameters>
+    <generatorParameters> kundur-twoarea_4renewable_mech.dyr </generatorParameters>
     <simulationTime>20</simulationTime>
     <!---<iterativeNetworkInterface>true</iterativeNetworkInterface>-->
     <timeStep>0.005</timeStep>
