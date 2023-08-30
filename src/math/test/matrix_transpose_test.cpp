@@ -8,7 +8,7 @@
 /**
  * @file   matrix_transpose_test.cpp
  * @author William A. Perkins
- * @date   2018-12-18 09:31:40 d3g096
+ * @date   2023-08-30 08:02:21 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -173,8 +173,7 @@ BOOST_AUTO_TEST_CASE( TransposeRandom )
   // see if the transpose is reversible (transpose of transpose needs
   // to be distributed the same as A
   
-  boost::scoped_ptr<TestMatrixType> C(A->clone());
-  gridpack::math::transpose(*B, *C);
+  boost::scoped_ptr<TestMatrixType> C(gridpack::math::transpose(*B));
   C->scale(-1.0);
   boost::scoped_ptr<TestMatrixType> E(gridpack::math::add(*A, *C));
 
