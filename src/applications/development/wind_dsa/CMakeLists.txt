@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:51:41 d3g096
+# Last Change: 2023-08-31 08:45:11 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -81,16 +81,13 @@ target_link_libraries(wind.x ${target_libraries})
 target_link_libraries(wind2.x ${target_libraries})
 
 
-# Put files necessary to run powerflow2 in binary directory.
-# gridpack.petscrc is temporary -- it will be incorporated into
-# input.xml
+gridpack_set_lu_solver(
+  "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+)
 
 add_custom_target(wind.x.input
  
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE3G9B_V23.raw
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -112,13 +109,12 @@ add_custom_target(wind.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE3G9B_V23.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/3g9b_faults.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/3g9b_classical.dyr
   ${CMAKE_CURRENT_SOURCE_DIR}/load.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/wind.txt
-
 )
 add_dependencies(wind.x wind.x.input)
 add_dependencies(wind2.x wind.x.input)
@@ -126,8 +122,10 @@ add_dependencies(wind2.x wind.x.input)
 # -------------------------------------------------------------
 # run applications as tests
 # -------------------------------------------------------------
-# FIXME: temporarily disabled
-#gridpack_add_run_test("wind" wind.x input.xml)
+gridpack_add_run_test("wind_dsa" wind.x input.xml)
+gridpack_add_run_test("wind_dsa_2" wind2.x input.xml)
+gridpack_add_run_test("wind_dsa" wind.x input.xml)
+gridpack_add_run_test("wind_dsa_2" wind2.x input.xml)
 
 # -------------------------------------------------------------
 # install as a sample application
