@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-08-31 08:45:11 d3g096
+# Last Change: 2023-08-31 09:05:17 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -86,6 +86,11 @@ gridpack_set_lu_solver(
   "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
 )
 
+gridpack_set_lu_solver(
+  "${CMAKE_CURRENT_SOURCE_DIR}/input_tamu2000_dsf.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_tamu2000_dsf.xml"
+)
+
 add_custom_target(wind.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -108,6 +113,22 @@ add_custom_target(wind.x.input
   ${CMAKE_CURRENT_SOURCE_DIR}/wind.txt
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/texas2000_hr_4882_mod_33.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/texas2000_v23_fullsys_noac_wind_mod.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/tamu_2000_faults.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/texas_2k_scenfile_5_full.txt
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE3G9B_V23.raw
@@ -115,6 +136,11 @@ add_custom_target(wind.x.input
   ${CMAKE_CURRENT_SOURCE_DIR}/3g9b_classical.dyr
   ${CMAKE_CURRENT_SOURCE_DIR}/load.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/wind.txt
+  ${CMAKE_CURRENT_BINARY_DIR}/input_tamu2000_dsf.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/texas2000_hr_4882_mod_33.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/texas2000_v23_fullsys_noac_wind_mod.dyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/tamu_2000_faults.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/texas_2k_scenfile_5_full.txt
 )
 add_dependencies(wind.x wind.x.input)
 add_dependencies(wind2.x wind.x.input)
@@ -124,8 +150,8 @@ add_dependencies(wind2.x wind.x.input)
 # -------------------------------------------------------------
 gridpack_add_run_test("wind_dsa" wind.x input.xml)
 gridpack_add_run_test("wind_dsa_2" wind2.x input.xml)
-gridpack_add_run_test("wind_dsa" wind.x input.xml)
-gridpack_add_run_test("wind_dsa_2" wind2.x input.xml)
+gridpack_add_run_test("wind_dsa_tamu2000" wind.x input_tamu2000_dsf.xml)
+gridpack_add_run_test("wind_dsa_2_tamu2000" wind2.x input_tamu2000_dsf.xml)
 
 # -------------------------------------------------------------
 # install as a sample application
