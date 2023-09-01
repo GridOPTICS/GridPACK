@@ -8,7 +8,7 @@
  * @file   esst4b.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   Oct 12, 2015
- * @Last modified with control block: Aug 24, 2023
+ * @Last modified with control block: Sep 1, 2023
  * 
  * @brief  
  * 
@@ -91,6 +91,8 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
   }
 
   PIControl_blkR.setparams(Kpm, Kim, Vmmin, Vmmax, -10000.0, 10000.0);
+
+  LVGate_blk.setparams(Voel);
 
 }
 
@@ -258,7 +260,7 @@ void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,Integr
 
   u4 = PIControl_blmM.getoutput(u3 + Efd * Kg);
 
-  // LV Gate?
+  u4 = LVGate_blk.getoutput(u4);
 
   double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
 
@@ -460,3 +462,7 @@ void gridpack::dynamic_simulation::Esst4bModel::setIri(double vIr, double vIi)
   Ii = vIi;
 }
 
+void gridpack::dynamic_simulation::Esst4bModel::setVoel(double vtmp)
+{
+  Voel = vtmp;
+}

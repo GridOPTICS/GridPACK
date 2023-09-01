@@ -8,7 +8,7 @@
  * @file   esst4b.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   Oct 12, 2015
- * @Last modified with control block: Aug 24, 2023
+ * @Last modified with control block: Sep 1, 2023
  * 
  * @brief  
  * 
@@ -134,6 +134,8 @@ class Esst4bModel : public BaseExciterModel
      */
     void setIri(double vIr, double vIi);
 
+    void setVoel(double vtmp);
+
   private:
 
     //double S10, S12; 
@@ -150,10 +152,12 @@ class Esst4bModel : public BaseExciterModel
     PIControl PIControl_blkR;
     Filter Filter_blkA;
     PIControl PIControl_blmM;
+    LVGate LVGate_blk;
 
     double Vuel, Vs;
     double Vref; // Reference voltage
     double Vmeas; // Ouptut of voltage measurement block
+    double Voel;
     
     double Kpang, Vgmax; // TBD
     
