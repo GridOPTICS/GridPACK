@@ -623,11 +623,35 @@ bool gridpack::dynamic_simulation::Reeca1Model::serialWrite(char *string,
   char *ptr = string;
   bool ret = false;
   if (!strcmp(signal,"watch_header")) {
-    // TODO: Added variable labels
-    ret = true;
+    char buf[128];
+    std::string tag;
+    if(p_gen_id[0] != ' ') {
+      tag = p_gen_id;
+    } else {
+      tag = p_gen_id[1];
+    }
+    sprintf(buf,", %d_%s_REECA1_S0, %d_%s_REECA1_S1, %d_%s_REECA1_S2",p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str());
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
   } else if (!strcmp(signal,"watch")) {
-    // TODO: Added variable values
-    ret = true;
+    double S0,S1,S2;
+    S0 = Vt_filter_blk.getstate();
+    S1 = Pe_filter_blk.getstate();
+    S2 = Q_PI_blk.getstate();
+
+    char buf[256];
+    sprintf(buf,",%f,%f,%f",
+	    S0,S1,S2);
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
   }
   return ret;
 }

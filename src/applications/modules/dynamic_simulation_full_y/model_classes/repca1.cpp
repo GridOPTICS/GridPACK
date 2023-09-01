@@ -382,12 +382,42 @@ bool gridpack::dynamic_simulation::Repca1Model::serialWrite(char *string,
 {
   char *ptr = string;
   bool ret = false;
+
   if (!strcmp(signal,"watch_header")) {
-    // TODO: Added variable labels
-    ret = true;
+    char buf[256];
+    std::string tag;
+    if(p_gen_id[0] != ' ') {
+      tag = p_gen_id;
+    } else {
+      tag = p_gen_id[1];
+    }
+    sprintf(buf,", %d_%s_REPCA1_S0, %d_%s_REPCA1_S1, %d_%s_REPCA1_S2,%d_%s_REPCA1_S3, %d_%s_REPCA1_S4, %d_%s_REPCA1_S5,%d_%s_REPCA1_S6",p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str());
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
   } else if (!strcmp(signal,"watch")) {
-    // TODO: Added variable values
-    ret = true;
+    double S0,S1,S2,S3,S4,S5,S6;
+    S0 = V_filter_blk.getstate();
+    S1 = Qbranch_filter_blk.getstate();
+    S2 = Qref_PI_blk.getstate();
+    S3 = Qref_leadlag_blk.getstate();
+    S4 = Pbranch_filter_blk.getstate();
+    S5 = Pref_PI_blk.getstate();
+    S6 = Pref_filter_blk.getstate();
+
+    char buf[256];
+    sprintf(buf,",%f,%f,%f,%f,%f,%f,%f",
+	    S0,S1,S2,S3,S4,S5,S6);
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
   }
+
   return ret;
 }

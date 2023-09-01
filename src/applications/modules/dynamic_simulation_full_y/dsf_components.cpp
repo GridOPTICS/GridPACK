@@ -2286,13 +2286,13 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
     for (i=0; i<p_ngen; i++) {
       if(!p_generators.size()) continue;
       if (p_generators[i]->getWatch()) {
-        char gen_buf[128];
-        char gov_buf[128];
-        char exc_buf[128];
-        char plnt_buf[128];
+        char gen_buf[256];
+        char gov_buf[256];
+        char exc_buf[256];
+        char plnt_buf[256];
         int nlen;
         ///printf("(DSFull::serialWrite) Got to 1\n");
-        ok = p_generators[i]->serialWrite(gen_buf,128,signal);
+        ok = p_generators[i]->serialWrite(gen_buf,256,signal);
         ///printf("(DSFull::serialWrite) Got to 2\n");
         if (ok) {
           int slen = strlen(gen_buf);
@@ -2301,7 +2301,7 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
           ptr += slen;
         }
         if (p_generators[i]->getGovernor().get() != NULL) {
-          ok = p_generators[i]->getGovernor()->serialWrite(gov_buf,128,signal);
+          ok = p_generators[i]->getGovernor()->serialWrite(gov_buf,256,signal);
           if (ok) {
             int slen = strlen(gov_buf);
             if (len+slen < bufsize) sprintf(ptr,"%s",gov_buf);
@@ -2310,7 +2310,7 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
           }
         }
         if (p_generators[i]->getExciter().get() != NULL) {
-          ok = p_generators[i]->getExciter()->serialWrite(exc_buf,128,signal);
+          ok = p_generators[i]->getExciter()->serialWrite(exc_buf,256,signal);
           if (ok) {
             int slen = strlen(exc_buf);
             if (len+slen < bufsize) sprintf(ptr,"%s",exc_buf);
@@ -2320,7 +2320,7 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
         }
         if (p_generators[i]->getPlantController().get() != NULL) {
           ok = p_generators[i]->getPlantController()->serialWrite(
-              plnt_buf,128,signal);
+              plnt_buf,256,signal);
           if (ok) {
             int slen = strlen(plnt_buf);
             if (len+slen < bufsize) sprintf(ptr,"%s",plnt_buf);
