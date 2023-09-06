@@ -50,7 +50,7 @@ function install_gridpack {
 
   # install
   echo "Installing GridPACK"
-  make -j 10 install
+  make -j "$(nproc)" install
 
   popd || exit
 

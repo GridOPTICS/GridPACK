@@ -90,7 +90,7 @@ function install_ga {
 
   # install
   echo "Installing Global Arrays"
-  make -j 10 install >../log/ga_install.log 2>&1
+  make -j "$(nproc)" install >../log/ga_install.log 2>&1
 
   popd || exit
 
