@@ -1,129 +1,160 @@
 #! /bin/bash
 
-# This script installs all GridPACK dependencies.The dependencies are installed in external-dependencies directory.
+# installs GridPACK dependencies to the current directory
 
-# This script should be run from the top-level GridPACK directory.
+set -xeuo pipefail
 
-# Flags for installing/not installing different dependency packages
-install_boost=true
-install_ga=true
-install_petsc=true
+function install_boost {
+  local boost_version=$1
 
-date
+  # check args
+  : "${boost_version:?}"
 
-if test -z "${GRIDPACK_ROOT_DIR}"; then
-  export GRIDPACK_ROOT_DIR=${PWD}
-  echo "GRIDPACK_ROOT_DIR = ${GRIDPACK_ROOT_DIR}"
-fi
+  echo "--- Installing Boost ${boost_version} ---"
 
-cd "${GRIDPACK_ROOT_DIR}" || exit
-
-# Create directory for installing external packages
-if test -z "${GP_EXT_DEPS}"; then
-  export GP_EXT_DEPS=${GRIDPACK_ROOT_DIR}/external-dependencies
-  rm -rf "${GP_EXT_DEPS}"
-  mkdir "${GP_EXT_DEPS}"
-  echo "GRIDPACK_EXT_DEPENDENCIES_DIR=${GP_EXT_DEPS}"
-else
-  if test -d "${GP_EXT_DEPS}"; then
-    echo "GRIDPACK_EXT_DEPENDENCIES_DIR=${GP_EXT_DEPS}"
-  else
-    mkdir "${GP_EXT_DEPS}"
-  fi
-fi
-
-cd "${GP_EXT_DEPS}" || exit
-
-if ${install_boost}; then
-
+  # remove existing
   rm -rf boost*
 
-  # Download and install Boost
-  echo "Downloading Boost-1.78.0"
+  # download
+  echo "Downloading Boost"
+  wget \
+    "https://boostorg.jfrog.io/artifactory/main/release/${boost_version}/source/boost_${boost_version//./_}.tar.gz" \
+    -O boost.tar.gz \
+    --quiet
 
-  # Download Boost
-  wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.tar.gz
+  # unpack
+  echo "Unpacking Boost"
+  tar -xf boost.tar.gz && rm boost.tar.gz
 
-  # Untar
-  tar -xf boost_1_78_0.tar.gz
+  # remove version from dir name
+  mv "boost_${boost_version//./_}" boost
 
-  cd boost_1_78_0 || exit
+  pushd boost || exit
 
-  # Install boost
-  echo "Building Boost-1.78.0"
-
-  ./bootstrap.sh --prefix=install_for_gridpack --with-libraries=mpi,serialization,random,filesystem,system
-
+  # bootstrap
+  echo "Bootstrapping Boost"
+  ./bootstrap.sh \
+    --prefix=install_for_gridpack \
+    --with-libraries=mpi,serialization,random,filesystem,system \
+    >../log/boost_bootstrap.log 2>&1
   echo 'using mpi ;' >>project-config.jam
 
-  ./b2 -a -d+2 link=shared stage
+  # build
+  echo "Building Boost"
+  ./b2 -a -d+2 link=shared stage >../log/boost_build.log 2>&1
 
-  echo "Installing Boost-1.78.0"
-  ./b2 -a -d+2 link=shared install
+  # install
+  echo "Installing Boost"
+  ./b2 -a -d+2 link=shared install >../log/boost_install.log 2>&1
 
-  echo "Building and Installing Boost libraries complete"
-fi
+  popd || exit
 
-if ${install_ga}; then
-  # Download, build, and install GA
-  cd "${GP_EXT_DEPS}" || exit
+  echo "Boost installation complete"
+}
 
-  echo "Downloading GA-5.8"
+function install_ga {
+  local ga_version=$1
 
-  wget https://github.com/GlobalArrays/ga/releases/download/v5.8/ga-5.8.tar.gz
+  # check args
+  : "${ga_version:?}"
 
-  tar -xf ga-5.8.tar.gz
+  echo "--- Installing Global Arrays ${ga_version} ---"
 
-  cd ga-5.8 || exit
+  # download
+  echo "Downloading Global Arrays"
+  wget \
+    "https://github.com/GlobalArrays/ga/releases/download/v${ga_version}/ga-${ga_version}.tar.gz" \
+    -O ga.tar.gz \
+    --quiet
 
-  # Build GA
-  echo "Building GA-5.8"
-  ./configure --with-mpi-ts --disable-f77 --without-blas --enable-cxx --enable-i4 --prefix="${PWD}"/install_for_gridpack --enable-shared
+  # unpack
+  echo "Unpacking Global Arrays"
+  tar -xf ga.tar.gz && rm ga.tar.gz
 
-  # Install GA
-  echo "Installing GA-5.8"
-  make -j 10 install
+  # remove version from dir name
+  mv "ga-${ga_version}" ga
 
-  echo "GA-5.8 installation complete"
-fi
+  pushd ga || exit
 
-if ${install_petsc}; then
+  # build
+  echo "Configuring Global Arrays"
+  ./configure \
+    --with-mpi-ts \
+    --disable-f77 \
+    --without-blas \
+    --enable-cxx \
+    --enable-i4 \
+    --prefix="${PWD}/install_for_gridpack" \
+    --enable-shared \
+    >../log/ga_configure.log 2>&1
 
-  # Install PETSc 3.16.4
-  cd "${GP_EXT_DEPS}" || exit
+  # install
+  echo "Installing Global Arrays"
+  make -j 10 install >../log/ga_install.log 2>&1
 
-  # Download
-  echo "Downloading PETSc 3.16.4"
+  popd || exit
 
+  echo "Global Arrays installation complete"
+}
+
+function install_petsc {
+  local petsc_version=$1
+
+  # check args
+  : "${petsc_version:?}"
+
+  echo "--- Installing PETSc ${petsc_version} ---"
+
+  # clone
+  echo "Cloning PETSc repository"
   git clone https://gitlab.com/petsc/petsc.git
 
-  cd petsc || exit
+  pushd petsc || exit
 
-  git checkout tags/v3.16.4 -b v3.16.4
+  git checkout "tags/v${petsc_version}" -b "v${petsc_version}"
 
   export PETSC_DIR=${PWD}
   export PETSC_ARCH=build-dir
 
-  # Install PETSc
-  echo "Installing PETSc 3.16.4"
+  # install
+  echo "Configuring PETSc"
+  ./configure \
+    --download-superlu_dist \
+    --download-metis \
+    --download-parmetis \
+    --download-suitesparse \
+    --download-f2cblaslapack \
+    --download-cmake \
+    --prefix="${PWD}"/install_for_gridpack \
+    --scalar-type=complex \
+    --with-shared-libraries=1 \
+    --download-f2cblaslapack=1 \
+    >../log/petsc_configure.log 2>&1
 
-  ./configure --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake --prefix="${PWD}"/install_for_gridpack --scalar-type=complex --with-shared-libraries=1 --download-f2cblaslapack=1
+  # build
+  echo "Building PETSc"
+  make >../log/petsc_build.log 2>&1
 
-  # Build PETSc
-  echo "Building PETSc 3.16.4"
+  # install
+  echo "Installing PETSc"
+  make install >../log/petsc_install.log 2>&1
 
-  make
+  # check
+  echo "Checking PETSc"
+  make check >../log/petsc_check.log 2>&1
 
-  # Install PETSc
-  echo "Installing PETSc 3.16.4"
+  popd || exit
 
-  make install
-  make check
-fi
+  echo "PETSc installation complete"
+}
 
-# update LD_LIBRARY_PATH so that boost,ga, and petsc are on it
-export LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib:${GP_EXT_DEPS}/ga-5.8/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
+echo "Installing GridPACK dependencies"
+date
 
-cd "${GRIDPACK_ROOT_DIR}" || exit
+mkdir -p log
 
-echo "Completed installing GridPACK dependencies in ${GP_EXT_DEPS}"
+install_boost "1.78.0"
+install_ga "5.8"
+install_petsc "3.16.4"
+
+echo "GridPACK dependency installation complete"

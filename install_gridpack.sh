@@ -1,100 +1,115 @@
 #! /bin/bash
 
-# This script installs GridPACK and python wrappter.GridPACK is built in src/build directory and installed in src/install directory.
+# installs GridPACK and its python wrappter
+# gridPACK is built in src/build and installed to src/install
+# run this from the top level GridPACK directory
 
-# This script should be run from the top-level GridPACK directory.
+set -xeuo pipefail
 
-# Flag for install GridPACK and GridPACK python wrapper
-install_gridpack=true
-install_gridpack_python=true
+function install_gridpack {
+  echo "--- GridPACK ---"
 
-# Set your python executable here
-python_exe=$(which python)
-if test -z "${python_exe}"; then
-  python_exe=$(which python3)
-fi
+  # args
+  local gridpack_deps_dir=$1
+  local gridpack_build_dir=$2
+  local gridpack_install_dir=$3
+  ${gridpack_deps_dir:?}
+  ${gridpack_build_dir:?}
+  ${gridpack_install_dir:?}
 
-if test -z "${GRIDPACK_ROOT_DIR}"; then
-  export GRIDPACK_ROOT_DIR=${PWD}
-  echo "GRIDPACK_ROOT_DIR = ${GRIDPACK_ROOT_DIR}"
-fi
+  # remove existing build and install dir
+  rm -rf "$gridpack_build_dir"
+  rm -rf "$gridpack_install_dir"
 
-# Create directory for installing external packages
-if test -z "${GP_EXT_DEPS}"; then
-  export GP_EXT_DEPS=${GRIDPACK_ROOT_DIR}/external-dependencies
-fi
+  # create the build dir
+  mkdir -p "$gridpack_build_dir"
 
-cd "${GRIDPACK_ROOT_DIR}" || exit
+  pushd "$gridpack_build_dir" || exit
 
-# Set environment variable GRIDPACK_BUILD_DIR and create a build directory
-export GRIDPACK_BUILD_DIR=${GRIDPACK_ROOT_DIR}/src/build
+  # todo? git checkout develop
 
-GRIDPACK_INSTALL_DIR=${GRIDPACK_ROOT_DIR}/src/install
-export GRIDPACK_DIR=${GRIDPACK_INSTALL_DIR}
-
-if ${install_gridpack}; then
-
-  rm -rf "$GRIDPACK_BUILD_DIR"
-  mkdir "$GRIDPACK_BUILD_DIR"
-
-  rm -rf "${GRIDPACK_INSTALL_DIR}"
-
-  cd "${GRIDPACK_BUILD_DIR}" || exit
-
-  ## GridPACK installation
-  echo "Building GridPACK"
-
-  #  git checkout develop
-
+  # remove existing cmake output
   rm -rf CMake*
 
-  cmake_args="-D GA_DIR:STRING=${GP_EXT_DEPS}/ga-5.8/install_for_gridpack \
-   -D BOOST_ROOT:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack \
-   -D Boost_DIR:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib/cmake/Boost-1.78.0 \
-   -D Boost_LIBRARIES:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib \
-   -D Boost_INCLUDE_DIRS:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/include \
-   -D PETSC_DIR:PATH=${GP_EXT_DEPS}/petsc/install_for_gridpack \
-   -D MPI_CXX_COMPILER:STRING='mpicxx' \
-   -D MPI_C_COMPILER:STRING='mpicc' \
-   -D MPIEXEC:STRING='mpiexec' \
-   -D GRIDPACK_TEST_TIMEOUT:STRING=30 \
-   -D CMAKE_INSTALL_PREFIX:PATH=${GRIDPACK_INSTALL_DIR} \
-   -D CMAKE_BUILD_TYPE:STRING=Debug \
-   -D BUILD_SHARED_LIBS=YES \
-   -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE \
-    ..   "
+  # generate make files
+  echo "Generating GridPACK make files"
+  cmake \
+    -D GA_DIR:STRING="${gridpack_deps_dir}/ga/install_for_gridpack" \
+    -D BOOST_ROOT:STRING="${gridpack_deps_dir}/boost/install_for_gridpack" \
+    -D Boost_DIR:STRING="${gridpack_deps_dir}/boost/install_for_gridpack/lib/cmake/Boost" \
+    -D Boost_LIBRARIES:STRING="${gridpack_deps_dir}/boost/install_for_gridpack/lib" \
+    -D Boost_INCLUDE_DIRS:STRING="${gridpack_deps_dir}/boost/install_for_gridpack/include" \
+    -D PETSC_DIR:PATH="${gridpack_deps_dir}/petsc/install_for_gridpack" \
+    -D MPI_CXX_COMPILER:STRING='mpicxx' \
+    -D MPI_C_COMPILER:STRING='mpicc' \
+    -D MPIEXEC:STRING='mpiexec' \
+    -D GRIDPACK_TEST_TIMEOUT:STRING=30 \
+    -D CMAKE_INSTALL_PREFIX:PATH="${gridpack_install_dir}" \
+    -D CMAKE_BUILD_TYPE:STRING=Debug \
+    -D BUILD_SHARED_LIBS=YES \
+    -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE \
+    ..
 
-  cmake "${cmake_args}"
-
-  echo "Installing GridPACK develop branch"
+  # install
+  echo "Installing GridPACK"
   make -j 10 install
-fi
 
-if ${install_gridpack_python}; then
-  echo "Installing GridPACK python wrapper"
+  popd || exit
 
-  cd "${GRIDPACK_ROOT_DIR}" || exit
+  echo "GridPACK installation complete"
+}
 
+function install_gridpack_python {
+  echo "--- GridPACK python wrapper ---"
+
+  # args
+  local gridpack_build_dir=$1
+  local gridpack_install_dir=$2
+  ${gridpack_build_dir:?}
+  ${gridpack_install_dir:?}
+
+  # update submodules
+  echo "Updating GridPACK submodules"
   git submodule update --init
 
-  echo "${GRIDPACK_DIR}"
-  cd python || exit
+  pushd python || exit
 
   export RHEL_OPENMPI_HACK=yes
 
+  # set python executable path
+  python_exe=$(which python || which python3)
+
+  # remove existing build dir
   rm -rf build
 
+  # build
+  echo "Building GridPACK python wrapper"
   ${python_exe} setup.py build
 
-  rm -rf "${GRIDPACK_INSTALL_DIR}"/lib/python
-  mkdir "${GRIDPACK_INSTALL_DIR}"/lib/python
+  # remove existing install dir
+  local py_lib="${gridpack_install_dir}/lib/python"
+  rm -rf "${py_lib}"
+  mkdir -p "${py_lib}"
 
-  PYTHONPATH="${GRIDPACK_DIR}/lib/python:${PYTHONPATH}"
-  export PYTHONPATH
+  # add lib to python path
+  export PYTHONPATH="${py_lib}:${PYTHONPATH}"
+
+  # install
+  echo "Installing GridPACK python wrapper"
   ${python_exe} setup.py install --home="$GRIDPACK_DIR"
 
-fi
+  popd || exit
 
-cd "${GRIDPACK_ROOT_DIR}" || exit
+  echo "GridPACK python wrapper installation complete"
+}
+
+echo "Installing GridPACK"
+date
+
+build_dir=${PWD}/src/build
+install_dir=${PWD}/src/install
+
+install_gridpack "${GRIDPACK_EXT_DEPS-?}" "$build_dir" "$install_dir"
+install_gridpack_python "$build_dir" "$install_dir"
 
 echo "Completed GridPACK installation"
