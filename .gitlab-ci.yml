@@ -1,0 +1,44 @@
+default:
+
+  tags: [ basic, gridpack, ikp, k8s ]
+
+
+variables:
+
+  GP_EXT_DEPS: /gridpack-dependencies
+  LD_LIBRARY_PATH: ${GP_EXT_DEPS}/boost_${BOOST_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/ga-${GA_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
+
+
+# https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
+build-container:
+
+  image:
+
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+
+  script:
+
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --build-arg http_proxy=$http_proxy
+      --build-arg https_proxy=$https_proxy
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF}"
+
+  rules:
+
+    - if: $CI_PIPELINE_SOURCE == "branch"
+      changes: [ "dockerfile", "install/*" ]
+    - if: $CI_PIPELINE_SOURCE == "tag"
+
+
+test:
+
+  image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF}
+
+  needs: [ build-container ]
+
+  script:
+
+    - ./install_gridpack.sh
