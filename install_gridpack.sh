@@ -106,7 +106,7 @@ date
 build_dir=${PWD}/src/build
 install_dir=${PWD}/src/install
 
-install_gridpack "${GRIDPACK_EXT_DEPS:?}" "$build_dir" "$install_dir"
+install_gridpack "${GP_EXT_DEPS:?}" "$build_dir" "$install_dir"
 install_gridpack_python "$build_dir" "$install_dir"
 
 echo "Completed GridPACK installation"
