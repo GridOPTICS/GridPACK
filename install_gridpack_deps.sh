@@ -153,8 +153,8 @@ date
 
 mkdir -p log
 
-install_boost "1.78.0"
-install_ga "5.8"
-install_petsc "3.16.4"
+install_boost "${BOOST_VERSION:?}"
+install_ga "${GA_VERSION:?}"
+install_petsc "${PETSC_VERSION:?}"
 
 echo "GridPACK dependency installation complete"
