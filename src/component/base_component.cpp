@@ -306,18 +306,22 @@ int GenMatVecInterface::matrixNumValues() const
 }
 
 /**
- * Get a list of matrix values contributed by this component and their
- * matrix indices
- * @param values list of matrix element values
- * @param rows row indices for the matrix elements
- * @param cols column indices for the matrix elements
+ * Return values from a matrix block
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
  */
-void GenMatVecInterface::matrixGetValues(ComplexType *values, int *rows, int*cols)
+void GenMatVecInterface::matrixGetValues(int *nvals, gridpack::ComplexType *values,
+    int *rows, int *cols)
 {
 }
-void GenMatVecInterface::matrixGetValues(RealType *values, int *rows, int*cols)
+
+void GenMatVecInterface::matrixGetValues(int *nvals, gridpack::RealType *values,
+    int *rows, int *cols)
 {
 }
+
 
 /**
  * Return number of elements in vector from component

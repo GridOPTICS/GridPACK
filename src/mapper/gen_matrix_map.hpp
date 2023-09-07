@@ -577,7 +577,7 @@ void numberNonZeros(void)
     p_nz_per_row[i] = 0;
   }
   delete [] row_idx_buf;
-  int nvals;
+  int nvals=0;
   p_maxValues = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
@@ -587,8 +587,9 @@ void numberNonZeros(void)
         gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
         int *rows = new int[nvals];
         int *cols = new int[nvals];
-        p_network->getBus(i)->matrixGetValues(values, rows, cols);
-        for (j=0; j<nvals; j++) {
+	int nv=0; /* Number of values */
+        p_network->getBus(i)->matrixGetValues(&nv,values, rows, cols);
+        for (j=0; j<nv; j++) {
 //          if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
             p_nz_per_row[rows[j]-p_minRowIndex]++;
 //          }
@@ -613,8 +614,9 @@ void numberNonZeros(void)
       gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
       int *rows = new int[nvals];
       int *cols = new int[nvals];
-      p_network->getBranch(i)->matrixGetValues(values, rows, cols);
-      for (j=0; j<nvals; j++) {
+      int nv=0;
+      p_network->getBranch(i)->matrixGetValues(&nv,values, rows, cols);
+      for (j=0; j<nv; j++) {
         if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
           if (ncols > 0) {
             if (cols[j] >= rmin && cols[j] <= rmax) {
@@ -648,8 +650,9 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       nvals = p_network->getBus(i)->matrixNumValues();
-      p_network->getBus(i)->matrixGetValues(values,rows,cols);
-      for (j=0; j<nvals; j++) {
+      int nv=0;
+      p_network->getBus(i)->matrixGetValues(&nv,values,rows,cols);
+      for (j=0; j<nv; j++) {
         if (flag) {
           matrix.addElement(rows[j],cols[j],values[j]);
         } else {
@@ -684,9 +687,10 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
         rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
         rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
       }
-      p_network->getBranch(i)->matrixGetValues(values,rows,cols);
+      int nv=0;
+      p_network->getBranch(i)->matrixGetValues(&nv,values,rows,cols);
       bool addElem;
-      for (j=0; j<nvals; j++) {
+      for (j=0; j<nv; j++) {
         if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
           addElem = false;
           if (ncols > 0) {
