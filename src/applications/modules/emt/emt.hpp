@@ -168,6 +168,15 @@ public:
     p_factory->setMode(FAULT_EVAL);
     p_VecMapper->mapToVector(F);
     F.ready();
+
+#if 0
+#if USE_GEN_MAT_INTERFACE
+    F.print("Gen_mat.vec");
+#else
+    F.print("Std_mat.vec");
+#endif
+#endif
+
     //    F.print();
   }
 
@@ -190,6 +199,16 @@ public:
     p_factory->setMode(FAULT_EVAL);
     p_MatMapper->mapToMatrix(J);
     J.ready();
+
+#if 0
+#if USE_GEN_MAT_INTERFACE
+    J.print("Gen_mat.mat");
+#else
+    J.print("Std_mat.mat");
+#endif
+    exit(0);
+#endif
+
   }
 
   private:

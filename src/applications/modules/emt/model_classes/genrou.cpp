@@ -782,132 +782,21 @@ bool GenrouGen::setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType> &
 #define MAP_PAIR(_i, _j, _val) \
   std::pair<std::pair<int,int>,gridpack::ComplexType>( \
       std::pair<int,int>(_j,_i),_val)
+
+  gridpack::ComplexType zval;
   if(p_mode == FAULT_EVAL) {
     // Generator variables held constant
     // dF_dX
     // Set diagonal values to 1.0
-#if 0
     value_map.insert(MAP_PAIR(delta_idx,delta_idx,1.0));
     value_map.insert(MAP_PAIR(dw_idx,dw_idx,1.0));
     value_map.insert(MAP_PAIR(Eqp_idx,Eqp_idx,1.0));
     value_map.insert(MAP_PAIR(Psidp_idx,Psidp_idx,1.0));
     value_map.insert(MAP_PAIR(Psiqp_idx,Psiqp_idx,1.0));
     value_map.insert(MAP_PAIR(Edp_idx,Edp_idx,1.0));
-#endif
-    // Partial derivatives of ddelta_dt equation
-    value_map.insert(MAP_PAIR(delta_idx,delta_idx,1.0));
-    value_map.insert(MAP_PAIR(dw_idx,delta_idx,0.0));
 
-    value_map.insert(MAP_PAIR(delta_idx,dw_idx,0.0));
-    value_map.insert(MAP_PAIR(dw_idx,dw_idx,1.0));
-    value_map.insert(MAP_PAIR(Eqp_idx,dw_idx,0.0));
-    value_map.insert(MAP_PAIR(Psidp_idx,dw_idx,0.0));
-    value_map.insert(MAP_PAIR(Psiqp_idx,dw_idx,0.0));
-    value_map.insert(MAP_PAIR(Edp_idx,dw_idx,0.0));
-
-    value_map.insert(MAP_PAIR(VD_idx,dw_idx,0.0));
-    value_map.insert(MAP_PAIR(VQ_idx,dw_idx,0.0));
-
-    // Add Pmech contributions
-    if(p_hasGovernor) {
-      int nxgov,i;
-      p_governor->vectorSize(&nxgov);
-      p_governor->getMechanicalPowerPartialDerivatives(xgov_loc,dPmech_dxgov);
-
-      /* Partials w.r.t. governor mechanical power Pmech */
-      for(i=0; i < nxgov; i++) {
-        value_map.insert(MAP_PAIR(xgov_loc[i],dw_idx,0.0));
-      }
-    }
-
-    // Partial derivatives of dEqp_dt equation
-    // Note: No saturation considered yet
-    value_map.insert(MAP_PAIR(delta_idx,Eqp_idx,0.0));
-    value_map.insert(MAP_PAIR(dw_idx,Eqp_idx,0.0));
-    value_map.insert(MAP_PAIR(Eqp_idx,Eqp_idx,1.0));
-    value_map.insert(MAP_PAIR(Psidp_idx,Eqp_idx,0.0));
-    value_map.insert(MAP_PAIR(Psiqp_idx,Eqp_idx,0.0));
-    value_map.insert(MAP_PAIR(Edp_idx,Eqp_idx,0.0));
-
-    value_map.insert(MAP_PAIR(VD_idx,Eqp_idx,0.0));
-    value_map.insert(MAP_PAIR(VQ_idx,Eqp_idx,0.0));
-
-    // Add Efd contributions
-    if(p_hasExciter) {
-      int nexc,i;
-      p_exciter->vectorSize(&nexc);
-      p_exciter->getFieldVoltagePartialDerivatives(xexc_loc,dEfd_dxexc,
-          dEfd_dxgen);
-
-      /* Partials w.r.t. exciter variables */
-      for(i=0; i < nexc; i++) {
-        value_map.insert(MAP_PAIR(xexc_loc[i],Eqp_idx,0.0));
-      }
-
-      /* Partials contributions for Efd w.r.t. generator variables. Note
-       * that this may be because the exciter Efd calculation uses the
-       * field current LadIfd (which is a function of generator variables)
-       */
-      for(i=0; i < nxgen; i++) {
-        std::map<std::pair<int,int>,gridpack::ComplexType>::iterator it;
-        it = value_map.find(std::pair<int,int>(offsetb+i,Eqp_idx));
-        if (it == value_map.end()) {
-        } else {
-          value_map.insert(MAP_PAIR(VQ_idx,Eqp_idx,0.0));
-        }
-      }
-    }
-
-    // Partial derivatives of dPsidp_dt equation
-    value_map.insert(MAP_PAIR(delta_idx,Psidp_idx,0.0));
-    value_map.insert(MAP_PAIR(dw_idx,Psidp_idx,0.0));
-    value_map.insert(MAP_PAIR(Eqp_idx,Psidp_idx,0.0));
-    value_map.insert(MAP_PAIR(Psidp_idx,Psidp_idx,1.0));
-    value_map.insert(MAP_PAIR(Psiqp_idx,Psidp_idx,0.0));
-    value_map.insert(MAP_PAIR(Edp_idx,Psidp_idx,0.0));
-
-    value_map.insert(MAP_PAIR(VD_idx,Psidp_idx,0.0));
-    value_map.insert(MAP_PAIR(VQ_idx,Psidp_idx,0.0));
-
-    // Partial derivatives of dPsiqp_dt equation
-    value_map.insert(MAP_PAIR(delta_idx,Psiqp_idx,0.0));
-    value_map.insert(MAP_PAIR(dw_idx,Psiqp_idx,0.0));
-    value_map.insert(MAP_PAIR(Eqp_idx,Psiqp_idx,0.0));
-    value_map.insert(MAP_PAIR(Psidp_idx,Psiqp_idx,0.0));
-    value_map.insert(MAP_PAIR(Psiqp_idx,Psiqp_idx,1.0));
-    value_map.insert(MAP_PAIR(Edp_idx,Psiqp_idx,0.0));
-
-    value_map.insert(MAP_PAIR(VD_idx,Psiqp_idx,0.0));
-    value_map.insert(MAP_PAIR(VQ_idx,Psiqp_idx,0.0));
-
-    // Partial derivatives of dEdp_dt equation
-    value_map.insert(MAP_PAIR(delta_idx,Edp_idx,0.0));
-    value_map.insert(MAP_PAIR(dw_idx,Edp_idx,0.0));
-    value_map.insert(MAP_PAIR(Eqp_idx,Edp_idx,0.0));
-    value_map.insert(MAP_PAIR(Psidp_idx,Edp_idx,0.0));
-    value_map.insert(MAP_PAIR(Psiqp_idx,Edp_idx,0.0));
-    value_map.insert(MAP_PAIR(Edp_idx,Edp_idx,1.0));
-
-    value_map.insert(MAP_PAIR(VD_idx,Edp_idx,0.0));
-    value_map.insert(MAP_PAIR(VQ_idx,Edp_idx,0.0));
-
-    // Partial derivatives of generator currents IGQ and IGD w.r.t x and V
-    value_map.insert(MAP_PAIR(delta_idx,IGQ_idx,0.0));
-    value_map.insert(MAP_PAIR(dw_idx,IGQ_idx,0.0));
-    value_map.insert(MAP_PAIR(Eqp_idx,IGQ_idx,0.0));
-    value_map.insert(MAP_PAIR(Psidp_idx,IGQ_idx,0.0));
-    value_map.insert(MAP_PAIR(Psiqp_idx,IGQ_idx,0.0));
-    value_map.insert(MAP_PAIR(Edp_idx,IGQ_idx,0.0));
-
-    value_map.insert(MAP_PAIR(delta_idx,IGD_idx,0.0));
-    value_map.insert(MAP_PAIR(dw_idx,IGD_idx,0.0));
-    value_map.insert(MAP_PAIR(Eqp_idx,IGD_idx,0.0));
-    value_map.insert(MAP_PAIR(Psidp_idx,IGD_idx,0.0));
-    value_map.insert(MAP_PAIR(Psiqp_idx,IGD_idx,0.0));
-    value_map.insert(MAP_PAIR(Edp_idx,IGD_idx,0.0));
     // dG_dV
   } else {
-    gridpack::ComplexType zval;
     // Partial derivatives of ddelta_dt equation
     value_map.insert(MAP_PAIR(delta_idx,delta_idx,-shift));
     value_map.insert(MAP_PAIR(dw_idx,delta_idx,OMEGA_S));
@@ -1064,61 +953,61 @@ bool GenrouGen::setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType> &
     value_map.insert(MAP_PAIR(VD_idx,Edp_idx,zval));
     zval = (Xq - Xqp)*(dIq_dVQ - const3*(Xqp - Xl)*dIq_dVQ)/Tqop;
     value_map.insert(MAP_PAIR(VQ_idx,Edp_idx,zval));
+  }
 
-    // Partial derivatives of generator currents IGQ and IGD w.r.t x and V
-    zval = dId_ddelta*sin(theta) + Id*cos(theta)
-      + dIq_ddelta*cos(theta) + Iq*-sin(theta); 
-    value_map.insert(MAP_PAIR(delta_idx,IGQ_idx,zval));
-    zval = dId_ddw*sin(theta) + dIq_ddw*cos(theta);
-    value_map.insert(MAP_PAIR(dw_idx,IGQ_idx,zval));
-    zval = dId_dEqp*sin(theta) + dIq_dEqp*cos(theta);
-    value_map.insert(MAP_PAIR(Eqp_idx,IGQ_idx,zval));
-    zval = dId_dPsidp*sin(theta) + dIq_dPsidp*cos(theta);
-    value_map.insert(MAP_PAIR(Psidp_idx,IGQ_idx,zval));
-    zval = dId_dPsiqp*sin(theta) + dIq_dPsiqp*cos(theta);
-    value_map.insert(MAP_PAIR(Psiqp_idx,IGQ_idx,zval));
-    zval = dId_dEdp*sin(theta) + dIq_dEdp*cos(theta);
-    value_map.insert(MAP_PAIR(Edp_idx,IGQ_idx,zval));
+  // Partial derivatives of generator currents IGQ and IGD w.r.t x and V
+  zval = dId_ddelta*sin(theta) + Id*cos(theta)
+    + dIq_ddelta*cos(theta) + Iq*-sin(theta); 
+  value_map.insert(MAP_PAIR(delta_idx,IGQ_idx,zval));
+  zval = dId_ddw*sin(theta) + dIq_ddw*cos(theta);
+  value_map.insert(MAP_PAIR(dw_idx,IGQ_idx,zval));
+  zval = dId_dEqp*sin(theta) + dIq_dEqp*cos(theta);
+  value_map.insert(MAP_PAIR(Eqp_idx,IGQ_idx,zval));
+  zval = dId_dPsidp*sin(theta) + dIq_dPsidp*cos(theta);
+  value_map.insert(MAP_PAIR(Psidp_idx,IGQ_idx,zval));
+  zval = dId_dPsiqp*sin(theta) + dIq_dPsiqp*cos(theta);
+  value_map.insert(MAP_PAIR(Psiqp_idx,IGQ_idx,zval));
+  zval = dId_dEdp*sin(theta) + dIq_dEdp*cos(theta);
+  value_map.insert(MAP_PAIR(Edp_idx,IGQ_idx,zval));
 
-    // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
-    std::map<std::pair<int,int>,gridpack::ComplexType>::iterator it;
-    it = value_map.find(std::pair<int,int>(VD_idx,IGQ_idx));
-    if (it != value_map.end())  {
-      zval = dId_dVD*sin(theta) + dIq_dVD*cos(theta);
-      it->second += zval;
-    }
-    it = value_map.find(std::pair<int,int>(VQ_idx,IGQ_idx));
-    if (it != value_map.end())  {
-      zval = dId_dVQ*sin(theta) + dIq_dVQ*cos(theta);
-      it->second += zval;
-    }
+  // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
+  std::map<std::pair<int,int>,gridpack::ComplexType>::iterator it;
+  it = value_map.find(std::pair<int,int>(VD_idx,IGQ_idx));
+  if (it != value_map.end())  {
+    zval = dId_dVD*sin(theta) + dIq_dVD*cos(theta);
+    it->second += zval;
+  }
+  it = value_map.find(std::pair<int,int>(VQ_idx,IGQ_idx));
+  if (it != value_map.end())  {
+    zval = dId_dVQ*sin(theta) + dIq_dVQ*cos(theta);
+    it->second += zval;
+  }
 
-    zval = dId_ddelta*cos(theta) + Id*-sin(theta)
-      - dIq_ddelta*sin(theta) - Iq*cos(theta); 
-    value_map.insert(MAP_PAIR(delta_idx,IGD_idx,zval));
-    zval = dId_ddw*cos(theta) - dIq_ddw*sin(theta);
-    value_map.insert(MAP_PAIR(dw_idx,IGD_idx,zval));
-    zval = dId_dEqp*cos(theta) - dIq_dEqp*sin(theta);
-    value_map.insert(MAP_PAIR(Eqp_idx,IGD_idx,zval));
-    zval = dId_dPsidp*cos(theta) - dIq_dPsidp*sin(theta);
-    value_map.insert(MAP_PAIR(Psidp_idx,IGD_idx,zval));
-    zval = dId_dPsiqp*cos(theta) - dIq_dPsiqp*sin(theta);
-    value_map.insert(MAP_PAIR(Psiqp_idx,IGD_idx,zval));
-    zval = dId_dEdp*cos(theta) - dIq_dEdp*sin(theta);
-    value_map.insert(MAP_PAIR(Edp_idx,IGD_idx,zval));
-
-    // Note the values are added, since different components
-    // (bus, load, etc.) add contributions to these locations
-    it = value_map.find(std::pair<int,int>(VD_idx,IGD_idx));
-    if (it != value_map.end())  {
-      zval = dId_dVD*cos(theta) - dIq_dVD*sin(theta);
-      it->second += zval;
-    }
-    it = value_map.find(std::pair<int,int>(VQ_idx,IGD_idx));
-    if (it != value_map.end())  {
-      zval = dId_dVQ*cos(theta) - dIq_dVQ*sin(theta);
-      it->second += zval;
-    }
+  zval = dId_ddelta*cos(theta) + Id*-sin(theta)
+    - dIq_ddelta*sin(theta) - Iq*cos(theta); 
+  value_map.insert(MAP_PAIR(delta_idx,IGD_idx,zval));
+  zval = dId_ddw*cos(theta) - dIq_ddw*sin(theta);
+  value_map.insert(MAP_PAIR(dw_idx,IGD_idx,zval));
+  zval = dId_dEqp*cos(theta) - dIq_dEqp*sin(theta);
+  value_map.insert(MAP_PAIR(Eqp_idx,IGD_idx,zval));
+  zval = dId_dPsidp*cos(theta) - dIq_dPsidp*sin(theta);
+  value_map.insert(MAP_PAIR(Psidp_idx,IGD_idx,zval));
+  zval = dId_dPsiqp*cos(theta) - dIq_dPsiqp*sin(theta);
+  value_map.insert(MAP_PAIR(Psiqp_idx,IGD_idx,zval));
+  zval = dId_dEdp*cos(theta) - dIq_dEdp*sin(theta);
+  value_map.insert(MAP_PAIR(Edp_idx,IGD_idx,zval));
+  
+  // Note the values are added, since different components
+  // (bus, load, etc.) add contributions to these locations
+  it = value_map.find(std::pair<int,int>(VD_idx,IGD_idx));
+  if (it != value_map.end())  {
+    zval = dId_dVD*cos(theta) - dIq_dVD*sin(theta);
+    it->second += zval;
+  }
+  it = value_map.find(std::pair<int,int>(VQ_idx,IGD_idx));
+  if (it != value_map.end())  {
+    zval = dId_dVQ*cos(theta) - dIq_dVQ*sin(theta);
+    it->second += zval;
   }
 #undef MAP_PAIR
   return true;
