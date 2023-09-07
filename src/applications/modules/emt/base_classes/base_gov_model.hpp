@@ -158,11 +158,13 @@ public:
   int matrixNumValues();
 
   /**
-   * Get list of matrix values contributed by generator
-   * @params values list of matrix values
-   * @params rows list of local row indices
-   */
-  void matrixGetValues(gridpack::ComplexType *values,
+ * Return values from a matrix block
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
+ */
+  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
       int *rows, int *cols);
 #endif
 
