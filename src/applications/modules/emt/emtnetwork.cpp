@@ -345,12 +345,16 @@ void EmtBus::load(const
   }
   p_matvalues = (gridpack::ComplexType**)malloc(p_nvar*sizeof(gridpack::ComplexType*));
 
-  // Get active and reactive power load
-  data->getValue(LOAD_PL,&p_pl);
-  data->getValue(LOAD_QL,&p_ql);
-  // Convert to p.u.
-  p_pl /= p_sbase;
-  p_ql /= p_sbase;
+  data->getValue(LOAD_NUMBER, &p_nload);
+  if(p_nload > 1) printf("Warning: More than one load detected on bus\n");
+  
+  for(i=0; i < p_nload; i++) {
+    // Get active and reactive power load
+    data->getValue(LOAD_PL,&p_pl,i);
+    data->getValue(LOAD_QL,&p_ql,i);
+    p_pl /= p_sbase;
+    p_ql /= p_sbase;
+  }
 
 }
 
