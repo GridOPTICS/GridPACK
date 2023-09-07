@@ -74,11 +74,14 @@ public:
   virtual int matrixNumValues();
 
   /**
-   * Get list of matrix values contributed by generator
-   * @params values list of matrix values
-   * @params rows list of local row indices
+   * Return values from a matrix block
+   * @param nvals: number of values to be inserted
+   * @param values: pointer to matrix block values
+   * @param rows: pointer to matrix block rows
+   * @param cols: pointer to matrix block cols
    */
-  virtual void matrixGetValues(gridpack::ComplexType *values,
+
+  virtual void matrixGetValues(int *nvals,gridpack::ComplexType *values,
       int *rows, int *cols);
 
   /**

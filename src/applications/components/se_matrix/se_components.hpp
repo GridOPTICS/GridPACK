@@ -280,11 +280,12 @@ class SEBus
 
     /**
      * Return values from a matrix block
+     * @params nvals: Number of values to be inserted
      * @param values: pointer to matrix block values
      * @param rows: pointer to matrix block rows
      * @param cols: pointer to matrix block cols
     */
-    void matrixGetValues(ComplexType *values, int *rows, int *cols);
+    void matrixGetValues(int *nvals, ComplexType *values, int *rows, int *cols);
 
     /**
      * Configure buses with state estimation parameters. These can be used in
@@ -574,11 +575,12 @@ class SEBranch
 
     /**
      * Return values from a matrix block
+     * @param nvals: number of values to be inserted
      * @param values: pointer to matrix block values
      * @param rows: pointer to matrix block rows
      * @param cols: pointer to matrix block cols
      */
-    void matrixGetValues(ComplexType *values, int *rows, int *cols);
+    void matrixGetValues(int *nvals,ComplexType *values, int *rows, int *cols);
 
     /**
      * Return number of elements in vector coming from component
