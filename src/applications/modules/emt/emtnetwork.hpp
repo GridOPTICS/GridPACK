@@ -25,7 +25,7 @@
 #include <base_classes/base_gov_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
-#define USE_GEN_MAT_INTERFACE 1
+#define USE_GEN_MAT_INTERFACE 0
 
 class EmtBus: public gridpack::component::BaseBusComponent 
 {
@@ -265,6 +265,7 @@ private:
   double p_pl,p_ql; // Active and reactive load (p.u)
   double p_Vm0,p_Va0;     // Voltage magnitude and angle at t=0 used for building constant impedance load
   int    p_ngen;    // Number of generators incident on this bus
+  int    p_nload;   // Number of loads incident on this bus
   int    p_nactivegen; // Number of active generators (status=1) on this bus
   bool   p_isolated;   // flag for isolated bus
   EMTMode p_mode; // factory mode

@@ -164,6 +164,8 @@ void BaseGenModel::load(const boost::shared_ptr<gridpack::component::DataCollect
     data->getValue(GENERATOR_PG,&pg,idx); // Generator real power
     data->getValue(GENERATOR_QG,&qg,idx); // Generator reactive power
     data->getValue(GENERATOR_MBASE,&mbase,idx); // Machine base (in MVA)
+    pg *= sbase;
+    qg *= sbase;
   } else {
     pg = qg = mbase = 0.0;
   }

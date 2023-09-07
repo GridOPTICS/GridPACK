@@ -295,7 +295,7 @@ void Emt::setup()
   emt_network->initBusUpdate();
 
   /* Create mappers and vectors, matrices */
-  p_factory->setMode(RESIDUAL_EVAL);
+  p_factory->setMode(INIT_X);
 #if USE_GEN_MAT_INTERFACE
   p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork>(emt_network);
 #else
