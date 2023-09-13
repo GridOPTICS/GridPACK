@@ -145,55 +145,6 @@ elif [ $host == "we32673" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-install" \
         $common_flags ..
 
-elif [ $host == "WE30729" ]; then
-
-    # Macbook using CLang 6.0 compilers and MPICH via MacPorts
-    # Pretty much the same as WE32673
-
-    CC=/opt/local/bin/clang
-    export CC
-    CXX=/opt/local/bin/clang++
-    export CXX
-
-    prefix="$HOME/Projects/GridPACK"
-
-    if [ "$shared"x = "ON"x ]; then
-        pdir="$prefix/petsc-3.10.5" 
-        parch="macosx-complex-c-shared" 
-    else
-        pdir="$prefix/petsc-3.8.4"
-        parch="arch-macosx-clang-real-opt"
-    fi
-    cmake $options \
-        -D BOOST_ROOT:STRING="/opt/local" \
-        -D PETSC_DIR:PATH="$pdir" \
-        -D PETSC_ARCH:STRING="$parch" \
-        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
-        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
-        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
-        -D USE_CPLEX:BOOL=OFF \
-        -D USE_GLPK:BOOL=ON \
-        -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
-        $common_flags ..
-
-elif [ $host == "olympus.local" ]; then
-
-    prefix="/pic/projects/gridpack/software"
-    cmake $options \
-        -D GA_DIR:STRING="/pic/projects/gridpack/ga-5-2" \
-        -D GA_EXTRA_LIBS:STRING="-libverbs" \
-	-D BOOST_ROOT:STRING="$prefix" \
-	-D PETSC_DIR:STRING="$prefix/petsc-3.4.0" \
-	-D PETSC_ARCH:STRING='olympus-openmpi-gnu-cxx-complex-opt' \
-	-D MPI_CXX_COMPILER:STRING='mpicxx' \
-	-D MPI_C_COMPILER:STRING='mpicc' \
-	-D MPIEXEC:STRING='mpiexec' \
-	$common_flags ..
-
-
 elif [ $host == "constance" ]; then
 
     CC=`which gcc`
@@ -281,8 +232,8 @@ elif [ $host == "tlaloc" ]; then
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
-          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
-          -D PETSC_ARCH:STRING="ubuntu-real-shared" \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared-debug" \
           -D USE_OLD_PETSC:BOOL=OFF \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
