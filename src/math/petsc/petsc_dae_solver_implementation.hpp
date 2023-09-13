@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2023-08-24 09:42:12 d3g096
+ * @date   2023-09-13 07:43:15 d3g096
  * 
  * @brief  
  * 
@@ -70,7 +70,7 @@ public:
 
   PETScDAESolverImplementation(const parallel::Communicator& comm, 
                                const int local_size,
-			       Matrix* J,
+			       MatrixType* J,
                                JacobianBuilder& jbuilder,
                                FunctionBuilder& fbuilder,
                                EventManagerPtr eman)

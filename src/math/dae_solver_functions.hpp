@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_functions.hpp
  * @author William A. Perkins
- * @date   2015-05-07 13:15:18 d3g096
+ * @date   2023-09-13 07:56:50 d3g096
  * 
  * @brief  
  * 
@@ -31,7 +31,7 @@ template <typename T, typename I = int>
 struct DAEBuilder {
   
   typedef VectorT<T, I> VectorType;
-  typedef Matrix MatrixType;
+  typedef MatrixT<T, I> MatrixType;
 
   /// Functions that compute a Jacobian
   typedef 
