@@ -26,18 +26,20 @@ build-container:
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF}"
 
-  rules:
+  # rules:
 
-    - if: $CI_PIPELINE_SOURCE == "branch"
-      changes: [ "dockerfile", "install/*" ]
-    - if: $CI_PIPELINE_SOURCE == "tag"
+  #   - if: $CI_PIPELINE_SOURCE == "branch"
+  #     changes: [ "dockerfile", "install/*" ]
+  #   - if: $CI_PIPELINE_SOURCE == "tag"
 
 
 test:
 
   image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF}
 
-  needs: [ build-container ]
+  needs:
+    - job: build-container
+      optional: true
 
   script:
 
