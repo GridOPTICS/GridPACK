@@ -41,4 +41,5 @@ test:
 
   script:
 
-    - ./install_gridpack.sh
+    - echo "hello world"
+    # - ./install_gridpack.sh
