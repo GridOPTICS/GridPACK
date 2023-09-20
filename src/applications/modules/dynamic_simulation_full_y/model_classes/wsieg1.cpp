@@ -33,6 +33,7 @@ gridpack::dynamic_simulation::Wsieg1Model::Wsieg1Model(void)
   SecondGenExists = false;
   OptionToModifyLimitsForInitialStateLimitViolation = true;
   w = 0.0;
+  printf("---yuan debug constructor---\n");
   /*dx1LL = 0;
   dx2GovOut = 0;
   dx3Turb1 = 0;
@@ -102,8 +103,48 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
+  int debug_print_params=1;
+  if (debug_print_params) {
+	  printf("---Yuan debug print params below---\n");
+	  printf("---K=%.6f---\n", K);
+	  printf("---T1=%.6f---\n", T1);
+	  printf("---T2=%.6f---\n", T2);
+	  printf("---T3=%.6f---\n", T3);
+	  printf("---Uo=%.6f---\n", Uo);
+	  printf("---Uc=%.6f---\n", Uc);
+	  printf("---Pmax=%.6f---\n", Pmax);
+	  printf("---Pmin=%.6f---\n", Pmin);
+	  printf("---T4=%.6f---\n", T4);
+	  printf("---K1=%.6f---\n", K1);
+	  printf("---K2=%.6f---\n", K2);
+	  printf("---T5=%.6f---\n", T5);
+	  printf("---K3=%.6f---\n", K3);
+	  printf("---K4=%.6f---\n", K4);
+	  printf("---T6=%.6f---\n", T6);
+	  printf("---K5=%.6f---\n", K5);
+	  printf("---K6=%.6f---\n", K6);
+	  printf("---T7=%.6f---\n", T7);
+	  printf("---K7=%.6f---\n", K7);
+	  printf("---K8=%.6f---\n", K8);
+	  printf("---Db1=%.6f---\n", Db1);
+	  printf("---Err=%.6f---\n", Err);
+	  printf("---Db2=%.6f---\n", Db2);
+	  printf("---Gv1=%.6f---\n", Gv1);
+	  printf("---PGv1=%.6f---\n", PGv1);
+	  printf("---Gv2=%.6f---\n", Gv2);
+	  printf("---PGv2=%.6f---\n", PGv2);
+	  printf("---Gv3=%.6f---\n", Gv3);
+	  printf("---PGv3=%.6f---\n", PGv3);
+	  printf("---Gv4=%.6f---\n", Gv4);
+	  printf("---PGv4=%.6f---\n", PGv4);
+	  printf("---Gv5=%.6f---\n", Gv5);
+	  printf("---PGv5=%.6f---\n", PGv5);
+	  printf("---Iblock=%.6f---\n", Iblock);
+  }
+  
   Db1_blk.setparams(Db1, Err);
   Leadlag_blk.setparams(T2, T1);
+  // printf("---yuan debug load---\n");
   P_blk.setparams(1.0, Pmin, Pmax); // need another method to take Pmax and Pmin
   Db2_blk.setparams(Db2, Db2);
 
@@ -120,6 +161,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   Filter_blk2.setparams(1.0, T5);
   Filter_blk3.setparams(1.0, T6);
   Filter_blk4.setparams(1.0, T7);
+
 
 }
 
@@ -167,13 +209,39 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
      u5 = Filter_blk1.init_given_y(u6);
   } else 
      u5 = 0;
-   
-  u4 = NGV_blk.init_given_y(u5); // Implemented a .int_given_y method for PiecewiseSlope in dblock
-  u3 = u4; // Deadband Db2_blk's input equails the output
+  //-- yuan comment and add below -//
+  // u4 = NGV_blk.init_given_y(u5); // Implemented a .int_given_y method for PiecewiseSlope in dblock
+  u4 = u5;
+  GV = u4; // GV can be used in the next time step, not a local variable like u1-u9
+  //-- yuan comment and add above -//
+  
+  u3 = u4; // Deadband Db2_blk's input equals the output
   u2 = P_blk.init_given_y(u3);
-  u1 = Leadlag_blk.init_given_y(GV0-u2*T3-u4);
+  
+  //-- yuan add below -//
+  if (OptionToModifyLimitsForInitialStateLimitViolation) {
+    if (GV > Pmax) Pmax = GV+0.1;
+    if (GV < Pmin) Pmin = GV-0.1;
+	if (GV > Uo) Uo = GV+0.1;
+    if (GV < Uc) Uc = GV-0.1;
+  }
+  // if (Iblock == 1 && Pmin == 0) Pmin = GV; // where to put these four blocks?
+  // if (Iblock == 2 && Pmax == 0) Pmax = GV;
+  // if (Iblock == 3 && Pmin == 0) Pmin = GV;
+  // if (Iblock == 3 && Pmax == 0) Pmax = GV;
+  GV0 = GV;
+  //-- yuan add above -//
+  
+  //-- yuan comment and add below -//
+  // u1 = Leadlag_blk.init_given_y(GV0-u2*T3-u4);
+  u1 = Leadlag_blk.init_given_y(0.0);
+  //-- yuan comment and add above -//
 
-  GV = u4; 
+  //-- yuan comment below -//
+  // GV = u4; 
+  //-- yuan comment below -//
+  
+  // printf("---yuan debug init---\n");
 
  /*double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
@@ -227,7 +295,10 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
 {
     double u1, y1, u2, y2, u3, y3, u4, y4, u5, y5, u6, y6, u7, y7, u8, y8, u9, y9; 
     u1 = w;
-    y1 = Db1_blk.getoutput(u1);
+	//-- yuan comment and add below -//
+    // y1 = Db1_blk.getoutput(u1);
+	y1 = u1;
+	//-- yuan comment and add above -//
     u2 = y1 * K;
     y2 = Leadlag_blk.getoutput(u2, t_inc, int_flag, true);
     y4 = GV;
@@ -237,11 +308,22 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
     else if (u3 < Uc) 
       u3 = Uc;
     y3 = P_blk.getoutput(u3, t_inc, int_flag, true); 
+	
+	//-- yuan add below -//
+	if (y3 > Pmax)
+      y3 = Pmax;
+    else if (y3 < Pmin) 
+      y3 = Pmin;
+	//-- yuan add above -//
+	
     u4 = y3;
     y4 = Db2_blk.getoutput(u4); 
     GV = y4;
     u5 = y4;
-    y5 = NGV_blk.getoutput(u5);
+	//-- yuan comment and add below -//
+    // y5 = NGV_blk.getoutput(u5);
+	y5 = u5;
+	//-- yuan comment and add above -//
 
     u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
     u7 = Filter_blk2.getoutput(u6, t_inc, int_flag, true);
@@ -250,6 +332,8 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
 
     Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
     Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
+	
+	// printf("---yuan debug---\n");
 }
 
 /**
