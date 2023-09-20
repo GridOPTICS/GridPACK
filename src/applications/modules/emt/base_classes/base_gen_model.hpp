@@ -281,6 +281,7 @@ to be overwritten by the implementation */
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */
   double        mbase; /**< MVA base of the machine */
+  int           busnum; /**< Bus number */
   int           status; /**< Machine status */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.

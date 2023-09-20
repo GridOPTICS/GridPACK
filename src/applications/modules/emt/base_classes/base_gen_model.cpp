@@ -160,6 +160,7 @@ void BaseGenModel::matrixGetValues(int *nvals, gridpack::ComplexType *values,
 void BaseGenModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx)
 {
+  data->getValue(BUS_NUMBER, &busnum);
   data->getValue(GENERATOR_STAT,&status,idx); // Generator status
   data->getValue(CASE_SBASE,&sbase); // System MVAbase, used in conversion from machine base to system base.
   if(status) {
