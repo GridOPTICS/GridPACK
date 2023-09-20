@@ -81,7 +81,6 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   BaseGenModel::load(data,idx); // load parameters in base generator model
 
   // load parameters for the model type
-  data->getValue(BUS_NUMBER, &busnum);
   if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &H, idx)) H = 0.0; // H
   if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &D, idx)) D = 0.0; // D
   if (!data->getValue(GENERATOR_RESISTANCE, &Ra, idx)) Ra=0.0; // Ra

@@ -60,13 +60,8 @@ class EmtFactory
   /**
    * Set events 
    */
-#if USE_GEN_MAT_INTERFACE
   void setEvents(gridpack::math::DAESolver::EventManagerPtr,
       gridpack::mapper::GenVectorMap<EmtNetwork>*);
-#else
-  void setEvents(gridpack::math::DAESolver::EventManagerPtr,
-      gridpack::mapper::BusVectorMap<EmtNetwork>*);
-#endif
 
   /** 
    * Reset flags after event is handled
