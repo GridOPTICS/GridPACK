@@ -150,7 +150,6 @@ public:
   int getRotorSpeedDeviationLocation();
 private:
   // Machine parameters
-  int    busnum;
   double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
   double Tdop, Tdopp, Tqopp, S10, S12, Tqop;
   

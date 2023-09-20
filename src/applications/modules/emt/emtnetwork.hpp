@@ -25,8 +25,6 @@
 #include <base_classes/base_gov_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
-#define USE_GEN_MAT_INTERFACE 1
-
 class EmtBus: public gridpack::component::BaseBusComponent 
 {
 public:

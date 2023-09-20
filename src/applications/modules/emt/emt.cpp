@@ -43,21 +43,17 @@ protected:
       // get the current DAE solution onto the network
       p_sim->p_X->equate(state);
       p_sim->p_factory->setMode(XVECPRETOBUS);
-#if USE_GEN_MAT_INTERFACE
+
       p_sim->p_VecMapper->mapToNetwork(*(p_sim->p_X));
-#else
-      p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
-#endif
+
       // Solve algebraic equations 
       p_sim->p_nlsolver->solve(*(p_sim->p_X));
 
       // Push the updated solution back to network
       p_sim->p_factory->setMode(XVECTOBUS);
-#if USE_GEN_MAT_INTERFACE
+
       p_sim->p_VecMapper->mapToNetwork(*(p_sim->p_X));
-#else
-      p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
-#endif
+
       p_sim->p_X->ready();
       p_sim->p_factory->resetEventFlags();
     }
@@ -296,18 +292,13 @@ void Emt::setup()
 
   /* Create mappers and vectors, matrices */
   p_factory->setMode(INIT_X);
-#if USE_GEN_MAT_INTERFACE
+
   p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork>(emt_network);
-#else
-  p_VecMapper = new gridpack::mapper::BusVectorMap<EmtNetwork>(emt_network);
-#endif
+
   p_X = p_VecMapper->mapToVector();
 
-#if USE_GEN_MAT_INTERFACE
   p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
-#else
-  p_MatMapper = new gridpack::mapper::FullMatrixMap<EmtNetwork>(emt_network);
-#endif
+
   p_J = p_MatMapper->mapToMatrix();
 
   if(!rank()) printf("Emt:Finished setting up mappers\n");

@@ -25,7 +25,7 @@ class Emt
 {
 public:
   
-  // Let's try to avoid some typing
+  // Typedef for some objects
   
   typedef gridpack::math::DAESolver DAESolver;
   typedef DAESolver::VectorType VectorType;
@@ -51,11 +51,19 @@ public:
   ~Emt(void);
 
   /**
-   *
+   *   Get the communicator rank
    */
   int rank() {return p_comm.rank(); };
 
+  /**
+   *   Get the communicator size
+   */
+
   int size() {return p_comm.size(); };
+
+  /**
+   *   Set the configuration file
+   */
 
   void setconfigurationfile(const char*);
 
@@ -84,11 +92,8 @@ public:
 
     // Push current values in Xdot vector back into network components
     p_factory->setMode(XDOTVECTOBUS);
-#if USE_GEN_MAT_INTERFACE
+
     p_VecMapper->mapToNetwork(Xdot);
-#else
-    p_VecMapper->mapToBus(Xdot);
-#endif
 
     // Update ghost buses
     //    emt_network->updateBuses();
@@ -98,14 +103,7 @@ public:
     p_factory->setMode(RESIDUAL_EVAL);
     p_MatMapper->mapToMatrix(J);
 //    J.ready();
-#if 0
-#if USE_GEN_MAT_INTERFACE
-    J.print("Gen_mat.m");
-#else
-    J.print("Std_mat.m");
-#endif
-    exit(0);
-#endif
+
   }
 
   /// Build the DAE RHS function
@@ -115,19 +113,13 @@ public:
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
-#if USE_GEN_MAT_INTERFACE
+
     p_VecMapper->mapToNetwork(X);
-#else
-    p_VecMapper->mapToBus(X);
-#endif
 
     // Push current values in Xdot vector back into network components
     p_factory->setMode(XDOTVECTOBUS);
-#if USE_GEN_MAT_INTERFACE
+
     p_VecMapper->mapToNetwork(Xdot);
-#else
-    p_VecMapper->mapToBus(Xdot);
-#endif
 
     // Update ghost buses
     emt_network->updateBuses();
@@ -136,18 +128,7 @@ public:
     p_factory->setMode(RESIDUAL_EVAL);
     p_VecMapper->mapToVector(F);
     F.ready();
-#if 0
-#if USE_GEN_MAT_INTERFACE
-    F.print("Gen_vec.v");
-#else
-    F.print("Std_vec.v");
-#endif
-    exit(0);
-#endif
-    /*    printf("F.print():\n");
-    F.print();
-    exit(0);
-    */
+
   }
 
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff
@@ -155,11 +136,8 @@ public:
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
-#if USE_GEN_MAT_INTERFACE
+
     p_VecMapper->mapToNetwork(X);
-#else
-    p_VecMapper->mapToBus(X);
-#endif
 
     // Update ghost buses
     emt_network->updateBuses();
@@ -169,15 +147,6 @@ public:
     p_VecMapper->mapToVector(F);
     F.ready();
 
-#if 0
-#if USE_GEN_MAT_INTERFACE
-    F.print("Gen_mat.vec");
-#else
-    F.print("Std_mat.vec");
-#endif
-#endif
-
-    //    F.print();
   }
 
   // Build the Jacobian for the nonlinear solver at tfaulton or tfaultoff
@@ -185,11 +154,8 @@ public:
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
-#if USE_GEN_MAT_INTERFACE
+
     p_VecMapper->mapToNetwork(X);
-#else
-    p_VecMapper->mapToBus(X);
-#endif
 
     // Update ghost buses
     emt_network->updateBuses();
@@ -199,15 +165,6 @@ public:
     p_factory->setMode(FAULT_EVAL);
     p_MatMapper->mapToMatrix(J);
     J.ready();
-
-#if 0
-#if USE_GEN_MAT_INTERFACE
-    J.print("Gen_mat.mat");
-#else
-    J.print("Std_mat.mat");
-#endif
-    exit(0);
-#endif
 
   }
 
@@ -241,13 +198,8 @@ public:
   EmtFactory *p_factory;
 
   // Mappers for creating vectors and matrices
-#if USE_GEN_MAT_INTERFACE
   gridpack::mapper::GenVectorMap<EmtNetwork> *p_VecMapper;
   gridpack::mapper::GenMatrixMap<EmtNetwork> *p_MatMapper;
-#else
-  gridpack::mapper::BusVectorMap<EmtNetwork> *p_VecMapper;
-  gridpack::mapper::FullMatrixMap<EmtNetwork> *p_MatMapper;
-#endif
 
   boost::shared_ptr<gridpack::math::Vector> p_X; // Solution vector
   boost::shared_ptr<gridpack::math::Vector> p_R; // Residual vector
