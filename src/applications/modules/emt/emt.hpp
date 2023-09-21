@@ -208,12 +208,6 @@ public:
   // DAE solver
   gridpack::math::DAESolver *p_daesolver;
 
-  // Nonlinear solver for handling discontinuities
-  gridpack::math::NonlinearSolver *p_nlsolver;
-
-  /// Does the network need a resolve
-  bool p_resolve;
-
   /// These class needs to see inside Emt
   friend class EmtTimedFaultEvent;
   friend class EmtEventManager;
