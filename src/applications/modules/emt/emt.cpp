@@ -30,7 +30,6 @@ protected:
                         int *eventidx, const double t,
                         Emt::VectorType& state)
   {
-    p_sim->p_resolve = false;
 
     //    p_sim->p_X->equate(state);
     //    p_sim->p_factory->setMode(XVECTOBUS);
@@ -38,25 +37,6 @@ protected:
   
     Emt::EventManager::p_handle(nevent, eventidx, t, state);
 
-    // FIXME: All reduce on p_resolve needed here
-    if (p_sim->p_resolve) {
-      // get the current DAE solution onto the network
-      p_sim->p_X->equate(state);
-      p_sim->p_factory->setMode(XVECPRETOBUS);
-
-      p_sim->p_VecMapper->mapToNetwork(*(p_sim->p_X));
-
-      // Solve algebraic equations 
-      p_sim->p_nlsolver->solve(*(p_sim->p_X));
-
-      // Push the updated solution back to network
-      p_sim->p_factory->setMode(XVECTOBUS);
-
-      p_sim->p_VecMapper->mapToNetwork(*(p_sim->p_X));
-
-      p_sim->p_X->ready();
-      p_sim->p_factory->resetEventFlags();
-    }
   }
 
   
@@ -122,12 +102,10 @@ protected:
     // Set fault
     if(!p_sim->rank())printf("Applying a fault on bus %d at t = %3.2f\n", p_bus, t);
     p_sim->p_factory->setfault(p_bus, p_Gfault, -p_Bfault);
-    p_sim->p_resolve = true;
   } else if (triggered[1]) {
     // Remove fault
     if(!p_sim->rank()) printf("Removing fault on bus %d at t = %3.2f\n", p_bus, t);
     p_sim->p_factory->setfault(p_bus,-p_Gfault,p_Bfault);
-    p_sim->p_resolve = true;
   }
 }
 
@@ -160,7 +138,6 @@ Emt::~Emt(void)
   delete(p_MatMapper);
   delete(p_pfapp);
   delete(p_daesolver);
-  delete(p_nlsolver);
   if(!rank()) printf("Emt: Finished running simulation\n");
 }
 
@@ -334,13 +311,6 @@ void Emt::setup()
   gridpack::math::Matrix* mat_ptr = p_J.get();
   p_daesolver = new DAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);
   p_daesolver->configure(p_configcursor);
-
-  // Create nonlinear solver for solving the algebraic equations at fault-on/fault-off time instants
-  gridpack::math::NonlinearSolver::JacobianBuilder jbuildf = boost::ref(*this);
-  gridpack::math::NonlinearSolver::FunctionBuilder fbuildf = boost::ref(*this);
-
-  p_nlsolver = new gridpack::math::NonlinearSolver(*(this->p_J),jbuildf,fbuildf);
-  p_nlsolver->configure(p_configcursor);
 
   // Get simulation time length
   double t(0.0),tstep,tmax;
