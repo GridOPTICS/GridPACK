@@ -47,11 +47,6 @@ class EmtFactory
    */
   void setTSshift(double);
 
-  /**
-   * Insert fault impedance 
-   */
-  void setfault(int,double,double);
-
   /** 
     Initialize components
   */

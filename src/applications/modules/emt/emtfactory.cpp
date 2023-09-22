@@ -73,24 +73,6 @@ void EmtFactory::resetEventFlags()
   }
 }
 
-/**
- * Locates the faulted bus and modifies its shunt to insert the bus fault
- */
-void EmtFactory::setfault(int faultbus,double Gfault,double Bfault) 
-{
-  int numBuses = p_network->numBuses();
-  int i,busnum;
-  
-  for(i=0; i < numBuses; i++) {
-    EmtBus *bus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
-    busnum = bus->getOriginalIndex();
-    if(faultbus == busnum) {
-      bus->addBusShunt(Gfault,Bfault);
-      return;
-    }
-  }
-}
-
 void EmtFactory::initialize(void) 
 {
   int numBuses = p_network->numBuses();
