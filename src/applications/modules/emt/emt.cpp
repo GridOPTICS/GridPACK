@@ -100,12 +100,8 @@ protected:
     
   if (triggered[0]) {
     // Set fault
-    if(!p_sim->rank())printf("Applying a fault on bus %d at t = %3.2f\n", p_bus, t);
-    p_sim->p_factory->setfault(p_bus, p_Gfault, -p_Bfault);
   } else if (triggered[1]) {
     // Remove fault
-    if(!p_sim->rank()) printf("Removing fault on bus %d at t = %3.2f\n", p_bus, t);
-    p_sim->p_factory->setfault(p_bus,-p_Gfault,p_Bfault);
   }
 }
 
