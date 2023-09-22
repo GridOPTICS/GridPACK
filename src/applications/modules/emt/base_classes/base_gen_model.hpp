@@ -6,11 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   base_gen_model.hpp
- * @author Shrirang Abhyankar
- * @Last modified:   04/24/20
  * 
  * @brief  Base generator class header file
- * 
  * 
  */
 
@@ -41,7 +38,22 @@ public:
    * Basic destructor
    */
   virtual ~BaseGenModel();
-  
+
+  /**
+     Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read.
+     
+     * Load data from DataCollection object into corresponding
+     * component. This needs to be implemented by every component
+     * @param data data collection associated with component
+     */
+  virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
+
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
+  virtual bool setJacobian(gridpack::ComplexType **values);
+
   /**
    * Initialize generator model before calculation
    * @param [output] values - array where initialized generator variables should be set
@@ -58,8 +70,6 @@ public:
    */
   virtual bool serialWrite(char *string, const int bufsize,
 			   const char *signal);
-  
-  virtual double getAngle();
   
   /**
    * Write out generator state
@@ -80,9 +90,9 @@ public:
 
   
   /**
-   * Set bus voltage
+   * Copy over voltage from the bus
    */
-  void setVoltage(double busVD, double busVQ) {VD = busVD; VQ = busVQ; }
+  void setVoltage(double inva, double invb,double invc) {va = inva; vb = invb; vc = invc;}
   
   /**
    * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
@@ -90,94 +100,24 @@ public:
   void setTSshift(double inshift) {shift = inshift;}
   
   /**
-   * Return the generator current injection (in rectangular form) 
-   * @param [output] IGD - real part of the generator current
-   * @param [output] IGQ - imaginary part of the generator current
+   * Return the generator current injection 
+   * @param [output] ia - phase a current
+   * @param [output] ib - phase b current
+   * @param [output] ic - phase c current
    */
-  virtual void getCurrent(double *IGD, double *IGQ);
-  
-  /**
-     Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
-
-   * Load data from DataCollection object into corresponding
-   * component. This needs to be implemented by every component
-   * @param data data collection associated with component
-   */
-  virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
-
+  virtual void getCurrent(double *ia, double *ib, double *ic);
 
   /**
-   * Set Jacobian block
-   * @param values a 2-d array of Jacobian block for the bus
+   * Return the number of variables
+   * @param [output] nvar - number of variables
    */
-  virtual bool setJacobian(gridpack::ComplexType **values);
-
-  /**
-   * Set Jacobian block
-   * @param value_map standard map containing indices and values of matrix
-   *        elements
-   */
-  virtual bool setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType>
-      &value_map);
-
-#if 0
-  /**
-   * Set the number of rows contributed by this generator
-   * @param nrows number of rows
-   */
-  virtual void matrixSetNumRows(int nrows);
-
-  /**
-   * Set the number of columns contributed by this generator
-   * @param ncols number of columns
-   */
-  virtual void matrixSetNumCols(int ncols);
-
-  /**
-   * Number of rows (equations) contributed to by generator
-   * @return number of rows
-   */
-  int matrixNumRows();
-
-  /**
-   * Number of rows (equations) contributed to by generator
-   * @return number of rows
-   */
-  int matrixNumCols();
-
-  /** 
-   * Set global row index
-   * @param irow local row index
-   * @param global row index
-   */
-  void matrixSetRowIndex(int irow, int idx);
-
-  /** 
-   * Set global column index
-   * @param icol local column index
-   * @param global column index
-   */
-  void matrixSetColIndex(int icol, int idx);
-
-  /**
-   * Return global row index given local row index
-   * @param irow local row index
-   * @return global row index
-   */
-  int matrixGetRowIndex(int irow);
-
-  /**
-   * Return global column index given local column index
-   * @param icol local column index
-   * @return global column index
-   */
-  int matrixGetColIndex(int icol);
+  virtual void getnvar(double *nvar);
 
   /**
    * Get number of matrix values contributed by generator
    * @return number of matrix values
    */
-  int matrixNumValues();
+  virtual int matrixNumValues();
 
   /**
  * Return values from a matrix block
@@ -186,9 +126,9 @@ public:
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+  virtual void matrixGetValues(int *nvals,gridpack::ComplexType *values,
       int *rows, int *cols);
-#endif
+
 
   /**
    * Set the field current parameter inside the exciter
@@ -226,11 +166,6 @@ public:
   
   bool hasGovernor();
 
-  /****************************************************
- The following methods are inherited from the BaseComponent class and are 
-to be overwritten by the implementation */
-  
-  
   /**
    * Set an internal variable that can be used to control the behavior of the
    * component. This function doesn't need to be implemented, but if needed,
@@ -241,29 +176,6 @@ to be overwritten by the implementation */
    * @param mode integer indicating which mode should be used
    */
   void setMode(int mode) { p_mode = mode;}
-
-  /**
-   * Return size of vector block contributed by component
-   * @param isize number of vector elements
-   * @return false if network component does not contribute
-   *        vector element
-   */
-  bool vectorSize(int *isize) const;
-
-  /**
-   * Return the values of the vector block
-   * @param values pointer to vector values
-   * @return false if network component does not contribute
-   *        vector element
-   */
-  bool vectorValues(gridpack::ComplexType *values);
-
-  /**
-   * Set values in the component based on values in a vector or
-   * matrix
-   * @param values values in vector or matrix
-   */
-  void setValues(gridpack::ComplexType *values);
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 
@@ -285,7 +197,7 @@ to be overwritten by the implementation */
   int           status; /**< Machine status */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
-  double        VD, VQ;
+  double        va, vb, vc; // Voltages
   bool          p_hasExciter; // Flag indicating whether this generator has exciter
   bool          p_hasGovernor; // Flag indicating whether this generator has governor
   boost::shared_ptr<BaseExcModel> p_exciter; // Exciter
@@ -302,8 +214,6 @@ to be overwritten by the implementation */
   // Arrays used in coupling blocks between generator and governor. These should be allocated and destroyed by the derived class
   int           *xgov_loc;   // locations for governor variables in the bus variables array
   double        *dPmech_dxgov; // Partial derivatives of mechanical power Pmech w.r.t. governor variables (size = nxgov)
-  int           p_nrows;  // number of rows (equations) contributed by this generator
-  int           p_ncols;  // number of columns (variables) contributed by this generator
   std::vector<int>   p_rowidx; // global index for rows
   std::vector<int>   p_colidx; // global index for columns
 };

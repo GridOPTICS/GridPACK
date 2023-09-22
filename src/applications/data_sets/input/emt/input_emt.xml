@@ -46,17 +46,17 @@
       </PETScOptions>
     </NonlinearSolver>
   </Powerflow>
-  <Dynamic_simulation>
-    <generatorParameters> case9_GENROU_ESST1A.dyr </generatorParameters>
+  <EMT>
+    <generatorParameters> case9_GENCLS.dyr </generatorParameters>
     <simulationTime>10.0</simulationTime>
     <timeStep>0.01</timeStep>
     <faultbus>1</faultbus>
-    <faultontime>1</faultofftime>
+    <faultontime>1</faultontime>
     <faultofftime>1.05</faultofftime>
     <Gfault>0.0</Gfault>
     <Bfault>999</Bfault>
     <DAESolver>
       <PETScPrefix>emt_</PETScPrefix>
     </DAESolver>
-  </Dynamic_simulation>
+  </EMT>
 </Configuration>

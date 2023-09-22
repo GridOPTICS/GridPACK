@@ -10,16 +10,16 @@ BaseGenModel::BaseGenModel(void)
   sbase = DEFAULT_MVABASE;
   status = 0;
   shift  = 0.0;
-  VD     = 0.0;
-  VQ     = 0.0;
+  va     = 0.0;
+  vb     = 0.0;
+  vc     = 0.0;
+  nxgen  = 0;
   p_hasExciter = false;
   p_hasGovernor = false;
 }
 
 BaseGenModel::~BaseGenModel(void)
 {
-  p_nrows = 0;
-  p_ncols = 0;
 }
 
 /**
@@ -30,126 +30,6 @@ bool BaseGenModel::setJacobian(gridpack::ComplexType **values)
 {
   return false;
 }
-
-/**
- * Set Jacobian block
- * @param value_map standard map containing indices and values of matrix
- *        elements
- */
-bool BaseGenModel::setJacobian(std::map<std::pair<int,int>,gridpack::ComplexType>
-    &value_map)
-{
-  return false;
-}
-
-#if 0
-/**
- * Set the number of rows contributed by this generator
- * @param nrows number of rows
- */
-void BaseGenModel::matrixSetNumRows(int nrows)
-{
-  p_nrows = nrows;
-}
-
-/**
- * Set the number of columns contributed by this generator
- * @param ncols number of columns
- */
-void BaseGenModel::matrixSetNumCols(int ncols)
-{
-  p_ncols = ncols;
-}
-
-/**
- * Number of rows (equations) contributed to by generator
- * @return number of rows
- */
-int BaseGenModel::matrixNumRows()
-{
-  return p_nrows;
-}
-
-/**
- * Number of rows (equations) contributed to by generator
- * @return number of rows
- */
-int BaseGenModel::matrixNumCols()
-{
-  return p_ncols;
-}
-
-/** 
- * Set global row index
- * @param irow local row index
- * @param global row index
- */
-void BaseGenModel::matrixSetRowIndex(int irow, int idx)
-{
-  if (p_rowidx.size() == 0) {
-    p_rowidx.resize(p_nrows);
-    int i;
-    for (i=0; i<p_nrows; i++) p_rowidx[i] = -1;
-  }
-  p_rowidx[irow] = idx;
-}
-
-/** 
- * Set global column index
- * @param icol local column index
- * @param global column index
- */
-void BaseGenModel::matrixSetColIndex(int icol, int idx)
-{
-  if (p_colidx.size() == 0) {
-    p_colidx.resize(p_ncols);
-    int i;
-    for (i=0; i<p_ncols; i++) p_colidx[i] = -1;
-  }
-  p_colidx[icol] = idx;
-}
-
-/**
- * Return global row index given local row index
- * @param irow local row index
- * @return global row index
- */
-int BaseGenModel::matrixGetRowIndex(int irow)
-{
-  return p_rowidx[irow];
-}
-
-/**
- * Return global column index given local column index
- * @param icol local column index
- * @return global column index
- */
-int BaseGenModel::matrixGetColIndex(int icol)
-{
-  return p_colidx[icol];
-}
-
-/**
- * Get number of matrix values contributed by generator
- * @return number of matrix values
- */
-int BaseGenModel::matrixNumValues()
-{
-  return 0;
-}
-
-  /**
- * Return values from a matrix block
- * @param nvals: number of values to be inserted
- * @param values: pointer to matrix block values
- * @param rows: pointer to matrix block rows
- * @param cols: pointer to matrix block cols
- */
-void BaseGenModel::matrixGetValues(int *nvals, gridpack::ComplexType *values,
-    int *rows, int *cols)
-{
-}
-#endif
 
 /**
  * Load parameters from DataCollection object into generator model
@@ -196,21 +76,6 @@ bool BaseGenModel::serialWrite(char *string, const int bufsize,
   return false;
 }
 
-double BaseGenModel::getAngle()
-{
-  return 0.0;
-}
-
-/**
- *  Set the number of variables for this generator model
- *  @param [output] number of variables for this model
- */
-bool BaseGenModel::vectorSize(int *nvar) const
-{
-  *nvar = 0;
-  return true;
-}
-
 /**
  * Write out generator state
  * @param signal character string used to determine behavior
@@ -221,34 +86,25 @@ void BaseGenModel::write(const char* signal, char* string)
 }
 
 /**
- * Set the internal values of the voltage magnitude and phase angle. Need this
- * function to push values from vectors back onto generators
- * @param values array containing generator state variables
-*/
-void BaseGenModel::setValues(gridpack::ComplexType *values)
-{
-}
-
-/**
- * Return the values of the generator vector block
- * @param values: pointer to vector values
- * @return: false if generator does not contribute
- *        vector element
+ * Return the generator current injection 
+ * @param [output] ia - phase a current
+ * @param [output] ib - phase b current
+ * @param [output] ic - phase c current
  */
-bool BaseGenModel::vectorValues(gridpack::ComplexType *values)
+void BaseGenModel::getCurrent(double *ia, double *ib, double *ic)
 {
-  return false;
+  *ia = *ib = *ic = 0.0;
 }
 
 /**
- * Return the generator current injection (in rectangular form) 
- * @param [output] IGD - real part of the generator current
- * @param [output] IGQ - imaginary part of the generator current
-*/
-void BaseGenModel::getCurrent(double *IGD, double *IGQ)
+ * Return the number of variables
+ * @param [output] nvar - number of variables
+ */
+void BaseGenModel::getnvar(double *nvar)
 {
-  *IGD = *IGQ = 0.0;
+  *nvar = 0.0;
 }
+
 
 /**
  * Get the field current
@@ -310,3 +166,23 @@ bool BaseGenModel::hasGovernor()
     return p_hasGovernor;
 }
 
+/**
+ * Get number of matrix values contributed by generator
+ * @return number of matrix values
+ */
+int BaseGenModel::matrixNumValues()
+{
+  return 0;
+}
+
+/**
+ * Return values from a matrix block
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
+ */
+void BaseGenModel::matrixGetValues(int *nvals,gridpack::ComplexType *values,
+      int *rows, int *cols)
+{
+}

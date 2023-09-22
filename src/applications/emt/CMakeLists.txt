@@ -66,6 +66,10 @@ add_custom_target(emt.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
@@ -108,7 +112,7 @@ add_custom_target(emt.x.input
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${GRIDPACK_DATA_DIR}/raw/case9.raw
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
 )
 
 add_dependencies(emt.x emt.x.input)
