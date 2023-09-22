@@ -229,7 +229,7 @@ void Emt::setup()
   if(p_isSetUp) return;
   p_profiler.startsetuptimer();
 
-  p_configcursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  p_configcursor = p_config->getCursor("Configuration.EMT");
 
   // Read generator data
   std::string filename;

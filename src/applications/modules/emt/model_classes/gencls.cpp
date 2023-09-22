@@ -1,8 +1,8 @@
-#include <classical_gen_model.hpp>
+#include <gencls.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
 
-ClassicalGen::ClassicalGen(void)
+Gencls::Gencls(void)
 {
   p_delta = 0.0;
   p_dw    = 0.0;
@@ -16,7 +16,7 @@ ClassicalGen::ClassicalGen(void)
   p_Xdp   = 0.0;
 }
 
-ClassicalGen::~ClassicalGen(void)
+Gencls::~Gencls(void)
 {
 }
 
@@ -26,7 +26,7 @@ ClassicalGen::~ClassicalGen(void)
  * @param index of generator on bus
  * TODO: might want to move this functionality to BaseGeneratorModel
  */
-void ClassicalGen::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+void Gencls::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
   BaseGenModel::load(data,idx); // load parameters in base generator model
 
@@ -37,19 +37,13 @@ void ClassicalGen::load(const boost::shared_ptr<gridpack::component::DataCollect
   data->getValue(GENERATOR_INERTIA_CONSTANT_H,&p_H,idx);
   data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&p_D,idx);
 
-  // Convert generator parameters from machine base to MVA base
-  p_H *= mbase/sbase;
-  p_D *= mbase/sbase;
-  p_Xdp /= mbase/sbase;
-
-  printf("mbase = %f, sbase = %f\n", mbase, sbase);
 }
 
 /**
  * Initialize generator model before calculation
  * @param [output] values - array where initialized generator variables should be set
  */
-void ClassicalGen::init(gridpack::ComplexType* values)
+void Gencls::init(gridpack::ComplexType* values)
 {
   double IGD,IGQ; // Machine currents in cartesian coordinates
   double Pg, Qg;  // Generator real and reactive power
@@ -83,12 +77,12 @@ void ClassicalGen::init(gridpack::ComplexType* values)
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool ClassicalGen::serialWrite(char *string, const int bufsize,const char *signal)
+bool Gencls::serialWrite(char *string, const int bufsize,const char *signal)
 {
   return false;
 }
 
-double ClassicalGen::getAngle(void)
+double Gencls::getAngle(void)
 {
   return p_delta;
 }
@@ -98,7 +92,7 @@ double ClassicalGen::getAngle(void)
  * @param signal character string used to determine behavior
  * @param string buffer that contains output
  */
-void ClassicalGen::write(const char* signal, char* string)
+void Gencls::write(const char* signal, char* string)
 {
 }
 
@@ -106,7 +100,7 @@ void ClassicalGen::write(const char* signal, char* string)
  *  Set the number of variables for this generator model
  *  @param [output] number of variables for this model
  */
-bool ClassicalGen::vectorSize(int *nvar) const
+bool Gencls::vectorSize(int *nvar) const
 {
   *nvar = 2;
   return true;
@@ -117,7 +111,7 @@ bool ClassicalGen::vectorSize(int *nvar) const
  * function to push values from vectors back onto generators
  * @param values array containing generator state variables
 */
-void ClassicalGen::setValues(gridpack::ComplexType *values)
+void Gencls::setValues(gridpack::ComplexType *values)
 {
   if(p_mode == XVECTOBUS) {
     p_delta = real(values[0]);
@@ -137,7 +131,7 @@ void ClassicalGen::setValues(gridpack::ComplexType *values)
  * @return: false if generator does not contribute
  *        vector element
  */
-bool ClassicalGen::vectorValues(gridpack::ComplexType *values)
+bool Gencls::vectorValues(gridpack::ComplexType *values)
 {
   int delta_idx = 0, dw_idx = 1;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
@@ -160,7 +154,7 @@ bool ClassicalGen::vectorValues(gridpack::ComplexType *values)
  * @param [output] IGD - real part of the generator current
  * @param [output] IGQ - imaginary part of the generator current
 */
-void ClassicalGen::getCurrent(double *IGD, double *IGQ)
+void Gencls::getCurrent(double *IGD, double *IGQ)
 {
   // Generator current injections in the network
   *IGD += (-VQ + p_Ep*sin(p_delta))/p_Xdp;
@@ -171,7 +165,7 @@ void ClassicalGen::getCurrent(double *IGD, double *IGQ)
  * Set Jacobian values
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool ClassicalGen::setJacobian(gridpack::ComplexType **values)
+bool Gencls::setJacobian(gridpack::ComplexType **values)
 {
   int VD_idx = 0; /* Row/col number for bus voltage VD variable */
   int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
