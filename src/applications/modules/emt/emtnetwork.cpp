@@ -212,9 +212,9 @@ void EmtBus::load(const
 
   // Assume balanced conditions
   // Three phase voltages
-  double p_va = Vm*cos(Va);
-  double p_vb = Vm*cos(Va - 2*PI/3.0);
-  double p_vc = Vm*cos(Va + 2*PI/3.0);
+  double p_va = Vm*sin(Va);
+  double p_vb = Vm*sin(Va - 2*PI/3.0);
+  double p_vc = Vm*sin(Va + 2*PI/3.0);
 
   if(p_vptr) {
     *p_vptr     = p_va;
@@ -238,13 +238,27 @@ void EmtBus::load(const
   p_gl /= p_sbase;
   p_bl /= p_sbase;
 
-  if(abs(p_gl) < 1e-6) {
+  if(abs(p_gl) > 1e-6) {
     p_hasResistiveShunt = true;
     p_Gshunt[0][0] = p_gl;
     p_Gshunt[1][1] = p_gl;
     p_Gshunt[2][2] = p_gl;
   }
 
+  if(abs(p_bl) > 1e-6) {
+    if(p_bl > 0) {
+      p_hasCapacitiveShunt = true;
+      p_Cshunt[0][0] = p_bl/OMEGA_S;
+      p_Cshunt[1][1] = p_bl/OMEGA_S;
+      p_Cshunt[2][2] = p_bl/OMEGA_S;
+    } else {
+      p_hasInductiveShunt = true;
+      p_Lshunt[0][0] = -p_bl/OMEGA_S;
+      p_Lshunt[1][1] = -p_bl/OMEGA_S;
+      p_Lshunt[2][2] = -p_bl/OMEGA_S;
+    }
+  }
+      
   gridpack::utility::StringUtils util;
   bool has_ex;
   bool has_gv;
