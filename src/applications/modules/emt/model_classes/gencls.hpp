@@ -5,32 +5,32 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   classical_generator_model.hpp
+ * @file   gencls.hpp
  * 
  * @brief Classical generator model 
  * 
  * 
  */
 
-#ifndef _classical_gen_model_h_
-#define _classical_gen_model_h_
+#ifndef _gencls_model_h_
+#define _gencls_model_h_
 
 #include <base_gen_model.hpp>
 #include <gridpack/include/gridpack.hpp>
 
 
-class ClassicalGen: public BaseGenModel
+class Gencls: public BaseGenModel
 {
    public:
   /**
      * Basic constructor
      */
-    ClassicalGen();
+    Gencls();
 
     /**
      * Basic destructor
      */
-    ~ClassicalGen();
+    ~Gencls();
 
     /**
      * Load parameters from DataCollection object into generator model
@@ -65,8 +65,6 @@ class ClassicalGen: public BaseGenModel
     bool serialWrite(char *string, const int bufsize,
         const char *signal);
 
-    double getAngle();
-
     /**
      * Write out generator state
      * @param signal character string used to determine behavior
@@ -74,38 +72,41 @@ class ClassicalGen: public BaseGenModel
      */
     void write(const char* signal, char* string);
 
-    /**
-     *  Set the number of variables for this generator model
-     *  @param [output] number of variables for this model
-     */
-    bool vectorSize(int *nvar) const;
+  /**
+   * Return the generator current injection 
+   * @param [output] ia - phase a current
+   * @param [output] ib - phase b current
+   * @param [output] ic - phase c current
+   */
+  void getCurrent(double *ia, double *ib, double *ic);
 
-    /**
-     * Set the internal values of the voltage magnitude and phase angle. Need this
-     * function to push values from vectors back onto generators
-     * @param values array containing generator state variables
-     */
-     void setValues(gridpack::ComplexType*);
+  /**
+   * Return the number of variables
+   * @param [output] nvar - number of variables
+   */
+  void getnvar(double *nvar);
+  
+  /**
+   * Get number of matrix values contributed by generator
+   * @return number of matrix values
+   */
+  int matrixNumValues();
 
-    /**
-     * Return the values of the generator vector block
-     * @param values: pointer to vector values
-     * @return: false if generator does not contribute
-     *        vector element
-     */
-    bool vectorValues(gridpack::ComplexType *values);
+  /**
+ * Return values from a matrix block
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
+ */
+  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+      int *rows, int *cols);
 
-    /**
-     * Return the generator current injection (in rectangular form) 
-     * @param [output] IGD - real part of the generator current
-     * @param [output] IGQ - imaginary part of the generator current
-     */
-    void getCurrent(double *IGD, double *IGQ);
-
+  
   private:
     // Machine parameters
     double p_Rs; // Machine stator resistance
-    double p_Xdp;  // Machine transient reactance
+    double p_L;  // Machine transient inductance
     double p_H;      // Machine Inertia constant
     double p_D;      // Machine damping coefficient
 
