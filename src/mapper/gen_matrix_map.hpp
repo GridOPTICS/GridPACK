@@ -99,6 +99,22 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 }
 
 /**
+ * Generate matrix from current component state on network
+ * @return return a pointer to new matrix
+ */
+boost::shared_ptr<gridpack::math::Matrix> createMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxRowIndex-p_minRowIndex+1;
+  boost::shared_ptr<gridpack::math::Matrix>
+    Ret(new gridpack::math::Matrix(comm, blockSize, p_colBlockSize, p_nz_per_row));
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  Ret->zero();
+  return Ret;
+}
+
+/**
  * Generate matrix from current component state on network and return a
  * conventional pointer to it. Used for Fortran interface
  * @return return a pointer to new matrix
@@ -139,6 +155,30 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   mapToMatrix(*matrix);
 }
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void mapValuesToMatrix(gridpack::math::Matrix &matrix)
+{
+  int t_set, t_bus, t_branch;
+  matrix.zero();
+  loadBusDataValues(matrix);
+  loadBranchDataValues(matrix);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void mapValuesToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  mapValuesToMatrix(*matrix);
+}
+
 
 /**
  * Overwrite elements of existing matrix. This can be used to overwrite selected
@@ -717,6 +757,41 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   delete [] rows;
   delete [] cols;
 }
+
+/**
+ * Add contributions from buses to matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ *
+ * Note: This method directly passes the matrix to the application
+ */
+void loadBusDataValues(gridpack::math::Matrix &matrix)
+{
+  int i;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->matrixGetValues(matrix);
+    }
+  }
+}
+
+/**
+ * Add contributions from branches to matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ *
+ * Note: This method directly passes the matrix to the application
+ */
+void loadBranchDataValues(gridpack::math::Matrix &matrix)
+{
+  int i;
+  for (i=0; i<p_nBranches; i++) {
+    if(p_network->getActiveBranch(i)) {
+      p_network->getBranch(i)->matrixGetValues(matrix);
+    }
+  }
+}
+
 
     // Configuration information
 int                         p_me;

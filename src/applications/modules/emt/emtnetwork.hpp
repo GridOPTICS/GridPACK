@@ -117,6 +117,10 @@ public:
    */
   void matrixGetValues(int *nvals,gridpack::ComplexType *values,
       int *rows, int *cols);
+
+  /**
+   */
+  void matrixGetValues(gridpack::math::Matrix &matrix);
   
   /**
    * Set value of global index for corresponding local index
@@ -350,7 +354,9 @@ public:
    */
   void matrixGetValues(int *nvals,gridpack::ComplexType *values,
       int *rows, int *cols);
-  
+
+  void matrixGetValues(gridpack::math::Matrix &matrix);
+
   /**
    * Write output from branches to standard out
    * @param string (output) string with information to be printed out

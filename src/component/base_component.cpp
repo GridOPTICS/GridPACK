@@ -322,6 +322,11 @@ void GenMatVecInterface::matrixGetValues(int *nvals, gridpack::RealType *values,
 {
 }
 
+void GenMatVecInterface::matrixGetValues(gridpack::math::Matrix &matrix)
+{
+}
+
+
 
 /**
  * Return number of elements in vector from component
