@@ -427,6 +427,12 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
 
 }
 
+void EmtBus::matrixGetValues(gridpack::math::Matrix &matrix)
+{
+
+}
+
+
 /**
  * Set the model to control what matrices and vectors and built when using the
  * mapper
@@ -637,6 +643,12 @@ void EmtBranch::matrixGetValues(int *nvals,gridpack::ComplexType *values,
 {
 
 }
+
+void EmtBranch::matrixGetValues(gridpack::math::Matrix &matrix)
+{
+
+}
+
 
 /**
  * Write output from branches to standard out
