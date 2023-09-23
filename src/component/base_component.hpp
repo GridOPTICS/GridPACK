@@ -29,6 +29,9 @@
 
 #include <boost/serialization/export.hpp>
 
+#include <gridpack/math/matrix.hpp>
+
+
 // TODO: Might want to put MatrixIndices and VectorIndex operations into a
 //       separate class since these can probably be implemented once for all
 //       network components
@@ -259,6 +262,7 @@ class GenMatVecInterface {
   virtual void matrixGetValues(int *nvals,ComplexType *values, int *rows, int*cols);
   virtual void matrixGetValues(int *nvals,RealType *values, int *rows, int*cols);
 
+  virtual void matrixGetValues(gridpack::math::Matrix &matrix);
     /**
      * Return number of elements in vector from component
      * @return number of elements contributed from component
