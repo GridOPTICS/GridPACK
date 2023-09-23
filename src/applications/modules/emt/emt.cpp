@@ -272,7 +272,7 @@ void Emt::setup()
 
   p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
 
-  p_J = p_MatMapper->mapToMatrix();
+  p_J = p_MatMapper->createMatrix();
 
   if(!rank()) printf("Emt:Finished setting up mappers\n");
 

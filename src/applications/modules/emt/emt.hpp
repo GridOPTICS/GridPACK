@@ -101,7 +101,7 @@ public:
     // Evaluate the DAE Jacobian
     //    J.zero();
     p_factory->setMode(RESIDUAL_EVAL);
-    p_MatMapper->mapToMatrix(J);
+    p_MatMapper->mapValuesToMatrix(J);
 //    J.ready();
 
   }
