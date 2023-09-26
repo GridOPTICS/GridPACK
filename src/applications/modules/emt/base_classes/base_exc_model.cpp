@@ -262,12 +262,12 @@ double BaseExcModel::getFieldVoltage()
   return 0.0;
 }
 
-void BaseExcModel::setGenerator(BaseGenModel *generator)
+void BaseExcModel::setGenerator(BaseEMTGenModel *generator)
 {
   p_gen = generator;
 }
 
-BaseGenModel* BaseExcModel::getGenerator()
+BaseEMTGenModel* BaseExcModel::getGenerator()
 {
   return p_gen;
 }

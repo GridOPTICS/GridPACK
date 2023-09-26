@@ -39,6 +39,7 @@ add_library(gridpack_emt_module
   base_classes/base_gen_model.cpp
   base_classes/base_exc_model.cpp
   base_classes/base_gov_model.cpp
+  base_classes/base_load_model.cpp
   model_classes/gencls.cpp
 )
 
@@ -69,6 +70,7 @@ install(FILES
   base_classes/base_gen_model.hpp
   base_classes/base_exc_model.hpp
   base_classes/base_gov_model.hpp
+  base_classes/base_load_model.hpp
   DESTINATION include/gridpack/applications/modules/emt/base_classes
 )
 
