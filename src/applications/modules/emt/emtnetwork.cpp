@@ -19,6 +19,7 @@
 #include <gridpack/utilities/complex.hpp>
 #include <constants.hpp>
 #include <gridpack/math/dae_solver.hpp>
+#include <model_classes/gencls.hpp>
 
 /**
  *  Simple constructor
@@ -289,8 +290,13 @@ void EmtBus::load(const
 
       std::string type = util.trimQuotes(model);
       util.toUpper(type);
- 
 
+      if(type == "GENCLS") {
+        Gencls *clgen;
+        clgen = new Gencls;
+        p_gen[i] = clgen;
+      }
+      
       // Read generator data stored in data collection objects
       p_gen[i]->load(data,i); // load data
       has_ex = p_gen[i]->hasExciter();
@@ -648,6 +654,52 @@ void EmtBranch::matrixGetValues(gridpack::math::Matrix &matrix)
 {
 
 }
+
+/**
+ * Set value of global index for corresponding local index
+ * @param ielem local index for element
+ * @param idx global index of element
+ */
+void EmtBranch::vectorSetElementIndex(int ielem, int idx)
+{
+}
+
+/**
+ * Return a set of element indices that map the local indices to
+ * global indices
+ * @param idx array of global indices
+ */
+void EmtBranch::vectorGetElementIndices(int *idx)
+{
+
+}
+
+/**
+ * Return number elements contributed by this bus
+ * @return number of elements
+ */
+int EmtBranch::vectorNumElements() const
+{
+  return p_nvar;
+}
+
+/**
+ * Return the elements and their global indices in the vector
+ * @param values array of element values
+ * @param idx array of element indices
+ */
+void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
+{
+}
+
+/**
+ * Set network elements based on values in vector
+ * @param array containing vector values
+ */
+void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
+{
+}
+
 
 
 /**
