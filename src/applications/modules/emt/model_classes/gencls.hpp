@@ -19,7 +19,7 @@
 #include <gridpack/include/gridpack.hpp>
 
 
-class Gencls: public BaseGenModel
+class Gencls: public BaseEMTGenModel
 {
    public:
   /**

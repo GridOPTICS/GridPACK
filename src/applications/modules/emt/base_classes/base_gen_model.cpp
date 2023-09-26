@@ -2,7 +2,7 @@
 #include "base_gen_model.hpp"
 #include <gridpack/include/gridpack.hpp>
 
-BaseGenModel::BaseGenModel(void)
+BaseEMTGenModel::BaseEMTGenModel(void)
 {
   pg = 0.0;
   qg = 0.0;
@@ -18,7 +18,7 @@ BaseGenModel::BaseGenModel(void)
   p_hasGovernor = false;
 }
 
-BaseGenModel::~BaseGenModel(void)
+BaseEMTGenModel::~BaseEMTGenModel(void)
 {
 }
 
@@ -26,7 +26,7 @@ BaseGenModel::~BaseGenModel(void)
  * Set Jacobian values
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool BaseGenModel::setJacobian(gridpack::ComplexType **values)
+bool BaseEMTGenModel::setJacobian(gridpack::ComplexType **values)
 {
   return false;
 }
@@ -35,9 +35,9 @@ bool BaseGenModel::setJacobian(gridpack::ComplexType **values)
  * Load parameters from DataCollection object into generator model
  * @param data collection of generator parameters from input files
  * @param index of generator on bus
- * TODO: might want to move this functionality to BaseGeneratorModel
+ * TODO: might want to move this functionality to BaseEMTGeneratorModel
  */
-void BaseGenModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
+void BaseEMTGenModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx)
 {
   data->getValue(BUS_NUMBER, &busnum);
@@ -58,7 +58,7 @@ void BaseGenModel::load(const boost::shared_ptr<gridpack::component::DataCollect
  * Initialize generator model before calculation
  * @param [output] values - array where initialized generator variables should be set
  */
-void BaseGenModel::init(gridpack::ComplexType *values)
+void BaseEMTGenModel::init(gridpack::ComplexType *values)
 {
 }
 
@@ -70,7 +70,7 @@ void BaseGenModel::init(gridpack::ComplexType *values)
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool BaseGenModel::serialWrite(char *string, const int bufsize,
+bool BaseEMTGenModel::serialWrite(char *string, const int bufsize,
 			       const char *signal)
 {
   return false;
@@ -81,7 +81,7 @@ bool BaseGenModel::serialWrite(char *string, const int bufsize,
  * @param signal character string used to determine behavior
  * @param string buffer that contains output
  */
-void BaseGenModel::write(const char* signal, char* string)
+void BaseEMTGenModel::write(const char* signal, char* string)
 {
 }
 
@@ -91,7 +91,7 @@ void BaseGenModel::write(const char* signal, char* string)
  * @param [output] ib - phase b current
  * @param [output] ic - phase c current
  */
-void BaseGenModel::getCurrent(double *ia, double *ib, double *ic)
+void BaseEMTGenModel::getCurrent(double *ia, double *ib, double *ic)
 {
   *ia = *ib = *ic = 0.0;
 }
@@ -100,7 +100,7 @@ void BaseGenModel::getCurrent(double *ia, double *ib, double *ic)
  * Get the field current
  * @param 
  */
-double BaseGenModel::getFieldCurrent()
+double BaseEMTGenModel::getFieldCurrent()
 {
   return 0.0;
 }
@@ -109,7 +109,7 @@ double BaseGenModel::getFieldCurrent()
  * Return the rotor speed deviation
  * @param 
  */
-double BaseGenModel::getRotorSpeedDeviation()
+double BaseEMTGenModel::getRotorSpeedDeviation()
 {
   return 0.0;
 }
@@ -118,40 +118,40 @@ double BaseGenModel::getRotorSpeedDeviation()
  * Return the location of speed rotor speed deviation variable in the bus array
  * @param rotor speed deviation location
 */
-int BaseGenModel::getRotorSpeedDeviationLocation()
+int BaseEMTGenModel::getRotorSpeedDeviationLocation()
 {
   return 0;
 }
 
-void BaseGenModel::setExciter(boost::shared_ptr<BaseExcModel> &exciter)
+void BaseEMTGenModel::setExciter(boost::shared_ptr<BaseExcModel> &exciter)
 { 
   p_exciter = exciter;
   p_hasExciter = true;
 }
 
 
-boost::shared_ptr<BaseExcModel> BaseGenModel::getExciter()
+boost::shared_ptr<BaseExcModel> BaseEMTGenModel::getExciter()
 {
   return p_exciter;
 }
 
-bool BaseGenModel::hasExciter()
+bool BaseEMTGenModel::hasExciter()
 {
     return p_hasExciter;
 }
 
-void BaseGenModel::setGovernor(boost::shared_ptr<BaseGovModel> &governor)
+void BaseEMTGenModel::setGovernor(boost::shared_ptr<BaseGovModel> &governor)
 { 
   p_governor = governor;
   p_hasGovernor = true;
 }
 
-boost::shared_ptr<BaseGovModel> BaseGenModel::getGovernor()
+boost::shared_ptr<BaseGovModel> BaseEMTGenModel::getGovernor()
 {
   return p_governor;
 }
 
-bool BaseGenModel::hasGovernor()
+bool BaseEMTGenModel::hasGovernor()
 {
     return p_hasGovernor;
 }
@@ -160,7 +160,7 @@ bool BaseGenModel::hasGovernor()
  * Get number of matrix values contributed by generator
  * @return number of matrix values
  */
-int BaseGenModel::matrixNumValues()
+int BaseEMTGenModel::matrixNumValues()
 {
   return 0;
 }
@@ -169,7 +169,7 @@ int BaseGenModel::matrixNumValues()
  * Return values from a matrix block
  * @param matrix - the Jacobian matrix
  */
-void BaseGenModel::matrixGetValues(gridpack::math::Matrix &matrix)
+void BaseEMTGenModel::matrixGetValues(gridpack::math::Matrix &matrix)
 {
 }
 
@@ -181,7 +181,7 @@ void BaseGenModel::matrixGetValues(gridpack::math::Matrix &matrix)
  * for e.g., the entries in the residual vector from the generator
  * object
    */
-void BaseGenModel::vectorGetValues(gridpack::ComplexType *values)
+void BaseEMTGenModel::vectorGetValues(gridpack::ComplexType *values)
 {
 }
 
@@ -193,7 +193,7 @@ void BaseGenModel::vectorGetValues(gridpack::ComplexType *values)
  * to the generator object,
  * for e.g., the state vector values for this generator
  */
-void BaseGenModel::setValues(gridpack::ComplexType *values)
+void BaseEMTGenModel::setValues(gridpack::ComplexType *values)
 {
 }
 

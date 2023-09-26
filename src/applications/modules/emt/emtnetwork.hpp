@@ -239,7 +239,7 @@ private:
   
   int    p_rank;
   
-  BaseGenModel **p_gen;    // Generator model
+  BaseEMTGenModel **p_gen;    // Generator model
   int           *p_neqsgen; // Number of equations for each generator
   int           *p_neqsexc; // Number of equations for each exciter 
   int           *p_neqsgov; // Number of equations for each governor 
