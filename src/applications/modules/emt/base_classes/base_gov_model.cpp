@@ -274,12 +274,12 @@ void BaseGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
 }
 
 
-void BaseGovModel::setGenerator(BaseGenModel *generator)
+void BaseGovModel::setGenerator(BaseEMTGenModel *generator)
 {
   p_gen = generator;
 }
 
-BaseGenModel* BaseGovModel::getGenerator(void)
+BaseEMTGenModel* BaseGovModel::getGenerator(void)
 {
   return p_gen;
 }

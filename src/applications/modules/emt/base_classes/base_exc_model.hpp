@@ -21,7 +21,7 @@
 #include <base_gen_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
-class BaseGenModel; // Forward declaration for BaseGenModel
+class BaseEMTGenModel; // Forward declaration for BaseGenModel
 
 class BaseExcModel : public gridpack::component::BaseComponent
 {
@@ -199,9 +199,9 @@ public:
    */
   virtual bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
 
-  void setGenerator(BaseGenModel* generator);
+  void setGenerator(BaseEMTGenModel* generator);
 
-  BaseGenModel* getGenerator();
+  BaseEMTGenModel* getGenerator();
 
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
@@ -258,7 +258,7 @@ protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
-  BaseGenModel* p_gen; // Generator model
+  BaseEMTGenModel* p_gen; // Generator model
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           nxexc;    /** Number of variables for the exciter model */
   int           p_busoffset; /** Starting location for bus variables in the local state vector */
