@@ -8,12 +8,15 @@ Gencls::Gencls(void)
   p_dw    = 0.0;
   p_deltadot = 0.0;
   p_dwdot    = 0.0;
-  p_Rs    = 0.0;
+  p_Rs    = 0.01;
+  p_L     = 0.01/OMEGA_S;
   p_H     = 0.0;
   p_D     = 0.0;
   p_Ep    = 0.0;
   p_Pm    = 0.0;
   p_Xdp   = 0.0;
+  
+  nxgen   = 5; // Number of variables for this model
 }
 
 Gencls::~Gencls(void)
@@ -53,7 +56,8 @@ void Gencls::init(gridpack::ComplexType* values)
   Pg = pg/sbase;
   Qg = qg/sbase;
 
-  Vm = sqrt(VD*VD + VQ*VQ);
+  VD = Vm0*cos(Va0);
+  VQ = Vm0*sin(Va0);
 
   IGD = (VD*Pg + VQ*Qg)/(Vm*Vm);
   IGQ = (VQ*Pg - VD*Qg)/(Vm*Vm);
@@ -65,8 +69,9 @@ void Gencls::init(gridpack::ComplexType* values)
 	
   values[0] = delta;
   values[1] = dw;
-
+ 
   printf("Pg = %f, Qg = %f, VD = %f, VQ = %f, Vm = %f, IGD = %f, IGQ = %f, delta = %f, p_Ep = %f, p_Pm = %f, dw = %f\n", Pg, Qg, VD, VQ, Vm, IGD, IGQ, delta, p_Ep, p_Pm, dw);
+
 }
 
 /**
@@ -82,11 +87,6 @@ bool Gencls::serialWrite(char *string, const int bufsize,const char *signal)
   return false;
 }
 
-double Gencls::getAngle(void)
-{
-  return p_delta;
-}
-
 /**
  * Write out generator state
  * @param signal character string used to determine behavior
@@ -94,16 +94,6 @@ double Gencls::getAngle(void)
  */
 void Gencls::write(const char* signal, char* string)
 {
-}
-
-/**
- *  Set the number of variables for this generator model
- *  @param [output] number of variables for this model
- */
-bool Gencls::vectorSize(int *nvar) const
-{
-  *nvar = 2;
-  return true;
 }
 
 /**
@@ -131,7 +121,7 @@ void Gencls::setValues(gridpack::ComplexType *values)
  * @return: false if generator does not contribute
  *        vector element
  */
-bool Gencls::vectorValues(gridpack::ComplexType *values)
+void Gencls::vectorGetValues(gridpack::ComplexType *values)
 {
   int delta_idx = 0, dw_idx = 1;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
@@ -145,21 +135,37 @@ bool Gencls::vectorValues(gridpack::ComplexType *values)
     values[dw_idx]    = (p_Pm - VD*p_Ep*sin(p_delta)/p_Xdp + VQ*p_Ep*cos(p_delta)/p_Xdp - p_D*p_dw)/(2*p_H) - p_dwdot;
     //printf("classical: %f\t%f\n", real(values[delta_idx]),real(values[dw_idx]));
   }
-  
-  return true;
+
+}
+
+  /**
+   * Return the generator current injection 
+   * @param [output] ia - phase a current
+   * @param [output] ib - phase b current
+   * @param [output] ic - phase c current
+   */
+void Gencls::getCurrent(double *ia, double *ib, double *ic)
+{
+
 }
 
 /**
- * Return the generator current injection (in rectangular form) 
- * @param [output] IGD - real part of the generator current
- * @param [output] IGQ - imaginary part of the generator current
-*/
-void Gencls::getCurrent(double *IGD, double *IGQ)
+ * Get number of matrix values contributed by generator
+ * @return number of matrix values
+ */
+int Gencls::matrixNumValues()
 {
-  // Generator current injections in the network
-  *IGD += (-VQ + p_Ep*sin(p_delta))/p_Xdp;
-  *IGQ += ( VD - p_Ep*cos(p_delta))/p_Xdp;
 }
+
+
+/**
+ * Return values from a matrix block
+ * @param matrix - the Jacobian matrix
+ */
+void Gencls::matrixGetValues(gridpack::math::Matrix &matrix)
+{
+}
+
 
 /**
  * Set Jacobian values

@@ -81,34 +81,46 @@ class Gencls: public BaseGenModel
   void getCurrent(double *ia, double *ib, double *ic);
 
   /**
-   * Return the number of variables
-   * @param [output] nvar - number of variables
-   */
-  void getnvar(double *nvar);
-  
-  /**
    * Get number of matrix values contributed by generator
    * @return number of matrix values
    */
   int matrixNumValues();
 
   /**
- * Return values from a matrix block
- * @param nvals: number of values to be inserted
- * @param values: pointer to matrix block values
- * @param rows: pointer to matrix block rows
- * @param cols: pointer to matrix block cols
- */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
-      int *rows, int *cols);
+   * Return values from a matrix block
+   * @param matrix - the Jacobian matrix
+   */
+  void matrixGetValues(gridpack::math::Matrix &matrix);
 
-  
+  /**
+   * Return vector values from the generator model 
+   * @param values - array of returned values
+   *
+   * Note: This function is used to return the entries in vector,
+   * for e.g., the entries in the residual vector from the generator
+   * object
+   */
+  void vectorGetValues(gridpack::ComplexType *values);
+
+  /**
+   * Pass solution vector values to the generator object
+   * @param values - array of returned values
+   *
+   * Note: This function is used to pass the entries in vector
+   * to the generator object,
+   * for e.g., the state vector values for this generator
+   */
+  void setValues(gridpack::ComplexType *values);
+
   private:
     // Machine parameters
     double p_Rs; // Machine stator resistance
+    double p_Xdp;  // Machine transient reactance
     double p_L;  // Machine transient inductance
     double p_H;      // Machine Inertia constant
     double p_D;      // Machine damping coefficient
+
+    double VD, VQ; // Dq axis voltages
 
     // Internal constants
     double p_Pm;  // Mechanical power input
