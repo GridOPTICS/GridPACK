@@ -17,6 +17,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
+#include <gridpack/math/matrix.hpp>
 #include <base_exc_model.hpp>
 #include <base_gov_model.hpp>
 
@@ -93,6 +94,12 @@ public:
    * Copy over voltage from the bus
    */
   void setVoltage(double inva, double invb,double invc) {va = inva; vb = invb; vc = invc;}
+
+  /**
+   * Copy over initial bus voltage from the bus (power flow solution)
+   */
+  void setInitialVoltage(double inVm,double inVa) {Vm0 = inVm; Va0 = inVa;}
+
   
   /**
    * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
@@ -111,7 +118,7 @@ public:
    * Return the number of variables
    * @param [output] nvar - number of variables
    */
-  virtual void getnvar(double *nvar);
+  void getnvar(double *nvar) {*nvar = nxgen;}
 
   /**
    * Get number of matrix values contributed by generator
@@ -120,16 +127,31 @@ public:
   virtual int matrixNumValues();
 
   /**
- * Return values from a matrix block
- * @param nvals: number of values to be inserted
- * @param values: pointer to matrix block values
- * @param rows: pointer to matrix block rows
- * @param cols: pointer to matrix block cols
- */
-  virtual void matrixGetValues(int *nvals,gridpack::ComplexType *values,
-      int *rows, int *cols);
+   * Return values from a matrix block
+   * @param matrix - the Jacobian matrix
+   */
+  virtual void matrixGetValues(gridpack::math::Matrix &matrix);
 
+  /**
+   * Return vector values from the generator model 
+   * @param values - array of returned values
+   *
+   * Note: This function is used to return the entries in vector,
+   * for e.g., the entries in the residual vector from the generator
+   * object
+   */
+  virtual void vectorGetValues(gridpack::ComplexType *values);
 
+  /**
+   * Pass solution vector values to the generator object
+   * @param values - array of returned values
+   *
+   * Note: This function is used to pass the entries in vector
+   * to the generator object,
+   * for e.g., the state vector values for this generator
+   */
+  virtual void setValues(gridpack::ComplexType *values);
+  
   /**
    * Set the field current parameter inside the exciter
    * @param fldc value of the field current
@@ -197,6 +219,7 @@ public:
   int           status; /**< Machine status */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
+  double        Vm0,Va0; // Initial bus voltage and angle
   double        va, vb, vc; // Voltages
   bool          p_hasExciter; // Flag indicating whether this generator has exciter
   bool          p_hasGovernor; // Flag indicating whether this generator has governor
