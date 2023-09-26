@@ -31,7 +31,7 @@ Gencls::~Gencls(void)
  */
 void Gencls::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  BaseGenModel::load(data,idx); // load parameters in base generator model
+  BaseEMTGenModel::load(data,idx); // load parameters in base generator model
 
   // load parameters for the model type
   data->getValue(BUS_NUMBER, &bid);

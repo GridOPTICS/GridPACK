@@ -268,7 +268,7 @@ void EmtBus::load(const
   // Get number of generators incident on this bus
   data->getValue(GENERATOR_NUMBER, &p_ngen);
   if(p_ngen) {
-    p_gen = (BaseGenModel**)malloc(p_ngen*sizeof(BaseGenModel*));
+    p_gen = (BaseEMTGenModel**)malloc(p_ngen*sizeof(BaseEMTGenModel*));
     p_neqsgen = (int*)malloc(p_ngen*sizeof(int));
     p_neqsexc= (int*)malloc(p_ngen*sizeof(int));
     p_neqsgov= (int*)malloc(p_ngen*sizeof(int));
@@ -276,7 +276,7 @@ void EmtBus::load(const
     for(i=0; i < p_ngen; i++) {
       data->getValue(GENERATOR_STAT,&gstatus,i); // Generator status
       if(!gstatus) {
-        p_gen[i] = new BaseGenModel;
+        p_gen[i] = new BaseEMTGenModel;
         p_gen[i]->setGenStatus(0);
         continue;
       }
@@ -305,7 +305,7 @@ void EmtBus::load(const
       if (has_gv) p_gen[i]->getGovernor()->load(data,i); // load governor model
 
       // Set number of equations for this generator
-      p_gen[i]->vectorSize(&p_neqsgen[i]);
+      p_gen[i]->getnvar(&p_neqsgen[i]);
       // Set the offset for the first variable in the bus variable array 
       p_gen[i]->setBusOffset(p_nvar);
       if (has_ex) {

@@ -21,7 +21,7 @@
 #include <base_gen_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
-class BaseGenModel; // Forward declaration for BaseGenModel
+class BaseEMTGenModel; // Forward declaration for BaseGenModel
 
 class BaseGovModel : public gridpack::component::BaseComponent
 {
@@ -193,9 +193,9 @@ public:
    */
   virtual void setVcomp(double vtmp);
   
-  void setGenerator(BaseGenModel* generator);
+  void setGenerator(BaseEMTGenModel* generator);
 
-  BaseGenModel* getGenerator(void);
+  BaseEMTGenModel* getGenerator(void);
 
   /**
    * Set the offset for first variable for the governor in the array for all bus variables 
@@ -259,7 +259,7 @@ protected:
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
 
-  BaseGenModel *p_gen;
+  BaseEMTGenModel *p_gen;
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           nxgov; // Number of variables for the model (set by the derived class)
   int           p_busoffset; // Starting location of the bus variables in the local vector */
