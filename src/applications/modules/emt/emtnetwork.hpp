@@ -358,6 +358,39 @@ public:
   void matrixGetValues(gridpack::math::Matrix &matrix);
 
   /**
+   * Set value of global index for corresponding local index
+   * @param ielem local index for element
+   * @param idx global index of element
+   */
+  void vectorSetElementIndex(int ielem, int idx);
+
+  /**
+   * Return a set of element indices that map the local indices to
+   * global indices
+   * @param idx array of global indices
+   */
+  void vectorGetElementIndices(int *idx);
+
+  /**
+   * Return number elements contributed by this bus
+   * @return number of elements
+   */
+  int vectorNumElements() const;
+
+  /**
+   * Return the elements and their global indices in the vector
+   * @param values array of element values
+   * @param idx array of element indices
+   */
+  void vectorGetElementValues(gridpack::ComplexType *values, int *idx);
+
+  /**
+   * Set network elements based on values in vector
+   * @param array containing vector values
+   */
+  void vectorSetElementValues(gridpack::ComplexType *values);
+
+  /**
    * Write output from branches to standard out
    * @param string (output) string with information to be printed out
    * @param bufsize size of string buffer in bytes
