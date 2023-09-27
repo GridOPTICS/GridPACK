@@ -7,7 +7,7 @@ variables:
 
   GP_EXT_DEPS: /gridpack-dependencies
   LD_LIBRARY_PATH: ${GP_EXT_DEPS}/boost_${BOOST_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/ga-${GA_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
-
+  KUBERNETES_MEMORY_LIMIT: 4Gi
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
 build-container:
