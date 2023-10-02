@@ -26,6 +26,7 @@ build-container:
 
   script:
 
+    - env
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --build-arg http_proxy=$http_proxy
