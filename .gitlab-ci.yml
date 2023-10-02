@@ -33,11 +33,11 @@ build-container:
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
 
-  # rules:
+  rules:
 
-  #   - if: $CI_PIPELINE_SOURCE == "branch"
-  #     changes: [ "dockerfile", "install/*" ]
-  #   - if: $CI_PIPELINE_SOURCE == "tag"
+    - if: $CI_PIPELINE_SOURCE == "branch"
+      changes: [ "dockerfile", "install/*" ]
+    - if: $CI_PIPELINE_SOURCE == "tag"
 
 
 test:
@@ -50,5 +50,4 @@ test:
 
   script:
 
-    - echo "hello world"
-    # - ./install_gridpack.sh
+    - ./install_gridpack.sh
