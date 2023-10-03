@@ -9,7 +9,7 @@ variables:
   LD_LIBRARY_PATH: ${GP_EXT_DEPS}/boost_${BOOST_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/ga-${GA_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
 
   KUBERNETES_CPU_REQUEST: "2"
-  KUBERNETES_CPU_LIMIT: "4"
+  KUBERNETES_CPU_LIMIT: "2"
   KUBERNETES_MEMORY_REQUEST: "4Gi"
   KUBERNETES_MEMORY_LIMIT: "8Gi"
 
