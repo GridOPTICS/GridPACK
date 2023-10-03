@@ -82,23 +82,23 @@ public:
   /**
    * return the bolean indicating whether the gen is ON or OFF
    */
-  bool getGenStatus() {return status;}
+  bool getStatus() {return status;}
 
   /**
    * set the bolean indicating whether the gen is ON or OFF
    */
-  void setGenStatus(int gstatus) {status = gstatus;}
+  void setStatus(int gstatus) {status = gstatus;}
 
   
   /**
    * Copy over voltage from the bus
    */
-  void setVoltage(double inva, double invb,double invc) {va = inva; vb = invb; vc = invc;}
+  void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
 
   /**
    * Copy over initial bus voltage from the bus (power flow solution)
    */
-  void setInitialVoltage(double inVm,double inVa) {Vm0 = inVm; Va0 = inVa;}
+  void setInitialVoltage(double inVm,double inVa) {p_Vm0 = inVm; p_Va0 = inVa;}
 
   
   /**
@@ -219,8 +219,8 @@ public:
   int           status; /**< Machine status */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
-  double        Vm0,Va0; // Initial bus voltage and angle
-  double        va, vb, vc; // Voltages
+  double        p_Vm0,p_Va0; // Initial bus voltage and angle
+  double        p_va, p_vb, p_vc; // phase voltages
   bool          p_hasExciter; // Flag indicating whether this generator has exciter
   bool          p_hasGovernor; // Flag indicating whether this generator has governor
   boost::shared_ptr<BaseExcModel> p_exciter; // Exciter
