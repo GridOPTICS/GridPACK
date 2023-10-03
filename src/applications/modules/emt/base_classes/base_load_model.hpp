@@ -75,14 +75,14 @@ public:
   virtual void write(const char* signal, char* string);
   
   /**
-   * return the bolean indicating whether the gen is ON or OFF
+   * return the bolean indicating whether the load is ON or OFF
    */
-  bool getGenStatus() {return status;}
+  bool getStatus() {return status;}
 
   /**
-   * set the bolean indicating whether the gen is ON or OFF
+   * set the bolean indicating whether the load is ON or OFF
    */
-  void setGenStatus(int gstatus) {status = gstatus;}
+  void setStatus(int lstatus) {status = lstatus;}
 
   
   /**
@@ -188,7 +188,7 @@ public:
   double        va, vb, vc; // Voltages
 
   int           offsetb; /**< offset for the first variable for the load in the array for all bus variables */
-  int           nxload; /* Number of variables for the generator model */
+  int           nxload; /* Number of variables for the load model */
   int           p_busoffset; /** Offset for the bus variables in the local vector. Used only for events */
 
   std::vector<int>   p_rowidx; // global index for rows

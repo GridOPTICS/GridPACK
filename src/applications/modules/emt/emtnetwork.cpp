@@ -20,6 +20,9 @@
 #include <constants.hpp>
 #include <gridpack/math/dae_solver.hpp>
 #include <model_classes/gencls.hpp>
+#include <model_classes/constantimpedance.hpp>
+//#include <model_classes/lumpedline.hpp>
+
 
 /**
  *  Simple constructor
@@ -32,7 +35,8 @@ EmtBus::EmtBus(void)
   p_isolated = false;
   p_mode = NONE;
   p_vptr = NULL;
-  p_nvar = 3;
+  p_nvar = 0;
+  p_nvarbus = 0;
   p_neqsgen = NULL;
   p_neqsexc= NULL;
   p_neqsgov= NULL;
@@ -104,7 +108,7 @@ void EmtBus::setLocalOffset(int offset)
   p_offset = offset;
 
   for(i=0; i < p_ngen; i++) {
-    if(!p_gen[i]->getGenStatus()) continue;
+    if(!p_gen[i]->getStatus()) continue;
 
     p_gen[i]->setBusLocalOffset(offset);
       
@@ -127,7 +131,7 @@ void EmtBus::resetEventFlags()
   int i;
 
   for(i=0; i < p_ngen; i++) {
-    if(!p_gen[i]->getGenStatus()) continue;
+    if(!p_gen[i]->getStatus()) continue;
 
     p_gen[i]->resetEventFlags();
     
@@ -164,7 +168,7 @@ void EmtBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
   bool has_ex=false,has_gov=false;
 
   for(i=0; i < p_ngen; i++) {
-    if(!p_gen[i]->getGenStatus()) continue;
+    if(!p_gen[i]->getStatus()) continue;
 
     has_ex = p_gen[i]->hasExciter();
     if(has_ex) {
@@ -177,6 +181,96 @@ void EmtBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
   }
 }
 
+/**
+   Sets up the bus component
+
+   - Set up arrays and calculates number of variables
+**/
+void EmtBus::setup()
+{
+  int i,j;
+
+  p_nvar = 0; // Initialize number of variables
+  p_nvarbus = 0;
+  /* Check if there are any capactive shunts */
+  for(i=0; i < 3; i++) {
+    if(p_hasCapacitiveShunt) break;
+    for(j=0; j < 3; j++) {
+      if(abs(p_Cshunt[i][j]) > 1e-6) {
+	p_nvarbus += 3; // Bus has capacitive shunt
+	p_hasCapacitiveShunt = true;
+	break;
+      }
+    }
+  }
+
+  for(i=0; i < 3; i++) {
+    if(p_hasInductiveShunt) break;
+    for(j=0; j < 3; j++) {
+      if(abs(p_Lshunt[i][j]) > 1e-6) {
+	p_nvarbus += 3; // Bus also has inductive shunt
+	p_hasInductiveShunt = true;
+	break;
+      }
+    }
+  }
+
+  p_nvar += p_nvarbus;
+
+  // Set up generators
+  if(p_ngen) {
+    p_neqsgen = (int*)malloc(p_ngen*sizeof(int));
+    p_neqsexc= (int*)malloc(p_ngen*sizeof(int));
+    p_neqsgov= (int*)malloc(p_ngen*sizeof(int));
+  }
+
+  for(i=0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) {
+      p_neqsgen[i] = 0;
+      p_neqsexc[i] = 0;
+      p_neqsgov[i] = 0;
+    } else {
+
+      // Set number of equations for this generator
+      p_gen[i]->getnvar(&p_neqsgen[i]);
+      // Set the offset for the first variable in the bus variable array 
+      p_gen[i]->setBusOffset(p_nvar);
+
+      bool has_ex = p_gen[i]->hasExciter();
+      bool has_gv = p_gen[i]->hasGovernor();
+
+      if (has_ex) {
+        p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
+        p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
+      }
+      if (has_gv) {
+        p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+        p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
+      }
+      
+      /* Update number of variables for this bus */
+      p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
+    }
+  }
+
+  if(p_nload) {
+    p_neqsload = (int*)malloc(p_nload*sizeof(int));
+  }
+
+  for(i=0; i < p_nload; i++) {
+    if(!p_load[i]->getStatus()) {
+      p_neqsload[i] = 0;
+    } else {
+      // Get number of equations for this load
+      p_load[i]->getnvar(&p_neqsload[i]);
+      // Set the offset for the first variable in the bus variable array 
+      p_load[i]->setBusOffset(p_nvar);
+      
+      p_nvar += p_neqsload[i];
+    }
+  }
+}
+    	
 /**
  * Load values stored in DataCollection object into EmtBus object. The
  * DataCollection object will have been filled when the network was created
@@ -194,7 +288,7 @@ void EmtBus::load(const
   double pi=PI;
   int    i=0;
   double Pg, Qg,mbase,Rs,Xdp,H,D; // temp. variables to hold machine data
-  int    gstatus;
+  int    gstatus,lstatus;
   double delta,dw=0.0;
   double Pm,Ep;
   double IGD,IGQ; /* D and Q components of generator currents */
@@ -213,14 +307,14 @@ void EmtBus::load(const
 
   // Assume balanced conditions
   // Three phase voltages
-  double p_va = Vm*sin(Va);
-  double p_vb = Vm*sin(Va - 2*PI/3.0);
-  double p_vc = Vm*sin(Va + 2*PI/3.0);
+  double va = Vm*sin(Va);
+  double vb = Vm*sin(Va - 2*PI/3.0);
+  double vc = Vm*sin(Va + 2*PI/3.0);
 
   if(p_vptr) {
-    *p_vptr     = p_va;
-    *(p_vptr+1) = p_vb;
-    *(p_vptr+2) = p_vc;
+    *p_vptr     = va;
+    *(p_vptr+1) = vb;
+    *(p_vptr+2) = vc;
   }
 
   /* Save the voltage magnitude and angle so that we can use it later for building loads */
@@ -269,22 +363,16 @@ void EmtBus::load(const
   data->getValue(GENERATOR_NUMBER, &p_ngen);
   if(p_ngen) {
     p_gen = (BaseEMTGenModel**)malloc(p_ngen*sizeof(BaseEMTGenModel*));
-    p_neqsgen = (int*)malloc(p_ngen*sizeof(int));
-    p_neqsexc= (int*)malloc(p_ngen*sizeof(int));
-    p_neqsgov= (int*)malloc(p_ngen*sizeof(int));
 
     for(i=0; i < p_ngen; i++) {
       data->getValue(GENERATOR_STAT,&gstatus,i); // Generator status
       if(!gstatus) {
         p_gen[i] = new BaseEMTGenModel;
-        p_gen[i]->setGenStatus(0);
+        p_gen[i]->setStatus(0);
         continue;
       }
 
       p_gen[i] = NULL;
-      p_neqsgen[i] = 0;
-      p_neqsexc[i] = 0;
-      p_neqsgov[i] = 0;
       std::string model;
       data->getValue(GENERATOR_MODEL,&model,i);
 
@@ -303,34 +391,37 @@ void EmtBus::load(const
       has_gv = p_gen[i]->hasGovernor();
       if (has_ex) p_gen[i]->getExciter()->load(data,i); // load exciter data
       if (has_gv) p_gen[i]->getGovernor()->load(data,i); // load governor model
-
-      // Set number of equations for this generator
-      p_gen[i]->getnvar(&p_neqsgen[i]);
-      // Set the offset for the first variable in the bus variable array 
-      p_gen[i]->setBusOffset(p_nvar);
-      if (has_ex) {
-        p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
-        p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
-      }
-      if (has_gv) {
-        p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
-        p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
-      }
-
-      /* Update number of variables for this bus */
-      p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
     }
   }
 
   data->getValue(LOAD_NUMBER, &p_nload);
-  if(p_nload > 1) printf("Warning: More than one load detected on bus\n");
+  if(p_nload) {
+    p_load = (BaseEMTLoadModel**)malloc(p_nload*sizeof(BaseEMTLoadModel*));
+  }
   
   for(i=0; i < p_nload; i++) {
-    // Get active and reactive power load
-    data->getValue(LOAD_PL,&p_pl,i);
-    data->getValue(LOAD_QL,&p_ql,i);
-    p_pl /= p_sbase;
-    p_ql /= p_sbase;
+    data->getValue(LOAD_STATUS,&lstatus,i); // Generator status
+    if(!lstatus) {
+      p_load[i] = new BaseEMTLoadModel;
+      p_load[i]->setStatus(0);
+      continue;
+    }
+
+    std::string lmodel;
+    data->getValue(LOAD_MODEL,&lmodel,i);
+
+    if(lmodel.empty()) {
+      // No load model given, so use a R-L impedance model
+      Constantimpedance *ciload;
+      ciload = new Constantimpedance;
+      p_load[i] = ciload;
+    } else {
+      std::string type = util.trimQuotes(lmodel);
+      util.toUpper(type);
+    }
+
+    p_load[i]->load(data,i);
+
   }
 
 }
@@ -467,6 +558,12 @@ void EmtBus::setXCBuf(void *buf)
  */
 void EmtBus::vectorSetElementIndex(int ielem, int idx)
 {
+  if (p_vecidx.size() == 0) {
+    p_vecidx.resize(p_nvar);
+    int i;
+    for (i=0; i<p_nvar; i++) p_vecidx[i] = -1;
+  }
+  p_vecidx[ielem] = idx;
 }
 
 /**
@@ -476,7 +573,11 @@ void EmtBus::vectorSetElementIndex(int ielem, int idx)
  */
 void EmtBus::vectorGetElementIndices(int *idx)
 {
-
+  int size = p_vecidx.size();
+  int i;
+  for (i=0; i<size; i++) {
+    idx[i] = p_vecidx[i];
+  }
 }
 
 /**
@@ -495,6 +596,55 @@ int EmtBus::vectorNumElements() const
  */
 void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 {
+  bool has_ex=false, has_gv=false;
+  int i;
+  gridpack::ComplexType *x = values;
+  for(i=0; i < p_nvar; i++) {
+    idx[i] = p_vecidx[i];
+  }
+  if(p_mode == INIT_X) { /* Initialization of values */
+    int i;
+    double va = p_Vm0*sin(p_Va0);
+    double vb = p_Vm0*sin(p_Va0 - 2*PI/3.0);
+    double vc = p_Vm0*sin(p_Va0 + 2*PI/3.0);
+    
+    if(p_isolated) {
+      x[0] = va;
+      x[1] = vb;
+      x[2] = vc;
+
+      return;
+    }
+
+    x[0] = va;
+    x[1] = vb;
+    x[2] = vc;
+
+    if(p_hasInductiveShunt) {
+      /* Calculate the current in the inductive shunt */
+      double VR,VI;
+      VR = p_Vm0*cos(p_Va0);
+      VI = p_Vm0*sin(p_Va0);
+      gridpack::ComplexType V = gridpack::ComplexType(VR,VI);
+      gridpack::ComplexType S = gridpack::ComplexType(p_gl,p_bl);
+      gridpack::ComplexType Ishunt = S/V;
+      double Ishuntmag,Ishuntang;
+      Ishuntmag = abs(Ishunt);
+      Ishuntang = atan2(imag(Ishunt),real(Ishunt));
+
+      x[3] = Ishuntmag*sin(Ishuntang);
+      x[4] = Ishuntmag*sin(Ishuntang-2*PI/3.0);
+      x[5] = Ishuntmag*sin(Ishuntang+2*PI/3.0);
+    }
+
+    for(i=0; i < p_ngen; i++) {
+      if(!p_gen[i]->getStatus()) continue;
+
+      p_gen[i]->setVoltage(va,vb,vc);
+      p_gen[i]->setInitialVoltage(p_Vm0,p_Va0);
+      p_gen[i]->init(x);
+    }
+  }
 }
 
 /**
@@ -537,6 +687,10 @@ EmtBranch::~EmtBranch(void)
 {
 }
 
+void EmtBranch::setup()
+{
+
+}
 /**
  * Load values stored in DataCollection object into EmtBranch object. The
  * DataCollection object will have been filled when the network was created
@@ -550,7 +704,73 @@ EmtBranch::~EmtBranch(void)
 void EmtBranch::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  double pi=PI;
+  int    status,i;
+  std::string cktid;
+  double R,X, Bc;
 
+  data->getValue(BRANCH_NUM_ELEMENTS,&p_nparlines);
+
+  try {
+    if(p_nparlines > 1) {
+      throw(p_nparlines);
+    }
+  } catch(int nlines) {
+    std::cout << "Parallel lines not allowed\n";
+  }
+
+  for(i=0; i < p_nparlines; i++) {
+    //    LumpedLineModel *lumpedline;
+    //    lumpedpi = new LumpedLineModel;
+    //    p_impl[i] = lumpedline;
+
+    // Get line parameters
+    data->getValue(BRANCH_STATUS,&status,i);
+    data->getValue(BRANCH_CKT,&cktid,i);
+    // Positive sequence values
+    data->getValue(BRANCH_R,&R,i);
+    data->getValue(BRANCH_X,&X,i);
+    data->getValue(BRANCH_B,&Bc,i);
+
+    // Assuming zero sequence values as 3 times of +ve sequence
+    // we get the following phase matrices
+    double R1,L1,C1;
+    double R0,L0,C0;
+
+    if(abs(R) > 1e-6) {
+      hasResistance = true;
+    }
+
+    if(abs(X) > 1e-6) {
+      hasInductance = true;
+    }
+      
+    R1 = R; L1 = X/OMEGA_S; C1 = Bc/OMEGA_S;
+    R0 = 3*R1; L0 = 3*L1; C0 = 3*C1;
+
+    p_R[0][0] = p_R[1][1] = p_R[2][2] = R1 + R0;
+    p_R[0][1] = p_R[1][0] = R1;
+    p_R[0][2] = p_R[2][0] = R1;
+    p_R[1][2] = p_R[2][1] = R1;
+
+    p_L[0][0] = p_L[1][1] = p_L[2][2] = L1 + L0;
+    p_L[0][1] = p_L[1][0] = L1;
+    p_L[0][2] = p_L[2][0] = L1;
+    p_L[1][2] = p_L[2][1] = L1;
+
+    p_C[0][0] = p_C[1][1] = p_C[2][2] = C1 + C0;
+    p_C[0][1] = p_C[1][0] = C1;
+    p_C[0][2] = p_C[2][0] = C1;
+    p_C[1][2] = p_C[2][1] = C1;
+
+    /* Add Capacitive shunt to from and to buses */
+    EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
+    EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
+    busf->addLumpedLineCshunt(p_C,0.5);
+    bust->addLumpedLineCshunt(p_C,0.5);
+
+  }
+  
 }
 
 /**
@@ -662,6 +882,13 @@ void EmtBranch::matrixGetValues(gridpack::math::Matrix &matrix)
  */
 void EmtBranch::vectorSetElementIndex(int ielem, int idx)
 {
+  if (p_vecidx.size() == 0) {
+    p_vecidx.resize(p_nvar);
+    int i;
+    for (i=0; i<p_nvar; i++) p_vecidx[i] = -1;
+  }
+  p_vecidx[ielem] = idx;
+
 }
 
 /**
@@ -671,7 +898,11 @@ void EmtBranch::vectorSetElementIndex(int ielem, int idx)
  */
 void EmtBranch::vectorGetElementIndices(int *idx)
 {
-
+  int size = p_vecidx.size();
+  int i;
+  for (i=0; i<size; i++) {
+    idx[i] = p_vecidx[i];
+  }
 }
 
 /**

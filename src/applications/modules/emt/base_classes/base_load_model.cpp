@@ -45,10 +45,7 @@ void BaseEMTLoadModel::load(const boost::shared_ptr<gridpack::component::DataCol
     data->getValue(LOAD_PL,&pl,idx); // Load real power
     data->getValue(LOAD_QL,&ql,idx); // Load reactive power
 
-    mbase = sbase; // Machine base is same as sbase
-    
-    pl *= sbase;
-    ql *= sbase;
+    mbase = sbase; // Machine base is same as sbase    
   } else {
     pl = ql = mbase = 0.0;
   }

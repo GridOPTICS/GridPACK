@@ -40,38 +40,52 @@ void Gencls::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   data->getValue(GENERATOR_INERTIA_CONSTANT_H,&p_H,idx);
   data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&p_D,idx);
 
+  p_L = p_Xdp/OMEGA_S;
 }
 
 /**
  * Initialize generator model before calculation
  * @param [output] values - array where initialized generator variables should be set
  */
-void Gencls::init(gridpack::ComplexType* values)
+void Gencls::init(gridpack::ComplexType* xin)
 {
   double IGD,IGQ; // Machine currents in cartesian coordinates
   double Pg, Qg;  // Generator real and reactive power
-  double delta,dw=0.0;  // Initial machine speed deviation
-  double Vm;
+  double dw=0.0;  // Initial machine speed deviation
+  gridpack::ComplexType *x = xin+offsetb; // generator array starts from this location
 
   Pg = pg/sbase;
   Qg = qg/sbase;
 
-  VD = Vm0*cos(Va0);
-  VQ = Vm0*sin(Va0);
+  VD = p_Vm0*cos(p_Va0);
+  VQ = p_Vm0*sin(p_Va0);
 
-  IGD = (VD*Pg + VQ*Qg)/(Vm*Vm);
-  IGQ = (VQ*Pg - VD*Qg)/(Vm*Vm);
-  
-  delta = atan2(VQ + p_Xdp*IGD,VD-p_Xdp*IGQ);
+  gridpack::ComplexType V = gridpack::ComplexType(VD,VQ);
+  gridpack::ComplexType S = gridpack::ComplexType(Pg,Qg);
+  gridpack::ComplexType I = conj(S/V);
+  gridpack::ComplexType Z = gridpack::ComplexType(p_Rs,p_Xdp);
+  gridpack::ComplexType E = V + I*Z;
+  double delta = arg(E);
+  double Im = abs(I);
+  double Ia = arg(I);
 
-  p_Ep = sqrt(pow((VD - p_Xdp*IGQ),2) + pow((VQ + p_Xdp*IGD),2));
+  p_Ep = abs(E);
   p_Pm = Pg;
-	
-  values[0] = delta;
-  values[1] = dw;
- 
-  printf("Pg = %f, Qg = %f, VD = %f, VQ = %f, Vm = %f, IGD = %f, IGQ = %f, delta = %f, p_Ep = %f, p_Pm = %f, dw = %f\n", Pg, Qg, VD, VQ, Vm, IGD, IGQ, delta, p_Ep, p_Pm, dw);
 
+  double ia,ib,ic;
+
+  ia = Im*sin(Ia);
+  ib = Im*sin(Ia - 2*PI/3.0);
+  ic = Im*sin(Ia + 2*PI/3.0);
+
+  double Pg1 = p_va*ia + p_vb*ib + p_vc*ic;
+	
+  x[0] = delta;
+  x[1] = dw;
+  x[2] = ia;
+  x[3] = ib;
+  x[4] = ic;
+ 
 }
 
 /**
