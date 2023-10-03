@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# installs GridPACK and its python wrappter
+# installs GridPACK and its python wrapper
 # gridPACK is built in src/build and installed to src/install
 # run this from the top level GridPACK directory
 
@@ -71,13 +71,19 @@ function install_gridpack_python {
 
   pushd python || exit
 
-  export RHEL_OPENMPI_HACK=yes
+  os_id=$(source /etc/os-release; echo "$ID")
+  if [[ $os_id == "rhel" ]] || [[ $os_id == "centos" ]]; then
+    export RHEL_OPENMPI_HACK=yes
+  fi
 
   # set python executable path
   python_exe=$(which python || which python3)
 
   # remove existing build dir
   rm -rf build
+
+  # export GRIDPACK_DIR
+  export GRIDPACK_DIR="${gridpack_install_dir}"
 
   # build
   echo "Building GridPACK python wrapper"
@@ -93,7 +99,7 @@ function install_gridpack_python {
 
   # install
   echo "Installing GridPACK python wrapper"
-  ${python_exe} setup.py install --home="$GRIDPACK_DIR"
+  ${python_exe} setup.py install --home="$gridpack_install_dir"
 
   popd || exit
 
