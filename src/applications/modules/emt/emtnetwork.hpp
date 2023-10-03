@@ -23,6 +23,7 @@
 #include <base_classes/base_gen_model.hpp>
 #include <base_classes/base_exc_model.hpp>
 #include <base_classes/base_gov_model.hpp>
+#include <base_classes/base_load_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
 class EmtBus: public gridpack::component::BaseBusComponent 
@@ -184,6 +185,11 @@ public:
   int getXCBufSize(void);
   
   void setXCBuf(void*);
+
+  /*
+    setup - set up routine for the bus component
+  */
+  void setup(void);
   
   /* Set whether the element is local or ghosted */
   void setGhostStatus(bool isghost) { p_isghost = isghost; }
@@ -197,6 +203,25 @@ public:
   void setLocalOffset(int offset);
 
   void resetEventFlags(void);
+
+  /**
+    AddLumpedLineCshunt - Add capacitive shunt of lumped line model
+                         at this bus
+    @param [input] Cshunt - the capacitive shunt matrix 3 X 3
+    @param [input] frac   - the fraction of capacitive shunt that should
+                            be added
+    Note: The capacitive shunt added to the bus equals frac*Cshunt
+  **/
+     
+  void addLumpedLineCshunt(double Cshunt[3][3], double frac)
+  {
+    int i,j;
+    for(i=0; i < 3; i++) {
+      for(j=0; j < 3; j++) {
+	p_Cshunt[i][j] += frac*Cshunt[i][j];
+      }
+    }
+  }
   
 private:
   // Anything declared here should be set in the Archive class in exactly the same order!!
@@ -212,7 +237,8 @@ private:
   bool   p_isolated;   // flag for isolated bus
   EMTMode p_mode; // factory mode
   double p_TSshift;  // shift value provided by TSIJacobian. 
-  int    p_nvar;      // Number of variables for this bus
+  int    p_nvar;      // Total number of variables for this bus (includes gen, exc, etc.)
+  int    p_nvarbus;   // Only the variables for the bus (no component variables included)
   int    p_offset; // Offset for the starting location for this bus's variables in the state vector (array)
 
   // EMT data
@@ -240,6 +266,8 @@ private:
   int    p_rank;
   
   BaseEMTGenModel **p_gen;    // Generator model
+  BaseEMTLoadModel **p_load;  // Load model
+  int           *p_neqsload; // Number of equations for each load
   int           *p_neqsgen; // Number of equations for each generator
   int           *p_neqsexc; // Number of equations for each exciter 
   int           *p_neqsgov; // Number of equations for each governor 
@@ -266,7 +294,7 @@ private:
       & p_rank;
   }  
   
-}; // End of DSBus
+}; // End of EmtBus
 
 class EmtBranch
   : public gridpack::component::BaseBranchComponent {
@@ -399,6 +427,12 @@ public:
    * @return true if branch is contributing string to output, false otherwise
    */
   bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
+
+  /*
+    setup - set up routine for the branch component
+  */
+  void setup(void);
+
   
   /* Set whether the element is local or ghosted */
   void setGhostStatus(bool isghost) { p_isghost = isghost; }
@@ -410,15 +444,24 @@ private:
   int p_nparlines; // Number of parallel lines
   std::vector<int> p_status; // Status of the lines
   std::vector<std::string> p_cktid; // circuit id
-  int    p_nvar;      // Number of variables for this branch  
+  int  p_nvar;      // Number of variables for this branch  
   int p_mode;
   bool p_isghost; // Local or ghosted element
   int  p_rank;
 
-  // Generalized mapper interface
+  // Used by generalized mapper interface
   std::vector<int>    p_rowidx;   // array holding row indices
   std::vector<int>    p_colidx;   // array holding column indices
-  int    p_num_vals;   // total number of matrix elements returned by branch
+  std::vector<int>    p_vecidx;   // array holding vector indices
+  int                 p_num_vals; // total number of matrix elements returned by bus
+
+  double p_R[3][3];
+  double p_L[3][3];
+  double p_C[3][3];
+  bool   hasResistance;
+  bool   hasInductance;
+
+  EmtBranch *p_impl;
   
   friend class boost::serialization::access;
   

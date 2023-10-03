@@ -48,9 +48,9 @@ class EmtFactory
   void setTSshift(double);
 
   /** 
-    Initialize components
+    Set up components
   */
-  void initialize(void);
+  void setup(void);
   
   /**
    * Set events 

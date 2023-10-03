@@ -73,7 +73,7 @@ void EmtFactory::resetEventFlags()
   }
 }
 
-void EmtFactory::initialize(void) 
+void EmtFactory::setup(void) 
 {
   int numBuses = p_network->numBuses();
   int numBranches = p_network->numBranches();
@@ -83,19 +83,19 @@ void EmtFactory::initialize(void)
   
   for(i=0; i < numBuses; i++) {
     isactive = p_network->getActiveBus(i);
-    int extbusnum = p_network->getOriginalBusIndex(i);
     EmtBus* emtbus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
     emtbus->setGhostStatus(!isactive);
     emtbus->setRank(rank);
+    emtbus->setup();
   }
 
   for(i=0; i < numBranches; i++) {
     int idxf,idxt;
     isactive = p_network->getActiveBranch(i);
-    p_network->getOriginalBranchEndpoints(i,&idxf,&idxt);
     EmtBranch* emtbranch = dynamic_cast<EmtBranch*>(p_network->getBranch(i).get());
     emtbranch->setGhostStatus(!isactive);
     emtbranch->setRank(rank);
+    emtbranch->setup();
   }
 }
 

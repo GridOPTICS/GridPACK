@@ -249,13 +249,15 @@ void Emt::setup()
   /* Create factory */
   p_factory = new EmtFactory(emt_network);
 
+  /* Set up connectivity information */
+  p_factory->setComponents();
+
   /* Load data from Data Collection objects to Bus and Branch components */
   p_factory->load();
 
-  /* Set up connectivity information */
-  p_factory->setComponents();
-  /* Set up ghost/local status */
-  p_factory->initialize();
+  /* Set up buses and branches */
+  p_factory->setup();
+  
   // Set up bus data exchange buffers.
   p_factory->setExchange();
   if(!rank()) printf("Emt:Finished setting up factory\n");

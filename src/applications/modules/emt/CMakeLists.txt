@@ -41,6 +41,7 @@ add_library(gridpack_emt_module
   base_classes/base_gov_model.cpp
   base_classes/base_load_model.cpp
   model_classes/gencls.cpp
+  model_classes/constantimpedance.cpp
 )
 
 target_link_libraries(gridpack_emt_module
@@ -76,6 +77,7 @@ install(FILES
 
 install(FILES
   model_classes/gencls.hpp
+  model_classes/constantimpedance.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )
 
