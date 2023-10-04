@@ -46,6 +46,7 @@ function install_gridpack {
     -D CMAKE_BUILD_TYPE:STRING=Debug \
     -D BUILD_SHARED_LIBS=YES \
     -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE \
+    -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
     ..
 
   # install
