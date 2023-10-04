@@ -99,7 +99,7 @@ function install_gridpack_python {
   mkdir -p "${py_lib}"
 
   # add lib to python path
-  export PYTHONPATH="${py_lib}:${PYTHONPATH}"
+  export PYTHONPATH="${py_lib}${PYTHONPATH:+:$PYTHONPATH}"
 
   # install
   echo "Installing GridPACK python wrapper"
