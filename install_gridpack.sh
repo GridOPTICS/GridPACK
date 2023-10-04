@@ -51,7 +51,7 @@ function install_gridpack {
 
   # install
   echo "Installing GridPACK"
-  make -j "$(nproc)" install
+  make -j "${MAKE_JOBS:-$(nproc)}" install
 
   popd || exit
 
@@ -72,7 +72,10 @@ function install_gridpack_python {
 
   pushd python || exit
 
-  os_id=$(source /etc/os-release; echo "$ID")
+  os_id=$(
+    source /etc/os-release
+    echo "$ID"
+  )
   if [[ $os_id == "rhel" ]] || [[ $os_id == "centos" ]]; then
     export RHEL_OPENMPI_HACK=yes
   fi

@@ -46,6 +46,10 @@ build-gridpack:
 
   image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
 
+  variables:
+
+    MAKE_JOBS: "2"
+
   needs:
 
     - job: build-container
