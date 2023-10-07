@@ -7,8 +7,6 @@
 /**
  * @file   emtnetwork.cpp
  * @brief  EMT network implementation
- * 
- * 
  */
 // -------------------------------------------------------------
 
@@ -191,13 +189,12 @@ void EmtBus::setup()
   int i,j;
 
   p_nvar = 0; // Initialize number of variables
-  p_nvarbus = 0;
+  p_nvarbus = 3;
   /* Check if there are any capactive shunts */
   for(i=0; i < 3; i++) {
     if(p_hasCapacitiveShunt) break;
     for(j=0; j < 3; j++) {
       if(abs(p_Cshunt[i][j]) > 1e-6) {
-	p_nvarbus += 3; // Bus has capacitive shunt
 	p_hasCapacitiveShunt = true;
 	break;
       }
@@ -644,6 +641,14 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       p_gen[i]->setInitialVoltage(p_Vm0,p_Va0);
       p_gen[i]->init(x);
     }
+
+    for(i=0; i < p_nload; i++) {
+      if(!p_load[i]->getStatus()) continue;
+
+      p_load[i]->setVoltage(va,vb,vc);
+      p_load[i]->setInitialVoltage(p_Vm0,p_Va0);
+      p_load[i]->init(x);
+    }
   }
 }
 
@@ -689,7 +694,15 @@ EmtBranch::~EmtBranch(void)
 
 void EmtBranch::setup()
 {
+  int i;
+  p_nvar = 0;
 
+  for(i = 0; i < p_nparlines; i++) {
+    p_localoffset.push_back(p_nvar);
+    if(!p_status[i]) continue;
+
+    p_nvar += 3;
+  }
 }
 /**
  * Load values stored in DataCollection object into EmtBranch object. The
@@ -732,6 +745,11 @@ void EmtBranch::load(
     data->getValue(BRANCH_X,&X,i);
     data->getValue(BRANCH_B,&Bc,i);
 
+    p_status.push_back(status);
+    p_cktid.push_back(cktid);
+    p_lineR.push_back(R);
+    p_lineX.push_back(X);
+    
     // Assuming zero sequence values as 3 times of +ve sequence
     // we get the following phase matrices
     double R1,L1,C1;
@@ -921,6 +939,48 @@ int EmtBranch::vectorNumElements() const
  */
 void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 {
+  int i;
+  gridpack::ComplexType *x = values;
+  for(i=0; i < p_nvar; i++) {
+    idx[i] = p_vecidx[i];
+  }
+  if(p_mode == INIT_X) { /* Initialization of values */
+    for(i=0; i < p_nparlines; i++) {
+      if(!p_status[i]) continue;
+
+      EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
+      EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
+
+      double Vmf,Vaf,Vmt,Vat;
+      double VDf,VQf,VDt,VQt;
+      busf->getInitialVoltage(&Vmf,&Vaf);
+      bust->getInitialVoltage(&Vmt,&Vat);
+
+      VDf = Vmf*cos(Vaf);
+      VQf = Vmf*sin(Vaf);
+      VDt = Vmt*cos(Vat);
+      VQt = Vmt*sin(Vat);
+
+      gridpack::ComplexType Vf = gridpack::ComplexType(VDf,VQf);
+      gridpack::ComplexType Vt = gridpack::ComplexType(VDt,VQt);
+
+      gridpack::ComplexType Zline = gridpack::ComplexType(p_lineR[i],p_lineX[i]);
+
+      gridpack::ComplexType Iline = (Vf - Vt)/Zline;
+
+      double Ilinem,Ilinea;
+
+      Ilinem = abs(Iline);
+      Ilinea = atan2(imag(Iline),real(Iline));
+
+      x += p_localoffset[i];
+
+      x[0] = Ilinem*sin(Ilinea);
+      x[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0);
+      x[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
+
+    }
+  }
 }
 
 /**

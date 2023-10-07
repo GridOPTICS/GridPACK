@@ -45,7 +45,7 @@ void Gencls::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 
 /**
  * Initialize generator model before calculation
- * @param [output] values - array where initialized generator variables should be set
+ * @param [output] xin - array where initialized generator variables should be set
  */
 void Gencls::init(gridpack::ComplexType* xin)
 {
@@ -78,7 +78,7 @@ void Gencls::init(gridpack::ComplexType* xin)
   ib = Im*sin(Ia - 2*PI/3.0);
   ic = Im*sin(Ia + 2*PI/3.0);
 
-  double Pg1 = p_va*ia + p_vb*ib + p_vc*ic;
+  double p_Pm = (p_va*ia + p_vb*ib + p_vc*ic)*(2.0/3.0);
 	
   x[0] = delta;
   x[1] = dw;
