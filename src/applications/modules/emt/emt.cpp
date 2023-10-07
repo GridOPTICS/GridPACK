@@ -265,15 +265,19 @@ void Emt::setup()
   // Create bus data exchange
   emt_network->initBusUpdate();
 
-  /* Create mappers and vectors, matrices */
+  /* Set mode for initializing vector X */
   p_factory->setMode(INIT_X);
 
+  /* Create mapper for vector */
   p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork>(emt_network);
 
+  /* Create solution vector */
   p_X = p_VecMapper->mapToVector();
 
+  /* Create mapper for matrix */
   p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
 
+  /* Jacobian matrix */
   p_J = p_MatMapper->createMatrix();
 
   if(!rank()) printf("Emt:Finished setting up mappers\n");

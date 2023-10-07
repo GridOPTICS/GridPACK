@@ -93,7 +93,7 @@ public:
   /**
    * Copy over initial bus voltage from the bus (power flow solution)
    */
-  void setInitialVoltage(double inVm,double inVa) {Vm0 = inVm; Va0 = inVa;}
+  void setInitialVoltage(double inVm,double inVa) {p_Vm0 = inVm; p_Va0 = inVa;}
 
   
   /**
@@ -184,7 +184,7 @@ public:
   int           status; /**< Load status */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
-  double        Vm0,Va0; // Initial bus voltage and angle
+  double        p_Vm0,p_Va0; // Initial bus voltage and angle
   double        va, vb, vc; // Voltages
 
   int           offsetb; /**< offset for the first variable for the load in the array for all bus variables */
