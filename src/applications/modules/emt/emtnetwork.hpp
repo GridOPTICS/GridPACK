@@ -173,7 +173,15 @@ public:
    * @param double vc - phase c voltage
    */
   void getVoltages(double*,double*,double*) const;
-  
+
+  /**
+   *  getInitialVoltage - Get the initial voltage
+   *  @param[output] double Vm - voltage magnitude
+   *  @param[output] double Va - voltage angle
+   *
+   * Returns the initial (t=0) voltage magnitude and angle for the bus
+   */
+  void getInitialVoltage(double *Vm, double *Va) { *Vm = p_Vm0; *Va = p_Va0;}
   /**
      Set the shift value provided by TS
   */
@@ -444,6 +452,9 @@ private:
   int p_nparlines; // Number of parallel lines
   std::vector<int> p_status; // Status of the lines
   std::vector<std::string> p_cktid; // circuit id
+  std::vector<int> p_localoffset; // local offset used for inserting/retrieving values from vector
+  std::vector<double> p_lineR; // Line resistance
+  std::vector<double> p_lineX; // Line reactance
   int  p_nvar;      // Number of variables for this branch  
   int p_mode;
   bool p_isghost; // Local or ghosted element
