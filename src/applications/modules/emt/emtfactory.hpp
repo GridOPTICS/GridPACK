@@ -43,7 +43,12 @@ class EmtFactory
     ~EmtFactory() {}
 
   /**
-   * Set the shift value provided by TS onto bus components 
+   * setTime - set the current time onto bus and branch components
+   */
+  void setTime(double);
+  
+  /**
+   * Set the shift value provided by TS onto bus and branch components 
    */
   void setTSshift(double);
 

@@ -117,15 +117,20 @@ void Gencls::write(const char* signal, char* string)
 */
 void Gencls::setValues(gridpack::ComplexType *values)
 {
+  gridpack::ComplexType *x = values+offsetb; // generator array starts from this location
+
   if(p_mode == XVECTOBUS) {
-    p_delta = real(values[0]);
-    p_dw    = real(values[1]);
+    p_delta = real(x[0]);
+    p_dw    = real(x[1]);
+    p_i[0]  = real(x[2]);
+    p_i[1]  = real(x[3]);
+    p_i[2]  = real(x[4]);
   } else if(p_mode == XDOTVECTOBUS) {
-    p_deltadot = real(values[0]);
-    p_dwdot    = real(values[1]);
-  } else if(p_mode == XVECPRETOBUS) {
-    p_deltaprev = real(values[0]);
-    p_dwprev = real(values[1]);
+    p_deltadot = real(x[0]);
+    p_dwdot    = real(x[1]);
+    p_idot[0]  = real(x[2]);
+    p_idot[1]  = real(x[3]);
+    p_idot[2]  = real(x[4]);
   } 
 }
 
@@ -140,9 +145,6 @@ void Gencls::vectorGetValues(gridpack::ComplexType *values)
   int delta_idx = 0, dw_idx = 1;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    //values[delta_idx] = values[dw_idx] = 0.0;
-    values[delta_idx] = p_delta - p_deltaprev; 
-    values[dw_idx] = p_dw - p_dwprev;
   } else if(p_mode == RESIDUAL_EVAL) {
     // Generator equations
     values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
@@ -160,7 +162,9 @@ void Gencls::vectorGetValues(gridpack::ComplexType *values)
    */
 void Gencls::getCurrent(double *ia, double *ib, double *ic)
 {
-
+  *ia = p_i[0];
+  *ib = p_i[1];
+  *ic = p_i[2];
 }
 
 /**
