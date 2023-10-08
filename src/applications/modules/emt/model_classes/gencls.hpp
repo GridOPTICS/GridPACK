@@ -127,11 +127,8 @@ class Gencls: public BaseEMTGenModel
     double p_Ep;  // Internal emf
 
     // Generator variables and their derivatives
-    double p_delta,p_dw;
-    double p_deltadot,p_dwdot;
-
-    // Previous step values of the variables
-    double p_deltaprev, p_dwprev;
+  double p_delta,p_dw, p_i[3];
+  double p_deltadot,p_dwdot,p_idot[3];
 
     int bid;
 };

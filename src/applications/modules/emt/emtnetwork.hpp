@@ -182,11 +182,17 @@ public:
    * Returns the initial (t=0) voltage magnitude and angle for the bus
    */
   void getInitialVoltage(double *Vm, double *Va) { *Vm = p_Vm0; *Va = p_Va0;}
+  
   /**
      Set the shift value provided by TS
   */
   void setTSshift(double);
-  
+
+  /**
+     Set the current time provided by TS
+  */
+  void setTime(double);
+
   /**
      Set buffer size for exchange
   */
@@ -244,6 +250,7 @@ private:
   int    p_nactivegen; // Number of active generators (status=1) on this bus
   bool   p_isolated;   // flag for isolated bus
   EMTMode p_mode; // factory mode
+  double p_time;     // current time
   double p_TSshift;  // shift value provided by TSIJacobian. 
   int    p_nvar;      // Total number of variables for this bus (includes gen, exc, etc.)
   int    p_nvarbus;   // Only the variables for the bus (no component variables included)
@@ -268,7 +275,8 @@ private:
   
   // EMT Variables
   double *p_vptr; // Pointer used for exchanging values with ghost buses. Note that this pointer is pointed to the buffer used for exchanging values with ghost buses. Its contents should be updated whenever there is a change in v, e.g., when the values from vector X are being mapped to the buses
-  
+
+  double p_dvdt[3]; // Voltage derivatives returned by DAE solver
   bool   p_isghost; // Is it a local or ghosted element
   
   int    p_rank;
@@ -332,7 +340,24 @@ public:
    * @param mode: enumerated constant for different modes
    */
   void setMode(int mode);
-    
+
+  /**
+     Set the shift value provided by TS
+  */
+  void setTSshift(double);
+
+  /**
+     Set the current time provided by TS
+  */
+  void setTime(double);
+
+  /**
+     Set buffer size for exchange
+  */
+  int getXCBufSize(void);
+  
+  void setXCBuf(void*);
+  
   /**
    * Return number of rows (dependent variables) that branch contributes
    * to matrix
@@ -441,6 +466,11 @@ public:
   */
   void setup(void);
 
+
+  /*
+    setLocalOffset - sets the starting location for the variables for this branch in the solution vector
+  */
+  void setLocalOffset(int offset) {p_offset = offset;}
   
   /* Set whether the element is local or ghosted */
   void setGhostStatus(bool isghost) { p_isghost = isghost; }
@@ -456,9 +486,12 @@ private:
   std::vector<double> p_lineR; // Line resistance
   std::vector<double> p_lineX; // Line reactance
   int  p_nvar;      // Number of variables for this branch  
-  int p_mode;
+  int p_mode;     // Mode used for vectors and matrices
+  double p_time;     // current time
+  double p_TSshift;  // shift value provided by TSIJacobian.
   bool p_isghost; // Local or ghosted element
-  int  p_rank;
+  int  p_rank;   // Process rank
+  int p_offset; // Starting location for the variables for this branch in the solution vector
 
   // Used by generalized mapper interface
   std::vector<int>    p_rowidx;   // array holding row indices
@@ -466,6 +499,11 @@ private:
   std::vector<int>    p_vecidx;   // array holding vector indices
   int                 p_num_vals; // total number of matrix elements returned by bus
 
+  double *p_iptr; // Pointer used for exchanging values with ghost branches. Note that this pointer is pointed to the buffer used for exchanging values with ghost branches. Its contents should be updated whenever there is a change in v, e.g., when the values from vector X are being mapped to the branches
+
+  double* p_didt;
+
+  // Line parameters
   double p_R[3][3];
   double p_L[3][3];
   double p_C[3][3];

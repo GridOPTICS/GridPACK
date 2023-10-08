@@ -85,6 +85,15 @@ void EmtBus::setTSshift(double shift)
 }
 
 /**
+  Set the shift value provided by TS
+*/
+void EmtBus::setTime(double time)
+{
+  p_time = time;
+}
+
+
+/**
   *  Check if the bus is isolated. Returns true if the bus is isolated
 
 */
@@ -658,6 +667,37 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
  */
 void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
 {
+  int i;
+  double va,vb,vc;
+  
+  if(p_mode == XVECTOBUS) {
+    *p_vptr     = va = real(values[0]);
+    *(p_vptr+1) = vb = real(values[1]);
+    *(p_vptr+2) = vc = real(values[2]);
+
+    if(p_isolated) return;
+
+    for(i=0; i < p_ngen; i++) {
+      if(!p_gen[i]->getStatus()) continue;
+
+      p_gen[i]->setMode(p_mode);
+      p_gen[i]->setVoltage(va,vb,vc);
+      p_gen[i]->setValues(values);
+    }
+  } else if(p_mode == XDOTVECTOBUS) {
+    p_dvdt[0] = real(values[0]);
+    p_dvdt[1] = real(values[1]);
+    p_dvdt[2] = real(values[2]);
+
+    if(p_isolated) return;
+
+    for(i=0; i < p_ngen; i++) {
+      if(!p_gen[i]->getStatus()) continue;
+      
+      p_gen[i]->setMode(p_mode);
+      p_gen[i]->setValues(values);
+    }
+  }
 }
 
 /**
@@ -680,6 +720,7 @@ bool EmtBus::serialWrite(char *string,
 EmtBranch::EmtBranch(void)
 {
   p_nparlines = 0;
+  p_iptr = NULL;
   p_nvar = 3;
   p_num_vals = 0;
   p_mode = NONE;
@@ -690,6 +731,9 @@ EmtBranch::EmtBranch(void)
  */
 EmtBranch::~EmtBranch(void)
 {
+  if(p_nvar) {
+    delete [] p_didt;
+  }
 }
 
 void EmtBranch::setup()
@@ -702,6 +746,10 @@ void EmtBranch::setup()
     if(!p_status[i]) continue;
 
     p_nvar += 3;
+  }
+
+  if(p_nvar) {
+    p_didt = new double[p_nvar];
   }
 }
 /**
@@ -802,6 +850,23 @@ void EmtBranch::setMode(int mode)
 }
 
 /**
+  Set the shift value provided by TS
+*/
+void EmtBranch::setTSshift(double shift)
+{
+  p_TSshift = shift;
+}
+
+/**
+  Set the shift value provided by TS
+*/
+void EmtBranch::setTime(double time)
+{
+  p_time = time;
+}
+
+
+/**
  * Return number of rows (dependent variables) that branch contributes
  * to matrix
  * @return number of dependent variables (equations)
@@ -890,6 +955,17 @@ void EmtBranch::matrixGetValues(int *nvals,gridpack::ComplexType *values,
 
 void EmtBranch::matrixGetValues(gridpack::math::Matrix &matrix)
 {
+
+}
+
+int EmtBranch::getXCBufSize(void)
+{
+  return p_nvar*sizeof(double);
+}
+
+void EmtBranch::setXCBuf(void *buf)
+{
+  p_iptr = static_cast<double*>(buf);
 
 }
 
@@ -989,6 +1065,32 @@ void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
  */
 void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
 {
+  int i,l=0;
+  double *dibrdt = p_didt;
+  gridpack::ComplexType *x = values;
+
+  if(p_mode == XVECTOBUS) {
+    for(i=0; i < p_nparlines; i++) {
+      if(p_status[i]) {
+	*p_iptr     = real(x[0]);
+	*(p_iptr+1) = real(x[1]);
+	*(p_iptr+2) = real(x[2]);
+
+	p_iptr += 3;
+	x += 3;
+      }
+    }
+  } else if(p_mode == XDOTVECTOBUS) {
+    for(i=0; i < p_nparlines; i++) {
+      if(p_status[i]) {
+	dibrdt[0] = real(x[0]);
+	dibrdt[1] = real(x[1]);
+	dibrdt[2] = real(x[2]);
+	
+	dibrdt += 3;
+      }
+    }
+  }
 }
 
 

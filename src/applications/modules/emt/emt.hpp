@@ -111,6 +111,7 @@ public:
 		   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
 		   gridpack::math::Vector& F)
   {
+    p_factory->setTime(time);
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
 
@@ -121,8 +122,9 @@ public:
 
     p_VecMapper->mapToNetwork(Xdot);
 
-    // Update ghost buses
+    // Update ghost buses and branches
     emt_network->updateBuses();
+    emt_network->updateBranches();
 
     // Evaluate the residual f(x) - xdot
     p_factory->setMode(RESIDUAL_EVAL);
