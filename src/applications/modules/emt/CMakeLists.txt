@@ -36,6 +36,7 @@ add_library(gridpack_emt_module
   emt.cpp
   emtfactory.cpp
   emtnetwork.cpp
+  emtutilfunctions.cpp
   base_classes/base_gen_model.cpp
   base_classes/base_exc_model.cpp
   base_classes/base_gov_model.cpp
@@ -64,6 +65,7 @@ install(FILES
   emtfactory.hpp
   emtnetwork.hpp
   emtutils.hpp
+  emtutilfunctions.hpp
   DESTINATION include/gridpack/applications/modules/emt
 )
 
