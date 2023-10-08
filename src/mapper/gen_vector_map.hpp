@@ -307,7 +307,7 @@ void setOffsets(void)
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       i_bus_offsets[i] = icnt;
-      p_BranchLocOffsets[i] = icnt;
+      p_BusLocOffsets[i] = icnt;
       p_BusSizes[i] = p_network->getBus(i)->vectorNumElements();
       icnt += p_network->getBus(i)->vectorNumElements();
       std::vector<int> nghbrs = p_network->getConnectedBranches(i);

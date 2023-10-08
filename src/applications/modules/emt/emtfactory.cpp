@@ -20,7 +20,30 @@
 #include <gridpack/math/dae_solver.hpp>
 
 /**
- * Set shift value provided by TS onto bus components
+ * Set the current time provided by TS onto bus and branch components
+ *
+ * This is expensive. Should rather set the value of shift in the factory and then
+ * have the bus components point to it. Thus, we only need to set the shift value
+ * value once in the factory and it will be seen by the bus components.
+ * This is not implemented currently though
+ */
+void EmtFactory::setTime(double time) 
+{
+  int numBuses = p_network->numBuses();
+  int numBranches = p_network->numBranches();
+  int i;
+  
+  for(i=0; i < numBuses; i++) {
+    dynamic_cast<EmtBus*>(p_network->getBus(i).get())->setTime(time); 
+  }
+
+  for(i=0; i < numBranches; i++) {
+    dynamic_cast<EmtBranch*>(p_network->getBranch(i).get())->setTime(time); 
+  }
+}
+
+/**
+ * Set shift value provided by TS onto bus and branch components
  *
  * This is expensive. Should rather set the value of shift in the factory and then
  * have the bus components point to it. Thus, we only need to set the shift value
@@ -30,10 +53,15 @@
 void EmtFactory::setTSshift(double shift) 
 {
   int numBuses = p_network->numBuses();
+  int numBranches = p_network->numBranches();
   int i;
   
   for(i=0; i < numBuses; i++) {
-    dynamic_cast<EmtBus*>(p_network->getBus(i).get())->setTSshift(shift);
+    dynamic_cast<EmtBus*>(p_network->getBus(i).get())->setTSshift(shift); 
+  }
+
+  for(i=0; i < numBranches; i++) {
+    dynamic_cast<EmtBranch*>(p_network->getBranch(i).get())->setTSshift(shift); 
   }
 }
 
@@ -43,17 +71,27 @@ void EmtFactory::setTSshift(double shift)
 void EmtFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,gridpack::mapper::GenVectorMap<EmtNetwork> *vecmap)
 {
   int numBuses = p_network->numBuses();
+  int numBranches = p_network->numBranches();
   int i;
   int offset,size;
   EmtBus *bus;
+  EmtBranch *branch;
   
   for(i=0; i < numBuses; i++) {
     bus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
     bus->setEvent(eman);
 
+    // This should be moved to a separate function
     vecmap->getLocalBusOffset(i,&offset,&size);
-
     bus->setLocalOffset(offset);
+  }
+
+  for(i=0; i < numBranches; i++) {
+    branch = dynamic_cast<EmtBranch*>(p_network->getBranch(i).get());
+
+    // This should be moved to a separate function
+    vecmap->getLocalBranchOffset(i,&offset,&size);
+    branch->setLocalOffset(offset);
   }
 }
 
