@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   emt.hpp
+ * @file   emtutils.hpp
  *
  * @brief  Header file for the dynamic simulation application utilities
  *    -- EmtProfiler -- Code Profiler
