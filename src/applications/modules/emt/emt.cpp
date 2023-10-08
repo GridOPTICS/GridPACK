@@ -262,17 +262,12 @@ void Emt::setup()
   p_factory->setExchange();
   if(!rank()) printf("Emt:Finished setting up factory\n");
 
-  // Create bus data exchange
+  // Create bus and branch data exchange
   emt_network->initBusUpdate();
-
-  /* Set mode for initializing vector X */
-  p_factory->setMode(INIT_X);
+  emt_network->initBranchUpdate();
 
   /* Create mapper for vector */
   p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork>(emt_network);
-
-  /* Create solution vector */
-  p_X = p_VecMapper->mapToVector();
 
   /* Create mapper for matrix */
   p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
@@ -335,11 +330,12 @@ void Emt::setup()
 
 void Emt::initialize()
 {
-  //  p_factory->setMode(INIT_X);
-  p_VecMapper->mapToVector(p_X);
+  p_factory->setMode(INIT_X);
+  p_X = p_VecMapper->mapToVector();
   p_X->ready();
   
   emt_network->updateBuses();
+  emt_network->updateBranches();
   //p_X->print();
 }
 
