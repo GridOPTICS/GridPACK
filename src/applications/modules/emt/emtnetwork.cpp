@@ -1254,17 +1254,18 @@ void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
 {
   int i,l=0;
   double *ibr    = p_ibr;
+  double *iptr   = p_iptr;
   double *dibrdt = p_didt;
   gridpack::ComplexType *x = values;
 
   if(p_mode == XVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
       if(p_status[i]) {
-	*p_iptr     = ibr[0] = real(x[0]);
-	*(p_iptr+1) = ibr[1] = real(x[1]);
-	*(p_iptr+2) = ibr[2] = real(x[2]);
+	iptr[0]     = ibr[0] = real(x[0]);
+	iptr[1] = ibr[1] = real(x[1]);
+	iptr[2] = ibr[2] = real(x[2]);
 
-	p_iptr += 3;
+	iptr += 3;
 	x += 3;
       }
       ibr += 3;
