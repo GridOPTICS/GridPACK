@@ -36,5 +36,19 @@ void abc2dq0(double *xabc,double t,double theta,double *xdq0);
  */
 void dq02abc(double *xdq0,double t,double theta,double *xabc);
 
-  
+//inverse = matrix^-1
+void inverse3x3(double matrix[3][3],double inverse[3][3]);
+
+// C = alpha*A*B
+void scaledmatmatmult3x3(double A[3][3],double B[3][3],double C[3][3],double alpha);
+
+// C = A*B
+void matmatmult3x3(double A[3][3],double B[3][3], double C[3][3]);
+
+// y = alpha*A*x
+void scaledmatvecmult3x3(double A[3][3], double *x,double *y,double alpha);
+
+// y = A*x
+void matvecmult3x3(double A[3][3],double *x, double *y);
+
 #endif

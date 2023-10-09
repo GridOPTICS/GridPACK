@@ -50,3 +50,83 @@ void dq02abc(double *xdq0,double t,double theta,double *xabc)
   xabc[1] = sin(omegat_minus)*xabc[0] + cos(omegat_minus)*xdq0[1] + xdq0[2];
   xabc[0] = sin(omegat_plus)*xabc[0]  + cos(omegat_plus)*xdq0[1]  + xdq0[2];  
 }
+
+
+// 2x2 determinant
+double determinant2x2(double a, double b, double c, double d)
+{
+  return a * d - b * c;
+}
+
+// 3x3 determinant
+double determinant3x3(double matrix[3][3])
+{
+  double det = 0.0;
+  
+  // Calculate the determinant using the formula for 3x3 matrices
+  det = matrix[0][0] * determinant2x2(matrix[1][1], matrix[1][2], matrix[2][1], matrix[2][2])
+    - matrix[0][1] * determinant2x2(matrix[1][0], matrix[1][2], matrix[2][0], matrix[2][2])
+    + matrix[0][2] * determinant2x2(matrix[1][0], matrix[1][1], matrix[2][0], matrix[2][1]);
+  
+  return det;
+}
+
+// 3x3 inverse
+void inverse3x3(double matrix[3][3], double result[3][3])
+{
+  double det = determinant3x3(matrix);
+  
+  if (det == 0.0) {
+    printf("Matrix is not invertible (determinant is zero).\n");
+    return;
+  }
+  
+  // Calculate the inverse using the formula for 3x3 matrices
+  result[0][0] = determinant2x2(matrix[1][1], matrix[1][2], matrix[2][1], matrix[2][2]) / det;
+  result[0][1] = -determinant2x2(matrix[0][1], matrix[0][2], matrix[2][1], matrix[2][2]) / det;
+  result[0][2] = determinant2x2(matrix[0][1], matrix[0][2], matrix[1][1], matrix[1][2]) / det;
+  result[1][0] = -determinant2x2(matrix[1][0], matrix[1][2], matrix[2][0], matrix[2][2]) / det;
+  result[1][1] = determinant2x2(matrix[0][0], matrix[0][2], matrix[2][0], matrix[2][2]) / det;
+  result[1][2] = -determinant2x2(matrix[0][0], matrix[0][2], matrix[1][0], matrix[1][2]) / det;
+  result[2][0] = determinant2x2(matrix[1][0], matrix[1][1], matrix[2][0], matrix[2][1]) / det;
+  result[2][1] = -determinant2x2(matrix[0][0], matrix[0][1], matrix[2][0], matrix[2][1]) / det;
+  result[2][2] = determinant2x2(matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1]) / det;
+}
+
+// 3x3 scaled matrix multiply - multiplies two 3x3 matrices A, B; scales by given value alpha, and returns the resultant matrix C
+// C = alpha*A*B
+void scaledmatmatmult3x3(double A[3][3],double B[3][3],double C[3][3],double alpha)
+{
+  for(int i=0; i < 3; i++) {
+    for(int j=0; j < 3; j++) {
+      C[i][j] = 0.0;
+      for(int k=0; k < 3; k++) {
+	C[i][j] += A[i][k]*B[k][j];
+      }
+      C[i][j] *= alpha;
+    }
+  }
+}
+
+void matmatmult3x3(double A[3][3],double B[3][3],double C[3][3])
+{
+  scaledmatmatmult3x3(A,B,C,1.0);
+}
+
+// y = alpha*A*x
+void scaledmatvecmult3x3(double A[3][3],double *x,double *y,double alpha)
+{
+  y[0] = y[1] = y[2] = 0.0;
+
+  y[0] = alpha*A[0][0]*x[0] + A[0][1]*x[1] + A[0][2]*x[2];
+  y[1] = alpha*A[1][0]*x[0] + A[1][1]*x[1] + A[1][2]*x[2];
+  y[2] = alpha*A[2][0]*x[0] + A[2][1]*x[1] + A[2][2]*x[2];
+}
+
+// y = Ax
+void matvecmult3x3(double A[3][3],double *x,double *y)
+{
+  scaledmatvecmult3x3(A,x,y,1.0);
+}
+
+

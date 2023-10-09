@@ -17,6 +17,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
+#include <emtutilfunctions.hpp>
 #include <gridpack/math/matrix.hpp>
 #include <base_exc_model.hpp>
 #include <base_gov_model.hpp>
@@ -89,6 +90,10 @@ public:
    */
   void setStatus(int gstatus) {status = gstatus;}
 
+  /**
+   * set current time
+   */
+  void setTime(double time) {p_time = time; }
   
   /**
    * Copy over voltage from the bus
@@ -218,6 +223,7 @@ public:
   int           busnum; /**< Bus number */
   int           status; /**< Machine status */
   double        sbase;  /** The system MVA base */
+  double        p_time; /** Current time */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
   double        p_Vm0,p_Va0; // Initial bus voltage and angle
   double        p_va, p_vb, p_vc; // phase voltages

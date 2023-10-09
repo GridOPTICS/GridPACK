@@ -17,6 +17,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
+#include <emtutilfunctions.hpp>
 #include <gridpack/math/matrix.hpp>
 
 class BaseEMTLoadModel : public gridpack::component::BaseComponent
@@ -88,7 +89,7 @@ public:
   /**
    * Copy over voltage from the bus
    */
-  void setVoltage(double inva, double invb,double invc) {va = inva; vb = invb; vc = invc;}
+  void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
 
   /**
    * Copy over initial bus voltage from the bus (power flow solution)
@@ -100,7 +101,12 @@ public:
    * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
    */
   void setTSshift(double inshift) {shift = inshift;}
-  
+
+  /**
+   * set current time
+   */
+  void setTime(double time) {p_time = time; }
+
   /**
    * Return the load current injection 
    * @param [output] ia - phase a current
@@ -184,8 +190,9 @@ public:
   int           status; /**< Load status */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
+  double        p_time; // current time
   double        p_Vm0,p_Va0; // Initial bus voltage and angle
-  double        va, vb, vc; // Voltages
+  double        p_va, p_vb, p_vc; // Voltages
 
   int           offsetb; /**< offset for the first variable for the load in the array for all bus variables */
   int           nxload; /* Number of variables for the load model */
