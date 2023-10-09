@@ -435,8 +435,6 @@ void EmtBus::load(const
       continue;
     }
 
-    p_load[i]->setStatus(lstatus);
-
     std::string lmodel;
     data->getValue(LOAD_MODEL,&lmodel,i);
 
@@ -445,6 +443,8 @@ void EmtBus::load(const
       Constantimpedance *ciload;
       ciload = new Constantimpedance;
       p_load[i] = ciload;
+
+      p_load[i]->setStatus(lstatus);
     } else {
       std::string type = util.trimQuotes(lmodel);
       util.toUpper(type);
@@ -706,9 +706,14 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
     gridpack::component::BaseBusComponent::getNeighborBranches(branches);
     int nconnbranch = branches.size();
 
+    int thisbusnum = this->getOriginalIndex();
+
     i_br[0] = i_br[1] = i_br[2] = 0.0;
     for(i=0; i < nconnbranch; i++) {
       EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+
+      int fbusnum = branch->getBus1OriginalIndex();
+      int tbusnum = branch->getBus2OriginalIndex();
       
       int nparlines = branch->getNumParallelLines();
       
@@ -718,10 +723,15 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 	i_bri[0] = i_bri[1] = i_bri[2] = 0.0;
 	branch->getCurrent(j,&i_bri[0],&i_bri[1],&i_bri[2]);
 
-	i_br[0] += i_bri[0];
-	i_br[1] += i_bri[1];
-	i_br[2] += i_bri[2];
-
+	if(thisbusnum == fbusnum) {
+	  i_br[0] += i_bri[0];
+	  i_br[1] += i_bri[1];
+	  i_br[2] += i_bri[2];
+	} else {
+	  i_br[0] -= i_bri[0];
+	  i_br[1] -= i_bri[1];
+	  i_br[2] -= i_bri[2];
+	}
       }
     }
     
