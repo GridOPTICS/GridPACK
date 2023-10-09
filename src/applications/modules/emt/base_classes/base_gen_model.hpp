@@ -83,7 +83,7 @@ public:
   /**
    * return the bolean indicating whether the gen is ON or OFF
    */
-  bool getStatus() {return status;}
+  int getStatus() {return status;}
 
   /**
    * set the bolean indicating whether the gen is ON or OFF

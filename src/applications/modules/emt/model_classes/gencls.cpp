@@ -62,9 +62,13 @@ void Gencls::init(gridpack::ComplexType* xin)
 
   gridpack::ComplexType V = gridpack::ComplexType(VD,VQ);
   gridpack::ComplexType S = gridpack::ComplexType(Pg,Qg);
-  gridpack::ComplexType I = conj(S/V);
+  gridpack::ComplexType I;
   gridpack::ComplexType Z = gridpack::ComplexType(p_Rs,p_Xdp);
-  gridpack::ComplexType E = V + I*Z;
+  gridpack::ComplexType E;
+
+  I = conj(S/V);
+  E = V + I*Z;
+
   double delta = arg(E);
   double Im = abs(I);
   double Ia = arg(I);
