@@ -78,6 +78,10 @@ void Gencls::init(gridpack::ComplexType* xin)
   ib = Im*sin(Ia - 2*PI/3.0);
   ic = Im*sin(Ia + 2*PI/3.0);
 
+  p_i[0] = ia;
+  p_i[1] = ib;
+  p_i[2] = ic;
+
   double p_Pm = (p_va*ia + p_vb*ib + p_vc*ic)*(2.0/3.0);
 	
   x[0] = delta;
@@ -142,13 +146,40 @@ void Gencls::setValues(gridpack::ComplexType *values)
  */
 void Gencls::vectorGetValues(gridpack::ComplexType *values)
 {
-  int delta_idx = 0, dw_idx = 1;
-  // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
-  if(p_mode == FAULT_EVAL) {
-  } else if(p_mode == RESIDUAL_EVAL) {
+  gridpack::ComplexType *f = values+offsetb; // generator array starts from this location
+
+  if(p_mode == RESIDUAL_EVAL) {
+    double Pe;
+    double vabc[3];
+    double vdq0[3];
+    double idq0[3];
+    double e[3];
+
+    e[0] = p_Ep*sin(OMEGA_S*p_time + p_delta);
+    e[1] = p_Ep*sin(OMEGA_S*p_time + p_delta - TWOPI_OVER_THREE);
+    e[2] = p_Ep*sin(OMEGA_S*p_time + p_delta + TWOPI_OVER_THREE);
+
+    vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+    abc2dq0(vabc,p_time,p_delta,vdq0);
+    abc2dq0(p_i,p_time,p_delta,idq0);
+
+    Pe = vdq0[0]*idq0[0] + vdq0[1]*idq0[1] + vdq0[2]*idq0[2];
+    
     // Generator equations
-    values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
-    values[dw_idx]    = (p_Pm - VD*p_Ep*sin(p_delta)/p_Xdp + VQ*p_Ep*cos(p_delta)/p_Xdp - p_D*p_dw)/(2*p_H) - p_dwdot;
+    f[0] = p_dw/OMEGA_S - p_deltadot;
+    f[1]    = (p_Pm - Pe - p_D*p_dw)/(2*p_H) - p_dwdot;
+    if(abs(p_L) > 1e-6) {
+      // f = di_dt - idot => L^-1*(e - R*i - v) - idot
+      f[2] = (e[0] - p_Rs*p_i[0] - p_va)/p_L - p_idot[0];
+      f[3] = (e[1] - p_Rs*p_i[1] - p_vb)/p_L - p_idot[1];
+      f[4] = (e[2] - p_Rs*p_i[2] - p_vc)/p_L - p_idot[2];
+    } else {
+      f[2] = (e[0] - p_Rs*p_i[0] - p_va);
+      f[3] = (e[1] - p_Rs*p_i[1] - p_vb);
+      f[4] = (e[2] - p_Rs*p_i[2] - p_vc);
+    }      
+    
     //printf("classical: %f\t%f\n", real(values[delta_idx]),real(values[dw_idx]));
   }
 
