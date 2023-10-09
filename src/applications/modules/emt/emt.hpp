@@ -116,9 +116,7 @@ public:
     // Push current values in Xdot vector back into network components
     p_factory->setMode(XDOTVECTOBUS);
 
-    printf("Got here 1\n");
     p_VecMapper->mapToNetwork(Xdot);
-    printf("Got here 2\n");
 
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
@@ -130,9 +128,9 @@ public:
     emt_network->updateBranches();
 
     // Evaluate the residual f(x) - xdot
-    //    p_factory->setMode(RESIDUAL_EVAL);
-    //    p_VecMapper->mapToVector(F);
-    //    F.ready();
+       p_factory->setMode(RESIDUAL_EVAL);
+       p_VecMapper->mapToVector(F);
+       F.ready();
 
   }
 

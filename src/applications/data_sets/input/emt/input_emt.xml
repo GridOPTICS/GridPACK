@@ -49,7 +49,7 @@
   <EMT>
     <generatorParameters> case9_GENCLS.dyr </generatorParameters>
     <simulationTime>10.0</simulationTime>
-    <timeStep>0.01</timeStep>
+    <timeStep>0.00005</timeStep>
     <faultbus>1</faultbus>
     <faultontime>1</faultontime>
     <faultofftime>1.05</faultofftime>
