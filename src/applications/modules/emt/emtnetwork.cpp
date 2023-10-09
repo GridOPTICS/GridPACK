@@ -74,6 +74,16 @@ EmtBus::~EmtBus(void)
     free(p_neqsgov);
     free(p_gen);
   }
+
+  if(p_nload) {
+    for(int i=0; i < p_nload; i++) {
+      if(p_load[i]) delete(p_load[i]);
+    }
+    free(p_neqsload);
+  }
+  if(p_nvar) {
+    delete(p_vecidx);
+  }
 }
 
 /**
@@ -210,6 +220,11 @@ void EmtBus::setup()
     }
   }
 
+  if(p_hasCapacitiveShunt) {
+    // Invert the capacitive shunt
+    inverse3x3(p_Cshunt,p_Cshuntinv);
+  }
+  
   for(i=0; i < 3; i++) {
     if(p_hasInductiveShunt) break;
     for(j=0; j < 3; j++) {
@@ -274,6 +289,9 @@ void EmtBus::setup()
       
       p_nvar += p_neqsload[i];
     }
+  }
+  if(p_nvar) {
+    p_vecidx = new int[p_nvar];
   }
 }
     	
@@ -564,11 +582,6 @@ void EmtBus::setXCBuf(void *buf)
  */
 void EmtBus::vectorSetElementIndex(int ielem, int idx)
 {
-  if (p_vecidx.size() == 0) {
-    p_vecidx.resize(p_nvar);
-    int i;
-    for (i=0; i<p_nvar; i++) p_vecidx[i] = -1;
-  }
   p_vecidx[ielem] = idx;
 }
 
@@ -579,9 +592,8 @@ void EmtBus::vectorSetElementIndex(int ielem, int idx)
  */
 void EmtBus::vectorGetElementIndices(int *idx)
 {
-  int size = p_vecidx.size();
   int i;
-  for (i=0; i<size; i++) {
+  for (i=0; i< p_nvar; i++) {
     idx[i] = p_vecidx[i];
   }
 }
@@ -604,7 +616,7 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 {
   bool has_ex=false, has_gv=false;
   int i;
-  gridpack::ComplexType *x = values;
+  gridpack::ComplexType *x,*f;
   for(i=0; i < p_nvar; i++) {
     idx[i] = p_vecidx[i];
   }
@@ -613,6 +625,8 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
     double va = p_Vm0*sin(p_Va0);
     double vb = p_Vm0*sin(p_Va0 - 2*PI/3.0);
     double vc = p_Vm0*sin(p_Va0 + 2*PI/3.0);
+
+    x = values;
     
     if(p_isolated) {
       x[0] = va;
@@ -658,7 +672,110 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       p_load[i]->setInitialVoltage(p_Vm0,p_Va0);
       p_load[i]->init(x);
     }
-  }
+  } else if(p_mode == RESIDUAL_EVAL) {
+    int i,j;
+    double *v = p_vptr;
+    double i_gen[3]; // Total generator current
+    double i_geni[3]; // Current from generator i
+    double i_load[3]; // Total load current
+    double i_loadi[3]; // Current from load i
+    double i_br[3];   // Total current from branches
+    double i_bri[3]; // Current from branch i
+    double i_mis[3]; // i_gen - i_br - i_load
+
+    f = values;
+    if(p_isolated) {
+      f[0] = v[0] - p_Vm0*sin(OMEGA_S*p_time + p_Va0);
+      f[1] = v[1] - p_Vm0*sin(OMEGA_S*p_time + p_Va0 - TWOPI_OVER_THREE);
+      f[2] = v[2] - p_Vm0*sin(OMEGA_S*p_time + p_Va0 + TWOPI_OVER_THREE);
+
+      return;
+    }
+
+    if(p_hasInductiveShunt) {
+    }
+
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    //Get the edges connected to this bus
+    gridpack::component::BaseBusComponent::getNeighborBranches(branches);
+    int nconnbranch = branches.size();
+
+    i_br[0] = i_br[1] = i_br[2] = 0.0;
+    for(i=0; i < nconnbranch; i++) {
+      EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+      
+      int nparlines = branch->getNumParallelLines();
+      
+      for(j=0; j < nparlines; j++) {
+	if(!branch->getStatus(j)) continue;
+
+	i_bri[0] = i_bri[1] = i_bri[2] = 0.0;
+	branch->getCurrent(j,&i_bri[0],&i_bri[1],&i_bri[2]);
+
+	i_br[0] += i_bri[0];
+	i_br[1] += i_bri[1];
+	i_br[2] += i_bri[2];
+
+      }
+    }
+    
+    i_gen[0] = i_gen[1] = i_gen[2] = 0.0;
+    for(i=0; i < p_ngen; i++) {
+      if(!p_gen[i]->getStatus()) continue;
+
+      p_gen[i]->setVoltage(v[0],v[1],v[2]);
+      p_gen[i]->setTime(p_time);
+
+      /* Get generator current */
+      i_geni[0] = i_geni[1] = i_geni[2] = 0.0;
+      p_gen[i]->getCurrent(&i_geni[0],&i_geni[1],&i_geni[2]);
+
+      i_gen[0] += i_geni[0];
+      i_gen[1] += i_geni[1];
+      i_gen[2] += i_geni[2];
+
+      /* Generator residual evaluation */
+      p_gen[i]->setMode(p_mode);
+      p_gen[i]->vectorGetValues(f);
+    }
+
+    i_load[0] = i_load[1] = i_load[2] = 0.0;
+    for(i=0; i < p_nload; i++) {
+      if(!p_load[i]->getStatus()) continue;
+
+      p_load[i]->setVoltage(v[0],v[1],v[2]);
+      p_load[i]->setTime(p_time);
+
+      /* Get load current */
+      i_loadi[0] = i_loadi[1] = i_loadi[2] = 0.0;
+      p_load[i]->getCurrent(&i_loadi[0],&i_loadi[1],&i_loadi[2]);
+
+      i_load[0] += i_loadi[0];
+      i_load[1] += i_loadi[1];
+      i_load[2] += i_loadi[2];
+
+      /* Load residual evaluation */
+      p_load[i]->setMode(p_mode);
+      p_load[i]->vectorGetValues(f);
+    }
+
+    i_mis[0] = i_gen[0] - i_br[0] - i_load[0];
+    i_mis[1] = i_gen[1] - i_br[1] - i_load[1];
+    i_mis[2] = i_gen[2] - i_br[2] - i_load[2];
+
+    if(p_hasCapacitiveShunt) {
+      double fval[3];
+      matvecmult3x3(p_Cshuntinv,i_mis,fval);
+      f[0] = fval[0] - p_dvdt[0];
+      f[1] = fval[1] - p_dvdt[1];
+      f[2] = fval[2] - p_dvdt[2];
+    } else {
+      f[0] = i_mis[0];
+      f[1] = i_mis[1];
+      f[2] = i_mis[2];
+    }
+    
+  } 
 }
 
 /**
@@ -684,6 +801,16 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
       p_gen[i]->setVoltage(va,vb,vc);
       p_gen[i]->setValues(values);
     }
+
+    for(i=0; i < p_nload; i++) {
+      if(!p_load[i]->getStatus()) continue;
+
+      p_load[i]->setMode(p_mode);
+      p_load[i]->setVoltage(va,vb,vc);
+      p_load[i]->setValues(values);
+    }
+
+    
   } else if(p_mode == XDOTVECTOBUS) {
     p_dvdt[0] = real(values[0]);
     p_dvdt[1] = real(values[1]);
@@ -732,7 +859,9 @@ EmtBranch::EmtBranch(void)
 EmtBranch::~EmtBranch(void)
 {
   if(p_nvar) {
+    delete [] p_ibr;
     delete [] p_didt;
+    delete [] p_vecidx;
   }
 }
 
@@ -749,7 +878,9 @@ void EmtBranch::setup()
   }
 
   if(p_nvar) {
-    p_didt = new double[p_nvar];
+    p_vecidx = new int[p_nvar];
+    p_ibr  = new double[3*p_nparlines];
+    p_didt = new double[3*p_nparlines];
   }
 }
 /**
@@ -804,11 +935,11 @@ void EmtBranch::load(
     double R0,L0,C0;
 
     if(abs(R) > 1e-6) {
-      hasResistance = true;
+      p_hasResistance = true;
     }
 
     if(abs(X) > 1e-6) {
-      hasInductance = true;
+      p_hasInductance = true;
     }
       
     R1 = R; L1 = X/OMEGA_S; C1 = Bc/OMEGA_S;
@@ -824,6 +955,14 @@ void EmtBranch::load(
     p_L[0][2] = p_L[2][0] = L1;
     p_L[1][2] = p_L[2][1] = L1;
 
+    if(p_hasInductance) {
+      // L^-1
+      inverse3x3(p_L,p_Linv);
+
+      // -L^-1*R
+      scaledmatmatmult3x3(p_Linv,p_R,p_minusLinvR,-1.0);
+    }
+    
     p_C[0][0] = p_C[1][1] = p_C[2][2] = C1 + C0;
     p_C[0][1] = p_C[1][0] = C1;
     p_C[0][2] = p_C[2][0] = C1;
@@ -976,13 +1115,7 @@ void EmtBranch::setXCBuf(void *buf)
  */
 void EmtBranch::vectorSetElementIndex(int ielem, int idx)
 {
-  if (p_vecidx.size() == 0) {
-    p_vecidx.resize(p_nvar);
-    int i;
-    for (i=0; i<p_nvar; i++) p_vecidx[i] = -1;
-  }
   p_vecidx[ielem] = idx;
-
 }
 
 /**
@@ -992,10 +1125,10 @@ void EmtBranch::vectorSetElementIndex(int ielem, int idx)
  */
 void EmtBranch::vectorGetElementIndices(int *idx)
 {
-  int size = p_vecidx.size();
   int i;
-  for (i=0; i<size; i++) {
+  for (i=0; i<p_nvar; i++) {
     idx[i] = p_vecidx[i];
+    //    printf("Branch %d -- %d: p_vecidx[%d] = %d\n",this->getBus1OriginalIndex(),this->getBus2OriginalIndex(),i,p_vecidx[i]);
   }
 }
 
@@ -1016,14 +1149,16 @@ int EmtBranch::vectorNumElements() const
 void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 {
   int i;
-  gridpack::ComplexType *x = values;
   for(i=0; i < p_nvar; i++) {
     idx[i] = p_vecidx[i];
   }
   if(p_mode == INIT_X) { /* Initialization of values */
+    gridpack::ComplexType *x = values;
     for(i=0; i < p_nparlines; i++) {
+      double *ibr = p_ibr + 3*i;
+      ibr[0] = ibr[1] = ibr[2] = 0.0;
       if(!p_status[i]) continue;
-
+      
       EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
       EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
 
@@ -1051,12 +1186,51 @@ void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 
       x += p_localoffset[i];
 
-      x[0] = Ilinem*sin(Ilinea);
-      x[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0);
-      x[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
-
+      x[0] = ibr[0] = Ilinem*sin(Ilinea);
+      x[1] = ibr[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0);
+      x[2] = ibr[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
     }
-  }
+  } else if(p_mode == RESIDUAL_EVAL) {
+    gridpack::ComplexType *f = values;
+    for(i=0; i < p_nparlines; i++) {
+      double *ibr = p_ibr + 3*i;
+      if(!p_status[i]) continue;
+      
+      EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
+      EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
+
+      double vf[3],vt[3];
+
+      busf->getVoltages(&vf[0],&vf[1],&vf[2]);
+      bust->getVoltages(&vt[0],&vt[1],&vt[2]);
+
+      double vf_minus_vt[3];
+      
+      vf_minus_vt[0] = vf[0] - vt[0];
+      vf_minus_vt[1] = vf[1] - vt[1];
+      vf_minus_vt[2] = vf[2] - vt[2];
+      
+      if(p_hasInductance) {
+	double fval1[3],fval2[3];
+
+	matvecmult3x3(p_Linv,vf_minus_vt,fval1); // fval1 = L^-1*(vf - vt)
+	matvecmult3x3(p_minusLinvR,ibr,fval2); // fval2 = -L^-1*R*i_br
+	f[0] = fval1[0] + fval2[0] - p_didt[0];
+	f[1] = fval1[1] + fval2[1] - p_didt[1];
+	f[2] = fval1[2] + fval2[2] - p_didt[2];
+      } else {
+	double fval[3];
+
+	scaledmatvecmult3x3(p_R,ibr,fval,-1.0);
+
+	f[0] = fval[0] + vf_minus_vt[0];
+	f[1] = fval[1] + vf_minus_vt[1];
+	f[2] = fval[2] + vf_minus_vt[2];
+      }
+      
+      f += p_localoffset[i];
+    }
+  }    
 }
 
 /**
@@ -1066,19 +1240,21 @@ void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
 {
   int i,l=0;
+  double *ibr    = p_ibr;
   double *dibrdt = p_didt;
   gridpack::ComplexType *x = values;
 
   if(p_mode == XVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
       if(p_status[i]) {
-	*p_iptr     = real(x[0]);
-	*(p_iptr+1) = real(x[1]);
-	*(p_iptr+2) = real(x[2]);
+	*p_iptr     = ibr[0] = real(x[0]);
+	*(p_iptr+1) = ibr[1] = real(x[1]);
+	*(p_iptr+2) = ibr[2] = real(x[2]);
 
 	p_iptr += 3;
 	x += 3;
       }
+      ibr += 3;
     }
   } else if(p_mode == XDOTVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
@@ -1086,9 +1262,10 @@ void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
 	dibrdt[0] = real(x[0]);
 	dibrdt[1] = real(x[1]);
 	dibrdt[2] = real(x[2]);
-	
-	dibrdt += 3;
+
+	x += 3;
       }
+      dibrdt += 3;
     }
   }
 }

@@ -10,9 +10,9 @@ BaseEMTLoadModel::BaseEMTLoadModel(void)
   sbase = DEFAULT_MVABASE;
   status = 0;
   shift  = 0.0;
-  va     = 0.0;
-  vb     = 0.0;
-  vc     = 0.0;
+  p_va     = 0.0;
+  p_vb     = 0.0;
+  p_vc     = 0.0;
   nxload  = 0;
 }
 

@@ -112,15 +112,19 @@ public:
 		   gridpack::math::Vector& F)
   {
     p_factory->setTime(time);
+
+    // Push current values in Xdot vector back into network components
+    p_factory->setMode(XDOTVECTOBUS);
+
+    printf("Got here 1\n");
+    p_VecMapper->mapToNetwork(Xdot);
+    printf("Got here 2\n");
+
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
 
     p_VecMapper->mapToNetwork(X);
 
-    // Push current values in Xdot vector back into network components
-    p_factory->setMode(XDOTVECTOBUS);
-
-    p_VecMapper->mapToNetwork(Xdot);
 
     // Update ghost buses and branches
     emt_network->updateBuses();
