@@ -118,14 +118,6 @@ void EmtFactory::setup(void)
   int i;
   bool isactive;
   int rank = p_network->communicator().rank();
-  
-  for(i=0; i < numBuses; i++) {
-    isactive = p_network->getActiveBus(i);
-    EmtBus* emtbus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
-    emtbus->setGhostStatus(!isactive);
-    emtbus->setRank(rank);
-    emtbus->setup();
-  }
 
   for(i=0; i < numBranches; i++) {
     int idxf,idxt;
@@ -135,6 +127,16 @@ void EmtFactory::setup(void)
     emtbranch->setRank(rank);
     emtbranch->setup();
   }
+
+  
+  for(i=0; i < numBuses; i++) {
+    isactive = p_network->getActiveBus(i);
+    EmtBus* emtbus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
+    emtbus->setGhostStatus(!isactive);
+    emtbus->setRank(rank);
+    emtbus->setup();
+  }
+
 }
 
 

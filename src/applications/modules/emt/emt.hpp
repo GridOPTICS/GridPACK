@@ -125,15 +125,14 @@ public:
 
     p_VecMapper->mapToNetwork(X);
 
-
     // Update ghost buses and branches
     emt_network->updateBuses();
     emt_network->updateBranches();
 
     // Evaluate the residual f(x) - xdot
-    p_factory->setMode(RESIDUAL_EVAL);
-    p_VecMapper->mapToVector(F);
-    F.ready();
+    //    p_factory->setMode(RESIDUAL_EVAL);
+    //    p_VecMapper->mapToVector(F);
+    //    F.ready();
 
   }
 
