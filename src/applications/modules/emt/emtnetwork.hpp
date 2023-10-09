@@ -302,9 +302,11 @@ private:
       & p_pl & p_ql
       & p_Vm0 & p_Va0
       & p_ngen
+      & p_nload
       & p_nactivegen
       & p_isolated
       & p_mode
+      & p_time
       & p_TSshift
       & p_nvar
       & p_offset
@@ -548,10 +550,16 @@ private:
       & p_nparlines
       & p_status
       & p_cktid
+      & p_localoffset
+      & p_lineR
+      & p_lineX
+      & p_nvar
       & p_mode
+      & p_time
+      & p_TSshift
       & p_isghost
-      & p_rank;
-    
+      & p_rank
+      & p_offset;    
   }  
   
 };
