@@ -249,23 +249,24 @@ void Emt::setup()
   /* Create factory */
   p_factory = new EmtFactory(emt_network);
 
-  /* Set up connectivity information */
-  p_factory->setComponents();
-
   /* Load data from Data Collection objects to Bus and Branch components */
   p_factory->load();
 
-  /* Set up buses and branches */
-  p_factory->setup();
-  
+  /* Set up connectivity information */
+  p_factory->setComponents();
+
   // Set up bus data exchange buffers.
   p_factory->setExchange();
   if(!rank()) printf("Emt:Finished setting up factory\n");
+
+  /* Set up buses and branches */
+  p_factory->setup();
 
   // Create bus and branch data exchange
   emt_network->initBusUpdate();
   emt_network->initBranchUpdate();
 
+  
   /* Create mapper for vector */
   p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork>(emt_network);
 

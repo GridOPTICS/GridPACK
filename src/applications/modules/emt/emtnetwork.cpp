@@ -246,32 +246,31 @@ void EmtBus::setup()
   }
 
   for(i=0; i < p_ngen; i++) {
-    if(!p_gen[i]->getStatus()) {
-      p_neqsgen[i] = 0;
-      p_neqsexc[i] = 0;
-      p_neqsgov[i] = 0;
-    } else {
+    p_neqsgen[i] = 0;
+    p_neqsexc[i] = 0;
+    p_neqsgov[i] = 0;
 
-      // Set number of equations for this generator
-      p_gen[i]->getnvar(&p_neqsgen[i]);
-      // Set the offset for the first variable in the bus variable array 
-      p_gen[i]->setBusOffset(p_nvar);
+    if(!p_gen[i]->getStatus()) continue;
 
-      bool has_ex = p_gen[i]->hasExciter();
-      bool has_gv = p_gen[i]->hasGovernor();
+    // Set number of equations for this generator
+    p_gen[i]->getnvar(&p_neqsgen[i]);
+    // Set the offset for the first variable in the bus variable array 
+    p_gen[i]->setBusOffset(p_nvar);
 
-      if (has_ex) {
-        p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
-        p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
-      }
-      if (has_gv) {
-        p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
-        p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
-      }
-      
-      /* Update number of variables for this bus */
-      p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
+    bool has_ex = p_gen[i]->hasExciter();
+    bool has_gv = p_gen[i]->hasGovernor();
+
+    if (has_ex) {
+      p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
+      p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
     }
+    if (has_gv) {
+      p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+      p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
+    }
+    
+    /* Update number of variables for this bus */
+    p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
   }
 
   if(p_nload) {
@@ -279,17 +278,17 @@ void EmtBus::setup()
   }
 
   for(i=0; i < p_nload; i++) {
-    if(!p_load[i]->getStatus()) {
-      p_neqsload[i] = 0;
-    } else {
-      // Get number of equations for this load
-      p_load[i]->getnvar(&p_neqsload[i]);
-      // Set the offset for the first variable in the bus variable array 
-      p_load[i]->setBusOffset(p_nvar);
-      
-      p_nvar += p_neqsload[i];
-    }
+    p_neqsload[i] = 0;
+    if(!p_load[i]->getStatus()) continue;
+
+    // Get number of equations for this load
+    p_load[i]->getnvar(&p_neqsload[i]);
+    // Set the offset for the first variable in the bus variable array 
+    p_load[i]->setBusOffset(p_nvar);
+    
+    p_nvar += p_neqsload[i];
   }
+
   if(p_nvar) {
     p_vecidx = new int[p_nvar];
   }
@@ -312,7 +311,7 @@ void EmtBus::load(const
   double pi=PI;
   int    i=0;
   double Pg, Qg,mbase,Rs,Xdp,H,D; // temp. variables to hold machine data
-  int    gstatus,lstatus;
+  int    gstatus=0,lstatus=0;
   double delta,dw=0.0;
   double Pm,Ep;
   double IGD,IGQ; /* D and Q components of generator currents */
@@ -384,15 +383,16 @@ void EmtBus::load(const
 
   // Read Generators 
   // Get number of generators incident on this bus
-  data->getValue(GENERATOR_NUMBER, &p_ngen);
+  if(!data->getValue(GENERATOR_NUMBER, &p_ngen)) p_ngen = 0;
+
   if(p_ngen) {
     p_gen = (BaseEMTGenModel**)malloc(p_ngen*sizeof(BaseEMTGenModel*));
 
     for(i=0; i < p_ngen; i++) {
-      data->getValue(GENERATOR_STAT,&gstatus,i); // Generator status
+      if(!data->getValue(GENERATOR_STAT,&gstatus,i)) gstatus = 0; // Generator status
       if(!gstatus) {
         p_gen[i] = new BaseEMTGenModel;
-        p_gen[i]->setStatus(0);
+        p_gen[i]->setStatus(gstatus);
         continue;
       }
 
@@ -408,7 +408,10 @@ void EmtBus::load(const
         clgen = new Gencls;
         p_gen[i] = clgen;
       }
-      
+
+      // Set status
+      p_gen[i]->setStatus(gstatus);
+
       // Read generator data stored in data collection objects
       p_gen[i]->load(data,i); // load data
       has_ex = p_gen[i]->hasExciter();
@@ -418,18 +421,21 @@ void EmtBus::load(const
     }
   }
 
-  data->getValue(LOAD_NUMBER, &p_nload);
+  if(!data->getValue(LOAD_NUMBER, &p_nload)) p_nload = 0;
+
   if(p_nload) {
     p_load = (BaseEMTLoadModel**)malloc(p_nload*sizeof(BaseEMTLoadModel*));
   }
   
   for(i=0; i < p_nload; i++) {
-    data->getValue(LOAD_STATUS,&lstatus,i); // Generator status
+    if(!data->getValue(LOAD_STATUS,(int*)&lstatus,i)) lstatus = 0; // Load status
     if(!lstatus) {
       p_load[i] = new BaseEMTLoadModel;
-      p_load[i]->setStatus(0);
+      p_load[i]->setStatus(lstatus);
       continue;
     }
+
+    p_load[i]->setStatus(lstatus);
 
     std::string lmodel;
     data->getValue(LOAD_MODEL,&lmodel,i);
@@ -851,6 +857,8 @@ EmtBranch::EmtBranch(void)
   p_nvar = 3;
   p_num_vals = 0;
   p_mode = NONE;
+  p_hasInductance = false;
+  p_hasResistance = false;
 }
 
 /**
@@ -875,6 +883,12 @@ void EmtBranch::setup()
     if(!p_status[i]) continue;
 
     p_nvar += 3;
+
+    /* Add Capacitive shunt to from and to buses */
+    EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
+    EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
+    busf->addLumpedLineCshunt(p_C,0.5);
+    bust->addLumpedLineCshunt(p_C,0.5);
   }
 
   if(p_nvar) {
@@ -902,6 +916,12 @@ void EmtBranch::load(
   double R,X, Bc;
 
   data->getValue(BRANCH_NUM_ELEMENTS,&p_nparlines);
+
+  p_status.reserve(p_nparlines);
+  p_cktid.reserve(p_nparlines);
+  p_lineR.reserve(p_nparlines);
+  p_lineX.reserve(p_nparlines);
+
 
   try {
     if(p_nparlines > 1) {
@@ -967,13 +987,6 @@ void EmtBranch::load(
     p_C[0][1] = p_C[1][0] = C1;
     p_C[0][2] = p_C[2][0] = C1;
     p_C[1][2] = p_C[2][1] = C1;
-
-    /* Add Capacitive shunt to from and to buses */
-    EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
-    EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
-    busf->addLumpedLineCshunt(p_C,0.5);
-    bust->addLumpedLineCshunt(p_C,0.5);
-
   }
   
 }
