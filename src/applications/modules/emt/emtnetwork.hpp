@@ -25,6 +25,7 @@
 #include <base_classes/base_gov_model.hpp>
 #include <base_classes/base_load_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
+#include <emtutilfunctions.hpp>
 
 class EmtBus: public gridpack::component::BaseBusComponent 
 {
@@ -259,6 +260,7 @@ private:
   // EMT data
   double p_nphases;
   double p_Cshunt[3][3]; // Shunt capacitance 3X3 block
+  double p_Cshuntinv[3][3]; // Inverse of the shunt capacitance
   // The shunt capacitance is a combination of the bus shunt capacitance
   // and the lumped parameter line capacitance p_C = p_Cshunt + \sum_i^lines_connected{p_Cline_i/2}
   double p_Gshunt[3][3]; // Shunt resistance 3X3 block
@@ -270,7 +272,7 @@ private:
   // Generalized mapper interface
   std::vector<int>    p_rowidx;   // array holding row indices
   std::vector<int>    p_colidx;   // array holding column indices
-  std::vector<int>    p_vecidx;   // array holding vector indices
+  int                *p_vecidx;   // array holding vector indices
   int                 p_num_vals; // total number of matrix elements returned by bus
   
   // EMT Variables
@@ -351,6 +353,22 @@ public:
   */
   void setTime(double);
 
+  /**
+   * getCurrent - returns the line current
+   *
+   * @param[input]  idx - For the nth parallel line number, idx = n. For no parallel lines, idx = 0
+   * @param[output] ia - phase a current
+   * @param[output] ib - phase b current
+   * @param[output] ic - phase c current
+   */
+  void getCurrent(int idx,double *ia, double *ib, double *ic) {
+    double *i = p_ibr + 3*idx;
+
+    *ia = i[0];
+    *ib = i[1];
+    *ic = i[2];
+  }
+  
   /**
      Set buffer size for exchange
   */
@@ -452,6 +470,10 @@ public:
   void vectorSetElementValues(gridpack::ComplexType *values);
 
   /**
+   * Return the number of parallel lines
+   */
+  int getNumParallelLines(){ return p_nparlines;}
+  /**
    * Write output from branches to standard out
    * @param string (output) string with information to be printed out
    * @param bufsize size of string buffer in bytes
@@ -478,6 +500,8 @@ public:
   bool isGhost(void) { return p_isghost; }
   
   void setRank(int rank) { p_rank = rank; }
+
+  int  getStatus(int i) {return p_status[i];}
 private:
   int p_nparlines; // Number of parallel lines
   std::vector<int> p_status; // Status of the lines
@@ -496,19 +520,22 @@ private:
   // Used by generalized mapper interface
   std::vector<int>    p_rowidx;   // array holding row indices
   std::vector<int>    p_colidx;   // array holding column indices
-  std::vector<int>    p_vecidx;   // array holding vector indices
+  int                *p_vecidx;   // array holding vector indices
   int                 p_num_vals; // total number of matrix elements returned by bus
 
   double *p_iptr; // Pointer used for exchanging values with ghost branches. Note that this pointer is pointed to the buffer used for exchanging values with ghost branches. Its contents should be updated whenever there is a change in v, e.g., when the values from vector X are being mapped to the branches
 
-  double* p_didt;
+  double *p_ibr; // Array to hold branch currents. 
+  double* p_didt; // Array to hold derivatives
 
   // Line parameters
   double p_R[3][3];
   double p_L[3][3];
+  double p_Linv[3][3];
+  double p_minusLinvR[3][3];
   double p_C[3][3];
-  bool   hasResistance;
-  bool   hasInductance;
+  bool   p_hasResistance;
+  bool   p_hasInductance;
 
   EmtBranch *p_impl;
   
