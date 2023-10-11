@@ -72,6 +72,7 @@ function install_gridpack_python {
 
   pushd python || exit
 
+  # set an env var if we are running on RHEL
   os_id=$(
     source /etc/os-release
     echo "$ID"
