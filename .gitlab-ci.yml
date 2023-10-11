@@ -42,8 +42,6 @@ build-container:
 
 build-gridpack:
 
-  timeout: 5 hours
-
   image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
 
   variables:
