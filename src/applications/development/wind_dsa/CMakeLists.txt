@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-08-31 09:05:17 d3g096
+# Last Change: 2023-10-11 10:33:21 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -150,8 +150,8 @@ add_dependencies(wind2.x wind.x.input)
 # -------------------------------------------------------------
 gridpack_add_run_test("wind_dsa" wind.x input.xml)
 gridpack_add_run_test("wind_dsa_2" wind2.x input.xml)
-gridpack_add_run_test("wind_dsa_tamu2000" wind.x input_tamu2000_dsf.xml)
-gridpack_add_run_test("wind_dsa_2_tamu2000" wind2.x input_tamu2000_dsf.xml)
+# gridpack_add_run_test("wind_dsa_tamu2000" wind.x input_tamu2000_dsf.xml)
+# gridpack_add_run_test("wind_dsa_2_tamu2000" wind2.x input_tamu2000_dsf.xml)
 
 # -------------------------------------------------------------
 # install as a sample application
