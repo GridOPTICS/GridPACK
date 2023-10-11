@@ -58,3 +58,19 @@ build-gridpack:
   script:
 
     - ./install_gridpack.sh
+
+
+  artifacts:
+
+    untracked: true
+
+
+test-gridpack:
+
+  image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
+
+  needs: [ build-gridpack ]
+
+  script:
+
+    - make test
