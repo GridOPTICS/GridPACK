@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-08-18 14:09:32 d3g096
+ * @date   2023-08-30 07:58:18 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -482,16 +482,16 @@ void add(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
   result.add(B);
 }
 
-/// Make the transpose of a Matrix and put it in another
-/** 
- * 
- * 
- * @param A 
- * @param result 
- */
-template <typename T, typename I>
-void 
-transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result);
+// /// Make the transpose of a Matrix and put it in another
+// /** 
+//  * 
+//  * 
+//  * @param A 
+//  * @param result 
+//  */
+// template <typename T, typename I>
+// void 
+// transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result);
 
 /// Get a column from the Matrix and put in specified Vector
 /** 

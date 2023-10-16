@@ -21,7 +21,7 @@ function(gridpack_setup)
   endif()
 
   set(gp_include "${GRIDPACK_DIR}/include")
-  
+
   set(GRIDPACK_LIB_DIR "${GRIDPACK_DIR}/lib")
 
   set(GRIDPACK_HAVE_PETSC @PETSC_FOUND@)
@@ -89,7 +89,7 @@ function(gridpack_setup)
   )
 
   message(STATUS "GRIDPACK_HAVE_GOSS: ${GRIDPACK_HAVE_GOSS}")
-  if (GRIDPACK_HAVE_GOSS) 
+  if (GRIDPACK_HAVE_GOSS)
   message(STATUS "Adding GRIDPACK_GOSS library")
   find_library(GRIDPACK_GOSS_LIBRARY
     NAMES gridpack_goss
@@ -179,12 +179,12 @@ function(gridpack_setup)
     ${GRIDPACK_PARALLEL_LIBRARY}
   )
 
-  if (GRIDPACK_HAVE_PARMETIS)   
+  if (GRIDPACK_HAVE_PARMETIS)
     list(APPEND gp_include
       @PARMETIS_INCLUDE_DIR@
     )
     list(APPEND gp_libs
-      @PARMETIS_LIBRARY@ 
+      @PARMETIS_LIBRARY@
       @METIS_LIBRARY@
     )
   endif()
@@ -238,10 +238,10 @@ function(gridpack_setup)
     @MPI_INCLUDE_PATH@
   )
 
-  list(APPEND gp_libs
-    @Boost_LIBRARIES@
-    @MPI_CXX_LIBRARIES@
-  )
+#  list(APPEND gp_libs
+#    @Boost_LIBRARIES@
+#    @MPI_CXX_LIBRARIES@
+#  )
 
   set(GRIDPACK_INCLUDE_DIRS
     ${gp_include}
