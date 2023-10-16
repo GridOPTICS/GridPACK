@@ -57,7 +57,6 @@ build-gridpack:
 
     - ./install_gridpack.sh
 
-
   artifacts:
 
     untracked: true
