@@ -70,7 +70,9 @@ test-gridpack:
 
   script:
 
-    - make -C src/build test
+    - useradd gridpack
+    - chown -R gridpack:gridpack .
+    - su gridpack -c 'make -C src/build test'
 
   artifacts:
 
