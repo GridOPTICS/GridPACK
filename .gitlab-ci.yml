@@ -35,9 +35,10 @@ build-container:
 
   rules:
 
-    - if: $CI_PIPELINE_SOURCE == "branch"
-      changes: [ "dockerfile", "install/*" ]
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes: [ "dockerfile" ]
     - if: $CI_PIPELINE_SOURCE == "tag"
+    - when: manual
 
 
 build-gridpack:
