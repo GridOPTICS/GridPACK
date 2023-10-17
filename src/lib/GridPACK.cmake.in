@@ -238,10 +238,10 @@ function(gridpack_setup)
     @MPI_INCLUDE_PATH@
   )
 
-#  list(APPEND gp_libs
-#    @Boost_LIBRARIES@
-#    @MPI_CXX_LIBRARIES@
-#  )
+  list(APPEND gp_libs
+    @Boost_LIBRARIES@
+    @MPI_CXX_LIBRARIES@
+  )
 
   set(GRIDPACK_INCLUDE_DIRS
     ${gp_include}
