@@ -8,7 +8,7 @@ ENV GP_EXT_DEPS=/gridpack-dependencies
 ENV BOOST_VERSION "1.78.0"
 ENV GA_VERSION "5.8"
 ENV PETSC_VERSION "3.16.4"
-ENV LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost_${BOOST_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/ga-${GA_VERSION}/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost/install_for_gridpack/lib:${GP_EXT_DEPS}/ga/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
 
 WORKDIR ${GP_EXT_DEPS}
 
