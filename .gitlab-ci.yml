@@ -70,5 +70,10 @@ test-gridpack:
 
   script:
 
-    - find . -type d -maxdepth 4
-    - make test
+    - make -C src/build test
+
+  artifacts:
+
+    paths:
+
+      - src/build/Testing/Temporary
