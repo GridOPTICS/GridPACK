@@ -10,7 +10,23 @@ GridPACK on a workstation or a virtual machine, you may need to install or build
 MPI on your own. More information on configuring your Linux platform
 can be found [here](required/LINUX_BASICS.md).
 
-The example below can be adapted to build GridPACK on many platforms. More
+GridPACK includes two scripts that can be used to build GridPACK and its
+dependencies. These are not guaranteed to work for all Linux platforms, but they
+are likely to work for many configurations and we recommend that you try them
+first before building GridPACK and its dependencies by hand. Both scripts can be
+found in the [top level GridPACK directory](../../). The
+[install_gridpack_deps.sh](../../install_gridpack_deps.sh) script can be used to
+build all modules needed by GridPACK and the
+[install_gridpack.sh](../../install_gridpack.sh) script can be used to
+build GridPACK itself. You may be able to get these to work on you platform with
+some minor edits. If you are not interested in building GridPACK with the python
+interface, you should set the `install_gridpack_python` variable in
+[install_gridpack.sh](../../install_gridpack.sh) to false. If the
+`install_gridpack` scripts do not work on your platform, it will be necessary to
+build GridPACK and its dependencies by hand. Instructions for doing so are given
+in the following.
+
+The examples below can be adapted to build GridPACK on many platforms. More
 specific examples, with detailed instructions, for builds using different
 variants of Linux can be found on the links below.
 
