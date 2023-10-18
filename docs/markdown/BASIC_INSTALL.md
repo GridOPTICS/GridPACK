@@ -14,7 +14,7 @@ GridPACK includes two scripts that can be used to build GridPACK and its
 dependencies. These are not guaranteed to work for all Linux platforms, but they
 are likely to work for many configurations and we recommend that you try them
 first before building GridPACK and its dependencies by hand. Both scripts can be
-found in the [top level GridPACK directory](../../.). The
+found in the top level GridPACK directory. The
 [install_gridpack_deps.sh](../../install_gridpack_deps.sh) script can be used to
 build all modules needed by GridPACK and the
 [install_gridpack.sh](../../install_gridpack.sh) script can be used to
