@@ -72,8 +72,7 @@ building GridPACK from one of the releae tarballs, the submodules will already
 be included in the tarball and this command is not necessary.
 -->
 
-# GridPACK<sup>TM</sup>-->
-# GridPACK: High-Performance Electric Grid Simulation
+# GridPACK<sup>TM</sup>: High-Performance Electric Grid Simulation
 
 GridPACK is an open-source high-performance (HPC) package for simulation of large-scale electrical grids. Powered by distributed (parallel) computing and high-performance numerical solvers, GridPACK offers several applications forfast simulation of electrical transmission systems. GridPACK includes a number of prebuilt applications that can be directly used. The most commonly used and well-developed are:
 - AC Power Flow
