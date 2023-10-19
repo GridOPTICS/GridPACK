@@ -8,6 +8,7 @@
  * @file   ggov1.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
+ * @Latested modification with control blocks: Oct 24, 2023
  * 
  * @brief  
  * 
@@ -33,7 +34,7 @@ gridpack::dynamic_simulation::Ggov1Model::Ggov1Model(void)
   SecondGenExists = false;
   OptionToModifyLimitsForInitialStateLimitViolation = false;
   w = 0.0;
-  dx1Pelec = 0;
+  /*dx1Pelec = 0;
   dx2GovDer = 0; 
   dx3GovInt = 0;
   dx4Act = 0;
@@ -52,7 +53,8 @@ gridpack::dynamic_simulation::Ggov1Model::Ggov1Model(void)
   dx7LoadInt_1 = 0;
   dx8LoadCtrl_1 = 0;
   dx9Accel_1 = 0;
-  dx10TempLL_1 = 0;
+  dx10TempLL_1 = 0;*/
+  GenMVABase = 100.0;
 }
 
 /**
@@ -73,82 +75,63 @@ void gridpack::dynamic_simulation::Ggov1Model::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
-  //if (!data->getValue(GOVERNOR_RSELECT, &Rselect, idx)) 
-  Rselect = 0.0;
-  //if (!data->getValue(GOVERNOR_FLAG, &Flag, idx)) 
-  Flag = 0.0;
-  //if (!data->getValue(GOVERNOR_R, &R, idx)) 
-  R = 0.0; 
-  //if (!data->getValue(GOVERNOR_TPELEC, &Tpelec, idx)) 
-  Tpelec = 0.0;
-  //if (!data->getValue(GOVERNOR_MAXERR, &MaxErr, idx)) 
-  MaxErr = 0.0;
-  //if (!data->getValue(GOVERNOR_MINERR, &MinErr, idx)) 
-  MinErr = 0.0;
-  //if (!data->getValue(GOVERNOR_KPGOV, &Kpgov, idx)) 
-  Kpgov = 0.0;
-  //if (!data->getValue(GOVERNOR_KIGOV, &Kigov, idx)) 
-  Kigov = 0.0;
-  //if (!data->getValue(GOVERNOR_KDGOV, &Kdgov, idx)) 
-  Kdgov = 0.0;
-  //if (!data->getValue(GOVERNOR_TDGOV, &Tdgov, idx)) 
-  Tdgov = 0.0;
-  //if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) 
-  Vmax = 0.0;
-  //if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) 
-  Vmin = 0.0;
-  //if (!data->getValue(GOVERNOR_TACT, &Tact, idx)) 
-  Tact = 0.0;
-  //if (!data->getValue(GOVERNOR_KTURB, &Kturb, idx)) 
-  Kturb = 0.0;
-  //if (!data->getValue(GOVERNOR_WFNL, &Wfnl, idx)) 
-  Wfnl = 0.0;
-  //if (!data->getValue(GOVERNOR_TB, &Tb, idx)) 
-  Tb = 0.0; 
-  //if (!data->getValue(GOVERNOR_TC, &Tc, idx)) 
-  Tc = 0.0; 
-  //if (!data->getValue(GOVERNOR_TENG, &Teng, idx)) 
-  Teng = 0.0; 
-  //if (!data->getValue(GOVERNOR_TFLOAD, &Tfload, idx)) 
-  Tfload = 0.0;
-  //if (!data->getValue(GOVERNOR_KPLOAD, &Kpload, idx)) 
-  Kpload = 0.0;
-  //if (!data->getValue(GOVERNOR_KILOAD, &Kiload, idx)) 
-  Kiload = 0.0;
-  //if (!data->getValue(GOVERNOR_LDREF, &Ldref, idx)) 
-  Ldref = 0.0;
-  //if (!data->getValue(GOVERNOR_DM, &Dm, idx)) 
-  Dm = 0.0;
-  //if (!data->getValue(GOVERNOR_ROPEN, &Ropen, idx)) 
-  Ropen = 0.0;
-  //if (!data->getValue(GOVERNOR_RCLOSE, &Rclose, idx)) 
-  Rclose = 0.0;
-  //if (!data->getValue(GOVERNOR_KIMW, &Kimw, idx)) 
-  Kimw = 0.0;
-  //if (!data->getValue(GOVERNOR_ASET, &Aset, idx)) 
-  Aset = 0.0;
-  //if (!data->getValue(GOVERNOR_KA, &Ka, idx)) 
-  Ka = 0.0; 
-  //if (!data->getValue(GOVERNOR_TA, &Ta, idx)) 
-  Ta = 0.0; 
-  //if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) 
-  Trate = 0.0; 
-  //if (!data->getValue(GOVERNOR_DB, &Db, idx)) 
-  Db = 0.0;
-  //if (!data->getValue(GOVERNOR_TSA, &Tsa, idx)) 
-  Tsa = 0.0; 
-  //if (!data->getValue(GOVERNOR_TSB, &Tsb, idx)) 
-  Tsb = 0.0; 
-  //if (!data->getValue(GOVERNOR_RUP, &Rup, idx)) 
-  Rup = 0.0;
-  //if (!data->getValue(GOVERNOR_RDOWN, &Rdown, idx)) 
-  Rdown = 0.0;
-
-  if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
+  if (!data->getValue(GOVERNOR_RSELECT, &Rselect, idx)) Rselect = 0.0;
+  if (!data->getValue(GOVERNOR_FLAGSWITCH, &Flag, idx)) Flag = 0.0;
+  if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.0; 
+  if (!data->getValue(GOVERNOR_TPELEC, &Tpelec, idx)) Tpelec = 0.0;
+  if (!data->getValue(GOVERNOR_MAXERR, &MaxErr, idx)) MaxErr = 0.0;
+  if (!data->getValue(GOVERNOR_MINERR, &MinErr, idx)) MinErr = 0.0;
+  if (!data->getValue(GOVERNOR_KPGOV, &Kpgov, idx)) Kpgov = 0.0;
+  if (!data->getValue(GOVERNOR_KIGOV, &Kigov, idx)) Kigov = 0.0;
+  if (!data->getValue(GOVERNOR_KDGOV, &Kdgov, idx)) Kdgov = 0.0;
+  if (!data->getValue(GOVERNOR_TDGOV, &Tdgov, idx)) Tdgov = 0.0;
+  if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) Vmax = 0.0;
+  if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) Vmin = 0.0;
+  if (!data->getValue(GOVERNOR_TACT, &Tact, idx)) Tact = 0.0;
+  if (!data->getValue(GOVERNOR_KTURB, &Kturb, idx)) Kturb = 0.0;
+  if (!data->getValue(GOVERNOR_WFNL, &Wfnl, idx)) Wfnl = 0.0;
+  if (!data->getValue(GOVERNOR_TB, &Tb, idx)) Tb = 0.0; 
+  if (!data->getValue(GOVERNOR_TC, &Tc, idx)) Tc = 0.0; 
+  if (!data->getValue(GOVERNOR_TENG, &Teng, idx)) Teng = 0.0; 
+  if (!data->getValue(GOVERNOR_TFLOAD, &Tfload, idx)) Tfload = 0.0;
+  if (!data->getValue(GOVERNOR_KPLOAD, &Kpload, idx)) Kpload = 0.0;
+  if (!data->getValue(GOVERNOR_KILOAD, &Kiload, idx)) Kiload = 0.0;
+  if (!data->getValue(GOVERNOR_LDREF, &Ldref, idx)) Ldref = 0.0;
+  if (!data->getValue(GOVERNOR_DM, &Dm, idx)) Dm = 0.0;
+  if (!data->getValue(GOVERNOR_ROPEN, &Ropen, idx)) Ropen = 0.0;
+  if (!data->getValue(GOVERNOR_RCLOSE, &Rclose, idx)) Rclose = 0.0;
+  if (!data->getValue(GOVERNOR_KIMW, &Kimw, idx)) Kimw = 0.0;
+  if (!data->getValue(GOVERNOR_ASET, &Aset, idx)) Aset = 0.0;
+  if (!data->getValue(GOVERNOR_KA, &Ka, idx)) Ka = 0.0; 
+  if (!data->getValue(GOVERNOR_TA, &Ta, idx)) Ta = 0.0; 
+  if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) Trate = 0.0; 
+  if (!data->getValue(GOVERNOR_DB, &Db, idx)) Db = 0.0;
+  if (!data->getValue(GOVERNOR_TSA, &Tsa, idx)) Tsa = 0.0; 
+  if (!data->getValue(GOVERNOR_TSB, &Tsb, idx)) Tsb = 0.0; 
+  if (!data->getValue(GOVERNOR_RUP, &Rup, idx)) Rup = 0.0;
+  if (!data->getValue(GOVERNOR_RDOWN, &Rdown, idx)) Rdown = 0.0;
+  /*if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
   if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; // Err
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
+  if (!data->getValue(GENERATOR_MBASE, &GenMVABase, idx)) GenMVABase = 0.0;*/
 
-  if (!data->getValue(GENERATOR_MBASE, &GenMVABase, idx)) GenMVABase = 0.0;
+  Filter_blk_s0.setparams(1.0, Tpelec);
+
+  double a[2], b[2];
+  a[0] = Tdgov; a[1] = 1.0;
+  b[0] = Kdgov; b[1] = 0.0;
+  Feedback_blk_s1.setcoeffs(a, b);
+
+  Integrator_blk_s2.setparams(1.0);//, Vmin, Vmax);
+  Integrator_blk_s3.setparams(1.0);//, Vmin, Vmax);
+  Leadlag_blk_s4.setparams(Tc, Tb);
+  Filter_blk_s5.setparams(1.0, Tfload);
+  PIControl_blk_s6.setparams(Kpload, Kiload);
+  Integrator_blk_s7.setparams(1.0);
+  Filter_blk_s8.setparams(1.0, Ta);
+  Leadlag_blk_s9.setparams(Tsa, Tsb);
+  
+  Deadband_blk.setparams(MinErr, MaxErr); // TBD: Need to check!
 }
 
 /**
@@ -179,7 +162,43 @@ void gridpack::dynamic_simulation::Ggov1Model::init(double mag, double ang, doub
   if (Db < 0) Db = 0; // disable deadband
   if (Teng < 0) Teng = 0; // Actually for now we ignore this here anyway
 
-  printf("ggov1: Pmech = %f\n", Pmech);
+  if (Dm > 0)
+    s4 = Leadlag_blk_s4.init_given_y(Pmech + Dm * w);
+  else
+    s4 = Leadlag_blk_s4.init_given_y(Pmech);
+
+  if (Dm < 0) s9 = s3 * pow(1+w, Dm);
+  else s9 = s3;
+
+  s5 = Leadlag_blk_s9.init_given_u(s9);
+
+  temp1 = Filter_blk_s5.init_given_u(s5);
+
+  s6 = PIControl_blk_s6.init_given_u(LdRefslashKturb + Wfnl - temp1);
+
+  s8 = Filter_blk_s8.init_given_u(w);
+
+  s3 = s4 / Kturb + Wfnl;
+  if (Flag == 1) s3 = s3 / (1 + w);
+
+  s0 = Filter_blk_s0.init_given_u(GenPelec) * GenMVABase / Trate; 
+  Pmwset = s0; 
+
+  s7 = Integrator_blk_s7.init_given_u(Pmwset - s0) * Kimw;
+
+  if (Rselect == 1) Pref = R * s0;
+  else if (Rselect < 0) Pref = R * s3;
+  else Pref = 0;
+
+  temp2 = s7 - w; 
+   
+  s1 = Feedback_blk_s1.init_given_u(temp2);
+
+  temp3 = Integrator_blk_s3.init_given_y(s3) / Tact + s3;
+
+  s2 = Integrator_blk_s2.init_given_u(temp3 * KigovKpgov); // TBD: check!
+  
+  /*printf("ggov1: Pmech = %f\n", Pmech);
   // State 1
   x1Pelec = GenPelec * GenMVABase /Trate;
   Pmwset = x1Pelec;
@@ -221,7 +240,67 @@ void gridpack::dynamic_simulation::Ggov1Model::init(double mag, double ang, doub
   x3GovInt = 0;
   // State 8
   x8LoadCtrl = 0;
-  LastLowValueSelect = x4Act;
+  LastLowValueSelect = x4Act;*/
+}
+
+float findSmallestFloat(float a, float b, float c) {
+    if (a <= b && a <= c) {
+        return a;
+    } else if (b <= a && b <= c) {
+        return b;
+    } else {
+        return c;
+    }
+}
+
+void gridpack::dynamic_simulation::Ggov1Model::computeModel(double t_inc,IntegrationStage int_flag)
+{
+  double u1, u2, u3;
+
+  s0 = Filter_blk_s0.getoutput(GenPelec);
+  s7 = Integrator_blk_s7.getoutput(Pmech - s0) * Kimw;
+
+  if (Rselect == 1) u1 = R * s0;
+  else if (Rselect < 0) u1 = R * s3;
+  else u1 = 0;
+
+  temp2 = Pref + s7 - w - u1; 
+
+  temp2 = Deadband_blk.getoutput(temp2);
+
+  s1 = Feedback_blk_s1.getoutput(temp2);
+
+  s2 = Integrator_blk_s2.getoutput((temp3 - s2) * KigovKpgov);
+
+  s8 = Filter_blk_s8.getoutput(w);
+
+  s6 = PIControl_blk_s6.getoutput(LdRefslashKturb + Wfnl - temp1);
+
+  float small = findSmallestFloat(s6, (Aset - s8) * Ka, s1 + s2);
+
+  if (small > Vmax) temp3 = Vmax;
+  else if (small < Vmin) temp3 = Vmin;
+  else temp3 = small;
+
+  u2 = (temp3 - s3) / Tact;
+
+  if (u2 > Ropen) u2 = Ropen;
+  else if (u2 < Rclose) u2 = Rclose;
+
+  s3 = Integrator_blk_s3.getoutput(u2);
+
+  if (Flag == 1) s3 = s3 / (1 + w);
+
+  if (Dm < 0) u3 = Leadlag_blk_s9.getoutput(s3 * pow(1+w, Dm));
+  else u3 = Leadlag_blk_s9.getoutput(s3);
+
+  temp1 = Filter_blk_s5.getoutput(u3);
+
+  s4 = Leadlag_blk_s4.init_given_y(s3 - Wfnl);
+
+  if (Dm > 0) Pmech = s4 - Dm * w;
+  else Pmech = s4; 
+
 }
 
 /**
@@ -231,7 +310,8 @@ void gridpack::dynamic_simulation::Ggov1Model::init(double mag, double ang, doub
  */
 void gridpack::dynamic_simulation::Ggov1Model::predictor(double t_inc, bool flag)
 {
-  if (!flag) {
+  computeModel(t_inc,PREDICTOR);
+  /*if (!flag) {
     x1Pelec = x1Pelec_1;
     x2GovDer = x2GovDer_1; 
     x3GovInt = x3GovInt_1;
@@ -363,7 +443,7 @@ void gridpack::dynamic_simulation::Ggov1Model::predictor(double t_inc, bool flag
     Pmech = LeadLagOut * Trate / GenMVABase;
   } 
   
-  printf("ggov1 Pmech = %f\n", Pmech);
+  printf("ggov1 Pmech = %f\n", Pmech);*/
 }
 
 /**
@@ -373,7 +453,8 @@ void gridpack::dynamic_simulation::Ggov1Model::predictor(double t_inc, bool flag
  */
 void gridpack::dynamic_simulation::Ggov1Model::corrector(double t_inc, bool flag)
 {
-  // State 1
+  computeModel(t_inc,CORRECTOR);
+  /*// State 1
   if (Tpelec < TS_THRESHOLD * t_inc) {
     x1Pelec_1 = GenPelec * GenMVABase / Trate;
     dx1Pelec_1 = 0;
@@ -493,7 +574,7 @@ void gridpack::dynamic_simulation::Ggov1Model::corrector(double t_inc, bool flag
     Pmech = LeadLagOut * Trate / GenMVABase;
   } 
   
-  printf("ggov1 Pmech = %f\n", Pmech);
+  printf("ggov1 Pmech = %f\n", Pmech);*/
 }
 
 /**

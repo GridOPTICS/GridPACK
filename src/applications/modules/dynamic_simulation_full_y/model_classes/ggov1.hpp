@@ -8,6 +8,7 @@
  * @file   ggov1.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
+ * @Latested modification with control blocks: Oct 24, 2023
  * 
  * @brief  
  * 
@@ -19,9 +20,11 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_governor_model.hpp"
-#include "GainBlockClass.hpp"
+/*#include "GainBlockClass.hpp"
 #include "BackLashClass.hpp"
-#include "DBIntClass.hpp"
+#include "DBIntClass.hpp"*/
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -104,32 +107,49 @@ class Ggov1Model : public BaseGovernorModel
     double Aset, Ka, Ta, Trate, Db, Tsa, Tsb;
     double Rup, Rdown;
     
-    double Db1, Err, Db2;
-    double Gvx, PGvx;
+    //double Db1, Err, Db2;
+    //double Gvx, PGvx;
     //double Iblock;
 
     // GGOV1 state variables
-    double x1Pelec, x2GovDer, x3GovInt, x4Act, x5LL, x6Fload;
+    /*double x1Pelec, x2GovDer, x3GovInt, x4Act, x5LL, x6Fload;
     double x7LoadInt, x8LoadCtrl, x9Accel, x10TempLL;
     double x1Pelec_1, x2GovDer_1, x3GovInt_1, x4Act_1, x5LL_1, x6Fload_1;
     double x7LoadInt_1, x8LoadCtrl_1, x9Accel_1, x10TempLL_1;
     double dx1Pelec, dx2GovDer, dx3GovInt, dx4Act, dx5LL, dx6Fload;
     double dx7LoadInt, dx8LoadCtrl, dx9Accel, dx10TempLL;
     double dx1Pelec_1, dx2GovDer_1, dx3GovInt_1, dx4Act_1, dx5LL_1, dx6Fload_1;
-    double dx7LoadInt_1, dx8LoadCtrl_1, dx9Accel_1, dx10TempLL_1;
+    double dx7LoadInt_1, dx8LoadCtrl_1, dx9Accel_1, dx10TempLL_1;*/
 
     // Outputs: Mechnical Power Gen1 and Gen 2
     double Pmech;
 
     bool SecondGenExists, OptionToModifyLimitsForInitialStateLimitViolation;
 
-    GainBlockClass GainBlock;
+    /*GainBlockClass GainBlock;
     BackLashClass BackLash;
-    DBIntClass DBInt;
+    DBIntClass DBInt;*/
 
     double Pref, Pmwset, KigovKpgov, KiLoadKpLoad, LdRefslashKturb, LastLowValueSelect, LeadLagOut;
     double w;
     double GenMVABase, GenPelec;
+
+    Filter Filter_blk_s0;
+    Cblock Feedback_blk_s1;
+    Integrator Integrator_blk_s2;
+    Integrator Integrator_blk_s3;
+    LeadLag Leadlag_blk_s4;
+    Filter Filter_blk_s5;
+    PIControl PIControl_blk_s6;
+    Integrator Integrator_blk_s7;
+    Filter Filter_blk_s8;
+    LeadLag Leadlag_blk_s9;
+    Deadband Deadband_blk;
+
+    void computeModel(double t_inc, IntegrationStage int_flag);
+
+    double s0, s1, s2, s3, s4, s5, s6, s7, s8, s9;
+    double temp1, temp2, temp3;
 
 };
 }  // dynamic_simulation
