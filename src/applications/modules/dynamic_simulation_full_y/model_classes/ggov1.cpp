@@ -122,8 +122,8 @@ void gridpack::dynamic_simulation::Ggov1Model::load(
   b[0] = Kdgov; b[1] = 0.0;
   Feedback_blk_s1.setcoeffs(a, b);
 
-  Integrator_blk_s2.setparams(1.0);//, Vmin, Vmax);
-  Integrator_blk_s3.setparams(1.0);//, Vmin, Vmax);
+  Integrator_blk_s2.setparams(1.0, Vmin, Vmax);
+  Integrator_blk_s3.setparams(1.0, Vmin, Vmax);
   Leadlag_blk_s4.setparams(Tc, Tb);
   Filter_blk_s5.setparams(1.0, Tfload);
   PIControl_blk_s6.setparams(Kpload, Kiload);
