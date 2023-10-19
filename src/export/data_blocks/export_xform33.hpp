@@ -251,7 +251,7 @@ class ExportXform33
               sprintf(ptr,"%f,",rval);
               ptr += strlen(ptr);
               rval = 0.0;
-              data->getValue(TRANSFORMER_NOMV1,&rval,j);
+              data->getValue(TRANSFORMER_NOMV2,&rval,j);
               sprintf(ptr," %f",rval);
               ptr += strlen(ptr);
               sprintf(ptr,"\n");
