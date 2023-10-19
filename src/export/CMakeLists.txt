@@ -44,11 +44,17 @@ endif()
 # -------------------------------------------------------------
 install(FILES 
   base_export.hpp
+  PSSE34Export.hpp
   PSSE33Export.hpp
   PSSE23Export.hpp
   DESTINATION include/gridpack/export
 )
 install(FILES 
+  data_blocks/export_bus34.hpp
+  data_blocks/export_gen34.hpp
+  data_blocks/export_line34.hpp
+  data_blocks/export_sys_switch34.hpp
+  data_blocks/export_xform34.hpp
   data_blocks/export_2term33.hpp
   data_blocks/export_area33.hpp
   data_blocks/export_bus33.hpp
