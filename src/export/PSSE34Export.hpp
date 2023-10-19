@@ -30,7 +30,7 @@
 #include "gridpack/export/data_blocks/export_area33.hpp"
 #include "gridpack/export/data_blocks/export_2term33.hpp"
 #include "gridpack/export/data_blocks/export_vscline33.hpp"
-#include "gridpack/export/data_blocks/export_icorr34.hpp"
+#include "gridpack/export/data_blocks/export_icorr33.hpp"
 #include "gridpack/export/data_blocks/export_mterm33.hpp"
 #include "gridpack/export/data_blocks/export_msect33.hpp"
 #include "gridpack/export/data_blocks/export_zone33.hpp"
@@ -91,7 +91,7 @@ class PSSE34Export
       term2.write2TermBlock(fout);
       ExportVSCLine33<_network> vscline(p_network);
       vscline.writeVSCLineBlock(fout);
-      ExportImpedCorr34<_network> icorr(p_network);
+      ExportImpedCorr33<_network> icorr(p_network);
       icorr.writeImpedCorrBlock(fout);
       ExportMultiTerm33<_network> mterm(p_network);
       mterm.writeMultiTermBlock(fout);
