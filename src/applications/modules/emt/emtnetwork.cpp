@@ -39,7 +39,7 @@ EmtBus::EmtBus(void)
   p_neqsexc= NULL;
   p_neqsgov= NULL;
   p_gen     = NULL;
-  p_num_vals = -1;
+  p_num_vals = 0;
   p_hasCapacitiveShunt = false;
   p_hasResistiveShunt = false;
   p_hasInductiveShunt = false;
@@ -220,11 +220,6 @@ void EmtBus::setup()
     }
   }
 
-  if(p_hasCapacitiveShunt) {
-    // Invert the capacitive shunt
-    inverse3x3(p_Cshunt,p_Cshuntinv);
-  }
-  
   for(i=0; i < 3; i++) {
     if(p_hasInductiveShunt) break;
     for(j=0; j < 3; j++) {
@@ -532,12 +527,74 @@ int EmtBus::matrixGetColIndex(int icol)
  */
 int EmtBus::matrixNumValues()
 {
+  bool has_ex=false, has_gv=false;
+  int i,j;
+  int numvals=0;
+
+  if(p_num_vals) {
+    // matrix elements already calculated, just return the number
+    return p_num_vals;
+  }
+  // else the following code is executed
+  // to calculate the number of matrix elements
+  
   if (p_isolated) {
     p_num_vals = 3;
-  } else {
-    
+    return p_num_vals;
+  }
+  
+  if(p_hasInductiveShunt) {
   }
 
+  if(p_hasCapacitiveShunt) {
+    numvals += 9;
+  } else {
+    numvals += 3;
+  }
+  
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  //Get the edges connected to this bus
+  gridpack::component::BaseBusComponent::getNeighborBranches(branches);
+  int nconnbranch = branches.size();
+  
+  int thisbusnum = this->getOriginalIndex();
+
+  for(i=0; i < nconnbranch; i++) {
+    EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+    
+    int fbusnum = branch->getBus1OriginalIndex();
+    int tbusnum = branch->getBus2OriginalIndex();
+    
+    int nparlines = branch->getNumParallelLines();
+    for(j=0; j < nparlines; j++) {
+      if(!branch->getStatus(j)) continue;
+
+      numvals += 3; // for i_br
+    }
+  }
+
+  for(i=0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) continue;
+    numvals += 3;
+
+    int numvals_gen;
+    numvals_gen = p_gen[i]->matrixNumValues();
+
+    numvals += numvals_gen;
+  }
+
+  for(i=0; i < p_nload; i++) {
+    if(!p_load[i]->getStatus()) continue;
+
+    numvals += 3;
+
+    int numvals_load;
+    numvals_load = p_load[i]->matrixNumValues();
+
+    numvals += numvals_load;
+  }
+  
+  p_num_vals = numvals;
   return p_num_vals;
 }
 
@@ -556,7 +613,47 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
 
 void EmtBus::matrixGetValues(gridpack::math::Matrix &matrix)
 {
+  int i,j;
+  int row_idx[9],col_idx[9];
+  gridpack::ComplexType val[9];
+  
+  if(p_isolated) {
+    row_idx[0] = p_vecidx[0];
+    row_idx[1] = p_vecidx[1];
+    row_idx[2] = p_vecidx[2];
+    val[0] = val[1] = val[2] = 1.0;
 
+    matrix.addElements(3,row_idx,row_idx,val);
+
+    return;
+  }
+
+  if(p_hasInductiveShunt) {
+  }
+
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  //Get the edges connected to this bus
+  gridpack::component::BaseBusComponent::getNeighborBranches(branches);
+  int nconnbranch = branches.size();
+
+  int thisbusnum = this->getOriginalIndex();
+
+  for(i=0; i < nconnbranch; i++) {
+    EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+
+    int fbusnum = branch->getBus1OriginalIndex();
+    int tbusnum = branch->getBus2OriginalIndex();
+      
+    int nparlines = branch->getNumParallelLines();
+
+    for(j=0; j < nparlines; j++) {
+      if(!branch->getStatus(j)) continue;
+
+      if(thisbusnum == fbusnum) {
+      } else {
+      }
+    }
+  }
 }
 
 
@@ -781,10 +878,11 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 
     if(p_hasCapacitiveShunt) {
       double fval[3];
-      matvecmult3x3(p_Cshuntinv,i_mis,fval);
-      f[0] = fval[0] - p_dvdt[0];
-      f[1] = fval[1] - p_dvdt[1];
-      f[2] = fval[2] - p_dvdt[2];
+      // i_mis - Cshunt*dv_dt = 0
+      matvecmult3x3(p_Cshunt,p_dvdt,fval);
+      f[0] = i_mis[0] - fval[0];
+      f[1] = i_mis[1] - fval[1];
+      f[2] = i_mis[2] - fval[2];
     } else {
       f[0] = i_mis[0];
       f[1] = i_mis[1];
@@ -865,7 +963,7 @@ EmtBranch::EmtBranch(void)
   p_nparlines = 0;
   p_iptr = NULL;
   p_nvar = 3;
-  p_num_vals = 0;
+  p_num_vals = -1;
   p_mode = NONE;
   p_hasInductance = false;
   p_hasResistance = false;
@@ -985,14 +1083,6 @@ void EmtBranch::load(
     p_L[0][2] = p_L[2][0] = L1;
     p_L[1][2] = p_L[2][1] = L1;
 
-    if(p_hasInductance) {
-      // L^-1
-      inverse3x3(p_L,p_Linv);
-
-      // -L^-1*R
-      scaledmatmatmult3x3(p_Linv,p_R,p_minusLinvR,-1.0);
-    }
-    
     p_C[0][0] = p_C[1][1] = p_C[2][2] = C1 + C0;
     p_C[0][1] = p_C[1][0] = C1;
     p_C[0][2] = p_C[2][0] = C1;
@@ -1099,6 +1189,33 @@ int EmtBranch::matrixGetColIndex(int icol)
  */
 int EmtBranch::matrixNumValues()
 {
+  int numvals=0;
+  int i;
+
+  if(p_num_vals) {
+    // Number of matrix elements already calculated
+    // so just return the number
+    return p_num_vals;
+  }
+  // else execute the following code to compute the
+  // number of matrix elements
+  if(p_hasInductance) {
+    // fval = L^-1*(vf - R*i - vt)
+    // dfval_dvf = L^-1 => 9 entries
+    // dfval_di  = -L^-1*R => 9 entries
+    // dfval_dvt = -L^-1 => 9 entries
+    // Total 27 entries
+    numvals += 27;
+  } else {
+    // fval = vf - R*i - vt
+    // dfval_dvf = I => 3 entries
+    // dfval_di = -R => 9 entries
+    // dfval_dvt = -I => 3 entries
+    // Total 15 entries
+    numvals += 15;
+  }
+  
+  p_num_vals = numvals;
   return p_num_vals;
 }
 
@@ -1234,21 +1351,21 @@ void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       vf_minus_vt[2] = vf[2] - vt[2];
       
       if(p_hasInductance) {
-	double fval1[3],fval2[3];
-
-	matvecmult3x3(p_Linv,vf_minus_vt,fval1); // fval1 = L^-1*(vf - vt)
-	matvecmult3x3(p_minusLinvR,ibr,fval2); // fval2 = -L^-1*R*i_br
-	f[0] = fval1[0] + fval2[0] - p_didt[0];
-	f[1] = fval1[1] + fval2[1] - p_didt[1];
-	f[2] = fval1[2] + fval2[2] - p_didt[2];
+	double Ribr[3],Ldidt[3];
+	// vf - R*ibr - vt - L*didt = 0
+	matvecmult3x3(p_R, ibr,Ribr); // fval1 = R*ibr
+	matvecmult3x3(p_L,p_didt,Ldidt); // fval2 = L*didt
+	f[0] = vf_minus_vt[0] - Ribr[0] - Ldidt[0];
+	f[1] = vf_minus_vt[1] - Ribr[1] - Ldidt[1];
+	f[2] = vf_minus_vt[2] - Ribr[2] - Ldidt[2];
       } else {
-	double fval[3];
+	double Ribr[3];
 
-	scaledmatvecmult3x3(p_R,ibr,fval,-1.0);
+	matvecmult3x3(p_R,ibr,Ribr);
 
-	f[0] = fval[0] + vf_minus_vt[0];
-	f[1] = fval[1] + vf_minus_vt[1];
-	f[2] = fval[2] + vf_minus_vt[2];
+	f[0] = -Ribr[0] + vf_minus_vt[0];
+	f[1] = -Ribr[1] + vf_minus_vt[1];
+	f[2] = -Ribr[2] + vf_minus_vt[2];
       }
       
       f += p_localoffset[i];

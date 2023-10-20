@@ -260,7 +260,6 @@ private:
   // EMT data
   double p_nphases;
   double p_Cshunt[3][3]; // Shunt capacitance 3X3 block
-  double p_Cshuntinv[3][3]; // Inverse of the shunt capacitance
   // The shunt capacitance is a combination of the bus shunt capacitance
   // and the lumped parameter line capacitance p_C = p_Cshunt + \sum_i^lines_connected{p_Cline_i/2}
   double p_Gshunt[3][3]; // Shunt resistance 3X3 block
@@ -533,8 +532,6 @@ private:
   // Line parameters
   double p_R[3][3];
   double p_L[3][3];
-  double p_Linv[3][3];
-  double p_minusLinvR[3][3];
   double p_C[3][3];
   bool   p_hasResistance;
   bool   p_hasInductance;
