@@ -53,6 +53,9 @@ int main(int argc, char **argv)
     bool exportPSSE33 = false;
     std::string filename33;
     exportPSSE33 = cursor->get("exportPSSE_v33",&filename33);
+    bool exportPSSE34 = false;
+    std::string filename34;
+    exportPSSE34 = cursor->get("exportPSSE_v34",&filename34);
     bool noPrint = false;
     cursor->get("suppressOutput",&noPrint);
 
@@ -79,6 +82,9 @@ int main(int argc, char **argv)
     }
     if (exportPSSE33) {
       pf_app.exportPSSE33(filename33);
+    }
+    if (exportPSSE34) {
+      pf_app.exportPSSE34(filename34);
     }
     if (!noPrint) {
       timer ->dump();
