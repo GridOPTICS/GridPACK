@@ -144,9 +144,20 @@ void Constantimpedance::getCurrent(double *ia, double *ib, double *ic)
 /**
  * Get number of matrix values contributed by load
  * @return number of matrix values
+
+ Non-zero pattern of the Jacobian is
+         ia    ib    ic    va    vb    vc
+ eq. 1 |  x                 x
+ eq. 2 |        x                 x     
+ eq. 3 |              x                 x
+
+ Number of non-zeros in the Jacobian = 6
  */
 int Constantimpedance::matrixNumValues()
 {
+  int numVals = 6;
+
+  return numVals;
 }
 
 

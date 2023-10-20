@@ -205,9 +205,23 @@ void Gencls::getCurrent(double *ia, double *ib, double *ic)
 /**
  * Get number of matrix values contributed by generator
  * @return number of matrix values
+
+ Non-zero pattern of the Jacobian (x denotes non-zero value)
+
+         delta    omega    ia    ib    ic    va    vb    vc
+ eq. 1 |   x       x    
+ eq. 2 |   x       x        x     x     x     x     x     x
+ eq. 3 |   x                x                 x
+ eq. 4 |   x                      x                 x
+ eq. 5 |   x                            x                 x
+
+ Number of non-zero values = 19
  */
 int Gencls::matrixNumValues()
 {
+  int numVals = 19;
+
+  return numVals;
 }
 
 
