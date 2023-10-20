@@ -187,11 +187,11 @@ class ExportGen34
             ptr += strlen(ptr);
             rval = 1.0;
             data->getValue(GENERATOR_WPF,&rval,j);
-            sprintf(ptr," %f\n",rval);
+            sprintf(ptr," %f",rval);
             ptr += strlen(ptr);
             ival = 0;
             data->getValue(GENERATOR_NREG,&ival,j);
-            sprintf(ptr," %d,",ival);
+            sprintf(ptr," %d\n",ival);
             text_line text;
             strcpy(text.text,buf);
             text.global_idx = p_network->getGlobalBusIndex(i);

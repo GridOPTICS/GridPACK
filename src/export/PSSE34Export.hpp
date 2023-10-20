@@ -83,6 +83,8 @@ class PSSE34Export
       generators.writeGenBlock(fout);
       ExportLine34<_network> lines(p_network);
       lines.writeLineBlock(fout);
+      ExportSysSwitch34<_network> sys_switch(p_network);
+      sys_switch.writeSysSwitchBlock(fout);
       ExportXform34<_network> xform(p_network);
       xform.writeXformBlock(fout);
       ExportArea33<_network> area(p_network);

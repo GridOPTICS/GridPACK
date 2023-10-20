@@ -59,7 +59,7 @@ class ExportSysSwitch34
       int me = p_comm.rank();
       // BaseExport<_network> exprt(p_comm);
       if (me == 0) {
-        fout << "0 / END TRANSFORMER DATA, BEGIN SYSTEM SWITCHING DEVICE DATA" << std::endl;
+        fout << "0 / END LINE DATA, BEGIN SYSTEM SWITCHING DEVICE DATA" << std::endl;
       }
       // exprt.writeDataBlock(fout, text_data);
     }

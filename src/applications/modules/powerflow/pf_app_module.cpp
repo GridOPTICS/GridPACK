@@ -24,6 +24,7 @@
 #include "gridpack/parser/PTI34_parser.hpp"
 #include "gridpack/parser/PTI35_parser.hpp"
 #include "gridpack/parser/MAT_parser.hpp"
+#include "gridpack/export/PSSE34Export.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/export/PSSE23Export.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
@@ -762,6 +763,17 @@ void gridpack::powerflow::PFAppModule::print(const char *buf)
 {
   if (p_no_print) return;
   p_busIO->header(buf);
+}
+
+/**
+ * Export final configuration to PSS/E v34 formatted file
+ * @param filename name of file to store network configuration
+ */
+void gridpack::powerflow::PFAppModule::exportPSSE34(std::string &filename)
+{
+  if (p_no_print) return;
+  gridpack::expnet::PSSE34Export<PFNetwork> exprt(p_network);
+  exprt.writeFile(filename);
 }
 
 /**

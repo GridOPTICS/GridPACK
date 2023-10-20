@@ -112,7 +112,7 @@ class ExportLine34
               data->getValue(BRANCH_NAME,&sval,j);
               sprintf(ptr,"\'%s\'",sval.c_str());
               ptr += strlen(ptr);
-              rval = 0.0
+              rval = 0.0;
               if (!data->getValue(BRANCH_RATE1,&rval,j)) {
                 data->getValue(BRANCH_RATING_A,&rval,j);
               }

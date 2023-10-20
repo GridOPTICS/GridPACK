@@ -153,7 +153,7 @@ class ExportXform34
               sprintf(ptr," %d, %f,",ival,rval);
               ptr += strlen(ptr);
               // VECGRP just defaults to 12 blanks
-              sprintf(ptr,"\'            \'");
+              sprintf(ptr,"\'            \',");
               ptr += strlen(ptr);
               // Assume default value for ZCOD
               sprintf(ptr," 0\n");
