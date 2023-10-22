@@ -80,6 +80,12 @@ class Constantimpedance: public BaseEMTLoadModel
   void getCurrent(double *ia, double *ib, double *ic);
 
   /**
+   * Return the global location for the load current 
+   * @param [output] i_gloc - global location for the first current variable
+   */
+  void getCurrentGlobalLocation(int *i_gloc);
+
+  /**
    * Get number of matrix values contributed by load
    * @return number of matrix values
    */
