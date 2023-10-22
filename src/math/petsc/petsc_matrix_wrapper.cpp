@@ -257,6 +257,7 @@ PetscMatrixWrapper::p_set_sparse_matrix(const PetscInt *nz_by_row)
                                        &offdiagnz[0]); CHKERRXX(ierr);
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
+    ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);CHKERRXX(ierr);
     ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);

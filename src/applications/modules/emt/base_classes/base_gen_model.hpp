@@ -100,6 +100,11 @@ public:
    */
   void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
 
+  /*
+    Set the bus voltage global location
+  */
+  void setVoltageGlobalLocation(int v_gloc) { p_glocvoltage = v_gloc; }
+
   /**
    * Copy over initial bus voltage from the bus (power flow solution)
    */
@@ -247,6 +252,7 @@ public:
   
   int           nxgen; /* Number of variables for the generator model */
   int           p_busoffset; /** Offset for the bus variables in the local vector. Used only for events */
+  int           p_glocvoltage; /* Global location of the first bus voltage variable. This is set by the bus */
 
   // Arrays used in coupling blocks between generator and exciter. These should be allocated and destroyed by the derived class
   int           *xexc_loc;   // locations for exciter variables in the bus variables array

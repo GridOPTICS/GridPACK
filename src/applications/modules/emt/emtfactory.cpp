@@ -139,7 +139,7 @@ void EmtFactory::setup(void)
 
 }
 
-void EmtFactory::setGlobalIndices()
+void EmtFactory::setGlobalLocations()
 {
   int numBuses = p_network->numBuses();
   int numBranches = p_network->numBranches();
