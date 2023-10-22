@@ -139,4 +139,22 @@ void EmtFactory::setup(void)
 
 }
 
+void EmtFactory::setGlobalIndices()
+{
+  int numBuses = p_network->numBuses();
+  int numBranches = p_network->numBranches();
+  int i;
+
+  for(i=0; i < numBranches; i++) {
+    EmtBranch* emtbranch = dynamic_cast<EmtBranch*>(p_network->getBranch(i).get());
+    emtbranch->setGlobalLocation();
+  }
+
+  
+  for(i=0; i < numBuses; i++) {
+    EmtBus* emtbus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
+    emtbus->setGlobalLocation();
+  }
+}
+
 
