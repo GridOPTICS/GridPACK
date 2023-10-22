@@ -93,10 +93,13 @@ class Gencls: public BaseEMTGenModel
   int matrixNumValues();
 
   /**
-   * Return values from a matrix block
-   * @param matrix - the Jacobian matrix
+   * Return values from Jacobian matrix
+   * @param nvals: number of values to be inserted
+   * @param values: pointer to matrix block values
+   * @param rows: pointer to matrix block rows
+   * @param cols: pointer to matrix block cols
    */
-  void matrixGetValues(gridpack::math::Matrix &matrix);
+  void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
 
   /**
    * Return vector values from the generator model 
@@ -132,8 +135,12 @@ class Gencls: public BaseEMTGenModel
     double p_Pm;  // Mechanical power input
     double p_Ep;  // Internal emf
 
+    // Some temporary arrays
+  double p_vdq0[3]; // voltage in dq0 reference frame
+  double p_idq0[3]; // current in dq0 reference frame
+  double p_vabc[3]; // voltage in abc reference frame
     // Generator variables and their derivatives
-  double p_delta,p_dw, p_i[3];
+  double p_delta,p_dw, p_iabc[3];
   double p_deltadot,p_dwdot,p_idot[3];
 
     int bid;

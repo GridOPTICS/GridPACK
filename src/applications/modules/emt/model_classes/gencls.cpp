@@ -82,9 +82,9 @@ void Gencls::init(gridpack::ComplexType* xin)
   ib = Im*sin(Ia - 2*PI/3.0);
   ic = Im*sin(Ia + 2*PI/3.0);
 
-  p_i[0] = ia;
-  p_i[1] = ib;
-  p_i[2] = ic;
+  p_iabc[0] = ia;
+  p_iabc[1] = ib;
+  p_iabc[2] = ic;
 
   double p_Pm = (p_va*ia + p_vb*ib + p_vc*ic)*(2.0/3.0);
 	
@@ -130,9 +130,9 @@ void Gencls::setValues(gridpack::ComplexType *values)
   if(p_mode == XVECTOBUS) {
     p_delta = real(x[0]);
     p_dw    = real(x[1]);
-    p_i[0]  = real(x[2]);
-    p_i[1]  = real(x[3]);
-    p_i[2]  = real(x[4]);
+    p_iabc[0]  = real(x[2]);
+    p_iabc[1]  = real(x[3]);
+    p_iabc[2]  = real(x[4]);
   } else if(p_mode == XDOTVECTOBUS) {
     p_deltadot = real(x[0]);
     p_dwdot    = real(x[1]);
@@ -154,37 +154,34 @@ void Gencls::vectorGetValues(gridpack::ComplexType *values)
 
   if(p_mode == RESIDUAL_EVAL) {
     double Pe;
-    double vabc[3];
-    double vdq0[3];
-    double idq0[3];
     double e[3];
 
     e[0] = p_Ep*sin(OMEGA_S*p_time + p_delta);
     e[1] = p_Ep*sin(OMEGA_S*p_time + p_delta - TWOPI_OVER_THREE);
     e[2] = p_Ep*sin(OMEGA_S*p_time + p_delta + TWOPI_OVER_THREE);
 
-    vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+    p_vabc[0] = p_va;
+    p_vabc[1] = p_vb;
+    p_vabc[2] = p_vc;
 
-    abc2dq0(vabc,p_time,p_delta,vdq0);
-    abc2dq0(p_i,p_time,p_delta,idq0);
+    abc2dq0(p_vabc,p_time,p_delta,p_vdq0);
+    abc2dq0(p_iabc,p_time,p_delta,p_idq0);
 
-    Pe = vdq0[0]*idq0[0] + vdq0[1]*idq0[1] + vdq0[2]*idq0[2];
+    Pe = p_vdq0[0]*p_idq0[0] + p_vdq0[1]*p_idq0[1] + p_vdq0[2]*p_idq0[2];
     
     // Generator equations
     f[0] = p_dw/OMEGA_S - p_deltadot;
     f[1]    = (p_Pm - Pe - p_D*p_dw)/(2*p_H) - p_dwdot;
     if(abs(p_L) > 1e-6) {
       // f = di_dt - idot => L^-1*(e - R*i - v) - idot
-      f[2] = (e[0] - p_Rs*p_i[0] - p_va)/p_L - p_idot[0];
-      f[3] = (e[1] - p_Rs*p_i[1] - p_vb)/p_L - p_idot[1];
-      f[4] = (e[2] - p_Rs*p_i[2] - p_vc)/p_L - p_idot[2];
+      f[2] = (e[0] - p_Rs*p_iabc[0] - p_va)/p_L - p_idot[0];
+      f[3] = (e[1] - p_Rs*p_iabc[1] - p_vb)/p_L - p_idot[1];
+      f[4] = (e[2] - p_Rs*p_iabc[2] - p_vc)/p_L - p_idot[2];
     } else {
-      f[2] = (e[0] - p_Rs*p_i[0] - p_va);
-      f[3] = (e[1] - p_Rs*p_i[1] - p_vb);
-      f[4] = (e[2] - p_Rs*p_i[2] - p_vc);
+      f[2] = (e[0] - p_Rs*p_iabc[0] - p_va);
+      f[3] = (e[1] - p_Rs*p_iabc[1] - p_vb);
+      f[4] = (e[2] - p_Rs*p_iabc[2] - p_vc);
     }      
-    
-    //printf("classical: %f\t%f\n", real(values[delta_idx]),real(values[dw_idx]));
   }
 
 }
@@ -197,9 +194,9 @@ void Gencls::vectorGetValues(gridpack::ComplexType *values)
    */
 void Gencls::getCurrent(double *ia, double *ib, double *ic)
 {
-  *ia = p_i[0];
-  *ib = p_i[1];
-  *ic = p_i[2];
+  *ia = p_iabc[0];
+  *ib = p_iabc[1];
+  *ic = p_iabc[2];
 }
 
 /**
@@ -234,13 +231,202 @@ int Gencls::matrixNumValues()
   return numVals;
 }
 
-
 /**
- * Return values from a matrix block
- * @param matrix - the Jacobian matrix
+ * Return values from Jacobian matrix
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
  */
-void Gencls::matrixGetValues(gridpack::math::Matrix &matrix)
+void Gencls::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
 {
+  int ctr = 0;
+
+  // partial derivatives w.r.t f[0]
+  rows[ctr]   = p_gloc;
+  cols[ctr]   = p_gloc;
+  values[ctr] = -shift;
+
+  rows[ctr+1]   = p_gloc;
+  cols[ctr+1]   = p_gloc+1;
+  values[ctr+1] = 1/OMEGA_S;
+
+  ctr += 2;
+
+  // partial derivatives w.r.t. f[1]
+  // df[1]_ddw
+  rows[ctr]   = p_gloc + 1;
+  cols[ctr]   = p_gloc + 1;
+  values[ctr] = -p_D/(2*p_H) - shift;
+  ctr++;
+
+  // f[1] = -1/(2*H)*Pe = -1/(2*H)*vdq0^T*idq0
+  // df[1]_ddelta = -1/(2*H)*[vdq0^T*didq0_ddelta + (dvdq0_ddelta)^T*idq0]
+  //              = -1/(2*H)*[vdq0^T*dTdq0_ddelta*iabc + (dTdq0_ddelta*vabc)^T*idq0]
+  double Tdq0[3][3],dTdq0_ddelta[3][3];
+  double omegat = OMEGA_S*p_time + p_delta;
+  double omegat_minus = omegat - 2.0*PI/3.0;
+  double omegat_plus = omegat + 2.0*PI/3.0;
+
+  Tdq0[0][0] = TWO_OVER_THREE*sin(omegat); Tdq0[0][1] = TWO_OVER_THREE*sin(omegat_minus); Tdq0[0][2] = TWO_OVER_THREE*sin(omegat_plus);
+  Tdq0[1][0] = TWO_OVER_THREE*cos(omegat); Tdq0[1][1] = TWO_OVER_THREE*cos(omegat_minus); Tdq0[1][2] = TWO_OVER_THREE*cos(omegat_plus);
+  Tdq0[2][0] = Tdq0[2][1] = Tdq0[2][2] = TWO_OVER_THREE*0.5;
+
+  dTdq0_ddelta[0][0] = TWO_OVER_THREE*cos(omegat); dTdq0_ddelta[0][1] = TWO_OVER_THREE*cos(omegat_minus); dTdq0_ddelta[0][2] = TWO_OVER_THREE*cos(omegat_plus);
+  dTdq0_ddelta[1][0] = TWO_OVER_THREE*-sin(omegat); dTdq0_ddelta[1][1] = TWO_OVER_THREE*-sin(omegat_minus); dTdq0_ddelta[1][2] = TWO_OVER_THREE*-sin(omegat_plus);
+  Tdq0[2][0] = Tdq0[2][1] = Tdq0[2][2] = 0.0;
+
+  double dvdq0_ddelta[3];
+  double didq0_ddelta[3];
+  double dPe_ddelta1,dPe_ddelta2;
+
+  matvecmult3x3(dTdq0_ddelta,p_vabc,dvdq0_ddelta);
+  matvecmult3x3(dTdq0_ddelta,p_iabc,didq0_ddelta);
+
+  vecdot3(p_vdq0,didq0_ddelta,&dPe_ddelta1);
+  vecdot3(p_idq0,dvdq0_ddelta,&dPe_ddelta2);
+
+  rows[ctr] = p_gloc + 1;
+  cols[ctr] = p_gloc;
+  values[ctr] = -1.0/(2*p_H)*(dPe_ddelta1 + dPe_ddelta2);
+
+  ctr++;
+
+  // df[1]_dvabc = -1/(2*H)*[(dvdq0_dvabc)^T*idq0]
+  //             = -1/(2*H)*[d(vabc^T*Tdq0^T)*idq0]
+  //              = -1/(2*H)*[Tdq0^T*idq0]
+  double df1_dvabc[3];
+
+  scaledmattransposevecmult3x3(Tdq0,p_idq0,df1_dvabc,-1.0/(2*p_H));
+
+  rows[ctr]   = p_gloc+1;
+  cols[ctr]   = p_glocvoltage;
+  values[ctr] = df1_dvabc[0];
+
+  rows[ctr+1]   = p_gloc+1;
+  cols[ctr+1]   = p_glocvoltage+1;
+  values[ctr+1] = df1_dvabc[1];
+
+  rows[ctr+2]   = p_gloc+1;
+  cols[ctr+2]   = p_glocvoltage+2;
+  values[ctr+2] = df1_dvabc[2];
+
+  ctr += 3;
+  
+  // df[1]_diabc = -1/(2*H)*[vdq0^T*Tdq0]
+  //              = -1/(2*H)*[vdq0^T*Tdq0]]
+  double df1_diabc[3];
+
+  scaledvec3multmat3x3(p_vdq0,Tdq0,df1_diabc,-1.0/(2*p_H));
+
+  rows[ctr]   = p_gloc+1;
+  cols[ctr]   = p_gloc+2;
+  values[ctr] = df1_diabc[0];
+
+  rows[ctr+1]   = p_gloc+1;
+  cols[ctr+1]   = p_gloc+3;
+  values[ctr+1] = df1_diabc[1];
+
+  rows[ctr+2]   = p_gloc+1;
+  cols[ctr+2]   = p_gloc+4;
+  values[ctr+2] = df1_diabc[2];
+
+  ctr += 3;
+
+  // partial derivatives w.r.t. f[3]-f[5]
+  if(abs(p_L) > 1e-6) {
+    // f[2] partial derivative w.r.t. delta
+    rows[ctr]   = p_gloc+2;
+    cols[ctr]   = p_gloc;
+    values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta)/p_L;
+
+    rows[ctr+1]   = p_gloc+2;
+    cols[ctr+1]   = p_gloc+2;
+    values[ctr+1] = -p_Rs/p_L - shift;
+
+    rows[ctr+2]   = p_gloc+2;
+    cols[ctr+2]   = p_glocvoltage;
+    values[ctr+2] = -1.0/p_L;
+
+    ctr += 3;
+
+    // f[3] partial derivative w.r.t. delta
+    rows[ctr]   = p_gloc+3;
+    cols[ctr]   = p_gloc;
+    values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta - TWOPI_OVER_THREE)/p_L;
+
+    rows[ctr+1]   = p_gloc+3;
+    cols[ctr+1]   = p_gloc+3;
+    values[ctr+1] = -p_Rs/p_L - shift;
+
+    rows[ctr+2]   = p_gloc+3;
+    cols[ctr+2]   = p_glocvoltage+1;
+    values[ctr+2] = -1.0/p_L;
+
+    ctr += 3;
+
+    // f[4] partial derivative w.r.t. delta
+    rows[ctr]   = p_gloc+4;
+    cols[ctr]   = p_gloc;
+    values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta + TWOPI_OVER_THREE)/p_L;
+
+    rows[ctr+1]   = p_gloc+4;
+    cols[ctr+1]   = p_gloc+4;
+    values[ctr+1] = -p_Rs/p_L - shift;
+
+    rows[ctr+2]   = p_gloc+4;
+    cols[ctr+2]   = p_glocvoltage+2;
+    values[ctr+2] = -1.0/p_L;
+
+    ctr += 3;
+  } else {
+    // f[2] partial derivative w.r.t. delta
+    rows[ctr]   = p_gloc+2;
+    cols[ctr]   = p_gloc;
+    values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta);
+
+    rows[ctr+1]   = p_gloc+2;
+    cols[ctr+1]   = p_gloc+2;
+    values[ctr+1] = -p_Rs;
+
+    rows[ctr+2]   = p_gloc+2;
+    cols[ctr+2]   = p_glocvoltage;
+    values[ctr+2] = -1.0;
+
+    ctr += 3;
+
+    // f[3] partial derivative w.r.t. delta
+    rows[ctr]   = p_gloc+3;
+    cols[ctr]   = p_gloc;
+    values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta - TWOPI_OVER_THREE);
+
+    rows[ctr+1]   = p_gloc+3;
+    cols[ctr+1]   = p_gloc+3;
+    values[ctr+1] = -p_Rs;
+
+    rows[ctr+2]   = p_gloc+3;
+    cols[ctr+2]   = p_glocvoltage+1;
+    values[ctr+2] = -1.0;
+
+    ctr += 3;
+
+    // f[4] partial derivative w.r.t. delta
+    rows[ctr]   = p_gloc+4;
+    cols[ctr]   = p_gloc;
+    values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta + TWOPI_OVER_THREE);
+
+    rows[ctr+1]   = p_gloc+4;
+    cols[ctr+1]   = p_gloc+4;
+    values[ctr+1] = -p_Rs;
+
+    rows[ctr+2]   = p_gloc+4;
+    cols[ctr+2]   = p_glocvoltage+2;
+    values[ctr+2] = -1.0;
+
+    ctr += 3;
+  }
+
+  *nvals = ctr;
 }
 
 
