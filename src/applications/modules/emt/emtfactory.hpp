@@ -58,11 +58,11 @@ class EmtFactory
   void setup(void);
 
   /**
-     Set the global index/location for the first variable for a bus
+     Set the global location for the first variable for a bus
      and branch in the solution vector. This location is used when
      setting values in the matrix
   */
-  void setGlobalIndices(void);
+  void setGlobalLocations(void);
   
   /**
    * Set events 

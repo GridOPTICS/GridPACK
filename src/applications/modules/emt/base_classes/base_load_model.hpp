@@ -91,6 +91,11 @@ public:
    */
   void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
 
+  /*
+    Set the bus voltage global location
+  */
+  void setVoltageGlobalLocation(int v_gloc) { p_glocvoltage = v_gloc; }
+
   /**
    * Copy over initial bus voltage from the bus (power flow solution)
    */
@@ -209,6 +214,7 @@ public:
   int           nxload; /* Number of variables for the load model */
   int           p_busoffset; /** Offset for the bus variables in the local vector. Used only for events */
   int           p_gloc; /* Global location for the first variable for this load in the solution vector */
+  int           p_glocvoltage; /* Global location for the first variable for the bus voltage. This is set by the bus */
 
   std::vector<int>   p_rowidx; // global index for rows
   std::vector<int>   p_colidx; // global index for columns
