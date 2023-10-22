@@ -51,4 +51,21 @@ void scaledmatvecmult3x3(double A[3][3], double *x,double *y,double alpha);
 // y = A*x
 void matvecmult3x3(double A[3][3],double *x, double *y);
 
+// y = alpha*A^T*x
+void scaledmattransposevecmult3x3(double A[3][3], double *x,double *y,double alpha);
+
+// y = A^T*x
+void mattransposevecmult3x3(double A[3][3],double *x,double *y);
+
+// Dot product: result = u^T*v
+void vecdot3(double u[3], double v[3], double *result);
+
+// Multiplies a 1 x 3 vector with a 3 x 3. Result is a 1 X 3 vector
+void vec3multmat3x3(double vec[3], double A[3][3],double *result);
+
+// Multiplies a 1 x 3 vector with a 3 x 3. Result is a 1 X 3 vector
+// y = alpha*A*x
+void scaledvec3multmat3x3(double vec[3], double A[3][3],double *result,double alpha);
+
+
 #endif
