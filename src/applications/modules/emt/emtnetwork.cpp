@@ -663,11 +663,9 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
 {
   int ctr=0;
   int i,j;
-  int gloc;
+  int i_gloc;
   int v_gloc; // Global location for first voltage variable for the bus
   
-  *nvals = p_num_vals;
-
   getVoltageGlobalLocation(&v_gloc);
   
   if(p_hasInductiveShunt) {
@@ -691,11 +689,11 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
     for(j=0; j < nparlines; j++) {
       if(!branch->getStatus(j)) continue;
 
-      branch->getCurrentGlobalLocation(j,&gloc);
+      branch->getCurrentGlobalLocation(j,&i_gloc);
 
-      rows[ctr]   = v_gloc; cols[ctr]   = gloc;
-      rows[ctr+1] = v_gloc; cols[ctr+1] = gloc;
-      rows[ctr+2] = v_gloc; cols[ctr+2] = gloc;
+      rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
+      rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
+      rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
       
       if(thisbusnum == fbusnum) {
 	values[ctr]   = -1.0;
@@ -713,11 +711,11 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   for(i=0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
 
-    p_gen[i]->getCurrentGlobalLocation(&gloc);
+    p_gen[i]->getCurrentGlobalLocation(&i_gloc);
 
-    rows[ctr]   = v_gloc; cols[ctr]   = gloc;
-    rows[ctr+1] = v_gloc; cols[ctr+1] = gloc;
-    rows[ctr+2] = v_gloc; cols[ctr+2] = gloc;
+    rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
+    rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
+    rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
     
     values[ctr]   = 1.0;
     values[ctr+1] = 1.0;
@@ -728,11 +726,11 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   for(i=0; i < p_nload; i++) {
     if(!p_load[i]->getStatus()) continue;
 
-    p_load[i]->getCurrentGlobalLocation(&gloc);
+    p_load[i]->getCurrentGlobalLocation(&i_gloc);
 
-    rows[ctr]   = v_gloc; cols[ctr]   = gloc;
-    rows[ctr+1] = v_gloc; cols[ctr+1] = gloc;
-    rows[ctr+2] = v_gloc; cols[ctr+2] = gloc;
+    rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
+    rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
+    rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
     
     values[ctr]   = 1.0;
     values[ctr+1] = 1.0;
@@ -743,15 +741,23 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   if(p_hasCapacitiveShunt) {
     for(i=0; i < 3; i++) {
       for(j=0; j < 3; j++) {
-	rows[ctr]   = p_gloc + i; // row idx
-	cols[ctr]   = p_gloc + j; // col idx
-	values[ctr] = p_TSshift*p_Cshunt[i][j];
+	rows[ctr]   = v_gloc + i; // row idx
+	cols[ctr]   = v_gloc + j; // col idx
+	values[ctr] = -p_TSshift*p_Cshunt[i][j];
 	ctr++;
       }
     }
+  } else {
+    for(j=0; j < 3; j++) {
+      rows[ctr]   = v_gloc + j; // row idx
+      cols[ctr]   = v_gloc + j; // col idx
+      values[ctr] = 0.0;
+      ctr++;
+    }
   }
+    
 
-  
+  *nvals = ctr;
 }
 
 void EmtBus::matrixGetValues(gridpack::math::Matrix &matrix)
@@ -1106,7 +1112,7 @@ EmtBranch::EmtBranch(void)
   p_nparlines = 0;
   p_iptr = NULL;
   p_nvar = 3;
-  p_num_vals = -1;
+  p_num_vals = 0;
   p_mode = NONE;
   p_hasInductance = false;
   p_hasResistance = false;
@@ -1326,7 +1332,12 @@ int EmtBranch::matrixNumCols()
  */
 void EmtBranch::matrixSetRowIndex(int irow, int idx)
 {
-
+  if (p_rowidx.size() == 0) {
+    p_rowidx.resize(p_nvar);
+    int i;
+    for (i=0; i<p_nvar; i++) p_rowidx[i] = -1;
+  }
+  p_rowidx[irow] = idx;
 }
 
 /** 
@@ -1381,12 +1392,12 @@ int EmtBranch::matrixNumValues()
   // else execute the following code to compute the
   // number of matrix elements
   if(p_hasInductance) {
-    // fval = L^-1*(vf - R*i - vt)
-    // dfval_dvf = L^-1 => 9 entries
-    // dfval_di  = -L^-1*R => 9 entries
-    // dfval_dvt = -L^-1 => 9 entries
-    // Total 27 entries
-    numvals += 27;
+    // fval = (vf - R*i - vt) - L*di_dt
+    // dfval_dvf = I => 3 entries
+    // dfval_di  = -R - sL => 9 entries
+    // dfval_dvt = -I => 3 entries
+    // Total 15 entries
+    numvals += 15;
   } else {
     // fval = vf - R*i - vt
     // dfval_dvf = I => 3 entries
@@ -1410,7 +1421,55 @@ int EmtBranch::matrixNumValues()
 void EmtBranch::matrixGetValues(int *nvals,gridpack::ComplexType *values,
     int *rows, int *cols)
 {
+  int ctr=0;
+  int i,j,k;
+  int vf_gloc,vt_gloc,i_gloc;
 
+  for(i=0; i < p_nparlines; i++) {
+    if(!p_status[i]) continue;
+
+    EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
+    EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
+
+    getCurrentGlobalLocation(i,&i_gloc);
+    
+    busf->getVoltageGlobalLocation(&vf_gloc);
+    bust->getVoltageGlobalLocation(&vt_gloc);
+
+    if(p_hasInductance) {
+      for(j=0; j < 3; j++) {
+	for(k=0; k < 3; k++) {
+	  rows[ctr]   = i_gloc + j;
+	  cols[ctr]   = i_gloc + k;
+	  values[ctr] = -p_R[j][k] - p_TSshift*p_L[j][k];
+	  ctr++;
+	}
+      }
+    } else {
+      for(j=0; j < 3; j++) {
+	for(k=0; k < 3; k++) {
+	  rows[ctr]   = i_gloc + j;
+	  cols[ctr]   = i_gloc + k;
+	  values[ctr] = -p_R[j][k];
+	  ctr++;
+	}
+      }
+    }
+
+    // Partial derivatives w.r..t voltages
+    for(j=0; j < 3; j++) {
+      rows[ctr] = i_gloc + j;
+      cols[ctr] = vf_gloc + j;
+      values[ctr] = 1.0;
+
+      rows[ctr+1] = i_gloc + j;
+      cols[ctr+1] = vt_gloc + j;
+      values[ctr+1] = -1.0;
+
+      ctr += 2;
+    }
+  }
+  *nvals = ctr;
 }
 
 void EmtBranch::matrixGetValues(gridpack::math::Matrix &matrix)
