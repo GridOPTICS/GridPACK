@@ -170,13 +170,49 @@ int Constantimpedance::matrixNumValues()
   return numVals;
 }
 
-
 /**
- * Return values from a matrix block
- * @param matrix - the Jacobian matrix
+ * Return values from Jacobian matrix
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
  */
-void Constantimpedance::matrixGetValues(gridpack::math::Matrix &matrix)
+void Constantimpedance::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
 {
+  int ctr = 0;
+
+  //partial w.r.t. load currents
+  rows[ctr]   = p_gloc;
+  rows[ctr+1] = p_gloc+1;
+  rows[ctr+2] = p_gloc+2;
+  
+  cols[ctr]   = rows[ctr];
+  cols[ctr+1] = rows[ctr+1];
+  cols[ctr+2] = rows[ctr+2];
+
+  values[ctr]   = -p_R[0]/p_L[0] - shift;
+  values[ctr+1] = -p_R[1]/p_L[1] - shift;
+  values[ctr+2] = -p_R[2]/p_L[2] - shift;
+
+  ctr += 3;
+  
+  // Partial w.r.t voltages
+  rows[ctr]   = p_gloc;
+  rows[ctr+1] = p_gloc+1;
+  rows[ctr+2] = p_gloc+2;
+
+  cols[ctr]   = p_glocvoltage;
+  cols[ctr+1] = p_glocvoltage+1;
+  cols[ctr+2] = p_glocvoltage+2;
+
+  values[ctr]   = 1.0/p_L[0];
+  values[ctr+1] = 1.0/p_L[1];
+  values[ctr+2] = 1.0/p_L[2];
+
+  ctr += 3;
+
+  *nvals = ctr;
+  
 }
 
 

@@ -102,6 +102,8 @@ void BaseEMTLoadModel::getCurrentGlobalLocation(int *i_gloc)
   *i_gloc = p_gloc;
 }
 
+
+
 /**
  * Get number of matrix values contributed by load
  * @return number of matrix values
@@ -112,12 +114,17 @@ int BaseEMTLoadModel::matrixNumValues()
 }
 
 /**
- * Return values from a matrix block
- * @param matrix - the Jacobian matrix
+ * Return values from Jacobian matrix
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
  */
-void BaseEMTLoadModel::matrixGetValues(gridpack::math::Matrix &matrix)
+void BaseEMTLoadModel::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
 {
+  *nvals = 0;
 }
+
 
 /**
  * Return vector values from the load model 
