@@ -16,7 +16,7 @@
 #include <emtutilfunctions.hpp>
 
 /**
- * abc2dq0 - Does a vector transform from abc to dq0 reference frame using the given angle theta
+ * abc2dq0 - Does a park transform from abc to dq0 reference frame using the given angle theta
  * @param[input] xabc - the vector in abc reference frame represented as an array with 3 elements
  * @param[input] t - current time
  * @param[input] theta - the angle of rotation
@@ -24,7 +24,7 @@
  */
 void abc2dq0(double *xabc,double t,double theta,double *xdq0)
 {
-  double omegat = OMEGA_S*t;
+  double omegat = OMEGA_S*t + theta;
   double omegat_minus = omegat - 2.0*PI/3.0;
   double omegat_plus = omegat + 2.0*PI/3.0;
 
@@ -118,9 +118,9 @@ void scaledmatvecmult3x3(double A[3][3],double *x,double *y,double alpha)
 {
   y[0] = y[1] = y[2] = 0.0;
 
-  y[0] = alpha*A[0][0]*x[0] + A[0][1]*x[1] + A[0][2]*x[2];
-  y[1] = alpha*A[1][0]*x[0] + A[1][1]*x[1] + A[1][2]*x[2];
-  y[2] = alpha*A[2][0]*x[0] + A[2][1]*x[1] + A[2][2]*x[2];
+  y[0] = alpha*(A[0][0]*x[0] + A[0][1]*x[1] + A[0][2]*x[2]);
+  y[1] = alpha*(A[1][0]*x[0] + A[1][1]*x[1] + A[1][2]*x[2]);
+  y[2] = alpha*(A[2][0]*x[0] + A[2][1]*x[1] + A[2][2]*x[2]);
 }
 
 // y = Ax
@@ -128,5 +128,47 @@ void matvecmult3x3(double A[3][3],double *x,double *y)
 {
   scaledmatvecmult3x3(A,x,y,1.0);
 }
+
+// y = alpha*A^T*x
+void scaledmattransposevecmult3x3(double A[3][3],double *x,double *y,double alpha)
+{
+  y[0] = y[1] = y[2] = 0.0;
+
+  y[0] = alpha*(A[0][0]*x[0] + A[1][0]*x[1] + A[2][0]*x[2]);
+  y[1] = alpha*(A[0][1]*x[0] + A[1][1]*x[1] + A[2][1]*x[2]);
+  y[2] = alpha*(A[0][2]*x[0] + A[1][2]*x[1] + A[2][2]*x[2]);
+}
+
+// y = A^Tx
+void mattransposevecmult3x3(double A[3][3],double *x,double *y)
+{
+  scaledmattransposevecmult3x3(A,x,y,1.0);
+}
+
+
+// dot product: result = u^T*v
+void vecdot3(double u[3],double v[3], double *result)
+{
+  *result = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+}
+
+// Multiplies a 1 x 3 vector with a 3 x 3. Result is a 1 X 3 vector
+// y = alpha*A*vec
+void scaledvec3multmat3x3(double vec[3], double A[3][3],double *y,double alpha)
+{
+  y[0] = alpha*(vec[0]*A[0][0] + vec[1]*A[1][0] + vec[2]*A[2][0]);
+  y[1] = alpha*(vec[0]*A[0][1] + vec[1]*A[1][1] + vec[2]*A[2][1]);
+  y[2] = alpha*(vec[0]*A[0][2] + vec[1]*A[1][2] + vec[2]*A[2][2]);
+}
+
+// Multiplies a 1 x 3 vector with a 3 x 3. Result is a 1 X 3 vector
+// y = A*vec
+void vec3multmat3x3(double vec[3], double A[3][3],double *y)
+{
+  scaledvec3multmat3x3(vec,A,y,1.0);
+}
+
+
+
 
 

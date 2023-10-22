@@ -711,6 +711,13 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   for(i=0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
 
+    int nvals_gen=0;
+
+    p_gen[i]->setVoltageGlobalLocation(v_gloc);
+    p_gen[i]->setTSshift(p_TSshift);
+    p_gen[i]->matrixGetValues(&nvals_gen,values+ctr,rows+ctr,cols+ctr);
+    ctr += nvals_gen;
+
     p_gen[i]->getCurrentGlobalLocation(&i_gloc);
 
     rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
@@ -726,15 +733,22 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   for(i=0; i < p_nload; i++) {
     if(!p_load[i]->getStatus()) continue;
 
+    int nvals_load=0;
+
+    p_load[i]->setVoltageGlobalLocation(v_gloc);
+    p_load[i]->matrixGetValues(&nvals_load,values+ctr,rows+ctr,cols+ctr);
+    ctr += nvals_load;
+
+    
     p_load[i]->getCurrentGlobalLocation(&i_gloc);
 
     rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
     rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
     rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
     
-    values[ctr]   = 1.0;
-    values[ctr+1] = 1.0;
-    values[ctr+2] = 1.0;
+    values[ctr]   = -1.0;
+    values[ctr+1] = -1.0;
+    values[ctr+2] = -1.0;
     ctr += 3;
   }
 

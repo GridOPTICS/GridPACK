@@ -92,10 +92,13 @@ class Constantimpedance: public BaseEMTLoadModel
   int matrixNumValues();
 
   /**
-   * Return values from a matrix block
-   * @param matrix - the Jacobian matrix
+   * Return values from Jacobian matrix
+   * @param nvals: number of values to be inserted
+   * @param values: pointer to matrix block values
+   * @param rows: pointer to matrix block rows
+   * @param cols: pointer to matrix block cols
    */
-  void matrixGetValues(gridpack::math::Matrix &matrix);
+  void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
 
   /**
    * Return vector values from the load model 
