@@ -116,6 +116,12 @@ public:
   virtual void getCurrent(double *ia, double *ib, double *ic);
 
   /**
+   * Return the global location for the load current
+   * @param [output] i_gloc - global location for the first current variable
+   */
+  virtual void getCurrentGlobalLocation(int *i_gloc);
+
+  /**
    * Return the number of variables
    * @param [output] nvar - number of variables
    */
@@ -171,6 +177,11 @@ public:
   void setMode(int mode) { p_mode = mode;}
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
+  
+  /*
+    set the location for the first variable for this load in the solution vector
+  */
+  void setGlobalLocation(int gloc) {p_gloc = gloc;}
 
   /**
    * return offset in the local vector 
@@ -197,6 +208,7 @@ public:
   int           offsetb; /**< offset for the first variable for the load in the array for all bus variables */
   int           nxload; /* Number of variables for the load model */
   int           p_busoffset; /** Offset for the bus variables in the local vector. Used only for events */
+  int           p_gloc; /* Global location for the first variable for this load in the solution vector */
 
   std::vector<int>   p_rowidx; // global index for rows
   std::vector<int>   p_colidx; // global index for columns

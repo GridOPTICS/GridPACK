@@ -120,6 +120,13 @@ public:
   virtual void getCurrent(double *ia, double *ib, double *ic);
 
   /**
+   * Return the global location for the generator current injection 
+   * @param [output] i_gloc - global location for the first current variable
+   */
+  virtual void getCurrentGlobalLocation(int *i_gloc);
+
+  
+  /**
    * Return the number of variables
    * @param [output] nvar - number of variables
    */
@@ -206,6 +213,10 @@ public:
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 
+  /*
+    set the location for the first variable in the solution vector
+  */
+  void setGlobalLocation(int gloc) {p_gloc = gloc;}
   /**
    * return offset in the local vector 
    */
@@ -232,6 +243,8 @@ public:
   boost::shared_ptr<BaseExcModel> p_exciter; // Exciter
   boost::shared_ptr<BaseGovModel> p_governor; // Governor
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+  int           p_gloc; // Global location of the first variable for the generator
+  
   int           nxgen; /* Number of variables for the generator model */
   int           p_busoffset; /** Offset for the bus variables in the local vector. Used only for events */
 
