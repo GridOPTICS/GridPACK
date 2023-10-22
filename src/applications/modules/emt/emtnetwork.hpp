@@ -176,6 +176,17 @@ public:
   void getVoltages(double*,double*,double*) const;
 
   /**
+   * Get the global location for the voltage for this bus in the solution vector
+   * @param startgloballoc - global location for the first voltage variable for the bus 
+   *
+   * Note startgloballoc gives the location of phase a voltage for the bus
+   * in the global vector. Add 1 and 2 for the global locations for phase
+   * b and c voltages
+   */
+  void getVoltageGlobalLocation(int *startgloballoc) const;
+
+  
+  /**
    *  getInitialVoltage - Get the initial voltage
    *  @param[output] double Vm - voltage magnitude
    *  @param[output] double Va - voltage angle
@@ -205,6 +216,13 @@ public:
     setup - set up routine for the bus component
   */
   void setup(void);
+
+  /*
+    set the location of the first variable for the bus in the solution vector.
+    This is used when setting values in the matrix
+    @param input - global index
+  */
+  void setGlobalLocation();
   
   /* Set whether the element is local or ghosted */
   void setGhostStatus(bool isghost) { p_isghost = isghost; }
@@ -256,6 +274,7 @@ private:
   int    p_nvar;      // Total number of variables for this bus (includes gen, exc, etc.)
   int    p_nvarbus;   // Only the variables for the bus (no component variables included)
   int    p_offset; // Offset for the starting location for this bus's variables in the state vector (array)
+  int    p_gloc; // Global location of the first variable for this bus in the solution vector
 
   // EMT data
   double p_nphases;
@@ -309,6 +328,7 @@ private:
       & p_TSshift
       & p_nvar
       & p_offset
+      & p_gloc
       & p_isghost
       & p_rank;
   }  
@@ -362,14 +382,19 @@ public:
    * @param[output] ib - phase b current
    * @param[output] ic - phase c current
    */
-  void getCurrent(int idx,double *ia, double *ib, double *ic) {
-    double *i = p_ibr + 3*idx;
+  void getCurrent(int idx,double *ia, double *ib, double *ic);
 
-    *ia = i[0];
-    *ib = i[1];
-    *ic = i[2];
-  }
-  
+  /**
+   * Get the global location of the first current variable in the solution vector
+   * @param j - jth parallel line (0 if no parallel lines)
+   * @param startglobalidx - global location for the first variable for the branch currents 
+   *
+   * Note startgloballoc gives the location of phase a branch for the branch
+   * in the global vector. Add 1 and 2 for the global locations for phase
+   * b and c currents
+   */
+  void getCurrentGlobalLocation(int j, int *startgloballoc) const;
+
   /**
      Set buffer size for exchange
   */
@@ -489,6 +514,12 @@ public:
   */
   void setup(void);
 
+  /*
+    set the location of the first variable for the bus in the solution vector.
+    This is used when setting values in the matrix
+    @param input - global index
+  */
+  void setGlobalLocation();
 
   /*
     setLocalOffset - sets the starting location for the variables for this branch in the solution vector
@@ -512,6 +543,7 @@ private:
   std::vector<double> p_lineX; // Line reactance
   int  p_nvar;      // Number of variables for this branch  
   int p_mode;     // Mode used for vectors and matrices
+  int  p_gloc;     // Global location for the first variable for this branch in the solution vector
   double p_time;     // current time
   double p_TSshift;  // shift value provided by TSIJacobian.
   bool p_isghost; // Local or ghosted element
@@ -556,9 +588,9 @@ private:
       & p_TSshift
       & p_isghost
       & p_rank
-      & p_offset;    
+      & p_offset
+      & p_gloc;    
   }  
-  
 };
 
 /// The type of network used in the examples application

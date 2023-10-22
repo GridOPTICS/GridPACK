@@ -244,6 +244,11 @@ to be overwritten by the implementation */
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 
+  /*
+    set the location for the first variable in the solution vector
+  */
+  void setGlobalLocation(int gloc) {p_gloc = gloc;}
+
   /**
    * return offset in the local vector 
    */
@@ -260,6 +265,8 @@ protected:
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
   BaseEMTGenModel* p_gen; // Generator model
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+  int           p_gloc; // Global location of the first variable for the generator
+
   int           nxexc;    /** Number of variables for the exciter model */
   int           p_busoffset; /** Starting location for bus variables in the local state vector */
   int           p_nrows;  // number of rows (equations) contributed by this excitor

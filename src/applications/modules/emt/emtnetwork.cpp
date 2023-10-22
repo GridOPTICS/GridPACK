@@ -44,6 +44,7 @@ EmtBus::EmtBus(void)
   p_hasResistiveShunt = false;
   p_hasInductiveShunt = false;
   p_nphases = 3;
+  p_TSshift = 1.0;
 
   p_Gshunt[0][0] = p_Gshunt[0][1] = p_Gshunt[0][2] = 0.0;
   p_Gshunt[1][0] = p_Gshunt[1][1] = p_Gshunt[1][2] = 0.0;
@@ -176,6 +177,19 @@ void EmtBus::getVoltages(double *va,double *vb,double *vc) const
 }
 
 /**
+   * Get the global location for the voltage for this bus in the solution vector
+   * @param startgloballoc - global location for the first voltage variable for the bus 
+   *
+   * Note startgloballoc gives the location of phase a voltage for the bus
+   * in the global vector. Add 1 and 2 for the global locations for phase
+   * b and c voltages
+   */
+void EmtBus::getVoltageGlobalLocation(int* startgloballoc) const
+{
+  *startgloballoc = p_vecidx[0];
+}
+  
+/**
  * Add events
  * @eman - EventManager pointer
  */
@@ -286,6 +300,45 @@ void EmtBus::setup()
 
   if(p_nvar) {
     p_vecidx = new int[p_nvar];
+  }
+}
+
+void EmtBus::setGlobalLocation()
+{
+  int i;
+  int gloc;
+
+  p_gloc = p_vecidx[0];
+
+  gloc = p_gloc + p_nvarbus;
+  for(i=0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) continue;
+
+    // Set the global location for the first variable
+    p_gen[i]->setGlobalLocation(gloc);
+    gloc += p_neqsgen[i];
+    
+    bool has_ex = p_gen[i]->hasExciter();
+    bool has_gv = p_gen[i]->hasGovernor();
+
+    if (has_ex) {
+      // Set the global location for the first variable
+      p_gen[i]->getExciter()->setGlobalLocation(gloc);
+      gloc += p_neqsexc[i];
+    }
+    if (has_gv) {
+      // Set the global location for the first variable 
+      p_gen[i]->getGovernor()->setGlobalLocation(gloc);
+      gloc += p_neqsgov[i];
+    }
+  }
+
+  for(i=0; i < p_nload; i++) {
+    if(!p_load[i]->getStatus()) continue;
+
+    // Set the global location for the first variable 
+    p_load[i]->setGlobalLocation(gloc);
+    gloc += p_neqsload[i];
   }
 }
     	
@@ -608,7 +661,97 @@ int EmtBus::matrixNumValues()
 void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
     int *rows, int *cols)
 {
+  int ctr=0;
+  int i,j;
+  int gloc;
+  int v_gloc; // Global location for first voltage variable for the bus
+  
+  *nvals = p_num_vals;
 
+  getVoltageGlobalLocation(&v_gloc);
+  
+  if(p_hasInductiveShunt) {
+  }
+
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  //Get the edges connected to this bus
+  gridpack::component::BaseBusComponent::getNeighborBranches(branches);
+  int nconnbranch = branches.size();
+  
+  int thisbusnum = this->getOriginalIndex();
+  
+  for(i=0; i < nconnbranch; i++) {
+    EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+    
+    int fbusnum = branch->getBus1OriginalIndex();
+    int tbusnum = branch->getBus2OriginalIndex();
+      
+    int nparlines = branch->getNumParallelLines();
+
+    for(j=0; j < nparlines; j++) {
+      if(!branch->getStatus(j)) continue;
+
+      branch->getCurrentGlobalLocation(j,&gloc);
+
+      rows[ctr]   = v_gloc; cols[ctr]   = gloc;
+      rows[ctr+1] = v_gloc; cols[ctr+1] = gloc;
+      rows[ctr+2] = v_gloc; cols[ctr+2] = gloc;
+      
+      if(thisbusnum == fbusnum) {
+	values[ctr]   = -1.0;
+	values[ctr+1] = -1.0;
+	values[ctr+2] = -1.0;
+      } else {
+	values[ctr]   = 1.0;
+	values[ctr+1] = 1.0;
+	values[ctr+2] = 1.0;
+      }
+      ctr += 3;
+    }
+  }
+
+  for(i=0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) continue;
+
+    p_gen[i]->getCurrentGlobalLocation(&gloc);
+
+    rows[ctr]   = v_gloc; cols[ctr]   = gloc;
+    rows[ctr+1] = v_gloc; cols[ctr+1] = gloc;
+    rows[ctr+2] = v_gloc; cols[ctr+2] = gloc;
+    
+    values[ctr]   = 1.0;
+    values[ctr+1] = 1.0;
+    values[ctr+2] = 1.0;
+    ctr += 3;
+  }
+
+  for(i=0; i < p_nload; i++) {
+    if(!p_load[i]->getStatus()) continue;
+
+    p_load[i]->getCurrentGlobalLocation(&gloc);
+
+    rows[ctr]   = v_gloc; cols[ctr]   = gloc;
+    rows[ctr+1] = v_gloc; cols[ctr+1] = gloc;
+    rows[ctr+2] = v_gloc; cols[ctr+2] = gloc;
+    
+    values[ctr]   = 1.0;
+    values[ctr+1] = 1.0;
+    values[ctr+2] = 1.0;
+    ctr += 3;
+  }
+
+  if(p_hasCapacitiveShunt) {
+    for(i=0; i < 3; i++) {
+      for(j=0; j < 3; j++) {
+	rows[ctr]   = p_gloc + i; // row idx
+	cols[ctr]   = p_gloc + j; // col idx
+	values[ctr] = p_TSshift*p_Cshunt[i][j];
+	ctr++;
+      }
+    }
+  }
+
+  
 }
 
 void EmtBus::matrixGetValues(gridpack::math::Matrix &matrix)
@@ -967,6 +1110,7 @@ EmtBranch::EmtBranch(void)
   p_mode = NONE;
   p_hasInductance = false;
   p_hasResistance = false;
+  p_TSshift = 1.0;
 }
 
 /**
@@ -1005,6 +1149,12 @@ void EmtBranch::setup()
     p_didt = new double[3*p_nparlines];
   }
 }
+
+void EmtBranch::setGlobalLocation()
+{
+  p_gloc = p_vecidx[0];
+}
+
 /**
  * Load values stored in DataCollection object into EmtBranch object. The
  * DataCollection object will have been filled when the network was created
@@ -1116,6 +1266,37 @@ void EmtBranch::setTime(double time)
 {
   p_time = time;
 }
+
+/**
+ * getCurrent - returns the line current
+ *
+ * @param[input]  idx - For the nth parallel line number, idx = n. For no parallel lines, idx = 0
+ * @param[output] ia - phase a current
+ * @param[output] ib - phase b current
+ * @param[output] ic - phase c current
+ */
+void EmtBranch::getCurrent(int idx,double *ia, double *ib, double *ic) {
+  double *i = p_ibr + 3*idx;
+  
+  *ia = i[0];
+  *ib = i[1];
+  *ic = i[2];
+}
+
+/**
+ * Get the global location of the first current variable in the solution vector
+ * @param j - jth parallel line (0 if no parallel lines)
+ * @param startglobalidx - global location for the first variable for the branch currents 
+ *
+ * Note startgloballoc gives the location of phase a branch for the branch
+ * in the global vector. Add 1 and 2 for the global locations for phase
+   * b and c currents
+*/
+void EmtBranch::getCurrentGlobalLocation(int j, int *startgloballoc) const
+{
+  *startgloballoc = p_vecidx[3*j];
+}
+
 
 
 /**

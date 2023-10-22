@@ -276,6 +276,12 @@ void Emt::setup()
   /* Jacobian matrix */
   p_J = p_MatMapper->createMatrix();
 
+  /* Set up global indices for buses and branches
+     These indices are used when setting values in
+     the Jacobian matrix
+  */
+  p_factory->setGlobalIndices();
+  
   if(!rank()) printf("Emt:Finished setting up mappers\n");
 
   // Initialize

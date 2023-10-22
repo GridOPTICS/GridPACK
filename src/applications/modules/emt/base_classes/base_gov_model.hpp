@@ -244,6 +244,11 @@ to be overwritten by the implementation */
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 
+  /*
+    set the location for the first variable in the solution vector
+  */
+  void setGlobalLocation(int gloc) {p_gloc = gloc;}
+
   /**
    * return offset in the local vector 
    */
@@ -261,6 +266,7 @@ protected:
 
   BaseEMTGenModel *p_gen;
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+  int           p_gloc; /* Location of the first variable in the solution vector */
   int           nxgov; // Number of variables for the model (set by the derived class)
   int           p_busoffset; // Starting location of the bus variables in the local vector */
 
