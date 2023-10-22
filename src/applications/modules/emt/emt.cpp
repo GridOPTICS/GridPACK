@@ -270,18 +270,18 @@ void Emt::setup()
   /* Create mapper for vector */
   p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork>(emt_network);
 
+  /* Set up global locations for buses and branches
+     These indices are used during setting values in
+     the Jacobian matrix
+  */
+  p_factory->setGlobalLocations();
+
   /* Create mapper for matrix */
   p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
 
   /* Jacobian matrix */
   p_J = p_MatMapper->createMatrix();
 
-  /* Set up global indices for buses and branches
-     These indices are used when setting values in
-     the Jacobian matrix
-  */
-  p_factory->setGlobalIndices();
-  
   if(!rank()) printf("Emt:Finished setting up mappers\n");
 
   // Initialize
