@@ -614,6 +614,8 @@ int EmtBus::matrixNumValues()
 
   for(i=0; i < nconnbranch; i++) {
     EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+
+    if(branch->isGhost()) continue;
     
     int fbusnum = branch->getBus1OriginalIndex();
     int tbusnum = branch->getBus2OriginalIndex();
@@ -680,6 +682,8 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   
   for(i=0; i < nconnbranch; i++) {
     EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
+
+    if(branch->isGhost()) continue;
     
     int fbusnum = branch->getBus1OriginalIndex();
     int tbusnum = branch->getBus2OriginalIndex();
@@ -972,6 +976,8 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
     for(i=0; i < nconnbranch; i++) {
       EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
 
+      if(branch->isGhost()) continue;
+      
       int fbusnum = branch->getBus1OriginalIndex();
       int tbusnum = branch->getBus2OriginalIndex();
       
