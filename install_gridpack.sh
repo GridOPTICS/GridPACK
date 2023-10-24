@@ -47,6 +47,7 @@ function install_gridpack {
     -D BUILD_SHARED_LIBS=YES \
     -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE \
     -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
+    -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
     ..
 
   # install
