@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2019-10-29 13:08:56 d3g096
+# Last Change: 2023-10-25 08:53:06 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -233,15 +233,15 @@ function(gridpack_setup)
     list(APPEND gp_libs @GLPK_LIBRARY@)
   endif()
 
-#  list(APPEND gp_include 
-#    @Boost_INCLUDE_DIR@
-#    @MPI_INCLUDE_PATH@
-#  )
+  list(APPEND gp_include 
+    @Boost_INCLUDE_DIR@
+    @MPI_INCLUDE_PATH@
+  )
 
-#  list(APPEND gp_libs
-#    @Boost_LIBRARIES@
-#    @MPI_CXX_LIBRARIES@
-#  )
+  list(APPEND gp_libs
+    @Boost_LIBRARIES@
+    @MPI_CXX_LIBRARIES@
+  )
 
   set(GRIDPACK_INCLUDE_DIRS
     ${gp_include}
