@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2020-04-23 13:19:33 d3g096
+ * @date   2023-10-25 08:29:55 d3g096
  * 
  * @brief  
  * 
@@ -854,7 +854,25 @@ bool gridpack::hadrec::HADRECAppModule::getDataCollectionBranchParam(
  */
 void gridpack::hadrec::HADRECAppModule::exportPSSE23(std::string filename)
 {
-	pf_app_sptr->exportPSSE23(filename);
+  pf_app_sptr->exportPSSE23(filename);
+}
+
+/**
+ * Export final solved power flow to PSS/E formatted file, version 33
+ * @param filename name of file to store network configuration
+ */
+void gridpack::hadrec::HADRECAppModule::exportPSSE33(std::string filename)
+{
+  pf_app_sptr->exportPSSE33(filename);
+}
+
+/**
+ * Export final solved power flow to PSS/E formatted file, version 34
+ * @param filename name of file to store network configuration
+ */
+void gridpack::hadrec::HADRECAppModule::exportPSSE34(std::string filename)
+{
+  pf_app_sptr->exportPSSE34(filename);
 }
 
 /**
