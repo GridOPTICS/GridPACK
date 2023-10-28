@@ -70,7 +70,7 @@ public:
 
   PETScDAESolverImplementation(const parallel::Communicator& comm, 
                                const int local_size,
-			       Matrix* J,
+			       MatrixType *J,
                                JacobianBuilder& jbuilder,
                                FunctionBuilder& fbuilder,
                                EventManagerPtr eman)

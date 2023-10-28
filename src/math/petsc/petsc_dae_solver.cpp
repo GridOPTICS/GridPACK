@@ -47,7 +47,7 @@ DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm,
 template <typename T, typename I>
 DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm, 
                              const int local_size,
-			     Matrix* J,
+			     MatrixT<T>* J,
                              DAESolverT<T, I>::JacobianBuilder& jbuilder,
                              DAESolverT<T, I>::FunctionBuilder& fbuilder,
                              DAESolverT<T, I>::EventManagerPtr eman)
@@ -71,7 +71,7 @@ DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm,
 template 
 DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm, 
                                     const int local_size,
-				    gridpack::math::Matrix* J,
+				    MatrixT<ComplexType> *J,
                                     DAESolverT<ComplexType>::JacobianBuilder& jbuilder,
                                     DAESolverT<ComplexType>::FunctionBuilder& fbuilder,
                                     DAESolverT<ComplexType>::EventManagerPtr eman);
@@ -86,7 +86,7 @@ DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm,
 template 
 DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm, 
                                  const int local_size,
-				 Matrix *J,
+				 MatrixT<RealType> *J,
                                  DAESolverT<RealType>::JacobianBuilder& jbuilder,
                                  DAESolverT<RealType>::FunctionBuilder& fbuilder,
                                  DAESolverT<RealType>::EventManagerPtr eman);

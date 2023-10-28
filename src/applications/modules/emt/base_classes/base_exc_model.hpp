@@ -43,7 +43,7 @@ public:
    * Initialize exciter model before calculation
    * @param [output] values - array where initialized exciter variables should be set
    */
-  virtual void init(gridpack::ComplexType *values);
+  virtual void init(gridpack::RealType *values);
   
   /**
    * Write output from exciters to a string.
@@ -78,7 +78,7 @@ public:
    */
   void setTSshift(double inshift) {shift = inshift;}
   
-  virtual void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+  virtual void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
@@ -95,21 +95,6 @@ public:
    */
   void setBusOffset(int offset) {offsetb = offset;}
 
-  /**
-   * Set Jacobian block
-   * @param values a 2-d array of Jacobian block for the bus
-   */
-  virtual bool setJacobian(gridpack::ComplexType **values);
-
-  /**
-   * Set Jacobian block
-   * @param value_map standard map containing indices and values of matrix
-   *        elements
-   */
-  virtual bool setJacobian(std::map<std::pair<int,int>,
-      gridpack::ComplexType> &value_map);
-
-#if 0
   /**
    * Set the number of rows contributed by this excitor
    * @param nrows number of rows
@@ -175,9 +160,8 @@ public:
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+  void matrixGetValues(int *nvals,gridpack::RealType *values,
       int *rows, int *cols);
-#endif
 
   /**
    * Set the initial field voltage (at t = tstart) for the exciter
@@ -233,14 +217,14 @@ to be overwritten by the implementation */
    * @return false if network component does not contribute
    *        vector element
    */
-  bool vectorValues(gridpack::ComplexType *values);
+  bool vectorValues(gridpack::RealType *values);
 
   /**
    * Set values in the component based on values in a vector or
    * matrix
    * @param values values in vector or matrix
    */
-  void setValues(gridpack::ComplexType *values);
+  void setValues(gridpack::RealType *values);
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 

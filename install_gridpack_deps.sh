@@ -81,7 +81,7 @@ then
 
   # Build GA
   echo "Building GA-5.8"
-  ./configure --with-mpi-ts --disable-f77 --without-blas --enable-cxx --enable-i4 --prefix=${PWD}/install_for_gridpack --enable-shared
+  ./configure --with-mpi-ts --disable-f77 --without-blas --enable-cxx --enable-i4 --prefix=${PWD}/install_for_gridpack
   
   # Install GA
   echo "Installing GA-5.8"
@@ -96,30 +96,32 @@ then
   # Install PETSc 3.16.4
   cd ${GP_EXT_DEPS}
 
+  rm -rf petsc
+  
   # Download
-  echo "Downloading PETSc 3.16.4"
+  echo "Downloading PETSc 3.20"
 
   git clone https://gitlab.com/petsc/petsc.git
     
   cd petsc
 
-  git checkout tags/v3.16.4 -b v3.16.4
+  #git checkout tags/v3.16.4 -b v3.16.4
 
   export PETSC_DIR=${PWD}
   export PETSC_ARCH=build-dir
-
+  
   # Install PETSc
-  echo "Installing PETSc 3.16.4"
+  echo "Installing PETSc 3.20"
     
-  ./configure --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake --prefix=${PWD}/install_for_gridpack --scalar-type=complex --with-shared-libraries=1 --download-f2cblaslapack=1
-
+  ./configure --download-metis --download-parmetis --download-suitesparse --prefix=${PWD}/install_for_gridpack --download-superlu_dist --with-debugging=0
+  
   # Build PETSc
-  echo "Building PETSc 3.16.4"
+  echo "Building PETSc 3.20"
 
   make 
 
   # Install PETSc
-  echo "Installing PETSc 3.16.4"
+  echo "Installing PETSc 3.20"
 
   make install
   make check  

@@ -117,12 +117,12 @@ public:
    * @param rows list of row indices
    * @param cols list of column indices
    */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+  void matrixGetValues(int *nvals,gridpack::RealType *values,
       int *rows, int *cols);
 
   /**
    */
-  void matrixGetValues(gridpack::math::Matrix &matrix);
+  void matrixGetValues(gridpack::math::RealMatrix &matrix);
   
   /**
    * Set value of global index for corresponding local index
@@ -149,13 +149,13 @@ public:
    * @param values array of element values
    * @param idx array of element indices
    */
-  void vectorGetElementValues(gridpack::ComplexType *values, int *idx);
+  void vectorGetElementValues(gridpack::RealType *values, int *idx);
 
   /**
    * Set network elements based on values in vector
    * @param array containing vector values
    */
-  void vectorSetElementValues(gridpack::ComplexType *values);
+  void vectorSetElementValues(gridpack::RealType *values);
   
   /**
    * Write output from buses to standard out
@@ -231,7 +231,7 @@ public:
   
   void setRank(int rank) { p_rank = rank; }
 
-  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+  void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   void setLocalOffset(int offset);
 
@@ -457,10 +457,10 @@ public:
    * @param rows list of row indices
    * @param cols list of column indices
    */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+  void matrixGetValues(int *nvals,gridpack::RealType *values,
       int *rows, int *cols);
 
-  void matrixGetValues(gridpack::math::Matrix &matrix);
+  void matrixGetValues(gridpack::math::RealMatrix &matrix);
 
   /**
    * Set value of global index for corresponding local index
@@ -487,13 +487,13 @@ public:
    * @param values array of element values
    * @param idx array of element indices
    */
-  void vectorGetElementValues(gridpack::ComplexType *values, int *idx);
+  void vectorGetElementValues(gridpack::RealType *values, int *idx);
 
   /**
    * Set network elements based on values in vector
    * @param array containing vector values
    */
-  void vectorSetElementValues(gridpack::ComplexType *values);
+  void vectorSetElementValues(gridpack::RealType *values);
 
   /**
    * Return the number of parallel lines

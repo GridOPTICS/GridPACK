@@ -61,7 +61,7 @@ public:
                       const int& busno,
                       const double& Gfault,
                       const double& Bfault)
-    : gridpack::math::DAESolver::Event(2),
+    : gridpack::math::RealDAESolver::Event(2),
       p_sim(sim), p_ton(ton), p_toff(toff), p_bus(busno),
       p_Gfault(Gfault), p_Bfault(Bfault)
   {
@@ -85,14 +85,14 @@ protected:
   double p_Gfault;
   double p_Bfault;
 
-  void p_update(const double& t, gridpack::ComplexType *state)
+  void p_update(const double& t, gridpack::RealType *state)
   {
     p_current[0] = p_ton - t;
     p_current[1] = p_toff - t;
   }
 
   void p_handle(const bool *triggered, const double& t,
-                gridpack::ComplexType *state)
+                gridpack::RealType *state)
   {
   // FIXME: Is setfault local (to the process w/ p_bus or collective?
   // The Event class is *local*, so if collective operations are
@@ -277,10 +277,10 @@ void Emt::setup()
   p_factory->setGlobalLocations();
 
   /* Create mapper for matrix */
-  p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
+  p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork,gridpack::RealType>(emt_network);
 
   /* Jacobian matrix */
-  p_J = p_MatMapper->createMatrix();
+  p_J = p_MatMapper->createRealMatrix();
 
   if(!rank()) printf("Emt:Finished setting up mappers\n");
 
@@ -290,9 +290,9 @@ void Emt::setup()
   // Set up solver
   int lsize = p_X->localSize();
 
-  DAESolver::JacobianBuilder daejacobian = boost::ref(*this);
-  DAESolver::FunctionBuilder daefunction = boost::ref(*this);
-  DAESolver::EventManagerPtr eman(new EmtEventManager(this));
+  RealDAESolver::JacobianBuilder daejacobian = boost::ref(*this);
+  RealDAESolver::FunctionBuilder daefunction = boost::ref(*this);
+  RealDAESolver::EventManagerPtr eman(new EmtEventManager(this));
 
   p_factory->setEvents(eman,p_VecMapper);
   // Read fault parameters, Set up fault events
@@ -312,8 +312,8 @@ void Emt::setup()
   // Event manager must be populated before DAE solver construction
   eman->add(e);
 
-  gridpack::math::Matrix* mat_ptr = p_J.get();
-  p_daesolver = new DAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);
+  gridpack::math::RealMatrix* mat_ptr = p_J.get();
+  p_daesolver = new RealDAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);
   p_daesolver->configure(p_configcursor);
 
   // Get simulation time length
@@ -338,7 +338,7 @@ void Emt::setup()
 void Emt::initialize()
 {
   p_factory->setMode(INIT_X);
-  p_X = p_VecMapper->mapToVector();
+  p_X = p_VecMapper->mapToRealVector();
   p_X->ready();
   
   emt_network->updateBuses();

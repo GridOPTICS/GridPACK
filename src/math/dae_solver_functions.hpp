@@ -31,7 +31,7 @@ template <typename T, typename I = int>
 struct DAEBuilder {
   
   typedef VectorT<T, I> VectorType;
-  typedef Matrix MatrixType;
+  typedef MatrixT<T, I> MatrixType;
 
   /// Functions that compute a Jacobian
   typedef 

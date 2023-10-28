@@ -36,27 +36,7 @@ void BaseExcModel::load(const boost::shared_ptr<gridpack::component::DataCollect
 {
 }
 
-/**
- * Set Jacobian block
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool BaseExcModel::setJacobian(gridpack::ComplexType **values)
-{
-  return false;
-}
 
-/**
- * Set Jacobian block
- * @param value_map standard map containing indices and values of matrix
- *        elements
- */
-bool BaseExcModel::setJacobian(std::map<std::pair<int,int>,
-    gridpack::ComplexType> &value_map)
-{
-  return false;
-}
-
-#if 0
 /**
  * Set the number of rows contributed by this excitor
  * @param nrows number of rows
@@ -159,17 +139,16 @@ int BaseExcModel::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void BaseExcModel::matrixGetValues(int *nvals,gridpack::ComplexType *values,
+void BaseExcModel::matrixGetValues(int *nvals,gridpack::RealType *values,
     int *rows, int *cols)
 {
 }
-#endif
 
 /**
  * Initialize exciter model before calculation
  * @param [output] values - array where initialized exciter variables should be set
  */
-void BaseExcModel::init(gridpack::ComplexType *values)
+void BaseExcModel::init(gridpack::RealType *values)
 {
 }
 
@@ -209,7 +188,7 @@ void BaseExcModel::write(const char* signal, char* string)
 /**
  * Set Event
  */
-void BaseExcModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void BaseExcModel::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
 
 }
@@ -219,7 +198,7 @@ void BaseExcModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
  * function to push values from vectors back onto exciters
  * @param values array containing exciter state variables
 */
-void BaseExcModel::setValues(gridpack::ComplexType *values)
+void BaseExcModel::setValues(gridpack::RealType *values)
 {
 }
 
@@ -229,7 +208,7 @@ void BaseExcModel::setValues(gridpack::ComplexType *values)
  * @return: false if exciter does not contribute
  *        vector element
  */
-bool BaseExcModel::vectorValues(gridpack::ComplexType *values)
+bool BaseExcModel::vectorValues(gridpack::RealType *values)
 {
   return false;
 }

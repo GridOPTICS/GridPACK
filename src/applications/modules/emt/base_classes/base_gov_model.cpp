@@ -44,7 +44,7 @@ void BaseGovModel::load(const boost::shared_ptr<gridpack::component::DataCollect
  * Initialize governor model before calculation
  * @param [output] values - array where initialized governor variables should be set
  */
-void BaseGovModel::init(gridpack::ComplexType *values)
+void BaseGovModel::init(gridpack::RealType *values)
 {
 }
 
@@ -86,7 +86,7 @@ void BaseGovModel::write(const char* signal, char* string)
  * function to push values from vectors back onto governors
  * @param values array containing governor state variables
 */
-void BaseGovModel::setValues(gridpack::ComplexType *values)
+void BaseGovModel::setValues(gridpack::RealType *values)
 {
 }
 
@@ -96,32 +96,11 @@ void BaseGovModel::setValues(gridpack::ComplexType *values)
  * @return: false if governor does not contribute
  *        vector element
  */
-bool BaseGovModel::vectorValues(gridpack::ComplexType *values)
+bool BaseGovModel::vectorValues(gridpack::RealType *values)
 {
   return false;
 }
 
-/**
- * Set Jacobian block
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool BaseGovModel::setJacobian(gridpack::ComplexType **values)
-{
-  return false;
-}
-
-/**
- * Set Jacobian block
- * @param value_map standard map containing indices and values of matrix
- *        elements
- */
-bool BaseGovModel::setJacobian(std::map<std::pair<int,int>,
-    gridpack::ComplexType> &value_map)
-{
-  return false;
-}
-
-#if 0
 /**
  * Set the number of rows contributed by this governor
  * @param nrows number of rows
@@ -163,7 +142,7 @@ int BaseGovModel::matrixNumCols()
  * @param irow local row index
  * @param global row index
  */
-void BaseGenModel::matrixSetRowIndex(int irow, int idx)
+void BaseGovModel::matrixSetRowIndex(int irow, int idx)
 {
   if (p_rowidx.size() == 0) {
     p_rowidx.resize(p_nrows);
@@ -178,7 +157,7 @@ void BaseGenModel::matrixSetRowIndex(int irow, int idx)
  * @param icol local column index
  * @param global column index
  */
-void BaseGenModel::matrixSetColIndex(int icol, int idx)
+void BaseGovModel::matrixSetColIndex(int icol, int idx)
 {
   if (p_colidx.size() == 0) {
     p_colidx.resize(p_ncols);
@@ -193,7 +172,7 @@ void BaseGenModel::matrixSetColIndex(int icol, int idx)
  *   * @param irow local row index
  *    * @return global row index
  *     */
-int BaseGenModel::matrixGetRowIndex(int irow)
+int BaseGovModel::matrixGetRowIndex(int irow)
 {
     return p_rowidx[irow];
 }
@@ -203,7 +182,7 @@ int BaseGenModel::matrixGetRowIndex(int irow)
  * @param icol local column index
  * @return global column index
  */
-int BaseGenModel::matrixGetColIndex(int icol)
+int BaseGovModel::matrixGetColIndex(int icol)
 {
   return p_colidx[icol];
 }
@@ -212,7 +191,7 @@ int BaseGenModel::matrixGetColIndex(int icol)
  * Get number of matrix values contributed by governor
  * @return number of matrix values
  */
-int BaseGenModel::matrixNumValues()
+int BaseGovModel::matrixNumValues()
 {
   return 0;
 }
@@ -224,11 +203,10 @@ int BaseGenModel::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void BaseGenModel::matrixGetValues(int *nvals,gridpack::ComplexType *values,
+void BaseGovModel::matrixGetValues(int *nvals,gridpack::RealType *values,
     int *rows, int *cols)
 {
 }
-#endif
 
 /**
  * Set the mechanical power parameter inside the governor
@@ -269,7 +247,7 @@ void BaseGovModel::setVcomp(double Vcomp)
 /**
  * Set Event
  */
-void BaseGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void BaseGovModel::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
 }
 

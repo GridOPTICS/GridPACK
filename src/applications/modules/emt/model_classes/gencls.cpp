@@ -47,12 +47,12 @@ void Gencls::load(const boost::shared_ptr<gridpack::component::DataCollection> d
  * Initialize generator model before calculation
  * @param [output] xin - array where initialized generator variables should be set
  */
-void Gencls::init(gridpack::ComplexType* xin)
+void Gencls::init(gridpack::RealType* xin)
 {
   double IGD,IGQ; // Machine currents in cartesian coordinates
   double Pg, Qg;  // Generator real and reactive power
   double dw=0.0;  // Initial machine speed deviation
-  gridpack::ComplexType *x = xin+offsetb; // generator array starts from this location
+  gridpack::RealType *x = xin+offsetb; // generator array starts from this location
 
   Pg = pg/sbase;
   Qg = qg/sbase;
@@ -123,22 +123,22 @@ void Gencls::write(const char* signal, char* string)
  * function to push values from vectors back onto generators
  * @param values array containing generator state variables
 */
-void Gencls::setValues(gridpack::ComplexType *values)
+void Gencls::setValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *x = values+offsetb; // generator array starts from this location
+  gridpack::RealType *x = values+offsetb; // generator array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    p_delta = real(x[0]);
-    p_dw    = real(x[1]);
-    p_iabc[0]  = real(x[2]);
-    p_iabc[1]  = real(x[3]);
-    p_iabc[2]  = real(x[4]);
+    p_delta    = x[0];
+    p_dw       = x[1];
+    p_iabc[0]  = x[2];
+    p_iabc[1]  = x[3];
+    p_iabc[2]  = x[4];
   } else if(p_mode == XDOTVECTOBUS) {
-    p_deltadot = real(x[0]);
-    p_dwdot    = real(x[1]);
-    p_idot[0]  = real(x[2]);
-    p_idot[1]  = real(x[3]);
-    p_idot[2]  = real(x[4]);
+    p_deltadot = x[0];
+    p_dwdot    = x[1];
+    p_idot[0]  = x[2];
+    p_idot[1]  = x[3];
+    p_idot[2]  = x[4];
   } 
 }
 
@@ -148,9 +148,9 @@ void Gencls::setValues(gridpack::ComplexType *values)
  * @return: false if generator does not contribute
  *        vector element
  */
-void Gencls::vectorGetValues(gridpack::ComplexType *values)
+void Gencls::vectorGetValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *f = values+offsetb; // generator array starts from this location
+  gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
     double Pe;
@@ -238,7 +238,7 @@ int Gencls::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void Gencls::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void Gencls::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
 
@@ -427,67 +427,6 @@ void Gencls::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *row
   }
 
   *nvals = ctr;
-}
-
-
-/**
- * Set Jacobian values
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool Gencls::setJacobian(gridpack::ComplexType **values)
-{
-  int VD_idx = 0; /* Row/col number for bus voltage VD variable */
-  int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
-  int IGQ_idx = 0; /* Row/col location for IGQ equations */
-  int IGD_idx = 1; /* Row/col location for IGD equations */
-  // Note that the order for the generator currents is [IGQ;IGD]
-  int delta_idx = offsetb;
-  int dw_idx = offsetb+1;
-
-  /***** IMPORTANT NOTE ************/
-  /********!!!!!!!!!!!!!!!!*********/
-  // The array matrixDiagValues uses has a column-major-order! Because of
-  // this we need to use the transpose of the locations. For e.g. the
-  // partial derivative of dw equation w.r.t. VD would, in the natural
-  // row-order form use a[dw_idx][VD_idx]. But, due to the column-major-
-  // ordering, we need to use the transposed location, i.e., a[VD_idx][dw_idx]
-  // This is extremely confusing!!!!!!!!
-
-  if(p_mode == FAULT_EVAL) {
-    // Generator variables held constant
-    // dF_dX
-    // Set diagonal values to 1.0
-    values[delta_idx][delta_idx] = 1.0;
-    values[dw_idx][dw_idx] = 1.0;
-
-    // dG_dV
-    values[VD_idx][IGQ_idx] +=  1/p_Xdp;
-    values[VQ_idx][IGD_idx] += -1/p_Xdp;
-  } else {
-
-    // Partials of generator equations w.r.t generator variables
-    // dF_dX
-    values[delta_idx][delta_idx] = -shift;
-    values[dw_idx][delta_idx] = 1.0/OMEGA_S;
-    values[delta_idx][dw_idx] = (-VD*p_Ep*cos(p_delta)/p_Xdp - VQ*p_Ep*sin(p_delta)/p_Xdp)/(2*p_H);
-    values[dw_idx][dw_idx] = -shift - p_D/(2*p_H);
-
-    // dF_dV
-    // These are the partial derivatives of the generator equations w.r.t voltage variables VD and VQ
-    values[VD_idx][dw_idx] = (-p_Ep*sin(p_delta)/p_Xdp)/(2*p_H);
-    values[VQ_idx][dw_idx] = (p_Ep*cos(p_delta)/p_Xdp)/(2*p_H);
-
-    // dG_dX
-    // These are the partial derivatives of the generator current w.r.t. generator variables
-    values[delta_idx][IGQ_idx] = p_Ep*sin(p_delta)/p_Xdp;
-    values[delta_idx][IGD_idx] = p_Ep*cos(p_delta)/p_Xdp;
-
-    // dG_dV
-    values[VD_idx][IGQ_idx] +=  1/p_Xdp;
-    values[VQ_idx][IGD_idx] += -1/p_Xdp;
-  }
-			      
-  return true;
 }
 
 

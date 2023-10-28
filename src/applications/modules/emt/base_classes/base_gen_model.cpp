@@ -23,15 +23,6 @@ BaseEMTGenModel::~BaseEMTGenModel(void)
 }
 
 /**
- * Set Jacobian values
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool BaseEMTGenModel::setJacobian(gridpack::ComplexType **values)
-{
-  return false;
-}
-
-/**
  * Load parameters from DataCollection object into generator model
  * @param data collection of generator parameters from input files
  * @param index of generator on bus
@@ -58,7 +49,7 @@ void BaseEMTGenModel::load(const boost::shared_ptr<gridpack::component::DataColl
  * Initialize generator model before calculation
  * @param [output] values - array where initialized generator variables should be set
  */
-void BaseEMTGenModel::init(gridpack::ComplexType *values)
+void BaseEMTGenModel::init(gridpack::RealType *values)
 {
 }
 
@@ -182,7 +173,7 @@ int BaseEMTGenModel::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void BaseEMTGenModel::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void BaseEMTGenModel::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   *nvals = 0;
 }
@@ -195,7 +186,7 @@ void BaseEMTGenModel::matrixGetValues(int *nvals, gridpack::ComplexType *values,
  * for e.g., the entries in the residual vector from the generator
  * object
    */
-void BaseEMTGenModel::vectorGetValues(gridpack::ComplexType *values)
+void BaseEMTGenModel::vectorGetValues(gridpack::RealType *values)
 {
 }
 
@@ -207,7 +198,7 @@ void BaseEMTGenModel::vectorGetValues(gridpack::ComplexType *values)
  * to the generator object,
  * for e.g., the state vector values for this generator
  */
-void BaseEMTGenModel::setValues(gridpack::ComplexType *values)
+void BaseEMTGenModel::setValues(gridpack::RealType *values)
 {
 }
 

@@ -61,7 +61,7 @@ public:
       p_eventManager(eman),
       p_doAdaptive(true)
   {
-    p_J = new gridpack::math::Matrix(comm,local_size,local_size);
+    p_J = new gridpack::math::MatrixT<T,I>(comm,local_size,local_size);
   }
 
   DAESolverImplementation(const parallel::Communicator& comm, 

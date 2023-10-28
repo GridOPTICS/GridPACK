@@ -44,6 +44,10 @@ GenVectorMap(boost::shared_ptr<_network> network)
   : p_network(network)
 {
   p_Offsets = NULL;
+  p_BusSizes = NULL;
+  p_BusLocOffsets = NULL;
+  p_BranchSizes = NULL;
+  p_BranchLocOffsets = NULL;
 
   p_timer = NULL;
   //p_timer = gridpack::utility::CoarseTimer::instance();
@@ -66,6 +70,10 @@ GenVectorMap(boost::shared_ptr<_network> network)
 ~GenVectorMap()
 {
   if (p_Offsets != NULL) delete [] p_Offsets;
+  if (p_BusSizes != NULL) delete [] p_BusSizes;
+  if (p_BusLocOffsets != NULL) delete [] p_BusLocOffsets;
+  if (p_BranchSizes != NULL) delete [] p_BranchSizes;
+  if (p_BranchLocOffsets != NULL) delete [] p_BranchLocOffsets;
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -177,6 +185,141 @@ void mapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
   mapToNetwork(*vector);
 }
 
+/**
+ * Generate vector from current component state on network
+ * @return return a pointer to new vector
+ */
+boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxIndex-p_minIndex+1;
+  boost::shared_ptr<gridpack::math::RealVector>
+    Ret(new gridpack::math::RealVector(comm, blockSize));
+  loadRealBusData(*Ret,false);
+  loadRealBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
+/**
+ * Generate vector from current component state on network and return a
+ * conventional pointer to it. Used for Fortran interface.
+ * @return return a pointer to new vector
+ */
+gridpack::math::RealVector* intMapToRealVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxIndex-p_minIndex+1;
+  gridpack::math::RealVector*
+    Ret(new gridpack::math::RealVector(comm, blockSize));
+  loadRealBusData(*Ret,false);
+  loadRealBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
+
+/**
+ * Reset existing vector from current component state on network
+ * @param vector existing vector (should be generated from same mapper)
+ */
+void mapToRealVector(gridpack::math::RealVector &vector)
+{
+  int t_set, t_bus, t_branch;
+  vector.zero();
+  loadRealBusData(vector,false);
+  loadRealBranchData(vector,false);
+  GA_Pgroup_sync(p_GAgrp);
+  vector.ready();
+}
+
+/**
+ * Reset existing vector from current component state on network
+ * @param vector existing vector (should be generated from same mapper)
+ */
+void mapToRealVector(boost::shared_ptr<gridpack::math::RealVector> &vector)
+{
+  mapToRealVector(*vector);
+}
+
+/**
+ * Push data from vector onto buses and branches. Vector must
+ * be created with the mapToVector method using the same
+ * GenVectorMap
+ * @param vector vector containing data to be pushed to network
+ */
+void mapToNetwork(const gridpack::math::RealVector &vector)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
+  int *idx = new int[p_maxValues];
+  // get values from buses
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      nvals = p_network->getBus(i)->vectorNumElements();
+      p_network->getBus(i)->vectorGetElementIndices(idx);
+      for (j=0; j<nvals; j++) {
+        vector.getElement(idx[j],values[j]);
+      }
+      p_network->getBus(i)->vectorSetElementValues(values);
+    }
+  }
+  // get values from branches
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      nvals = p_network->getBranch(i)->vectorNumElements();
+      p_network->getBranch(i)->vectorGetElementIndices(idx);
+      for (j=0; j<nvals; j++) {
+        vector.getElement(idx[j],values[j]);
+      }
+      p_network->getBranch(i)->vectorSetElementValues(values);
+    }
+  }
+  delete [] values;
+  delete [] idx;
+  GA_Pgroup_sync(p_GAgrp);
+}
+
+/**
+ * Push data from vector onto buses and branches. Vector must
+ * be created with the mapToVector method using the same
+ * GenVectorMap
+ * @param vector vector containing data to be pushed to network
+ */
+void mapToNetwork(boost::shared_ptr<gridpack::math::RealVector> &vector)
+{
+  mapToNetwork(*vector);
+}
+
+
+/**
+ * Get the local offset of the array values and the number of the values
+ * contributed by each bus
+ * @param idx local index of the bus
+ * @param offset local offset of bus values in the vector
+ * @param size number of values contributed by bus
+ */
+void getLocalBusOffset(int idx, int *offset, int *size)
+{
+  *offset = p_BusLocOffsets[idx];
+  *size = p_BusSizes[idx];
+}
+
+/**
+ * Get the local offset of the array values and the number of the values
+ * contributed by each branch
+ * @param idx local index of the branch
+ * @param offset local offset of branch values in the vector
+ * @param size number of values contributed by branch
+ */
+void getLocalBranchOffset(int idx, int *offset, int *size)
+{
+  *offset = p_BranchLocOffsets[idx];
+  *size = p_BranchSizes[idx];
+}
+
 private:
 
 /**
@@ -261,10 +404,20 @@ void setOffsets(void)
   }
   int icnt = 0;
   int nsize;
+  p_BusSizes = new int[p_nBuses];
+  p_BusLocOffsets = new int[p_nBuses];
+  for (i=0; i<p_nBuses; i++) p_BusSizes[i] = 0;
+  for (i=0; i<p_nBuses; i++) p_BusLocOffsets[i] = 0;
+  p_BranchSizes = new int[p_nBranches];
+  p_BranchLocOffsets = new int[p_nBuses];
+  for (i=0; i<p_nBranches; i++) p_BranchSizes[i] = 0;
+  for (i=0; i<p_nBranches; i++) p_BranchLocOffsets[i] = 0;
   // Evaluate offsets for individual network components
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       i_bus_offsets[i] = icnt;
+      p_BusLocOffsets[i] = icnt;
+      p_BusSizes[i] = p_network->getBus(i)->vectorNumElements();
       icnt += p_network->getBus(i)->vectorNumElements();
       std::vector<int> nghbrs = p_network->getConnectedBranches(i);
       nsize = nghbrs.size();
@@ -278,11 +431,15 @@ void setOffsets(void)
           p_network->getBranchEndpoints(jdx,&jdx1,&jdx2);
           if (jdx1 == i) {
             i_branch_offsets[jdx] = icnt;
+            p_BranchLocOffsets[jdx] = icnt;
+            p_BranchSizes[jdx] = p_network->getBranch(jdx)->vectorNumElements();
             icnt += p_network->getBranch(jdx)->vectorNumElements();
           }
         } else {
           if (p_network->getActiveBranch(jdx)) {
             i_branch_offsets[jdx] = icnt;
+            p_BranchLocOffsets[jdx] = icnt;
+            p_BranchSizes[jdx] = p_network->getBranch(jdx)->vectorNumElements();
             icnt += p_network->getBranch(jdx)->vectorNumElements();
           }
         }
@@ -512,6 +669,63 @@ void loadBranchData(gridpack::math::Vector &vector, bool flag)
   delete [] idx;
 }
 
+/**
+ * Add contributions from buses to vector
+ * @param vector vector to which contributions are added
+ * @param flag flag to distinguish new vector (true) from old (false)
+ */
+void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
+  int *idx = new int[p_maxValues];
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      nvals = p_network->getBus(i)->vectorNumElements();
+      p_network->getBus(i)->vectorGetElementValues(values, idx);
+      for (j=0; j<nvals; j++) {
+        if (flag) {
+          vector.addElement(idx[j],values[j]);
+        } else {
+          vector.setElement(idx[j],values[j]);
+        }
+      }
+    }
+  }
+  delete [] values;
+  delete [] idx;
+}
+
+/**
+ * Add contributions from branches to vector
+ * @param vector vector to which contributions are added
+ * @param flag flag to distinguish new vector (true) from old (false)
+ */
+void loadRealBranchData(gridpack::math::RealVector &vector, bool flag)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
+  int *idx = new int[p_maxValues];
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      nvals = p_network->getBranch(i)->vectorNumElements();
+      p_network->getBranch(i)->vectorGetElementValues(values,idx);
+      for (j=0; j<nvals; j++) {
+        if (idx[j] >= p_minIndex && idx[j] <= p_maxIndex) {
+          if (flag) {
+            vector.addElement(idx[j],values[j]);
+          } else {
+            vector.setElement(idx[j],values[j]);
+          }
+        }
+      }
+    }
+  }
+  delete [] values;
+  delete [] idx;
+}
+
+
     // Configuration information
 int                         p_me;
 int                         p_nNodes;
@@ -536,6 +750,13 @@ int*                        p_Offsets;
 int                         g_bus_offsets;
 int                         g_branch_offsets;
 int                         p_GAgrp;
+
+// local offset arrays
+int                         *p_BusLocOffsets;
+int                         *p_BusSizes;
+int                         *p_BranchLocOffsets;
+int                         *p_BranchSizes;
+
 
     // pointer to timer
 gridpack::utility::CoarseTimer *p_timer;

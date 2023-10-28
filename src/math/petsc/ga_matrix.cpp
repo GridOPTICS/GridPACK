@@ -892,7 +892,7 @@ MatSetOperations_DenseGA(Mat A)
   ierr = MatShellSetOperation(A, MATOP_GET_VALUES, (void(*)(void))MatGetValues_DenseGA); CHKERRQ(ierr);
   ierr = MatShellSetOperation(A, MATOP_ZERO_ENTRIES, (void(*)(void))MatZeroEntries_DenseGA); CHKERRQ(ierr);
   ierr = MatShellSetOperation(A, MATOP_MULT, (void(*)(void))MatMult_DenseGA); CHKERRQ(ierr); 
-  ierr = MatShellSetOperation(A, MATOP_MAT_MULT, (void(*)(void))MatMatMult_DenseGA); CHKERRQ(ierr); 
+  //  ierr = MatShellSetOperation(A, MATOP_MAT_MULT, (void(*)(void))MatMatMult_DenseGA); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(A, MATOP_TRANSPOSE, (void(*)(void))MatTranspose_DenseGA); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(A, MATOP_DUPLICATE, (void(*)(void))MatDuplicate_DenseGA); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(A, MATOP_ASSEMBLY_BEGIN, (void(*)(void))MatAssemmblyBegin_DenseGA); CHKERRQ(ierr);
