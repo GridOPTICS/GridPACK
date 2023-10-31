@@ -80,7 +80,6 @@ public:
               const long int& ma_heap);
   Environment(int argc, char **argv);
 
-#ifdef ENABLE_ENVIRONMENT_FROM_COMM
   /**
    * Initialize environment from existing communicator
    * @param argc        number of program command line arguments
@@ -90,7 +89,6 @@ public:
    * @return 
    */
   Environment(int argc, char **argv, MPI_Comm &comm);
-#endif
 
   /**
    * Return true if processor is active in this environment, false otherwise.

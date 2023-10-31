@@ -92,9 +92,9 @@ Environment::Environment(int argc, char **argv,const char* help,const long int& 
 
 }
 
-#ifdef ENABLE_ENVIRONMENT_FROM_COMM
 Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc,argv),clparser(argc,argv),p_from_comm(false)
 {
+#ifdef ENABLE_ENVIRONMENT_FROM_COMM
   PrintStatus();
   pma_stack = 200000;
   pma_heap  = 200000;
@@ -102,9 +102,24 @@ Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc
     p_from_comm = true;
     MA_init(C_DBL,pma_stack,pma_heap);
     gridpack::math::Initialize(&argc,&argv);
+  } else {
+    int rank;
+    MPI_Comm_rank(comm,&rank);
+    if (rank == 0) {
+      std::cout<<"Initialize GA from communicator failed" << std::endl;
+    }
+    MPI_Abort(comm, 1);
   }
-}
+#else
+  int rank;
+  MPI_Comm_rank(comm,&rank);
+  if (rank == 0) {
+    std::cout<<"Initialize GridPACK Environment from communicator not implemented"
+      << std::endl;
+  }
+  MPI_Abort(comm, 1);
 #endif
+}
 
 Environment::~Environment(void)
 {
