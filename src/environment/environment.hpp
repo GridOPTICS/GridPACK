@@ -92,7 +92,15 @@ public:
 
   /**
    * Return true if processor is active in this environment, false otherwise.
-   * Only chance of returning false is with progress rank runtime
+   * Only chance of returning false is with progress rank runtime. The main
+   * use for this function is to guarantee that code exits cleanly and that
+   * there are no hangs at the end of the run. The correct way to start an
+   * application is
+   *
+   * Environment env(argc, argv, comm);
+   * if (env.active()) {
+   *   // Application code goes here
+   * }
    */
   bool active();
 

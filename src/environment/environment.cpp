@@ -123,23 +123,14 @@ Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc
 
 Environment::~Environment(void)
 {
-  if (p_from_comm) {
-    // Finalize math libraries
-    gridpack::math::Finalize();
-<<<<<<< HEAD
-
-    GA_Terminate();
-  }
+  // Finalize math libraries
+  gridpack::math::Finalize();
+  GA_Terminate();
 }
 
 bool Environment::active()
 {
   return p_from_comm;
-=======
-
-    GA_Terminate();
-  }
->>>>>>> 357dc81e... Added a configuration option so that branch still builds if a GA library that
 }
 
 /**

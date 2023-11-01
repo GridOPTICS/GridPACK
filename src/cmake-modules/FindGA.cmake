@@ -6,6 +6,7 @@
 # Once done this will define
 #
 #  GA_FOUND        - system has GA
+#  GA_COMM_FOUND   - system has GA that can be initialized from a communicator
 #  GA_INCLUDE_DIRS - include directories for GA
 #  GA_LIBRARIES    - libraries for GA
 #
@@ -163,16 +164,43 @@ int main(int argc, char **argv)
 }
 ")
 
+set(ga_test_comm_src "
+#include <mpi.h>
+#include <ga++.h>
+
+int main(int argc, char **argv)
+{
+  // FIXME: Find a simple but sensible test for GA
+
+  // Initialise MPI
+  MPI_Init(&argc, &argv);
+
+  // Initialize GA
+  GA_Initialize_comm(MPI_COMM_WORLD);
+
+  // Terminate GA
+  GA_Terminate();
+
+  // Finalize MPI
+  MPI_Finalize();
+
+  return 0;
+}
+")
+
 include(CheckCXXSourceRuns)
 include(CheckCXXSourceCompiles)
 if (USE_PROGRESS_RANKS OR CHECK_COMPILATION_ONLY) 
   check_cxx_source_compiles("${ga_test_src}" GA_TEST_RUNS)
+  check_cxx_source_compiles("${ga_test_comm_src}" GA_TEST_COMM_RUNS)
 else()
   check_cxx_source_runs("${ga_test_src}" GA_TEST_RUNS)
+  check_cxx_source_runs("${ga_test_comm_src}" GA_TEST_COMM_RUNS)
 endif()
 endif()
 
 unset(ga_test_src)
+unset(ga_test_comm_src)
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
@@ -185,9 +213,13 @@ else()
     REQUIRED_VARS GA_LIBRARY GA_INCLUDE_DIR GA_TEST_RUNS)
 endif()
 
+set(GA_COMM_FOUND FALSE)
 if(GA_FOUND)
   set(GA_LIBRARIES ${GA_CXX_LIBRARY} ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS})
   set(GA_INCLUDE_DIRS ${GA_INCLUDE_DIR})
+  if (GA_TEST_COMM_RUNS)
+    set(GA_COMM_FOUND TRUE)
+  endif()
 endif()
 
-mark_as_advanced(GA_INCLUDE_DIR GA_LIBRARY ARMCI_LIBRARY)
+mark_as_advanced(GA_INCLUDE_DIR GA_LIBRARY ARMCI_LIBRARY GA_COMM_FOUND)
