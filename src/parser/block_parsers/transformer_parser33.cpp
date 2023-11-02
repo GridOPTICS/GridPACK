@@ -546,10 +546,10 @@ void gridpack::parser::TransformerParser33::parse(
       double windv2 = atof(split_line4[0].c_str());
 
       if(cw == 2) {
-	double nomv1 = atof(split_line3[1].c_str());
-	double nomv2 = atof(split_line4[1].c_str());
-	windv1 = windv1/nomv1;
-	windv2 = windv2/nomv2;
+        double nomv1 = atof(split_line3[1].c_str());
+        double nomv2 = atof(split_line4[1].c_str());
+        windv1 = windv1/nomv1;
+        windv2 = windv2/nomv2;
       }
       double tap = windv1/windv2;
       
@@ -563,6 +563,7 @@ void gridpack::parser::TransformerParser33::parse(
        * BRANCH_R
        */
       double rval = atof(split_line2[0].c_str());
+      p_branchData[l_idx]->addValue(TRANSFORMER_R1_2,rval,nelems);
       rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio to the req of the transformer
       if (sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
@@ -570,7 +571,6 @@ void gridpack::parser::TransformerParser33::parse(
         rval = rval*p_case_sbase/sbase2;
         p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
       }
-      p_branchData[l_idx]->addValue(TRANSFORMER_R1_2,rval,nelems);
 
 
       /*
@@ -578,6 +578,7 @@ void gridpack::parser::TransformerParser33::parse(
        * BRANCH_X
        */
       rval = atof(split_line2[1].c_str());
+      p_branchData[l_idx]->addValue(TRANSFORMER_X1_2,rval,nelems);
       rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio to the xeq of the transformer
       if (sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
@@ -585,7 +586,6 @@ void gridpack::parser::TransformerParser33::parse(
         rval = rval*p_case_sbase/sbase2;
         p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
       }
-      p_branchData[l_idx]->addValue(TRANSFORMER_X1_2,rval,nelems);
 
       // Add parameters from line 3
 
