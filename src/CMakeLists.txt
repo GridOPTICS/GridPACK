@@ -400,14 +400,14 @@ if(BUILD_GA)
 else(BUILD_GA)
   message(STATUS "Checking GA ...")
   find_package(GA REQUIRED)
+  if (ENABLE_ENVIRONMENT_FROM_COMM AND NOT GA_COMM_FOUND)
+    message(WARNING "Initializing GridPACK environment from a communicator enabled
+but GA version does not support this")
+endif()
+
 endif(BUILD_GA)
 message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
 message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")
-
-if (ENABLE_ENVIRONMENT_FROM_COMM AND NOT GA_COMM_FOUND)
-  message(WARNING "Initializing GridPACK environment from a communicator enabled
-but GA version does not support this")
-endif()
 
 # -------------------------------------------------------------
 # Doxygen
