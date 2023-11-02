@@ -86,6 +86,19 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   return Ret;
 }
 
+boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxIndex-p_minIndex+1;
+  boost::shared_ptr<gridpack::math::RealVector>
+    Ret(new gridpack::math::RealVector(comm, blockSize));
+  loadRealBusData(*Ret,false);
+  loadRealBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
 /**
  * Generate vector from current component state on network and return a
  * conventional pointer to it. Used for Fortran interface.
@@ -99,6 +112,19 @@ gridpack::math::Vector* intMapToVector(void)
     Ret(new gridpack::math::Vector(comm, blockSize));
   loadBusData(*Ret,false);
   loadBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
+gridpack::math::RealVector* intMapToRealVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxIndex-p_minIndex+1;
+  gridpack::math::RealVector*
+    Ret(new gridpack::math::RealVector(comm, blockSize));
+  loadRealBusData(*Ret,false);
+  loadRealBranchData(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   return Ret;
@@ -119,6 +145,16 @@ void mapToVector(gridpack::math::Vector &vector)
   vector.ready();
 }
 
+void mapToRealVector(gridpack::math::RealVector &vector)
+{
+  int t_set, t_bus, t_branch;
+  vector.zero();
+  loadRealBusData(vector,false);
+  loadRealBranchData(vector,false);
+  GA_Pgroup_sync(p_GAgrp);
+  vector.ready();
+}
+
 /**
  * Reset existing vector from current component state on network
  * @param vector existing vector (should be generated from same mapper)
@@ -126,6 +162,11 @@ void mapToVector(gridpack::math::Vector &vector)
 void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
   mapToVector(*vector);
+}
+
+void mapToRealVector(boost::shared_ptr<gridpack::math::RealVector> &vector)
+{
+  mapToRealVector(*vector);
 }
 
 /**
@@ -166,6 +207,38 @@ void mapToNetwork(const gridpack::math::Vector &vector)
   GA_Pgroup_sync(p_GAgrp);
 }
 
+void mapToNetwork(const gridpack::math::RealVector &vector)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
+  int *idx = new int[p_maxValues];
+  // get values from buses
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      nvals = p_network->getBus(i)->vectorNumElements();
+      p_network->getBus(i)->vectorGetElementIndices(idx);
+      for (j=0; j<nvals; j++) {
+        vector.getElement(idx[j],values[j]);
+      }
+      p_network->getBus(i)->vectorSetElementValues(values);
+    }
+  }
+  // get values from branches
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      nvals = p_network->getBranch(i)->vectorNumElements();
+      p_network->getBranch(i)->vectorGetElementIndices(idx);
+      for (j=0; j<nvals; j++) {
+        vector.getElement(idx[j],values[j]);
+      }
+      p_network->getBranch(i)->vectorSetElementValues(values);
+    }
+  }
+  delete [] values;
+  delete [] idx;
+  GA_Pgroup_sync(p_GAgrp);
+}
+
 /**
  * Push data from vector onto buses and branches. Vector must
  * be created with the mapToVector method using the same
@@ -173,6 +246,11 @@ void mapToNetwork(const gridpack::math::Vector &vector)
  * @param vector vector containing data to be pushed to network
  */
 void mapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
+{
+  mapToNetwork(*vector);
+}
+
+void mapToNetwork(boost::shared_ptr<gridpack::math::RealVector> &vector)
 {
   mapToNetwork(*vector);
 }
@@ -483,6 +561,28 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   delete [] idx;
 }
 
+void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
+  int *idx = new int[p_maxValues];
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      nvals = p_network->getBus(i)->vectorNumElements();
+      p_network->getBus(i)->vectorGetElementValues(values, idx);
+      for (j=0; j<nvals; j++) {
+        if (flag) {
+          vector.addElement(idx[j],values[j]);
+        } else {
+          vector.setElement(idx[j],values[j]);
+        }
+      }
+    }
+  }
+  delete [] values;
+  delete [] idx;
+}
+
 /**
  * Add contributions from branches to vector
  * @param vector vector to which contributions are added
@@ -492,6 +592,30 @@ void loadBranchData(gridpack::math::Vector &vector, bool flag)
 {
   int i, j, nvals;
   ComplexType *values = new ComplexType[p_maxValues];
+  int *idx = new int[p_maxValues];
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      nvals = p_network->getBranch(i)->vectorNumElements();
+      p_network->getBranch(i)->vectorGetElementValues(values,idx);
+      for (j=0; j<nvals; j++) {
+        if (idx[j] >= p_minIndex && idx[j] <= p_maxIndex) {
+          if (flag) {
+            vector.addElement(idx[j],values[j]);
+          } else {
+            vector.setElement(idx[j],values[j]);
+          }
+        }
+      }
+    }
+  }
+  delete [] values;
+  delete [] idx;
+}
+
+void loadRealBranchData(gridpack::math::RealVector &vector, bool flag)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
   int *idx = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {

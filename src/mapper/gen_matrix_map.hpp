@@ -98,6 +98,20 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   return Ret;
 }
 
+boost::shared_ptr<gridpack::math::RealMatrix> mapToRealMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxRowIndex-p_minRowIndex+1;
+  boost::shared_ptr<gridpack::math::RealMatrix>
+    Ret(new gridpack::math::RealMatrix(comm, blockSize, p_colBlockSize,
+          p_nz_per_row));
+  loadRealBusData(*Ret,false);
+  loadRealBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
 /**
  * Generate matrix from current component state on network and return a
  * conventional pointer to it. Used for Fortran interface
@@ -111,6 +125,20 @@ gridpack::math::Matrix* intMapToMatrix(void)
     Ret(new gridpack::math::Matrix(comm, blockSize, p_colBlockSize, p_nz_per_row));
   loadBusData(*Ret,false);
   loadBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
+gridpack::math::RealMatrix* intMapRealToMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxRowIndex-p_minRowIndex+1;
+  gridpack::math::RealMatrix*
+    Ret(new gridpack::math::RealMatrix(comm, blockSize, p_colBlockSize,
+          p_nz_per_row));
+  loadRealBusData(*Ret,false);
+  loadRealBranchData(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   return Ret;
@@ -131,6 +159,16 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
   matrix.ready();
 }
 
+void mapToRealMatrix(gridpack::math::RealMatrix &matrix)
+{
+  int t_set, t_bus, t_branch;
+  matrix.zero();
+  loadRealBusData(matrix,false);
+  loadRealBranchData(matrix,false);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
 /**
  * Reset existing matrix from current component state on network
  * @param matrix existing matrix (should be generated from same mapper)
@@ -138,6 +176,11 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   mapToMatrix(*matrix);
+}
+
+void mapToRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
+{
+  mapToRealMatrix(*matrix);
 }
 
 /**
@@ -153,6 +196,14 @@ void overwriteMatrix(gridpack::math::Matrix &matrix)
   matrix.ready();
 }
 
+void overwriteRealMatrix(gridpack::math::RealMatrix &matrix)
+{
+  loadRealBusData(matrix,false);
+  loadRealBranchData(matrix,false);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
 /**
  * Overwrite elements of existing matrix. This can be used to overwrite selected
  * elements of a matrix
@@ -161,6 +212,11 @@ void overwriteMatrix(gridpack::math::Matrix &matrix)
 void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   overwriteMatrix(*matrix);
+}
+
+void overwriteRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
+{
+  overwriteRealMatrix(*matrix);
 }
 
 /**
@@ -176,6 +232,14 @@ void incrementMatrix(gridpack::math::Matrix &matrix)
   matrix.ready();
 }
 
+void incrementRealMatrix(gridpack::math::RealMatrix &matrix)
+{
+  loadRealBusData(matrix,true);
+  loadRealBranchData(matrix,true);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
 /**
  * Increment elements of existing matrix. This can be used to increment selected
  * elements of a matrix
@@ -184,6 +248,11 @@ void incrementMatrix(gridpack::math::Matrix &matrix)
 void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   incrementMatrix(*matrix);
+}
+
+void incrementRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
+{
+  incrementRealMatrix(*matrix);
 }
 
 private:
@@ -402,7 +471,8 @@ void setOffsets(void)
   GA_Set_pgroup(g_bus_row_offsets, p_GAgrp);
   if (!GA_Allocate(g_bus_row_offsets)) {
     char buf[256];
-    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for bus row offsets\n");
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate"
+        " distributed array for bus row offsets\n");
     printf("%s",buf);
     throw gridpack::Exception(buf);
   }
@@ -414,7 +484,8 @@ void setOffsets(void)
   GA_Set_pgroup(g_bus_column_offsets, p_GAgrp);
   if (!GA_Allocate(g_bus_column_offsets)) {
     char buf[256];
-    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for bus column offsets\n");
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate"
+        " distributed array for bus column offsets\n");
     printf("%s",buf);
     throw gridpack::Exception(buf);
   }
@@ -426,7 +497,8 @@ void setOffsets(void)
   GA_Set_pgroup(g_branch_row_offsets, p_GAgrp);
   if (!GA_Allocate(g_branch_row_offsets)) {
     char buf[256];
-    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for branch row offsets\n");
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate"
+        " distributed array for branch row offsets\n");
     printf("%s",buf);
     throw gridpack::Exception(buf);
   }
@@ -438,7 +510,8 @@ void setOffsets(void)
   GA_Set_pgroup(g_branch_column_offsets, p_GAgrp);
   if (!GA_Allocate(g_branch_column_offsets)) {
     char buf[256];
-    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for branch column offsets\n");
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate"
+        " distributed array for branch column offsets\n");
     printf("%s",buf);
     throw gridpack::Exception(buf);
   }
@@ -450,8 +523,10 @@ void setOffsets(void)
   // Scatter offsets to global arrays
   NGA_Scatter(g_bus_row_offsets, i_bus_value_buf, i_bus_index, i_bus_cnt);
   NGA_Scatter(g_bus_column_offsets, j_bus_value_buf, j_bus_index, j_bus_cnt);
-  NGA_Scatter(g_branch_row_offsets, i_branch_value_buf, i_branch_index, i_branch_cnt);
-  NGA_Scatter(g_branch_column_offsets, j_branch_value_buf, j_branch_index, j_branch_cnt);
+  NGA_Scatter(g_branch_row_offsets, i_branch_value_buf, i_branch_index,
+      i_branch_cnt);
+  NGA_Scatter(g_branch_column_offsets, j_branch_value_buf, j_branch_index,
+      j_branch_cnt);
   GA_Pgroup_sync(p_GAgrp);
 
   delete [] i_bus_index;
@@ -498,7 +573,8 @@ void setIndices(void)
   NGA_Gather(g_bus_row_offsets, i_bus_value_buf, bus_index, p_nBuses);
   NGA_Gather(g_bus_column_offsets, j_bus_value_buf, bus_index, p_nBuses);
   NGA_Gather(g_branch_row_offsets, i_branch_value_buf, branch_index, p_nBranches);
-  NGA_Gather(g_branch_column_offsets, j_branch_value_buf, branch_index, p_nBranches);
+  NGA_Gather(g_branch_column_offsets, j_branch_value_buf, branch_index,
+      p_nBranches);
 
   // Offsets are now available. Set indices in all network components
   int offset, nrows, ncols, idx;
@@ -663,6 +739,30 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   delete [] cols;
 }
 
+void loadRealBusData(gridpack::math::RealMatrix &matrix, bool flag)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
+  int *rows = new int[p_maxValues];
+  int *cols = new int[p_maxValues];
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      nvals = p_network->getBus(i)->matrixNumValues();
+      p_network->getBus(i)->matrixGetValues(values,rows,cols);
+      for (j=0; j<nvals; j++) {
+        if (flag) {
+          matrix.addElement(rows[j],cols[j],values[j]);
+        } else {
+          matrix.setElement(rows[j],cols[j],values[j]);
+        }
+      }
+    }
+  }
+  delete [] values;
+  delete [] rows;
+  delete [] cols;
+}
+
 /**
  * Add contributions from branches to matrix
  * @param matrix matrix to which contributions are added
@@ -672,6 +772,52 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 {
   int i, j, nvals;
   ComplexType *values = new ComplexType[p_maxValues];
+  int *rows = new int[p_maxValues];
+  int *cols = new int[p_maxValues];
+  for (i=0; i<p_nBranches; i++) {
+    nvals = p_network->getBranch(i)->matrixNumValues();
+    if (nvals > 0) {
+      int ncols = p_network->getBranch(i)->matrixNumCols();
+      int rmin, rmax;
+      bool isActive = p_network->getActiveBranch(i);
+      if (ncols > 0) {
+        rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
+        rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
+      }
+      p_network->getBranch(i)->matrixGetValues(values,rows,cols);
+      bool addElem;
+      for (j=0; j<nvals; j++) {
+        if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+          addElem = false;
+          if (ncols > 0) {
+            if (cols[j] >= rmin && cols[j] <= rmax) {
+              if (isActive) addElem = true;
+            } else {
+              addElem = true;
+            }
+          } else {
+            addElem = true;
+          }
+          if (addElem) {
+            if (flag) {
+              matrix.addElement(rows[j],cols[j],values[j]);
+            } else {
+              matrix.setElement(rows[j],cols[j],values[j]);
+            }
+          }
+        }
+      }
+    }
+  }
+  delete [] values;
+  delete [] rows;
+  delete [] cols;
+}
+
+void loadRealBranchData(gridpack::math::RealMatrix &matrix, bool flag)
+{
+  int i, j, nvals;
+  RealType *values = new RealType[p_maxValues];
   int *rows = new int[p_maxValues];
   int *cols = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {
