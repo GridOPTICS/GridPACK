@@ -8,7 +8,7 @@
  * @file   ggov1.cpp
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
- * @Latested modification with control blocks: Oct 24, 2023
+ * @Latested modification with control blocks: Nov 06, 2023
  * 
  * @brief  
  * 
@@ -167,6 +167,9 @@ void gridpack::dynamic_simulation::Ggov1Model::init(double mag, double ang, doub
   else
     s4 = Leadlag_blk_s4.init_given_y(Pmech);
 
+  s3 = s4 / Kturb + Wfnl;
+  if (Flag == 1) s3 = s3 / (1 + w);
+
   if (Dm < 0) s9 = s3 * pow(1+w, Dm);
   else s9 = s3;
 
@@ -177,9 +180,6 @@ void gridpack::dynamic_simulation::Ggov1Model::init(double mag, double ang, doub
   s6 = PIControl_blk_s6.init_given_u(LdRefslashKturb + Wfnl - temp1);
 
   s8 = Filter_blk_s8.init_given_u(w);
-
-  s3 = s4 / Kturb + Wfnl;
-  if (Flag == 1) s3 = s3 / (1 + w);
 
   s0 = Filter_blk_s0.init_given_u(GenPelec) * GenMVABase / Trate; 
   Pmwset = s0; 
@@ -276,7 +276,7 @@ void gridpack::dynamic_simulation::Ggov1Model::computeModel(double t_inc,Integra
 
   s6 = PIControl_blk_s6.getoutput(LdRefslashKturb + Wfnl - temp1);
 
-  float small = findSmallestFloat(s6, (Aset - s8) * Ka, s1 + s2);
+  float small = findSmallestFloat(s6, (Aset - s8) * Ka * t_inc, s1 + s2);
 
   if (small > Vmax) temp3 = Vmax;
   else if (small < Vmin) temp3 = Vmin;
