@@ -69,7 +69,7 @@ test-gridpack:
 
     - useradd gridpack
     - chown -R gridpack:gridpack .
-    - su gridpack -c 'make -C src/build test'
+    - su gridpack -c 'ctest --test-dir src/build --output-on-failure'
 
   artifacts:
 
