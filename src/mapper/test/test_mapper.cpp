@@ -828,13 +828,8 @@ void run (const int &me, const int &nprocs)
   }
 
   // Multiply values in vector by a factor of 2
-  int lo, hi;
-  V->localIndexRange(lo,hi);
-  for (i=lo; i<hi; i++) {
-    V->getElement(i,v);
-    v *= 2.0;
-    V->setElement(i,v);
-  }
+  V->scale(2.0);
+  
   // Push values back onto buses
   vMap.mapToBus(V);
 
