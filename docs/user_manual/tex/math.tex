@@ -536,3 +536,12 @@ If you are only interested in using the \texttt{\textbf{NonlinearSolver}}, then 
 }
 
 Additional calls are likely to be added to these to allow user-specified parameters from the input deck to be sent to the solver. In the case of the \texttt{\textbf{NonlinearSolver}}, these can be used to specify which PETSc solver should be used. More details on how to use the non-linear solvers can be found by looking at the powerflow module in the GridPACK source code.
+
+\subsection{Differential Algebraic Equation Solvers}
+\label{sec:dae-solver}
+
+The \texttt{\textbf{DAESolver}} is used to solve systems of
+differential and algebraic equations (DAE).  It can also be used to solve
+systems of ordinary differential equations (ODE).  
+\texttt{\textbf{DAESolver}}, like \texttt{\textbf{NonlinearSolver}},
+requires some helper functions.  
