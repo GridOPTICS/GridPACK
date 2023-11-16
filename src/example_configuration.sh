@@ -225,15 +225,29 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
     #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
+
+    # Custom built 3.19, complex:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+
+    # Custom built 3.19, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+
+    # Custom built 3.19, complex, w/o superlu_dist:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+
+
     
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
-
-    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
-    cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
-          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
-          -D PETSC_ARCH:STRING="ubuntu-real-shared-debug" \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+          -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
           -D USE_OLD_PETSC:BOOL=OFF \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
