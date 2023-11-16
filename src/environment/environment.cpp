@@ -98,21 +98,20 @@ Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc
   PrintStatus();
   pma_stack = 200000;
   pma_heap  = 200000;
+  // GA_Initialize_comm returns false if the processor is not in the active
+  // set. This is needed so that applications can exit cleanly instead of
+  // hanging.
   if (GA_Initialize_comm(comm)) {
     p_from_comm = true;
     MA_init(C_DBL,pma_stack,pma_heap);
     gridpack::math::Initialize(&argc,&argv);
   } else {
-    int rank;
-    MPI_Comm_rank(comm,&rank);
-    if (rank == 0) {
-      std::cout<<"Initialize GA from communicator failed" << std::endl;
-    }
-    MPI_Abort(comm, 1);
+    p_from_comm = false;
   }
 #else
   int rank;
   MPI_Comm_rank(comm,&rank);
+  p_from_comm = true;
   if (rank == 0) {
     std::cout<<"Initialize GridPACK Environment from communicator not implemented"
       << std::endl;

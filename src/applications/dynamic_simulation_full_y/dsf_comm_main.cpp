@@ -69,9 +69,16 @@ void dsf(MPI_Comm comm, int argc, char **argv)
   gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
   noprint_ins->setStatus(true);
   
+
+  int rank,size;
+  MPI_Comm_rank(comm,&rank);
+  MPI_Comm_size(comm,&size);
+    std::cout << "Rank: "<<rank<<" Size: "<<size <<std::endl;
   gridpack::Environment env(argc,argv,comm);
 
   if (env.active()) {
+    gridpack::parallel::Communicator gp_world;
+    std::cout << "p["<<rank<<"] Size of world communicator: "<<gp_world.size() <<std::endl;
 
     gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();

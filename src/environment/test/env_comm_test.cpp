@@ -45,16 +45,18 @@ main(int argc, char **argv)
   printf("MPI %d: Process %d of %d (global: %d of %d)\n",
          color, color_rank, color_size, global_rank, global_size);
 
-  {
+  if (color_size > 2) {
     using namespace gridpack;
     using namespace gridpack::parallel;
       
     Environment env(argc,argv,csplit);
-    Communicator gp_world;
+    if (env.active()) {
+      Communicator gp_world;
 
-    printf("GP  %d: Process %d of %d (global: %d of %d)\n",
-           color, gp_world.rank(), gp_world.size(),
-           global_rank, global_size);
+      printf("GP  %d: Process %d of %d (global: %d of %d)\n",
+          color, gp_world.rank(), gp_world.size(),
+          global_rank, global_size);
+    }
 
   }
 
