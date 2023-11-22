@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2019-12-03 08:14:38 d3g096
+ * @date   2023-08-24 09:45:38 d3g096
  * 
  * @brief  
  * 
@@ -26,7 +26,6 @@
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
-#include "petsc/ga_matrix.hpp"
 
 namespace gridpack {
 namespace math {
@@ -35,6 +34,8 @@ namespace math {
 
 // -------------------------------------------------------------
 // transpose
+// This should be avoided in favor of MatrixT<> = transpose(MatrixT<>)
+// because this can cause additional mallocs
 // -------------------------------------------------------------
 template <typename T, typename I>
 void 
@@ -47,10 +48,14 @@ transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result)
     Mat *pAtrans(PETScMatrix(result));
     PetscErrorCode ierr(0);
     try {
+      // 
+      ierr = MatSetOption(*pAtrans, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE); CHKERRXX(ierr);
       ierr = MatTranspose(*pA, MAT_REUSE_MATRIX, pAtrans); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
+    // This appears to be necessary with PETSc >= 3.12
+    result.ready();
     if (!PETScMatrixImplementation<T, I>::useLibrary) {
       result.conjugate();
     }
@@ -129,6 +134,7 @@ transpose(const MatrixT<T, I>& A)
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
+  result->ready();
   if (!PETScMatrixImplementation<T, I>::useLibrary) {
     result->conjugate();
   }
@@ -358,27 +364,6 @@ multiply(const MatrixT<RealType, int>& A,
 
 
 // -------------------------------------------------------------
-// multiply_dense
-// -------------------------------------------------------------
-static 
-PetscErrorCode 
-multiply_dense(const Mat& A, const Mat& B, Mat& C)
-{
-  PetscErrorCode ierr(0);
-  Mat Aga, Bga, Cga;
-
-  ierr = MatConvertToDenseGA(A, &Aga); CHKERRQ(ierr);
-  ierr = MatConvertToDenseGA(B, &Bga); CHKERRQ(ierr);
-  ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cga); CHKERRQ(ierr);
-  ierr = MatConvertGAToDense(Cga, &C); CHKERRXX(ierr);
-  
-  ierr = MatDestroy(&Aga); CHKERRQ(ierr);
-  ierr = MatDestroy(&Bga); CHKERRQ(ierr);
-  ierr = MatDestroy(&Cga); CHKERRQ(ierr);
-  return ierr;
-}
-
-// -------------------------------------------------------------
 // (Matrix) multiply
 // -------------------------------------------------------------
 template <typename T, typename I>
@@ -387,16 +372,6 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
 {
   PetscErrorCode ierr(0);
 
-  // special method required for parallel dense*dense
-  if (A.communicator().size() > 1 &&
-      A.storageType() == Dense &&
-      B.storageType() == Dense) {
-    const Mat *Amat(PETScMatrix(A));
-    const Mat *Bmat(PETScMatrix(B));
-    Mat *Cmat(PETScMatrix(result));
-    ierr = MatMultbyGA(*Amat, *Bmat, *Cmat); CHKERRXX(ierr);
-    // ierr = multiply_dense(*Amat, *Bmat, *Cmat); CHKERRXX(ierr);
-  } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
     Mat *Cmat(PETScMatrix(result));
@@ -407,7 +382,7 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
-  }
+
 }
 
 template
@@ -428,19 +403,6 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
 {
   PetscErrorCode ierr(0);
   MatrixT<T, I> *result;
-  // special method required for parallel dense*dense
-  if (A.communicator().size() > 1 &&
-      A.storageType() == Dense &&
-      B.storageType() == Dense) {
-    const Mat *Amat(PETScMatrix(A));
-    const Mat *Bmat(PETScMatrix(B));
-    Mat Cmat;
-    ierr = MatMultbyGA_new(*Amat, *Bmat, Cmat);
-
-    PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(Cmat, false, true);
-    result = new MatrixT<T, I>(result_impl);
-  } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
     Mat Cmat;
@@ -454,7 +416,7 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     PETScMatrixImplementation<T, I> *result_impl = 
       new PETScMatrixImplementation<T, I>(Cmat, false, true);
     result = new MatrixT<T, I>(result_impl);
-  }
+
   return result;
 }
 
@@ -597,16 +559,10 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
                                  filename,
                                  FILE_MODE_READ,
                                  &viewer); CHKERRXX(ierr);
-#if PETSC_VERSION_GE(3,7,0)
     ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
-#else
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
-#endif
     ierr = MatLoad(mat, viewer); CHKERRXX(ierr);
 
-#if PETSC_VERSION_GE(3,7,0)
     ierr = PetscViewerPopFormat(viewer); CHKERRXX(ierr);
-#endif
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
 
     PETScMatrixImplementation<T, I> *result_impl = 

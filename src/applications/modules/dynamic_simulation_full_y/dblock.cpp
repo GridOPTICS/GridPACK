@@ -28,7 +28,7 @@ void GainLimiter::setparams(double K,double ymin,double ymax,double dymin, doubl
 
 double GainLimiter::getoutput(double u)
 {
-  double yout;
+  double yout = 0.0;
 
   yout = std::max(p_ymin,std::min(p_K*u,p_ymax));
 
@@ -37,7 +37,7 @@ double GainLimiter::getoutput(double u)
 
 double GainLimiter::getoutput(double u, double ymin, double ymax)
 {
-  double yout;
+  double yout = 0.0;
 
   p_ymin = ymin;
   p_ymax = ymax;
@@ -123,7 +123,7 @@ void Deadband::setparams(double u1,double u2)
 
 double Deadband::getoutput(double u)
 {
-  double yout;
+  double yout = 0.0;
 
   if(u - p_u1 > 1e-6 && p_u2 - u > 1e-6) yout = 0.0; // In the deadband
   else yout = u;

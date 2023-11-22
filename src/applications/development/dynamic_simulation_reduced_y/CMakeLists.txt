@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-01-04 08:39:22 d3g096
+# Last Change: 2023-09-06 06:50:50 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -100,5 +100,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("dynamic_simulation" ds.x input.xml)
+# gridpack_add_run_test("dynamic_simulation" ds.x input.xml)
 

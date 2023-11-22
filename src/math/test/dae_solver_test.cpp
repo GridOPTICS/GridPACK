@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2019-12-04 12:40:57 d3g096
+ * @date   2023-09-13 07:44:15 d3g096
  * 
  * @brief  
  * 
@@ -169,8 +169,11 @@ public:
                    const double& shift, MatrixType& J)
   {
     int lo, hi;
+    int rlo, rhi;
     X.localIndexRange(lo, hi);
+    J.localRowRange(rlo, rhi);
     BOOST_ASSERT((hi-lo) == this->size());
+    BOOST_ASSERT((rhi-rlo) == this->size());
     std::vector<TestType> x(this->size());
     X.getElementRange(lo, hi, &x[0]);
     J.setElement(lo+0, lo+0, shift + 0.04);

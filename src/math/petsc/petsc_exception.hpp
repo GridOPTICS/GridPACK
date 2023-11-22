@@ -8,7 +8,7 @@
 /**
  * @file   petsc_exception.hpp
  * @author William A. Perkins
- * @date   2019-08-13 09:12:24 d3g096
+ * @date   2023-08-24 09:43:26 d3g096
  * 
  * @brief 
  * 
@@ -26,28 +26,11 @@
 
 // You gotta love PETSc consistency 
 
-#if PETSC_VERSION_(3,4,0)
-#undef PETSC_VERSION_RELEASE
-#define PETSC_VERSION_RELEASE 0
-#endif
-
 // Default type for PETSc exceptions
 #define PETSC_EXCEPTION_TYPE std::runtime_error
 
 // If PETSc is compiled with the C++, use its C++ exception
 // facility. Otherwise, we need to make our own.
-
-#ifdef PETSC_CLANGUAGE_CXX
-// With PETSc version 3.5, PETSc::Exception was no longer defined.  It
-// was replaced with std::runtime_error. 
-
-#if PETSC_VERSION_LT(3,5,0)
-#include <petscsys.hh>
-#undef PETSC_EXCEPTION_TYPE
-#define PETSC_EXCEPTION_TYPE PETSc::Exception
-#define GRIDPACK_USES_PETSC_EXCEPTION 1
-#endif
-#endif
 
 #include "gridpack/utilities/exception.hpp"
 
