@@ -150,7 +150,20 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     std::vector<std::string> fileVec = p_goss_client.subscribeFileAsVector(std::string(sbuf2));
     parser.parse(fileVec);
 #else
-    parser.parse(filename.c_str());
+    try {
+      parser.parse(filename.c_str());
+    } catch (const gridpack::Exception e) {
+      std::string w(e.what());
+      if (!p_no_print) {
+        char ebuf[512];
+        sprintf(ebuf,"p[%d] unable to open network file: %s with error: %s\n",
+            filename.c_str(),w.c_str());
+        if (p_comm.rank() == 0) {
+          printf("%s",ebuf);
+        }
+      }
+      timer->stop(t_total);
+    }
 #endif
     if (phaseShiftSign == -1.0) {
       parser.changePhaseShiftSign();
