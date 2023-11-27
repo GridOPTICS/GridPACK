@@ -375,7 +375,10 @@ class BasePTIParser : public BaseParser<_network>
         input.open(fileName.c_str());
         if (!input.is_open()) {
           p_timer->stop(t_ds);
-          return;
+          char buf[512];
+          sprintf(buf,"Failed to open device parameter file: %s\n\n",
+              fileName.c_str());
+          throw gridpack::Exception(buf);
         }
         find_ds_par(input);
         input.close();
@@ -1025,8 +1028,10 @@ class BasePTIParser : public BaseParser<_network>
         std::ifstream            input;
         input.open(fileName.c_str());
         if (!input.is_open()) {
-          // p_timer->stop(t_ds);
-          return;
+          char buf[512];
+          sprintf(buf,"Failed to open device parameter file: %s\n\n",
+              fileName.c_str());
+          throw gridpack::Exception(buf);
         }
         find_ds_vector(input, &gen_data, &bus_relay_data,
             &branch_relay_data, &load_data);
@@ -1294,7 +1299,10 @@ class BasePTIParser : public BaseParser<_network>
         std::ifstream            input;
         input.open(fileName.c_str());
         if (!input.is_open()) {
-          return;
+          char buf[512];
+          sprintf(buf,"Failed to open unit commitment parameter file: %s\n\n",
+              fileName.c_str());
+          throw gridpack::Exception(buf);
         }
         find_uc_vector(input, &uc_data);
         input.close();
