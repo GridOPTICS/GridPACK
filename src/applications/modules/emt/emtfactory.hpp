@@ -19,7 +19,7 @@
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <gridpack/include/gridpack.hpp>
-#include <emtnetwork.hpp>
+#include <gridpack/applications/modules/emt/emtnetwork.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
 // This example only needs the functionality in the base factory class

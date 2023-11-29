@@ -16,7 +16,7 @@
 #ifndef _utilfunctions_h
 #define _utilfunctions_h
 
-#include <constants.hpp>
+#include <gridpack/applications/modules/emt/constants.hpp>
 
 /**
  * abc2dq0 - Does a vector transform from abc to dq0 reference frame using the given angle theta

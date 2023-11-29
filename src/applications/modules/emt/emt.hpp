@@ -16,9 +16,9 @@
 #ifndef _emt_h_
 #define _emt_h_
      
-#include <emtutils.hpp>
-#include <emtnetwork.hpp>
-#include <emtfactory.hpp>
+#include <gridpack/applications/modules/emt/emtutils.hpp>
+#include <gridpack/applications/modules/emt/emtnetwork.hpp>
+#include <gridpack/applications/modules/emt/emtfactory.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
 class Emt
