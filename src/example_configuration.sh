@@ -242,9 +242,12 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
-
+    if [ -z "$GRIDPACK_DIR" ]; then
+        prefix="$HOME/Projects/ExaLearn/gridpack-install"
+    else
+        prefix="$GRIDPACK_DIR"
+    fi
     
-    prefix="$HOME/Projects/ExaLearn/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
