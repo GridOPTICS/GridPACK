@@ -242,6 +242,7 @@ elif [ $host == "tlaloc" ]; then
         prefix="$GRIDPACK_DIR"
     fi
     
+    prefix="$HOME/Projects/GridPACK-Wind/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
