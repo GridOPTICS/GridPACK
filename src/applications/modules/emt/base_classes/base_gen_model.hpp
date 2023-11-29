@@ -16,11 +16,11 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
-#include <constants.hpp>
-#include <emtutilfunctions.hpp>
+#include <gridpack/applications/modules/emt/constants.hpp>
+#include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
 #include <gridpack/math/matrix.hpp>
-#include <base_exc_model.hpp>
-#include <base_gov_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 
 class BaseExcModel; // Forward declaration for BaseExcModel
 class BaseGovModel; // Forward declaration for BaseGovModel
