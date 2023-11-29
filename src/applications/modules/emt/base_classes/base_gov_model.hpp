@@ -17,8 +17,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
-#include <constants.hpp>
-#include <base_gen_model.hpp>
+#include <gridpack/applications/modules/emt/constants.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_gen_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
 class BaseEMTGenModel; // Forward declaration for BaseGenModel

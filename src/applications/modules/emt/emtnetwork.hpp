@@ -19,11 +19,11 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <gridpack/utilities/complex.hpp>
-#include <constants.hpp>
-#include <base_classes/base_gen_model.hpp>
-#include <base_classes/base_exc_model.hpp>
-#include <base_classes/base_gov_model.hpp>
-#include <base_classes/base_load_model.hpp>
+#include <gridpack/applications/modules/emt/constants.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_gen_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_load_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 #include <emtutilfunctions.hpp>
 

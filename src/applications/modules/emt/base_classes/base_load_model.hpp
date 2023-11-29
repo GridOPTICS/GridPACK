@@ -16,8 +16,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
-#include <constants.hpp>
-#include <emtutilfunctions.hpp>
+#include <gridpack/applications/modules/emt/constants.hpp>
+#include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
 #include <gridpack/math/matrix.hpp>
 
 class BaseEMTLoadModel : public gridpack::component::BaseComponent
