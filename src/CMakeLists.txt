@@ -10,8 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2023-11-30 12:47:38 d3g096
-# -------------------------------------------------------------
+
 
 # 
 cmake_minimum_required (VERSION 3.5.0)
@@ -34,13 +33,11 @@ enable_language(CXX)
 # where to look for special .cmake files
 list (APPEND CMAKE_MODULE_PATH 
     "${GridPACK_SOURCE_DIR}/cmake-modules"
-    "${GridPACK_SOURCE_DIR}/../cmake-jedbrown"
 )
 include(GridPACK)
 
 # add user configuration options
 option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
-option (USE_OLD_PETSC "Use older versions of PETSc" OFF)
 if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
@@ -290,16 +287,19 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
-if (NOT USE_OLD_PETSC)
+
 include(FindPkgConfig)
+
+if (NOT PETSC_DIR)
+  message(FATAL_ERROR "PETSC_DIR is not set, do so with -D PETSC_DIR=...")
+endif()
+  
 # Include petsc package path in pkg_config_path                                                                      
 set(ENV{PKG_CONFIG_PATH}
-${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig                         
+  ${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig
 )
 pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
-else()
-find_package (PETSc REQUIRED)
-endif()
+
 message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (NOT USE_OLD_PETSC)
