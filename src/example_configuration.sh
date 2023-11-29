@@ -284,7 +284,7 @@ elif [ $host == "tlaloc" ]; then
     #      -D USE_OLD_PETSC:BOOL=OFF \
     
     
-    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
+    prefix="$HOME/Projects/GridPACK-Wind/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc.gitlab" \
