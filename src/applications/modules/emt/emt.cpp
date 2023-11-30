@@ -109,16 +109,15 @@ protected:
 
 
 Emt::Emt(void)
-{
-  p_isSetUp = 0;
-  emt_network.reset(new EmtNetwork(p_comm));
-}
+  : p_isSetUp(0),
+    emt_network(new EmtNetwork(p_comm))
+{}
 
 Emt::Emt(gridpack::parallel::Communicator comm)
-{
-  p_isSetUp = 0;
-  p_comm = comm;
-}
+  : p_comm(comm),
+    p_isSetUp(0),
+    emt_network(new EmtNetwork(p_comm))
+{}
 
 void Emt::setconfigurationfile(const char* configfile)
 {
