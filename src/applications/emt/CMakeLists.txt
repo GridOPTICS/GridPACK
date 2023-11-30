@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-08 09:39:48 d3g096
+# Last Change: 2023-11-30 09:42:32 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -82,14 +82,6 @@ add_custom_target(emt.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A_WSIEG1.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
@@ -113,6 +105,13 @@ add_custom_target(emt.x.input
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${GRIDPACK_DATA_DIR}/raw/case9.raw
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
 )
 
 add_dependencies(emt.x emt.x.input)
@@ -127,8 +126,15 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
   ${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc
+  ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
   ${CMAKE_CURRENT_SOURCE_DIR}/emt_app.cpp
   DESTINATION share/gridpack/example/emt
 )
