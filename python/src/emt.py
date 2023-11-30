@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created November 29, 2023 by Perkins
-# Last Change: 2023-11-29 12:11:59 d3g096
+# Last Change: 2023-11-30 11:31:08 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -34,7 +34,7 @@ env = gridpack.Environment()
 
 comm = gridpack.Communicator()
 
-emt = gridpack.emt.EMT(comm)
+emt = gridpack.emt.EMT()
 
 emt.setconfigurationfile(inname)
 emt.solvepowerflow()

@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2023-11-30 09:45:54 d3g096
+# Last Change: 2023-11-30 11:37:23 d3g096
 # -------------------------------------------------------------
 
 import os
@@ -56,11 +56,11 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
 setup(
-    name='gridpack-hadrec',
+    name='gridpack',
     version='0.0.1',
     author='W.A. Perkins',
     author_email='william.perkins@pnnl.gov',
-    description='A Python interface to the GridPACK hadrec application module',
+    description='A Python interface to some GridPACK application modules',
     long_description='',
     ext_modules=[CMakeExtension('gridpack')],
     cmdclass=dict(build_ext=CMakeBuild),
