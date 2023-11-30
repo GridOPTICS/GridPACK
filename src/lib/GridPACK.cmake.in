@@ -9,9 +9,6 @@
 # file: FindGridPACK.cmake.in
 # -------------------------------------------------------------
 # -------------------------------------------------------------
-# Created January  8, 2014 by William A. Perkins
-# Last Change: 2023-11-30 12:48:01 d3g096
-# -------------------------------------------------------------
 
 function(gridpack_setup)
 
@@ -138,9 +135,15 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_EMT_MODULE_LIBRARY
+    NAMES gridpack_emt_module
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   set(gp_libs
     ${GRIDPACK_POWERFLOW_MODULE_LIBRARY}
     ${GRIDPACK_DYNAMIC_SIMULATION_FULL_MODULE_LIBRARY}
+    ${GRIDPACK_EMT_MODULE_LIBRARY}
     ${GRIDPACK_KALMAN_DS_MODULE_LIBRARY}
     ${GRIDPACK_STATE_ESTIMATION_MODULE_LIBRARY}
     ${GRIDPACK_HADREC_MODULE_LIBRARY}
@@ -215,15 +218,15 @@ function(gridpack_setup)
     list(APPEND gp_libs @GLPK_LIBRARY@)
   endif()
 
-#  list(APPEND gp_include 
-#    @Boost_INCLUDE_DIR@
-#    @MPI_INCLUDE_PATH@
-#  )
+  list(APPEND gp_include 
+    @Boost_INCLUDE_DIR@
+    @MPI_INCLUDE_PATH@
+  )
 
-#  list(APPEND gp_libs
-#    @Boost_LIBRARIES@
-#    @MPI_CXX_LIBRARIES@
-#  )
+  list(APPEND gp_libs
+    @Boost_LIBRARIES@
+    @MPI_CXX_LIBRARIES@
+  )
 
   set(GRIDPACK_INCLUDE_DIRS
     ${gp_include}
