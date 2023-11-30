@@ -300,7 +300,7 @@ void setOffsets(void)
   for (i=0; i<p_nBuses; i++) p_BusSizes[i] = 0;
   for (i=0; i<p_nBuses; i++) p_BusLocOffsets[i] = 0;
   p_BranchSizes = new int[p_nBranches];
-  p_BranchLocOffsets = new int[p_nBuses];
+  p_BranchLocOffsets = new int[p_nBranches];
   for (i=0; i<p_nBranches; i++) p_BranchSizes[i] = 0;
   for (i=0; i<p_nBranches; i++) p_BranchLocOffsets[i] = 0;
   // Evaluate offsets for individual network components
