@@ -41,8 +41,8 @@ with a limited number of cores. This runtime provides reasonable performance on
 a small number of cores but slows down considerably at larger core counts(our
 experience is that you should limit this runtime to 8 or less processors). It is
 not recommended for large-scale parallel computation.  The progress ranks
-runtime is much higher performing and approaches the performance of the OpenIB
-runtime. It is very reliable and runs on any platform that supports MPI.
+runtime is much higher performing.
+It is very reliable and runs on any platform that supports MPI.
 However, it has one peculiarity in that it reserves one MPI process on each SMP
 node to act as a communication manager. Thus, if you are running your
 calculation on 2 nodes with 5 processes on each node, the GridPACK application
