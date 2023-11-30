@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2019-12-03 07:45:40 d3g096
+ * @date   2023-11-29 14:57:06 d3g096
  * 
  * @updated Shri Abhyankar
  * Conversion of constant current, constant admittance values from raw file
@@ -1657,50 +1657,6 @@ void gridpack::powerflow::PFBus::setGeneratorStatus(
   }
   if (idx != -1) {
     p_gstatus[idx] = status;
-    if (!data->setValue(GENERATOR_STAT,status,idx)) {
-      data->addValue(GENERATOR_STAT,status,idx);
-    }
-    if(!status) {
-      p_pg[idx] = 0.0;
-      p_qg[idx] = 0.0;
-      data->setValue(GENERATOR_PG,0.0,idx);
-      data->setValue(GENERATOR_QG,0.0,idx);
-    }
-    // Check PV status and change it if all generators are off
-    p_isPV = p_gstatus[0];
-    for (i=1; i<p_ngen; i++) {
-      p_isPV = p_isPV || p_gstatus[i];
-    }
-    setIsPV(p_isPV);
-  } else {
-    printf("setGenertorStatus: No generator found on bus %d with id: (%s)\n",getOriginalIndex(),tag.c_str());
-  }
-}
-
-/**
- * Set generator status
- * @param tag generator ID
- * @param status new value of status
- * @param data data collection object associated with
- bus
- */
-void gridpack::powerflow::PFBus::setGeneratorStatus(
-    std::string tag, int status, gridpack::component::DataCollection *data)
-{
-  int i, idx;
-  idx = -1;
-  for (i=0; i<p_ngen; i++) {
-    if (p_gid[i] == tag) {
-      idx = i;
-      break;
-    }
-  }
-  if (idx != -1) {
-    p_gstatus[idx] = status;
-    p_pg[idx] = 0.0;
-    p_qg[idx] = 0.0;
-    data->setValue(GENERATOR_PG,0.0,idx);
-    data->setValue(GENERATOR_QG,0.0,idx);
     if (!data->setValue(GENERATOR_STAT,status,idx)) {
       data->addValue(GENERATOR_STAT,status,idx);
     }
