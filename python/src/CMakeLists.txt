@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2023-12-12 10:26:16 d3g096
+# Last Change: 2023-11-30 09:33:03 d3g096
 # -------------------------------------------------------------
 
 pybind11_add_module(gridpack gridpack.cpp)
@@ -14,6 +14,7 @@ set(parallel_scripts
   ${CMAKE_CURRENT_SOURCE_DIR}/hello.py
   ${CMAKE_CURRENT_SOURCE_DIR}/task_manager.py
   ${CMAKE_CURRENT_SOURCE_DIR}/hadrec.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/emt.py
 )
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)
@@ -25,6 +26,7 @@ target_link_libraries(gridpack PRIVATE ${GRIDPACK_LIBS})
 
 install(FILES
   ${parallel_scripts}
-  DESTINATION bin)
+  DESTINATION bin
+  )
 
 
