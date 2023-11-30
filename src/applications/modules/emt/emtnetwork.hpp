@@ -25,7 +25,7 @@
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_load_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
-#include <emtutilfunctions.hpp>
+#include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
 
 class EmtBus: public gridpack::component::BaseBusComponent 
 {
