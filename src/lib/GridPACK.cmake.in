@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2019-10-29 13:08:56 d3g096
+# Last Change: 2023-11-30 12:48:01 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -75,16 +75,6 @@ function(gridpack_setup)
 
   find_library(GRIDPACK_STREAM_LIBRARY
     NAMES gridpack_stream
-    HINTS ${GRIDPACK_LIB_DIR}
-  )
-
-  find_library(GRIDPACK_EXPRESSION_LIBRARY
-    NAMES gridpack_expression
-    HINTS ${GRIDPACK_LIB_DIR}
-  )
-
-  find_library(GRIDPACK_OPTIMIZATION_LIBRARY
-    NAMES gridpack_optimum
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
@@ -169,8 +159,6 @@ function(gridpack_setup)
     ${GRIDPACK_CONFIGURATION_LIBRARY}
     ${GRIDPACK_ENVIRONMENT_LIBRARY}
     ${GRIDPACK_MATH_LIBRARY}
-    ${GRIDPACK_EXPRESSION_LIBRARY}
-    ${GRIDPACK_OPTIMIZATION_LIBRARY}
     ${GRIDPACK_GOSS_LIBRARY}
     ${GRIDPACK_PARTITION_LIBRARY}
     ${GRIDPACK_TIMER_LIBRARY}

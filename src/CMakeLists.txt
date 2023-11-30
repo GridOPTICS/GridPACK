@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2023-08-28 13:46:15 d3g096
+# Last Change: 2023-11-30 12:47:38 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -113,16 +113,6 @@ endif()
 # suppress any checks to see if test codes run. Only check for compilation.
 # use for cross-compilation situations
 option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
-
-# should cplex or gurobi be used
-option(USE_CPLEX
-  "Use optimization software CPLEX libraries." OFF)
-
-option(USE_GUROBI
-  "Use optimization software GUROBI libraries." OFF)
-
-option(USE_GLPK
-  "Use GNU linear programming kit optimization software library." OFF)
 
 # BUILD_SHARED_LIBS is a CMake option and is understood by the CMake build
 # system, independently of declaring it here
@@ -414,29 +404,6 @@ message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
 message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")
 
 # -------------------------------------------------------------
-#  Add optimization libraries, if requested
-# -------------------------------------------------------------
-# add the CPLEX library?
-if( USE_CPLEX)
-  message(STATUS "Checking cplex ...")
-  find_package(CPLEX REQUIRED)
-endif( USE_CPLEX)
-
-# add the GUROBI library?
-IF( USE_GUROBI)
-  message(STATUS "Checking Gurobi ...")
-  find_package(GUROBI REQUIRED)
-endif (USE_GUROBI)
-
-if(USE_GLPK)
-  message(STATUS "Checking glpk ...")
-  find_package(GLPK REQUIRED)
-endif(USE_GLPK)
-
-#message(STATUS "Checking concert ...")
-#find_package(CONCERT REQUIRED)
-
-# -------------------------------------------------------------
 # Doxygen
 # -------------------------------------------------------------
 find_package(Doxygen)
@@ -531,8 +498,6 @@ add_subdirectory(analysis)
 add_subdirectory(partition)
 add_subdirectory(factory)
 add_subdirectory(mapper)
-add_subdirectory(expression)
-add_subdirectory(optimization)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/dynamic_simulation_full_y)
 add_subdirectory(applications/contingency_analysis)
