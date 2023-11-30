@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-02-17 12:01:02 d3g096
+# Last Change: 2023-11-30 09:45:54 d3g096
 # -------------------------------------------------------------
 
 import os
@@ -67,6 +67,7 @@ setup(
     zip_safe=False,
     scripts=[
         'src/hadrec.py',
+        'src/emt.py',
     ],
     test_suite='nose.collector',
     tests_require=['nose'],

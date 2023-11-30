@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2023-11-29 11:48:10 d3g096
+// Last Change: 2023-11-30 09:31:51 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -614,7 +614,6 @@ PYBIND11_MODULE(gridpack, gpm) {
 
   py::class_<Emt> emtapp(emtm, "EMT");
   emtapp
-    .def(py::init<>))
     .def(py::init<gpp::Communicator&>())
     .def("rank", &Emt::rank)
     .def("size", &Emt::size)
@@ -626,7 +625,7 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("setconfigurationfile",
          [](Emt& self, const std::string& s) {
            self.setconfigurationfile(s.c_str());
-         }
+         })
     ;
 
 

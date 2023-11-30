@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-02-17 12:46:40 d3g096
+# Last Change: 2023-11-30 09:33:03 d3g096
 # -------------------------------------------------------------
 
 pybind11_add_module(gridpack gridpack.cpp)
@@ -17,10 +17,13 @@ add_custom_target(parallel_scripts
   ${CMAKE_CURRENT_SOURCE_DIR}/task_manager.py ${CMAKE_CURRENT_BINARY_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/hadrec.py ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/emt.py ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS 
   ${CMAKE_CURRENT_SOURCE_DIR}/hello.py
   ${CMAKE_CURRENT_SOURCE_DIR}/task_manager.py
   ${CMAKE_CURRENT_SOURCE_DIR}/hadrec.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/emt.py
   )
 
 add_dependencies(gridpack parallel_scripts)
