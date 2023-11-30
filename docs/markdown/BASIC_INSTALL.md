@@ -3,6 +3,22 @@ This document provides a step-by-step guide to install GridPACK and its
 dependencies. They are meant to be used with GridPACK's develop branch. The
 installation instructions have been tested on Linux, MacOS, and Ubuntu. 
 
+GridPACK includes two scripts that can be used to build GridPACK and its
+dependencies. These are not guaranteed to work for all Linux platforms, but they
+are likely to work for many configurations and we recommend that you try them
+first before building GridPACK and its dependencies by hand. Both scripts can be
+found in the top level GridPACK directory. The
+[install_gridpack_deps.sh](../../install_gridpack_deps.sh) script can be used to
+build all modules needed by GridPACK and the
+[install_gridpack.sh](../../install_gridpack.sh) script can be used to
+build GridPACK itself. You may be able to get these to work on you platform with
+some minor edits. If you are not interested in building GridPACK with the python
+interface, you should set the `install_gridpack_python` variable in
+[install_gridpack.sh](../../install_gridpack.sh) to false. If the
+`install_gridpack` scripts do not work on your platform, it will be necessary to
+build GridPACK and its dependencies by hand. Instructions for doing so are given
+in the following.
+
 ## Prerequisite software
 Before building GridPACK using these instructions, you will need to make sure that
 - CMake is available on your system (version newer than 3.5.0) 
@@ -90,7 +106,8 @@ More information on building and installing GA can be found
 ## <b>Step 3: Install PETSc 3.16.4</b>
 Step 3.1. Download PETSc release
 ```
-git clone https://gitlab.com/petsc/petsc.git
+git clone https://gitlab.com/petsc/petsc.githttps://gitlab.com/petsc/petsc.git
+git checkout v3.16.4
 ```
 
 Step 3.2.
