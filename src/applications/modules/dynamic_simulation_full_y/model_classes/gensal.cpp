@@ -161,6 +161,9 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
     p_exciter->setVcomp(mag); 
     p_exciter->setFieldVoltage(Efd);
     p_exciter->setFieldCurrent(LadIfd);
+    //---yuan add below 20231024---//
+    p_exciter->setIri(Ir, Ii); 
+    //---yuan add above 20231024---//
     p_exciter->setExtBusNum(p_bus_id);
     p_exciter->init(mag, ang, ts);
   }

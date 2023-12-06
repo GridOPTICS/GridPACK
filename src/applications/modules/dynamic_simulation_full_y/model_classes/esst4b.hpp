@@ -135,6 +135,10 @@ class Esst4bModel : public BaseExciterModel
     void setIri(double vIr, double vIi);
 
     void setVoel(double vtmp);
+    
+    /*---yuan add below---*/
+    void setVcomp(double vtmp);
+    /*---yuan add above---*/
 
   private:
 
@@ -147,6 +151,11 @@ class Esst4bModel : public BaseExciterModel
 
     bool zero_TR; // Time constant TR for measurement block is zero, no transfer function
     bool zero_TA; // Time constant TA for measurement block is zero, no transfer function  
+    
+    /*---yuan add below---*/
+    bool zero_KIM; // Integrator gain KIM for PI controller is zero, no transfer function
+    bool zero_KIR; // Integrator gain KIR for PI controller is zero, no transfer function
+    /*---yuan add above---*/
 
     Filter Filter_blkR;
     PIControl PIControl_blkR;

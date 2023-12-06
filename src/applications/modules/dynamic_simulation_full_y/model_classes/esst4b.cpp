@@ -24,7 +24,11 @@
 #include "base_exciter_model.hpp"
 #include "esst4b.hpp"
 
-#define TS_THRESHOLD 1
+/*---yuan comment and add below---*/
+// #define TS_THRESHOLD 1
+#define TS_THRESHOLD 4
+#define KI_THRESHOLD 1e-6
+/*---yuan comment and add above---*/
 
 /**
  *  Basic constructor
@@ -75,24 +79,42 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
   if (!data->getValue(EXCITER_VBMAX, &Vbmax, idx)) Vbmax = 0.0; // Vbmax
   if (!data->getValue(EXCITER_KC, &Kc, idx)) Kc = 0.0; // Kc
   if (!data->getValue(EXCITER_XL, &Xl, idx)) Xl = 0.0; // Xl
-  if (!data->getValue(EXCITER_THETAP, &Thetap, idx)) Thetap = 0.0; // Thetap
+  if (!data->getValue(EXCITER_THETAP, &Thetap, idx)) Thetap = 0.0; // Thetap, yuan: deg
+  
+  /*---yuan uncomment below---*/
+  printf("Tr=%f,Kpr=%f,Kir=%f,Vrmax=%f,Vrmin=%f,Ta=%f,Kpm=%f,Kim=%f,Vmmax=%f,Vmmin=%f,Kg=%f,Kp=%f,KI=%f,Vbmax=%f,Kc=%f,Xl=%f,Thetap=%f\n",Tr,Kpr,Kir,Vrmax,Vrmin,Ta,Kpm,Kim,Vmmax,Vmmin,Kg,Kp,KI,Vbmax,Kc,Xl,Thetap);
+  /*---yuan uncomment above---*/
+  
+  /*---yuan add below---*/
+  // right now we just hard code Vuel, Voel and Vs
+  Vs = 0.0;
+  Vuel = 0.0;
+  Voel = 1000.0;
+  OptionToModifyLimitsForInitialStateLimitViolation = true;
+  zero_TR = false;
+  zero_TA = false;
+  zero_KIM = false;
+  zero_KIR = false;
+  /*---yuan add above---*/
 
-  if(fabs(Tr) < 1e-6) zero_TR = true;
-  if(fabs(Tr) < 1e-6) zero_TA = true;
+  /*---yuan comment below---*/
+  // if(fabs(Tr) < 1e-6) zero_TR = true;
+  // if(fabs(Tr) < 1e-6) zero_TA = true;
 
-  if (!zero_TR) {
-    Filter_blkR.setparams(1.0, Tr);
-  }
+  // if (!zero_TR) {
+    // Filter_blkR.setparams(1.0, Tr);
+  // }
 
-  PIControl_blkR.setparams(Kpr, Kir, Vrmin, Vrmax, -10000.0, 10000.0);
+  // PIControl_blkR.setparams(Kpr, Kir, Vrmin, Vrmax, -10000.0, 10000.0);
 
-  if (!zero_TA) {
-    Filter_blkA.setparams(1.0, Ta);
-  }
+  // if (!zero_TA) {
+    // Filter_blkA.setparams(1.0, Ta);
+  // }
 
-  PIControl_blkR.setparams(Kpm, Kim, Vmmin, Vmmax, -10000.0, 10000.0);
+  // PIControl_blkR.setparams(Kpm, Kim, Vmmin, Vmmax, -10000.0, 10000.0);
 
-  LVGate_blk.setparams(Voel);
+  // LVGate_blk.setparams(Voel);
+  /*---yuan comment above---*/
 
 }
 
@@ -111,6 +133,10 @@ double gridpack::dynamic_simulation::Esst4bModel::Sat(double x)
     //double B = log(SE2 / SE1)/(E2 - E1);
     //double A = SE1 / exp(B * E1);
     //return A * exp(B * x);
+
+    /*---yuan add below---*/
+    return 0.0;
+    /*---yuan add above---*/
 }
 
 double gridpack::dynamic_simulation::Esst4bModel::sqr(double x)
@@ -124,13 +150,28 @@ double gridpack::dynamic_simulation::Esst4bModel::sqr(double x)
  */
 double gridpack::dynamic_simulation::Esst4bModel::FEX(double IN)
 {
+  /*---yuan comment below---*/
+  // double result;
+  // if (IN <= 0.0) result = 1;
+  // else if (IN <= 0.433) result = 1 - 0.577 * IN;
+  // else if (IN <= 0.75) result = sqrt(0.75 - sqr(IN));
+  // else if (IN < 1.0) result = 1.732 * (1 - IN);
+  // else result = 0;
+  // return result;
+  /*---yuan comment above---*/
+  
+  /*---yuan add below---*/
+  // the old might be PowerWorld implementation; the new was referred to PSS/E 35 model library
+  // still different from PSS/E implementation, a little confusing here.
   double result;
   if (IN <= 0.0) result = 1;
-  else if (IN <= 0.433) result = 1 - 0.577 * IN;
-  else if (IN <= 0.75) result = sqrt(0.75 - sqr(IN));
-  else if (IN < 1.0) result = 1.732 * (1 - IN);
+  else if (IN <= 0.433 && IN > 0.0) result = 1 - 0.577 * IN;
+  else if (IN < 0.75 && IN > 0.433) result = sqrt(0.75 - sqr(IN));
+  else if (IN <= 1.0 && IN >= 0.75) result = 1.732 * (1 - IN);
   else result = 0;
   return result;
+  /*---yuan add above---*/
+  
 }
 
 /**
@@ -142,8 +183,8 @@ double gridpack::dynamic_simulation::Esst4bModel::CalculateVb(double Vterm,
 {
   double pi = 4.0 * atan(1.0);
   // Calculate complex values for VE Calculation
-  Kpvr = Kp * cos(Kpang * 180 / pi); // Kpang and Vgmax was read in from Parser in the original implementation.
-  Kpvi = Kp * sin(Kpang * 180 / pi); 
+  Kpvr = Kp * cos(Thetap * pi / 180.0); // Thetap and Kp were read in from Parser in the original implementation.
+  Kpvi = Kp * sin(Thetap * pi / 180.0); // cos and sin here take rad as inputs; Thetap is in deg
   Kpir = - Kpvi * Xl;
   Kpii = + Kpvr * Xl + KI;
   double Vrterm = Vterm * cos(Theta);
@@ -164,6 +205,50 @@ double gridpack::dynamic_simulation::Esst4bModel::CalculateVb(double Vterm,
  */
 void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, double ts)
 {
+  /*---yuan add below---*/
+  if (Tr < TS_THRESHOLD * ts) zero_TR = true;
+  if (Ta < TS_THRESHOLD * ts) zero_TA = true;
+  if (Kim < KI_THRESHOLD) zero_KIM = true;
+  if (Kir < KI_THRESHOLD) zero_KIR = true;
+  
+  if (zero_TR) printf("Tr=%f is better at least %d times larger than timestep=%f.\n", Tr, TS_THRESHOLD, ts);
+  if (zero_TA) printf("Ta=%f is better at least %d times larger than timestep=%f.\n", Ta, TS_THRESHOLD, ts);
+  if (zero_KIM) printf("Kim=%f is less than %d times of timestep=%f, treated as zero.\n", Kim, TS_THRESHOLD, ts);
+  if (zero_KIR) printf("Kir=%f is less than %d times of timestep=%f, treated as zero.\n", Kir, TS_THRESHOLD, ts);
+  
+  // printf("print: yuan debug here, inside esst4b model, Ir=%f, Ii=%f\n", Ir, Ii);
+  
+  if (Kpr == 0.0 && Kir < KI_THRESHOLD) {
+	  Kpr = 1.0;
+	  printf("Kpr and Kir cannot be both zeros; reset Kpr=1.0.\n");
+  }
+  
+  if (Kpm == 0.0 && Kim < KI_THRESHOLD) {
+	  Kpm = 1.0;
+	  printf("Kpm and Kim cannot be both zeros; reset Kpm=1.0.\n");
+  }
+
+  if (!zero_TR) {
+    Filter_blkR.setparams(1.0, Tr);
+  }
+  /*---yuan: else {a gain=1 block}---*/
+
+  if (!zero_KIR) {
+    PIControl_blkR.setparams(Kpr, Kir, Vrmin, Vrmax, -10000.0, 10000.0);
+  }
+  /*---yuan: else {a gain=Kpr block}---*/
+  
+  if (!zero_TA) {
+    Filter_blkA.setparams(1.0, Ta);
+  }
+  
+  if (!zero_KIM) {
+    PIControl_blmM.setparams(Kpm, Kim, Vmmin, Vmmax, -10000.0, 10000.0);
+  }
+  
+  LVGate_blk.setparams(Voel);
+  /*---yuan add above---*/
+  
   double u1, u2, u3, u4;
 
   Vterm = mag; // Ec
@@ -174,21 +259,65 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   u1 = Efd / Vb;
 
   // LV Gate?
+  /*---yuan add below---*/
+  // assume LV gate always take feedforward path during initialization, may need to adjust Voel
+  if (OptionToModifyLimitsForInitialStateLimitViolation) {
+	  if (u1 > Voel) Voel = u1 + 0.1;
+	  LVGate_blk.setparams(Voel);
+  }
+  /*---yuan add above---*/
   
-  u2 = PIControl_blmM.init_given_y(u1);
+  
+  /*---yuan comment and add below---*/
+  // u2 = PIControl_blmM.init_given_y(u1);
+  // u3 = Filter_blkA.init_given_y(u2 + Efd * Kg);
+  // u4 = PIControl_blkR.init_given_y(u3);
+  // double Verr = u4 + Vuel + Vs;
+  // if(!zero_TR) {
+    // Vmeas = Filter_blkR.init_given_u(Vterm);
+  // } else 
+    // Vmeas = Vterm;
+  // Vref = Verr + Vmeas; 
+  
+  
+  if (!zero_KIM) {
+	  u2 = PIControl_blmM.init_given_y(u1);
+	  // Check limits here, but these would be 
+	  // initial state limit violations that are not possible!
+	  if (OptionToModifyLimitsForInitialStateLimitViolation) {
+		if (u1 > Vmmax) Vmmax = u1+0.1;
+		if (u1 < Vmmin) Vmmin = u1-0.1;
+	  }
+  } else {
+	  u2 = u1/Kpm;
+  }
 
-  u3 = Filter_blkA.init_given_y(u2 + Efd * Kg);
-
-  u4 = PIControl_blkR.init_given_y(u3);
-
-  double Verr = u4 + Vuel + Vs;
+  if (!zero_TA) {
+	  u3 = Filter_blkA.init_given_y(u2 + Efd * Kg);
+  } else {
+	  u3 = u2 + Efd * Kg;
+  }
+  
+  if (!zero_KIR) {
+	  u4 = PIControl_blkR.init_given_y(u3);
+	  // Check limits here, but these would be 
+	  // initial state limit violations that are not possible!
+	  if (OptionToModifyLimitsForInitialStateLimitViolation) {
+		if (u3 > Vrmax) Vrmax = u3+0.1;
+		if (u3 < Vrmin) Vrmin = u3-0.1;
+	  }
+  } else {
+	  u4 = u3/Kpr;
+  }
 
   if(!zero_TR) {
-    Vmeas = Filter_blkR.init_given_u(Vterm);
+    Vmeas = Filter_blkR.init_given_u(Vcomp);
   } else 
-    Vmeas = Vterm;
+    Vmeas = Vcomp;
+  Vref = u4 + Vmeas - Vuel - Vs; 
+  /*---yuan comment and add above---*/
 
-  Vref = Verr + Vmeas; 
+
 
   /*Vterm = mag;
   presentMag = mag;
@@ -246,25 +375,49 @@ void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,Integr
 {
   double u1, u2, u3, u4;
 
+  /*---yuan comment and add below---*/
+  // if(!zero_TR) {
+    // Vmeas = Filter_blkR.getoutput(Vterm, t_inc, int_flag, true);
+  // } else {
+    // Vmeas = Vterm;
+  // }
+  // u1 = Vref - Vmeas + Vuel + Vs;
+  // u2 = PIControl_blkR.getoutput(u1);
+  // u3 = Filter_blkA.getoutput(u2);
+  // u4 = PIControl_blmM.getoutput(u3 + Efd * Kg);
+  // u4 = LVGate_blk.getoutput(u4);
+  // double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
+  // Efd = u4 * Vb;
+  
+  
   if(!zero_TR) {
-    Vmeas = Filter_blkR.getoutput(Vterm, t_inc, int_flag, true);
+    Vmeas = Filter_blkR.getoutput(Vcomp, t_inc, int_flag, true);
   } else {
-    Vmeas = Vterm;
+    Vmeas = Vcomp;
   }
-
   u1 = Vref - Vmeas + Vuel + Vs;
-
-  u2 = PIControl_blkR.getoutput(u1);
-
-  u3 = Filter_blkA.getoutput(u2);
-
-  u4 = PIControl_blmM.getoutput(u3 + Efd * Kg);
-
+  
+  if(!zero_KIR) {
+    u2 = PIControl_blkR.getoutput(u1, t_inc, int_flag, true);
+  } else {
+	u2 = Kpr * u1;
+  }
+  
+  if(!zero_TA) {
+    u3 = Filter_blkA.getoutput(u2, t_inc, int_flag, true);
+  } else {
+	u3 = u2;
+  }
+  
+  if(!zero_KIM) {
+    u4 = PIControl_blmM.getoutput(u3 - Efd * Kg, t_inc, int_flag, true);
+  } else {
+	u4 = Kpm * (u3 - Efd * Kg);
+  }
   u4 = LVGate_blk.getoutput(u4);
-
   double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
-
   Efd = u4 * Vb;
+  /*---yuan comment and add above---*/
 
 }
 
@@ -275,6 +428,11 @@ void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,Integr
  */
 void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool flag)
 {
+  /*---yuan add below---*/
+  computeModel(t_inc,PREDICTOR);
+  /*---yuan add above---*/
+  
+  
   /*if (!flag) {
     x1Vm = x1Vm_1;
     x2Vcomp = x2Vcomp_1;
@@ -340,6 +498,11 @@ void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool fla
  */
 void gridpack::dynamic_simulation::Esst4bModel::corrector(double t_inc, bool flag)
 {
+  /*---yuan add below---*/
+  computeModel(t_inc,CORRECTOR);
+  /*---yuan add above---*/
+  
+  
   /*// State 2
   if (Tr < TS_THRESHOLD * t_inc) {
     x2Vcomp_1 = Vcomp; // Must propogate input value instantaneously
@@ -435,6 +598,9 @@ double gridpack::dynamic_simulation::Esst4bModel::getFieldCurrent()
 void gridpack::dynamic_simulation::Esst4bModel::setVterminal(double mag)
 {
   //Vterminal = mag;
+  /*---yuan add below---*/
+  Vterm = mag;
+  /*---yuan add above---*/
 }
 
 /** 
@@ -466,3 +632,14 @@ void gridpack::dynamic_simulation::Esst4bModel::setVoel(double vtmp)
 {
   Voel = vtmp;
 }
+
+/*---yuan add below---*/
+/** 
+ * Set the value of the Vcomp
+ * @return value of the Vcomp
+ */
+void gridpack::dynamic_simulation::Esst4bModel::setVcomp(double vtmp)
+{
+  Vcomp = vtmp;
+}
+/*---yuan add above---*/
