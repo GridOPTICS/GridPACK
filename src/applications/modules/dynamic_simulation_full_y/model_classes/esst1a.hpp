@@ -161,7 +161,10 @@ class Esst1aModel : public BaseExciterModel
     // ESST1A inputs
     double Vcomp, LadIfd, Vstab, Vothsg, Vuel, Voel;
 
-    double Vterm; // Terminal voltage (Ec)
+    /*---yuan comment and add below---*/
+    // double Vterm; // Terminal voltage (Ec)
+    double Vterm; // Terminal voltage not Ec, Ec == Vcomp
+    /*---yuan comment and add above---*/
  
     // Field Voltage Output
     double Efd;
@@ -185,6 +188,12 @@ class Esst1aModel : public BaseExciterModel
     double Vf; // Output of Feedback block
     bool   zero_TA;      // Time constant TA for regulator block zero, no transfer function
     bool   zero_TR;      // Time constant TR for measurement block is zero, no transfer function
+    /*---yuan add below---*/
+    bool zero_TF;   // Time constant TF for feedback block, if too small, no transfer function
+    bool zero_TB;   // Time constant TB for first lead lag block, if too small, no transfer function
+    bool zero_TB1;   // Time constant TB1 for second lead lag block, if too small, no transfer function
+    bool OptionToModifyLimitsForInitialStateLimitViolation;
+    /*---yuan add above---*/
     double VA; // Output of Regulator blk
     double VLL1; // Output of LeadLag blk BC1
     double VLL; // Output of LeadLag blk BC
