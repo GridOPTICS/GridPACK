@@ -9,7 +9,7 @@
  * @author Shuangshuang Jin 
  * @Last modified:   June 11, 2015
  * @Latested modification with control blocks: Aug 28, 2023
- * 
+ * @Last modified by Yuan: Nov. 21, 2023
  * @brief  
  * 
  * 
@@ -78,9 +78,9 @@ class WshygpModel : public BaseGovernorModel
      */
     void setMechanicalPower(double pmech);
 
-    void setPelec(double pelec);
+    // void setPelec(double pelec);
 
-    void setPref(double pref);
+    // void setPref(double pref);
 
     /**
      * Set the rotor speed deviation inside the governor
@@ -149,14 +149,14 @@ class WshygpModel : public BaseGovernorModel
 
     double GenMVABase;
 
-    Deadband Db1_blk; // is DBInt (Intentional Deadband) implemented in Deadband block?
+    Deadband_dbint Db1_blk; // is DBInt (Intentional Deadband) implemented in Deadband block?
     Filter Filter_blk_d;
     PIControl PIControl_blk;
     Cblock Feedback_blk_f;
     Filter Filter_blk_t;
     Filter Filter_blk_p;
     Integrator Integrator_blk;
-    Deadband Db2_blk; // is BackLash (Unintentional Deadband) implemented in Deadband block?
+    Deadband_backlash Db2_blk; // is BackLash (Unintentional Deadband) implemented in Deadband block?
     PiecewiseSlope NGV_blk; // 
     LeadLag Leadlag_blk;
 
@@ -166,6 +166,9 @@ class WshygpModel : public BaseGovernorModel
     double CV;
 
     double Pref;
+	
+	bool zero_TD, zero_KI, zero_TF, zero_TT, zero_TP, zero_TTURB_BTURB, zero_KD;
+	bool OptionToModifyLimitsForInitialStateLimitViolation;
 
     void computeModel(double t_inc, IntegrationStage int_flag);
 

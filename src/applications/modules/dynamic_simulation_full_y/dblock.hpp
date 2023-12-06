@@ -285,5 +285,113 @@ class PiecewiseSlope
     bool  p_increasing; // Increasing (true) or decreasing (false) function
 };
 
+//---yuan add below---//
+/**
+  Deadband_backlash: Type 1
+
+  input  : u 
+  output : y
+                   
+        ---------------       
+        |           /  |      
+  u ----|   _______|   |
+        |  |-Db   +Db  |----------- y
+        | /            |    
+        ---------------   
+                    
+
+  Deadband_backlash: Type 2
+
+  input  : u 
+  output : y
+                   
+        ---------------       
+        |           /  |      
+  u ----|   _______/   |
+        |  /-Db   +Db  |----------- y
+        | /            |    
+        ---------------   
+                    
+**/
+class Deadband_backlash
+{
+  public:
+  Deadband_backlash();
+
+    /**
+     GETOUTPUT - Returns the block output
+
+     INPUTS:
+       theInput       - block input
+  **/
+  double getoutput(double theInput);
+
+  
+  /**
+     SETPARAMS - Set the gain and the slop points
+
+     INPUTS:
+       theDb2      deadband width
+       DbType      deadband block type (1 or 2)
+  **/
+  void setparams(double theDb2, int DbType);
+  
+  void init_given_y(double InitOutput);
+
+  
+  private:
+  double p_Db2, p_LastOutput;
+  int p_type;
+};
+
+
+/**
+  Deadband_dbint
+
+  input  : u 
+  output : y
+                   
+        -----------------
+        |     _______   |   
+        |    /       /  |      
+  u ----|   /_______/   |
+        |  /-Db +Db/    |----------- y
+        | /______ /     |    
+        ---------------   
+                    
+**/
+class Deadband_dbint
+{
+  public:
+  Deadband_dbint();
+
+    /**
+     GETOUTPUT - Returns the block output
+
+     INPUTS:
+       anInput       - block input
+  **/
+  double getoutput(double anInput);
+
+  
+  /**
+     SETPARAMS - Set the deadband parameters
+
+     INPUTS:
+       theDb1      deadband width
+       theEps      ?
+  **/
+  void setparams(double theDb1, double theEps);
+  
+  void init_given_u(double theInitInput);
+  void init_given_y(double theInitOutput);
+  
+  private:
+    double p_Db1;
+    double p_Eps;
+    int p_State;
+    double p_InitialValue;
+};
+//---yuan add below---//
 
 #endif
