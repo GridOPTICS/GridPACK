@@ -290,6 +290,10 @@ message(STATUS "Checking PETSc ...")
 
 include(FindPkgConfig)
 
+if (NOT PKG_CONFIG_FOUND)
+  message(FATAL_ERROR "The pkg-config facility is required to build GridPACK")
+endif()
+
 if (NOT PETSC_DIR)
   message(FATAL_ERROR "PETSC_DIR is not set, do so with -D PETSC_DIR=...")
 endif()
