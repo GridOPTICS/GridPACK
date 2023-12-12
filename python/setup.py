@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2022-12-15 08:24:03 d3g096
+# Last Change: 2023-12-12 11:05:59 d3g096
 # -------------------------------------------------------------
 
 import os
@@ -68,6 +68,9 @@ setup(
     install_requires=["mpi4py"],
     zip_safe=False,
     scripts=[
+        'src/hello.py',
+        'src/hello_comm.py',
+        'src/task_manager.py',
         'src/hadrec.py',
         'src/hadrec_comm.py',
     ],
