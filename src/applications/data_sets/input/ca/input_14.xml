@@ -12,6 +12,7 @@
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-3</tolerance>
     <LinearSolver>
+      <PETScPrefix>pre_</PETScPrefix>
       <PETScOptions>
         -ksp_type richardson
         -pc_type lu

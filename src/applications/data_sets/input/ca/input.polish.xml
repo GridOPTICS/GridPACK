@@ -37,6 +37,7 @@
       the klu solver can only be used for a group size of 1.
     -->
     <LinearSolver>
+      <PETScPrefix>pre_</PETScPrefix>
       <PETScOptions>
         -ksp_type richardson
         -pc_type lu
