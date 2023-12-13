@@ -24,6 +24,7 @@
 #include "gridpack/parser/PTI34_parser.hpp"
 #include "gridpack/parser/PTI35_parser.hpp"
 #include "gridpack/parser/MAT_parser.hpp"
+#include "gridpack/export/PSSE34Export.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/export/PSSE23Export.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
@@ -149,7 +150,20 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     std::vector<std::string> fileVec = p_goss_client.subscribeFileAsVector(std::string(sbuf2));
     parser.parse(fileVec);
 #else
-    parser.parse(filename.c_str());
+    try {
+      parser.parse(filename.c_str());
+    } catch (const gridpack::Exception e) {
+      std::string w(e.what());
+      if (!p_no_print) {
+        char ebuf[512];
+        sprintf(ebuf,"p[%d] unable to open network file: %s with error: %s\n",
+            filename.c_str(),w.c_str());
+        if (p_comm.rank() == 0) {
+          printf("%s",ebuf);
+        }
+      }
+      timer->stop(t_total);
+    }
 #endif
     if (phaseShiftSign == -1.0) {
       parser.changePhaseShiftSign();
@@ -762,6 +776,17 @@ void gridpack::powerflow::PFAppModule::print(const char *buf)
 {
   if (p_no_print) return;
   p_busIO->header(buf);
+}
+
+/**
+ * Export final configuration to PSS/E v34 formatted file
+ * @param filename name of file to store network configuration
+ */
+void gridpack::powerflow::PFAppModule::exportPSSE34(std::string &filename)
+{
+  if (p_no_print) return;
+  gridpack::expnet::PSSE34Export<PFNetwork> exprt(p_network);
+  exprt.writeFile(filename);
 }
 
 /**

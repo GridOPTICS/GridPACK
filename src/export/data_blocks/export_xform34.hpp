@@ -4,16 +4,16 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 /*
- * export_xform33.hpp
+ * export_xform34.hpp
  *
- * This class exports transformer data in PSS/E v33 format
+ * This class exports transformer data in PSS/E v34 format
  *
- *  Created on: April 17, 2019
+ *  Created on: October 19, 2023
  *      Author: Bruce Palmer
  */
 
-#ifndef EXPORTXFORM33_HPP_
-#define EXPORTXFORM33_HPP_
+#ifndef EXPORTXFORM34_HPP_
+#define EXPORTXFORM34_HPP_
 
 #include <iostream>
 #include <string>
@@ -30,14 +30,14 @@ namespace gridpack {
 namespace expnet {
 
 template <class _network>
-class ExportXform33
+class ExportXform34
 {
   public:
 
     /**
      * Constructor
      */
-    explicit ExportXform33(boost::shared_ptr<_network> network) :
+    explicit ExportXform34(boost::shared_ptr<_network> network) :
       p_network(network), p_comm(network->communicator())
     {
     }
@@ -45,7 +45,7 @@ class ExportXform33
     /**
      * Destructor
      */
-    virtual ~ExportXform33(){}
+    virtual ~ExportXform34(){}
 
     /**
      * export text to fstream
@@ -122,6 +122,7 @@ class ExportXform33
               sprintf(ptr," %d,",ival);
               ptr += strlen(ptr);
               ival = 1;
+              // NAME just defaults to 12 blanks
               sprintf(ptr," \'            \',");
               ptr += strlen(ptr);
               data->getValue(BRANCH_STATUS,&ival,j);
@@ -152,7 +153,10 @@ class ExportXform33
               sprintf(ptr," %d, %f,",ival,rval);
               ptr += strlen(ptr);
               // VECGRP just defaults to 12 blanks
-              sprintf(ptr,"\'            \'\n");
+              sprintf(ptr,"\'            \',");
+              ptr += strlen(ptr);
+              // Assume default value for ZCOD
+              sprintf(ptr," 0\n");
               ptr += strlen(ptr);
 
               // Second line
@@ -189,15 +193,57 @@ class ExportXform33
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
               rval = 0.0;
-              data->getValue(BRANCH_RATING_A,&rval,j);
+              if (!data->getValue(BRANCH_RATE1,&rval,j)) {
+                data->getValue(BRANCH_RATING_A,&rval,j);
+              }
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
               rval = 0.0;
-              data->getValue(BRANCH_RATING_B,&rval,j);
+              if (!data->getValue(BRANCH_RATE2,&rval,j)) {
+                data->getValue(BRANCH_RATING_B,&rval,j);
+              }
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
               rval = 0.0;
-              data->getValue(BRANCH_RATING_C,&rval,j);
+              if (!data->getValue(BRANCH_RATE3,&rval,j)) {
+                data->getValue(BRANCH_RATING_C,&rval,j);
+              }
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE4,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE5,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE6,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE7,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE8,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE9,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE10,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE11,&rval,j);
+              sprintf(ptr," %f,",rval);
+              ptr += strlen(ptr);
+              rval = 0.0;
+              data->getValue(BRANCH_RATE12,&rval,j);
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
               ival = 0;
@@ -222,26 +268,6 @@ class ExportXform33
               ptr += strlen(ptr);
               rval = 0.9;
               data->getValue(TRANSFORMER_VMI,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              ival = 33;
-              data->getValue(TRANSFORMER_NTP,&ival,j);
-              sprintf(ptr," %d,",ival);
-              ptr += strlen(ptr);
-              ival = 0;
-              data->getValue(TRANSFORMER_TAB,&ival,j);
-              sprintf(ptr," %d,",ival);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(TRANSFORMER_CR,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(TRANSFORMER_CX,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(TRANSFORMER_CNXA,&rval,j);
               sprintf(ptr," %f\n",rval);
               ptr += strlen(ptr);
 
@@ -280,4 +306,4 @@ class ExportXform33
 } /* namespace export */
 } /* namespace gridpack */
 
-#endif /* EXPORTXFORM33_HPP_ */
+#endif /* EXPORTXFORM34_HPP_ */
