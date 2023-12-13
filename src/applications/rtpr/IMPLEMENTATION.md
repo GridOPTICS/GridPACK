@@ -53,7 +53,7 @@ The input deck is of the form
       <PETScOptions>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package superlu_dist
+        -pc_factor_mat_solver_type superlu_dist
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
