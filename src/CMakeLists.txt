@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-
+# -------------------------------------------------------------
 
 # 
 cmake_minimum_required (VERSION 3.5.0)
@@ -109,6 +109,9 @@ option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
 # system, independently of declaring it here
 option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
+
+option(ENABLE_ENVIRONMENT_FROM_COMM
+  "Create GridPACK environment from communicator" OFF)
 
 
 # turn testing on/off
@@ -397,6 +400,11 @@ if(BUILD_GA)
 else(BUILD_GA)
   message(STATUS "Checking GA ...")
   find_package(GA REQUIRED)
+  if (ENABLE_ENVIRONMENT_FROM_COMM AND NOT GA_COMM_FOUND)
+    message(WARNING "Initializing GridPACK environment from a communicator enabled
+but GA version does not support this")
+endif()
+
 endif(BUILD_GA)
 message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
 message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")

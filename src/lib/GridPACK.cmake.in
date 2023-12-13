@@ -10,7 +10,6 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2023-11-30 12:48:01 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -32,6 +31,8 @@ function(gridpack_setup)
   set(GRIDPACK_HAVE_GOSS @GOSS_DIR@)
   set(GRIDPACK_HAVE_APR @APR_DIR@)
   set(GRIDPACK_USE_OLD_PETSC @USE_OLD_PETSC@)
+
+  set(ENABLE_ENVIRONMENT_FROM_COMM @ENABLE_ENVIRONMENT_FROM_COMM@)
 
   find_library(GRIDPACK_COMPONENTS_LIBRARY
     NAMES gridpack_components
@@ -215,16 +216,16 @@ function(gridpack_setup)
     list(APPEND gp_libs @GLPK_LIBRARY@)
   endif()
 
-#  list(APPEND gp_include 
-#    @Boost_INCLUDE_DIR@
-#    @MPI_INCLUDE_PATH@
-#  )
-
-#  list(APPEND gp_libs
-#    @Boost_LIBRARIES@
-#    @MPI_CXX_LIBRARIES@
-#  )
-
+  list(APPEND gp_include 
+    @Boost_INCLUDE_DIR@
+    @MPI_INCLUDE_PATH@
+  )
+  
+  list(APPEND gp_libs
+    @Boost_LIBRARIES@
+    @MPI_CXX_LIBRARIES@
+  )
+  
   set(GRIDPACK_INCLUDE_DIRS
     ${gp_include}
     CACHE STRING "Include directories for GridPACK"
@@ -235,12 +236,21 @@ function(gridpack_setup)
     CACHE STRING "Libraries for GridPACK"
   )
 
+  # this needs to be better -- any defined macro used in a public
+  # header needs to be included here
+  set(gp_defs "")
+  if(ENABLE_ENVIRONMENT_FROM_COMM)
+    list(APPEND gp_defs "-DENABLE_ENVIRONMENT_FROM_COMM=1")
+  endif(ENABLE_ENVIRONMENT_FROM_COMM)
+
+  set(GRIDPACK_DEFINITIONS ${gp_defs}
+    CACHE STRING "Any compiler definitions/flags set in the GridPACK configuration"
+  )
+
+  message(STATUS "GridPACK compiler defines: ${gp_defs}")
   message(STATUS "Include directories for GridPACK: ${gp_include}")
   message(STATUS "Libraries for GridPACK: ${gp_libs}")
-  # set(GRIDPACK_DEFINITIONS
-  #   "@GRIDPACK_DEFINITIONS@"
-  #   CACHE STRING "Any compiler definitions/flags set in the GridPACK configuration"
-  # )
+
 endfunction(gridpack_setup)
 
 set(GRIDPACK_C_COMPILER @CMAKE_C_COMPILER@)

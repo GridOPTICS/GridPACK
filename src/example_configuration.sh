@@ -4,9 +4,9 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [-s] [-G] [-B] [name]"
+usage="$0 [-d|-r] [-s] [-G] [-B] [-c] [name]"
 
-options=`getopt rdsGB $*`
+options=`getopt crdsGB $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
@@ -17,6 +17,7 @@ build="RelWithDebInfo"
 shared="FALSE"
 buildGA="FALSE"
 buildBoost="FALSE"
+initcomm="OFF"
 for o in $*; do
     case $o in
         -d)
@@ -37,6 +38,10 @@ for o in $*; do
             ;;
         -B)
             buildBoost="ON"
+            shift
+            ;;
+        -c)
+            initcomm="ON"
             shift
             ;;
         --)
@@ -67,6 +72,7 @@ common_flags="\
         -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+        -D ENABLE_ENVIRONMENT_FROM_COMM:BOOL=$initcomm \
 "
 
 if [ $host == "briareus" ]; then
@@ -241,9 +247,12 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
-
+    if [ -z "$GRIDPACK_DIR" ]; then
+        prefix="$HOME/Projects/ExaLearn/gridpack-install"
+    else
+        prefix="$GRIDPACK_DIR"
+    fi
     
-    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
@@ -257,6 +266,7 @@ elif [ $host == "tlaloc" ]; then
           -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
           -D USE_GLPK:BOOL=OFF \
+          -D GA_DIR="$HOME/Projects/ExaLearn/ga-install" \
           -D BUILD_SHARED_LIBS:BOOL=ON \
           -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
           -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \

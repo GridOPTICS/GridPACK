@@ -1,13 +1,8 @@
 #!/usr/bin/env python
-# -------------------------------------------------------------
-# file: 39bus_test_example.py
-# -------------------------------------------------------------
-# -------------------------------------------------------------
-# -------------------------------------------------------------
-# -------------------------------------------------------------
-# Created June 4, 2021 by Renke Huang
-# -------------------------------------------------------------
-# -------------------------------------------------------------
+#
+# 39 bus dynamics simulation application
+# Can run in serial and parallel
+#
 
 import sys, os
 import gridpack
@@ -17,6 +12,7 @@ import numpy as np
 import xmltodict
 import math
 #import pandas as pd
+from mpi4py import MPI
 
 def xml2dict(input_xmlfile):
     file_object = open(input_xmlfile,encoding = 'utf-8')
@@ -45,21 +41,25 @@ outputob_nsimustep = int(outputob_time_step/simu_time_step);
 # -------------------------------------------------------------
 # main program
 # -------------------------------------------------------------
+# Get World communicator
+comm = MPI.COMM_WORLD
 
 print ('before gridpack ini')
 noprintflag = gridpack.NoPrint()
-noprintflag.setStatus(False) # if you set this to be True, no any print out from GridPACK Hadrec module, usefull for parallel running with ray to disable any temp print outs
-run_gridpack_necessary_env = gridpack.Environment()
-hadapp = gridpack.hadrec.Module()
+noprintflag.setStatus(False) # Setting this to True will disable all printing to stdout
 
-print ('after gridpack ini')
+# Create GridPACK environment and pass the communicator to it
+env = gridpack.Environment(comm)
+
+# Create hadrec module
+hadapp = gridpack.hadrec.Module()
 
 gridpack_starttime = time.time()
 
 # solve the power flow
 hadapp.solvePowerFlowBeforeDynSimu(inname, 0)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
 
-print ('after gridpack solve pf')
+print ('Finished Solving Power Flow')
 
 # transfer data from power flow network to dynamic simulation network
 hadapp.transferPFtoDS()
@@ -135,32 +135,36 @@ total_dataconv_time = 0.0
 timeser = []
 
 while (not hadapp.isDynSimuDone()):
-
+    print('Time = %4.3f',isteps*simu_time_step)
     # apply line tripping at t = 15.0 seconds
-    if (bApplyAct and( isteps == 3000 )):
-        hadapp.applyAction(linetripact)
+    #if (bApplyAct and( isteps == 3000 )):
+        #hadapp.applyAction(linetripact)
 
     # apply load shedding at t = 25.0 seconds
-    if (bApplyAct and( isteps == 5000 )):
-        hadapp.applyAction(loadshedact)
+    #if (bApplyAct and( isteps == 5000 )):
+        #hadapp.applyAction(loadshedact)
 		
     # apply generator tripping at t = 35.0 seconds
-    if (bApplyAct and( isteps == 7000 )):
-        hadapp.applyAction(gentripact)
-    
+    #if (bApplyAct and( isteps == 7000 )):
+        #hadapp.applyAction(gentripact)
+
+    print('Before step')
     # execute one simulation time step	
     hadapp.executeDynSimuOneStep()       
-
+    print('After step')
     # check if it is the time to get the observations
     if 	isteps%outputob_nsimustep == 0:
-        before_getob_time = time.time()	
+        before_getob_time = time.time()
+        print('Before getObservations')
         ob_vals = hadapp.getObservations()
+        print('After getObservations')
+        
         after_getob_time = time.time()	
         total_dataconv_time += (after_getob_time - before_getob_time)
-
+        print('Before insert')
         ob_vals.insert(0,isteps*simu_time_step)	
         observation_list.append(ob_vals)
-
+        print('After insert')
 	
     isteps = isteps + 1
 
@@ -187,4 +191,4 @@ print("-------------!!! total csv write time :  ", total_csvwr_time)
 # It's important to force the deallocation order here
 
 hadapp = None
-run_gridpack_necessary_env = None
+env = None

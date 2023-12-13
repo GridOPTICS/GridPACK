@@ -13,6 +13,7 @@
 // Last Change: 2023-03-06 11:58:00 d3g096
 // -------------------------------------------------------------
 
+#include <mpi4py/mpi4py.h>
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 #include <pybind11/stl.h>
@@ -121,6 +122,20 @@ private:
 };
 
 // -------------------------------------------------------------
+// get_mpi_comm
+// Return a MPI communicator from mpi4py communicator object.
+// From https://gitlab.com/robertodr/pybind11-mpi4py/-/blob/main/src/pb11mpi.cpp
+// -------------------------------------------------------------
+MPI_Comm *get_mpi_comm(py::object py_comm) {
+  auto comm_ptr = PyMPIComm_Get(py_comm.ptr());
+  
+  if (!comm_ptr)
+    throw py::error_already_set();
+  
+  return comm_ptr;
+}
+
+// -------------------------------------------------------------
 // gridpack module
 // -------------------------------------------------------------
 PYBIND11_MODULE(gridpack, gpm) {
@@ -130,14 +145,28 @@ PYBIND11_MODULE(gridpack, gpm) {
   stupid_openmpi_hack();
 #endif
 
+  // initialize mpi4py's C-API
+  if (import_mpi4py() < 0) {
+    // mpi4py calls the Python C API
+    // we let pybind11 give us the detailed traceback
+    throw py::error_already_set();
+  }
+  
   // -------------------------------------------------------------
   // gridpack.Envronment
   // -------------------------------------------------------------
+
   py::class_<gp::Environment, boost::shared_ptr<gp::Environment> >(gpm, "Environment")
     .def(py::init<>([]()
                     { return boost::shared_ptr<gp::Environment>
                         (new gp::Environment(0, NULL)); }))
+    
+    .def(py::init<>([](py::object py_comm)
+                    { MPI_Comm *c = get_mpi_comm(py_comm);
+                      return boost::shared_ptr<gp::Environment>
+                        (new gp::Environment(0, NULL, *c)); }))
     ;
+  
 
   // -------------------------------------------------------------
   // gridpack.NoPrint

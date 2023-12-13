@@ -27,6 +27,10 @@ class GridPACKTester(TestCase):
         c = gridpack.Communicator()
         sys.stdout.write("hello from process %d of %d\n" %
                          (c.rank(), c.size()))
+    def hello_comm_test(self):
+        c = gridpack.Communicator()
+        sys.stdout.write("hello from process %d of %d\n" %
+                         (c.rank(), c.size()))
     def task_test(self):
         c = gridpack.Communicator()
         tskmgr = gridpack.TaskManager(c)
