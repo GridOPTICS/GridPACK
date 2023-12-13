@@ -50,6 +50,14 @@ will only see 8 processes (4 on each node). To make sure that the GridPACK build
 is aware of this, the `USE_PROGRESS_RANKS` parameter should be set to
 `TRUE` when using the progress ranks build of GA.
 
+A comparison of the performance of the progress ranks and two-sided runtimes is
+shown below for the Polish network test calculation included as part of the
+contingency analysis application. The progress ranks runtime shows significantly
+better performance for all process counts, especially after four processors or
+so.
+
+<img src="../images/GA_perf.png" alt="drawing" width="600"/>
+
 Global Arrays is a relatively straightforward build if MPI is available on your
 system. To configure GA with the basic two-sided runtime (suitable for
 workstations with a limited number of cores) use the configuration line
