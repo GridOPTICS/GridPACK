@@ -240,8 +240,36 @@ command with the options
 
 These options set the MPI wrappers for both the C and C++ compilers.
 
-Some GridPACK-specific options are available for controlling the configuration:
+Some GridPACK-specific options are available for controlling the
+configuration:
 
+- `-D BUILD_GA:BOOL=YES`
+
+  If desired, an appropriate version of [Global
+  Arrays](required/GLOBAL_ARRAYS.md) will be built and installed along
+  with GridPACK.   This will override any value specified for `GA_DIR`
+  as described above.
+
+- `-D USE_PROGRESS_RANKS:BOOL=YES`
+
+  This indicates that the [Global Arrays](required/GLOBAL_ARRAYS.md)
+  installation to be used has been built with the progress ranks option. Or,
+  GA will be built with progress ranks if `BUILD_GA` is true.  
+
+- `-D BUILD_SHARED_LIBS:BOOL=YES`
+
+  If specified, GridPACK will be built as shared libraries, otherwise
+  the libraries are built static.
+  
+- `-D ENABLE_ENVIRONMENT_FROM_COMM:BOOL=YES`
+
+  If specified, GridPACK will be built with the optional capability to
+  use an externally created MPI communicator.  Normally, GridPACK
+  controls MPI initialization and finalization, but this allows
+  external code to do that.  At the time of writing, this requires the
+  `develop` branch of [Global Arrays](required/GLOBAL_ARRAYS.md). If
+  `BUILD_GA` is true, the appropriate version of [Global
+  Arrays](required/GLOBAL_ARRAYS.md) will be built.  
 
 ## Building
 
