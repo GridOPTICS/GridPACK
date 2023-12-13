@@ -15,12 +15,6 @@
 # 
 cmake_minimum_required (VERSION 3.5.0)
 
-# This allows the use of LOCATION(target)
-if (POLICY CMP0026)
-  cmake_policy(SET CMP0026 OLD)
-endif (POLICY CMP0026)
-
-
 project (GridPACK)
 
 set (GridPACK_VERSION_MAJOR 3)

@@ -247,7 +247,7 @@ elif [ $host == "tlaloc" ]; then
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
-          -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared" \
           -D USE_OLD_PETSC:BOOL=OFF \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
