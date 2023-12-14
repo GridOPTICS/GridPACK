@@ -54,7 +54,8 @@ A comparison of the performance of the progress ranks and two-sided runtimes is
 shown below for the Polish network test calculation included as part of the
 contingency analysis application. The progress ranks runtime shows significantly
 better performance for all process counts, especially after four processors or
-so.
+so. After 16 processors, the performance of the two-sided runtime has degraded
+to the point that the overall runtime for the calculation starts increasing.
 
 <img src="../images/GA_perf.png" alt="drawing" width="600"/>
 
