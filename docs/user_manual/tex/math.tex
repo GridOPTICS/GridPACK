@@ -541,4 +541,88 @@ Additional calls are likely to be added to these to allow user-specified paramet
 \subsection{Differential Algebraic Equation Solvers}
 \label{sec:dae-solver}
 
-The \texttt{\textbf{DAESolver}} is used to solve systems of differential and algebraic equations (DAE).  It can also be used to solve systems of ordinary differential equations (ODE).  \texttt{\textbf{DAESolver}}, like \texttt{\textbf{NonlinearSolver}}, \texttt{\textbf{DAESolver}} requires some helper functions.
+The \texttt{\textbf{DAESolver}} is used to solve systems of
+differential and algebraic equations (DAE) of the form
+\begin{equation}
+  \mathbf{F} \left( t, \mathbf{u}, \mathbf{\dot{u}} \right) ~=~ \mathbf{G} \left( t,
+    \mathbf{u} \right), ~~ \mathbf{u} \left( t_{0} ~ = ~ \mathbf{u}_{0}
+  \right)
+\end{equation}
+It can also be used to solve systems of ordinary differential equations (ODE).
+
+At it's simplest, a \texttt{\textbf{DAESolver}} is instantiated with
+the constructor
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+DAESolver(const parallel::Communicator& comm, 
+          const int local_size,
+          JacobianBuilder& jbuilder,
+          FunctionBuilder& fbuilder)
+\end{Verbatim}
+}
+\texttt{\textbf{DAESolver}}, like \texttt{\textbf{NonlinearSolver}},
+requires some helper functions.  
+
+The solution of this system requires the Jacobian of $\mathbf{F}$
+\begin{equation}
+  \mathbf{J} ~ = ~ \frac{\partial \mathbf{F}}{\partial \mathbf{u}}
+\end{equation}
+
+Initialization
+
+Solution
+
+
+In addition to the Jacobian and function builder helper functions, the
+\texttt{\textbf{DAESolver}} accepts functions executed before and
+after each time step.  
+
+The evolution of a \texttt{\textbf{DAESolver}} time integration can be
+manipulated with the use of events.  Events can be used to modify the
+value of one or more time integration variables when a variable value
+changes sign.  Three kinds of events can be created, based on how a
+variable changes sign:
+\begin{description}
+\item[\texttt{\textbf{CrossZeroNegative}}]
+  variable value changes from positive to negative
+\item[\texttt{\textbf{CrossZeroPositive}}]
+  variable value changes from negative to positive
+\item[\texttt{\textbf{CrossZeroEither}}]
+  variable changes sign in either direction
+\end{description}
+Events are described using subclasses of
+\texttt{\textbf{DAESolver::Event}}, which should override
+{ \color{red}
+\begin{Verbatim}[fontseries=b]
+   void p_handle(const bool *triggered, const double& t, T *state)
+\end{Verbatim}
+}
+which does whatever is necessary to adjust the internals of the
+internals of the event when it is triggered, and
+{ \color{red}
+\begin{Verbatim}[fontseries=b]
+   void p_update(const double& t, T *state)
+\end{Verbatim}
+}
+which is used to modify the time integration state vector.
+
+An arbitrary number of events
+can be managed using a \texttt{\textbf{DAESolver::EventManager}}
+instance.  In order to use the event facility, an event manager must
+be created and populated with event instances, then the manager is
+used when creating the solver using this constructor:
+{ \color{red}
+\begin{Verbatim}[fontseries=b]
+DAESolver(const parallel::Communicator& comm, 
+          const int local_size,
+          JacobianBuilder& jbuilder,
+          FunctionBuilder& fbuilder,
+          EventManagerPtr eman);
+\end{Verbatim}
+}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../GridPACK"
+%%% End:
