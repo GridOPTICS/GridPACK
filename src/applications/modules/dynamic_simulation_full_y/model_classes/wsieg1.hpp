@@ -20,9 +20,6 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_governor_model.hpp"
-/*#include "GainBlockClass.hpp"
-#include "BackLashClass.hpp"
-#include "DBIntClass.hpp"*/
 #include <string>
 #include "cblock.hpp"
 #include "dblock.hpp"
@@ -121,20 +118,10 @@ class Wsieg1Model : public BaseGovernorModel
 
     double GV0;
 
-    // WSIEG1 state variables
-    /*double x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4;
-    double x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1;
-    double dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4;
-    double dx1LL_1, dx2GovOut_1, dx3Turb1_1, dx4Turb2_1, dx5Turb3_1, dx6Turb4_1;*/
-
     // Outputs: Mechnical Power Gen1 and Gen 2
     double Pmech1, Pmech2;
 
     bool SecondGenExists, OptionToModifyLimitsForInitialStateLimitViolation;
-
-    /*GainBlockClass GainBlock;
-    BackLashClass BackLash;
-    DBIntClass DBInt;*/
 
     double Pref;
     double w;

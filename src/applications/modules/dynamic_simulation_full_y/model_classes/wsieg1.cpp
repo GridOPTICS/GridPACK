@@ -33,19 +33,6 @@ gridpack::dynamic_simulation::Wsieg1Model::Wsieg1Model(void)
   SecondGenExists = false;
   OptionToModifyLimitsForInitialStateLimitViolation = true;
   w = 0.0;
-  printf("---yuan debug constructor---\n");
-  /*dx1LL = 0;
-  dx2GovOut = 0;
-  dx3Turb1 = 0;
-  dx4Turb2 = 0;
-  dx5Turb3 = 0;
-  dx6Turb4 = 0;
-  dx1LL_1 = 0;
-  dx2GovOut_1 = 0;
-  dx3Turb1_1 = 0;
-  dx4Turb2_1 = 0;
-  dx5Turb3_1 = 0;
-  dx6Turb4_1 = 0;*/
 }
 
 /**
@@ -103,7 +90,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
-  int debug_print_params=1;
+  int debug_print_params=0;
   if (debug_print_params) {
 	  printf("---Yuan debug print params below---\n");
 	  printf("---K=%.6f---\n", K);
@@ -144,7 +131,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   
   Db1_blk.setparams(Db1, Err);
   Leadlag_blk.setparams(T2, T1);
-  // printf("---yuan debug load---\n");
+
   P_blk.setparams(1.0, Pmin, Pmax); // need another method to take Pmax and Pmin
   Db2_blk.setparams(Db2, Db2);
 
@@ -174,25 +161,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
 void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, double ts)
 {
   double u1, u2, u3, u4, u5, u6, u7, u8, u9; 
-  /*// Forward initialization
-  // We can only do forward initialization because NGV_blk, Db2_blk and
-  // Db1_blk do not have .int_given_y() method?
-  // They only have getoutput() method.
-  u1 = Db1_blk.getoutput(w);
-  u2 = Leadlag_blk.init_given_u(u1*K);
-  u3 = P_blk.init_given_u((GV0-u2-u4)*1/T3); // Q: u3 depends on u4
-  u4 = Db2_blk.getoutput(u3); // Q: but u4 also depends on u3, deadlock?
-  u5 = NGV_blk.getoutput(u4);
-
-  u6 = Filter_blk1.init_given_u(u5);
-  u7 = Filter_blk2.init_given_u(u6);
-  u8 = Filter_blk3.init_given_u(u7);
-  u9 = Filter_blk4.init_given_u(u8);
-
-  Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
-  Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
-
-  GV = u4;*/ 
  
   // Backword initialization 
   if (K1 + K3 + K5 + K7 > 0) {
@@ -209,83 +177,25 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
      u5 = Filter_blk1.init_given_y(u6);
   } else 
      u5 = 0;
-  //-- yuan comment and add below -//
+
   // u4 = NGV_blk.init_given_y(u5); // Implemented a .int_given_y method for PiecewiseSlope in dblock
   u4 = u5;
   GV = u4; // GV can be used in the next time step, not a local variable like u1-u9
-  //-- yuan comment and add above -//
   
   u3 = u4; // Deadband Db2_blk's input equals the output
   u2 = P_blk.init_given_y(u3);
   
-  //-- yuan add below -//
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (GV > Pmax) Pmax = GV+0.1;
     if (GV < Pmin) Pmin = GV-0.1;
 	if (GV > Uo) Uo = GV+0.1;
     if (GV < Uc) Uc = GV-0.1;
   }
-  // if (Iblock == 1 && Pmin == 0) Pmin = GV; // where to put these four blocks?
-  // if (Iblock == 2 && Pmax == 0) Pmax = GV;
-  // if (Iblock == 3 && Pmin == 0) Pmin = GV;
-  // if (Iblock == 3 && Pmax == 0) Pmax = GV;
+
   GV0 = GV;
-  //-- yuan add above -//
-  
-  //-- yuan comment and add below -//
-  // u1 = Leadlag_blk.init_given_y(GV0-u2*T3-u4);
+
   u1 = Leadlag_blk.init_given_y(0.0);
-  //-- yuan comment and add above -//
 
-  //-- yuan comment below -//
-  // GV = u4; 
-  //-- yuan comment below -//
-  
-  // printf("---yuan debug init---\n");
-
- /*double PGV;
-  if (K1 + K3 + K5 + K7 > 0) 
-    PGV = Pmech1 / (K1 + K3 + K5 + K7);
-  else if (K2 + K4 + K6 + K8 > 0) 
-    PGV = Pmech2 / (K2 + K4 + K6 + K8);
-  else 
-    PGV = 0;
-  if (SecondGenExists && (Pmech2 != 0) && (K2 + K4 + K6 + K8 > 0) && (PGV != 0)) {
-    double temp = Pmech2 / PGV * (K2 + K4 + K6 + K8);
-    K2 = temp * K2;
-    K4 = temp * K4;
-    K6 = temp * K6;
-    K8 = temp * K8;
-  }
-  x6Turb4 = PGV;
-  x5Turb3 = PGV;
-  x4Turb2 = PGV;
-  x3Turb1 = PGV;
-  double GV = GainBlock.YtoX(PGV); // TBD: check GainBlock?
-
-  x2GovOut = GV;
-  
-  if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (GV > Pmax) Pmax = GV+0.1;
-    if (GV < Pmin) Pmin = GV-0.1;
-  }
-  Pref = GV;
-  // Initialize the Backlash
-  BackLash.Initialize(Db2, GV);
-  // Initialize the Intentional Deadband
-  DBInt.Initialize(Db1, Err, w); // TBD: has w been set at gensal init step? yes
-  // Note: (GV > Pmax) or (GV < Pmin) is an initial state violation
-  if (Iblock == 1 && Pmin == 0) Pmin = GV;
-  if (Iblock == 2 && Pmax == 0) Pmax = GV;
-  if (Iblock == 3 && Pmin == 0) Pmin = GV;
-  if (Iblock == 3 && Pmax == 0) Pmax = GV;
-  if (T1 > 4 * ts) x1LL = GV * (1 - T2 / T1);
-  else x1LL = GV;
-
-  if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (GV > Uo) Uo = GV+0.1;
-    if (GV < Uc) Uc = GV-0.1;
-  }*/
 }
 
 /**
@@ -295,10 +205,10 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
 {
     double u1, y1, u2, y2, u3, y3, u4, y4, u5, y5, u6, y6, u7, y7, u8, y8, u9, y9; 
     u1 = w;
-	//-- yuan comment and add below -//
+
     // y1 = Db1_blk.getoutput(u1);
 	y1 = u1;
-	//-- yuan comment and add above -//
+
     u2 = y1 * K;
     y2 = Leadlag_blk.getoutput(u2, t_inc, int_flag, true);
     y4 = GV;
@@ -309,21 +219,19 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
       u3 = Uc;
     y3 = P_blk.getoutput(u3, t_inc, int_flag, true); 
 	
-	//-- yuan add below -//
 	if (y3 > Pmax)
       y3 = Pmax;
     else if (y3 < Pmin) 
       y3 = Pmin;
-	//-- yuan add above -//
 	
     u4 = y3;
     y4 = Db2_blk.getoutput(u4); 
     GV = y4;
     u5 = y4;
-	//-- yuan comment and add below -//
+
     // y5 = NGV_blk.getoutput(u5);
 	y5 = u5;
-	//-- yuan comment and add above -//
+
 
     u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
     u7 = Filter_blk2.getoutput(u6, t_inc, int_flag, true);
@@ -333,7 +241,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
     Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
     Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
 	
-	// printf("---yuan debug---\n");
 }
 
 /**
@@ -344,83 +251,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
 void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool flag)
 {
    computeModel(t_inc,PREDICTOR);
-  /*if (!flag) {
-    x1LL = x1LL_1;
-    x2GovOut = x2GovOut_1;
-    x3Turb1 = x3Turb1_1;
-    x4Turb2 = x4Turb2_1;
-    x5Turb3 = x5Turb3_1;
-    x6Turb4 = x6Turb4_1;
-  }
 
-  // State 1
-
-  double TempIn1 = K * w;//DBInt.Output(w);
-  double TempOut;
-  if (T1 > 4 * t_inc) {
-    dx1LL = (TempIn1 * ( 1 - T2 / T1) - x1LL) / T1;
-    TempOut = TempIn1 * (T2 / T1) + x1LL;
-  } else 
-    TempOut = TempIn1;
-  // State 2
-  // enforce non-windup limits
-  double TempIn2;
-  if (x2GovOut > Pmax) {
-    x2GovOut = Pmax;
-  }
-  else if (x2GovOut < Pmin) {
-    x2GovOut = Pmin;
-  }
-  double GV = BackLash.Output(x2GovOut);
-  if (T3 < 4 * t_inc) TempIn2 = (+ Pref - TempOut - GV) / (4 * t_inc);
-  else TempIn2  = (+ Pref - TempOut - GV) / T3;
-  if (TempIn2 > Uo){
-    TempIn2 = Uo;
-  }
-  else if (TempIn2 < Uc) {
-    TempIn2 = Uc;
-  }
-  dx2GovOut = TempIn2;
-  
-  // enforce non-windup limits
-  if (dx2GovOut > 0 && x2GovOut >= Pmax) dx2GovOut = 0;
-  else if (dx2GovOut <0 && x2GovOut <= Pmin) dx2GovOut = 0;
-  // State 3
-  double PGV = GainBlock.XtoY(GV);
-  if (T4 < 4 * t_inc) {
-    x3Turb1 = PGV;
-    dx3Turb1 = 0;
-  } else
-    dx3Turb1 = (PGV - x3Turb1) / T4;
-  // State 4
-  if (T5 < 4 * t_inc) {
-    x4Turb2 = x3Turb1;
-    dx4Turb2 = 0;
-  } else
-    dx4Turb2 = (x3Turb1 - x4Turb2) / T5;
-  // State 5
-  if (T6 < 4 * t_inc) {
-    x5Turb3 = x4Turb2;
-    dx5Turb3 = 0;
-  } else
-    dx5Turb3 = (x4Turb2 - x5Turb3) / T6;
-  // State 6
-  if (T7 < 4 * t_inc) {
-    x6Turb4 = x5Turb3;
-    dx6Turb4 = 0;
-  } else
-    dx6Turb4 = (x5Turb3 - x6Turb4) / T7;
-
-  x1LL_1 = x1LL + dx1LL * t_inc;
-  x2GovOut_1 = x2GovOut + dx2GovOut * t_inc;
-  x3Turb1_1 = x3Turb1 + dx3Turb1 * t_inc;
-  x4Turb2_1 = x4Turb2 + dx4Turb2 * t_inc;
-  x5Turb3_1 = x5Turb3 + dx5Turb3 * t_inc;
-  x6Turb4_1 = x6Turb4 + dx6Turb4 * t_inc;
-
-  Pmech1 = x3Turb1_1 * K1 + x4Turb2_1 * K3 + x5Turb3_1 * K5 + x6Turb4_1 * K7;
-  Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;*/
-  
 }
 
 /**
@@ -431,63 +262,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
 void gridpack::dynamic_simulation::Wsieg1Model::corrector(double t_inc, bool flag)
 {
    computeModel(t_inc,CORRECTOR);
-  /*// State 1
-  double TempIn1 = K * w;//DBInt.Output(w);
-  double TempOut;
-  if (T1 > 4 * t_inc) {
-    dx1LL_1 = (TempIn1 * ( 1 - T2 / T1) - x1LL_1) / T1;
-    TempOut = TempIn1 * (T2 / T1) + x1LL_1;
-  } else 
-    TempOut = TempIn1;
-  // State 2
-  // enforce non-windup limits
-  double TempIn2;
-  if (x2GovOut_1 > Pmax) x2GovOut_1 = Pmax;
-  else if (x2GovOut_1 < Pmin) x2GovOut_1 = Pmin;
-  double GV = BackLash.Output(x2GovOut_1);
-  if (T3 < 4 * t_inc) TempIn2 = (+ Pref - TempOut - GV) / (4 * t_inc);
-  else TempIn2  = (+ Pref - TempOut - GV) / T3;
-  if (TempIn2 > Uo) TempIn2 = Uo;
-  else if (TempIn2 < Uc) TempIn2 = Uc;
-  dx2GovOut_1 = TempIn2;
-  // enforce non-windup limits
-  if (dx2GovOut_1 > 0 && x2GovOut_1 >= Pmax) dx2GovOut_1 = 0;
-  else if (dx2GovOut_1 <0 && x2GovOut_1 <= Pmin) dx2GovOut_1 = 0;
-  // State 3
-  double PGV = GainBlock.XtoY(GV);
-  if (T4 < 4 * t_inc) {
-    x3Turb1_1 = PGV;
-    dx3Turb1_1 = 0;
-  } else
-    dx3Turb1_1 = (PGV - x3Turb1_1) / T4;
-  // State 4
-  if (T5 < 4 * t_inc) {
-    x4Turb2_1 = x3Turb1_1;
-    dx4Turb2_1 = 0;
-  } else
-    dx4Turb2_1 = (x3Turb1_1 - x4Turb2_1) / T5;
-  // State 5
-  if (T6 < 4 * t_inc) {
-    x5Turb3_1 = x4Turb2_1;
-    dx5Turb3_1 = 0;
-  } else
-    dx5Turb3_1 = (x4Turb2_1 - x5Turb3_1) / T6;
-  // State 6
-  if (T7 < 4 * t_inc) {
-    x6Turb4_1 = x5Turb3_1;
-    dx6Turb4_1 = 0;
-  } else
-    dx6Turb4_1 = (x5Turb3_1 - x6Turb4_1) / T7;
-
-  x1LL_1 = x1LL + (dx1LL + dx1LL_1) / 2.0 * t_inc;
-  x2GovOut_1 = x2GovOut + (dx2GovOut + dx2GovOut_1) / 2.0 * t_inc;
-  x3Turb1_1 = x3Turb1 + (dx3Turb1 + dx3Turb1_1) / 2.0 * t_inc;
-  x4Turb2_1 = x4Turb2 + (dx4Turb2 + dx4Turb2_1) / 2.0 * t_inc;
-  x5Turb3_1 = x5Turb3 + (dx5Turb3 + dx5Turb3_1) / 2.0 * t_inc;
-  x6Turb4_1 = x6Turb4 + (dx6Turb4 + dx6Turb4_1) / 2.0 * t_inc;
- 
-  Pmech1 = x3Turb1_1 * K1 + x4Turb2_1 * K3 + x5Turb3_1 * K5 + x6Turb4_1 * K7;
-  Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;*/
 
 }
 
