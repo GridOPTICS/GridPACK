@@ -24,25 +24,15 @@
 #include "base_exciter_model.hpp"
 #include "esst4b.hpp"
 
-/*---yuan comment and add below---*/
-// #define TS_THRESHOLD 1
 #define TS_THRESHOLD 4
 #define KI_THRESHOLD 1e-6
-/*---yuan comment and add above---*/
 
 /**
  *  Basic constructor
  */
 gridpack::dynamic_simulation::Esst4bModel::Esst4bModel(void)
 {
-  /*dx1Vm = 0;
-  dx2Vcomp = 0;
-  dx3Va = 0; 
-  dx4Vr = 0; 
-  dx1Vm_1 = 0;
-  dx2Vcomp_1 = 0;
-  dx3Va_1 = 0;
-  dx4Vr_1 = 0;*/
+
 }
 
 /**
@@ -81,11 +71,9 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
   if (!data->getValue(EXCITER_XL, &Xl, idx)) Xl = 0.0; // Xl
   if (!data->getValue(EXCITER_THETAP, &Thetap, idx)) Thetap = 0.0; // Thetap, yuan: deg
   
-  /*---yuan uncomment below---*/
-  printf("Tr=%f,Kpr=%f,Kir=%f,Vrmax=%f,Vrmin=%f,Ta=%f,Kpm=%f,Kim=%f,Vmmax=%f,Vmmin=%f,Kg=%f,Kp=%f,KI=%f,Vbmax=%f,Kc=%f,Xl=%f,Thetap=%f\n",Tr,Kpr,Kir,Vrmax,Vrmin,Ta,Kpm,Kim,Vmmax,Vmmin,Kg,Kp,KI,Vbmax,Kc,Xl,Thetap);
-  /*---yuan uncomment above---*/
-  
-  /*---yuan add below---*/
+  //printf("Tr=%f,Kpr=%f,Kir=%f,Vrmax=%f,Vrmin=%f,Ta=%f,Kpm=%f,Kim=%f,Vmmax=%f,Vmmin=%f,Kg=%f,Kp=%f,KI=%f,Vbmax=%f,Kc=%f,Xl=%f,Thetap=%f\n",Tr,Kpr,Kir,Vrmax,Vrmin,Ta,Kpm,Kim,Vmmax,Vmmin,Kg,Kp,KI,Vbmax,Kc,Xl,Thetap);
+
+
   // right now we just hard code Vuel, Voel and Vs
   Vs = 0.0;
   Vuel = 0.0;
@@ -95,26 +83,6 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
   zero_TA = false;
   zero_KIM = false;
   zero_KIR = false;
-  /*---yuan add above---*/
-
-  /*---yuan comment below---*/
-  // if(fabs(Tr) < 1e-6) zero_TR = true;
-  // if(fabs(Tr) < 1e-6) zero_TA = true;
-
-  // if (!zero_TR) {
-    // Filter_blkR.setparams(1.0, Tr);
-  // }
-
-  // PIControl_blkR.setparams(Kpr, Kir, Vrmin, Vrmax, -10000.0, 10000.0);
-
-  // if (!zero_TA) {
-    // Filter_blkA.setparams(1.0, Ta);
-  // }
-
-  // PIControl_blkR.setparams(Kpm, Kim, Vmmin, Vmmax, -10000.0, 10000.0);
-
-  // LVGate_blk.setparams(Voel);
-  /*---yuan comment above---*/
 
 }
 
@@ -134,9 +102,7 @@ double gridpack::dynamic_simulation::Esst4bModel::Sat(double x)
     //double A = SE1 / exp(B * E1);
     //return A * exp(B * x);
 
-    /*---yuan add below---*/
     return 0.0;
-    /*---yuan add above---*/
 }
 
 double gridpack::dynamic_simulation::Esst4bModel::sqr(double x)
@@ -150,7 +116,7 @@ double gridpack::dynamic_simulation::Esst4bModel::sqr(double x)
  */
 double gridpack::dynamic_simulation::Esst4bModel::FEX(double IN)
 {
-  /*---yuan comment below---*/
+
   // double result;
   // if (IN <= 0.0) result = 1;
   // else if (IN <= 0.433) result = 1 - 0.577 * IN;
@@ -158,10 +124,8 @@ double gridpack::dynamic_simulation::Esst4bModel::FEX(double IN)
   // else if (IN < 1.0) result = 1.732 * (1 - IN);
   // else result = 0;
   // return result;
-  /*---yuan comment above---*/
   
-  /*---yuan add below---*/
-  // the old might be PowerWorld implementation; the new was referred to PSS/E 35 model library
+  // the above old code might be PowerWorld implementation; the new was referred to PSS/E 35 model library
   // still different from PSS/E implementation, a little confusing here.
   double result;
   if (IN <= 0.0) result = 1;
@@ -170,7 +134,6 @@ double gridpack::dynamic_simulation::Esst4bModel::FEX(double IN)
   else if (IN <= 1.0 && IN >= 0.75) result = 1.732 * (1 - IN);
   else result = 0;
   return result;
-  /*---yuan add above---*/
   
 }
 
@@ -216,7 +179,7 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   if (zero_KIM) printf("Kim=%f is less than %d times of timestep=%f, treated as zero.\n", Kim, TS_THRESHOLD, ts);
   if (zero_KIR) printf("Kir=%f is less than %d times of timestep=%f, treated as zero.\n", Kir, TS_THRESHOLD, ts);
   
-  // printf("print: yuan debug here, inside esst4b model, Ir=%f, Ii=%f\n", Ir, Ii);
+  // printf("print: inside esst4b model, Ir=%f, Ii=%f\n", Ir, Ii);
   
   if (Kpr == 0.0 && Kir < KI_THRESHOLD) {
 	  Kpr = 1.0;
@@ -231,12 +194,12 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   if (!zero_TR) {
     Filter_blkR.setparams(1.0, Tr);
   }
-  /*---yuan: else {a gain=1 block}---*/
+  /*---else {a gain=1 block}---*/
 
   if (!zero_KIR) {
     PIControl_blkR.setparams(Kpr, Kir, Vrmin, Vrmax, -10000.0, 10000.0);
   }
-  /*---yuan: else {a gain=Kpr block}---*/
+  /*---else {a gain=Kpr block}---*/
   
   if (!zero_TA) {
     Filter_blkA.setparams(1.0, Ta);
@@ -247,7 +210,6 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   }
   
   LVGate_blk.setparams(Voel);
-  /*---yuan add above---*/
   
   double u1, u2, u3, u4;
 
@@ -259,25 +221,11 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   u1 = Efd / Vb;
 
   // LV Gate?
-  /*---yuan add below---*/
   // assume LV gate always take feedforward path during initialization, may need to adjust Voel
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
 	  if (u1 > Voel) Voel = u1 + 0.1;
 	  LVGate_blk.setparams(Voel);
   }
-  /*---yuan add above---*/
-  
-  
-  /*---yuan comment and add below---*/
-  // u2 = PIControl_blmM.init_given_y(u1);
-  // u3 = Filter_blkA.init_given_y(u2 + Efd * Kg);
-  // u4 = PIControl_blkR.init_given_y(u3);
-  // double Verr = u4 + Vuel + Vs;
-  // if(!zero_TR) {
-    // Vmeas = Filter_blkR.init_given_u(Vterm);
-  // } else 
-    // Vmeas = Vterm;
-  // Vref = Verr + Vmeas; 
   
   
   if (!zero_KIM) {
@@ -315,57 +263,7 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   } else 
     Vmeas = Vcomp;
   Vref = u4 + Vmeas - Vuel - Vs; 
-  /*---yuan comment and add above---*/
 
-
-
-  /*Vterm = mag;
-  presentMag = mag;
-  Theta = ang;
-  presentAng = ang;
-  // State 1
-  double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); // TBD: What's the init value of Ir and Ii?
-  printf("esst4b: Efd = %f\n", Efd);
-  double Vm = Efd/ Vb;
-  // Check limits here, but these would be 
-  // initial state limit violations that are not possible!
-  if (OptionToModifyLimitsForInitialStateLimitViolation) { // TBD: inital value of this bool? 
-    if (Vm > Vmmax) Vmmax = Vm;
-    if (Vm < Vmmin) Vmmin = Vm;
-  }
-  double TempIn;
-  if (Kim != 0) {
-    x1Vm = Vm;
-    TempIn = 0;
-  } else {
-    x1Vm = 0;
-    TempIn = Vm / Kpm;
-  }
-  // State 3
-  x3Va = Efd * Kg;
-  if (x3Va > Vgmax) x3Va = Vgmax;
-  x3Va = x3Va + TempIn;
-  // State 4
-  double Vr = x3Va;
-  // Check limits here, but these would be
-  // initial state limit violations that are not possible!
-  if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (Vr > Vrmax) Vrmax = Vr;
-    if (Vr < Vrmin) Vrmin = Vr;
-  }
-  if (Kir != 0) {
-    x4Vr = Vr;
-    TempIn = 0;
-  } else {
-    x4Vr = 0;
-    TempIn = Vr / Kpr;
-  }
-  // State 2
-  x2Vcomp = Vcomp;  // TBD: init value of Vcomp?
-  // Vref
-  Vref = Vcomp + TempIn;
-
-  printf("esst4b init:  %f\t%f\t%f\t%f\n", x1Vm, x2Vcomp, x3Va, x4Vr); */
 }
 
 /**
@@ -374,20 +272,6 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
 void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,IntegrationStage int_flag)
 {
   double u1, u2, u3, u4;
-
-  /*---yuan comment and add below---*/
-  // if(!zero_TR) {
-    // Vmeas = Filter_blkR.getoutput(Vterm, t_inc, int_flag, true);
-  // } else {
-    // Vmeas = Vterm;
-  // }
-  // u1 = Vref - Vmeas + Vuel + Vs;
-  // u2 = PIControl_blkR.getoutput(u1);
-  // u3 = Filter_blkA.getoutput(u2);
-  // u4 = PIControl_blmM.getoutput(u3 + Efd * Kg);
-  // u4 = LVGate_blk.getoutput(u4);
-  // double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
-  // Efd = u4 * Vb;
   
   
   if(!zero_TR) {
@@ -417,7 +301,6 @@ void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,Integr
   u4 = LVGate_blk.getoutput(u4);
   double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
   Efd = u4 * Vb;
-  /*---yuan comment and add above---*/
 
 }
 
@@ -428,67 +311,8 @@ void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,Integr
  */
 void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool flag)
 {
-  /*---yuan add below---*/
   computeModel(t_inc,PREDICTOR);
-  /*---yuan add above---*/
   
-  
-  /*if (!flag) {
-    x1Vm = x1Vm_1;
-    x2Vcomp = x2Vcomp_1;
-    x3Va = x3Va_1;
-    x4Vr = x4Vr_1;
-  }
-  // State 2
-  if (Tr < TS_THRESHOLD * t_inc) {
-    x2Vcomp = Vcomp; // Must propogate input value instantaneously
-    dx2Vcomp = 0;
-  } else {
-    dx2Vcomp = 1 / Tr * (Vcomp - x2Vcomp);
-  }
-  // State 4
-  double TempIn = -x2Vcomp + Vref + Vstab;// + Vuel; // TBD: what is Vuel?
-  double TempMax = Vrmax - TempIn * Kpr;
-  double TempMin = Vrmin - TempIn * Kpr;
-  if (x4Vr > TempMax) x4Vr = TempMax;
-  else if (x4Vr < TempMin) x4Vr = TempMin;
-  dx4Vr = Kir * TempIn;
-  if (dx4Vr > 0 && x4Vr >= TempMax) dx4Vr = 0;
-  else if (dx4Vr < 0 && x4Vr <= TempMin) dx4Vr = 0;
-  //State 3
-  TempIn = x4Vr + TempIn * Kpr;
-  if (Ta < TS_THRESHOLD * t_inc) {
-    x3Va = TempIn; // Must propogate input value instantaneously
-    dx3Va = 0;
-  } else {
-    dx3Va = 1 / Tr * (TempIn - x3Va);
-  }
-  //State 1
-  TempIn = Efd * Kg;
-  if (TempIn > Vgmax) TempIn = Vgmax;
-  TempIn = x3Va - TempIn;
-  TempMax = Vmmax - TempIn * Kpm;
-  TempMin = Vmmin - TempIn * Kpm;
-  if (x1Vm > TempMax) x1Vm = TempMax;
-  else if (x1Vm < TempMin) x1Vm = TempMin;
-  dx1Vm = Kim * TempIn;
-  if (dx1Vm > 0 && x1Vm >= TempMax) dx1Vm = 0;
-  else if (dx1Vm < 0 && x1Vm <= TempMin) dx1Vm = 0;
-
-  x1Vm_1 = x1Vm + dx1Vm * t_inc;
-  x2Vcomp_1 = x2Vcomp + dx2Vcomp * t_inc;
-  x3Va_1 = x3Va + dx3Va * t_inc;
-  x4Vr_1 = x4Vr + dx4Vr * t_inc;
-
-  printf("esst4b dx: %f\t%f\t%f\t%f\t\n", dx1Vm, dx2Vcomp, dx3Va, dx4Vr);
-  printf("esst4b x: %f\t%f\t%f\t%f\n", x1Vm_1, x2Vcomp_1, x3Va_1, x4Vr_1);
-
-  double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd);
-  //if (x1Vm > Voel) TempIn = Voel * Vb; // TBD: what is Voel?
-  //else Efd = x1Vm_1 * Vb;
-  Efd = x1Vm_1 * Vb; // TBD: temporailly
-
-  printf("esst4b Efd: %f\n", Efd);*/
 }
 
 /**
@@ -498,61 +322,8 @@ void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool fla
  */
 void gridpack::dynamic_simulation::Esst4bModel::corrector(double t_inc, bool flag)
 {
-  /*---yuan add below---*/
   computeModel(t_inc,CORRECTOR);
-  /*---yuan add above---*/
-  
-  
-  /*// State 2
-  if (Tr < TS_THRESHOLD * t_inc) {
-    x2Vcomp_1 = Vcomp; // Must propogate input value instantaneously
-    dx2Vcomp_1 = 0;
-  } else {
-    dx2Vcomp_1 = 1 / Tr * (Vcomp - x2Vcomp_1);
-  }
-  // State 4
-  double TempIn = -x2Vcomp_1 + Vref + Vstab;// + Vuel; // TBD: what is Vuel?
-  double TempMax = Vrmax - TempIn * Kpr;
-  double TempMin = Vrmin - TempIn * Kpr;
-  if (x4Vr_1 > TempMax) x4Vr_1 = TempMax;
-  else if (x4Vr_1 < TempMin) x4Vr_1 = TempMin;
-  dx4Vr_1 = Kir * TempIn;
-  if (dx4Vr_1 > 0 && x4Vr_1 >= TempMax) dx4Vr_1 = 0;
-  else if (dx4Vr_1 < 0 && x4Vr_1 <= TempMin) dx4Vr_1 = 0;
-  //State 3
-  TempIn = x4Vr_1 + TempIn * Kpr;
-  if (Ta < TS_THRESHOLD * t_inc) {
-    x3Va_1 = TempIn; // Must propogate input value instantaneously
-    dx3Va_1 = 0;
-  } else {
-    dx3Va_1 = 1 / Tr * (TempIn - x3Va_1);
-  }
-  //State 1
-  TempIn = Efd * Kg;
-  if (TempIn > Vgmax) TempIn = Vgmax;
-  TempIn = x3Va_1 - TempIn;
-  TempMax = Vmmax - TempIn * Kpm;
-  TempMin = Vmmin - TempIn * Kpm;
-  if (x1Vm_1 > TempMax) x1Vm_1 = TempMax;
-  else if (x1Vm_1 < TempMin) x1Vm_1 = TempMin;
-  dx1Vm_1 = Kim * TempIn;
-  if (dx1Vm_1 > 0 && x1Vm_1 >= TempMax) dx1Vm_1 = 0;
-  else if (dx1Vm_1 < 0 && x1Vm_1 <= TempMin) dx1Vm_1 = 0;
 
-  x1Vm_1 = x1Vm + (dx1Vm + dx1Vm_1) / 2.0 * t_inc;
-  x2Vcomp_1 = x2Vcomp + (dx2Vcomp + dx2Vcomp_1) / 2.0 * t_inc;
-  x3Va_1 = x3Va + (dx3Va + dx3Va_1) / 2.0 * t_inc;
-  x4Vr_1 = x4Vr + (dx4Vr + dx4Vr_1) / 2.0 * t_inc;
-
-  printf("esst4b dx: %f\t%f\t%f\t%f\t\n", dx1Vm_1, dx2Vcomp_1, dx3Va_1, dx4Vr_1);
-  printf("esst4b x: %f\t%f\t%f\t%f\n", x1Vm_1, x2Vcomp_1, x3Va_1, x4Vr_1);
-  
-  double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd);
-  //if (x1Vm > Voel) TempIn = Voel * Vb; // TBD: what is Voel?
-  //else Efd = x1Vm_1 * Vb;
-  Efd = x1Vm_1 * Vb; // TBD: temporially
-
-  printf("esst4b Efd: %f\n", Efd);*/
 }
 
 /**
@@ -597,10 +368,7 @@ double gridpack::dynamic_simulation::Esst4bModel::getFieldCurrent()
  */
 void gridpack::dynamic_simulation::Esst4bModel::setVterminal(double mag)
 {
-  //Vterminal = mag;
-  /*---yuan add below---*/
   Vterm = mag;
-  /*---yuan add above---*/
 }
 
 /** 
@@ -633,7 +401,6 @@ void gridpack::dynamic_simulation::Esst4bModel::setVoel(double vtmp)
   Voel = vtmp;
 }
 
-/*---yuan add below---*/
 /** 
  * Set the value of the Vcomp
  * @return value of the Vcomp
@@ -642,4 +409,3 @@ void gridpack::dynamic_simulation::Esst4bModel::setVcomp(double vtmp)
 {
   Vcomp = vtmp;
 }
-/*---yuan add above---*/

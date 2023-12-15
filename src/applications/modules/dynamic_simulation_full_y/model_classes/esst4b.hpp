@@ -136,9 +136,7 @@ class Esst4bModel : public BaseExciterModel
 
     void setVoel(double vtmp);
     
-    /*---yuan add below---*/
     void setVcomp(double vtmp);
-    /*---yuan add above---*/
 
   private:
 
@@ -152,10 +150,8 @@ class Esst4bModel : public BaseExciterModel
     bool zero_TR; // Time constant TR for measurement block is zero, no transfer function
     bool zero_TA; // Time constant TA for measurement block is zero, no transfer function  
     
-    /*---yuan add below---*/
     bool zero_KIM; // Integrator gain KIM for PI controller is zero, no transfer function
     bool zero_KIR; // Integrator gain KIR for PI controller is zero, no transfer function
-    /*---yuan add above---*/
 
     Filter Filter_blkR;
     PIControl PIControl_blkR;
@@ -169,12 +165,6 @@ class Esst4bModel : public BaseExciterModel
     double Voel;
     
     double Kpang, Vgmax; // TBD
-    
-    // ESST4B state variables
-    /*double x1Vm, x2Vcomp, x3Va, x4Vr;    
-    double x1Vm_1, x2Vcomp_1, x3Va_1, x4Vr_1;
-    double dx1Vm, dx2Vcomp, dx3Va, dx4Vr;    
-    double dx1Vm_1, dx2Vcomp_1, dx3Va_1, dx4Vr_1;*/
    
     // ESST4B inputs
     double Vcomp, Vterm, Theta, Ir, Ii, LadIfd, Vstab; // Ir, Ii: terminal current
