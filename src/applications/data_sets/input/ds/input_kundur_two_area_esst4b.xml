@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Powerflow>
+    <networkConfiguration_v33> kundur-twoarea_v33.raw </networkConfiguration_v33>
+    <maxIteration>20</maxIteration>
+    <tolerance>1.0e-8</tolerance>
+    <qLimit>True</qLimit>
+    <LinearSolver>
+      <SolutionTolerance>1.0E-11 </SolutionTolerance> 
+      <PETScOptions>
+        <!-- -ksp_view -->
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_type superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+    <!-- 
+                  If UseNewton is true a NewtonRaphsonSolver is
+         used. Otherwise, a PETSc-based NonlinearSolver is
+         used. Configuration parameters for both are included here. 
+    -->
+    <UseNonLinear>false</UseNonLinear>
+    <UseNewton>false</UseNewton>
+    <NewtonRaphsonSolver>
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
+      <MaxIterations>20</MaxIterations>
+      <LinearSolver>
+        <SolutionTolerance>1.0E-08</SolutionTolerance>
+        <MaxIterations>50</MaxIterations>
+        <PETScOptions>
+          -ksp_type bicg
+          -pc_type bjacobi
+          -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly
+          <!-- -ksp_monitor
+          -ksp_view -->
+        </PETScOptions>
+      </LinearSolver>
+    </NewtonRaphsonSolver>
+    <NonlinearSolver>
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
+      <MaxIterations>50</MaxIterations>
+      <PETScOptions>
+        -ksp_type bicg
+        -pc_type bjacobi
+        -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly
+        <!-- -snes_view
+        -snes_monitor
+        -ksp_monitor
+        -ksp_view -->
+      </PETScOptions>
+    </NonlinearSolver>
+  </Powerflow>
+  <Dynamic_simulation>
+  
+	<iterativeNetworkInterface> false </iterativeNetworkInterface>
+	<iterativeNetworkInterfaceDebugPrint> false </iterativeNetworkInterfaceDebugPrint>
+	   
+    <generatorParameters> kundur-twoarea_esst4b.dyr </generatorParameters>
+                
+    <simulationTime>20.0</simulationTime>
+    <timeStep>0.002 </timeStep>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 10.0</beginFault>
+        <endFault>   10.1</endFault>
+        <faultBranch>8  9</faultBranch>
+        <timeStep>   0.002</timeStep>
+      </faultEvent>
+    </faultEvents>
+	
+	<reportNonExistingElements> false </reportNonExistingElements> 
+	
+     <observations>
+      <observation> 
+        <type> bus </type>
+        <busID> 6 </busID>
+      </observation>
+      <observation> 
+        <type> bus </type>
+        <busID> 10 </busID>
+      </observation>
+      <observation> 
+        <type> generator </type>
+        <busID> 1 </busID>
+        <generatorID> 1 </generatorID>
+      </observation>
+       <observation> 
+        <type> generator </type>
+        <busID> 4 </busID>
+        <generatorID> 1 </generatorID>
+      </observation>
+    </observations>
+    
+    <generatorWatch>
+      <generator>
+	    <busID> 4 </busID>
+	    <generatorID> 1 </generatorID>
+      </generator>
+    </generatorWatch>
+    <generatorWatchFrequency> 1 </generatorWatchFrequency>
+    <generatorWatchFileName> kundur_two_area_detail.csv </generatorWatchFileName>
+	<suppressWatchFiles> false </suppressWatchFiles>
+    <LinearSolver>
+      <SolutionTolerance>1.0E-12 </SolutionTolerance> 
+      <ForceSerial>true</ForceSerial>
+      <InitialGuessZero>true</InitialGuessZero>
+      <SerialMatrixConstant>true</SerialMatrixConstant>
+      <PETScOptions>
+        <!--
+                     -ksp_type richardson
+        -->
+        -ksp_type richardson 
+        -pc_type lu
+	    -pc_factor_mat_solver_type superlu_dist 
+	    -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+    <LinearMatrixSolver>
+      <!--
+        These options are used if SuperLU was built into PETSc 
+      -->
+      <Ordering>nd</Ordering>
+      <Package>superlu_dist</Package>
+      <Iterations>1</Iterations>
+      <Fill>5</Fill>
+      <!--<PETScOptions>
+        These options are used for the LinearSolver if SuperLU is not available
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+      </PETScOptions>
+      -->
+    </LinearMatrixSolver>
+  </Dynamic_simulation>
+</Configuration>
