@@ -86,12 +86,12 @@ void gridpack::dynamic_simulation::WshygpModel::load(
   if (!data->getValue(GOVERNOR_TTURB, &Tturb, idx)) Tturb = 0.0; //printf ("Tturb = %8.4f \n", Tturb);
   if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) Trate = 0.0; //printf ("Trate = %8.4f \n", Trate);
   
-  //---yuan add below---//
-  printf("Db1=%f,Err=%f,Td=%f,KI=%f,Tf=%f,KD=%f,KP=%f,R=%f,Tt=%f,KG=%f,Tp=%f,VELopen=%f,VELclose=%f,Pmax=%f,Pmin=%f,Db2=%f\n",
-  Db1,Err,Td,KI,Tf,KD,KP,R,Tt,KG,Tp,VELopen,VELclose,Pmax,Pmin,Db2);
-  printf("Gv1=%f,PGv1=%f,Gv2=%f,PGv2=%f,Gv3=%f,PGv3=%f,Gv4=%f,PGv4=%f,Gv5=%f,PGv5=%f,Aturb=%f,Bturb=%f,Tturb=%f,Trate=%f\n",
-  Gv1,PGv1,Gv2,PGv2,Gv3,PGv3,Gv4,PGv4,Gv5,PGv5,Aturb,Bturb,Tturb,Trate);
-  //---yuan add above---//
+
+  // printf("Db1=%f,Err=%f,Td=%f,KI=%f,Tf=%f,KD=%f,KP=%f,R=%f,Tt=%f,KG=%f,Tp=%f,VELopen=%f,VELclose=%f,Pmax=%f,Pmin=%f,Db2=%f\n",
+  // Db1,Err,Td,KI,Tf,KD,KP,R,Tt,KG,Tp,VELopen,VELclose,Pmax,Pmin,Db2);
+  // printf("Gv1=%f,PGv1=%f,Gv2=%f,PGv2=%f,Gv3=%f,PGv3=%f,Gv4=%f,PGv4=%f,Gv5=%f,PGv5=%f,Aturb=%f,Bturb=%f,Tturb=%f,Trate=%f\n",
+  // Gv1,PGv1,Gv2,PGv2,Gv3,PGv3,Gv4,PGv4,Gv5,PGv5,Aturb,Bturb,Tturb,Trate);
+
   
   zero_TD = false;
   zero_KI = false;

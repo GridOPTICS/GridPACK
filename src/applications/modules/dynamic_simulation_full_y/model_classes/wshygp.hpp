@@ -20,9 +20,6 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_governor_model.hpp"
-/*#include "GainBlockClass.hpp"
-#include "BackLashClass.hpp"
-#include "DBIntClass.hpp"*/
 #include "cblock.hpp"
 #include "dblock.hpp"
 
@@ -125,27 +122,6 @@ class WshygpModel : public BaseGovernorModel
     
     double Db1, Err, Db2;
     double Gv1, PGv1, Gv2, PGv2, Gv3, PGv3, Gv4, PGv4, Gv5, PGv5;
-    //double GenMVABase; 
-    //double Iblock;
-
-    // WSHYGP state variables
-    /*double x1Pmech, x2Td, x3Int, x4Der, x5Pelec, x6Valve, x7Gate;
-    double x1Pmech_1, x2Td_1, x3Int_1, x4Der_1, x5Pelec_1, x6Valve_1, x7Gate_1;
-    double dx1Pmech, dx2Td, dx3Int, dx4Der, dx5Pelec, dx6Valve, dx7Gate;
-    double dx1Pmech_1, dx2Td_1, dx3Int_1, dx4Der_1, dx5Pelec_1, dx6Valve_1, dx7Gate_1;
-
-    // Outputs: Mechnical Power Gen1 and Gen 2
-    double Pmech;
-
-    bool SecondGenExists, OptionToModifyLimitsForInitialStateLimitViolation;
-
-    GainBlockClass GainBlock;
-    BackLashClass BackLash;
-    DBIntClass DBInt;
-
-    double Pref;
-    double w;
-    double GenMVABase, GenPelec;*/
 
     double GenMVABase;
 
