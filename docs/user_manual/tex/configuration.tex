@@ -9,9 +9,11 @@ The \texttt{\textbf{Configuration}} class is in the namespace \texttt{\textbf{gr
 \begin{Verbatim}[fontseries=b]
 gridpack::utility::Configuration * c = 
   gridpack::utility::Configuration::configuration() ; 
-c->open(input_file, MPI_COMM_WORLD);
+c->open(input_file, comm);
 \end{Verbatim}
 }
+
+where \texttt{\textbf{comm}} is GridPACK \texttt{\textbf{Communicator}}.
 
 The input file uses XML syntax. The single top-level element must be named ``Configuration'' but other elements may have module- and application-specific names. Refer elsewhere in this document for details.  For illustration purposes, an example configuration file might look like: 
 
@@ -63,7 +65,7 @@ The first argument has type\texttt{\textbf{ Configuration::KeyType}} which is a 
 \begin{Verbatim}[fontseries=b]
  int get(const KeyType &, int default_value) const ;
 
- bool get(const KeyType &, int *) const;
+ bool get(const KeyType &, int *value) const;
 \end{Verbatim}
 }
 
@@ -82,7 +84,7 @@ std::string s = p->get("networkConfiguration",
 \end{Verbatim}
 }
 
-An additional use of such cursors is to access lists of values. The method 
+An additional use of such cursors is to access lists of values. The method
 
 {
 \color{red}
@@ -93,13 +95,15 @@ void children(ChildCursors &);
 \end{Verbatim}
 }
 
-can be used to get a vector of all the elements that are children in the name hierarchy of some element. These children need not have unique names, as illustrated by the children of the ``Faults'' element shown above. In this example, each of the children is a cursor that can be used to access ``StartFault'', ``EndFault'', and ``Branch'' parameters for each of the ``Fault'' blocks. Again, returning to the sample input above, the following code will return a list of faults
+can be used to get a vector of all the elements that are children in the name
+hierarchy of some element. These children need not have unique names, as
+illustrated by the children of the ``Faults'' element shown in the XML file above. In this example, each of the children is a cursor that can be used to access ``StartFault'', ``EndFault'', and ``Branch'' parameters for each of the ``Fault'' blocks. Again, returning to the sample input above, the following code will return a list of faults
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
 Configuration::CursorPtr p = 
-c->getCursor("Configuration.DynamicSimulation.Faults");
+   c->getCursor("Configuration.DynamicSimulation.Faults");
 ChildCursors faults;
 p->children(faults);
 \end{Verbatim}

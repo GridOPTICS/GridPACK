@@ -1,7 +1,7 @@
 \section{Mapper Module}\label{mapper}
 
 The mappers are a collection of generic capabilities that can be used to
-generate a matrices or vectors from the network components. This is done by
+generate matrices or vectors from the network components. This is done by
 running over all the network components and invoking methods in the
 matrix-vector interface. The mapper is basically a transformation that converts
 a set of network components into a matrix or vector based on the behavior of
@@ -13,7 +13,13 @@ mapper, the standard mapper described here that is implemented on top of the
 \texttt{\textbf{GenMatVecInterface}} and a mapper for generating matrices
 resembling ``fat'' vectors. These are dense matrices that are basically a
 collection of column vectors. The generalized mapper and its corresponding
-interface are described in section~\ref{gen_matvec}, along with the mapper for generating fat vectors. The mapper discussed in this section is used for problems where both dependent and independent variables are associated with buses, which is the case for problems such as power flow calculations and dynamic simulation. Other problems, such as state estimation, have variables associated with both buses and branches and require the more general interface.
+interface are described in section~\ref{gen_matvec}, along with the mapper for
+generating fat vectors. The mapper discussed in this section is used for
+problems where both dependent and independent variables are associated with
+buses, which is the case for problems such as power flow calculations and
+dynamic simulation. Other problems, such as state estimation, have variables
+associated with both buses and branches and require the more general interface.
+See section~\ref{gen_matvec} for details.
 
 The basic matrix-vector interface contains functions that provide two pieces of
 information about each network component. The first is the size of the matrix
@@ -41,16 +47,6 @@ matrix in Figure~\ref{fig:mapper}(d).
   \caption{A schematic diagram of the matrix map function. The bus numbers in (a) and (b) map to approximate row and column locations in (c). (a) a small network (b) matrix blocks associated with branches and buses. Not that not all blocks are the same size and not all buses and branches contribute (c) initial construction of matrix based on network indices (d) final matrix after eliminating gaps.}
   \label{fig:mapper}
 \end{figure}
-
-%\noindent \includegraphics*[width=6.50in, height=3.67in, keepaspectratio=false, trim=0.00in 0.39in 0.00in 0.82in]{image74}
-
-%\noindent \includegraphics*[width=6.50in, height=3.65in, keepaspectratio=false, trim=0.00in 0.38in 0.00in 0.85in]{image75}
-
-%\noindent \includegraphics*[width=6.50in, height=2.55in, keepaspectratio=false, trim=0.00in 1.49in 0.00in 0.83in]{image76}
-
-%\noindent \includegraphics*[width=6.50in, height=2.23in, keepaspectratio=false, trim=0.00in 1.79in 0.00in 0.85in]{image77}
-
-%\textcolor{red}{\texttt{\textbf{Figure 7.}} A schematic diagram of the matrix map function. The bus numbers in (a) and (b) map to approximate row and column locations in (c). (a) a small network (b) matrix blocks associated with branches and buses. Not that not all blocks are the same size and not all buses and branches contribute (c) initial construction of matrix based on network indices (d) final matrix after eliminating gaps}
 
 The most complex part of generating matrices and vectors is implementing the functions in the \texttt{\textbf{MatVecInterface.}} Once this has been done, actually creating matrices and vectors using the mappers is quite simple. The \texttt{\textbf{MatVecInterface}} is associated with two mappers, one that creates matrices from buses and branches and a second that can create vectors from buses. Both mappers are templated objects based on the type of network being used and use the \texttt{\textbf{gridpack::mapper}} namespace. The \texttt{\textbf{FullMatrixMap}} object runs over both buses and branches to set up a matrix. The constructor is
 

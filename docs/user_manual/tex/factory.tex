@@ -24,7 +24,14 @@ virtual void setExchange()
 
 The \texttt{\textbf{setComponents}} method pushes topology information available from the network into the individual buses and branches using methods in the base component classes. This operation ensures that operations such as \texttt{\textbf{getNeighborBuses}}, etc. work correctly. The topology information is originally only available in the network and it requires additional operations to imbed it in individual buses and branches. Being able to access this information directly from the buses and branches can simplify application programming substantially.
 
-The \texttt{\textbf{setExchange}} function allocates buffers and sets up pointers in the components so that exchange of data between buses and branches can occur and ghost buses and branches can receive updated values of the exchanged parameters. This function loops over the \texttt{\textbf{getXCBusSize}} and \texttt{\textbf{setXCBuf}} commands defined in the network component classes and guarantees that buffers are properly allocated and exposed to the network components.
+The \texttt{\textbf{setExchange}} function allocates buffers and sets up
+pointers in the components so that exchange of data between buses and branches
+can occur and ghost buses and branches can receive updated values of the
+exchanged parameters. This function loops over the
+\texttt{\textbf{getXCBusSize}} and \texttt{\textbf{setXCBuf}} commands defined
+in the network component classes and guarantees that buffers are properly
+allocated and exposed to the network components. If the application does not use
+exchanges, then this operation is unecessary.
 
 Two other functions are defined in the \texttt{\textbf{BaseFactory}} class as convenience functions. The first is
 

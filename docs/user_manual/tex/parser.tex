@@ -2,7 +2,15 @@
 
 The parser modules are designed to read an external network file, set up the network topology and assign any parameter fields in the file to simple fields. The parsers do not partition the network, they are only responsible for reading in the network and distributing the different network elements in a way that guarantees that not too much data ends up on any one processor. The parsers are also not responsible for determining if the input is compatible with the analysis being performed. This can be handled, if desired, by building checks into the network factory. The parsers are only responsible for determining if they can read the file.
 
-Currently, GridPACK only supports two file formats. Files based on the PSS/E PTI version 23 and version 33 formats can be read in using the classes \texttt{\textbf{PTI23\_parser}} and \texttt{\textbf{PTI33\_parser}}. Both parsers can also read PSS/E formatted .dyr files that are used to read in extra parameters used in dynamic simulation. The parsers are templated classes that again use the network type as a template argument. Both \texttt{\textbf{PTI23\_parser}} and \texttt{\textbf{PTI33\_parser}} are located in the \texttt{\textbf{gridpack::parser}} namespace. These classes have only a few important functions. The first are the constructors
+Currently, GridPACK supports five file formats. Files based on the PSS/E PTI
+version 23, 33, 34 and 35 formats can be read in using the classes
+\texttt{\textbf{PTI23\_parser}}, \texttt{\textbf{PTI33\_parser}},
+\texttt{\textbf{PTI34\_parser}}, and \texttt{\textbf{PTI35\_parser}}. These
+parsers can also read PSS/E formatted .dyr files that are used to read in extra
+parameters used in dynamic simulation. In addition, there is a parser that can
+read MatPower formatted files, \texttt{\textbf{MAT\_Parser}}. The parsers are
+templated classes that again use the network type as a template argument. All
+parsers are located in the \texttt{\textbf{gridpack::parser}} namespace. These classes have only a few important functions. The first are the constructors
 
 {
 \color{red}
@@ -10,10 +18,16 @@ Currently, GridPACK only supports two file formats. Files based on the PSS/E PTI
 PTI23_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
 
 PTI33_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+
+PTI34_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+
+PTI35_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+
+MAT_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
 \end{Verbatim}
 }
 
-The remaining functions are common to both parsers. To read a PSS/E PTI file containing a network configuration and generate a network, the parser calls the method
+The remaining functions are common to all parsers. To read a PSS/E PTI file containing a network configuration and generate a network, the parser calls the method
 
 {
 \color{red}

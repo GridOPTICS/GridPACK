@@ -1,6 +1,15 @@
 \section{Data Interface}\label{data_interface}
 
-The main route for incorporating information about buses and branches into GridPACK applications is the \texttt{\textbf{DataCollection}} class. Each bus and branch (including ghost buses and ghost branches) has an associated \texttt{\textbf{DataCollection}} object that contains all the parameters associated with that object. The \texttt{\textbf{DataCollection}} class works in conjunction with the \texttt{\textbf{dictionary.hpp}} header file, which defines a unified vocabulary for labeling power grid parameters that are used in applications. The goal of using the dictionary is to create a unified vocabulary for power grid parameters within GridPACK that is independent of the source of the parameters.
+The main route for incorporating information about buses and branches into
+GridPACK applications is the \texttt{\textbf{DataCollection}} class. Each bus
+and branch (including ghost buses and ghost branches) has an associated
+\texttt{\textbf{DataCollection}} object that contains all the parameters
+associated with that object. The \texttt{\textbf{DataCollection}} class works in
+conjunction with the \texttt{\textbf{dictionary.hpp}} header file, which defines
+a unified vocabulary for labeling power grid parameters that are used in
+applications. The \texttt{\textbf{dictionary.hpp}} file includes a collection of
+files that represent variables associated with different network components,
+such as buses, branches, transformers, generators, etc. The goal of using the dictionary is to create a unified vocabulary for power grid parameters within GridPACK that is independent of the source of the parameters.
 
 The \texttt{\textbf{DataCollection}} class is a simple container that can be
 used to store key-value pairs and resides in the
@@ -29,11 +38,7 @@ keepaspectratio=true]{figures/Network-objects}
   \label{fig:data-schematic}
 \end{figure}
 
-%\noindent \includegraphics*[width=6.00in, height=4.24in, keepaspectratio=false, trim=0.00in 0.07in 0.00in 0.19in]{image73}
-
-%\textcolor{red}{\texttt{\textbf{Figure 6.}} Schematic diagram representing relationship between the \textbf{DataCollection} objects (green) and the network components (purple). The arrows represent the transfer of data from the data collections to the network components during the \textbf{load} operation.}
-
-Each bus and branch in the figure has an associated \texttt{\textbf{DataCollection}} and network component (bus or branch class) object associated with it. After the network is created, the \texttt{\textbf{DataCollection}} objects are filled with key-value pairs while network components are in an uninitialized state. The information can be transferred from the \texttt{\textbf{DataCollection}} objects to the network components by implementing the network component \texttt{\textbf{load}} function. The load function has a pointer to the associated \texttt{\textbf{DataCollection}} object passed when it is called, so that the contents of the data collection can be accessed using the functions described below.
+After the network is created, the \texttt{\textbf{DataCollection}} objects are filled with key-value pairs while network components are in an uninitialized state. The information can be transferred from the \texttt{\textbf{DataCollection}} objects to the network components by implementing the network component \texttt{\textbf{load}} function. The load function has a pointer to the associated \texttt{\textbf{DataCollection}} object passed when it is called, so that the contents of the data collection can be accessed using the functions described below.
 
 Assuming that a parameter only appears once in the data collection, the contents of a \texttt{\textbf{DataCollection}} object can be accessed using the functions
 
@@ -62,7 +67,13 @@ getValue("SOME_VARIABLE_NAME",&var);
 \end{Verbatim}
 }
 
-If the variable is not found in the data collection, the default value is 1. The returned bool value can also be used to implement defaults or take alternative actions if the value is not found.
+If the variable is not found in the data collection, the default value is 1. The
+returned bool value can also be used to implement defaults or take alternative
+actions if the value is not found. Note that it is important to make match the
+variable type correctly when calling getValue. For example, if a variable is
+stored as type \texttt{\textbf{double}} in the data collection, but you try and
+access it by passing in a variable of type \texttt{\textbf{float}} or
+\texttt{\textbf{int}}, the \texttt{\textbf{getValue}} call will return false.
 
 If the variable is stored multiple times in the \texttt{\textbf{DataCollection}}, then it can be accessed with the functions
 
@@ -79,11 +90,28 @@ bool getValue(const char *name, ComplexType *value, const int idx)
 \end{Verbatim}
 }
 
-where \texttt{\textbf{idx}} is an index that identifies a particular instance of the key. In this case, the key is essentially a combination of the character string \texttt{\textbf{name}} and the index. An example is the parameter describing the generator active power output, \texttt{\textbf{GENERATOR\_PG}}. Because there can be more than one generator on the bus, it is necessary to include an additional index to indicate which generator values are required. Internally, the key then becomes the combination \texttt{\textbf{GENERATOR\_PG:idx}}. The index values are 0-based, so the first value has index 0, the second value has index 1 and so on up to N-1, where N is the total number of values. Note that because the combination of name and index is actually stored internally as a key, it is not necessary that all values of the index between 0 and N-1 be stored in the data collection. If some generators are missing some parameters, that is allowed. It is up to the application to account for these missing values.
+where \texttt{\textbf{idx}} is an index that identifies a particular instance of
+the key. In this case, the key is essentially a combination of the character
+string \texttt{\textbf{name}} and the index. An example is the parameter
+describing the generator active power output, \texttt{\textbf{GENERATOR\_PG}}.
+Because there can be more than one generator on the bus, it is necessary to
+include an additional index to indicate which generator values are required.
+Internally, the key then becomes the combination
+\texttt{\textbf{GENERATOR\_PG:idx}}. The index values are 0-based, so the first
+value has index 0, the second value has index 1 and so on up to N-1, where N is
+the total number of values. Note that because the combination of name and index
+is actually stored internally as a key, it is not necessary that all values of
+the index between 0 and N-1 be stored in the data collection. If some generators
+are missing some parameters, that is allowed. It is up to the application to
+account for these missing values. It is also important to not that variables
+without an index and those with an index are considered different, so if you
+attempt to access a variable that is indexed without using the indexed version
+of \texttt{\textbf{getValue}}, and visa-versa, the function will return false.
 
 The data collection is generally filled with values after the parser is called
 to create the network. The nomenclature for these values can be found in the
-\texttt{\textbf{dictionary.hpp}} file located under \texttt{\textbf{src/parser}}
+\texttt{\textbf{dictionary.hpp}} and associated files located under
+\texttt{\textbf{src/parser}} and \texttt{\textbf{src/parser/variable\_defs}}
 under the main GridPACK directory. This file contains additional files that
 include definitions for bus variables, branch variables, etc. in the
 \texttt{\textbf{src/parser/variable\_defs}} directory. Users are encouraged to

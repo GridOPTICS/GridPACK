@@ -1,6 +1,11 @@
 \chapter{Developing Applications}
 
-The previous section outlined most of the basic modules in the GridPACK framework. In this section, we provide an overview of how to use these modules to create actual applications by discussing the development of a power flow simulation application in detail. Actual examples of a power flow application can be found by looking at an example code located under the top-level GridPACK directory in src/applications/examples/powerflow. Users can also look at the power flow module located in the 
+The previous section outlined most of the basic modules in the GridPACK
+framework. In this section, we provide an overview of how to use these modules
+to create actual applications by discussing the development of a power flow
+simulation in detail. Actual examples of a power flow application can be found
+by looking at an example code located under the top-level GridPACK directory in
+\texttt{\textbf{src/applications/examples/powerflow}}. Users can also look at the power flow module located in the 
 
 {
 \color{red}
@@ -9,7 +14,11 @@ src/applications/modules/powerflow
 \end{Verbatim}
 }
 
-directory. The main difference between the power flow example code and the power flow module is that the module breaks up the power flow calculation into more separate function calls and the module also has options for using a non-linear solver. The power flow bus and branch classes are located in the directory src/applications/components/pf\_matrix.
+directory. The main difference between the power flow example code and the power
+flow module is that the module breaks up the power flow calculation into more
+separate function calls and the module also has options for using a non-linear
+solver. The power flow bus and branch classes are located in the directory
+\texttt{\textbf{src/applications/components/pf\_matrix}}.
 
 A schematic of a power flow code based on GridPACK is shown in
 Figure~\ref{fig:pf-schematic}. For
@@ -29,10 +38,6 @@ trim=0.00in 0.0in 0.0in 0.0in]{figures/PF-flow-chart}
   \label{fig:pf-schematic}
 \end{figure}
 
-%\noindent \includegraphics*[width=6.50in, height=3.45in, keepaspectratio=false, trim=0.00in 0.68in 0.00in 0.75in]{image78}
-
-%\textcolor{red}{\texttt{\textbf{Figure 9.}} Schematic of program flow for a power flow simulation. The yellow ovals are distributed data objects, the green blocks are GridPACK framework components and the blue blocks are application specific code. External files are red.}
-
 As shown in the figure, application developers will need to focus on writing two or three sets of modules. The first is the network components. These are the descriptions of the physics and/or measurements that are associated with buses and branches in the power grid network. The network factory is a module that initializes the grid components on the network after the network is originally created by the import module. The power flow problem is simple enough that it can use a non-linear solver directly from the math module but even a straightforward solution such as this requires the developer to overwrite some functions in the factory that are used in the non-linear solver iterations.
 
 Most of the work involved in creating a new application is centered on creating the bus and branch classes. This discussion will describe in some detail the routines that need to be written in order to develop a working power flow simulation. Additional application modules for dynamic simulation and contingency analysis have also been included in the distribution and users are encouraged to look at these modules for additional coding examples on how to use GridPACK. The discussion below is designed to illustrate how to build an application and for brevity has left out some code compared to the working implementation. The source code contains more comment lines as well as some additional diagnostics that may not appear here. However, the overall design is the same and readers who have a good understanding of the following text should have no difficulty understanding the power flow source code.
@@ -50,7 +55,8 @@ void gridpack::powerflow::PFBus::load(
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
   p_v = p_voltage;
-  double pi = 4.0*atan\eqref{GrindEQ__1_0_}; p_angle = p_angle*pi/180.0;
+  double pi = 4.0*atan(1.0;
+  p_angle = p_angle*pi/180.0;
   p_a = p_angle;
   int itype; data->getValue(BUS_TYPE, &itype);
   if (itype == 3) {
@@ -76,9 +82,34 @@ void gridpack::powerflow::PFBus::load(
 \end{Verbatim}
 }
 
-This version of the \texttt{\textbf{load}} function has left off additional properties, such as shunts and loads and some transmission parameters, but it serves to illustrate how \texttt{\textbf{load}} is suppose to work. The \texttt{\textbf{load}} method in the base factory class will run over all buses, get the \texttt{\textbf{DataCollection}} object associated with each bus and then call the \texttt{\textbf{PFBus::load}} method using the \texttt{\textbf{DataCollection}} object as the argument. The parameters \texttt{\textbf{p\_sbase}}, \texttt{\textbf{p\_angle}}, \texttt{\textbf{p\_voltage}} are private members of \texttt{\textbf{PFBus}}. The variables corresponding to the keys \texttt{\textbf{CASE\_SBASE}}, \texttt{\textbf{BUS\_VOLTAGE\_ANG}}, \texttt{\textbf{BUS\_VOLTAGE\_MAG}} were stored in the \texttt{\textbf{DataCollection}} object when the network configuration file was parsed. They are retrieved from this object using the \texttt{\textbf{getValue}} functions and assigned to \texttt{\textbf{p\_sbase}}, \texttt{\textbf{p\_angle}}, \texttt{\textbf{p\_voltage}}. Additional internal variables are also assigned in a similar manner. The value of the \texttt{\textbf{BUS\_TYPE}} variable can be used to determine whether the bus is a reference bus. As mentioned previously, the \texttt{\textbf{CASE\_SBASE}} etc. are just preprocessor symbols that are defined in the \texttt{\textbf{dictionary.hpp}} file, which must be included in the file defining the \texttt{\textbf{load}} function. The \texttt{\textbf{dictionary.hpp}} file can be found in the \texttt{\textbf{src/parser}} directory of the GridPACK distribution.
+This version of the \texttt{\textbf{load}} function has left off additional
+properties, such as shunts and loads and some transmission parameters, but it
+serves to illustrate how \texttt{\textbf{load}} is suppose to work. The
+\texttt{\textbf{load}} method in the base factory class will run over all buses,
+get the \texttt{\textbf{DataCollection}} object associated with each bus and
+then call the \texttt{\textbf{PFBus::load}} method using the
+\texttt{\textbf{DataCollection}} object as the argument. The parameters
+\texttt{\textbf{p\_sbase}}, \texttt{\textbf{p\_angle}},
+\texttt{\textbf{p\_voltage}} are private members of \texttt{\textbf{PFBus}}. The
+variables corresponding to the keys \texttt{\textbf{CASE\_SBASE}},
+\texttt{\textbf{BUS\_VOLTAGE\_ANG}}, \texttt{\textbf{BUS\_VOLTAGE\_MAG}} were
+stored in the \texttt{\textbf{DataCollection}} object when the network
+configuration file was parsed. They are retrieved from this object using the
+\texttt{\textbf{getValue}} functions and assigned to \texttt{\textbf{p\_sbase}},
+\texttt{\textbf{p\_angle}}, \texttt{\textbf{p\_voltage}}. Additional internal
+variables are also assigned in a similar manner. The value of the
+\texttt{\textbf{BUS\_TYPE}} variable can be used to determine whether the bus is
+a reference bus. As mentioned previously, the \texttt{\textbf{CASE\_SBASE}} etc.
+symbols are just preprocessor symbols that are defined in the
+\texttt{\textbf{dictionary.hpp}} file, which must be included in the file
+defining the \texttt{\textbf{load}} function. The
+\texttt{\textbf{dictionary.hpp}} and associated files can be found in the \texttt{\textbf{src/parser}} directory of the GridPACK distribution.
 
-The variables referring to generators have a different behavior than the other variables. A bus can have multiple generators and these are stored in the \texttt{\textbf{DataCollection}} object with an index. The total number of generators on the bus is also stored in the \texttt{\textbf{DataCollection}} object with the key \texttt{\textbf{GENERATOR\_NUMBER}}. First the number of generators is retrieved and then a loop is set up so that all the generator variables can be accessed. The generator parameters are stored in local private arrays. The loop shows how the return value of the \texttt{\textbf{getValue}} function can be used to verify that all three parameters for a generator were found. If they aren't found, then the generator is incomplete and the generator is not added to the local data. The boolean return value can also be used to determine if the bus has other properties and to set internal flags and parameters accordingly. The load function for the \texttt{\textbf{PFBranch}} is constructed in a similar way, except that the focus is on extracting branch related parameters from the \texttt{\textbf{DataCollection}} object.
+The variables referring to generators have a different behavior than the bus
+voltage variables. A bus can have multiple generators and these are stored in
+the \texttt{\textbf{DataCollection}} object with an index. The total number of
+generators on the bus is also stored in the \texttt{\textbf{DataCollection}}
+object with the key \texttt{\textbf{GENERATOR\_NUMBER}}. First, the number of generators is retrieved and then a loop is set up so that all the generator variables can be accessed. The generator parameters are stored in local private arrays. The loop shows how the return value of the \texttt{\textbf{getValue}} function can be used to verify that all three parameters for a generator were found. If they aren't found, then the generator is incomplete and the generator is not added to the local data. The boolean return value can also be used to determine if the bus has other properties and to set internal flags and parameters accordingly. The load function for the \texttt{\textbf{PFBranch}} is constructed in a similar way, except that the focus is on extracting branch related parameters from the \texttt{\textbf{DataCollection}} object.
 
 Both the \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} classes contain an application-specific function called \texttt{\textbf{setYBus}} that is used to set up values in the Y-matrix. There is also a function in the powerflow factory class that runs over all buses and branches and calls this function. The \texttt{\textbf{setYBus}} function in \texttt{\textbf{PFBus}} is
 
@@ -263,7 +294,15 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize,
 \end{Verbatim}
 }
 
-If the mode is ``\texttt{\textbf{YBus}}'', the size function returns a 1$\mathrm{\times}$1 block for the off-diagonal matrix block. For the Jacobian, this function first checks to see if either end of the branch is a reference bus by evaluating the Boolean variable ``ok''. If neither end is the reference bus then the function returns a 2$\mathrm{\times}$2 block, if one end is the reference bus then the function returns false. The false value indicates that this branch does not contribute to the matrix. For this system, the \texttt{\textbf{matrixReverseSize}} function is the same. For applications that return a non-square block, the reverse function will transpose the block dimensions relative to the forward direction.
+If the mode is ``\texttt{\textbf{YBus}}'', the size function returns a
+1$\mathrm{\times}$1 block for the off-diagonal matrix block. For the Jacobian,
+this function first checks to see if either end of the branch is a reference bus
+by evaluating the Boolean variable ``ok''. If neither end is the reference bus
+then the function returns a 2$\mathrm{\times}$2 block, if one end is the
+reference bus then the function returns false. The false value indicates that
+this branch does not contribute to the matrix. For this system, the
+\texttt{\textbf{matrixReverseSize}} function is the same. For applications that
+return a non-square block, the reverse function must transpose the block dimensions relative to the forward direction.
 
 The \texttt{\textbf{matrixForwardValues}} function is
 
