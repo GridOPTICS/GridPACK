@@ -18,6 +18,7 @@
 #include <constants.hpp>
 #include <gridpack/math/dae_solver.hpp>
 #include <model_classes/gencls.hpp>
+#include <model_classes/genrou.hpp>
 #include <model_classes/constantimpedance.hpp>
 //#include <model_classes/lumpedline.hpp>
 
@@ -455,6 +456,10 @@ void EmtBus::load(const
         Gencls *clgen;
         clgen = new Gencls;
         p_gen[i] = clgen;
+      } else if(type == "GENROU") {
+	Genrou *genrou;
+	genrou = new Genrou;
+	p_gen[i] = genrou;
       }
 
       // Set status
