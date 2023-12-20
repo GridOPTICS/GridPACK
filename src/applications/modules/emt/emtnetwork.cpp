@@ -745,6 +745,7 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
     int nvals_load=0;
 
     p_load[i]->setVoltageGlobalLocation(v_gloc);
+    p_load[i]->setTSshift(p_TSshift);
     p_load[i]->matrixGetValues(&nvals_load,values+ctr,rows+ctr,cols+ctr);
     ctr += nvals_load;
 
@@ -942,7 +943,6 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 
     for(i=0; i < p_nload; i++) {
       if(!p_load[i]->getStatus()) continue;
-
       p_load[i]->setVoltage(va,vb,vc);
       p_load[i]->setInitialVoltage(p_Vm0,p_Va0);
       p_load[i]->init(x);
@@ -1112,6 +1112,13 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
       p_gen[i]->setMode(p_mode);
       p_gen[i]->setValues(values);
     }
+
+    for(i=0; i < p_nload; i++) {
+      if(!p_load[i]->getStatus()) continue;
+
+      p_load[i]->setMode(p_mode);
+      p_load[i]->setValues(values);
+    }
   }
 }
 
@@ -1254,20 +1261,20 @@ void EmtBranch::load(
     R1 = R; L1 = X/OMEGA_S; C1 = Bc/OMEGA_S;
     R0 = 3*R1; L0 = 3*L1; C0 = 3*C1;
 
-    p_R[0][0] = p_R[1][1] = p_R[2][2] = R1 + R0;
-    p_R[0][1] = p_R[1][0] = R1;
-    p_R[0][2] = p_R[2][0] = R1;
-    p_R[1][2] = p_R[2][1] = R1;
+    p_R[0][0] = p_R[1][1] = p_R[2][2] = R1; // + R0;
+    p_R[0][1] = p_R[1][0] = 0.0; //R1;
+    p_R[0][2] = p_R[2][0] = 0.0; //R1;
+    p_R[1][2] = p_R[2][1] = 0.0; //R1;
 
-    p_L[0][0] = p_L[1][1] = p_L[2][2] = L1 + L0;
-    p_L[0][1] = p_L[1][0] = L1;
-    p_L[0][2] = p_L[2][0] = L1;
-    p_L[1][2] = p_L[2][1] = L1;
+    p_L[0][0] = p_L[1][1] = p_L[2][2] = L1; // + L0;
+    p_L[0][1] = p_L[1][0] = 0.0; //L1;
+    p_L[0][2] = p_L[2][0] = 0.0; //L1;
+    p_L[1][2] = p_L[2][1] = 0.0; //L1;
 
-    p_C[0][0] = p_C[1][1] = p_C[2][2] = C1 + C0;
-    p_C[0][1] = p_C[1][0] = C1;
-    p_C[0][2] = p_C[2][0] = C1;
-    p_C[1][2] = p_C[2][1] = C1;
+    p_C[0][0] = p_C[1][1] = p_C[2][2] = C1; // + C0;
+    p_C[0][1] = p_C[1][0] = 0.0; //C1;
+    p_C[0][2] = p_C[2][0] = 0.0; //C1;
+    p_C[1][2] = p_C[2][1] = 0.0; //C1;
   }
   
 }

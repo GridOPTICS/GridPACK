@@ -23,13 +23,6 @@ void Constantimpedance::load(const boost::shared_ptr<gridpack::component::DataCo
 
   pl /= sbase; // per unit conversion
   ql /= sbase; // per unit conversion
-  if(ql == 0.0) {
-    // No inductor current
-    nxload = 0;
-  } else {
-    nxload = 3;
-  }
-
 }
 
 /**
@@ -51,20 +44,19 @@ void Constantimpedance::init(gridpack::ComplexType* xin)
   gridpack::ComplexType S = gridpack::ComplexType(pl,ql);
   gridpack::ComplexType I = conj(S/V);
   gridpack::ComplexType Z = V/I;
-  gridpack::ComplexType Y = 1.0/Z;
+  
+  R = real(Z);
+  L = imag(Z)/OMEGA_S;
 
   Im = abs(I);
   Ia = atan2(imag(I),real(I));
-
-  R = real(Z);
-  L = imag(Z)/OMEGA_S;
 
   p_R[0] = p_R[1] = p_R[2] = R;
   p_L[0] = p_L[1] = p_L[2] = L;
 
   x[0] = p_i[0] = Im*sin(Ia);
-  x[1] = p_i[1] = Im*sin(Ia-2*PI/3.0);
-  x[2] = p_i[2] = Im*sin(Ia+2*PI/3.0);
+  x[1] = p_i[1] = Im*sin(Ia - TWOPI_OVER_THREE);
+  x[2] = p_i[2] = Im*sin(Ia + TWOPI_OVER_THREE);
 
 }
 
@@ -122,9 +114,15 @@ void Constantimpedance::vectorGetValues(gridpack::ComplexType *values)
   gridpack::ComplexType *f = values+offsetb; // load array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-    f[0] = (p_va - p_R[0]*p_i[0])/p_L[0] - p_idot[0];
-    f[1] = (p_vb - p_R[1]*p_i[1])/p_L[1] - p_idot[1];
-    f[2] = (p_vc - p_R[2]*p_i[2])/p_L[2] - p_idot[2];
+    if(abs(ql) < 1e-6) {// no ql
+      f[0] = (p_va - p_R[0]*p_i[0]);
+      f[1] = (p_vb - p_R[1]*p_i[1]);
+      f[2] = (p_vc - p_R[2]*p_i[2]);
+    } else {
+      f[0] = (p_va - p_R[0]*p_i[0])/p_L[0] - p_idot[0];
+      f[1] = (p_vb - p_R[1]*p_i[1])/p_L[1] - p_idot[1];
+      f[2] = (p_vc - p_R[2]*p_i[2])/p_L[2] - p_idot[2];
+    }
   }
 }
 
@@ -190,9 +188,15 @@ void Constantimpedance::matrixGetValues(int *nvals, gridpack::ComplexType *value
   cols[ctr+1] = rows[ctr+1];
   cols[ctr+2] = rows[ctr+2];
 
-  values[ctr]   = -p_R[0]/p_L[0] - shift;
-  values[ctr+1] = -p_R[1]/p_L[1] - shift;
-  values[ctr+2] = -p_R[2]/p_L[2] - shift;
+  if(abs(ql) < 1e-6) {
+    values[ctr]   = -p_R[0];
+    values[ctr+1] = -p_R[1];
+    values[ctr+2] = -p_R[2];
+  } else {
+    values[ctr]   = -p_R[0]/p_L[0] - shift;
+    values[ctr+1] = -p_R[1]/p_L[1] - shift;
+    values[ctr+2] = -p_R[2]/p_L[2] - shift;
+  }
 
   ctr += 3;
   
@@ -205,10 +209,15 @@ void Constantimpedance::matrixGetValues(int *nvals, gridpack::ComplexType *value
   cols[ctr+1] = p_glocvoltage+1;
   cols[ctr+2] = p_glocvoltage+2;
 
-  values[ctr]   = 1.0/p_L[0];
-  values[ctr+1] = 1.0/p_L[1];
-  values[ctr+2] = 1.0/p_L[2];
-
+  if(abs(ql) < 1e-6) {
+    values[ctr]   = 1.0;
+    values[ctr+1] = 1.0;
+    values[ctr+2] = 1.0;
+  } else {
+    values[ctr]   = 1.0/p_L[0];
+    values[ctr+1] = 1.0/p_L[1];
+    values[ctr+2] = 1.0/p_L[2];
+  }
   ctr += 3;
 
   *nvals = ctr;
