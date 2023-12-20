@@ -8,8 +8,8 @@ Gencls::Gencls(void)
   p_dw    = 0.0;
   p_deltadot = 0.0;
   p_dwdot    = 0.0;
-  p_Rs    = 0.01;
-  p_L     = 0.01/OMEGA_S;
+  p_Rs    = 0.0;
+  p_L     = 1.0/OMEGA_S;
   p_H     = 0.0;
   p_D     = 0.0;
   p_Ep    = 0.0;
@@ -32,11 +32,15 @@ Gencls::~Gencls(void)
 void Gencls::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
   BaseEMTGenModel::load(data,idx); // load parameters in base generator model
+  gridpack::ComplexType Zsource;
 
   // load parameters for the model type
   data->getValue(BUS_NUMBER, &bid);
-  data->getValue(GENERATOR_RESISTANCE,&p_Rs,idx);
-  data->getValue(GENERATOR_TRANSIENT_REACTANCE,&p_Xdp,idx);
+  data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
+  p_Rs = real(Zsource);
+  p_Xdp = imag(Zsource);
+  //  data->getValue(GENERATOR_RESISTANCE,&p_Rs,idx);
+  //  data->getValue(GENERATOR_TRANSIENT_REACTANCE,&p_Xdp,idx);
   data->getValue(GENERATOR_INERTIA_CONSTANT_H,&p_H,idx);
   data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&p_D,idx);
 
