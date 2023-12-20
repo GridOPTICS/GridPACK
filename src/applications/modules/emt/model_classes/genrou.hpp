@@ -142,7 +142,7 @@ class Genrou: public BaseEMTGenModel
 
   // Generator variables and their derivatives
   double delta, dw, Eqp, Psidp, Psiqp, Edp, iabc[3]; 
-  double ddelta, ddw, dEqp, dPsidp, dPsiqp, dEdp, idot[3];
+  double ddelta, ddw, dEqp, dPsidp, dPsiqp, dEdp, diabc[3];
 
   int bid;
 };

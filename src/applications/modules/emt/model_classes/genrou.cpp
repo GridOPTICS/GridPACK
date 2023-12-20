@@ -142,19 +142,23 @@ void Genrou::init(gridpack::ComplexType* xin)
   
   double Psidpp = Vq;
   double Psiqpp = -Vd;
-  double Psipp = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
 
-  double Psid = Psidpp - Id*Xdpp;
-  double Psiq = Psiqpp - Iq*Xdpp;
+  // q-axis transient voltage
+  Eqp = Vq + (Xdp - Xdpp)*Id;
 
-  Psidp = Psidpp - (Xdpp - Xl)*Id;
-  Eqp   = Psidp  + (Xdp - Xl)*Id;
+  // d-axis transient voltage
+  Edp = Vd - (Xqp - Xdpp)*Iq;
 
-  Edp = (Xq - Xqp)*Iq; // - (Xq - Xl)/(Xd - Xl)*Psiqpp*Sat(Psidpp,Psiqpp)/Psipp;
+  // d-axis flux
+  Psidp = Eqp - (Xdp - Xl)*Id;
+
+  // q-axis flux
   Psiqp = Edp + (Xqp - Xl)*Iq;
 
-  Efd = Eqp + (Xd - Xdp)*Id; //  + Psidpp*Sat(Psidpp,Psiqpp)/Psipp;;
+  // Field voltage
+  Efd = Eqp + (Xd - Xdp)*Id;
 
+  // Field current
   LadIfd = Efd;
 
   double Telec = Psidpp*Iq - Psiqpp*Id;
@@ -204,7 +208,25 @@ void Genrou::setValues(gridpack::ComplexType *values)
   gridpack::ComplexType *x = values+offsetb; // generator array starts from this location
 
   if(p_mode == XVECTOBUS) {
+    delta   = real(x[0]);
+    dw      = real(x[1]);
+    Eqp     = real(x[2]);
+    Psidp   = real(x[3]);
+    Psiqp   = real(x[4]);
+    Edp     = real(x[5]);
+    iabc[0] = real(x[6]);
+    iabc[1] = real(x[7]);
+    iabc[2] = real(x[8]);
   } else if(p_mode == XDOTVECTOBUS) {
+    ddelta   = real(x[0]);
+    ddw      = real(x[1]);
+    dEqp     = real(x[2]);
+    dPsidp   = real(x[3]);
+    dPsiqp   = real(x[4]);
+    dEdp     = real(x[5]);
+    diabc[0] = real(x[6]);
+    diabc[1] = real(x[7]);
+    diabc[2] = real(x[8]);
   } 
 }
 
@@ -219,6 +241,71 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
   gridpack::ComplexType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
+    double theta = delta - PI/2.0;
+
+    double tempd1,tempd2,tempq1,tempq2;
+    tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+    tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+    tempq1 = (Xdpp - Xl)/(Xqp - Xl);
+    tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
+
+    double Psidpp =  tempd1*Eqp + tempd2*Psidp;
+    double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
+    double Psipp  = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
+
+    double edq0[3];
+
+    edq0[0] = -Psiqpp*(1 + dw);
+    edq0[1] =   Psidpp*(1 + dw);
+    edq0[2] = 0.0;
+
+    abc2dq0(iabc,p_time,theta,idq0);
+
+    double Id = idq0[0];
+    double Iq = idq0[1];
+    
+    // Electrical torque
+    double Telec = Psidpp*Iq - Psiqpp*Id;
+
+    // RESIDUAL_EVAL for state 1 to 6
+    // Machine rotor angle
+    f[0] = dw * OMEGA_S - ddelta;
+
+    // Speed
+    f[1] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; // Pmech can be called from Governor
+    //    values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) - Telec) - ddw; // Ignoring speed effects
+
+    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
+      * (-Psidp - (Xdp - Xl) * Id + Eqp);
+    LadIfd = Eqp  + (Xd - Xdp) * (Id + TempD);
+    // Q-axis transient EMF
+    f[2] = (Efd - LadIfd) / Tdop - dEqp; 
+
+    
+    // D-axis transient flux
+    f[3] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
+    
+    // Q-axis transient flux
+    f[4] = (-Psiqp + (Xqp - Xl) * Iq + Edp) / Tqopp - dPsiqp;
+
+    // D-axis transient EMF
+    double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (-Psiqp + (Xqp - Xl) * Iq + Edp);
+    f[5] = (Xdpp*Iq - Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dEdp;
+
+    double eabc[3];
+
+    dq02abc(edq0,p_time,theta,eabc);
+
+    if(abs(L) > 1e-6) {
+      // f = di_dt - idot => L^-1*(e - R*i - v) - idot
+      f[6] = (eabc[0] - Ra*iabc[0] - p_va)/L - diabc[0];
+      f[7] = (eabc[1] - Ra*iabc[1] - p_vb)/L - diabc[1];
+      f[8] = (eabc[2] - Ra*iabc[2] - p_vc)/L - diabc[2];
+    } else {
+      f[6] = (eabc[0] - Ra*iabc[0] - p_va);
+      f[7] = (eabc[1] - Ra*iabc[1] - p_vb);
+      f[8] = (eabc[2] - Ra*iabc[2] - p_vc);
+    }      
   }
 
 }
