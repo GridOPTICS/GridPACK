@@ -541,42 +541,147 @@ Additional calls are likely to be added to these to allow user-specified paramet
 \subsection{Differential Algebraic Equation Solvers}
 \label{sec:dae-solver}
 
-The \texttt{\textbf{DAESolver}} is used to solve systems of
+The \texttt{\textbf{DAESolver}} is used to integrate systems of
 differential and algebraic equations (DAE) of the form
 \begin{equation}
-  \mathbf{F} \left( t, \mathbf{u}, \mathbf{\dot{u}} \right) ~=~ \mathbf{G} \left( t,
-    \mathbf{u} \right), ~~ \mathbf{u} \left( t_{0} ~ = ~ \mathbf{u}_{0}
+  \mathbf{F} \left( t, \mathbf{u}, \mathbf{\dot{u}} \right) ~=~ 0, ~~ \mathbf{u} \left( t_{0} ~ = ~ \mathbf{u}_{0}
   \right)
 \end{equation}
-It can also be used to solve systems of ordinary differential equations (ODE).
+It can also be used to solve systems of ordinary differential
+equations (ODE).  As with other GridPACK math classes,
+\textbf{\texttt{DAESolver}} has real and complex versions.  The
+complex version is discussed here, but the real version behaves
+identically.
 
 At it's simplest, a \texttt{\textbf{DAESolver}} is instantiated with
 the constructor
+
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-DAESolver(const parallel::Communicator& comm, 
-          const int local_size,
-          JacobianBuilder& jbuilder,
-          FunctionBuilder& fbuilder)
+    DAESolver(const parallel::Communicator& comm, 
+              const int local_size,
+              DAESolver::JacobianBuilder& jbuilder,
+              DAESolver::FunctionBuilder& fbuilder)
 \end{Verbatim}
 }
+
 \texttt{\textbf{DAESolver}}, like \texttt{\textbf{NonlinearSolver}},
-requires some helper functions.  
+requires some helper functions.  A helper function can be an actual
+function or a functor.  
 
-The solution of this system requires the Jacobian of $\mathbf{F}$
-\begin{equation}
-  \mathbf{J} ~ = ~ \frac{\partial \mathbf{F}}{\partial \mathbf{u}}
-\end{equation}
+The system Jacobian matrix is computed by the
+\texttt{\textbf{DAESolver::JacobianBuilder}} helper which requires the
+following arguments:
 
-Initialization
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    (const double& time, 
+     const DAESolver::VectorType& x, const DAESolver::VectorType& xdot, 
+     const double& shift, DAESolver::MatrixType& J)
+\end{Verbatim}
+}
 
-Solution
+where the vectors \textbf{\texttt{x}} and \textbf{\texttt{xdot}} are
+the system variable state and its time derivative at
+\textbf{\texttt{time}}.
 
+The \texttt{\textbf{DAESolver::FunctionBuilder}} helper is
+used to compute $ \mathbf{F} \left( t, \mathbf{u},  \mathbf{\dot{u}}
+  \right)$ and requires these arguments: 
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    (const double& time, 
+     const DAESolver::VectorType& x, const DAESolver::VectorType& xdot, 
+     DAESolver::VectorType& F)
+\end{Verbatim}
+}
+
+It's usually best to create a functor class or struct with appropriate
+methods and the necessary data for these helpers. For example,
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    struct MyDAEHelper {
+       void operator() (const double& time, 
+                        const DAESolver::VectorType& X, 
+                        const DAESolver::VectorType& Xdot, 
+                        const double& shift, DAESolver::MatrixType& J);
+       void operator() (const double& time, 
+                        const DAESolver::VectorType& X, 
+                        const DAESolver::VectorType& Xdot, 
+                        DAESolver::VectorType& F);
+    };
+\end{Verbatim}
+}
+
+which can be used to create a \texttt{\textbf{DAESolver}} like this.  
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    gridpack::parallel::Communicator comm;
+    MyDAEHelper myhelper;
+    DAESolver::JacobianBuilder jbuilder = boost::ref(myhelper);
+    DAESolver::FunctionBuilder fbuilder = boost::ref(myhelper);
+    DAESolver solver(comm, lrows, jbuilder, fbuilder);
+\end{Verbatim}
+}
+
+To use the solver, first it must be initialized, which is done with
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    DAESolver::initialize(const double& t0,
+                          const double& deltat0,
+                          DAESolver::VectorType& x0);
+\end{Verbatim}
+}
+
+where \textbf{\texttt{t0}} and \textbf{\texttt{deltat0}} are the
+initial time and time step and \textbf{\texttt{x0}} is the initial
+state.  The system is then solved with
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    DAESolver::solve(double& maxtime, int& maxsteps);
+\end{Verbatim}
+}
+
+This advances the time integration until \textbf{\texttt{maxtime}} is
+reached or \textbf{\texttt{maxsteps}} time steps are completed.  A
+subsequent call to \textbf{\texttt{solve}} will continue where the
+previous call left off. 
 
 In addition to the Jacobian and function builder helper functions, the
 \texttt{\textbf{DAESolver}} accepts functions executed before and
-after each time step.  
+after each time step that can be used to manipulate, or just report,
+the evolution \texttt{\textbf{DAESolver}} time integration.  These
+functions take the current time as the only argument.  To illustrate
+ways to use these, \textbf{\texttt{MyDAEHelper}} might be modified to
+add some facilities and pass those to the solver: 
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    struct MyDAEHelper {
+       [...]
+       void operator() (const double& time); 
+       static void postTimeStep (const double& time);
+    };
+    DAESolver::StepFunction sfunc;
+    sfunc = boost::ref(myhelper);
+    solver.preStep(sfunc);
+    sfunc = &MyDAEHelper::postTimeStep;
+    solver.postStep(sfunc);
+\end{Verbatim}
+}
 
 The evolution of a \texttt{\textbf{DAESolver}} time integration can be
 manipulated with the use of events.  Events can be used to modify the
@@ -616,9 +721,9 @@ used when creating the solver using this constructor:
 \begin{Verbatim}[fontseries=b]
 DAESolver(const parallel::Communicator& comm, 
           const int local_size,
-          JacobianBuilder& jbuilder,
-          FunctionBuilder& fbuilder,
-          EventManagerPtr eman);
+          DAESolver::JacobianBuilder& jbuilder,
+          DAESolver::FunctionBuilder& fbuilder,
+          DAESolver::EventManagerPtr eman);
 \end{Verbatim}
 }
 
