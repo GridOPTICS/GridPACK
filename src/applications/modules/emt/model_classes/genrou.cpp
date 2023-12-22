@@ -2,22 +2,15 @@
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
 
+/**
+   Sauer and Pai - Power System Dynamics and Stability book
+   Eqs. 3.148 - 3.159 - Page 42 with the following modifications
+   - Stator flux differential equations ignored
+   - Additional algebraic equations for machine three-phase currents
+   - Speed sensitivity for mechanical torque Tm
+*/
 Genrou::Genrou(void)
 {
-  delta = 0.0;
-  dw    = 0.0;
-  Eqp   = 0.0;
-  Psidp = 0.0;
-  Psiqp = 0.0;
-  Edp   = 0.0;
-
-  ddelta = 0.0;
-  ddw    = 0.0;
-  dEqp   = 0.0;
-  dPsidp = 0.0;
-  dPsiqp = 0.0;
-  dEdp   = 0.0;
-
   nxgen   = 9; // Number of variables for this model
 
 }
@@ -36,12 +29,15 @@ void Genrou::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 {
   BaseEMTGenModel::load(data,idx); // load parameters in base generator model
 
+  gridpack::ComplexType Zsource;
+  
   // load parameters for the model type
   data->getValue(BUS_NUMBER, &bid);
     // load parameters for the model type
   if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &H, idx)) H = 0.0; // H
   if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &D, idx)) D = 0.0; // D
-  if (!data->getValue(GENERATOR_RESISTANCE, &Ra, idx)) Ra=0.0; // Ra
+  data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
+  Ra = real(Zsource);
   if (!data->getValue(GENERATOR_XD, &Xd, idx)) Xd=0.0; // Xd
   if (!data->getValue(GENERATOR_XQ, &Xq, idx)) Xq=0.0; // Xq
   if (!data->getValue(GENERATOR_XDP, &Xdp, idx)) Xdp=0.0; // Xdp
@@ -74,9 +70,6 @@ void Genrou::init(gridpack::ComplexType* xin)
   Pg = pg/mbase;
   Qg = qg/mbase;
 
-  // Machine mechanical power input
-  Pmech = Pg;
-
   VD = p_Vm0*cos(p_Va0);
   VQ = p_Vm0*sin(p_Va0);
 
@@ -91,15 +84,15 @@ void Genrou::init(gridpack::ComplexType* xin)
   I = conj(S/V);
   double Im = abs(I);
   double Ia = arg(I);
+  
   double ia,ib,ic;
-
   ia = Im*sin(OMEGA_S*p_time + Ia);
   ib = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE);
   ic = Im*sin(OMEGA_S*p_time + Ia + TWOPI_OVER_THREE);
 
-  iabc[0] = ia;
-  iabc[1] = ib;
-  iabc[2] = ic;
+  iabc[0] = ia*mbase/sbase;
+  iabc[1] = ib*mbase/sbase;
+  iabc[2] = ic*mbase/sbase;
 
   vabc[0] = p_va;
   vabc[1] = p_vb;
@@ -121,55 +114,48 @@ void Genrou::init(gridpack::ComplexType* xin)
   abc2dq0(vabc,p_time,theta,vdq0);
   abc2dq0(iabc,p_time,theta,idq0);
   
-  double Eppr = real(E);
-  double Eppi = imag(E);
-
-  double eabc[3]; // Internal voltage in network reference frame
-  double edq0[3]; // Internal voltage in dq axis reference frame
-
-  eabc[0] = Em*sin(OMEGA_S*p_time + Eang);
-  eabc[1] = Em*sin(OMEGA_S*p_time + Eang - TWOPI_OVER_THREE);
-  eabc[2] = Em*sin(OMEGA_S*p_time + Eang + TWOPI_OVER_THREE);
-
-  abc2dq0(eabc,p_time,theta,edq0);
-
-  double Vd, Vq, Id, Iq;
+  double Vd, Vq, V0, Id, Iq, I0;
 
   Vd = vdq0[0];
   Vq = vdq0[1];
+  V0 = vdq0[2];
+
   Id = idq0[0];
   Iq = idq0[1];
+  I0 = idq0[2];
+
+  psid = Ra*Iq + Vq;
+  psiq = -Ra*Id - Vd;
+  psi0 = 0.0;
+
+  dw = dw0;
+
+  psi1d = psid + Xl*Id;
+  Eqp   = psi1d + (Xdp - Xl)*Id;
+
+  psi2q = psiq + Xl*Iq;
+  Edp = -psi2q - (Xqp - Xl)*Iq;
+
+  TM = psid*Iq - psiq*Id;
+
+  double param, LadIfd;
+  double dpsi1ddt;
+
+  param = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
   
-  double Psidpp = Vq;
-  double Psiqpp = -Vd;
+  dpsi1ddt = psi1d + (Xdp - Xl)*Id - Eqp;
 
-  // q-axis transient voltage
-  Eqp = Vq + (Xdp - Xdpp)*Id;
+  LadIfd = -Eqp - (Xd - Xdp)*(Id - param*dpsi1ddt);
 
-  // d-axis transient voltage
-  Edp = Vd - (Xqp - Xdpp)*Iq;
-
-  // d-axis flux
-  Psidp = Eqp - (Xdp - Xl)*Id;
-
-  // q-axis flux
-  Psiqp = Edp + (Xqp - Xl)*Iq;
-
-  // Field voltage
-  Efd = Eqp + (Xd - Xdp)*Id;
-
-  // Field current
-  LadIfd = Efd;
-
-  double Telec = Psidpp*Iq - Psiqpp*Id;
-
+  Efd = -LadIfd;
+  
   // Initialized state variables
-  x[0] = delta;
-  x[1] = dw;
-  x[2] = Eqp;
-  x[3] = Psidp;
-  x[4] = Psiqp;
-  x[5] = Edp;
+  x[0] = Eqp;
+  x[1] = psi1d;
+  x[2] = Edp;
+  x[3] = psi2q;
+  x[4] = delta;
+  x[5] = dw;
   x[6] = iabc[0];
   x[7] = iabc[1];
   x[8] = iabc[2];
@@ -208,22 +194,22 @@ void Genrou::setValues(gridpack::ComplexType *values)
   gridpack::ComplexType *x = values+offsetb; // generator array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    delta   = real(x[0]);
-    dw      = real(x[1]);
-    Eqp     = real(x[2]);
-    Psidp   = real(x[3]);
-    Psiqp   = real(x[4]);
-    Edp     = real(x[5]);
+    Eqp   = real(x[0]);
+    psi1d   = real(x[1]);
+    Edp     = real(x[2]);
+    psi2q = real(x[3]);
+    delta = real(x[4]);
+    dw = real(x[5]);
     iabc[0] = real(x[6]);
     iabc[1] = real(x[7]);
     iabc[2] = real(x[8]);
   } else if(p_mode == XDOTVECTOBUS) {
-    ddelta   = real(x[0]);
-    ddw      = real(x[1]);
-    dEqp     = real(x[2]);
-    dPsidp   = real(x[3]);
-    dPsiqp   = real(x[4]);
-    dEdp     = real(x[5]);
+    dEqp   = real(x[0]);
+    dpsi1d   = real(x[1]);
+    dEdp     = real(x[2]);
+    dpsi2q = real(x[3]);
+    ddelta = real(x[4]);
+    ddw = real(x[5]);
     diabc[0] = real(x[6]);
     diabc[1] = real(x[7]);
     diabc[2] = real(x[8]);
@@ -249,63 +235,63 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
     tempq1 = (Xdpp - Xl)/(Xqp - Xl);
     tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
 
-    double Psidpp =  tempd1*Eqp + tempd2*Psidp;
-    double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
-    double Psipp  = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
+    vabc[0] = p_va;
+    vabc[1] = p_vb;
+    vabc[2] = p_vc;
 
-    double edq0[3];
+    // Network to machine reference frame transformation
+    abc2dq0(vabc,p_time,theta,vdq0);
+  
+    double Vd, Vq, V0, Id, Iq, I0;
 
-    edq0[0] = -Psiqpp*(1 + dw);
-    edq0[1] =   Psidpp*(1 + dw);
-    edq0[2] = 0.0;
-
-    abc2dq0(iabc,p_time,theta,idq0);
-
-    double Id = idq0[0];
-    double Iq = idq0[1];
-    
-    // Electrical torque
-    double Telec = Psidpp*Iq - Psiqpp*Id;
-
-    // RESIDUAL_EVAL for state 1 to 6
-    // Machine rotor angle
-    f[0] = dw * OMEGA_S - ddelta;
-
-    // Speed
-    f[1] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; // Pmech can be called from Governor
-    //    values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) - Telec) - ddw; // Ignoring speed effects
-
-    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
-      * (-Psidp - (Xdp - Xl) * Id + Eqp);
-    LadIfd = Eqp  + (Xd - Xdp) * (Id + TempD);
-    // Q-axis transient EMF
-    f[2] = (Efd - LadIfd) / Tdop - dEqp; 
+    Vd = vdq0[0];
+    Vq = vdq0[1];
+    V0 = vdq0[2];
 
     
-    // D-axis transient flux
-    f[3] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
+    //    psid =  Ra*Iq + Vq;
+    //    psiq = -Ra*Id - Vd;
+
+    psid = Vq;
+    psiq = -Vd;
+    psi0 = 0.0;
     
-    // Q-axis transient flux
-    f[4] = (-Psiqp + (Xqp - Xl) * Iq + Edp) / Tqopp - dPsiqp;
+    Id = (psid - tempd1*Eqp - tempd2*psi1d)/-Xdpp;
+    Iq = (psiq + tempq1*Edp - tempq2*psi2q)/-Xdpp;
+    I0 = psi0/-Xl;
 
-    // D-axis transient EMF
-    double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (-Psiqp + (Xqp - Xl) * Iq + Edp);
-    f[5] = (Xdpp*Iq - Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dEdp;
+    idq0[0] = Id;
+    idq0[1] = Iq;
+    idq0[2] = I0;
 
-    double eabc[3];
+    double dpsi1ddt;
+    double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
 
-    dq02abc(edq0,p_time,theta,eabc);
+    dpsi1ddt = -psi1d + Eqp - (Xdp - Xl)*Id;
 
-    if(abs(L) > 1e-6) {
-      // f = di_dt - idot => L^-1*(e - R*i - v) - idot
-      f[6] = (eabc[0] - Ra*iabc[0] - p_va)/L - diabc[0];
-      f[7] = (eabc[1] - Ra*iabc[1] - p_vb)/L - diabc[1];
-      f[8] = (eabc[2] - Ra*iabc[2] - p_vc)/L - diabc[2];
-    } else {
-      f[6] = (eabc[0] - Ra*iabc[0] - p_va);
-      f[7] = (eabc[1] - Ra*iabc[1] - p_vb);
-      f[8] = (eabc[2] - Ra*iabc[2] - p_vc);
-    }      
+    f[0] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop;
+
+    f[1] = dpsi1ddt/Tdopp;
+
+    double dpsi2qdt;
+    double param2 = (Xqp - Xdpp)/((Xqp - Xl)*(Xqp - Xl));
+
+    dpsi2qdt = -psi2q - Edp - (Xqp - Xl)*Iq;
+
+    f[2] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop;
+
+    f[3] = dpsi2qdt/Tqopp;
+
+    f[4] = OMEGA_S*dw;
+
+    f[5] = 1 / (2 *H) * ((TM - D*dw) - (psid*Iq - psiq*Id)); 
+
+    double igen[3];
+    dq02abc(idq0,p_time,theta,igen);
+
+    f[6] = igen[0]*mbase/sbase - iabc[0];
+    f[7] = igen[1]*mbase/sbase - iabc[1];
+    f[8] = igen[2]*mbase/sbase - iabc[2];
   }
 
 }
@@ -329,7 +315,7 @@ void Genrou::getCurrent(double *ia, double *ib, double *ic)
  */
 void Genrou::getCurrentGlobalLocation(int *i_gloc)
 {
-  *i_gloc = p_gloc + 6;
+  *i_gloc = p_gloc + 9;
 }
 
 

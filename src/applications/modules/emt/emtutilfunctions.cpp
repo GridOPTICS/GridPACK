@@ -42,13 +42,13 @@ void abc2dq0(double *xabc,double t,double theta,double *xdq0)
  */
 void dq02abc(double *xdq0,double t,double theta,double *xabc)
 {
-  double omegat = OMEGA_S*t;
+  double omegat = OMEGA_S*t + theta;
   double omegat_minus = omegat - 2.0*PI/3.0;
   double omegat_plus = omegat + 2.0*PI/3.0;
 
-  xabc[0] = sin(omegat)*xabc[0]       + cos(omegat)*xdq0[1]       + xdq0[2];
-  xabc[1] = sin(omegat_minus)*xabc[0] + cos(omegat_minus)*xdq0[1] + xdq0[2];
-  xabc[0] = sin(omegat_plus)*xabc[0]  + cos(omegat_plus)*xdq0[1]  + xdq0[2];  
+  xabc[0] = sin(omegat)*xdq0[0]       + cos(omegat)*xdq0[1]       + xdq0[2];
+  xabc[1] = sin(omegat_minus)*xdq0[0] + cos(omegat_minus)*xdq0[1] + xdq0[2];
+  xabc[2] = sin(omegat_plus)*xdq0[0]  + cos(omegat_plus)*xdq0[1]  + xdq0[2];  
 }
 
 
