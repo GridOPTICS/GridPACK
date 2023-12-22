@@ -129,8 +129,8 @@ class Genrou: public BaseEMTGenModel
   double LadIfd; // Field current
   
   // Inputs
-  double Efd; // Field voltage (from exciter)
-  double Pmech; // Mechanical power (from governor)
+  double Efd; // Field voltage (from exciter if available otherwise constant)
+  double TM; // Mechanical torque (from governor if avaiable otherwise constant)
 
   // Voltages in network reference frame
   double VD, VQ;
@@ -141,8 +141,11 @@ class Genrou: public BaseEMTGenModel
   double vabc[3]; // terminal voltage in abc reference frame
 
   // Generator variables and their derivatives
-  double delta, dw, Eqp, Psidp, Psiqp, Edp, iabc[3]; 
-  double ddelta, ddw, dEqp, dPsidp, dPsiqp, dEdp, diabc[3];
+  double psid,psiq,psi0; 
+  double psi1d,psi2q,Edp,Eqp,delta,dw;
+  double iabc[3];
+  
+  double dpsid, dpsiq, dpsi0,ddelta, ddw, dEqp, dpsi1d, dpsi2q, dEdp, diabc[3];
 
   int bid;
 };
