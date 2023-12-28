@@ -11,8 +11,23 @@ variables:
   KUBERNETES_MEMORY_LIMIT: "8Gi"
 
 
+.multi-distro:
+
+  parallel:
+
+    matrix:
+      - BASE_IMAGE: rockylinux:9
+      - BASE_IMAGE: ubuntu:22.04
+
+  variables:
+
+    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE%%:*}-${CI_COMMIT_REF_NAME}"
+
+
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
 build-container:
+
+  extends: .multi-distro
 
   timeout: 5 hours
 
@@ -25,10 +40,11 @@ build-container:
 
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
+      --build-arg BASE_IMAGE=${BASE_IMAGE}
       --build-arg http_proxy=$http_proxy
       --build-arg https_proxy=$https_proxy
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}"
+      --destination "${IMAGE_PATH}"
 
   rules:
 
@@ -39,7 +55,9 @@ build-container:
 
 build-gridpack:
 
-  image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
+  extends: .multi-distro
+
+  image: "${IMAGE_PATH}"
 
   variables:
 
@@ -61,7 +79,9 @@ build-gridpack:
 
 test-gridpack:
 
-  image: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
+  extends: .multi-distro
+
+  image: ${IMAGE_PATH}
 
   needs: [ build-gridpack ]
 

@@ -1,8 +1,7 @@
-FROM ubuntu:22.04
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
-RUN apt update \
-  && apt upgrade -y \
-  && apt install -y wget build-essential git python3.11 python3-pip libopenmpi-dev cmake pkg-config
+RUN install_environment_packages.sh
 
 ENV GP_EXT_DEPS=/gridpack-dependencies
 ENV BOOST_VERSION "1.78.0"
