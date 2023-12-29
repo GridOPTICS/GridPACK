@@ -10,14 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2023-08-28 13:18:39 d3g096
+# Last Change: 2023-12-13 07:00:00 d3g096
 # -------------------------------------------------------------
 
 
 
 # This is used to specify a time out for GridPACK unit tests. It's 5
 # seconds by default, but may need to be longer on some platforms.
-if (NOT GRIDPACK_TEST_TIMEOUT) 
+if (NOT GRIDPACK_TEST_TIMEOUT)
   set (GRIDPACK_TEST_TIMEOUT 120
     CACHE STRING "Time out for GridPACK unit tests.")
 endif ()
@@ -57,11 +57,11 @@ endmacro()
 # This provides a way to consistly add a test that uses Boost::Test
 # and can be executed on one processor without ${MPI_EXEC}.
 # -------------------------------------------------------------
-function(gridpack_add_serial_unit_test test_name test_program)
+function(gridpack_add_serial_unit_test test_name test_target)
   set(the_test_name "${test_name}_serial")
-  add_test("${the_test_name}" "${test_program}")
+  add_test("${the_test_name}" "${test_target}")
   set_tests_properties("${the_test_name}"
-    PROPERTIES 
+    PROPERTIES
     PASS_REGULAR_EXPRESSION "No errors detected"
     FAIL_REGULAR_EXPRESSION "failure detected"
     TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
@@ -76,11 +76,11 @@ endfunction(gridpack_add_serial_unit_test)
 # on one processor without using ${MPI_EXEC}. Success or failure is
 # based on the exit code.
 # -------------------------------------------------------------
-function(gridpack_add_serial_run_test test_name test_program test_input)
+function(gridpack_add_serial_run_test test_name test_target test_input)
   set(the_test_name "${test_name}_serial")
-  add_test("${the_test_name}" "${test_program}" ${test_input})
+  add_test("${the_test_name}" "${test_target}" ${test_input})
   set_tests_properties("${the_test_name}"
-    PROPERTIES 
+    PROPERTIES
     TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
     )
   set_tests_ldpath("${the_test_name}")
@@ -92,17 +92,16 @@ endfunction(gridpack_add_serial_run_test)
 function(gridpack_add_parallel_unit_test test_name test_target)
   set(the_test_name "${test_name}_parallel")
   if (TARGET ${test_target})
-    get_property(test_program TARGET ${test_target} PROPERTY LOCATION)
     add_test("${the_test_name}"
-      ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} ${test_program} ${MPIEXEC_POSTFLAGS})
+      ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} ${test_target} ${MPIEXEC_POSTFLAGS})
     set_tests_properties("${the_test_name}"
-      PROPERTIES 
+      PROPERTIES
       PASS_REGULAR_EXPRESSION "No errors detected"
       FAIL_REGULAR_EXPRESSION "failure detected"
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
       )
     set_tests_ldpath("${the_test_name}")
-  else() 
+  else()
     message(FATAL_ERROR "gridpack_add_parallel_unit_test: target argument not target")
   endif()
 endfunction(gridpack_add_parallel_unit_test)
@@ -117,11 +116,10 @@ endfunction(gridpack_add_parallel_unit_test)
 function(gridpack_add_parallel_run_test test_name test_target test_input)
   set(the_test_name "${test_name}_parallel")
   if (TARGET ${test_target})
-    get_property(test_program TARGET ${test_target} PROPERTY LOCATION)
     add_test("${the_test_name}"
-      ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} ${test_program} ${MPIEXEC_POSTFLAGS} ${test_input})
+      ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} ${test_target} ${MPIEXEC_POSTFLAGS} ${test_input})
     set_tests_properties("${the_test_name}"
-      PROPERTIES 
+      PROPERTIES
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
       )
     set_tests_ldpath("${the_test_name}")
@@ -138,12 +136,12 @@ endfunction(gridpack_add_parallel_run_test)
 # same executable
 # -------------------------------------------------------------
 
-function(gridpack_add_unit_test test_name test_program)
+function(gridpack_add_unit_test test_name test_target)
   if (NOT USE_PROGRESS_RANKS)
-    gridpack_add_serial_unit_test("${test_name}" ${test_program})
+    gridpack_add_serial_unit_test("${test_name}" ${test_target})
   endif()
-  if (MPIEXEC) 
-    gridpack_add_parallel_unit_test("${test_name}" ${test_program})
+  if (MPIEXEC)
+    gridpack_add_parallel_unit_test("${test_name}" ${test_target})
   endif ()
 endfunction(gridpack_add_unit_test)
 
@@ -159,7 +157,7 @@ function(gridpack_add_run_test test_name test_target test_input)
   if (NOT USE_PROGRESS_RANKS)
     gridpack_add_serial_run_test("${test_name}" ${test_target}  "${test_input}")
   endif()
-  if (MPIEXEC) 
+  if (MPIEXEC)
     gridpack_add_parallel_run_test("${test_name}" ${test_target}  "${test_input}")
   endif ()
 endfunction(gridpack_add_run_test)

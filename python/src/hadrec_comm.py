@@ -6,13 +6,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-08-25 08:15:27 d3g096
+# Last Change: 2022-11-03 14:30:43 d3g096
 # -------------------------------------------------------------
 
 import sys, os
 import gridpack
 import gridpack.hadrec
 import gridpack.dynamic_simulation
+from mpi4py import MPI
 
 # -------------------------------------------------------------
 # variable initialization
@@ -33,8 +34,9 @@ inname = sys.argv[1]
 # -------------------------------------------------------------
 # main program
 # -------------------------------------------------------------
+the_comm = MPI.COMM_WORLD
 
-env = gridpack.Environment()
+env = gridpack.Environment(the_comm)
 
 comm = gridpack.Communicator()
 
@@ -141,15 +143,10 @@ if (btest_2dynasimu):
             print (isteps, ob_vals)
         isteps = isteps + 1
 
-# See if we could do it again, if we wanted to
-hadapp = None
-hadapp = gridpack.hadrec.Module()
-hadapp.solvePowerFlowBeforeDynSimu(inname)
-
 # It's important to force deallocation order here
 hadapp = None
+comm = None
 env = None
 
-hadapp = gridpack.hadrec.Module()
-
 print('----------gridpack test finished-----------------') 
+

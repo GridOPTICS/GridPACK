@@ -1,11 +1,7 @@
-[submodule "cmake-jedbrown"]
-	path = cmake-jedbrown
-	url = https://github.com/wperkins/cmake-modules.git
-	branch = master
 [submodule "src/ga"]
 	path = src/ga
-	url = https://github.com/wperkins/ga.git
-        branch = for-gridpack
+	url = https://github.com/GlobalArrays/ga.git
+	branch = develop
 [submodule "python/pybind11"]
 	path = python/pybind11
 	url = https://github.com/pybind/pybind11.git

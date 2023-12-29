@@ -10,17 +10,10 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2023-08-28 13:46:15 d3g096
 # -------------------------------------------------------------
 
-# 
+#
 cmake_minimum_required (VERSION 3.5.0)
-
-# This allows the use of LOCATION(target)
-if (POLICY CMP0026)
-  cmake_policy(SET CMP0026 OLD)
-endif (POLICY CMP0026)
-
 
 project (GridPACK)
 
@@ -32,15 +25,13 @@ set (GridPACK_VERSION_PATCH 0)
 enable_language(CXX)
 
 # where to look for special .cmake files
-list (APPEND CMAKE_MODULE_PATH 
+list (APPEND CMAKE_MODULE_PATH
     "${GridPACK_SOURCE_DIR}/cmake-modules"
-    "${GridPACK_SOURCE_DIR}/../cmake-jedbrown"
 )
 include(GridPACK)
 
 # add user configuration options
 option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
-option (USE_OLD_PETSC "Use older versions of PETSc" OFF)
 if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
@@ -48,7 +39,7 @@ endif()
 # add GOSS directory
 option (GOSS_DIR "Point to directory with GOSS files" OFF)
 if (GOSS_DIR)
-  add_definitions (-DUSE_GOSS=1) 
+  add_definitions (-DUSE_GOSS=1)
   include_directories(AFTER ${GOSS_DIR}/include/activemq-cpp-3.8.4)
   set(GOSS_INCLUDE "${GOSS_DIR}/include/activemq-cpp-3.8.4")
   set (GOSS_LIBRARY "${GOSS_DIR}/lib/libactivemq-cpp.a")
@@ -114,20 +105,13 @@ endif()
 # use for cross-compilation situations
 option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
 
-# should cplex or gurobi be used
-option(USE_CPLEX
-  "Use optimization software CPLEX libraries." OFF)
-
-option(USE_GUROBI
-  "Use optimization software GUROBI libraries." OFF)
-
-option(USE_GLPK
-  "Use GNU linear programming kit optimization software library." OFF)
-
 # BUILD_SHARED_LIBS is a CMake option and is understood by the CMake build
 # system, independently of declaring it here
 option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
+
+option(ENABLE_ENVIRONMENT_FROM_COMM
+  "Create GridPACK environment from communicator" OFF)
 
 
 # turn testing on/off
@@ -175,14 +159,14 @@ include_directories(AFTER ${MPI_CXX_INCLUDE_PATH})
 #  set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 #endif()
 
-# This is here for cmake version 2.6 
+# This is here for cmake version 2.6
 if (NOT MPI_LIBRARY OR NOT MPI_EXTRA_LIBRARY)
 # Punt if MPI_LIBRARY or MPI_EXTRA_LIBRARY not found
   set(MPI_CXX_LIBRARIES "")
 else()
   if (NOT MPI_CXX_LIBRARIES)
-   set(MPI_CXX_LIBRARIES 
-     ${MPI_LIBRARY} 
+   set(MPI_CXX_LIBRARIES
+     ${MPI_LIBRARY}
      ${MPI_EXTRA_LIBRARY}
    )
   endif()
@@ -200,7 +184,7 @@ message(STATUS "MPI_EXTRA_LIBRARY: ${MPI_EXTRA_LIBRARY}")
 
 
 # Perkins found out that this was exactly the wrong thing to do:
-# 
+#
 # set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 # set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
 # set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
@@ -213,12 +197,12 @@ message(STATUS "MPI_EXTRA_LIBRARY: ${MPI_EXTRA_LIBRARY}")
 # real problems, but there are so many of them they obscure errors
 # that are causing identifiable problems
 
-if (CMAKE_COMPILER_IS_GNUCXX) 
+if (CMAKE_COMPILER_IS_GNUCXX)
   add_definitions(
     -pedantic
     -Wno-write-strings
-    -Wno-long-long 
-    -Wno-sign-compare 
+    -Wno-long-long
+    -Wno-sign-compare
     -Wno-unused-variable
     -Wno-unused-but-set-variable
     -Wno-maybe-uninitialized
@@ -266,7 +250,7 @@ endif()
 option(BOOST_BUILD_PYTHON "Include Boost::Python in the Boost build" OFF)
 
 # These are the Boost libraries required here
-  
+
 set(BOOST_BUILD_LIBS "")
 list(APPEND BOOST_BUILD_LIBS mpi serialization random filesystem system)
 
@@ -300,16 +284,23 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
-if (NOT USE_OLD_PETSC)
+
 include(FindPkgConfig)
-# Include petsc package path in pkg_config_path                                                                      
+
+if (NOT PKG_CONFIG_FOUND)
+  message(FATAL_ERROR "The pkg-config facility is required to build GridPACK")
+endif()
+
+if (NOT PETSC_DIR)
+  message(FATAL_ERROR "PETSC_DIR is not set, do so with -D PETSC_DIR=...")
+endif()
+
+# Include petsc package path in pkg_config_path
 set(ENV{PKG_CONFIG_PATH}
-${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig                         
+  ${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig
 )
 pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
-else()
-find_package (PETSc REQUIRED)
-endif()
+
 message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (NOT USE_OLD_PETSC)
@@ -323,7 +314,7 @@ petscconf.h")
   endif()
 
   # checks
-  # define PETSc variables                                                                                           
+  # define PETSc variables
   include(CheckSymbolExists)
   check_symbol_exists(PETSC_HAVE_PARMETIS ${petscconf} PETSC_HAVE_PARMETIS)
   check_symbol_exists(PETSC_USE_REAL_DOUBLE ${petscconf} PETSC_USE_REAL_DOUBLE)
@@ -345,7 +336,7 @@ else()
 
   message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
 
-  # checks 
+  # checks
 
   if (NOT PETSC_HAVE_MPI)
     message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
@@ -357,13 +348,13 @@ endif()
 # (--with-scalar-type=real).  This is to determine what that
 # underlying type is.
 
-if (PETSC_USE_REAL_DOUBLE) 
+if (PETSC_USE_REAL_DOUBLE)
   message(STATUS "PETSc installation is double precision (--with-precision=double) -- good")
 else()
   message(FATAL_ERROR "PETSc installation is not double precision (--with-precision=double)")
 endif()
 
-if (PETSC_USE_COMPLEX) 
+if (PETSC_USE_COMPLEX)
   message (STATUS "PETSc installation uses complex type (--with-scalar-type=complex)")
 else()
   message (STATUS "PETSc installation uses real type (--with-scalar-type=real)")
@@ -374,7 +365,7 @@ if (PETSC_CLANGUAGE_Cxx)
   message (STATUS "PETSc installation uses C++ (--with-clanguage=c++) -- we can work with that.")
 endif()
 
-if (PETSC_HAVE_SUPERLU_DIST) 
+if (PETSC_HAVE_SUPERLU_DIST)
   set(GRIDPACK_MATSOLVER_PKG "superlu_dist")
   message(STATUS "PETSc parallel LU linear solver will be from SuperLU_dist")
 elseif (PETSC_HAVE_MUMPS)
@@ -387,7 +378,7 @@ endif()
 
 # -------------------------------------------------------------
 # ParMETIS
-# 
+#
 # Only versions > 4.0 have been used
 # -------------------------------------------------------------
 message(STATUS "Checking ParMETIS ...")
@@ -409,32 +400,14 @@ if(BUILD_GA)
 else(BUILD_GA)
   message(STATUS "Checking GA ...")
   find_package(GA REQUIRED)
+  if (ENABLE_ENVIRONMENT_FROM_COMM AND NOT GA_COMM_FOUND)
+    message(WARNING "Initializing GridPACK environment from a communicator enabled
+but GA version does not support this")
+endif()
+
 endif(BUILD_GA)
 message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
 message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")
-
-# -------------------------------------------------------------
-#  Add optimization libraries, if requested
-# -------------------------------------------------------------
-# add the CPLEX library?
-if( USE_CPLEX)
-  message(STATUS "Checking cplex ...")
-  find_package(CPLEX REQUIRED)
-endif( USE_CPLEX)
-
-# add the GUROBI library?
-IF( USE_GUROBI)
-  message(STATUS "Checking Gurobi ...")
-  find_package(GUROBI REQUIRED)
-endif (USE_GUROBI)
-
-if(USE_GLPK)
-  message(STATUS "Checking glpk ...")
-  find_package(GLPK REQUIRED)
-endif(USE_GLPK)
-
-#message(STATUS "Checking concert ...")
-#find_package(CONCERT REQUIRED)
 
 # -------------------------------------------------------------
 # Doxygen
@@ -451,7 +424,7 @@ if(DOXYGEN_FOUND)
       COMMENT "Generating API documentation with Doxygen" VERBATIM
       )
 
-    
+
 
     # The custom target "devdoc" generates "developer"
     # documentation. This has all the nitty gritty details and code
@@ -531,8 +504,6 @@ add_subdirectory(analysis)
 add_subdirectory(partition)
 add_subdirectory(factory)
 add_subdirectory(mapper)
-add_subdirectory(expression)
-add_subdirectory(optimization)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/dynamic_simulation_full_y)
 add_subdirectory(applications/contingency_analysis)
@@ -541,16 +512,12 @@ add_subdirectory(applications/state_estimation)
 add_subdirectory(applications/kalman_ds)
 add_subdirectory(applications/dynamic_simulation_dae)
 add_subdirectory(applications/hadrec)
-add_subdirectory(applications/development/powerflow2)
-add_subdirectory(applications/development/dynamic_simulation_reduced_y)
-add_subdirectory(applications/development/dynamic_simulation_implicit)
 add_subdirectory(applications/development/wind_dsa)
 add_subdirectory(applications/examples/hello_world)
 add_subdirectory(applications/examples/resistor_grid)
 add_subdirectory(applications/examples/powerflow)
 add_subdirectory(applications/examples/contingency_analysis)
 add_subdirectory(applications/modules/powerflow)
-add_subdirectory(applications/modules/dynamic_simulation)
 add_subdirectory(applications/modules/dynamic_simulation_full_y)
 add_subdirectory(applications/modules/state_estimation)
 add_subdirectory(applications/modules/kalman_ds)
@@ -578,7 +545,7 @@ add_subdirectory(lib)
 
 
 INCLUDE(InstallRequiredSystemLibraries)
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY 
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
   "An open source toolkit for developing power grid simulation applications for high performance computing architectures")
 set(CPACK_PACKAGE_DESCRIPTION "GridPACK(tm) is a software framework consisting of a set of modules designed to simplify the development of programs that model the power grid and run on parallel, high performance computing platforms. The modules are available as a library and consist of components for setting up and distributing power grid networks, support for modeling the behavior of individual buses and branches in the network, converting the network models to the corresponding algebraic equations, and parallel routines for manipulating and solving large algebraic systems. Additional modules support input and output as well as basic profiling and error management. ")
 set(CPACK_PACKAGE_VENDOR "")
@@ -586,11 +553,11 @@ set(CPACK_PACKAGE_CONTACT "william.perkins@pnnl.gov")
 set(CPACK_PACKAGE_VERSION_MAJOR "${GridPACK_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${GridPACK_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${GridPACK_VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION 
+set(CPACK_PACKAGE_VERSION
   "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-set(CPACK_PACKAGE_FILE_NAME 
+set(CPACK_PACKAGE_FILE_NAME
   "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME 
+set(CPACK_SOURCE_PACKAGE_FILE_NAME
   "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
 
 # set(CPACK_PACKAGING_INSTALL_PREFIX "")
@@ -604,7 +571,7 @@ set(CPACK_SET_DESTDIR true)
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_SECTION "science")
 set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
-set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+set(CPACK_DEBIAN_PACKAGE_DEPENDS
   "libga-dev (>=5.3), libpetsc3.6.2-dev (>= 3.6.2), libparmetis-dev (>=4.0.3), libboost-mpi-dev (>=1.58.0), libboost-all-dev (>=1.58.0)"
   )
 

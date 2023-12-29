@@ -54,13 +54,15 @@ void Environment::PrintStatus()
 //  class Environment
 // -------------------------------------------------------------
 
-Environment::Environment(int argc, char **argv):p_boostEnv(argc,argv),clparser(argc,argv)
+Environment::Environment(int argc, char **argv):p_boostEnv(argc,argv),
+  clparser(argc,argv)
 {
   pma_stack = 200000;
   pma_heap  = 200000;
 
   PrintStatus();
   GA_Initialize();
+  p_from_comm = true;
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
@@ -73,6 +75,7 @@ Environment::Environment(int argc, char **argv,const char* help): p_boostEnv(arg
 
   PrintStatus();
   GA_Initialize();
+  p_from_comm = true;
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
@@ -83,22 +86,55 @@ Environment::Environment(int argc, char **argv,const char* help,const long int& 
 
   PrintStatus();
   GA_Initialize();
+  p_from_comm = true;
   MA_init(C_DBL,ma_stack,ma_heap);
   gridpack::math::Initialize(&argc,&argv);
 
+}
+
+Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc,argv),clparser(argc,argv),p_from_comm(false)
+{
+#ifdef ENABLE_ENVIRONMENT_FROM_COMM
+  PrintStatus();
+  pma_stack = 200000;
+  pma_heap  = 200000;
+  // GA_Initialize_comm returns false if the processor is not in the active
+  // set. This is needed so that applications can exit cleanly instead of
+  // hanging.
+  if (GA_Initialize_comm(comm)) {
+    p_from_comm = true;
+    MA_init(C_DBL,pma_stack,pma_heap);
+    gridpack::math::Initialize(&argc,&argv);
+  } else {
+    p_from_comm = false;
+  }
+#else
+  int rank;
+  MPI_Comm_rank(comm,&rank);
+  p_from_comm = true;
+  if (rank == 0) {
+    std::cout<<"Initialize GridPACK Environment from communicator not implemented"
+      << std::endl;
+  }
+  MPI_Abort(comm, 1);
+#endif
 }
 
 Environment::~Environment(void)
 {
   // Finalize math libraries
   gridpack::math::Finalize();
-
   GA_Terminate();
 }
 
-  /**
-   *    * return next token after option
-   *       */
+bool Environment::active()
+{
+  return p_from_comm;
+}
+
+/**
+ * return next token after option
+ */
 const std::string Environment::getCmdOption(std::string &option)
 {
   return clparser.getCmdOption(option);

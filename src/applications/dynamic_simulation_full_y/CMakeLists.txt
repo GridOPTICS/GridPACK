@@ -10,8 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-08-30 10:04:14 d3g096
+# Last Change: 2023-11-29 06:37:54 d3g096
 # -------------------------------------------------------------
+
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  add_definitions(-DENABLE_ENVIRONMENT_FROM_COMM)
+endif()
 
 set(target_libraries
     gridpack_dynamic_simulation_full_y_module
@@ -29,7 +33,7 @@ set(target_libraries
     gridpack_parallel
     gridpack_block_parsers
     ${PETSC_LIBRARIES}
-    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
+    ${PARMETIS_LIBRARY} ${METIS_LIBRARY}
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
@@ -70,6 +74,16 @@ add_executable(dsf.x
 add_executable(dsf2.x
   dsf_main2.cpp
 )
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  add_executable(dsf_comm.x
+     dsf_comm_main.cpp
+  )
+endif()
+
+target_link_libraries(dsf.x ${target_libraries})
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  target_link_libraries(dsf_comm.x ${target_libraries})
+endif()
 
 target_link_libraries(dsf.x ${target_libraries})
 target_link_libraries(dsf2.x ${target_libraries})
@@ -110,60 +124,60 @@ gridpack_set_lu_solver(
 )
 
 add_custom_target(dsf.x.input
- 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/300bus_v23_no0imp_pslf.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/dyr/300bus_detail_model_cmpld_combine.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/bus3000_gen_no0imp_v23_pslf.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/dyr/classical_model_3000bus.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/dyr/240busWECC_2018_PSS_mod.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_fixedshunt.raw
-  ${CMAKE_CURRENT_BINARY_DIR}  
+  ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/kundur-twoarea_v33.raw
-  ${CMAKE_CURRENT_BINARY_DIR}  
+  ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea_4renewable_mech.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  DEPENDS 
+  DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
   ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
@@ -188,6 +202,9 @@ add_custom_target(dsf.x.input
 
 add_dependencies(dsf.x dsf.x.input)
 add_dependencies(dsf2.x dsf.x.input)
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  add_dependencies(dsf_comm.x dsf.x.input)
+endif()
 
 # -------------------------------------------------------------
 # install as an example
@@ -195,7 +212,7 @@ add_dependencies(dsf2.x dsf.x.input)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
-install(FILES 
+install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
@@ -216,7 +233,7 @@ install(FILES
 
 install(TARGETS dsf.x DESTINATION bin)
 install(TARGETS dsf2.x DESTINATION bin)
-  
+
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
@@ -228,4 +245,7 @@ gridpack_add_run_test("dynamic_simulation_two_area" dsf.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area" dsf2.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
+if (ENABLE_ENVIRONMENT_FROM_COMM)
+  gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
+endif()
 

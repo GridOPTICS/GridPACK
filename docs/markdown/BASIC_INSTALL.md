@@ -135,11 +135,13 @@ Step 4.1. Download GridPACK
 ```
 git clone https://github.com/GridOPTICS/GridPACK.git
 ```
-Step 4.2. Change branch to develop
+
+Step 4.2. `cd GridPACK/src`
+
+Step 4.3. Change branch to develop
 ```
 git checkout develop
 ```
-Step 4.3. `cd GridPACK/src`
 
 Step 4.4. Create build directory `mkdir build`, and cd to it - `cd build`
 

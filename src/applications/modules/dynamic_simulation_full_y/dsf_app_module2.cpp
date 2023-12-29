@@ -321,8 +321,8 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
   }
   saveTimeStep();
   
-  if ((!p_factory->securityCheck()) && p_insecureAt == -1)  
-    p_insecureAt = Simu_Current_Step;
+  //  if ((!p_factory->securityCheck()) && p_insecureAt == -1)  
+  //    p_insecureAt = Simu_Current_Step;
 
   last_S_Steps = S_Steps;
   

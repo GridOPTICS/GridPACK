@@ -4,9 +4,9 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [-s] [-G] [-B] [name]"
+usage="$0 [-d|-r] [-s] [-G] [-B] [-c] [name]"
 
-options=`getopt rdsGB $*`
+options=`getopt crdsGB $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
@@ -17,6 +17,7 @@ build="RelWithDebInfo"
 shared="FALSE"
 buildGA="FALSE"
 buildBoost="FALSE"
+initcomm="OFF"
 for o in $*; do
     case $o in
         -d)
@@ -37,6 +38,10 @@ for o in $*; do
             ;;
         -B)
             buildBoost="ON"
+            shift
+            ;;
+        -c)
+            initcomm="ON"
             shift
             ;;
         --)
@@ -67,6 +72,7 @@ common_flags="\
         -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+        -D ENABLE_ENVIRONMENT_FROM_COMM:BOOL=$initcomm \
 "
 
 if [ $host == "briareus" ]; then
@@ -115,7 +121,7 @@ elif [ $host == "we32673" ]; then
     CC=/opt/local/bin/clang
     export CC
     CXX=/opt/local/bin/clang++
-    export CC CXX 
+    export CC CXX
 
     prefix="/Users/d3g096/Projects/GridPACK"
     pdir="$prefix/petsc.gitlab"
@@ -126,7 +132,7 @@ elif [ $host == "we32673" ]; then
     else
         parch="darwin-mpich-clang-complex-opt-3.16-static"
     fi
-    
+
     cmake $options \
         --graphviz=GridPACK.dot \
         -D GA_DIR:STRING="$prefix/gridpack-install" \
@@ -198,8 +204,8 @@ elif [ $host == "tlaloc" ]; then
 
     # Ubuntu 20 with as many system packages as possible: GNU
     # compilers 9.4.0, OpenMPI 4.0.3, Boost 1.71.0, PETSc 3.12,
-    # ParMETIS 4.0.3.  
-    
+    # ParMETIS 4.0.3.
+
     CC=gcc
     CXX=g++
     CFLAGS=-pthread
@@ -225,16 +231,26 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
     #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
-    
+
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
+
+    # Custom built 3.12.5, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.12.5" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.12" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+
+    # Custom built 3.10.5, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.10.5" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.10" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
+
 
     prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
-          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
-          -D PETSC_ARCH:STRING="ubuntu-real-shared-debug" \
-          -D USE_OLD_PETSC:BOOL=OFF \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared" \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
           -D PARMETIS_DIR:PATH="/usr" \
@@ -244,6 +260,7 @@ elif [ $host == "tlaloc" ]; then
           -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
           -D USE_GLPK:BOOL=OFF \
+          -D GA_DIR="$HOME/Projects/ExaLearn/ga-install" \
           -D BUILD_SHARED_LIBS:BOOL=ON \
           -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
           -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
@@ -301,6 +318,6 @@ else
 
     echo "Unknown host: $host"
     exit 2
-    
+
 fi
 

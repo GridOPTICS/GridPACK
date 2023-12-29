@@ -6,7 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   dsf_main.cpp
- * @date   2023-11-08 09:22:59 d3g096
+ * @author Shuangshuang Jin
+ * @date   2016-07-14 14:23:30 d3g096
  *
  * @brief
  */
@@ -16,24 +17,69 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/parser/dictionary.hpp"
-#include "gridpack/environment/environment.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
+#include "gridpack/environment/environment.hpp"
 #include <vector>
 
+/**
+ * Transfer data from power flow to dynamic simulation
+ * @param pf_network power flow network
+ * @param ds_network dynamic simulation network
+ */
+void transferPFtoDS(
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network,
+    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+    ds_network)
+{
+  int numBus = pf_network->numBuses();
+  int i;
+  gridpack::component::DataCollection *pfData;
+  gridpack::component::DataCollection *dsData;
+  double rval;
+  for (i=0; i<numBus; i++) {
+    pfData = pf_network->getBusData(i).get();
+    dsData = ds_network->getBusData(i).get();
+    pfData->getValue("BUS_PF_VMAG",&rval);
+    dsData->setValue(BUS_VOLTAGE_MAG,rval);
+    ///printf("Step0 bus%d mag = %f\n", i+1, rval);
+    pfData->getValue("BUS_PF_VANG",&rval);
+    dsData->setValue(BUS_VOLTAGE_ANG,rval);
+    int ngen = 0;
+    if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
+      int j;
+      for (j=0; j<ngen; j++) {
+        pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
+        dsData->setValue(GENERATOR_PG,rval,j);
+        //printf("save PGEN: %f\n", rval);
+        pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
+        dsData->setValue(GENERATOR_QG,rval,j);
+        //printf("save QGEN: %f\n", rval);
+      }
+    }
+  }
+}
 
 // Calling program for the dynamis simulation applications
 
-int
-main(int argc, char **argv)
+void dsf(MPI_Comm comm, int argc, char **argv)
 {
-  gridpack::Environment env(argc, argv, NULL, 200000, 200000);
-
   gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
-  noprint_ins->setStatus(false);
+  noprint_ins->setStatus(true);
+  
 
-  if (1) {
+  int rank,size;
+  MPI_Comm_rank(comm,&rank);
+  MPI_Comm_size(comm,&size);
+    std::cout << "Rank: "<<rank<<" Size: "<<size <<std::endl;
+  gridpack::Environment env(argc,argv,comm);
+
+  if (env.active()) {
+    gridpack::parallel::Communicator gp_world;
+    std::cout << "p["<<rank<<"] Size of world communicator: "<<gp_world.size() <<std::endl;
+
     gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
     int t_total = timer->createCategory("Dynamic Simulation: Total Application");
@@ -83,20 +129,7 @@ main(int argc, char **argv)
       gridpack::dynamic_simulation::DSFullBranch>(ds_network);
 
     // transfer results from PF calculation to DS calculation
-    ds_app.transferPFtoDS(pf_network, ds_network); 
-
-    // run dynamic simulation
-    ds_app.setNetwork(ds_network, config);
-    //ds_app.readNetwork(ds_network,config);
-    ds_app.readGenerators();
-    ds_app.readSequenceData();
-    //printf("ds_app.initialize:\n");
-    ds_app.initialize();
-    ds_app.setGeneratorWatch();
-    //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
-    //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
-    //printf("ds_app.solve:\n");
-    //ds_app.solve(faults[0]);
+    transferPFtoDS(pf_network, ds_network); 
 
     // read in faults from input file
     //gridpack::utility::Configuration::CursorPtr cursor;
@@ -104,17 +137,45 @@ main(int argc, char **argv)
     std::vector<gridpack::dynamic_simulation::Event> faults;
     faults = ds_app.getEvents(cursor);
 
+    // run dynamic simulation
+    ds_app.setNetwork(ds_network, config);
+    //ds_app.readNetwork(ds_network,config);
+    ds_app.readGenerators();
+    //printf("ds_app.initialize:\n");
+    ds_app.initialize();
+    ds_app.setGeneratorWatch();
+    //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
+    //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
+    //printf("ds_app.solve:\n");
+    //ds_app.solve(faults[0]);
 	
-    ds_app.solvePreInitialize(faults[0]);
+	ds_app.solvePreInitialize(faults[0]);
 	
-    while(!ds_app.isDynSimuDone()){
-      ds_app.executeOneSimuStep( );
-    }
+	//std::vector<gridpack::dynamic_simulation::Event> action_list;
+	//action_list.clear();
+	
+	/*
+	for (ds_app.Simu_Current_Step = 0; ds_app.Simu_Current_Step < ds_app.simu_total_steps - 1; ds_app.Simu_Current_Step++){
+		ds_app.execute_one_simu_step(action_list);
+	}
+	*/
+	
+	while(!ds_app.isDynSimuDone()){
+		//ds_app.executeOneSimuStep(action_list);
+		ds_app.executeOneSimuStep( );
+	}
 
     //ds_app.write();
     timer->stop(t_total);
     timer->dump();
   }
+}
 
+int main(int argc, char **argv)
+{
+  // Initialize MPI libraries
+  int ierr = MPI_Init(&argc, &argv);
+  dsf(MPI_COMM_WORLD, argc, argv);
+  ierr = MPI_Finalize();
 }
 

@@ -56,17 +56,18 @@ private:
 // -------------------------------------------------------------
 //  class Environment
 // -------------------------------------------------------------
-  class Environment : private utility::Uncopyable
+class Environment : private utility::Uncopyable
 {
 public:
 
-  /// Default constructor.
   /** 
-   * 
-   * 
+   * Constructors
+   */
+  /**
    * @param argc        number of program command line arguments
    * @param argv        command line arguments
    * @param help        help string to be displayed for the application
+   * @param comm        existing communicator used to initialize gridpack
    * 
    * @return 
    */
@@ -75,11 +76,33 @@ public:
 
   Environment(int argc, char **argv,
               const char* help,
-	      const long int& ma_stack,
+              const long int& ma_stack,
               const long int& ma_heap);
-
   Environment(int argc, char **argv);
 
+  /**
+   * Initialize environment from existing communicator
+   * @param argc        number of program command line arguments
+   * @param argv        command line arguments
+   * @param comm        existing communicator used to initialize gridpack
+   * 
+   * @return 
+   */
+  Environment(int argc, char **argv, MPI_Comm &comm);
+
+  /**
+   * Return true if processor is active in this environment, false otherwise.
+   * Only chance of returning false is with progress rank runtime. The main
+   * use for this function is to guarantee that code exits cleanly and that
+   * there are no hangs at the end of the run. The correct way to start an
+   * application is
+   *
+   * Environment env(argc, argv, comm);
+   * if (env.active()) {
+   *   // Application code goes here
+   * }
+   */
+  bool active();
 
   /// Destructor
   ~Environment(void);
@@ -103,6 +126,7 @@ private:
   void PrintHelp(char **argv,const char* help);
 
   void PrintStatus();
+  bool p_from_comm;
 };
 
 } // namespace gridpack

@@ -148,7 +148,6 @@ struct PFSolverHelper
     // update(Xcur);
     
     // Set to build Jacobian
-    printf("Got to operator J\n");
     p_factory->setMode(Jacobian);
     mapper::FullMatrixMap<PFNetwork> jMap(p_network);
     

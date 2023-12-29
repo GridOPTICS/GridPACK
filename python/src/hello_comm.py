@@ -1,21 +1,21 @@
-#!/usr/bin/env python2
-# -*- mode: python; py-which-shell: "python2";-*-
+#!/usr/bin/env python
 # -------------------------------------------------------------
-# file: task_manager.py
+# file: hello.py
 # -------------------------------------------------------------
 # -------------------------------------------------------------
-# Battelle Memorial Institute
-# Pacific Northwest Laboratory
+# Copyright (c) 2013 Battelle Memorial Institute
+# Licensed under modified BSD License. A copy of this license can be
+# found in the LICENSE file in the top level directory of this
+# distribution.
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-01-27 14:49:13 d3g096
+# Last Change: 2022-11-03 10:59:25 d3g096
 # -------------------------------------------------------------
-
-# RCS ID: $Id$
 
 import sys, os
 import gridpack
+from mpi4py import MPI
 
 # -------------------------------------------------------------
 # variable initialization
@@ -26,16 +26,17 @@ program = os.path.basename(sys.argv[0])
 # main program
 # -------------------------------------------------------------
 
-e = gridpack.Environment()
+the_comm = MPI.COMM_WORLD
+
+global_me = the_comm.Get_rank()
+
+color = global_me % 2
+
+another_comm = the_comm.Split(color, global_me)
+
+e = gridpack.Environment(another_comm)
 c = gridpack.Communicator()
-tskmgr = gridpack.TaskManager(c)
 
-task = gridpack.TaskCounter()
-
-tskmgr.set(100)
-while tskmgr.nextTask(task):
-  sys.stdout.write("process %d of %d executing task %d\n" %
-                   (c.rank(), c.size(), task.task_id))
-tskmgr = None
-e = None
+sys.stdout.write("%s: hello from process %d of %d, color %d\n" %
+                 (program, c.rank(), c.size(), color))
 
