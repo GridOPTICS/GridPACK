@@ -121,7 +121,7 @@ elif [ $host == "we32673" ]; then
     CC=/opt/local/bin/clang
     export CC
     CXX=/opt/local/bin/clang++
-    export CC CXX
+    export CC CXX 
 
     prefix="/Users/d3g096/Projects/GridPACK"
     pdir="$prefix/petsc.gitlab"
@@ -132,7 +132,7 @@ elif [ $host == "we32673" ]; then
     else
         parch="darwin-mpich-clang-complex-opt-3.16-static"
     fi
-
+    
     cmake $options \
         --graphviz=GridPACK.dot \
         -D GA_DIR:STRING="$prefix/gridpack-install" \
@@ -204,8 +204,8 @@ elif [ $host == "tlaloc" ]; then
 
     # Ubuntu 20 with as many system packages as possible: GNU
     # compilers 9.4.0, OpenMPI 4.0.3, Boost 1.71.0, PETSc 3.12,
-    # ParMETIS 4.0.3.
-
+    # ParMETIS 4.0.3.  
+    
     CC=gcc
     CXX=g++
     CFLAGS=-pthread
@@ -232,21 +232,27 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
-    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
-    cmake -Wdev --debug-trycompile \
-
-    # Custom built 3.12.5, real:
-    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.12.5" \
-    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.12" \
+    # Custom built 3.19, complex:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
-    # Custom built 3.10.5, real:
-    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.10.5" \
-    #      -D PETSC_ARCH:STRING="ubuntu-real-shared-3.10" \
+    # Custom built 3.19, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
     #      -D USE_OLD_PETSC:BOOL=OFF \
 
+    # Custom built 3.19, complex, w/o superlu_dist:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
+    #      -D USE_OLD_PETSC:BOOL=OFF \
 
-    prefix="$HOME/Projects/GridPakLDRD/gridpack-install"
+    if [ -z "$GRIDPACK_DIR" ]; then
+        prefix="$HOME/Projects/ExaLearn/gridpack-install"
+    else
+        prefix="$GRIDPACK_DIR"
+    fi
+    
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
@@ -318,6 +324,6 @@ else
 
     echo "Unknown host: $host"
     exit 2
-
+    
 fi
 

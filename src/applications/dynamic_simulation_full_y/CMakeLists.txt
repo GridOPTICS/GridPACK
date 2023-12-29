@@ -33,7 +33,7 @@ set(target_libraries
     gridpack_parallel
     gridpack_block_parsers
     ${PETSC_LIBRARIES}
-    ${PARMETIS_LIBRARY} ${METIS_LIBRARY}
+    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
@@ -124,60 +124,60 @@ gridpack_set_lu_solver(
 )
 
 add_custom_target(dsf.x.input
-
-  COMMAND ${CMAKE_COMMAND} -E copy
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/300bus_v23_no0imp_pslf.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/300bus_detail_model_cmpld_combine.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/bus3000_gen_no0imp_v23_pslf.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/classical_model_3000bus.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/240busWECC_2018_PSS_mod.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_fixedshunt.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}  
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/kundur-twoarea_v33.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}  
 
-  COMMAND ${CMAKE_COMMAND} -E copy
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea_4renewable_mech.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
-  DEPENDS
+  DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
   ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
@@ -212,7 +212,7 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
-install(FILES
+install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
@@ -233,7 +233,7 @@ install(FILES
 
 install(TARGETS dsf.x DESTINATION bin)
 install(TARGETS dsf2.x DESTINATION bin)
-
+  
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
