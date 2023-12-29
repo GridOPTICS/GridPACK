@@ -16,12 +16,15 @@ variables:
   parallel:
 
     matrix:
-      - BASE_IMAGE: rockylinux:9
-      - BASE_IMAGE: ubuntu:22.04
+
+      - BASE_IMAGE: rockylinux
+        BASE_IMAGE_TAG: "9"
+      - BASE_IMAGE: ubuntu
+        BASE_IMAGE_TAG: "22.04"
 
   variables:
 
-    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE%%:*}-${CI_COMMIT_REF_NAME}"
+    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-${CI_COMMIT_REF_NAME}"
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
@@ -40,7 +43,7 @@ build-container:
 
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
-      --build-arg BASE_IMAGE=${BASE_IMAGE}
+      --build-arg BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}
       --build-arg http_proxy=$http_proxy
       --build-arg https_proxy=$https_proxy
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
