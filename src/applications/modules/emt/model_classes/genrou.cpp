@@ -11,8 +11,7 @@
 */
 Genrou::Genrou(void)
 {
-  nxgen   = 9; // Number of variables for this model
-
+  nxgen   = 12; // Number of variables for this model
 }
 
 Genrou::~Genrou(void)
@@ -124,10 +123,8 @@ void Genrou::init(gridpack::ComplexType* xin)
   Iq = idq0[1];
   I0 = idq0[2];
 
-  //  psid = Ra*Iq + Vq;
-  //  psiq = -Ra*Id - Vd;
-  psid = Vq;
-  psiq = -Vd;
+  psid = Ra*Iq + Vq;
+  psiq = -Ra*Id - Vd;
   psi0 = 0.0;
 
   dw = dw0;
@@ -152,15 +149,18 @@ void Genrou::init(gridpack::ComplexType* xin)
   Efd = -LadIfd;
   
   // Initialized state variables
-  x[0] = Eqp;
-  x[1] = psi1d;
-  x[2] = Edp;
-  x[3] = psi2q;
-  x[4] = delta;
-  x[5] = dw;
-  x[6] = iabc[0];
-  x[7] = iabc[1];
-  x[8] = iabc[2];
+  x[0] = psid;
+  x[1] = psiq;
+  x[2] = psi0;
+  x[3] = Eqp;
+  x[4] = psi1d;
+  x[5] = Edp;
+  x[6] = psi2q;
+  x[7] = delta;
+  x[8] = dw;
+  x[9] = iabc[0];
+  x[10] = iabc[1];
+  x[11] = iabc[2];
 
 }
 
@@ -196,25 +196,31 @@ void Genrou::setValues(gridpack::ComplexType *values)
   gridpack::ComplexType *x = values+offsetb; // generator array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    Eqp   = real(x[0]);
-    psi1d   = real(x[1]);
-    Edp     = real(x[2]);
-    psi2q = real(x[3]);
-    delta = real(x[4]);
-    dw = real(x[5]);
-    iabc[0] = real(x[6]);
-    iabc[1] = real(x[7]);
-    iabc[2] = real(x[8]);
+    psid  = real(x[0]);
+    psiq  = real(x[1]);
+    psi0  = real(x[2]);
+    Eqp   = real(x[3]);
+    psi1d   = real(x[4]);
+    Edp     = real(x[5]);
+    psi2q = real(x[6]);
+    delta = real(x[7]);
+    dw = real(x[8]);
+    iabc[0] = real(x[9]);
+    iabc[1] = real(x[10]);
+    iabc[2] = real(x[11]);
   } else if(p_mode == XDOTVECTOBUS) {
-    dEqp   = real(x[0]);
-    dpsi1d   = real(x[1]);
-    dEdp     = real(x[2]);
-    dpsi2q = real(x[3]);
-    ddelta = real(x[4]);
-    ddw = real(x[5]);
-    diabc[0] = real(x[6]);
-    diabc[1] = real(x[7]);
-    diabc[2] = real(x[8]);
+    dpsid  = real(x[0]);
+    dpsiq  = real(x[1]);
+    dpsi0  = real(x[2]);
+    dEqp   = real(x[3]);
+    dpsi1d   = real(x[4]);
+    dEdp     = real(x[5]);
+    dpsi2q = real(x[6]);
+    ddelta = real(x[7]);
+    ddw = real(x[8]);
+    diabc[0] = real(x[9]);
+    diabc[1] = real(x[10]);
+    diabc[2] = real(x[11]);
   } 
 }
 
@@ -251,13 +257,6 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
     V0 = vdq0[2];
 
     
-    //psid =  Ra*Iq + Vq;
-    //psiq = -Ra*Id - Vd;
-
-    psid = Vq;
-    psiq = -Vd;
-    psi0 = 0.0;
-    
     Id = (psid - tempd1*Eqp - tempd2*psi1d)/-Xdpp;
     Iq = (psiq + tempq1*Edp - tempq2*psi2q)/-Xdpp;
     I0 = psi0/-Xl;
@@ -266,34 +265,38 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
     idq0[1] = Iq;
     idq0[2] = I0;
 
+    f[0] = OMEGA_S*(Ra*Id + (1 + dw)*psiq + Vd) - dpsid;
+    f[1] = OMEGA_S*(Ra*Iq - (1 + dw)*psid + Vq) - dpsiq;
+    f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
+		    
     double dpsi1ddt;
     double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
 
     dpsi1ddt = -psi1d + Eqp - (Xdp - Xl)*Id;
 
-    f[0] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop - dEqp;
+    f[3] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop - dEqp;
 
-    f[1] = dpsi1ddt/Tdopp - dpsi1d;
+    f[4] = dpsi1ddt/Tdopp - dpsi1d;
 
     double dpsi2qdt;
     double param2 = (Xqp - Xdpp)/((Xqp - Xl)*(Xqp - Xl));
 
     dpsi2qdt = -psi2q - Edp - (Xqp - Xl)*Iq;
 
-    f[2] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop - dEdp;
+    f[5] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop - dEdp;
 
-    f[3] = dpsi2qdt/Tqopp - dpsi2q;
+    f[6] = dpsi2qdt/Tqopp - dpsi2q;
 
-    f[4] = OMEGA_S*dw - ddelta;
+    f[7] = OMEGA_S*dw - ddelta;
 
-    f[5] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)) - ddw; 
+    f[8] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)) - ddw; 
 
     double igen[3];
     dq02abc(idq0,p_time,theta,igen);
 
-    f[6] = igen[0]*mbase/sbase - iabc[0];
-    f[7] = igen[1]*mbase/sbase - iabc[1];
-    f[8] = igen[2]*mbase/sbase - iabc[2];
+    f[9] = igen[0]*mbase/sbase - iabc[0];
+    f[10] = igen[1]*mbase/sbase - iabc[1];
+    f[11] = igen[2]*mbase/sbase - iabc[2];
   }
 
 }
