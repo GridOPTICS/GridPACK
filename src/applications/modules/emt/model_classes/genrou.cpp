@@ -124,8 +124,10 @@ void Genrou::init(gridpack::ComplexType* xin)
   Iq = idq0[1];
   I0 = idq0[2];
 
-  psid = Ra*Iq + Vq;
-  psiq = -Ra*Id - Vd;
+  //  psid = Ra*Iq + Vq;
+  //  psiq = -Ra*Id - Vd;
+  psid = Vq;
+  psiq = -Vd;
   psi0 = 0.0;
 
   dw = dw0;
@@ -249,8 +251,8 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
     V0 = vdq0[2];
 
     
-    //    psid =  Ra*Iq + Vq;
-    //    psiq = -Ra*Id - Vd;
+    //psid =  Ra*Iq + Vq;
+    //psiq = -Ra*Id - Vd;
 
     psid = Vq;
     psiq = -Vd;
@@ -269,22 +271,22 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
 
     dpsi1ddt = -psi1d + Eqp - (Xdp - Xl)*Id;
 
-    f[0] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop;
+    f[0] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop - dEqp;
 
-    f[1] = dpsi1ddt/Tdopp;
+    f[1] = dpsi1ddt/Tdopp - dpsi1d;
 
     double dpsi2qdt;
     double param2 = (Xqp - Xdpp)/((Xqp - Xl)*(Xqp - Xl));
 
     dpsi2qdt = -psi2q - Edp - (Xqp - Xl)*Iq;
 
-    f[2] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop;
+    f[2] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop - dEdp;
 
-    f[3] = dpsi2qdt/Tqopp;
+    f[3] = dpsi2qdt/Tqopp - dpsi2q;
 
-    f[4] = OMEGA_S*dw;
+    f[4] = OMEGA_S*dw - ddelta;
 
-    f[5] = 1 / (2 *H) * ((TM - D*dw) - (psid*Iq - psiq*Id)); 
+    f[5] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)) - ddw; 
 
     double igen[3];
     dq02abc(idq0,p_time,theta,igen);
