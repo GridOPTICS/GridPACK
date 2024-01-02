@@ -13,17 +13,10 @@ variables:
 
 .multi-distro:
 
-  parallel:
-
-    matrix:
-
-      - BASE_IMAGE: rockylinux
-        BASE_IMAGE_TAG: "9"
-      - BASE_IMAGE: ubuntu
-        BASE_IMAGE_TAG: "22.04"
-
   variables:
 
+    BASE_IMAGE: ubuntu
+    BASE_IMAGE_TAG: "22.04"
     IMAGE_TAG: ${BASE_IMAGE}-gridpack-env
     IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${IMAGE_TAG}
 
