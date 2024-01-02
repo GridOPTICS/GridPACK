@@ -91,7 +91,7 @@ build-container:
 
   artifacts:
 
-      paths: [ log/ ]
+      paths: [ /gridpack-dependencies/log/ ]
 
 
 build-gridpack:
