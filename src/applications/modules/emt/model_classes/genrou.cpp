@@ -374,5 +374,11 @@ bool Genrou::setJacobian(gridpack::ComplexType **values)
   return true;
 }
 
-
-
+/**
+ * Returns the initial field voltage (Efd(t0))
+ * @param [out] Efd0 - Initial field voltage
+ */
+double Genrou::getInitialFieldVoltage()
+{
+  return Efd;
+}
