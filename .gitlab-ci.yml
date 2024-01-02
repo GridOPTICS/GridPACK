@@ -30,8 +30,6 @@ variables:
 
 check-container-definition-changed:
 
-    extends: .multi-distro
-
     image: alpine
 
     script:
@@ -82,6 +80,7 @@ build-container:
           1>$null 2>$null
       }
     - test -f container-definition-changed || ! tag_exists || exit 0
+    - chmod +x *.sh
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
