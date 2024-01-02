@@ -1,8 +1,6 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-RUN install_environment_packages.sh
-
 ENV GP_EXT_DEPS=/gridpack-dependencies
 ENV BOOST_VERSION "1.78.0"
 ENV GA_VERSION "5.8"
@@ -13,4 +11,4 @@ WORKDIR ${GP_EXT_DEPS}
 
 COPY *.sh .
 
-RUN ./install_gridpack_deps.sh && rm *.sh
+RUN ./install_environment_packages.sh && ./install_gridpack_deps.sh && rm *.sh
