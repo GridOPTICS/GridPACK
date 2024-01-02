@@ -20,6 +20,7 @@
 #include <model_classes/gencls.hpp>
 #include <model_classes/genrou.hpp>
 #include <model_classes/constantimpedance.hpp>
+#include <model_classes/exdc1.hpp>
 //#include <model_classes/lumpedline.hpp>
 
 
@@ -251,8 +252,8 @@ void EmtBus::setup()
   // Set up generators
   if(p_ngen) {
     p_neqsgen = (int*)malloc(p_ngen*sizeof(int));
-    p_neqsexc= (int*)malloc(p_ngen*sizeof(int));
-    p_neqsgov= (int*)malloc(p_ngen*sizeof(int));
+    p_neqsexc = (int*)malloc(p_ngen*sizeof(int));
+    p_neqsgov = (int*)malloc(p_ngen*sizeof(int));
   }
 
   for(i=0; i < p_ngen; i++) {
@@ -271,7 +272,7 @@ void EmtBus::setup()
     bool has_gv = p_gen[i]->hasGovernor();
 
     if (has_ex) {
-      p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
+      p_gen[i]->getExciter()->getnvar(&p_neqsexc[i]);
       p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
     }
     if (has_gv) {
@@ -467,10 +468,32 @@ void EmtBus::load(const
 
       // Read generator data stored in data collection objects
       p_gen[i]->load(data,i); // load data
-      has_ex = p_gen[i]->hasExciter();
-      has_gv = p_gen[i]->hasGovernor();
-      if (has_ex) p_gen[i]->getExciter()->load(data,i); // load exciter data
-      if (has_gv) p_gen[i]->getGovernor()->load(data,i); // load governor model
+
+      has_ex = false;
+      data->getValue(HAS_EXCITER,&has_ex,i);
+      if(has_ex) {
+	if(data->getValue(EXCITER_MODEL, &model, i)) {
+	  type = util.trimQuotes(model);
+	  if(type == "EXDC1") {
+	    Exdc1 *exdc1;
+            exdc1 = new Exdc1;
+	    exdc1->setGenerator(p_gen[i]);
+	    
+            boost::shared_ptr<BaseEMTExcModel> ex;
+            ex.reset(exdc1);
+            p_gen[i]->setExciter(ex);
+	    
+	    exdc1->load(data,i); // load exciter data
+	  }
+	}
+      }
+
+      has_gv = false;
+      data->getValue(HAS_GOVERNOR,&has_gv,i);
+      if(has_gv) {
+	// Handle governor data loading
+	p_gen[i]->getGovernor()->load(data,i); // load governor model
+      }
     }
   }
 
@@ -639,8 +662,13 @@ int EmtBus::matrixNumValues()
 
     int numvals_gen;
     numvals_gen = p_gen[i]->matrixNumValues();
-
     numvals += numvals_gen;
+
+    if(p_gen[i]->hasExciter()) {
+      int numvals_exc;
+      numvals_exc = p_gen[i]->getExciter()->matrixNumValues();
+      numvals += numvals_exc;
+    }
   }
 
   for(i=0; i < p_nload; i++) {
@@ -726,6 +754,13 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
     p_gen[i]->setTSshift(p_TSshift);
     p_gen[i]->matrixGetValues(&nvals_gen,values+ctr,rows+ctr,cols+ctr);
     ctr += nvals_gen;
+
+    if(p_gen[i]->hasExciter()) {
+      int nvals_exc = 0;
+      p_gen[i]->setTSshift(p_TSshift);
+      p_gen[i]->getExciter()->matrixGetValues(&nvals_exc, values+ctr, rows+ctr, cols+ctr);
+      ctr += nvals_exc;
+    }
 
     p_gen[i]->getCurrentGlobalLocation(&i_gloc);
 
@@ -902,6 +937,11 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
     double vb = p_Vm0*sin(p_Va0 - 2*PI/3.0);
     double vc = p_Vm0*sin(p_Va0 + 2*PI/3.0);
 
+    double VR,VI;
+    VR = p_Vm0*cos(p_Va0);
+    VI = p_Vm0*sin(p_Va0);
+    gridpack::ComplexType V = gridpack::ComplexType(VR,VI);
+
     x = values;
     
     if(p_isolated) {
@@ -918,10 +958,6 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 
     if(p_hasInductiveShunt) {
       /* Calculate the current in the inductive shunt */
-      double VR,VI;
-      VR = p_Vm0*cos(p_Va0);
-      VI = p_Vm0*sin(p_Va0);
-      gridpack::ComplexType V = gridpack::ComplexType(VR,VI);
       gridpack::ComplexType S = gridpack::ComplexType(p_gl,p_bl);
       gridpack::ComplexType Ishunt = S/V;
       double Ishuntmag,Ishuntang;
@@ -939,6 +975,15 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       p_gen[i]->setVoltage(va,vb,vc);
       p_gen[i]->setInitialVoltage(p_Vm0,p_Va0);
       p_gen[i]->init(x);
+
+      if(p_gen[i]->hasExciter()) {
+	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+	double Efd0;
+	Efd0 = p_gen[i]->getInitialFieldVoltage();
+	exc->setVoltage(VR,VI);
+	exc->setInitialFieldVoltage(Efd0);
+	exc->init(x);
+      }
     }
 
     for(i=0; i < p_nload; i++) {
@@ -1013,6 +1058,32 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       p_gen[i]->setVoltage(v[0],v[1],v[2]);
       p_gen[i]->setTime(p_time);
 
+      if(p_gen[i]->hasExciter()) {
+	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+	double Efd;
+	Efd = exc->getFieldVoltage();
+	p_gen[i]->setFieldVoltage(Efd);
+      }
+
+      /* Generator residual evaluation */
+      p_gen[i]->setMode(p_mode);
+      p_gen[i]->vectorGetValues(f);
+
+      /* Exciter residual evaluation */
+      if(p_gen[i]->hasExciter()) {
+	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+	exc->setMode(p_mode);
+	exc->setTime(p_time);
+
+	
+	exc->setVoltage(v[0],v[1],v[2]);
+	double delta;
+	delta = p_gen[i]->getAngle();
+	exc->setMachineAngle(delta);
+	
+	exc->vectorGetValues(f);
+      }
+
       /* Get generator current */
       i_geni[0] = i_geni[1] = i_geni[2] = 0.0;
       p_gen[i]->getCurrent(&i_geni[0],&i_geni[1],&i_geni[2]);
@@ -1021,9 +1092,6 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       i_gen[1] += i_geni[1];
       i_gen[2] += i_geni[2];
 
-      /* Generator residual evaluation */
-      p_gen[i]->setMode(p_mode);
-      p_gen[i]->vectorGetValues(f);
     }
 
     i_load[0] = i_load[1] = i_load[2] = 0.0;
@@ -1088,6 +1156,12 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
       p_gen[i]->setMode(p_mode);
       p_gen[i]->setVoltage(va,vb,vc);
       p_gen[i]->setValues(values);
+
+      if(p_gen[i]->hasExciter()) {
+	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+	exc->setMode(p_mode);
+	exc->setValues(values);
+      }
     }
 
     for(i=0; i < p_nload; i++) {
@@ -1111,6 +1185,13 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
       
       p_gen[i]->setMode(p_mode);
       p_gen[i]->setValues(values);
+
+      if(p_gen[i]->hasExciter()) {
+	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+	exc->setMode(p_mode);
+	exc->setValues(values);
+      }
+
     }
 
     for(i=0; i < p_nload; i++) {

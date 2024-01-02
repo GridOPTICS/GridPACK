@@ -18,12 +18,14 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <gridpack/applications/modules/emt/constants.hpp>
+#include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
+#include <gridpack/math/matrix.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gen_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
 class BaseEMTGenModel; // Forward declaration for BaseGenModel
 
-class BaseExcModel : public gridpack::component::BaseComponent
+class BaseEMTExcModel : public gridpack::component::BaseComponent
 {
   /* Inheriting the BaseComponent class allows use of functions
      for loading data and accessing/setting values in the vector/matrix
@@ -32,12 +34,28 @@ public:
   /**
    * Basic constructor
    */
-  BaseExcModel();
+  BaseEMTExcModel();
   
   /**
    * Basic destructor
    */
-  virtual ~BaseExcModel();
+  virtual ~BaseEMTExcModel();
+
+  /**
+     Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
+
+   * Load data from DataCollection object into corresponding
+   * component. This needs to be implemented by every component
+   * @param data data collection associated with component
+   */
+  virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
+
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
+  virtual bool setJacobian(gridpack::ComplexType **values);
+
   
   /**
    * Initialize exciter model before calculation
@@ -62,32 +80,50 @@ public:
    * @param string buffer that contains output
    */
   virtual void write(const char* signal, char* string);
+
+  /**
+     set exciter status
+  **/
+  void setStatus(int estatus) {status = estatus;}
   
   /**
    * return the bolean indicating whether the exciter is ON or OFF
    */
-  bool getExcStatus() {return status;}
+  bool getStatus() {return status;}
   
   /**
-   * Set bus voltage
+   * set current time
    */
-  void setVoltage(double busVD, double busVQ) {VD = busVD; VQ = busVQ; }
-  
+  void setTime(double time) {p_time = time; }
+
   /**
    * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
    */
   void setTSshift(double inshift) {shift = inshift;}
+
+  /**
+   * Set bus voltage
+   */
+  void setVoltage(double busVD, double busVQ) {VD = busVD; VQ = busVQ; }
+
+  /**
+   * Copy over initial bus voltage from the bus (power flow solution)
+   */
+  void setInitialVoltage(double inVm,double inVa) {p_Vm0 = inVm; p_Va0 = inVa;}
+
+  /**
+   * Set the initial field voltage (at t = tstart) for the exciter
+   * @param fldv value of the field voltage
+   */
+  void setInitialFieldVoltage(double fldv) {Efd0 = fldv; }
   
   virtual void setEvent(gridpack::math::DAESolver::EventManagerPtr);
 
   /**
-     Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
-
-   * Load data from DataCollection object into corresponding
-   * component. This needs to be implemented by every component
-   * @param data data collection associated with component
+   * Return the number of variables
+   * @param [output] nvar - number of variables
    */
-  virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
+  void getnvar(int *nvar) {*nvar = nxexc;}
 
   /**
    * Set the offset for first variable for the exciter in the array for all bus variables 
@@ -95,96 +131,43 @@ public:
    */
   void setBusOffset(int offset) {offsetb = offset;}
 
-  /**
-   * Set Jacobian block
-   * @param values a 2-d array of Jacobian block for the bus
-   */
-  virtual bool setJacobian(gridpack::ComplexType **values);
 
   /**
-   * Set Jacobian block
-   * @param value_map standard map containing indices and values of matrix
-   *        elements
-   */
-  virtual bool setJacobian(std::map<std::pair<int,int>,
-      gridpack::ComplexType> &value_map);
-
-#if 0
-  /**
-   * Set the number of rows contributed by this excitor
-   * @param nrows number of rows
-   */
-  virtual void matrixSetNumRows(int nrows);
-
-  /**
-   * Set the number of columns contributed by this excitor
-   * @param ncols number of columns
-   */
-  virtual void matrixSetNumCols(int ncols);
-
-  /**
-   * Number of rows (equations) contributed to by excitor
-   * @return number of rows
-   */
-  virtual int matrixNumRows();
-
-  /**
-   * Number of rows (equations) contributed to by excitor
-   * @return number of rows
-   */
-  int matrixNumCols();
-
-  /** 
-   * Set global row index
-   * @param irow local row index
-   * @param global row index
-   */
-  void matrixSetRowIndex(int irow, int idx);
-
-  /** 
-   * Set global column index
-   * @param icol local column index
-   * @param global column index
-   */
-  void matrixSetColIndex(int icol, int idx);
-
-  /**
-   * Return global row index given local row index
-   * @param irow local row index
-   * @return global row index
-   */
-  int matrixGetRowIndex(int irow);
-
-  /**
-   * Return global column index given local column index
-   * @param icol local column index
-   * @return global column index
-   */
-  int matrixGetColIndex(int icol);
-
-  /**
-   * Get number of matrix values contributed by excitor
+   * Get number of matrix values contributed by generator
    * @return number of matrix values
    */
-  int matrixNumValues();
+  virtual int matrixNumValues();
 
   /**
- * Return values from a matrix block
- * @param nvals: number of values to be inserted
- * @param values: pointer to matrix block values
- * @param rows: pointer to matrix block rows
- * @param cols: pointer to matrix block cols
- */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
-      int *rows, int *cols);
-#endif
-
-  /**
-   * Set the initial field voltage (at t = tstart) for the exciter
-   * @param fldv value of the field voltage
+   * Return values from Jacobian matrix
+   * @param nvals: number of values to be inserted
+   * @param values: pointer to matrix block values
+   * @param rows: pointer to matrix block rows
+   * @param cols: pointer to matrix block cols
    */
-  virtual void setInitialFieldVoltage(double fldv);
+  virtual void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
 
+
+  /**
+   * Return vector values from the generator model 
+   * @param values - array of returned values
+   *
+   * Note: This function is used to return the entries in vector,
+   * for e.g., the entries in the residual vector from the generator
+   * object
+   */
+  virtual void vectorGetValues(gridpack::ComplexType *values);
+
+  /**
+   * Pass solution vector values to the generator object
+   * @param values - array of returned values
+   *
+   * Note: This function is used to pass the entries in vector
+   * to the generator object,
+   * for e.g., the state vector values for this generator
+   */
+  virtual void setValues(gridpack::ComplexType *values);
+  
   /** 
    * Get the value of the field voltage parameter
    * @return value of field voltage
@@ -199,15 +182,16 @@ public:
    */
   virtual bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
 
-  void setGenerator(BaseEMTGenModel* generator);
+  /**
+   * Set the generator associated with this exciter
+   **/
+  void setGenerator(BaseEMTGenModel* generator) {p_gen = generator; }
 
-  BaseEMTGenModel* getGenerator();
+  /**
+   * Get the generator associated with this exciter
+   */
+  BaseEMTGenModel* getGenerator() { return p_gen; }
 
-  /****************************************************
- The following methods are inherited from the BaseComponent class and are 
-to be overwritten by the implementation */
-  
-  
   /**
    * Set an internal variable that can be used to control the behavior of the
    * component. This function doesn't need to be implemented, but if needed,
@@ -218,29 +202,6 @@ to be overwritten by the implementation */
    * @param mode integer indicating which mode should be used
    */
   void setMode(int mode) { p_mode = mode;}
-
-  /**
-   * Return size of vector block contributed by component
-   * @param isize number of vector elements
-   * @return false if network component does not contribute
-   *        vector element
-   */
-  bool vectorSize(int *isize) const;
-
-  /**
-   * Return the values of the vector block
-   * @param values pointer to vector values
-   * @return false if network component does not contribute
-   *        vector element
-   */
-  bool vectorValues(gridpack::ComplexType *values);
-
-  /**
-   * Set values in the component based on values in a vector or
-   * matrix
-   * @param values values in vector or matrix
-   */
-  void setValues(gridpack::ComplexType *values);
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 
@@ -259,9 +220,25 @@ to be overwritten by the implementation */
 
   virtual void resetEventFlags(void) {}
 
+  /**
+   * Copy over voltage from the bus
+   */
+  void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
+
+  /**
+   * Set Machine angle
+   */
+  void setMachineAngle(double deltain) {p_delta = deltain; }
+
+
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
+  double        p_time;   /** Current time */
+  double        p_Vm0, p_Va0; /** Initial voltage magnitude and angle **/
+  double        p_va,p_vb,p_vc; /** Bus voltage **/
+  double        p_delta;   /** Machine angle */
+  double        Efd0;
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
   BaseEMTGenModel* p_gen; // Generator model
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */

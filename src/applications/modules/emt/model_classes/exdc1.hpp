@@ -20,18 +20,18 @@
 
 // This model is also termed as 'ESDC1A' in PSSE
 
-class Exdc1Exc: public BaseExcModel
+class Exdc1: public BaseEMTExcModel
 {
 public:
   /**
    * Basic constructor
    */
-  Exdc1Exc();
+  Exdc1();
   
   /**
    * Basic destructor
    */
-  ~Exdc1Exc();
+  ~Exdc1();
   
   /**
    * Load parameters from DataCollection object into exciter model
@@ -71,34 +71,42 @@ public:
    * @param string buffer that contains output
    */
   void write(const char* signal, char* string);
-  
-  /**
-   *  Set the number of variables for this exciter model
-   *  @param [output] number of variables for this model
+
+    /**
+   * Get number of matrix values contributed by generator
+   * @return number of matrix values
    */
-  bool vectorSize(int *nvar) const;
-  
+  int matrixNumValues();
+
   /**
-   * Set the internal values of the voltage magnitude and phase angle. Need this
-   * function to push values from vectors back onto exciters
-   * @param values array containing exciter state variables
+   * Return values from Jacobian matrix
+   * @param nvals: number of values to be inserted
+   * @param values: pointer to matrix block values
+   * @param rows: pointer to matrix block rows
+   * @param cols: pointer to matrix block cols
    */
-  void setValues(gridpack::ComplexType*);
-  
+  void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
+
   /**
-   * Return the values of the exciter vector block
-   * @param values: pointer to vector values
-   * @return: false if exciter does not contribute
-   *        vector element
+   * Return vector values from the generator model 
+   * @param values - array of returned values
+   *
+   * Note: This function is used to return the entries in vector,
+   * for e.g., the entries in the residual vector from the generator
+   * object
    */
-  bool vectorValues(gridpack::ComplexType *values);
-  
+  void vectorGetValues(gridpack::ComplexType *values);
+
   /**
-   * Set the initial field voltage (at t = tstart) for the exciter
-   * @param fldv value of the field voltage
+   * Pass solution vector values to the generator object
+   * @param values - array of returned values
+   *
+   * Note: This function is used to pass the entries in vector
+   * to the generator object,
+   * for e.g., the state vector values for this generator
    */
-  void setInitialFieldVoltage(double fldv);
-  
+  void setValues(gridpack::ComplexType *values);
+
   /** 
    * Get the value of the field voltage parameter
    * @return value of field voltage
@@ -151,9 +159,6 @@ private:
   // EXDC1 derivatives
   double dVmeas, dxLL, dVR, dEfd, dxf;    
   
-  // EXDC1 previous step solution
-  double Vmeasprev,xLLprev,VRprev,Efdprev,xfprev;
-  
   // Saturation function data points
   double E1, SE1, E2, SE2;
 
@@ -173,22 +178,18 @@ private:
   // Voltage regulator reference
   double Vref;
   
-  // Flag to denote whether each equation is algebraic or differential.
-  // iseq_diff[i] = 1 if equation is differential, 0 otherwise.
-  int iseq_diff[5];
-
   bool VR_at_min,VR_at_max;
   bool sat_zero; // Saturation function SE is zero
 };
 
 // Class for defining events for Exdc1 model
-class Exdc1ExcEvent
+class Exdc1Event
   :public gridpack::math::DAESolver::Event
 {
 public:
 
   // Default constructor
-  Exdc1ExcEvent(Exdc1Exc *exc):gridpack::math::DAESolver::Event(2),p_exc(exc)
+  Exdc1Event(Exdc1 *exc):gridpack::math::DAESolver::Event(2),p_exc(exc)
   {
     std:fill(p_term.begin(),p_term.end(),false);
 
@@ -197,9 +198,9 @@ public:
   }
 
   // Destructor
-  ~Exdc1ExcEvent(void) {}
+  ~Exdc1Event(void) {}
 protected:
-  Exdc1Exc *p_exc;
+  Exdc1 *p_exc;
 
   void p_update(const double& t, gridpack::ComplexType *state);
 
