@@ -24,7 +24,30 @@ variables:
 
   variables:
 
-    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-${CI_COMMIT_REF_NAME}"
+    IMAGE_TAG: ${BASE_IMAGE}-gridpack-env
+    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${IMAGE_TAG}
+
+
+check-container-definition-changed:
+
+    extends: .multi-distro
+
+    image: alpine
+
+    script:
+
+      - touch container-definition-changed
+
+    artifacts:
+
+        paths:
+
+          - container-definition-changed
+
+    rules:
+
+      - if: $CI_PIPELINE_SOURCE == "push"
+        changes: [ "dockerfile" ]
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
@@ -39,21 +62,33 @@ build-container:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
 
+  needs:
+
+      - job: check-container-definition-changed
+        optional: true
+
   script:
 
+    # build image if definition was changed or the tag does not exist in the registry
+    - |
+      tag_exists() {
+        curl \
+          --silent \
+          --show-error \
+          --location \
+          --fail \
+          --header "PRIVATE-TOKEN: $CI_JOB_TOKEN " \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/294/tags/$IMAGE_TAG\" \
+          1>$null 2>$null
+      }
+    - test -f container-definition-changed || ! tag_exists || exit 0
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
-      --build-arg BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}
-      --build-arg http_proxy=$http_proxy
-      --build-arg https_proxy=$https_proxy
+      --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
+      --build-arg "http_proxy=$http_proxy"
+      --build-arg "https_proxy=$https_proxy"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}"
-
-  rules:
-
-    - if: $CI_PIPELINE_SOURCE == "push"
-      changes: [ "dockerfile" ]
-    - if: $CI_PIPELINE_SOURCE == "tag"
 
 
 build-gridpack:
@@ -66,10 +101,7 @@ build-gridpack:
 
     MAKE_JOBS: "2"
 
-  needs:
-
-    - job: build-container
-      optional: true
+  needs: [ build-container ]
 
   script:
 
