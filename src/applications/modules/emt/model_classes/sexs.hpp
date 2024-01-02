@@ -31,23 +31,21 @@
 #define _sexs_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "base_exciter_model.hpp"
+#include <base_exciter_model.hpp>
 #include <string>
 
-namespace gridpack {
-namespace dynamic_simulation {
-class SexsModel : public BaseExciterModel
+class Sexs : public BaseEMTExcModel
 {
   public:
     /**
      * Basic constructor
      */
-    SexsModel();
+    Sexs();
 
     /**
      * Basic destructor
      */
-    virtual ~SexsModel();
+    virtual ~Sexs();
 
     /**
      * Load parameters from DataCollection object into exciter model
@@ -65,20 +63,6 @@ class SexsModel : public BaseExciterModel
      * @param ts time step 
      */
     void init(double mag, double ang, double ts);
-
-    /**
-     * Predict new state variables for time step
-     * @param t_inc time step increment
-     * @param flag initial step if true
-     */
-    void predictor(double t_inc, bool flag);
-
-    /**
-     * Correct state variables for time step
-     * @param t_inc time step increment
-     * @param flag initial step if true
-     */
-    void corrector(double t_inc, bool flag);
 
     /**
      * Set the initial field voltage value
@@ -104,18 +88,6 @@ class SexsModel : public BaseExciterModel
     **/
     void setVstab(double vstab);
 	
-    /** 
-     * Set the exciter bus number
-     * @return value of exciter bus number
-     */
-    void setExtBusNum(int ExtBusNum);
-	
-    /** 
-     * Set the exciter generator id
-     * @return value of generator id
-     */
-    void setExtGenId(std::string ExtGenId);
-
   private:
 
     // Internal variables
@@ -141,6 +113,4 @@ class SexsModel : public BaseExciterModel
     int p_bus_id;  // bus number of the generator 
 
 };
-}  // dynamic_simulation
-}  // gridpack
 #endif

@@ -133,14 +133,14 @@ int BaseEMTGenModel::getRotorSpeedDeviationLocation()
   return 0;
 }
 
-void BaseEMTGenModel::setExciter(boost::shared_ptr<BaseExcModel> &exciter)
+void BaseEMTGenModel::setExciter(boost::shared_ptr<BaseEMTExcModel> &exciter)
 { 
   p_exciter = exciter;
   p_hasExciter = true;
 }
 
 
-boost::shared_ptr<BaseExcModel> BaseEMTGenModel::getExciter()
+boost::shared_ptr<BaseEMTExcModel> BaseEMTGenModel::getExciter()
 {
   return p_exciter;
 }
@@ -211,4 +211,12 @@ void BaseEMTGenModel::setValues(gridpack::ComplexType *values)
 {
 }
 
+/**
+ * Returns the initial field voltage (Efd(t0))
+ * @param [out] Efd0 - Initial field voltage
+ */
+double BaseEMTGenModel::getInitialFieldVoltage()
+{
+  return 0.0;
+}
 

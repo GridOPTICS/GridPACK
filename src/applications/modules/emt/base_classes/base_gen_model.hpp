@@ -22,7 +22,7 @@
 #include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 
-class BaseExcModel; // Forward declaration for BaseExcModel
+class BaseEMTExcModel; // Forward declaration for BaseEMTExcModel
 class BaseGovModel; // Forward declaration for BaseGovModel
 
 class BaseEMTGenModel : public gridpack::component::BaseComponent
@@ -130,6 +130,12 @@ public:
    */
   virtual void getCurrentGlobalLocation(int *i_gloc);
 
+  /**
+   * Return the machine angle
+   * @param [output] delta - machine angle
+   */
+  virtual double getAngle() { return 0.0; }
+
   
   /**
    * Return the number of variables
@@ -197,9 +203,9 @@ public:
    */
   void setBusOffset(int offset) {offsetb = offset;}
 
-  void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
+  void setExciter(boost::shared_ptr<BaseEMTExcModel> &p_exciter);
 
-  boost::shared_ptr<BaseExcModel> getExciter();
+  boost::shared_ptr<BaseEMTExcModel> getExciter();
   
   bool hasExciter();
 
@@ -236,6 +242,18 @@ public:
 
   virtual void resetEventFlags(void) {}
 
+  /**
+   * Returns the initial field voltage (Efd(t0))
+   * @param [out] Efd0 - Initial field voltage
+   */
+  virtual double getInitialFieldVoltage();
+
+  /**
+   * Sets the exciter field voltage for the generator
+   * @param [in] Efd - Exciter field voltage
+   */
+  void setFieldVoltage(double fldv) {Efd = fldv; }
+  
  protected:
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */
@@ -248,8 +266,9 @@ public:
   double        p_Vm0,p_Va0; // Initial bus voltage and angle
   double        p_va, p_vb, p_vc; // phase voltages
   bool          p_hasExciter; // Flag indicating whether this generator has exciter
+  double        Efd; // Field voltage 
   bool          p_hasGovernor; // Flag indicating whether this generator has governor
-  boost::shared_ptr<BaseExcModel> p_exciter; // Exciter
+  boost::shared_ptr<BaseEMTExcModel> p_exciter; // Exciter
   boost::shared_ptr<BaseGovModel> p_governor; // Governor
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator

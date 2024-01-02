@@ -121,6 +121,18 @@ class Genrou: public BaseEMTGenModel
    */
   void setValues(gridpack::ComplexType *values);
 
+  /**
+   * Returns the initial field voltage (Efd(t0))
+   * @param [out] Efd0 - Initial field voltage
+   */
+  double getInitialFieldVoltage();
+
+  /**
+   * Return the machine angle
+   * @param [output] delta - machine angle
+   */
+  double getAngle() { return delta; }
+
   private:
     // Machine parameters
   double H, D, Ra, L, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
@@ -128,8 +140,6 @@ class Genrou: public BaseEMTGenModel
   
   double LadIfd; // Field current
   
-  // Inputs
-  double Efd; // Field voltage (from exciter if available otherwise constant)
   double TM; // Mechanical torque (from governor if avaiable otherwise constant)
 
   // Voltages in network reference frame

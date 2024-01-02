@@ -44,6 +44,7 @@ add_library(gridpack_emt_module
   model_classes/gencls.cpp
   model_classes/genrou.cpp
   model_classes/constantimpedance.cpp
+  model_classes/exdc1.cpp
 )
 
 target_link_libraries(gridpack_emt_module
@@ -82,6 +83,7 @@ install(FILES
   model_classes/gencls.hpp
   model_classes/genrou.hpp
   model_classes/constantimpedance.hpp
+  model_classes/exdc1.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )
 
