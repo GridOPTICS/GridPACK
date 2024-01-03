@@ -150,13 +150,13 @@ bool BaseEMTGenModel::hasExciter()
     return p_hasExciter;
 }
 
-void BaseEMTGenModel::setGovernor(boost::shared_ptr<BaseGovModel> &governor)
+void BaseEMTGenModel::setGovernor(boost::shared_ptr<BaseEMTGovModel> &governor)
 { 
   p_governor = governor;
   p_hasGovernor = true;
 }
 
-boost::shared_ptr<BaseGovModel> BaseEMTGenModel::getGovernor()
+boost::shared_ptr<BaseEMTGovModel> BaseEMTGenModel::getGovernor()
 {
   return p_governor;
 }

@@ -23,7 +23,7 @@
 
 class BaseEMTGenModel; // Forward declaration for BaseGenModel
 
-class BaseGovModel : public gridpack::component::BaseComponent
+class BaseEMTGovModel : public gridpack::component::BaseComponent
 {
   /* Inheriting the BaseComponent class allows use of functions
      for loading data and accessing/setting values in the vector/matrix
@@ -32,12 +32,12 @@ public:
   /**
    * Basic constructor
    */
-  BaseGovModel();
+  BaseEMTGovModel();
   
   /**
    * Basic destructor
    */
-  virtual ~BaseGovModel();
+  virtual ~BaseEMTGovModel();
   
   /**
    * Initialize governor model before calculation
