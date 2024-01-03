@@ -119,7 +119,7 @@ double BaseEMTGenModel::getFieldCurrent()
  * Return the rotor speed deviation
  * @param 
  */
-double BaseEMTGenModel::getRotorSpeedDeviation()
+double BaseEMTGenModel::getSpeedDeviation()
 {
   return 0.0;
 }
@@ -128,7 +128,7 @@ double BaseEMTGenModel::getRotorSpeedDeviation()
  * Return the location of speed rotor speed deviation variable in the bus array
  * @param rotor speed deviation location
 */
-int BaseEMTGenModel::getRotorSpeedDeviationLocation()
+int BaseEMTGenModel::getSpeedDeviationLocation()
 {
   return 0;
 }
