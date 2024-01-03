@@ -15,7 +15,7 @@
 #include <base_gov_model.hpp>
 #include <gridpack/include/gridpack.hpp>
 
-BaseGovModel::BaseGovModel(void)
+BaseEMTGovModel::BaseEMTGovModel(void)
 {
   mbase = DEFAULT_MVABASE;
   sbase = DEFAULT_MVABASE;
@@ -23,7 +23,7 @@ BaseGovModel::BaseGovModel(void)
   p_ncols = 0;
 }
 
-BaseGovModel::~BaseGovModel(void)
+BaseEMTGovModel::~BaseEMTGovModel(void)
 {
 }
 
@@ -31,9 +31,9 @@ BaseGovModel::~BaseGovModel(void)
  * Load parameters from DataCollection object into governor model
  * @param data collection of governor parameters from input files
  * @param index of goviteer on bus
- * TODO: might want to move this functionality to BaseGovModel
+ * TODO: might want to move this functionality to BaseEMTGovModel
  */
-void BaseGovModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
+void BaseEMTGovModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx)
 {
   data->getValue(CASE_SBASE,&sbase); // System MVAbase, used in conversion from machine base to system base.
@@ -44,7 +44,7 @@ void BaseGovModel::load(const boost::shared_ptr<gridpack::component::DataCollect
  * Initialize governor model before calculation
  * @param [output] values - array where initialized governor variables should be set
  */
-void BaseGovModel::init(gridpack::ComplexType *values)
+void BaseEMTGovModel::init(gridpack::ComplexType *values)
 {
 }
 
@@ -56,7 +56,7 @@ void BaseGovModel::init(gridpack::ComplexType *values)
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool BaseGovModel::serialWrite(char *string, const int bufsize,
+bool BaseEMTGovModel::serialWrite(char *string, const int bufsize,
 			       const char *signal)
 {
   return false;
@@ -66,7 +66,7 @@ bool BaseGovModel::serialWrite(char *string, const int bufsize,
  *  Set the number of variables for this governor model
  *  @param [output] number of variables for this model
  */
-bool BaseGovModel::vectorSize(int *nvar) const
+bool BaseEMTGovModel::vectorSize(int *nvar) const
 {
   *nvar = 0;
   return true;
@@ -77,7 +77,7 @@ bool BaseGovModel::vectorSize(int *nvar) const
  * @param signal character string used to determine behavior
  * @param string buffer that contains output
  */
-void BaseGovModel::write(const char* signal, char* string)
+void BaseEMTGovModel::write(const char* signal, char* string)
 {
 }
 
@@ -86,7 +86,7 @@ void BaseGovModel::write(const char* signal, char* string)
  * function to push values from vectors back onto governors
  * @param values array containing governor state variables
 */
-void BaseGovModel::setValues(gridpack::ComplexType *values)
+void BaseEMTGovModel::setValues(gridpack::ComplexType *values)
 {
 }
 
@@ -96,7 +96,7 @@ void BaseGovModel::setValues(gridpack::ComplexType *values)
  * @return: false if governor does not contribute
  *        vector element
  */
-bool BaseGovModel::vectorValues(gridpack::ComplexType *values)
+bool BaseEMTGovModel::vectorValues(gridpack::ComplexType *values)
 {
   return false;
 }
@@ -105,7 +105,7 @@ bool BaseGovModel::vectorValues(gridpack::ComplexType *values)
  * Set Jacobian block
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool BaseGovModel::setJacobian(gridpack::ComplexType **values)
+bool BaseEMTGovModel::setJacobian(gridpack::ComplexType **values)
 {
   return false;
 }
@@ -115,7 +115,7 @@ bool BaseGovModel::setJacobian(gridpack::ComplexType **values)
  * @param value_map standard map containing indices and values of matrix
  *        elements
  */
-bool BaseGovModel::setJacobian(std::map<std::pair<int,int>,
+bool BaseEMTGovModel::setJacobian(std::map<std::pair<int,int>,
     gridpack::ComplexType> &value_map)
 {
   return false;
@@ -126,7 +126,7 @@ bool BaseGovModel::setJacobian(std::map<std::pair<int,int>,
  * Set the number of rows contributed by this governor
  * @param nrows number of rows
  */
-void BaseGovModel::matrixSetNumRows(int nrows)
+void BaseEMTGovModel::matrixSetNumRows(int nrows)
 {
   p_nrows = nrows;
 }
@@ -135,7 +135,7 @@ void BaseGovModel::matrixSetNumRows(int nrows)
  * Set the number of columns contributed by this governor
  * @param ncols number of columns
  */
-void BaseGovModel::matrixSetNumCols(int ncols)
+void BaseEMTGovModel::matrixSetNumCols(int ncols)
 {
   p_ncols = ncols;
 }
@@ -144,7 +144,7 @@ void BaseGovModel::matrixSetNumCols(int ncols)
  * Number of rows (equations) contributed to by governor
  * @return number of rows
  */
-int BaseGovModel::matrixNumRows()
+int BaseEMTGovModel::matrixNumRows()
 {
   return p_nrows;
 }
@@ -153,7 +153,7 @@ int BaseGovModel::matrixNumRows()
  * Number of rows (equations) contributed to by governor
  * @return number of rows
  */
-int BaseGovModel::matrixNumCols()
+int BaseEMTGovModel::matrixNumCols()
 {
   return p_ncols;
 }
@@ -234,7 +234,7 @@ void BaseGenModel::matrixGetValues(int *nvals,gridpack::ComplexType *values,
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power
  */
-void BaseGovModel::setInitialMechanicalPower(double pmech)
+void BaseEMTGovModel::setInitialMechanicalPower(double pmech)
 {
 }
 
@@ -242,7 +242,7 @@ void BaseGovModel::setInitialMechanicalPower(double pmech)
  * Get the value of the mechanical power parameter
  * @return value of the mechanical power
  */
-double BaseGovModel::getMechanicalPower()
+double BaseEMTGovModel::getMechanicalPower()
 {
   return 0.0;
 }
@@ -252,7 +252,7 @@ double BaseGovModel::getMechanicalPower()
  * @param xgov_loc locations of governor variables
  * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
  */
-bool BaseGovModel::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov)
+bool BaseEMTGovModel::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov)
 {
   return false;
 }
@@ -262,24 +262,24 @@ bool BaseGovModel::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dP
  * Set the value of VComp
  * @return value of Vcomp
  */
-void BaseGovModel::setVcomp(double Vcomp)
+void BaseEMTGovModel::setVcomp(double Vcomp)
 {
 }
 
 /**
  * Set Event
  */
-void BaseGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void BaseEMTGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
 {
 }
 
 
-void BaseGovModel::setGenerator(BaseEMTGenModel *generator)
+void BaseEMTGovModel::setGenerator(BaseEMTGenModel *generator)
 {
   p_gen = generator;
 }
 
-BaseEMTGenModel* BaseGovModel::getGenerator(void)
+BaseEMTGenModel* BaseEMTGovModel::getGenerator(void)
 {
   return p_gen;
 }
