@@ -23,7 +23,7 @@
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 
 class BaseEMTExcModel; // Forward declaration for BaseEMTExcModel
-class BaseGovModel; // Forward declaration for BaseGovModel
+class BaseEMTGovModel; // Forward declaration for BaseEMTGovModel
 
 class BaseEMTGenModel : public gridpack::component::BaseComponent
 {
@@ -209,9 +209,9 @@ public:
   
   bool hasExciter();
 
-  void setGovernor(boost::shared_ptr<BaseGovModel> &p_governor);
+  void setGovernor(boost::shared_ptr<BaseEMTGovModel> &p_governor);
 
-  boost::shared_ptr<BaseGovModel> getGovernor();
+  boost::shared_ptr<BaseEMTGovModel> getGovernor();
   
   bool hasGovernor();
 
@@ -269,7 +269,7 @@ public:
   double        Efd; // Field voltage 
   bool          p_hasGovernor; // Flag indicating whether this generator has governor
   boost::shared_ptr<BaseEMTExcModel> p_exciter; // Exciter
-  boost::shared_ptr<BaseGovModel> p_governor; // Governor
+  boost::shared_ptr<BaseEMTGovModel> p_governor; // Governor
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator
   
