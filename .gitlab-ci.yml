@@ -80,11 +80,11 @@ build-container:
       --build-arg "http_proxy=$http_proxy"
       --build-arg "https_proxy=$https_proxy"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
-      --destination "${IMAGE_PATH}" 2> build_stderr.log | tee build_stdout.log
+      --destination "${IMAGE_PATH}" > build.log 2>&1
 
   artifacts:
 
-      paths: [ build_stderr.log, build_stdout.log ]
+      paths: [ build.log ]
 
 
 build-gridpack:
