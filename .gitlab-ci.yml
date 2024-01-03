@@ -60,7 +60,6 @@ build-container:
 
   script:
 
-    - ln -s /gridpack-dependencies/log/ ${CI_PROJECT_DIR}/log
     # build image if definition was changed or the tag does not exist in the registry
     - |
       tag_exists() {
@@ -82,10 +81,6 @@ build-container:
       --build-arg "https_proxy=$https_proxy"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}"
-
-  artifacts:
-
-      paths: [ log/ ]
 
 
 build-gridpack:

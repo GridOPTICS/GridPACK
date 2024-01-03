@@ -35,17 +35,16 @@ function install_boost {
   echo "Bootstrapping Boost"
   ./bootstrap.sh \
     --prefix=install_for_gridpack \
-    --with-libraries=mpi,serialization,random,filesystem,system \
-    >../log/boost_bootstrap.log 2>&1
+    --with-libraries=mpi,serialization,random,filesystem,system
   echo 'using mpi ;' >>project-config.jam
 
   # build
   echo "Building Boost"
-  ./b2 -a -d+2 link=shared stage >../log/boost_build.log 2>&1
+  ./b2 -a -d+2 link=shared stage
 
   # install
   echo "Installing Boost"
-  ./b2 -a -d+2 link=shared install >../log/boost_install.log 2>&1
+  ./b2 -a -d+2 link=shared install
 
   popd || exit
 
@@ -85,12 +84,11 @@ function install_ga {
     --enable-cxx \
     --enable-i4 \
     --prefix="${PWD}/install_for_gridpack" \
-    --enable-shared \
-    >../log/ga_configure.log 2>&1
+    --enable-shared
 
   # install
   echo "Installing Global Arrays"
-  make -j "$(nproc)" install >../log/ga_install.log 2>&1
+  make -j "$(nproc)" install
 
   popd || exit
 
@@ -128,20 +126,19 @@ function install_petsc {
     --prefix="${PWD}"/install_for_gridpack \
     --scalar-type=complex \
     --with-shared-libraries=1 \
-    --download-f2cblaslapack=1 \
-    >../log/petsc_configure.log 2>&1
+    --download-f2cblaslapack=1
 
   # build
   echo "Building PETSc"
-  make >../log/petsc_build.log 2>&1
+  make
 
   # install
   echo "Installing PETSc"
-  make install >../log/petsc_install.log 2>&1
+  make install
 
   # check
   echo "Checking PETSc"
-  make check >../log/petsc_check.log 2>&1
+  make check
 
   popd || exit
 
