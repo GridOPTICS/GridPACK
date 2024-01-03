@@ -16,7 +16,7 @@
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
 
-Wsieg1Gov::Wsieg1Gov(void)
+Wsieg1::Wsieg1(void)
 {
   xLL = 0.0; 
   xGV = 0.0; 
@@ -24,18 +24,14 @@ Wsieg1Gov::Wsieg1Gov(void)
   xT2 = 0.0; 
   xT3 = 0.0; 
   xT4 = 0.0;
+
   dxLL = 0.0;
   dxGV = 0.0;
   dxT1 = 0.0;
   dxT2 = 0.0;
   dxT3 = 0.0;
   dxT4 = 0.0;
-  xLLprev = 0.0;
-  xGVprev = 0.0;
-  xT1prev = 0.0;
-  xT2prev = 0.0;
-  xT3prev = 0.0;
-  xT4prev = 0.0;
+
   K = 0.0;
   T1 = 0.0;
   T2 = 0.0;
@@ -63,7 +59,7 @@ Wsieg1Gov::Wsieg1Gov(void)
   nxgov = 6; // Number of variables
 }
 
-Wsieg1Gov::~Wsieg1Gov(void)
+Wsieg1::~Wsieg1(void)
 {
 }
 
@@ -73,9 +69,9 @@ Wsieg1Gov::~Wsieg1Gov(void)
  * @param index of governor on bus
  * TODO: might want to move this functionality to BaseGovernorModel
  */
-void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+void Wsieg1::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  BaseGovModel::load(data,idx); // load parameters in base governor model
+  BaseEMTGovModel::load(data,idx); // load parameters in base governor model
   
   // load parameters for the model type
   if (!data->getValue(GOVERNOR_K, &K, idx)) K = 0.0; // K
@@ -103,13 +99,6 @@ void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
-  // Convert governor parameters from machine base to sbase
-  double mult = mbase/sbase;
-  Uo   *= mult;
-  Uc   *= mult;
-  Pmin *= mult;
-  Pmax *= mult;
-
   //Set flags for differential or algebraic equations
   iseq_diff[0] = (T1 == 0 || T2 == 0)?0:1;
   iseq_diff[1] = 1;
@@ -123,10 +112,12 @@ void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection
  * Initialize governor model before calculation
  * @param [output] values - array where initialized governor variables should be set
  */
-void Wsieg1Gov::init(gridpack::ComplexType* values) 
+void Wsieg1::init(gridpack::ComplexType* xin) 
 {
-  BaseGenModel* gen=getGenerator();
-  double dw = gen->getRotorSpeedDeviation();
+  gridpack::ComplexType *x = xin+offsetb; // governor array starts from this location
+  
+  BaseEMTGenModel* gen=getGenerator();
+  double dw = gen->getSpeedDeviation();
   double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
     PGV = Pmech1 / (K1 + K3 + K5 + K7);
@@ -158,12 +149,12 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
   if (iseq_diff[0]) xLL = K*dw * (1.0 - T2 / T1);
   else xLL = K*dw;
 
-  values[0] = xLL;
-  values[1] = xGV;
-  values[2] = xT1;
-  values[3] = xT2;
-  values[4] = xT3;
-  values[5] = xT4;
+  x[0] = xLL;
+  x[1] = xGV;
+  x[2] = xT1;
+  x[3] = xT2;
+  x[4] = xT3;
+  x[5] = xT4;
 }
 
 /**
@@ -174,7 +165,7 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool Wsieg1Gov::serialWrite(char *string, const int bufsize,const char *signal)
+bool Wsieg1::serialWrite(char *string, const int bufsize,const char *signal)
 {
   return false;
 }
@@ -184,18 +175,8 @@ bool Wsieg1Gov::serialWrite(char *string, const int bufsize,const char *signal)
  * @param signal character string used to determine behavior
  * @param string buffer that contains output
  */
-void Wsieg1Gov::write(const char* signal, char* string)
+void Wsieg1::write(const char* signal, char* string)
 {
-}
-
-/**
- *  Set the number of variables for this governor model
- *  @param [output] number of variables for this model
- */
-bool Wsieg1Gov::vectorSize(int *nvar) const
-{
-  *nvar = nxgov;
-  return true;
 }
 
 /**
@@ -203,8 +184,10 @@ bool Wsieg1Gov::vectorSize(int *nvar) const
  * function to push values from vectors back onto governors
  * @param values array containing governor state variables
 */
-void Wsieg1Gov::setValues(gridpack::ComplexType *values)
+void Wsieg1::setValues(gridpack::ComplexType *val)
 {
+  gridpack::ComplexType *values = val+offsetb; // governor array starts from this location
+
   if(p_mode == XVECTOBUS) {
     xLL = real(values[0]);
     xGV = real(values[1]);
@@ -219,24 +202,17 @@ void Wsieg1Gov::setValues(gridpack::ComplexType *values)
     dxT2 = real(values[3]);
     dxT3 = real(values[4]);
     dxT4 = real(values[5]);
-  } else if (p_mode == XVECPRETOBUS) {
-    xLLprev = real(values[0]);
-    xGVprev = real(values[1]);
-    xT1prev = real(values[2]);
-    xT2prev = real(values[3]);
-    xT3prev = real(values[4]);
-    xT4prev = real(values[5]);
-   }
+  }
 }
 
 /**
  * Return the values of the governor vector block
  * @param values: pointer to vector values
- * @return: false if governor does not contribute
- *        vector element
  */
-bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
+void Wsieg1::vectorGetValues(gridpack::ComplexType *values)
 {
+  gridpack::ComplexType *f = values+offsetb; // exciter array starts from this location
+
   int x1_idx = 0;
   int x2_idx = 1;
   int x3_idx = 2;
@@ -244,42 +220,16 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
   int x5_idx = 4;
   int x6_idx = 5;
   double yLL,uGV;
-  BaseGenModel* gen=getGenerator();
-  double dw = gen->getRotorSpeedDeviation();
+  BaseEMTGenModel* gen=getGenerator();
+  double dw = gen->getSpeedDeviation();
 
-  // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the vector values of residual function to 0.0.
-  if(p_mode == FAULT_EVAL) {
-    // xLL equation
-    if(iseq_diff[x1_idx]) values[x1_idx] = xLL - xLLprev; 
-    else values[x1_idx] = -xLL + K*dw;
-    yLL = xLL;
-
-    // xGV equation
-    values[x2_idx] = xGV - xGVprev;
-
-    // xT1 equation
-    if(iseq_diff[x3_idx]) values[x3_idx] = xT1 - xT1prev;
-    else values[x3_idx] = xGV - xT1;
-      
-    // xT2 equation
-    if(iseq_diff[x4_idx]) values[x4_idx] = xT2 - xT2prev;
-    else values[x4_idx] = xT1 - xT2;
-
-    // xT3 equation
-    if(iseq_diff[x5_idx]) values[x5_idx] = xT3 - xT3prev;
-    else values[x5_idx] = xT2 - xT3;
-
-    // xT4 equation
-    if(iseq_diff[x6_idx]) values[x6_idx] = xT4 - xT4prev;
-    else values[x6_idx] = xT3 - xT4;
-
-  } else if(p_mode == RESIDUAL_EVAL) {
+  if(p_mode == RESIDUAL_EVAL) {
     // xLL equation
     if(iseq_diff[x1_idx]) {
-      values[x1_idx] = (-xLL + (1.0 - T2/T1)*K*dw)/T1 - dxLL;
+      f[x1_idx] = (-xLL + (1.0 - T2/T1)*K*dw)/T1 - dxLL;
       yLL = xLL + T2/T1*K*dw;
     } else {
-      values[x1_idx] = -xLL + K*dw;
+      f[x1_idx] = -xLL + K*dw;
       yLL = xLL;
     }
 
@@ -288,35 +238,33 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
     if(uGV_at_min) uGV = Uc;
     else if(uGV_at_max) uGV = Uo;
 
-    if(xGV_at_min) values[x2_idx] = xGV - Pmin;
-    else if(xGV_at_max) values[x2_idx] = xGV - Pmax;
-    else values[x2_idx] = uGV - dxGV;
+    if(xGV_at_min) f[x2_idx] = xGV - Pmin;
+    else if(xGV_at_max) f[x2_idx] = xGV - Pmax;
+    else f[x2_idx] = uGV - dxGV;
     
     // xT1 equation
-    if(iseq_diff[x3_idx]) values[x3_idx] = (xGV - xT1)/T4 - dxT1;
-    else values[x3_idx] = xGV - xT1;
+    if(iseq_diff[x3_idx]) f[x3_idx] = (xGV - xT1)/T4 - dxT1;
+    else f[x3_idx] = xGV - xT1;
 
     // xT2 equation
-    if(iseq_diff[x4_idx]) values[x4_idx] = (xT1 - xT2)/T5 - dxT2;
-    else values[x4_idx] = xT1 - xT2;
+    if(iseq_diff[x4_idx]) f[x4_idx] = (xT1 - xT2)/T5 - dxT2;
+    else f[x4_idx] = xT1 - xT2;
 
     // xT3 equation
-    if(iseq_diff[x5_idx]) values[x5_idx] = (xT2 - xT3)/T6 - dxT3;
-    else values[x5_idx] = xT2 - xT3;
+    if(iseq_diff[x5_idx]) f[x5_idx] = (xT2 - xT3)/T6 - dxT3;
+    else f[x5_idx] = xT2 - xT3;
 
     // xT4 equation
-    if(iseq_diff[x6_idx]) values[x6_idx] = (xT3 - xT4)/T7 - dxT4;
-    else values[x6_idx] = xT3 - xT4;        
+    if(iseq_diff[x6_idx]) f[x6_idx] = (xT3 - xT4)/T7 - dxT4;
+    else f[x6_idx] = xT3 - xT4;        
   }
-  
-  return true;
 }
 
 /**
  * Set Jacobian block
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
+bool Wsieg1::setJacobian(gridpack::ComplexType **values)
 {
   int xLL_idx = offsetb;
   int xGV_idx = offsetb+1;
@@ -331,52 +279,8 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
   double dyLL_ddw=0.0;
   int    dw_idx;
 
-  dw_idx = getGenerator()->getRotorSpeedDeviationLocation();
-  if(p_mode == FAULT_EVAL) {
-    // Partial derivatives of xLL equation
-    if(iseq_diff[0]) {
-      values[xLL_idx][xLL_idx] = 1.0;
-    } else {
-      values[xLL_idx][xLL_idx] = -1.0;
-      dw_idx = getGenerator()->getRotorSpeedDeviationLocation();
-      values[dw_idx][xLL_idx] = K;
-    }
-
-    // Partial derivatives of xGV equation
-    values[xGV_idx][xGV_idx] = 1.0;
-
-    // Partial derivatives of xT1 equation
-    if(iseq_diff[2]) {
-      values[xT1_idx][xT1_idx] = 1.0;
-    } else {
-      values[xGV_idx][xT1_idx] = 1.0;
-      values[xT1_idx][xT1_idx] = -1.0;
-    }
-
-    // Partial derivatives of xT2 equation
-    if(iseq_diff[3]) {
-      values[xT2_idx][xT2_idx] = 1.0;
-    } else {
-      values[xT1_idx][xT2_idx] = 1.0;
-      values[xT2_idx][xT2_idx] = -1.0;
-    }
-
-    // Partial derivatives of xT3 equation
-    if(iseq_diff[4]) {
-      values[xT3_idx][xT3_idx] = 1.0;
-    } else {
-      values[xT2_idx][xT3_idx] = 1.0;
-      values[xT3_idx][xT3_idx] = -1.0;
-    }
-
-    // Partial derivatives of xT4 equation
-    if(iseq_diff[5]) {
-      values[xT4_idx][xT4_idx] = 1.0;
-    } else {
-      values[xT3_idx][xT4_idx] = 1.0;
-      values[xT4_idx][xT4_idx] = -1.0;
-    }
-  } else {
+  dw_idx = getGenerator()->getSpeedDeviationLocation();
+  if(p_mode == RESIDUAL_EVAL) {
     // Partial derivatives of xLL equation
     if(iseq_diff[0]) {
       values[xLL_idx][xLL_idx] = -1.0/T1 - shift;
@@ -450,10 +354,31 @@ bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
 }
 
 /**
+ * Get number of matrix values contributed by generator
+ * @return number of matrix values
+ */
+int Wsieg1::matrixNumValues()
+{
+  return 0;
+}
+
+  /**
+   * Return values from Jacobian matrix
+   * @param nvals: number of values to be inserted
+   * @param values: pointer to matrix block values
+   * @param rows: pointer to matrix block rows
+   * @param cols: pointer to matrix block cols
+   */
+void Wsieg1::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+{
+
+}
+
+/**
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power 
  */
-void Wsieg1Gov::setInitialMechanicalPower(double Pmech0)
+void Wsieg1::setInitialMechanicalPower(double Pmech0)
 {
   Pmech1 = Pmech0;
   Pmech2 = Pmech0;
@@ -463,7 +388,7 @@ void Wsieg1Gov::setInitialMechanicalPower(double Pmech0)
  * Get the value of the mechanical power parameter
  * @return value of the mechanical power 
  */
-double Wsieg1Gov::getMechanicalPower()
+double Wsieg1::getMechanicalPower()
 {
   Pmech1 = xT1 * K1 + xT2 * K3 + xT3 * K5 + xT4 * K7;
   Pmech2 = xT1 * K2 + xT2 * K4 + xT3 * K6 + xT4 * K8;
@@ -476,7 +401,7 @@ double Wsieg1Gov::getMechanicalPower()
  * @param xgov_loc locations of governor variables
  * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
 */
-bool Wsieg1Gov::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov)
+bool Wsieg1::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov)
 {
   int i;
 
@@ -491,14 +416,14 @@ bool Wsieg1Gov::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmec
   return true;
 }
 
-void Wsieg1Gov::setVcomp(double Vcomp)
+void Wsieg1::setVcomp(double Vcomp)
 {
 }
 
 /**
  * Update the event function values
  */
-void Wsieg1Gov::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+void Wsieg1::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
 {
   int offset    = getLocalOffset();
   int xLL_idx = offset;
@@ -509,8 +434,8 @@ void Wsieg1Gov::eventFunction(const double&t,gridpack::ComplexType *state,std::v
   int xT4_idx  = offset+5;
 
   double yLL;
-  BaseGenModel* gen=getGenerator();
-  double dw = gen->getRotorSpeedDeviation();
+  BaseEMTGenModel* gen=getGenerator();
+  double dw = gen->getSpeedDeviation();
   double uGV;
 
   xLL  = real(state[xLL_idx]);
@@ -564,14 +489,14 @@ void Wsieg1Gov::eventFunction(const double&t,gridpack::ComplexType *state,std::v
 /**
  * Reset limiter flags after a network resolve
  */
-void Wsieg1Gov::resetEventFlags()
+void Wsieg1::resetEventFlags()
 {
   /* Note that the states are already pushed onto the network, so we can access these
      directly
   */
   double yLL;
-  BaseGenModel* gen=getGenerator();
-  double dw = gen->getRotorSpeedDeviation();
+  BaseEMTGenModel* gen=getGenerator();
+  double dw = gen->getSpeedDeviation();
   double uGV;
 
   if(iseq_diff[0]) {
@@ -613,7 +538,7 @@ void Wsieg1Gov::resetEventFlags()
 /**
  * Event handler
  */
-void Wsieg1Gov::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Wsieg1::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
 {
   int offset    = getLocalOffset();
   int xLL_idx = offset;
@@ -624,8 +549,8 @@ void Wsieg1Gov::eventHandlerFunction(const bool *triggered, const double& t, gri
   int xT4_idx  = offset+5;
 
   double yLL;
-  BaseGenModel* gen=getGenerator();
-  double dw = gen->getRotorSpeedDeviation();
+  BaseEMTGenModel* gen=getGenerator();
+  double dw = gen->getSpeedDeviation();
   double uGV;
 
   xLL  = real(state[xLL_idx]);
@@ -688,19 +613,19 @@ void Wsieg1Gov::eventHandlerFunction(const bool *triggered, const double& t, gri
 /**
  * Set event
  */
-void Wsieg1Gov::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void Wsieg1::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
 {
-  gridpack::math::DAESolver::EventPtr e(new Wsieg1GovEvent(this));
+  gridpack::math::DAESolver::EventPtr e(new Wsieg1Event(this));
 
   eman->add(e);
 }
 
-void Wsieg1GovEvent::p_update(const double& t,gridpack::ComplexType *state)
+void Wsieg1Event::p_update(const double& t,gridpack::ComplexType *state)
 {
   p_gov->eventFunction(t,state,p_current);
 }
 
-void Wsieg1GovEvent::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Wsieg1Event::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
 {
   p_gov->eventHandlerFunction(triggered,t,state);
 }

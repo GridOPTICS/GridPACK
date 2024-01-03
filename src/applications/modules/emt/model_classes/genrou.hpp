@@ -87,6 +87,12 @@ class Genrou: public BaseEMTGenModel
   void getCurrentGlobalLocation(int *i_gloc);
 
   /**
+   * Return the rotor speed deviation
+   * @param 
+   */
+  double getSpeedDeviation() { return dw; }
+
+  /**
    * Get number of matrix values contributed by generator
    * @return number of matrix values
    */
@@ -126,6 +132,12 @@ class Genrou: public BaseEMTGenModel
    * @param [out] Efd0 - Initial field voltage
    */
   double getInitialFieldVoltage();
+
+  /**
+   * Returns the initial mechanical power (Pmech(t0))
+   * @param [out] Pmech0 - Initial mechanical power
+   */
+  double getInitialMechanicalPower() {return TM; }
 
   /**
    * Return the machine angle

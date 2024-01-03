@@ -21,6 +21,7 @@
 #include <model_classes/genrou.hpp>
 #include <model_classes/constantimpedance.hpp>
 #include <model_classes/exdc1.hpp>
+#include <model_classes/wsieg1.hpp>
 //#include <model_classes/lumpedline.hpp>
 
 
@@ -276,7 +277,7 @@ void EmtBus::setup()
       p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
     }
     if (has_gv) {
-      p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+      p_gen[i]->getGovernor()->getnvar(&p_neqsgov[i]);
       p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
     }
     
@@ -491,8 +492,21 @@ void EmtBus::load(const
       has_gv = false;
       data->getValue(HAS_GOVERNOR,&has_gv,i);
       if(has_gv) {
-	// Handle governor data loading
-	p_gen[i]->getGovernor()->load(data,i); // load governor model
+	if(data->getValue(GOVERNOR_MODEL, &model, i)) {
+	  type = util.trimQuotes(model);
+	  if(type == "WSIEG1") {
+	    Wsieg1 *wsieg1;
+	    wsieg1 = new Wsieg1;
+	    wsieg1->setGenerator(p_gen[i]);
+
+	    boost::shared_ptr<BaseEMTGovModel> gov;
+	    gov.reset(wsieg1);
+	    p_gen[i]->setGovernor(gov);
+	    
+	    // Handle governor data loading
+	    wsieg1->load(data,i); // load governor model
+	  }
+	}
       }
     }
   }
@@ -669,6 +683,13 @@ int EmtBus::matrixNumValues()
       numvals_exc = p_gen[i]->getExciter()->matrixNumValues();
       numvals += numvals_exc;
     }
+
+    if(p_gen[i]->hasGovernor()) {
+      int numvals_gov;
+      numvals_gov = p_gen[i]->getGovernor()->matrixNumValues();
+      numvals += numvals_gov;
+    }
+
   }
 
   for(i=0; i < p_nload; i++) {
@@ -757,10 +778,18 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
 
     if(p_gen[i]->hasExciter()) {
       int nvals_exc = 0;
-      p_gen[i]->setTSshift(p_TSshift);
+      p_gen[i]->getExciter()->setTSshift(p_TSshift);
       p_gen[i]->getExciter()->matrixGetValues(&nvals_exc, values+ctr, rows+ctr, cols+ctr);
       ctr += nvals_exc;
     }
+
+    if(p_gen[i]->hasGovernor()) {
+      int nvals_gov = 0;
+      p_gen[i]->getGovernor()->setTSshift(p_TSshift);
+      p_gen[i]->getGovernor()->matrixGetValues(&nvals_gov, values+ctr, rows+ctr, cols+ctr);
+      ctr += nvals_gov;
+    }
+
 
     p_gen[i]->getCurrentGlobalLocation(&i_gloc);
 
@@ -984,6 +1013,15 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 	exc->setInitialFieldVoltage(Efd0);
 	exc->init(x);
       }
+
+      if(p_gen[i]->hasGovernor()) {
+	boost::shared_ptr<BaseEMTGovModel> gov = p_gen[i]->getGovernor();
+	double Pmech0;
+	Pmech0 = p_gen[i]->getInitialMechanicalPower();
+	gov->setVoltage(VR,VI);
+	gov->setInitialMechanicalPower(Pmech0);
+	gov->init(x);
+      }
     }
 
     for(i=0; i < p_nload; i++) {
@@ -1058,13 +1096,6 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       p_gen[i]->setVoltage(v[0],v[1],v[2]);
       p_gen[i]->setTime(p_time);
 
-      if(p_gen[i]->hasExciter()) {
-	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
-	double Efd;
-	Efd = exc->getFieldVoltage();
-	p_gen[i]->setFieldVoltage(Efd);
-      }
-
       /* Generator residual evaluation */
       p_gen[i]->setMode(p_mode);
       p_gen[i]->vectorGetValues(f);
@@ -1074,14 +1105,21 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
 	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
 	exc->setMode(p_mode);
 	exc->setTime(p_time);
-
 	
 	exc->setVoltage(v[0],v[1],v[2]);
-	double delta;
-	delta = p_gen[i]->getAngle();
-	exc->setMachineAngle(delta);
 	
 	exc->vectorGetValues(f);
+      }
+
+      /* Governor residual evaluation */
+      if(p_gen[i]->hasGovernor()) {
+	boost::shared_ptr<BaseEMTGovModel> gov = p_gen[i]->getGovernor();
+	gov->setMode(p_mode);
+	gov->setTime(p_time);
+	
+	gov->setVoltage(v[0],v[1],v[2]);
+	
+	gov->vectorGetValues(f);
       }
 
       /* Get generator current */
@@ -1162,6 +1200,13 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
 	exc->setMode(p_mode);
 	exc->setValues(values);
       }
+
+      if(p_gen[i]->hasGovernor()) {
+	boost::shared_ptr<BaseEMTGovModel> gov = p_gen[i]->getGovernor();
+	gov->setMode(p_mode);
+	gov->setValues(values);
+      }
+
     }
 
     for(i=0; i < p_nload; i++) {
