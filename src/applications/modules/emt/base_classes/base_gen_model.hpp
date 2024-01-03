@@ -186,16 +186,16 @@ public:
   virtual double getFieldCurrent(void);
 
   /**
-   * Return the rotor speed deviation
+   * Return the speed deviation
    * @param rotor speed deviation 
    */
-  virtual double getRotorSpeedDeviation();
+  virtual double getSpeedDeviation();
 
   /**
-   * Return the location of speed rotor speed deviation variable in the bus array
+   * Return the location of speed speed deviation variable in the bus array
    * @param rotor speed deviation location
    */
-  virtual int getRotorSpeedDeviationLocation();
+  virtual int getSpeedDeviationLocation();
 
   /**
    * Set the offset for first variable for the generator in the array for all bus variables 
@@ -247,6 +247,13 @@ public:
    * @param [out] Efd0 - Initial field voltage
    */
   virtual double getInitialFieldVoltage();
+
+  /**
+   * Returns the initial mechanical power (Pmech(t0))
+   * @param [out] Pmech0 - Initial mechanical power
+   */
+  virtual double getInitialMechanicalPower() {return 0.0; }
+
 
   /**
    * Sets the exciter field voltage for the generator

@@ -40,6 +40,15 @@ public:
   virtual ~BaseEMTGovModel();
   
   /**
+     Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
+
+   * Load data from DataCollection object into corresponding
+   * component. This needs to be implemented by every component
+   * @param data data collection associated with component
+   */
+  virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
+
+  /**
    * Initialize governor model before calculation
    * @param [output] values - array where initialized governor variables should be set
    */
@@ -55,7 +64,17 @@ public:
    */
   virtual bool serialWrite(char *string, const int bufsize,
 			   const char *signal);
+
+  /**
+     set governor status
+  **/
+  void setStatus(int gstatus) {status = gstatus;}
   
+  /**
+   * return the bolean indicating whether the exciter is ON or OFF
+   */
+  bool getStatus() {return status;}
+
   /**
    * Write out governor state
    * @param signal character string used to determine behavior
@@ -67,95 +86,58 @@ public:
    * Set bus voltage
    */
   void setVoltage(double busVD, double busVQ) {VD = busVD; VQ = busVQ; }
+
+  /**
+   * Copy over voltage from the bus
+   */
+  void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
+
   
   /**
    * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
    */
   void setTSshift(double inshift) {shift = inshift;}
 
-  virtual void setEvent(gridpack::math::DAESolver::EventManagerPtr);
-  
   /**
-     Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
-
-   * Load data from DataCollection object into corresponding
-   * component. This needs to be implemented by every component
-   * @param data data collection associated with component
+   * set current time
    */
-  virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
-  
+  void setTime(double time) {p_time = time; }
+
+  /**
+   * return number of variables/states
+   */
+  void getnvar(int *nvar) {*nvar = nxgov; }
+
+  virtual void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+    
   /**
    * Set Jacobian block
    * @param values a 2-d array of Jacobian block for the bus
    */
   virtual bool setJacobian(gridpack::ComplexType **values);
 
-  /**
-   * Set Jacobian block
-   * @param value_map standard map containing indices and values of matrix
-   *        elements
+    /**
+   * Return vector values from the governor model 
+   * @param values - array of returned values
+   *
+   * Note: This function is used to return the entries in vector,
+   * for e.g., the entries in the residual vector from the generator
+   * object
    */
-  virtual bool setJacobian(std::map<std::pair<int,int>,
-      gridpack::ComplexType> &value_map);
-
-#if 0
-  /**
-   * Set the number of rows contributed by this generator
-   * @param nrows number of rows
-   */
-  virtual void matrixSetNumRows(int nrows);
+  virtual void vectorGetValues(gridpack::ComplexType *values);
 
   /**
-   * Set the number of columns contributed by this generator
-   * @param ncols number of columns
+   * Set values in the component based on values in a vector or
+   * matrix
+   * @param values values in vector or matrix
    */
-  virtual void matrixSetNumCols(int ncols);
-
-  /**
-   * Number of rows (equations) contributed to by generator
-   * @return number of rows
-   */
-  int matrixNumRows();
-
-  /**
-   * Number of rows (equations) contributed to by generator
-   * @return number of rows
-   */
-  int matrixNumCols();
-
-  /** 
-   * Set global row index
-   * @param irow local row index
-   * @param global row index
-   */
-  void matrixSetRowIndex(int irow, int idx);
-
-  /** 
-   * Set global column index
-   * @param icol local column index
-   * @param global column index
-   */
-  void matrixSetColIndex(int icol, int idx);
-
-  /**
-   * Return global row index given local row index
-   * @param irow local row index
-   * @return global row index
-   */
-  int matrixGetRowIndex(int irow);
-
-  /**
-   * Return global column index given local column index
-   * @param icol local column index
-   * @return global column index
-   */
-  virtual int matrixGetColIndex(int icol);
+  virtual void setValues(gridpack::ComplexType *values);
 
   /**
    * Get number of matrix values contributed by generator
    * @return number of matrix values
    */
-  int matrixNumValues();
+  virtual int matrixNumValues();
 
   /**
  * Return values from a matrix block
@@ -164,9 +146,8 @@ public:
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+  virtual void matrixGetValues(int *nvals,gridpack::ComplexType *values,
       int *rows, int *cols);
-#endif
 
   /**
    * Set the mechanical power parameter inside the governor
@@ -193,9 +174,9 @@ public:
    */
   virtual void setVcomp(double vtmp);
   
-  void setGenerator(BaseEMTGenModel* generator);
+  void setGenerator(BaseEMTGenModel* generator) {p_gen = generator; };
 
-  BaseEMTGenModel* getGenerator(void);
+  BaseEMTGenModel* getGenerator(void) { return p_gen; }
 
   /**
    * Set the offset for first variable for the governor in the array for all bus variables 
@@ -203,11 +184,6 @@ public:
    */
   void setBusOffset(int offset) {offsetb = offset;}
 
-  /****************************************************
- The following methods are inherited from the BaseComponent class and are 
-to be overwritten by the implementation */
-  
-  
   /**
    * Set an internal variable that can be used to control the behavior of the
    * component. This function doesn't need to be implemented, but if needed,
@@ -218,29 +194,6 @@ to be overwritten by the implementation */
    * @param mode integer indicating which mode should be used
    */
   void setMode(int mode) { p_mode = mode;}
-
-  /**
-   * Return size of vector block contributed by component
-   * @param isize number of vector elements
-   * @return false if network component does not contribute
-   *        vector element
-   */
-  bool vectorSize(int *isize) const;
-
-  /**
-   * Return the values of the vector block
-   * @param values pointer to vector values
-   * @return false if network component does not contribute
-   *        vector element
-   */
-  bool vectorValues(gridpack::ComplexType *values);
-
-  /**
-   * Set values in the component based on values in a vector or
-   * matrix
-   * @param values values in vector or matrix
-   */
-  void setValues(gridpack::ComplexType *values);
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 
@@ -261,8 +214,10 @@ to be overwritten by the implementation */
 
 protected:
   double        VD, VQ;
+  double        p_va, p_vb, p_vc; // Instantaneous bus voltages
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
+  double        p_time; // Current time
 
   BaseEMTGenModel *p_gen;
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */

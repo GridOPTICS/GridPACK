@@ -18,18 +18,18 @@
 #include <base_gov_model.hpp>
 #include <gridpack/include/gridpack.hpp>
 
-class Wsieg1Gov: public BaseGovModel
+class Wsieg1: public BaseEMTGovModel
 {
 public:
   /**
    * Basic constructor
    */
-  Wsieg1Gov();
+  Wsieg1();
   
   /**
    * Basic destructor
      */
-  ~Wsieg1Gov();
+  ~Wsieg1();
   
   /**
    * Load parameters from DataCollection object into governor model
@@ -71,12 +71,6 @@ public:
   void write(const char* signal, char* string);
   
   /**
-   *  Set the number of variables for this governor model
-   *  @param [output] number of variables for this model
-   */
-  bool vectorSize(int *nvar) const;
-  
-  /**
    * Set the internal values of the voltage magnitude and phase angle. Need this
    * function to push values from vectors back onto governors
    * @param values array containing governor state variables
@@ -86,11 +80,25 @@ public:
   /**
    * Return the values of the governor vector block
    * @param values: pointer to vector values
-   * @return: false if governor does not contribute
-   *        vector element
    */
-  bool vectorValues(gridpack::ComplexType *values);
-  
+  void vectorGetValues(gridpack::ComplexType *values);
+
+  /**
+   * Get number of matrix values contributed by generator
+   * @return number of matrix values
+   */
+  int matrixNumValues();
+
+  /**
+ * Return values from a matrix block
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
+ */
+  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+      int *rows, int *cols);
+
   /**
    * Set the mechanical power during initialization inside the governor
    * @param pmech value of the mechanical power 
@@ -156,9 +164,6 @@ private:
   // WSIEG1 state-variable derivatives
   double dxLL, dxGV, dxT1, dxT2, dxT3, dxT4;
 
-  // WSIEG1 previous step solution
-  double xLLprev, xGVprev, xT1prev, xT2prev, xT3prev, xT4prev;
-
   // Outputs: Mechnical Power Gen1 and Gen 2
   double Pmech1, Pmech2;
 
@@ -175,13 +180,13 @@ private:
 };
 
 // Class for defining events for ESST1a model
-class Wsieg1GovEvent
+class Wsieg1Event
   :public gridpack::math::DAESolver::Event
 {
 public:
 
   // Default constructor
-  Wsieg1GovEvent(Wsieg1Gov *gov):gridpack::math::DAESolver::Event(4),p_gov(gov)
+  Wsieg1Event(Wsieg1 *gov):gridpack::math::DAESolver::Event(4),p_gov(gov)
   {
     std:fill(p_term.begin(),p_term.end(),false);
 
@@ -190,9 +195,9 @@ public:
   }
 
   // Destructor
-  ~Wsieg1GovEvent(void) {}
+  ~Wsieg1Event(void) {}
 protected:
-  Wsieg1Gov *p_gov;
+  Wsieg1 *p_gov;
 
   void p_update(const double& t, gridpack::ComplexType *state);
 

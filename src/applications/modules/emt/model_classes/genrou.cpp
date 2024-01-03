@@ -268,6 +268,10 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
     f[0] = OMEGA_S*(Ra*Id + (1 + dw)*psiq + Vd) - dpsid;
     f[1] = OMEGA_S*(Ra*Iq - (1 + dw)*psid + Vq) - dpsiq;
     f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
+
+    if(hasExciter()) {
+      Efd = getExciter()->getFieldVoltage();
+    }
 		    
     double dpsi1ddt;
     double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
@@ -289,6 +293,9 @@ void Genrou::vectorGetValues(gridpack::ComplexType *values)
 
     f[7] = OMEGA_S*dw - ddelta;
 
+    if(hasGovernor()) {
+      TM = getGovernor()->getMechanicalPower();
+    }
     f[8] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)) - ddw; 
 
     double igen[3];

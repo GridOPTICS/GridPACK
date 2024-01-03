@@ -63,21 +63,30 @@ bool BaseEMTGovModel::serialWrite(char *string, const int bufsize,
 }
 
 /**
- *  Set the number of variables for this governor model
- *  @param [output] number of variables for this model
- */
-bool BaseEMTGovModel::vectorSize(int *nvar) const
-{
-  *nvar = 0;
-  return true;
-}
-
-/**
  * Write out governor state
  * @param signal character string used to determine behavior
  * @param string buffer that contains output
  */
 void BaseEMTGovModel::write(const char* signal, char* string)
+{
+}
+
+/**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool BaseEMTGovModel::setJacobian(gridpack::ComplexType **values)
+{
+  return false;
+}
+
+/**
+ * Return the values of the governor vector block
+ * @param values: pointer to vector values
+ * @return: false if governor does not contribute
+ *        vector element
+ */
+void BaseEMTGovModel::vectorGetValues(gridpack::ComplexType *values)
 {
 }
 
@@ -91,128 +100,10 @@ void BaseEMTGovModel::setValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the values of the governor vector block
- * @param values: pointer to vector values
- * @return: false if governor does not contribute
- *        vector element
- */
-bool BaseEMTGovModel::vectorValues(gridpack::ComplexType *values)
-{
-  return false;
-}
-
-/**
- * Set Jacobian block
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool BaseEMTGovModel::setJacobian(gridpack::ComplexType **values)
-{
-  return false;
-}
-
-/**
- * Set Jacobian block
- * @param value_map standard map containing indices and values of matrix
- *        elements
- */
-bool BaseEMTGovModel::setJacobian(std::map<std::pair<int,int>,
-    gridpack::ComplexType> &value_map)
-{
-  return false;
-}
-
-#if 0
-/**
- * Set the number of rows contributed by this governor
- * @param nrows number of rows
- */
-void BaseEMTGovModel::matrixSetNumRows(int nrows)
-{
-  p_nrows = nrows;
-}
-
-/**
- * Set the number of columns contributed by this governor
- * @param ncols number of columns
- */
-void BaseEMTGovModel::matrixSetNumCols(int ncols)
-{
-  p_ncols = ncols;
-}
-
-/**
- * Number of rows (equations) contributed to by governor
- * @return number of rows
- */
-int BaseEMTGovModel::matrixNumRows()
-{
-  return p_nrows;
-}
-
-/**
- * Number of rows (equations) contributed to by governor
- * @return number of rows
- */
-int BaseEMTGovModel::matrixNumCols()
-{
-  return p_ncols;
-}
-
-/** 
- * Set global row index
- * @param irow local row index
- * @param global row index
- */
-void BaseGenModel::matrixSetRowIndex(int irow, int idx)
-{
-  if (p_rowidx.size() == 0) {
-    p_rowidx.resize(p_nrows);
-    int i;
-    for (i=0; i<p_nrows; i++) p_rowidx[i] = -1;
-  }
-  p_rowidx[irow] = idx;
-}
-
-/** 
- * Set global column index
- * @param icol local column index
- * @param global column index
- */
-void BaseGenModel::matrixSetColIndex(int icol, int idx)
-{
-  if (p_colidx.size() == 0) {
-    p_colidx.resize(p_ncols);
-    int i;
-    for (i=0; i<p_ncols; i++) p_colidx[i] = -1;
-  }
-  p_colidx[icol] = idx;
-}
-
-/**
- *  * Return global row index given local row index
- *   * @param irow local row index
- *    * @return global row index
- *     */
-int BaseGenModel::matrixGetRowIndex(int irow)
-{
-    return p_rowidx[irow];
-}
-
-/**
- * Return global column index given local column index
- * @param icol local column index
- * @return global column index
- */
-int BaseGenModel::matrixGetColIndex(int icol)
-{
-  return p_colidx[icol];
-}
-
-/**
  * Get number of matrix values contributed by governor
  * @return number of matrix values
  */
-int BaseGenModel::matrixNumValues()
+int BaseEMTGovModel::matrixNumValues()
 {
   return 0;
 }
@@ -224,11 +115,10 @@ int BaseGenModel::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void BaseGenModel::matrixGetValues(int *nvals,gridpack::ComplexType *values,
+void BaseEMTGovModel::matrixGetValues(int *nvals,gridpack::ComplexType *values,
     int *rows, int *cols)
 {
 }
-#endif
 
 /**
  * Set the mechanical power parameter inside the governor
@@ -257,7 +147,6 @@ bool BaseEMTGovModel::getMechanicalPowerPartialDerivatives(int *xgov_loc,double 
   return false;
 }
 
-
 /** 
  * Set the value of VComp
  * @return value of Vcomp
@@ -272,15 +161,3 @@ void BaseEMTGovModel::setVcomp(double Vcomp)
 void BaseEMTGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
 {
 }
-
-
-void BaseEMTGovModel::setGenerator(BaseEMTGenModel *generator)
-{
-  p_gen = generator;
-}
-
-BaseEMTGenModel* BaseEMTGovModel::getGenerator(void)
-{
-  return p_gen;
-}
- 
