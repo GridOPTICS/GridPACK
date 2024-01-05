@@ -2,6 +2,11 @@ default:
 
   tags: [ basic, gridpack, ikp, k8s ]
 
+  artifacts:
+
+    when: always
+    untracked: true
+
 
 variables:
 
@@ -29,10 +34,6 @@ check-container-definition-changed:
 
       - touch container-definition-changed
 
-    artifacts:
-
-      untracked: true
-
     rules:
 
       - if: $CI_PIPELINE_SOURCE == "push"
@@ -55,10 +56,6 @@ check-container-tag-exists:
         --header "PRIVATE-TOKEN: $CI_JOB_TOKEN " \
         "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/294/tags/$IMAGE_TAG" \
         1>$null 2>$null || touch container-tag-not-found
-
-  artifacts:
-
-    untracked: true
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
@@ -93,10 +90,6 @@ build-container:
         --dockerfile "${CI_PROJECT_DIR}/dockerfile"
         --destination "${IMAGE_PATH}" > build.log 2>&1
 
-  artifacts:
-
-      paths: [ build.log ]
-
 
 build-gridpack:
 
@@ -114,10 +107,6 @@ build-gridpack:
 
     - ./install_gridpack.sh
 
-  artifacts:
-
-    untracked: true
-
 
 test-gridpack:
 
@@ -132,11 +121,3 @@ test-gridpack:
     - useradd gridpack
     - chown -R gridpack:gridpack .
     - su gridpack -c 'ctest --test-dir src/build --output-on-failure'
-
-  artifacts:
-
-    paths:
-
-      - src/build/Testing/Temporary
-
-    when: always
