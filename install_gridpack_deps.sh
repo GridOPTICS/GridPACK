@@ -117,7 +117,7 @@ function install_petsc {
   # install
   echo "Configuring PETSc"
   ./configure \
-    --download-mumps \
+    --download-superlu_dist \
     --download-metis \
     --download-parmetis \
     --download-suitesparse \
