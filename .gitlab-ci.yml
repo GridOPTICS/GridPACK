@@ -90,6 +90,10 @@ build-container:
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
 
+  artifacts:
+
+    paths: [ build.log ]
+
 
 build-gridpack:
 
@@ -121,3 +125,7 @@ test-gridpack:
     - useradd gridpack
     - chown -R gridpack:gridpack .
     - su gridpack -c 'ctest --test-dir src/build --output-on-failure'
+
+  artifacts:
+
+    paths: [ src/build/Testing/Temporary ]
