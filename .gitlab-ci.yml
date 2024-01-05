@@ -90,10 +90,6 @@ build-container:
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
 
-  artifacts:
-
-    paths: [ build.log ]
-
 
 build-gridpack:
 
