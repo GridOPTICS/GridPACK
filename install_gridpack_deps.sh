@@ -118,6 +118,7 @@ function install_petsc {
   echo "Configuring PETSc"
   ./configure \
     --download-mumps \
+    --download-scalapack \
     --download-metis \
     --download-parmetis \
     --download-suitesparse \
