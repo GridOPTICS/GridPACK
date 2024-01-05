@@ -44,6 +44,10 @@ check-container-tag-exists:
 
   image: alpine
 
+  variables:
+
+    CONTAINER_REPO_ID: "294"
+
   script:
 
     - apk add --no-cache curl
@@ -54,7 +58,7 @@ check-container-tag-exists:
       --location
       --fail
       --header "PRIVATE-TOKEN: $CI_JOB_TOKEN "
-      "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/294/tags/$IMAGE_TAG"
+      "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/$CONTAINER_REPO_ID/tags/$IMAGE_TAG"
       1>$null 2>$null || touch container-tag-not-found
 
 
