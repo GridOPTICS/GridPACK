@@ -48,14 +48,14 @@ check-container-tag-exists:
 
     - apk add --no-cache curl
     - >
-      curl \
-        --silent \
-        --show-error \
-        --location \
-        --fail \
-        --header "PRIVATE-TOKEN: $CI_JOB_TOKEN " \
-        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/294/tags/$IMAGE_TAG" \
-        1>$null 2>$null || touch container-tag-not-found
+      curl
+      --silent
+      --show-error
+      --location
+      --fail
+      --header "PRIVATE-TOKEN: $CI_JOB_TOKEN "
+      "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/294/tags/$IMAGE_TAG"
+      1>$null 2>$null || touch container-tag-not-found
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
@@ -83,12 +83,12 @@ build-container:
     - chmod +x *.sh
     - >
       /kaniko/executor
-        --context "${CI_PROJECT_DIR}"
-        --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
-        --build-arg "http_proxy=$http_proxy"
-        --build-arg "https_proxy=$https_proxy"
-        --dockerfile "${CI_PROJECT_DIR}/dockerfile"
-        --destination "${IMAGE_PATH}" > build.log 2>&1
+      --context "${CI_PROJECT_DIR}"
+      --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
+      --build-arg "http_proxy=$http_proxy"
+      --build-arg "https_proxy=$https_proxy"
+      --dockerfile "${CI_PROJECT_DIR}/dockerfile"
+      --destination "${IMAGE_PATH}" > build.log 2>&1
 
 
 build-gridpack:
