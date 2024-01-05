@@ -11,4 +11,4 @@ WORKDIR ${GP_EXT_DEPS}
 
 COPY *.sh .
 
-RUN ./install_environment_packages.sh && ./install_gridpack_deps.sh && rm *.sh
+RUN (./install_environment_packages.sh && ./install_gridpack_deps.sh) || find ${GP_EXT_DEPS} -type f -regex ".*log.*" && rm *.sh
