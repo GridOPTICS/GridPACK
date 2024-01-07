@@ -215,6 +215,18 @@ void EmtBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
   }
 }
 
+void EmtBus::setFault(double ton, double toff, std::string type, std::string phases, double Ron, double Rgnd)
+{
+  p_hasfault = true;
+
+  p_fault = new Fault;
+
+  p_fault->setparams(this,ton,toff,type,phases,Ron,Rgnd);
+
+  p_nvar += 3;
+}
+
+
 /**
    Sets up the bus component
 
@@ -1824,3 +1836,5 @@ bool EmtBranch::serialWrite(char *string, const int
 {
   return false;
 }
+
+

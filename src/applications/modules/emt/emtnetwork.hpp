@@ -24,8 +24,11 @@
 #include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_load_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/fault.hpp>
 #include <gridpack/math/dae_solver.hpp>
 #include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
+
+class Fault; // Forward declaration to resolve circular dependency
 
 class EmtBus: public gridpack::component::BaseBusComponent 
 {
@@ -231,6 +234,18 @@ public:
   
   void setRank(int rank) { p_rank = rank; }
 
+  /**
+    Set fault on the bus
+
+    @param [in] ton - fault on time
+    @param [in] toff - fault off time
+    @param [in] type - fault type (SLG, LLG, or 3Phase)
+    @param [in] phases - faulted phases
+    @param [in] Ron - fault resistance
+    @param [in] Rgnd - ground resistance
+  */
+  void setFault(double ton, double toff, std::string type, std::string phases, double Ron, double Rgnd);
+
   void setEvent(gridpack::math::DAESolver::EventManagerPtr);
 
   void setLocalOffset(int offset);
@@ -268,10 +283,11 @@ private:
   int    p_nload;   // Number of loads incident on this bus
   int    p_nactivegen; // Number of active generators (status=1) on this bus
   bool   p_isolated;   // flag for isolated bus
+  bool   p_hasfault;   // Is there a fault on this bus?
   EMTMode p_mode; // factory mode
   double p_time;     // current time
   double p_TSshift;  // shift value provided by TSIJacobian. 
-  int    p_nvar;      // Total number of variables for this bus (includes gen, exc, etc.)
+  int    p_nvar;      // Total number of variables for this bus (includes gen, exc, governor, fault, etc.)
   int    p_nvarbus;   // Only the variables for the bus (no component variables included)
   int    p_offset; // Offset for the starting location for this bus's variables in the state vector (array)
   int    p_gloc; // Global location of the first variable for this bus in the solution vector
@@ -303,6 +319,7 @@ private:
   
   BaseEMTGenModel **p_gen;    // Generator model
   BaseEMTLoadModel **p_load;  // Load model
+  Fault            *p_fault;  // Fault model
   int           *p_neqsload; // Number of equations for each load
   int           *p_neqsgen; // Number of equations for each generator
   int           *p_neqsexc; // Number of equations for each exciter 

@@ -41,11 +41,13 @@ add_library(gridpack_emt_module
   base_classes/base_exc_model.cpp
   base_classes/base_gov_model.cpp
   base_classes/base_load_model.cpp
+  base_classes/fault.cpp	
   model_classes/gencls.cpp
   model_classes/genrou.cpp
   model_classes/constantimpedance.cpp
   model_classes/exdc1.cpp
   model_classes/wsieg1.cpp
+
 )
 
 target_link_libraries(gridpack_emt_module
@@ -77,6 +79,7 @@ install(FILES
   base_classes/base_exc_model.hpp
   base_classes/base_gov_model.hpp
   base_classes/base_load_model.hpp
+  base_classes/fault.hpp
   DESTINATION include/gridpack/applications/modules/emt/base_classes
 )
 
