@@ -261,6 +261,10 @@ void Emt::setup()
   /* Set up buses and branches */
   p_factory->setup();
 
+  /* Read events from configuration file */
+  p_factory->readEvents(p_configcursor);
+
+
   // Create bus and branch data exchange
   emt_network->initBusUpdate();
   emt_network->initBranchUpdate();
@@ -294,22 +298,6 @@ void Emt::setup()
   DAESolver::EventManagerPtr eman(new EmtEventManager(this));
 
   p_factory->setEvents(eman,p_VecMapper);
-  // Read fault parameters, Set up fault events
-
-  double faultontime(0.1),faultofftime(0.2);
-  int    faultbus(9);
-  double Gfault(0.0),Bfault(0.0);
-  p_configcursor->get("faultontime",&faultontime);
-  p_configcursor->get("faultofftime",&faultofftime);
-  p_configcursor->get("faultbus",&faultbus);
-  p_configcursor->get("Gfault",&Gfault);
-  p_configcursor->get("Bfault",&Bfault);
-
-  EventPtr e(new EmtTimedFaultEvent(this, faultontime, faultofftime,
-                                     faultbus, Gfault, Bfault));
-
-  // Event manager must be populated before DAE solver construction
-  eman->add(e);
 
   gridpack::math::Matrix* mat_ptr = p_J.get();
   p_daesolver = new DAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);

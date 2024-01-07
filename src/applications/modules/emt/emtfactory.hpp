@@ -52,6 +52,11 @@ class EmtFactory
    */
   void setTSshift(double);
 
+  /**
+     Read events from configuration file
+  */
+  void readEvents(gridpack::utility::Configuration::CursorPtr);
+
   /** 
     Set up components
   */

@@ -158,3 +158,38 @@ void EmtFactory::setGlobalLocations()
 }
 
 
+/**
+   Read events from configuration file
+*/
+void EmtFactory::readEvents(gridpack::utility::Configuration::CursorPtr cursor)
+{
+  gridpack::utility::Configuration::CursorPtr list;
+  list = cursor->getCursor("Events");
+  if(list) {
+    gridpack::utility::Configuration::ChildElements events;
+    list->children(events);
+    int size = events.size();
+    int idx;
+    for(idx=0; idx < size; idx++) {
+      if(strcmp(events[idx].name.c_str(),"BusFault") == 0) {
+	int busnum;
+	std::vector<int> bus_local_idx;
+	EmtBus *bus;
+	busnum = events[idx].cursor->get("bus",0);
+	bus_local_idx = p_network->getLocalBusIndices(busnum);
+	if(bus_local_idx.size()) {
+	  bus = dynamic_cast<EmtBus*>(p_network->getBus(bus_local_idx[0]).get());
+	}
+	// Read fault parameters
+	double ton  = events[idx].cursor->get("begin",0.0);
+	double toff = events[idx].cursor->get("end",0.0);
+	std::string faulttype = events[idx].cursor->get("type","SLG");
+	std::string faultphases = events[idx].cursor->get("phases","ABC");
+	double Ron = events[idx].cursor->get("Ron",1e-2);
+	double Rgnd = events[idx].cursor->get("Rgnd",1e-3);
+
+	bus->setFault(ton,toff,faulttype,faultphases,Ron,Rgnd);
+      }
+    }
+  }
+}
