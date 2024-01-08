@@ -42,6 +42,8 @@ EmtBus::EmtBus(void)
   p_neqsexc= NULL;
   p_neqsgov= NULL;
   p_gen     = NULL;
+  //  p_fault   = NULL;
+  p_hasfault = false;
   p_num_vals = 0;
   p_hasCapacitiveShunt = false;
   p_hasResistiveShunt = false;
@@ -85,6 +87,11 @@ EmtBus::~EmtBus(void)
     }
     free(p_neqsload);
   }
+
+  if(p_hasfault) {
+    if(p_fault) delete(p_fault);
+  }
+  
   if(p_nvar) {
     delete(p_vecidx);
   }
@@ -141,6 +148,10 @@ void EmtBus::setLocalOffset(int offset)
       p_gen[i]->getGovernor()->setBusLocalOffset(offset);
     }
   }
+
+  if(p_hasfault) {
+    p_fault->setBusLocalOffset(offset);
+  }
 }
 
 /**
@@ -163,6 +174,10 @@ void EmtBus::resetEventFlags()
     if(p_gen[i]->hasGovernor()) {
       p_gen[i]->getGovernor()->resetEventFlags();
     }
+  }
+
+  if(p_hasfault) {
+    p_fault->resetEventFlags();
   }
 }
 
@@ -213,17 +228,26 @@ void EmtBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
       p_gen[i]->getGovernor()->setEvent(eman);
     }
   }
+
+  if(p_hasfault) {
+    p_fault->setEvent(eman);
+  }
 }
 
 void EmtBus::setFault(double ton, double toff, std::string type, std::string phases, double Ron, double Rgnd)
 {
   p_hasfault = true;
 
+  if(p_nvar) delete p_vecidx;
+
   p_fault = new Fault;
 
-  p_fault->setparams(this,ton,toff,type,phases,Ron,Rgnd);
-
+  p_fault->setparams(ton,toff,type,phases,Ron,Rgnd);
+  p_fault->setBusOffset(p_nvar);
   p_nvar += 3;
+
+  p_vecidx = new int[p_nvar];
+
 }
 
 
@@ -354,6 +378,11 @@ void EmtBus::setGlobalLocation()
     // Set the global location for the first variable 
     p_load[i]->setGlobalLocation(gloc);
     gloc += p_neqsload[i];
+  }
+
+  if(p_hasfault) {
+    p_fault->setGlobalLocation(gloc);
+    gloc += 3;
   }
 }
     	
@@ -714,6 +743,16 @@ int EmtBus::matrixNumValues()
 
     numvals += numvals_load;
   }
+
+  if(p_hasfault) {
+
+    numvals += 3;
+    
+    int numvals_fault;
+    numvals_fault = p_fault->matrixNumValues();
+
+    numvals += numvals_fault;
+  }
   
   p_num_vals = numvals;
   return p_num_vals;
@@ -827,6 +866,27 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
 
     
     p_load[i]->getCurrentGlobalLocation(&i_gloc);
+
+    rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
+    rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
+    rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
+    
+    values[ctr]   = -1.0;
+    values[ctr+1] = -1.0;
+    values[ctr+2] = -1.0;
+    ctr += 3;
+  }
+
+  if(p_hasfault) {
+    int nvals_fault=0;
+
+    p_fault->setVoltageGlobalLocation(v_gloc);
+    p_fault->setTSshift(p_TSshift);
+    p_fault->matrixGetValues(&nvals_fault,values+ctr,rows+ctr,cols+ctr);
+    ctr += nvals_fault;
+
+    
+    p_fault->getCurrentGlobalLocation(&i_gloc);
 
     rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
     rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
@@ -1042,6 +1102,10 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       p_load[i]->setInitialVoltage(p_Vm0,p_Va0);
       p_load[i]->init(x);
     }
+
+    if(p_hasfault) {
+      p_fault->init(x);
+    }
   } else if(p_mode == RESIDUAL_EVAL) {
     int i,j;
     double *v = p_vptr;
@@ -1164,9 +1228,29 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       p_load[i]->vectorGetValues(f);
     }
 
+
     i_mis[0] = i_gen[0] - i_br[0] - i_load[0];
     i_mis[1] = i_gen[1] - i_br[1] - i_load[1];
     i_mis[2] = i_gen[2] - i_br[2] - i_load[2];
+
+    if(p_hasfault) {
+      double i_fault[3];
+      i_fault[0] = i_fault[1] = i_fault[2] = 0.0;
+
+      p_fault->setVoltage(v[0],v[1],v[2]);
+      p_fault->setTime(p_time);
+
+      /* Get fault current */
+      p_fault->getCurrent(&i_fault[0],&i_fault[1],&i_fault[2]);
+
+      i_mis[0] -= i_fault[0];
+      i_mis[1] -= i_fault[1];
+      i_mis[2] -= i_fault[2];
+
+      /* Load residual evaluation */
+      p_fault->setMode(p_mode);
+      p_fault->vectorGetValues(f);
+    }
 
     if(p_hasCapacitiveShunt) {
       double fval[3];
@@ -1227,6 +1311,12 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
       p_load[i]->setMode(p_mode);
       p_load[i]->setVoltage(va,vb,vc);
       p_load[i]->setValues(values);
+    }
+
+    if(p_hasfault) {
+      p_fault->setMode(p_mode);
+      p_fault->setVoltage(va,vb,vc);
+      p_fault->setValues(values);
     }
 
     

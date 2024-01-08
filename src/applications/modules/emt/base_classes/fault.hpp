@@ -20,10 +20,8 @@
 #include "gridpack/component/base_component.hpp"
 #include <gridpack/applications/modules/emt/constants.hpp>
 #include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
-#include <gridpack/applications/modules/emt/emtnetwork.hpp>
 #include <gridpack/math/matrix.hpp>
-
-class EmtBus; // Forward declaration to resolve circular dependency
+#include <gridpack/math/dae_solver.hpp>
 
 class Fault: public gridpack::component::BaseComponent
 {
@@ -57,7 +55,7 @@ class Fault: public gridpack::component::BaseComponent
     @param [in] Ron - fault resistance
     @param [in] Rgnd - ground resistance
   */
-  void setparams(EmtBus *emtbus,double ton, double toff, std::string type, std::string phases, double Ron, double Rgnd);
+  void setparams(double ton, double toff, std::string type, std::string phases, double Ron, double Rgnd);
 
     /**
      *  Set Jacobian values
@@ -135,8 +133,67 @@ class Fault: public gridpack::component::BaseComponent
    */
   void setValues(gridpack::ComplexType *values);
 
+  void setBusLocalOffset(int offset) {p_busoffset = offset;}
+
+  void setGlobalLocation(int gloc) {p_gloc = gloc; }
+  
+  /**
+   * return offset in the local vector 
+   */
+  int getLocalOffset()
+  {
+    return p_busoffset + offsetb;
+  }
+
+  /**
+   * Set the offset for first variable for the generator in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
+
+  void resetEventFlags(void) {}
+
+  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+
+  /**
+   * Copy over voltage from the bus
+   */
+  void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
+
+  /*
+    Set the bus voltage global location
+  */
+  void setVoltageGlobalLocation(int v_gloc) { p_glocvoltage = v_gloc; }
+
+  /**
+   * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
+   */
+  void setTSshift(double inshift) {shift = inshift;}
+
+  void setTime(double time) {p_time = time; }
+
+    /**
+   * Set an internal variable that can be used to control the behavior of the
+   * component. This function doesn't need to be implemented, but if needed,
+   * it can be used to change the behavior of the component in different phases
+   * of the calculation. For example, if a different matrix needs to be
+   * generated at different times, the mode of the calculation can changed to
+   * get different values from the MatVecInterface functions
+   * @param mode integer indicating which mode should be used
+   */
+  void setMode(int mode) { p_mode = mode;}
+
+  /**
+   * Update the event function values
+   */
+  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
+
+  /**
+   * Event handler function 
+   */
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+
   private:
-    EmtBus *bus;
   
     // Fault parameters
     double Ron; // Fault resistance
@@ -146,11 +203,52 @@ class Fault: public gridpack::component::BaseComponent
     double ton, toff; // fault on and fault off times
     bool   faulton;
     int    p_gloc; // Global location
+    int    p_glocvoltage;
     int    nxfault;
-    int    offsetb; 
+    int    offsetb;
+    int    p_busoffset;
+    double shift;
+    double p_time; // Current time
+    double p_va, p_vb, p_vc; /* Voltage */
+    int    p_mode;
 
     // Fault variables
     double ifault[3]; // Fault current
+};
+
+// -------------------------------------------------------------
+// class EmtTimedFaultEvent
+// 
+// This manages 2 solver events: when the fault goes on and when it
+// goes off.
+// -------------------------------------------------------------
+class FaultEvent
+  : public gridpack::math::DAESolver::Event
+{
+public:
+
+  /// Default constructor.
+  FaultEvent(Fault *fault): gridpack::math::DAESolver::Event(2),p_fault(fault)
+  {
+    // A fault requires that the DAE solver be reset. 
+    std::fill(p_term.begin(), p_term.end(), false);
+    
+    // The event occurs when the values go from positive to negative.
+    std::fill(p_dir.begin(), p_dir.end(),
+              gridpack::math::CrossZeroNegative);
+  }
+
+  /// Destructor
+  ~FaultEvent(void)
+  {}
+
+protected:
+  Fault *p_fault;
+
+  void p_update(const double& t, gridpack::ComplexType *state);
+
+  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state);
+
 };
 
 #endif

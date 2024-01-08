@@ -74,6 +74,16 @@ void Fault::vectorGetValues(gridpack::ComplexType *values)
   gridpack::ComplexType *f = values+offsetb; // fault array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
+    f[0] = ifault[0];
+    f[1] = ifault[1];
+    f[2] = ifault[2];
+    if(faulton) {
+      if(faulttype == 1) { // SLG
+	if(faultedphases[0]) f[0] = p_va - (Ron + Rgnd)*ifault[0];
+	if(faultedphases[1]) f[1] = p_vb - (Ron + Rgnd)*ifault[1];
+	if(faultedphases[2]) f[2] = p_vc - (Ron + Rgnd)*ifault[2];
+      }
+    }
   }
 }
 
@@ -139,24 +149,38 @@ void Fault::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows
   cols[ctr+1] = rows[ctr+1];
   cols[ctr+2] = rows[ctr+2];
 
-  //  values[ctr]   = -p_R[0];
-  //  values[ctr+1] = -p_R[1];
-  //  values[ctr+2] = -p_R[2];
+  if(faulton) {
+    if(faulttype == 1) { // SLG
+      if(faultedphases[0]) values[ctr]   = -(Ron + Rgnd);
+      if(faultedphases[1]) values[ctr+1] = -(Ron + Rgnd);
+      if(faultedphases[2]) values[ctr+2] = -(Ron + Rgnd);
+    }
+  } else {
+    values[ctr]   = 1.0;
+    values[ctr+1] = 1.0;
+    values[ctr+2] = 1.0;
+  }
 
   ctr += 3;
-  
-  // Partial w.r.t voltages
+
   rows[ctr]   = p_gloc;
   rows[ctr+1] = p_gloc+1;
   rows[ctr+2] = p_gloc+2;
+  
+  cols[ctr]   = p_glocvoltage;
+  cols[ctr+1] = p_glocvoltage+1;
+  cols[ctr+2] = p_glocvoltage+2;
+  
+  values[ctr] = values[ctr+1] = values[ctr+2] = 0.0;
 
-  //  cols[ctr]   = p_glocvoltage;
-  //  cols[ctr+1] = p_glocvoltage+1;
-  //  cols[ctr+2] = p_glocvoltage+2;
-
-  values[ctr]   = 1.0;
-  values[ctr+1] = 1.0;
-  values[ctr+2] = 1.0;
+  if(faulton) {
+    if(faulttype == 1) { // SLG
+      // Partial w.r.t voltages
+      if(faultedphases[0]) values[ctr]   = 1.0;
+      if(faultedphases[1]) values[ctr+1] = 1.0;
+      if(faultedphases[2]) values[ctr+2] = 1.0;
+    }
+  }
 
   ctr += 3;
 
@@ -175,9 +199,8 @@ bool Fault::setJacobian(gridpack::ComplexType **values)
   return true;
 }
 
-void Fault::setparams(EmtBus *emtbus,double faultontime, double faultofftime, std::string type, std::string phases, double Rfault, double Rg)
+void Fault::setparams(double faultontime, double faultofftime, std::string type, std::string phases, double Rfault, double Rg)
 {
-  bus = emtbus;
   ton = faultontime;
   toff = faultofftime;
 
@@ -194,6 +217,57 @@ void Fault::setparams(EmtBus *emtbus,double faultontime, double faultofftime, st
   }
 }
 
+void Fault::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+{
+  gridpack::math::DAESolver::EventPtr e(new FaultEvent(this));
 
+  eman->add(e);
 
+}
+
+/**
+ * Update the event function values
+ */
+void Fault::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+{
+  int offset    = getLocalOffset();
+
+  ifault[0] = real(state[offset]);
+  ifault[1] = real(state[offset+1]);
+  ifault[2] = real(state[offset+2]);
+
+  evalues[0] = ton - t;
+  evalues[1] = toff - t;
+
+} 
+
+/**
+ * Event handler
+ */
+void Fault::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  int offset    = getLocalOffset();
+
+  ifault[0] = real(state[offset]);
+  ifault[1] = real(state[offset+1]);
+  ifault[2] = real(state[offset+2]);
+
+  if(triggered[0]) {
+    faulton = 1;
+  }
+
+  if(triggered[1]) {
+    faulton = 0;
+  }
+}
+
+void FaultEvent::p_update(const double& t,gridpack::ComplexType *state)
+{
+  p_fault->eventFunction(t,state,p_current);
+}
+
+void FaultEvent::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+{
+  p_fault->eventHandlerFunction(triggered,t,state);
+}
 

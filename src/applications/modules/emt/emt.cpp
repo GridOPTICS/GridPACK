@@ -42,72 +42,6 @@ protected:
   
 };
 
-
-// -------------------------------------------------------------
-// class EmtTimedFaultEvent
-// 
-// This manages 2 solver events: when the fault goes on and when it
-// goes off.
-// -------------------------------------------------------------
-class EmtTimedFaultEvent
-  : public Emt::Event
-{
-public:
-
-  /// Default constructor.
-  EmtTimedFaultEvent(Emt *sim,
-                      const double& ton,
-                      const double& toff,
-                      const int& busno,
-                      const double& Gfault,
-                      const double& Bfault)
-    : gridpack::math::DAESolver::Event(2),
-      p_sim(sim), p_ton(ton), p_toff(toff), p_bus(busno),
-      p_Gfault(Gfault), p_Bfault(Bfault)
-  {
-    // A fault requires that the DAE solver be reset. 
-    std::fill(p_term.begin(), p_term.end(), false);
-    
-    // The event occurs when the values go from positive to negative.
-    std::fill(p_dir.begin(), p_dir.end(),
-              gridpack::math::CrossZeroNegative);
-  }
-
-  /// Destructor
-  ~EmtTimedFaultEvent(void)
-  {}
-
-protected:
-
-  Emt *p_sim;
-  double p_ton, p_toff;
-  int p_bus;
-  double p_Gfault;
-  double p_Bfault;
-
-  void p_update(const double& t, gridpack::ComplexType *state)
-  {
-    p_current[0] = p_ton - t;
-    p_current[1] = p_toff - t;
-  }
-
-  void p_handle(const bool *triggered, const double& t,
-                gridpack::ComplexType *state)
-  {
-  // FIXME: Is setfault local (to the process w/ p_bus or collective?
-  // The Event class is *local*, so if collective operations are
-  // needed they should be handled by an EventManager
-    
-  if (triggered[0]) {
-    // Set fault
-  } else if (triggered[1]) {
-    // Remove fault
-  }
-}
-
-};
-
-
 Emt::Emt(void)
   : p_isSetUp(0),
     emt_network(new EmtNetwork(p_comm))
@@ -263,7 +197,6 @@ void Emt::setup()
 
   /* Read events from configuration file */
   p_factory->readEvents(p_configcursor);
-
 
   // Create bus and branch data exchange
   emt_network->initBusUpdate();
