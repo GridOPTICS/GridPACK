@@ -82,6 +82,10 @@ void Fault::vectorGetValues(gridpack::ComplexType *values)
 	if(faultedphases[0]) f[0] = p_va - (Ron + Rgnd)*ifault[0];
 	if(faultedphases[1]) f[1] = p_vb - (Ron + Rgnd)*ifault[1];
 	if(faultedphases[2]) f[2] = p_vc - (Ron + Rgnd)*ifault[2];
+      } else if(faulttype == 3) { // ThreePhase
+	f[0] = p_va - (Ron + Rgnd)*ifault[0] - Rgnd*ifault[1]         - Rgnd*ifault[2];
+	f[1] = p_vb -         Rgnd*ifault[0] - (Ron + Rgnd)*ifault[1] - Rgnd*ifault[2];
+	f[2] = p_vc -         Rgnd*ifault[0] - Rgnd*ifault[1]         - (Ron + Rgnd)*ifault[2];	
       }
     }
   }
@@ -124,8 +128,12 @@ void Fault::getCurrentGlobalLocation(int *i_gloc)
  */
 int Fault::matrixNumValues()
 {
-  int numVals = 6;
-
+  int numVals;
+  if(faulttype == 1) {
+    numVals = 6;
+  } else if (faulttype == 3) {
+    numVals = 12;
+  }
   return numVals;
 }
 
@@ -140,28 +148,65 @@ void Fault::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows
 {
   int ctr = 0;
 
-  //partial w.r.t. fault currents
-  rows[ctr]   = p_gloc;
-  rows[ctr+1] = p_gloc+1;
-  rows[ctr+2] = p_gloc+2;
-  
-  cols[ctr]   = rows[ctr];
-  cols[ctr+1] = rows[ctr+1];
-  cols[ctr+2] = rows[ctr+2];
+  if(faulttype == 1) {
+    //partial w.r.t. fault currents
+    rows[ctr]   = p_gloc;
+    rows[ctr+1] = p_gloc+1;
+    rows[ctr+2] = p_gloc+2;
+    
+    cols[ctr]   = rows[ctr];
+    cols[ctr+1] = rows[ctr+1];
+    cols[ctr+2] = rows[ctr+2];
+
+    values[ctr] = 1.0;
+    values[ctr+1] = 1.0;
+    values[ctr+2] = 1.0;
+  } else if(faulttype == 3) {
+    rows[ctr]   = p_gloc;      cols[ctr]   = p_gloc;
+    rows[ctr+1] = p_gloc;      cols[ctr+1] = p_gloc + 1;
+    rows[ctr+2] = p_gloc;      cols[ctr+2] = p_gloc + 2;
+    rows[ctr+3] = p_gloc + 1;  cols[ctr+3] = p_gloc;
+    rows[ctr+4] = p_gloc + 1;  cols[ctr+4] = p_gloc + 1;
+    rows[ctr+5] = p_gloc + 1;  cols[ctr+5] = p_gloc + 2;
+    rows[ctr+6] = p_gloc + 2;  cols[ctr+6] = p_gloc;
+    rows[ctr+7] = p_gloc + 2;  cols[ctr+7] = p_gloc + 1;
+    rows[ctr+8] = p_gloc + 2;  cols[ctr+8] = p_gloc + 2;
+
+    values[ctr]   = 1.0;
+    values[ctr+1] = 0.0;
+    values[ctr+2] = 0.0;
+    values[ctr+3] = 0.0;
+    values[ctr+4] = 1.0;
+    values[ctr+5] = 0.0;
+    values[ctr+6] = 0.0;
+    values[ctr+7] = 0.0;
+    values[ctr+8] = 1.0;
+  }
 
   if(faulton) {
     if(faulttype == 1) { // SLG
       if(faultedphases[0]) values[ctr]   = -(Ron + Rgnd);
       if(faultedphases[1]) values[ctr+1] = -(Ron + Rgnd);
       if(faultedphases[2]) values[ctr+2] = -(Ron + Rgnd);
+
+      ctr += 3;
+    } else if(faulttype == 3) { //ThreePhase{
+      values[ctr]   = -(Ron + Rgnd);
+      values[ctr+1] = -Rgnd;
+      values[ctr+2] = -Rgnd;
+      values[ctr+3] = -Rgnd;
+      values[ctr+4] = -(Ron + Rgnd);;
+      values[ctr+5] = -Rgnd;
+      values[ctr+6] = -Rgnd;
+      values[ctr+7] = -Rgnd;
+      values[ctr+8] = -(Ron + Rgnd);
+
+      ctr += 9;
     }
   } else {
-    values[ctr]   = 1.0;
-    values[ctr+1] = 1.0;
-    values[ctr+2] = 1.0;
+    if(faulttype == 1) ctr += 3;
+    else if(faulttype == 3) ctr += 9;
   }
-
-  ctr += 3;
 
   rows[ctr]   = p_gloc;
   rows[ctr+1] = p_gloc+1;
@@ -179,6 +224,10 @@ void Fault::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows
       if(faultedphases[0]) values[ctr]   = 1.0;
       if(faultedphases[1]) values[ctr+1] = 1.0;
       if(faultedphases[2]) values[ctr+2] = 1.0;
+    } else if(faulttype == 3) { // Three Phase
+      values[ctr] = 1.0;
+      values[ctr+1] = 1.0;
+      values[ctr+2] = 1.0;
     }
   }
 
@@ -211,10 +260,15 @@ void Fault::setparams(double faultontime, double faultofftime, std::string type,
     if(phases == "A") faultedphases[0] = 1;
     if(phases == "B") faultedphases[1] = 1;
     if(phases == "C") faultedphases[2] = 1;
-
-    Ron = Rfault;
-    Rgnd = Rg;
+  } else if(type == "ThreePhase") {
+    /* Three phase fault */
+    faulttype = 3;
+    faultedphases[0] = faultedphases[1] = faultedphases[2] = 1;
   }
+  
+  Ron = Rfault;
+  Rgnd = Rg;
+  
 }
 
 void Fault::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
