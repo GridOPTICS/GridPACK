@@ -174,6 +174,14 @@ public:
    */
   virtual double getFieldVoltage();
 
+  /** 
+   * Get the value of the field voltage parameter
+   * and return the global location of field voltage variable
+   * @return value of field voltage
+   */
+  virtual double getFieldVoltage(int *Efd_gloc);
+
+
   /**
    * Partial derivatives of field voltage Efd w.r.t. exciter variables
    * @param xexc_loc locations of exciter variables

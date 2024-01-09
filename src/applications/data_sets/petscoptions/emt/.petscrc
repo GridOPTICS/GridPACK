@@ -10,7 +10,7 @@
 -emt_snes_linesearch_type basic
 
 # Numerical integration scheme
--emt_ts_type cn # Implicit trapezoidal
+-emt_ts_type beuler # Implicit trapezoidal
 #-emt_ts_type rosw
 #-emt_ts_rosw_type 2m
 
@@ -56,7 +56,7 @@
 #-emt_pc_factor_mat_solver_package superlu_dist
 
 # Use finite-difference Jacobian
--emt_snes_fd
+#-emt_snes_fd
 
 # Save the output at each time-step
 -emt_ts_save_trajectory

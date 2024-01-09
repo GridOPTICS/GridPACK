@@ -80,6 +80,13 @@ double BaseEMTExcModel::getFieldVoltage()
   return 0.0;
 }
 
+double BaseEMTExcModel::getFieldVoltage(int *Efd_gloc)
+{
+  *Efd_gloc = -1;
+  return 0.0;
+}
+
+
 bool BaseEMTExcModel::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
 {
   return false;
