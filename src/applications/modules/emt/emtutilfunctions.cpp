@@ -51,6 +51,77 @@ void dq02abc(double *xdq0,double t,double theta,double *xabc)
   xabc[2] = sin(omegat_plus)*xdq0[0]  + cos(omegat_plus)*xdq0[1]  + xdq0[2];  
 }
 
+/**
+  getTdq0 - returns the transformation matrix used for abc to dq0 transform
+  @param[input] theta - the transform angle
+  @param[output] Tdq0 - abc2dq0 transformation matrix
+*/
+void getTdq0(double t,double theta, double Tdq0[][3])
+{
+  double omegat = OMEGA_S*t + theta;
+  double omegat_minus = omegat - 2.0*PI/3.0;
+  double omegat_plus = omegat + 2.0*PI/3.0;
+
+  Tdq0[0][0] = TWO_OVER_THREE*sin(omegat); Tdq0[0][1] = TWO_OVER_THREE*sin(omegat_minus); Tdq0[0][2] = TWO_OVER_THREE*sin(omegat_plus);
+  Tdq0[1][0] = TWO_OVER_THREE*cos(omegat); Tdq0[1][1] = TWO_OVER_THREE*cos(omegat_minus); Tdq0[1][2] = TWO_OVER_THREE*cos(omegat_plus);
+  Tdq0[2][0] = TWO_OVER_THREE*0.5;         Tdq0[2][1] = TWO_OVER_THREE*0.5;               Tdq0[2][2] = TWO_OVER_THREE*0.5;
+}
+  
+/**
+  getdTdq0dtheta - returns the partial derivative of transformation matrix Tdq0 w.r.t angle theta
+  @param[input] t             - current time
+  @param[input] theta         - the transform angle
+  @param[output] dTdq0dtheta - \partial(Tdq0){theta}
+*/
+void getdTdq0dtheta(double t, double theta, double dTdq0dtheta[][3])
+{
+  double omegat = OMEGA_S*t + theta;
+  double omegat_minus = omegat - 2.0*PI/3.0;
+  double omegat_plus = omegat + 2.0*PI/3.0;
+
+  dTdq0dtheta[0][0] =  TWO_OVER_THREE*cos(omegat); dTdq0dtheta[0][1] = TWO_OVER_THREE*cos(omegat_minus); dTdq0dtheta[0][2] = TWO_OVER_THREE*cos(omegat_plus);
+  dTdq0dtheta[1][0] = -TWO_OVER_THREE*sin(omegat); dTdq0dtheta[1][1] = -TWO_OVER_THREE*sin(omegat_minus); dTdq0dtheta[1][2] = -TWO_OVER_THREE*sin(omegat_plus);
+  dTdq0dtheta[2][0] = 0.0;         dTdq0dtheta[2][1] = 0.0;               dTdq0dtheta[2][2] = 0.0;
+
+}
+
+/**
+  getTdq0inv - returns the transformation matrix used for dq0 to abc transform
+  @param[input] t     - current time
+  @param[input] theta - the transform angle
+  @param[output] Tdq0inv - dq02abc transformation matrix
+*/
+void getTdq0inv(double t, double theta, double Tdq0inv[][3])
+{
+  double omegat = OMEGA_S*t + theta;
+  double omegat_minus = omegat - 2.0*PI/3.0;
+  double omegat_plus = omegat + 2.0*PI/3.0;
+
+  Tdq0inv[0][0] = sin(omegat);  Tdq0inv[0][1] = cos(omegat);  Tdq0inv[0][2] = 1.0;
+  Tdq0inv[1][0] = sin(omegat_minus);  Tdq0inv[1][1] = cos(omegat_minus);  Tdq0inv[1][2] = 1.0;
+  Tdq0inv[2][0] = sin(omegat_plus);   Tdq0inv[2][1] = cos(omegat_plus);   Tdq0inv[2][2] = 1.0;  
+
+}
+
+/**
+  getdTdq0invdtheta - returns the partial derivative of transformation matrix Tdq0inv w.r.t angle theta
+  @param[input] t             - current time
+  @param[input] theta         - the transform angle
+  @param[output] dTdq0invdtheta - \partial(Tdq0inv){dtheta}
+*/
+void getdTdq0invdtheta(double t, double theta, double dTdq0invdtheta[][3])
+{
+  double omegat = OMEGA_S*t + theta;
+  double omegat_minus = omegat - 2.0*PI/3.0;
+  double omegat_plus = omegat + 2.0*PI/3.0;
+
+  dTdq0invdtheta[0][0] = cos(omegat);  dTdq0invdtheta[0][1] = -sin(omegat);  dTdq0invdtheta[0][2] = 0.0;
+  dTdq0invdtheta[1][0] = cos(omegat_minus);  dTdq0invdtheta[1][1] = -sin(omegat_minus);  dTdq0invdtheta[1][2] = 0.0;
+  dTdq0invdtheta[2][0] = cos(omegat_plus);   dTdq0invdtheta[2][1] = -sin(omegat_plus);   dTdq0invdtheta[2][2] = 0.0;  
+  
+}
+
+
 
 // 2x2 determinant
 double determinant2x2(double a, double b, double c, double d)

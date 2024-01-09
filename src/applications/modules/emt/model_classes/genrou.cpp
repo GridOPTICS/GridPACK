@@ -337,18 +337,27 @@ void Genrou::getCurrentGlobalLocation(int *i_gloc)
 
  Non-zero pattern of the Jacobian (x denotes non-zero value)
 
-         delta    omega    ia    ib    ic    va    vb    vc
- eq. 1 |   x       x    
- eq. 2 |   x       x        x     x     x     x     x     x
- eq. 3 |   x                x                 x
- eq. 4 |   x                      x                 x
- eq. 5 |   x                            x                 x
-
- Number of non-zero values = 19
+          psid    psiq    psi0    Eqp    psi1d    Edp    psi2q    delta    omega    ia    ib    ic    va    vb    vc    Efd    PM
+ eq. 0 |   x       x               x       x                       x         x                        x      x     x 
+ eq. 1 |   x       x                               x       x       x         x                        x      x     x
+ eq. 2 |                   x                                       x                                  x      x     x 
+ eq. 3 |   x                       x       x                                                                             x                 
+ eq. 4 |   x                       x       x         
+ eq. 5 |           x                               x       x
+ eq. 6 |           x                               x       x
+ eq. 7 |                                                           x         x
+ eq. 8 |   x       x               x       x       x       x                 x                                                x
+ eq. 9 |   x       x       x       x       x       x       x       x                x
+ eq.10 |   x       x       x       x       x       x       x       x                      x
+ eq.11 |   x       x       x       x       x       x       x       x                            x
+ 
+ Number of non-zero values = 9 + 9 + 5 + 4 + 3 + 3 + 3 + 2 + 7 + 9 + 9 + 9 = 69
  */
 int Genrou::matrixNumValues()
 {
-  int numVals = 19;
+  int numVals = 69;
+  if(hasExciter()) numVals += 1;
+  if(hasGovernor()) numVals += 1;
 
   return numVals;
 }
@@ -363,10 +372,364 @@ int Genrou::matrixNumValues()
 void Genrou::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
 {
   int ctr = 0;
+  // Set up some indices
+  int psid_idx = p_gloc;
+  int psiq_idx = p_gloc+1;
+  int psi0_idx = p_gloc+2;
+  int Eqp_idx  = p_gloc+3;
+  int psi1d_idx = p_gloc+4;
+  int Edp_idx  = p_gloc+5;
+  int psi2q_idx = p_gloc+6;
+  int delta_idx = p_gloc+7;
+  int dw_idx  = p_gloc+8;
+  int ia_idx  = p_gloc+9;
+  int ib_idx = p_gloc+10;
+  int ic_idx = p_gloc+11;
 
-  if(abs(L) > 1e-6) {
-  } else {
+  double tempd1,tempd2,tempq1,tempq2;
+  tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+  tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+  tempq1 = (Xdpp - Xl)/(Xqp - Xl);
+  tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
+
+  double dId_dpsid, dId_dEqp, dId_dpsi1d;
+  double dIq_dpsiq, dIq_dEdp, dIq_dpsi2q;
+  double dI0_dpsi0;
+
+  dId_dpsid  = -1/Xdpp;
+  dId_dEqp   =  tempd1/Xdpp;
+  dId_dpsi1d =  tempd2/Xdpp;
+
+  dIq_dpsiq  = -1/Xdpp;
+  dIq_dEdp   = -tempq1/Xdpp;
+  dIq_dpsi2q =  tempq2/Xdpp;
+
+  dI0_dpsi0  = -1/Xl;
+  
+  double vabc[3];
+  vabc[0] = p_va;
+  vabc[1] = p_vb;
+  vabc[2] = p_vc;
+
+  double dvdq0_ddelta[3];
+  double Tdq0[3][3],dTdq0_ddelta[3][3];
+
+  double theta = delta - PI/2.0;
+  getTdq0(p_time,theta,Tdq0);
+  getdTdq0dtheta(p_time,theta,dTdq0_ddelta);
+
+  matvecmult3x3(dTdq0_ddelta,vabc,dvdq0_ddelta);
+
+  // Derivatives w.r.t dpisd_dt
+  // psid
+  rows[ctr] = psid_idx; cols[ctr] = psid_idx;
+  values[ctr] = OMEGA_S*Ra*dId_dpsid - shift;
+  
+  rows[ctr+1] = psid_idx; cols[ctr+1] = psiq_idx;
+  values[ctr+1] = OMEGA_S*(1 + dw);
+
+  ctr += 2;
+
+  rows[ctr] = psid_idx; cols[ctr] = Eqp_idx;
+  values[ctr] = OMEGA_S*Ra*dId_dEqp;
+
+  rows[ctr+1] = psid_idx; cols[ctr+1] = psi1d_idx;
+  values[ctr+1] = OMEGA_S*Ra*dId_dpsi1d;
+
+  ctr += 2;
+
+  rows[ctr] = psid_idx; cols[ctr] = delta_idx;
+  values[ctr] = OMEGA_S*dvdq0_ddelta[0];
+
+  rows[ctr+1] = psid_idx; cols[ctr+1] = dw_idx;
+  values[ctr+1] = OMEGA_S*psiq;
+  
+  ctr += 2;
+  
+  rows[ctr]   = psid_idx;
+  cols[ctr]   = p_glocvoltage;
+  values[ctr] = OMEGA_S*Tdq0[0][0];
+
+  rows[ctr+1]   = psid_idx;
+  cols[ctr+1]   = p_glocvoltage+1;
+  values[ctr+1] = OMEGA_S*Tdq0[0][1];
+
+  rows[ctr+2]   = psid_idx;
+  cols[ctr+2]   = p_glocvoltage+2;
+  values[ctr+2] = OMEGA_S*Tdq0[0][2];
+
+  ctr += 3;
+
+  assert(ctr == 9);
+
+  // Derivatives w.r.t dpisq_dt
+
+  rows[ctr] = psiq_idx; cols[ctr] = psid_idx;
+  values[ctr] = -OMEGA_S*(1 + dw);
+  
+  rows[ctr+1] = psiq_idx; cols[ctr+1] = psiq_idx;
+  values[ctr+1] = OMEGA_S*Ra*dIq_dpsiq - shift;
+
+  ctr += 2;
+
+  rows[ctr] = psiq_idx; cols[ctr] = Edp_idx;
+  values[ctr] = OMEGA_S*Ra*dIq_dEdp;
+
+  rows[ctr+1] = psiq_idx; cols[ctr+1] = psi2q_idx;
+  values[ctr+1] = OMEGA_S*Ra*dIq_dpsi2q;
+
+  ctr += 2;
+
+  rows[ctr] = psiq_idx; cols[ctr] = delta_idx;
+  values[ctr] = OMEGA_S*dvdq0_ddelta[1];
+
+  rows[ctr+1] = psiq_idx; cols[ctr+1] = dw_idx;
+  values[ctr+1] = -OMEGA_S*psid;
+  
+  ctr += 2;
+  
+  rows[ctr]   = psiq_idx;
+  cols[ctr]   = p_glocvoltage;
+  values[ctr] = OMEGA_S*Tdq0[1][0];
+
+  rows[ctr+1]   = psiq_idx;
+  cols[ctr+1]   = p_glocvoltage+1;
+  values[ctr+1] = OMEGA_S*Tdq0[1][1];
+
+  rows[ctr+2]   = psiq_idx;
+  cols[ctr+2]   = p_glocvoltage+2;
+  values[ctr+2] = OMEGA_S*Tdq0[1][2];
+
+  ctr += 3;
+
+  assert(ctr == 18);
+
+  // Derivatives w.r.t dpsi0_dt
+
+  rows[ctr] = psi0_idx;  cols[ctr] = psi0_idx;
+  values[ctr] = OMEGA_S*Ra*dI0_dpsi0 - shift;
+
+  ctr += 1;
+
+  rows[ctr] = psi0_idx; cols[ctr] = delta_idx;
+  values[ctr] = OMEGA_S*dvdq0_ddelta[2];
+
+  ctr += 1;
+
+  rows[ctr]   = psi0_idx;
+  cols[ctr]   = p_glocvoltage;
+  values[ctr] = OMEGA_S*Tdq0[2][0];
+
+  rows[ctr+1]   = psi0_idx;
+  cols[ctr+1]   = p_glocvoltage+1;
+  values[ctr+1] = OMEGA_S*Tdq0[2][1];
+
+  rows[ctr+2]   = psi0_idx;
+  cols[ctr+2]   = p_glocvoltage+2;
+  values[ctr+2] = OMEGA_S*Tdq0[2][2];
+
+  ctr += 3;
+  
+  assert(ctr == 23);
+
+  // Derivatives w.r.t. dEqp_dt
+  double dpsi1ddt_dpsi1d, dpsi1ddt_dEqp, dpsi1ddt_dpsid;
+  double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
+
+  dpsi1ddt_dpsid = -(Xdp - Xl)*dId_dpsid;
+  dpsi1ddt_dEqp  = 1.0 -(Xdp - Xl)*dId_dEqp;
+  dpsi1ddt_dpsi1d = -1.0 -(Xdp - Xl)*dId_dpsi1d;
+  
+  rows[ctr] = Eqp_idx;  cols[ctr] = psid_idx;
+  values[ctr] = (-(Xd - Xdp)*(dId_dpsid - param1*-dpsi1ddt_dpsid))/Tdop;
+
+  rows[ctr+1] = Eqp_idx; cols[ctr+1] = Eqp_idx;
+  values[ctr+1] = (-1.0 -(Xd - Xdp)*(dId_dEqp - param1*(-dpsi1ddt_dEqp)))/Tdop -shift;
+
+  rows[ctr+2] = Eqp_idx; cols[ctr+2] = psi1d_idx;
+  values[ctr+2] = (-(Xd - Xdp)*(dId_dpsi1d -param1*-dpsi1ddt_dpsi1d))/Tdop;
+
+  ctr += 3;
+  if(hasExciter()) {
+    int Efd_idx;
+    double Efd;
+    Efd = getExciter()->getFieldVoltage(&Efd_idx);
+    rows[ctr+3] = Eqp_idx; cols[ctr+3] = Efd_idx;
+    values[ctr+3] = 1.0/Tdop;
+    ctr += 1;
   }
+
+  // Derivative of dpsi1d_dt
+  rows[ctr] = psi1d_idx;  cols[ctr] = psid_idx;
+  values[ctr] = (dpsi1ddt_dpsid)/Tdopp;
+
+  rows[ctr+1] = psi1d_idx; cols[ctr+1] = Eqp_idx;
+  values[ctr+1] = (dpsi1ddt_dEqp)/Tdopp;
+
+  rows[ctr+2] = psi1d_idx; cols[ctr+2] = psi1d_idx;
+  values[ctr+2] = (dpsi1ddt_dpsi1d)/Tdopp - shift;
+
+  ctr += 3;
+
+  // Derivatives w.r.t. dEdp_dt
+  double dpsi2qdt_dpsi2q, dpsi2qdt_dEdp, dpsi2qdt_dpsiq;
+  double param2 = (Xqp - Xdpp)/((Xqp - Xl)*(Xqp - Xl));
+
+  dpsi2qdt_dpsiq = -(Xqp - Xl)*dIq_dpsiq;
+  dpsi2qdt_dEdp  = -1.0 -(Xqp - Xl)*dIq_dEdp;
+  dpsi2qdt_dpsi2q = -1.0 -(Xqp - Xl)*dIq_dpsi2q;
+  
+  rows[ctr] = Edp_idx;  cols[ctr] = psiq_idx;
+  values[ctr] = ((Xq - Xqp)*(dIq_dpsiq - param2*-dpsi2qdt_dpsiq))/Tqop;
+
+  rows[ctr+1] = Edp_idx; cols[ctr+1] = Edp_idx;
+  values[ctr+1] = (-1.0 +(Xq - Xqp)*(dIq_dEdp - param2*(-dpsi2qdt_dEdp)))/Tqop - shift;
+
+  rows[ctr+2] = Edp_idx; cols[ctr+2] = psi2q_idx;
+  values[ctr+2] = ((Xq - Xqp)*(dIq_dpsi2q -param2*-dpsi2qdt_dpsi2q))/Tqop;
+
+  ctr += 3;
+
+  // Derivative of dpsi2q_dt
+  rows[ctr] = psi2q_idx;  cols[ctr] = psiq_idx;
+  values[ctr] = (dpsi2qdt_dpsiq)/Tqopp;
+
+  rows[ctr+1] = psi2q_idx; cols[ctr+1] = Edp_idx;
+  values[ctr+1] = (dpsi2qdt_dEdp)/Tqopp;
+
+  rows[ctr+2] = psi2q_idx; cols[ctr+2] = psi2q_idx;
+  values[ctr+2] = (dpsi2qdt_dpsi2q)/Tqopp - shift;
+
+  ctr += 3;
+
+  // Derivative of ddelta_dt
+  rows[ctr] = delta_idx; cols[ctr] = delta_idx;
+  values[ctr] = -shift;
+
+  rows[ctr+1] = delta_idx; cols[ctr+1] = dw_idx;
+  values[ctr+1] = OMEGA_S;
+
+  ctr += 2;
+
+  // derivative of ddw_dt
+  double Minv = 1 / (2*H);
+  double Id,Iq,I0;
+
+  Id = (psid - tempd1*Eqp - tempd2*psi1d)/-Xdpp;
+  Iq = (psiq + tempq1*Edp - tempq2*psi2q)/-Xdpp;
+  I0 = psi0/-Xl;
+
+  rows[ctr] = dw_idx; cols[ctr] = psid_idx;
+  values[ctr] = Minv*-(Iq - psiq*dId_dpsid);
+
+  rows[ctr+1] = dw_idx; cols[ctr+1] = psiq_idx;
+  values[ctr+1] = Minv*-(psid*dIq_dpsiq - Id);
+
+  rows[ctr+2] = dw_idx; cols[ctr+2] = Eqp_idx;
+  values[ctr+2] = Minv*-(-psiq*dId_dEqp);
+
+  rows[ctr+3] = dw_idx; cols[ctr+3] = psi1d_idx;
+  values[ctr+3] = Minv*-(-psiq*dId_dpsi1d);
+
+  rows[ctr+4] = dw_idx; cols[ctr+4] = Edp_idx;
+  values[ctr+4] = Minv*-(psid*dIq_dEdp);
+
+  rows[ctr+5] = dw_idx; cols[ctr+5] = psi2q_idx;
+  values[ctr+5] = Minv*-(psid*dIq_dpsi2q);
+
+  rows[ctr+6] = dw_idx; cols[ctr+6] = dw_idx;
+  values[ctr+6] = -D*(1/(1+dw) - dw/((1+dw)*(1+dw))) -shift;
+
+  ctr += 7;
+  if(hasGovernor()) {
+    // Partial derivatives w.r.t Governor
+  }
+  
+  // derivative of currents iabc
+
+  rows[ctr]   = ia_idx; cols[ctr]   = psid_idx;
+  rows[ctr+1] = ia_idx; cols[ctr+1] = psiq_idx;
+  rows[ctr+2] = ia_idx; cols[ctr+2] = psi0_idx;
+  rows[ctr+3] = ia_idx; cols[ctr+3] = Eqp_idx;
+  rows[ctr+4] = ia_idx; cols[ctr+4] = psi1d_idx;
+  rows[ctr+5] = ia_idx; cols[ctr+5] = Edp_idx;
+  rows[ctr+6] = ia_idx; cols[ctr+6] = psi2q_idx;
+  rows[ctr+7] = ia_idx; cols[ctr+7] = delta_idx;
+  rows[ctr+8] = ia_idx; cols[ctr+8] = ia_idx;
+
+  double Tdq0inv[3][3],dTdq0inv_ddelta[3][3];
+  double scal = sbase/mbase;
+
+  getTdq0inv(p_time,theta,Tdq0inv);
+  getdTdq0invdtheta(p_time,theta,dTdq0inv_ddelta);
+
+  values[ctr]   = scal*(Tdq0inv[0][0]*dId_dpsid);
+  values[ctr+1] = scal*(Tdq0inv[0][1]*dIq_dpsiq);
+  values[ctr+2] = scal*(Tdq0inv[0][2]*dI0_dpsi0);
+
+  values[ctr+3] = scal*(Tdq0inv[0][0]*dId_dEqp);
+  values[ctr+4] = scal*(Tdq0inv[0][0]*dId_dpsi1d);
+
+  values[ctr+5] = scal*(Tdq0inv[0][1]*dIq_dEdp);
+  values[ctr+6] = scal*(Tdq0inv[0][1]*dIq_dpsi2q);
+  
+  values[ctr+7] = scal*(dTdq0inv_ddelta[0][0]*Id + dTdq0inv_ddelta[0][1]*Iq + dTdq0inv_ddelta[0][2]*I0);
+			
+  values[ctr+8] = -1.0;
+  
+  ctr += 9;
+
+  rows[ctr]   = ib_idx; cols[ctr]   = psid_idx;
+  rows[ctr+1] = ib_idx; cols[ctr+1] = psiq_idx;
+  rows[ctr+2] = ib_idx; cols[ctr+2] = psi0_idx;
+  rows[ctr+3] = ib_idx; cols[ctr+3] = Eqp_idx;
+  rows[ctr+4] = ib_idx; cols[ctr+4] = psi1d_idx;
+  rows[ctr+5] = ib_idx; cols[ctr+5] = Edp_idx;
+  rows[ctr+6] = ib_idx; cols[ctr+6] = psi2q_idx;
+  rows[ctr+7] = ib_idx; cols[ctr+7] = delta_idx;
+  rows[ctr+8] = ib_idx; cols[ctr+8] = ib_idx;
+
+  values[ctr]   = scal*(Tdq0inv[1][0]*dId_dpsid);
+  values[ctr+1] = scal*(Tdq0inv[1][1]*dIq_dpsiq);
+  values[ctr+2] = scal*(Tdq0inv[1][2]*dI0_dpsi0);
+
+  values[ctr+3] = scal*(Tdq0inv[1][0]*dId_dEqp);
+  values[ctr+4] = scal*(Tdq0inv[1][0]*dId_dpsi1d);
+
+  values[ctr+5] = scal*(Tdq0inv[1][1]*dIq_dEdp);
+  values[ctr+6] = scal*(Tdq0inv[1][1]*dIq_dpsi2q);
+  
+  values[ctr+7] = scal*(dTdq0inv_ddelta[1][0]*Id + dTdq0inv_ddelta[1][1]*Iq + dTdq0inv_ddelta[1][2]*I0);
+			
+  values[ctr+8] = -1.0;
+  
+  ctr += 9;
+
+  rows[ctr]   = ic_idx; cols[ctr]   = psid_idx;
+  rows[ctr+1] = ic_idx; cols[ctr+1] = psiq_idx;
+  rows[ctr+2] = ic_idx; cols[ctr+2] = psi0_idx;
+  rows[ctr+3] = ic_idx; cols[ctr+3] = Eqp_idx;
+  rows[ctr+4] = ic_idx; cols[ctr+4] = psi1d_idx;
+  rows[ctr+5] = ic_idx; cols[ctr+5] = Edp_idx;
+  rows[ctr+6] = ic_idx; cols[ctr+6] = psi2q_idx;
+  rows[ctr+7] = ic_idx; cols[ctr+7] = delta_idx;
+  rows[ctr+8] = ic_idx; cols[ctr+8] = ic_idx;
+
+  values[ctr]   = scal*(Tdq0inv[2][0]*dId_dpsid);
+  values[ctr+1] = scal*(Tdq0inv[2][1]*dIq_dpsiq);
+  values[ctr+2] = scal*(Tdq0inv[2][2]*dI0_dpsi0);
+
+  values[ctr+3] = scal*(Tdq0inv[2][0]*dId_dEqp);
+  values[ctr+4] = scal*(Tdq0inv[2][0]*dId_dpsi1d);
+
+  values[ctr+5] = scal*(Tdq0inv[2][1]*dIq_dEdp);
+  values[ctr+6] = scal*(Tdq0inv[2][1]*dIq_dpsi2q);
+  
+  values[ctr+7] = scal*(dTdq0inv_ddelta[2][0]*Id + dTdq0inv_ddelta[2][1]*Iq + dTdq0inv_ddelta[2][2]*I0);
+			
+  values[ctr+8] = -1.0;
+  
+  ctr += 9;
 
   *nvals = ctr;
 }

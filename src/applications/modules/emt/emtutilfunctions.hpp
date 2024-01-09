@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   utilfunctions.hpp
+ * @file   emtutilfunctions.hpp
  * 
  * @brief  Utility functions header
  * 
@@ -13,8 +13,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _utilfunctions_h
-#define _utilfunctions_h
+#ifndef _emtutilfunctions_h
+#define _emtutilfunctions_h
 
 #include <gridpack/applications/modules/emt/constants.hpp>
 
@@ -35,6 +35,39 @@ void abc2dq0(double *xabc,double t,double theta,double *xdq0);
  * @param[output] xabc - the transformed vector in abc reference frame
  */
 void dq02abc(double *xdq0,double t,double theta,double *xabc);
+
+/**
+  getTdq0 - returns the transformation matrix used for abc to dq0 transform
+  @param[input] t     - current time
+  @param[input] theta - the transform angle
+  @param[output] Tdq0 - abc2dq0 transformation matrix
+*/
+void getTdq0(double t, double theta, double Tdq0[][3]);
+
+/**
+  getdTdq0dtheta - returns the partial derivative of transformation matrix Tdq0 w.r.t angle theta
+  @param[input] t             - current time
+  @param[input] theta         - the transform angle
+  @param[output] dTdq0_ddelta - \partial(Tdq0){delta}
+*/
+void getdTdq0dtheta(double t, double theta, double dTdq0dtheta[][3]);
+
+/**
+  getTdq0inv - returns the transformation matrix used for dq0 to abc transform
+  @param[input] t     - current time
+  @param[input] theta - the transform angle
+  @param[output] Tdq0inv - dq02abc transformation matrix
+*/
+void getTdq0inv(double t, double theta, double Tdq0inv[][3]);
+
+/**
+  getdTdq0invdtheta - returns the partial derivative of transformation matrix Tdq0inv w.r.t angle theta
+  @param[input] t             - current time
+  @param[input] theta         - the transform angle
+  @param[output] dTdq0inv_ddelta - \partial(Tdq0inv){delta}
+*/
+void getdTdq0invdtheta(double t, double theta, double dTdq0invddelta[][3]);
+
 
 //inverse = matrix^-1
 void inverse3x3(double matrix[3][3],double inverse[3][3]);

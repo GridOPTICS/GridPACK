@@ -261,7 +261,6 @@ void Exdc1::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows
 
 }
 
-
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage
@@ -270,6 +269,18 @@ double Exdc1::getFieldVoltage()
 {
   return Efd;
 }
+
+/** 
+ * Get the value of the field voltage parameter
+ * and its global location
+ * @return value of field voltage
+ */
+double Exdc1::getFieldVoltage(int *Efd_gloc)
+{
+  *Efd_gloc = p_gloc + 3;
+  return Efd;
+}
+
 
 bool Exdc1::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
 {
