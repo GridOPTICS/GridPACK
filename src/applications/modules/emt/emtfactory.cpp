@@ -184,7 +184,12 @@ void EmtFactory::readEvents(gridpack::utility::Configuration::CursorPtr cursor)
 	double ton  = events[idx].cursor->get("begin",0.0);
 	double toff = events[idx].cursor->get("end",0.0);
 	std::string faulttype = events[idx].cursor->get("type","SLG");
-	std::string faultphases = events[idx].cursor->get("phases","ABC");
+	std::string faultphases;
+	if(faulttype == "SLG") {
+	  faultphases = events[idx].cursor->get("phases","ABC");
+	} else if(faulttype == "ThreePhase") {
+	  faultphases = "ABC";
+	}
 	double Ron = events[idx].cursor->get("Ron",1e-2);
 	double Rgnd = events[idx].cursor->get("Rgnd",1e-3);
 
