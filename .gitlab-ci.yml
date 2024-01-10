@@ -14,6 +14,7 @@ variables:
   KUBERNETES_CPU_LIMIT: "2"
   KUBERNETES_MEMORY_REQUEST: "4Gi"
   KUBERNETES_MEMORY_LIMIT: "8Gi"
+  PROXY: "http://proxy01.pnl.gov:3128"
 
 
 .multi-distro:
@@ -89,8 +90,8 @@ build-container:
       /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
-      --build-arg "http_proxy=$http_proxy"
-      --build-arg "https_proxy=$https_proxy"
+      --build-arg "http_proxy=$PROXY"
+      --build-arg "https_proxy=$PROXY"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
 
