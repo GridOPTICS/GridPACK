@@ -15,9 +15,9 @@ variables:
   KUBERNETES_MEMORY_REQUEST: "4Gi"
   KUBERNETES_MEMORY_LIMIT: "8Gi"
   HTTP_PROXY: "http://proxy01.pnl.gov:3128"
-  HTTPS_PROXY: HTTP_PROXY
-  http_proxy: HTTP_PROXY
-  https_proxy: HTTP_PROXY
+  HTTPS_PROXY: ${HTTP_PROXY}
+  http_proxy: ${HTTP_PROXY}
+  https_proxy: ${HTTP_PROXY}
 
 
 .multi-distro:
