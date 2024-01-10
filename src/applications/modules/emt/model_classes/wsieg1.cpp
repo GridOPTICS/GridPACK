@@ -359,7 +359,7 @@ bool Wsieg1::setJacobian(gridpack::ComplexType **values)
  */
 int Wsieg1::matrixNumValues()
 {
-  return 0;
+  return 100;
 }
 
   /**

@@ -145,6 +145,17 @@ class Genrou: public BaseEMTGenModel
    */
   double getAngle() { return delta; }
 
+  /**
+   * Return the machine angle and its global location
+   * @param [output] delta - machine angle
+   */
+  double getAngle(int *delta_gloc)
+  {
+    *delta_gloc = p_gloc + 7;
+    return delta;
+  }
+
+
   private:
     // Machine parameters
   double H, D, Ra, L, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
