@@ -23,11 +23,11 @@
 -emt_ts_rtol 1e-2
 
 # Tolerance for event location
--emt_ts_event_tol 1e-3
+-emt_ts_event_tol 1e-5
 
 # Min. and max. steps (only used when step adaptivity is on)
--emt_ts_adapt_dt_max 0.3
--emt_ts_adapt_dt_min 0.01
+-emt_ts_adapt_dt_max 500e-6
+-emt_ts_adapt_dt_min 50e-6
 
 # End last time at the given final time 
 -emt_ts_exact_final_time MATCHSTEP
