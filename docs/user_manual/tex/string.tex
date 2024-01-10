@@ -33,7 +33,11 @@ std::string clean2Char(std::string &str)
 \end{Verbatim}
 }
 
-returns a two character string that is right justified. It will also remove any quotes that may or may not be around the original string. The strings C1, `C1', ``C1'' and ``  C1'' will all return a string containing the two characters C1. A single character string will return a two character string with a blank as the first character.
+returns a two character string that is left-justified. It will also remove any
+quotes that may or may not be around the original string. The strings C1, `C1',
+``C1'' and ``  C1'' will all return a string containing the two characters C1. A
+single character string will return a two character string with a blank as the
+second character.
 
 The function
 
@@ -129,7 +133,7 @@ Finally, the functions
 \color{red}
 \begin{Verbatim}[fontseries=b]
 bool getBool(std::string &str)
-bool getBool(str)
+bool getBool(const char *str)
 \end{Verbatim}
 }
 

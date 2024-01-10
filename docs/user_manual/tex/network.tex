@@ -230,4 +230,23 @@ const Communicator& communicator() const
 
 This function can be used in implementing algorithms based on multilevel parallelism. Recovering the communicator is also needed for converting applications to modules that can be used to create higher level workflows that combine multiple different types of applications. This is discussed in more detail below.
 
+Finally, two functions that can be of use in a variety of contexts return the
+local index of a bus or branch given the original indices of the bus or the
+original indices of the buses defining the endpoints of a branch. These
+functions are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<int> getLocalBusIndices(int idx)
+
+std::vector<int> getLocalBranchIndices(int idx1, int idx2)
+\end{Verbatim}
+}
+
+These can be used to easily modify individual buses or branches based on user
+input. The functions return a vector of local indices, since it is possible that
+multiple buses may correspond to an original index. This can happen if the
+original index happens to correspond to a ghost bus on a particular process.
+
 The \texttt{\textbf{BaseNetwork}} methods described in this section are only a subset of the total functionality available but they represent most of the methods that a typical developer would use. The remaining functions are primarily used to implement other parts of the GridPACK framework but are generally not required by people writing applications. More information on how the functions described above are used in practice can be found in the section on GridPACK factories.

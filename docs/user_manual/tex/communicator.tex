@@ -23,7 +23,9 @@ Global operations on the world communicator involve all 16 processes, global ope
 
 The communicator supports some basic operations that are commonly used in parallel programming. GridPACK has been designed to minimize the amount of explicit communication that must be handled by application developers, but it is occasionally useful to have access to standard communication protocols in applications. In particular, it is useful to be able to divide a given communicator into a set of non-overlapping sub-communicators. The basic operations supported by the GridPACK communicator class are described below.
 
-The GridPACK \texttt{\textbf{Communicator}} class is in the \texttt{\textbf{gridpack::parallel}} namespace. The constructor for this class creates a copy of the world communicator. The constructor has the form
+The GridPACK \texttt{\textbf{Communicator}} class is in the
+\texttt{\textbf{gridpack::parallel}} namespace. Several constructors for the
+communicator class are available. The simplest is
 
 {
 \color{red}
@@ -32,7 +34,27 @@ Communicator(void)
 \end{Verbatim}
 }
 
-and takes no arguments. Two basic functions associated with communicators are
+and takes no arguments. This constructor returns a communicator that is defined
+on the world group containing all processes available to the calculation. Other
+constructors take an argument and can be used to construct or copy communicators
+from a subset of processes. These include
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Communicator(const Communicator& comm)
+Communicator(const boost::mpi::communicator& comm)
+Communicator(const MPI_Comm& comm)
+\end{Verbatim}
+}
+
+The first constructor is a copy constructor and creates a separate instance of
+the communicator, the remaining two constructors allow users to create a
+communicator from MPI or Boost communicators. These can be useful if using
+GridPACK in conjunction with other parallel applications created outside the
+GridPACK framework.
+
+Two basic functions associated with communicators are
 
 {
 \color{red}
@@ -56,10 +78,8 @@ The first function returns the number of processors in the communicator and the 
 \color{red}
 \begin{Verbatim}[fontseries=b]
 Communicator comm;
-char buf[128];
-sprint(buf,"My message\n");
 if (comm.rank() == 0) {
-  printf("%s",buf);
+  printf("My message\n");
 }
 \end{Verbatim}
 }
@@ -136,7 +156,8 @@ void min(long *x, int nvals) const
 \end{Verbatim}
 }
 
-Again, a global maximum or minimum can be calculated by first computing the local maximum or minim on each processor and then evaluating it across processors. 
+Again, a global maximum or minimum can be calculated by first computing the
+local maximum or minimum on each processor and then evaluating it across processors. 
 
 One other common parallel construct that may be useful in some contexts is the barrier or synchronization function. In GridPACK, this is available as the function
 
@@ -147,4 +168,9 @@ void sync() const
 \end{Verbatim}
 }
 
-The \texttt{\textbf{sync}} function does not allow any processor in the communicator to proceed beyond this call until all processors in the communicator have reached the call. This is used in some parallel programming situations to guarantee a consistent state across all processors.  In general, there should be relatively little need for this call in GridPACK. See, however, the comment below at the end of the section on \texttt{\textbf{GlobalStore}}.
+The \texttt{\textbf{sync}} function does not allow any processor in the
+communicator to proceed beyond this call until all processors in the
+communicator have reached the call. This is used in some parallel programming
+situations to guarantee a consistent state across all processors.  In general,
+there should be relatively little need for this call in GridPACK. See, however,
+the comment below at the end of the section~\ref{global_store} on \texttt{\textbf{GlobalStore}}.

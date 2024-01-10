@@ -2,7 +2,11 @@
 
 The configuration module is designed to provide a central mechanism for directing information from the input file to the components making up a given application. For example, information about convergence thresholds and maximum numbers of iterations might need to be picked up by the solver module from an external configuration file. The configuration module is designed to read files using a simple XML format that supports a hierarchical input. This can be used to control which input gets directed to individual objects in the application, even if the object is a framework component and cannot be modified by the application developer.
 
-The \texttt{\textbf{Configuration}} class is in the namespace \texttt{\textbf{gridpack::utility}}. This class follows the C++ singleton pattern and does not have a public constructor. The static method \texttt{\textbf{configuration()}} returns a pointer to the shared instance of this class and guaratantees that the same instance is used by all modules in an application. The shared instance can be initialized with data from an external file using the code
+The \texttt{\textbf{Configuration}} class is in the namespace
+\texttt{\textbf{gridpack::utility}}. This class follows the C++ singleton
+pattern and does not have a public constructor. The static method
+\texttt{\textbf{configuration()}} returns a pointer to the shared instance of
+this class and guarantees that the same instance is used by all modules in an application. The shared instance can be initialized with data from an external file using the code
 
 {
 \color{red}
@@ -13,9 +17,12 @@ c->open(input_file, comm);
 \end{Verbatim}
 }
 
-where \texttt{\textbf{comm}} is GridPACK \texttt{\textbf{Communicator}}.
+where \texttt{\textbf{comm}} is a GridPACK \texttt{\textbf{Communicator}}.
 
-The input file uses XML syntax. The single top-level element must be named ``Configuration'' but other elements may have module- and application-specific names. Refer elsewhere in this document for details.  For illustration purposes, an example configuration file might look like: 
+The input file uses XML syntax. The single top-level element must be named
+``Configuration'' but other elements may have module- and application-specific
+names. Refer elsewhere in this document for details.  For illustration purposes,
+an example configuration file for a power flow calculation might look like: 
 
 {
 \color{blue}

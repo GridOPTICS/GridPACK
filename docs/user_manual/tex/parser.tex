@@ -36,7 +36,9 @@ void parse(const std::string &filename)
 \end{Verbatim}
 }
 
-where filename refers to the location of the network configuration file. To use this parser, the network object with the appropriate bus and branch classes is instantiated and then passed to the constructor of the \texttt{\textbf{PTI23\_parser }}or\texttt{\textbf{ PTI33\_parser }}object. The parse method is then invoked with the name of the network configuration file passed in as an argument and the network is filled out with buses and branches. The parameters in the network configuration file are stored as key-value pairs in the \texttt{\textbf{DataCollection}} object associated with each bus and branch. Once the network partition method has been called, the network is fully distributed and ghost buses and branches have been created. Other operations operations can then be performed. A variant on parse is the command
+where filename refers to the location of the network configuration file. To use
+this parser, the network object with the appropriate bus and branch classes is
+instantiated and then passed to the constructor of the parser object. The parse method is then invoked with the name of the network configuration file passed in as an argument and the network is filled out with buses and branches. The parameters in the network configuration file are stored as key-value pairs in the \texttt{\textbf{DataCollection}} object associated with each bus and branch. Once the network partition method has been called, the network is fully distributed and ghost buses and branches have been created. Other operations operations can then be performed. A variant on parse is the command
 
 {
 \color{red}
@@ -51,8 +53,9 @@ As discussed in section~\ref{data_interface}, another key part of the parsing
 capability is the \texttt{\textbf{dictionary.hpp}} file. This is designed to provide a common nomenclature for parameters associated with power grid components.
 The definitions in the \texttt{\textbf{dictionary.hpp}} and the files in the
 \texttt{\textbf{src/parser/variable\_defs}} subdirectory are used to extract
-parameters from the \texttt{\textbf{DataCollection}} objects created by the
+parameters from the\newline
+\texttt{\textbf{DataCollection}} objects created by the
 parser. For example, the parameter describing the resistance of a transmission
 element is given the common name \texttt{\textbf{BRANCH\_R}}. This string is
-defined as a macro in the \texttt{\textbf{dictionary.hpp}}, which
+defined as a macro in the \texttt{\textbf{variable\_defs/branch\_defs.hpp}}, which
 provides compile time error checking on the name. The goal of using the dictionary is that all parsers will eventually store the branch resistance parameter in the \texttt{\textbf{DataCollection}} object using this common name. Applications can then switch easily between different network configuration file formats by simply exchanging parsers, which will all store corresponding parameters using a common naming convention that can used within the code to access data.

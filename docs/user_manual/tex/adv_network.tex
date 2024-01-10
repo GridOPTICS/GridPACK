@@ -16,43 +16,44 @@ The argument \texttt{\textbf{idx}} is the original index of the bus. The functio
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-bool setGlobalBusIndex(int idx, int gdx);
+bool setGlobalBusIndex(int ldx, int gdx);
 \end{Verbatim}
 }
 
-The argument \texttt{\textbf{idx}} is the local index of the bus in the network, the argument \texttt{\textbf{gdx}} is the global index assigned by the user. This function will return false if the local index exceeds the number of buses on the processor. The existing GridPACK parsers assign the original index based on the index used in the configuration file and the global index based on the position of the bus in the configuration file. For other sources, it may be necessary for users to develop their own strategies for assigning indices.
+The argument \texttt{\textbf{ldx}} is the local index of the bus in the network, the argument \texttt{\textbf{gdx}} is the global index assigned by the user. This function will return false if the local index exceeds the number of buses on the processor. The existing GridPACK parsers assign the original index based on the index used in the configuration file and the global index based on the position of the bus in the configuration file. For other sources, it may be necessary for users to develop their own strategies for assigning indices.
 
 Once the bus has been added, its properties can be modified using methods in the \texttt{\textbf{BaseBusComponent}} class. Note that creating the bus simultaneously creates the associated \texttt{\textbf{DataCollection}} object. This can be accessed using the network function
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-boost::shared_ptr<DataCollection> getBusData(int idx);
+boost::shared_ptr<DataCollection> getBusData(int ldx);
 \end{Verbatim}
 }
 
-where \texttt{\textbf{idx}} is once again the local bus index. Once the data collection object is available, properties can be added to it as described earlier.
+where \texttt{\textbf{ldx}} is once again the local bus index. Once the data collection object is available, properties can be added to it as described earlier.
 
 New buses are added to the system with the assumption that they are local to the processor. This means the ``active'' flag is originally set to true. The partitioner can then be used to redistribute buses and branches and add ghost components. If the user wants to set their own local/ghost status, then this can be done through the function
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-bool setActiveBus(int idx, bool flag);
+bool setActiveBus(int ldx, bool flag);
 \end{Verbatim}
 }
 
-The index \texttt{\textbf{idx}} is a local index, \texttt{\textbf{flag}} is the status of the bus (true for local buses, false for ghost buses) and the function returns false if the local bus index does not correspond to a bus on the process.
+The index \texttt{\textbf{ldx}} is a local index, \texttt{\textbf{flag}} is the status of the bus (true for local buses, false for ghost buses) and the function returns false if the local bus index does not correspond to a bus on the process.
 The status of a bus as a reference bus can be set using the function
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-void setReferenceBus(int idx);
+void setReferenceBus(int ldx);
 \end{Verbatim}
 }
 
-where \texttt{\textbf{idx}} is a local index.By default, buses are created as ordinary buses.
+where \texttt{\textbf{ldx}} is a local index.By default, buses are created as ordinary buses.
+
 Branches can be added to the system using a similar set of functions. Note that there is no requirement that branches be created on processes that contain either of the endpoint buses. In an extreme case, the complete set of buses and branches can be created on separate processes. To add a new branch to the system, the user must supply the original indices of the buses at each end of the branch and a global index for each individual branch. Again, the global index runs consecutively from 0 to M-1, where M is the total number of unique branches in the system. A new branch is added to the network using the function
 
 {
@@ -67,29 +68,29 @@ where \texttt{\textbf{idx1}} is the original index of the ``from'' bus and \text
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-bool setGlobalBranchIndex(int idx, int gdx);
+bool setGlobalBranchIndex(int ldx, int gdx);
 \end{Verbatim}
 }
 
-where \texttt{\textbf{idx}} is the local index of the branch on the processor and \texttt{\textbf{gdx}} is the global index. As in the case of buses, the complicated part of adding a branch to the network is to determine a global index for the branch.
+where \texttt{\textbf{ldx}} is the local index of the branch on the processor and \texttt{\textbf{gdx}} is the global index. As in the case of buses, the complicated part of adding a branch to the network is to determine a global index for the branch.
 When a branch is created, a \texttt{\textbf{DateCollection}} object for the branch is created along and can be accessed using
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-boost::shared_ptr<DataCollection> getBranchData(int idx);
+boost::shared_ptr<DataCollection> getBranchData(int ldx);
 \end{Verbatim}
 }
 
-where \texttt{\textbf{idx}} is the local index of the branch. Once a pointer to the data collection object is available, parameters can be added to it or modified as described earlier. The active status of the branch can be set with
+where \texttt{\textbf{ldx}} is the local index of the branch. Once a pointer to the data collection object is available, parameters can be added to it or modified as described earlier. The active status of the branch can be set with
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-bool setActiveBranch(int idx, bool flag);
+bool setActiveBranch(int ldx, bool flag);
 \end{Verbatim}
 }
 
-The arguments \texttt{\textbf{idx}} and \texttt{\textbf{flag}} are the local branch index and the branch status and the function returns false if the local index is not in the range of branches on the processor.
+The arguments \texttt{\textbf{ldx}} and \texttt{\textbf{flag}} are the local branch index and the branch status and the function returns false if the local index is not in the range of branches on the processor.
 
 These functions are all that is needed to create a network from scratch or to write a parser for a new network configuration file format. These are currently used in the PSS/E parser classes to implement the network setup functionality.
