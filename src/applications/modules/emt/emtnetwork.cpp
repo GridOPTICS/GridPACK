@@ -346,8 +346,11 @@ void EmtBus::setGlobalLocation()
 {
   int i;
   int gloc;
+  int vgloc;
 
   p_gloc = p_vecidx[0];
+
+  getVoltageGlobalLocation(&vgloc);
 
   gloc = p_gloc + p_nvarbus;
   for(i=0; i < p_ngen; i++) {
@@ -355,6 +358,8 @@ void EmtBus::setGlobalLocation()
 
     // Set the global location for the first variable
     p_gen[i]->setGlobalLocation(gloc);
+    // Set global location for voltage
+    p_gen[i]->setVoltageGlobalLocation(vgloc);
     gloc += p_neqsgen[i];
     
     bool has_ex = p_gen[i]->hasExciter();
@@ -363,6 +368,8 @@ void EmtBus::setGlobalLocation()
     if (has_ex) {
       // Set the global location for the first variable
       p_gen[i]->getExciter()->setGlobalLocation(gloc);
+      // set the global location for the voltage
+      p_gen[i]->getExciter()->setVoltageGlobalLocation(vgloc);
       gloc += p_neqsexc[i];
     }
     if (has_gv) {
@@ -822,7 +829,6 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
 
     int nvals_gen=0;
 
-    p_gen[i]->setVoltageGlobalLocation(v_gloc);
     p_gen[i]->setTSshift(p_TSshift);
     p_gen[i]->matrixGetValues(&nvals_gen,values+ctr,rows+ctr,cols+ctr);
     ctr += nvals_gen;

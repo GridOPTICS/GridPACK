@@ -218,6 +218,12 @@ public:
   */
   void setGlobalLocation(int gloc) {p_gloc = gloc;}
 
+  /*
+    set the global location for first voltage variable for this bus
+  */
+  void setVoltageGlobalLocation(int glocvoltage) {p_glocvoltage = glocvoltage;}
+
+
   /**
    * return offset in the local vector 
    */
@@ -251,6 +257,7 @@ protected:
   BaseEMTGenModel* p_gen; // Generator model
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator
+  int           p_glocvoltage; // Global location for the first voltage variable for the bus
 
   int           nxexc;    /** Number of variables for the exciter model */
   int           p_busoffset; /** Starting location for bus variables in the local state vector */
