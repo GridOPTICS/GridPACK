@@ -241,12 +241,21 @@ bool Exdc1::setJacobian(gridpack::ComplexType **values)
 }
 
 /**
- * Get number of matrix values contributed by generator
+   Non-zero pattern of the Jacobian (x denotes non-zero entry)
+         Vmeas    xLL    VR    Efd    xf    delta    va    vb    vc
+ eq.0 |    x                                  x      x     x     x
+ eq.1 |    x      x             x     x
+ eq.2 |    x      x      x      x     x
+ eq.3 |                  x      x
+ eq.4 |                         x     x
+
+ Number of non-zeros = 5 + 4 + 5 + 2 + 2 = 18 
+ * Get number of matrix values contributed by exciter
  * @return number of matrix values
  */
 int Exdc1::matrixNumValues()
 {
-  return 0;
+  return 18;
 }
 
   /**
@@ -258,7 +267,151 @@ int Exdc1::matrixNumValues()
    */
 void Exdc1::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
 {
+  int ctr = 0;
 
+  int Vmeas_idx = p_gloc;
+  int xLL_idx   = p_gloc + 1;
+  int VR_idx    = p_gloc + 2;
+  int Efd_idx   = p_gloc + 3;
+  int xf_idx    = p_gloc + 4;
+  int delta_idx;
+  int va_idx    = p_glocvoltage;
+  int vb_idx    = p_glocvoltage+1;
+  int vc_idx    = p_glocvoltage+2;
+
+  double delta = getGenerator()->getAngle(&delta_idx);
+  double Tdq0[3][3];
+  double dTdq0ddelta[3][3];
+
+  getTdq0(p_time,delta,Tdq0);
+  getdTdq0dtheta(p_time,delta,dTdq0ddelta);
+
+  double Ec, Vd, Vq, V0;
+  double vabc[3],vdq0[3];
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  abc2dq0(vabc,p_time,delta,vdq0);
+  Vd = vdq0[0]; Vq = vdq0[1]; V0 = vdq0[2];
+
+  Ec = sqrt(Vd*Vd + Vq*Vq);
+
+  double dEc_dVd,dEc_dVq;
+  dEc_dVd = Vd/Ec; dEc_dVq = Vq/Ec;
+
+  double dVd_dvabc[3], dVq_dvabc[3];
+  dVd_dvabc[0] = Tdq0[0][0]; dVd_dvabc[1] = Tdq0[0][1]; dVd_dvabc[2] = Tdq0[0][2];
+  dVq_dvabc[0] = Tdq0[1][0]; dVq_dvabc[1] = Tdq0[1][1]; dVq_dvabc[2] = Tdq0[1][2];
+
+  double dVd_ddelta = dTdq0ddelta[0][0]*vabc[0] + dTdq0ddelta[0][1]*vabc[1] + dTdq0ddelta[0][2]*vabc[2];
+  double dVq_ddelta = dTdq0ddelta[1][0]*vabc[0] + dTdq0ddelta[1][1]*vabc[1] + dTdq0ddelta[1][2]*vabc[2];
+  
+
+  rows[ctr] = Vmeas_idx;  cols[ctr] = Vmeas_idx;
+  rows[ctr+1] = Vmeas_idx; cols[ctr+1] = delta_idx;
+  rows[ctr+2] = Vmeas_idx; cols[ctr+2] = va_idx;
+  rows[ctr+3] = Vmeas_idx; cols[ctr+3] = vb_idx;
+  rows[ctr+4] = Vmeas_idx; cols[ctr+4] = vc_idx;
+  
+  if(TR != 0) {
+    values[ctr]   = -1.0/TR - shift;
+    values[ctr+1] = (dEc_dVd*dVd_ddelta + dEc_dVq*dVq_ddelta)/TR;
+    values[ctr+2] = (dEc_dVd*dVd_dvabc[0] + dEc_dVq*dVq_dvabc[0])/TR;
+    values[ctr+3] = (dEc_dVd*dVd_dvabc[1] + dEc_dVq*dVq_dvabc[1])/TR;
+    values[ctr+4] = (dEc_dVd*dVd_dvabc[2] + dEc_dVq*dVq_dvabc[2])/TR;
+  } else {
+    values[ctr]   = -1.0;
+    values[ctr+1] = (dEc_dVd*dVd_ddelta + dEc_dVq*dVq_ddelta);
+    values[ctr+2] = (dEc_dVd*dVd_dvabc[0] + dEc_dVq*dVq_dvabc[0]);
+    values[ctr+3] = (dEc_dVd*dVd_dvabc[1] + dEc_dVq*dVq_dvabc[1]);
+    values[ctr+4] = (dEc_dVd*dVd_dvabc[2] + dEc_dVq*dVq_dvabc[2]);
+  }
+
+  ctr += 5;
+
+  rows[ctr] = xLL_idx; cols[ctr] = Vmeas_idx;
+  rows[ctr+1] = xLL_idx; cols[ctr+1] = xLL_idx;
+  rows[ctr+2] = xLL_idx; cols[ctr+2] = Efd_idx;
+  rows[ctr+3] = xLL_idx; cols[ctr+3] = xf_idx;
+
+  double dVf_dxf = 1.0;
+  double dVf_dEfd = KF/TF;
+  double param = (1 - TC/TB);
+  double dyLL_dVmeas = 0.0, dyLL_dxLL = 0.0;
+  double dyLL_dEfd = 0.0, dyLL_dxf = 0.0;
+  if(TB != 0 && TC != 0) {
+    values[ctr] = (param*-1)/TB;
+    values[ctr+1] = -1.0/TB - shift;
+    values[ctr+2] = (param*(-dVf_dEfd))/TB;
+    values[ctr+3] = (param*(-dVf_dxf))/TB;
+
+    dyLL_dVmeas = TC/TB*-1.0;
+    dyLL_dxLL = 1.0;
+    dyLL_dEfd = TC/TB*-KF/TF;
+    dyLL_dxf  = TC/TB*-1.0;
+  } else {
+    values[ctr] = -1.0;
+    values[ctr+1] = -1.0;
+    values[ctr+2] = -dVf_dEfd;
+    values[ctr+3] = -dVf_dxf;
+
+    dyLL_dxLL = 1.0;
+  }
+
+  ctr += 4;
+
+  rows[ctr] = VR_idx;  cols[ctr] = Vmeas_idx;
+  rows[ctr+1] = VR_idx; cols[ctr+1] = xLL_idx;
+  rows[ctr+2] = VR_idx; cols[ctr+2] = VR_idx;
+  rows[ctr+3] = VR_idx; cols[ctr+3] = Efd_idx;
+  rows[ctr+4] = VR_idx; cols[ctr+4] = xf_idx;
+
+  values[ctr] = values[ctr+1] = values[ctr+2] = values[ctr+3] = values[ctr+4] = 0.0;
+
+  if(VR_at_min || VR_at_max) {
+    values[ctr+2] = 1.0;
+  } else {
+    if(TA != 0) {
+      values[ctr] =   (KA*dyLL_dVmeas)/TA;
+      values[ctr+1] = (KA*dyLL_dxLL)/TA;
+      values[ctr+2] = -1.0/TA - shift;
+      values[ctr+3] = (KA*dyLL_dEfd)/TA;
+      values[ctr+4] = (KA*dyLL_dxf)/TA;
+    } else {
+      values[ctr] =   (KA*dyLL_dVmeas);
+      values[ctr+1] = (KA*dyLL_dxLL);
+      values[ctr+2] = -1.0/TA;
+      values[ctr+3] = (KA*dyLL_dEfd)/TA;
+      values[ctr+4] = (KA*dyLL_dxf)/TA;
+    }
+  }
+      
+  ctr += 5;
+
+  double SE = 0.0;
+  double dSE_dEfd = 0.0;
+  if(Efd > Efdthresh) {
+    SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+    dSE_dEfd = 2*satB*(Efd - satA)/Efd - SE/Efd;
+  }
+  rows[ctr] = Efd_idx; cols[ctr] = VR_idx;
+  rows[ctr+1] = Efd_idx; cols[ctr+1] = Efd_idx;
+
+  values[ctr] = (1.0)/TE;
+
+  values[ctr+1] = (-SE - dSE_dEfd*Efd - KE)/TE - shift;
+  
+  ctr += 2;
+
+  rows[ctr] = xf_idx; cols[ctr] = Efd_idx;
+  rows[ctr+1] = xf_idx; cols[ctr+1] = xf_idx;
+
+  values[ctr]   = (-KF/TF)/TF;
+  values[ctr+1] = (-1.0)/TF - shift;
+
+  ctr += 2;
+  
+  *nvals = ctr;
+		     
 }
 
 /** 

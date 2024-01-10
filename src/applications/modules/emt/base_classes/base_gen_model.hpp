@@ -136,6 +136,20 @@ public:
    */
   virtual double getAngle() { return 0.0; }
 
+  /**
+   * Return the machine angle and its global location
+   * @param [output] delta - machine angle
+   * @param [output] delta_gloc - global location of machine angle
+
+   * Note - the machine angle location is used in Jacobian calculation
+   */
+  virtual double getAngle(int *delta_gloc)
+  {
+    *delta_gloc = p_gloc;
+    return 0.0;
+  }
+
+
   
   /**
    * Return the number of variables

@@ -554,8 +554,8 @@ void Genrou::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *row
     int Efd_idx;
     double Efd;
     Efd = getExciter()->getFieldVoltage(&Efd_idx);
-    rows[ctr+3] = Eqp_idx; cols[ctr+3] = Efd_idx;
-    values[ctr+3] = 1.0/Tdop;
+    rows[ctr] = Eqp_idx; cols[ctr] = Efd_idx;
+    values[ctr] = 1.0/Tdop;
     ctr += 1;
   }
 
