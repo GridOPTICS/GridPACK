@@ -125,12 +125,14 @@ double BaseEMTGenModel::getSpeedDeviation()
 }
 
 /**
- * Return the location of speed rotor speed deviation variable in the bus array
- * @param rotor speed deviation location
-*/
-int BaseEMTGenModel::getSpeedDeviationLocation()
+ * Return the speed deviation and its global location 
+ * @param[output] rotor speed deviation
+ * @param[output] rotor speed deviation global location
+ */
+double BaseEMTGenModel::getSpeedDeviation(int *dw_gloc)
 {
-  return 0;
+  *dw_gloc = 0;
+  return 0.0;
 }
 
 void BaseEMTGenModel::setExciter(boost::shared_ptr<BaseEMTExcModel> &exciter)
