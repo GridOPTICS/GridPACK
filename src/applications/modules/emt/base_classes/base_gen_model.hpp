@@ -206,10 +206,11 @@ public:
   virtual double getSpeedDeviation();
 
   /**
-   * Return the location of speed speed deviation variable in the bus array
-   * @param rotor speed deviation location
+   * Return the speed deviation and its global location 
+   * @param[output] rotor speed deviation
+   * @param[output] rotor speed deviation global location
    */
-  virtual int getSpeedDeviationLocation();
+  virtual double getSpeedDeviation(int *dw_gloc);
 
   /**
    * Set the offset for first variable for the generator in the array for all bus variables 

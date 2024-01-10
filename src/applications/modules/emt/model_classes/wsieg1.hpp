@@ -110,6 +110,15 @@ public:
    * @return value of the mechanical power 
    */
   double getMechanicalPower();
+
+  /** 
+   * Get the value of the mechanical power and its global location
+   * @return value of the mechanical power
+   *
+   * Note: Used in Jacobian calculation
+   */
+  double getMechanicalPower(int *Pmech_gloc);
+
   
   /**
    * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
@@ -160,6 +169,8 @@ private:
   double xT2; // Second turbine integrator output
   double xT3; // Third turbine integrator output
   double xT4; // Fourth turbine integrator output
+
+  double xout; // output of the model
 
   // WSIEG1 state-variable derivatives
   double dxLL, dxGV, dxT1, dxT2, dxT3, dxT4;

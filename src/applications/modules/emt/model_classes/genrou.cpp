@@ -637,12 +637,21 @@ void Genrou::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *row
   rows[ctr+5] = dw_idx; cols[ctr+5] = psi2q_idx;
   values[ctr+5] = Minv*-(psid*dIq_dpsi2q);
 
+  int TM_idx;
+  if(hasGovernor()) {
+    TM = getGovernor()->getMechanicalPower(&TM_idx);
+  }
+  
   rows[ctr+6] = dw_idx; cols[ctr+6] = dw_idx;
-  values[ctr+6] = -D*(1/(1+dw) - dw/((1+dw)*(1+dw))) -shift;
+  values[ctr+6] = Minv*(-D*(1/(1+dw) - (TM - D*dw)/((1+dw)*(1+dw)))) -shift;
 
   ctr += 7;
+
   if(hasGovernor()) {
     // Partial derivatives w.r.t Governor
+    rows[ctr] = dw_idx; cols[ctr] = TM_idx;
+    values[ctr] = Minv*(1/(1+dw));
+    ctr += 1;
   }
   
   // derivative of currents iabc

@@ -137,6 +137,17 @@ double BaseEMTGovModel::getMechanicalPower()
   return 0.0;
 }
 
+/** 
+ * Get the value of the mechanical power and its global location
+ * @return value of the mechanical power
+ */
+double BaseEMTGovModel::getMechanicalPower(int *Pmech_gloc)
+{
+  *Pmech_gloc = -1;
+  return 0.0;
+}
+
+
 /**
  * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
  * @param xgov_loc locations of governor variables

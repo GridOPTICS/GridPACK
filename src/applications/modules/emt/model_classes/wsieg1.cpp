@@ -9,6 +9,8 @@
  *  
  * @brief WSIEG1 governor model implementation 
  *
+ * Model assumes there is no second generator
+ * So only Pmech1 is active
  *
  */
 
@@ -24,6 +26,7 @@ Wsieg1::Wsieg1(void)
   xT2 = 0.0; 
   xT3 = 0.0; 
   xT4 = 0.0;
+  xout = 0.0;
 
   dxLL = 0.0;
   dxGV = 0.0;
@@ -56,7 +59,7 @@ Wsieg1::Wsieg1(void)
   uGV_at_min = uGV_at_max = false;
   xGV_at_min = xGV_at_max = false;
 
-  nxgov = 6; // Number of variables
+  nxgov = 7; // Number of variables
 }
 
 Wsieg1::~Wsieg1(void)
@@ -149,12 +152,16 @@ void Wsieg1::init(gridpack::ComplexType* xin)
   if (iseq_diff[0]) xLL = K*dw * (1.0 - T2 / T1);
   else xLL = K*dw;
 
+  xout = xT1 * K1 + xT2 * K3 + xT3 * K5 + xT4 * K7;
+
   x[0] = xLL;
   x[1] = xGV;
   x[2] = xT1;
   x[3] = xT2;
   x[4] = xT3;
   x[5] = xT4;
+  x[6] = xout;
+  
 }
 
 /**
@@ -195,6 +202,7 @@ void Wsieg1::setValues(gridpack::ComplexType *val)
     xT2 = real(values[3]);
     xT3 = real(values[4]);
     xT4 = real(values[5]);
+    xout = real(values[6]);
   } else if(p_mode == XDOTVECTOBUS) {
     dxLL = real(values[0]);
     dxGV = real(values[1]);
@@ -219,6 +227,7 @@ void Wsieg1::vectorGetValues(gridpack::ComplexType *values)
   int x4_idx = 3;
   int x5_idx = 4;
   int x6_idx = 5;
+  int xout_idx = 6;
   double yLL,uGV;
   BaseEMTGenModel* gen=getGenerator();
   double dw = gen->getSpeedDeviation();
@@ -258,6 +267,10 @@ void Wsieg1::vectorGetValues(gridpack::ComplexType *values)
     if(iseq_diff[x6_idx]) f[x6_idx] = (xT3 - xT4)/T7 - dxT4;
     else f[x6_idx] = xT3 - xT4;        
   }
+
+  // xout equation
+  f[xout_idx] = xT1 * K1 + xT2 * K3 + xT3 * K5 + xT4 * K7 - xout;
+
 }
 
 /**
@@ -266,89 +279,6 @@ void Wsieg1::vectorGetValues(gridpack::ComplexType *values)
  */
 bool Wsieg1::setJacobian(gridpack::ComplexType **values)
 {
-  int xLL_idx = offsetb;
-  int xGV_idx = offsetb+1;
-  int xT1_idx = offsetb+2;
-  int xT2_idx = offsetb+3;
-  int xT3_idx = offsetb+4;
-  int xT4_idx = offsetb+5;
-  double yLL;
-  double dyLL_dxLL=0.0,dyLL_dxGV=0.0;
-  double dyLL_dxT1=0.0,dyLL_dxT2=0.0;
-  double dyLL_dxT3=0.0,dyLL_dxT4=0.0;
-  double dyLL_ddw=0.0;
-  int    dw_idx;
-
-  dw_idx = getGenerator()->getSpeedDeviationLocation();
-  if(p_mode == RESIDUAL_EVAL) {
-    // Partial derivatives of xLL equation
-    if(iseq_diff[0]) {
-      values[xLL_idx][xLL_idx] = -1.0/T1 - shift;
-
-      values[dw_idx][xLL_idx] = (1.0 - T2/T1)*K/T1;
-      dyLL_dxLL = 1.0;
-      dyLL_ddw  = T2/T1*K;
-    } else {
-      values[xLL_idx][xLL_idx] = -1.0;
-
-      values[dw_idx][xLL_idx] = K;
-      dyLL_dxLL = 1.0;
-    }
-
-    // Partial derivatives of xGV equation
-    if(xGV_at_min || xGV_at_max) {
-      values[xGV_idx][xGV_idx] = 1.0;
-    } else {
-      if(!uGV_at_min && !uGV_at_max) {
-	values[xLL_idx][xGV_idx] = -dyLL_dxLL/T3;
-	values[xGV_idx][xGV_idx] = -1.0/T3 - shift; 
-	values[xT1_idx][xGV_idx] = -dyLL_dxT1/T3;
-	values[xT2_idx][xGV_idx] = -dyLL_dxT2/T3;
-	values[xT3_idx][xGV_idx] = -dyLL_dxT3/T3;
-	values[xT4_idx][xGV_idx] = -dyLL_dxT4/T3;
-	
-	values[dw_idx][xGV_idx] = -dyLL_ddw/T3;
-      } else {
-	values[xGV_idx][xGV_idx] = -shift;
-      }
-    }
-
-    // Partial derivatives of xT1 equation
-    if(iseq_diff[2]) {
-      values[xGV_idx][xT1_idx] = 1.0/T4;
-      values[xT1_idx][xT1_idx] = -1.0/T4 - shift;
-    } else {
-      values[xGV_idx][xT1_idx] = 1.0;
-      values[xT1_idx][xT1_idx] = -1.0;
-    }
-
-    // Partial derivatives of xT2 equation
-    if(iseq_diff[3]) {
-      values[xT1_idx][xT2_idx] = 1.0/T5;
-      values[xT2_idx][xT2_idx] = -1.0/T5 - shift;
-    } else {
-      values[xT1_idx][xT2_idx] = 1.0;
-      values[xT2_idx][xT2_idx] = -1.0;
-    }
-
-    // Partial derivatives of xT3 equation
-    if(iseq_diff[4]) {
-      values[xT2_idx][xT3_idx] = 1.0/T6;
-      values[xT3_idx][xT3_idx] = -1.0/T6 - shift;
-    } else {
-      values[xT2_idx][xT3_idx] = 1.0;
-      values[xT3_idx][xT3_idx] = -1.0;
-    }
-
-    // Partial derivatives of xT4 equation
-    if(iseq_diff[5]) {
-      values[xT3_idx][xT4_idx] = 1.0/T7;
-      values[xT4_idx][xT4_idx] = -1.0/T7 - shift;
-    } else {
-      values[xT3_idx][xT4_idx] = 1.0;
-      values[xT4_idx][xT4_idx] = -1.0;
-    }
-  }
 
   return true;
 }
@@ -359,7 +289,7 @@ bool Wsieg1::setJacobian(gridpack::ComplexType **values)
  */
 int Wsieg1::matrixNumValues()
 {
-  return 100;
+  return 24;
 }
 
   /**
@@ -371,7 +301,125 @@ int Wsieg1::matrixNumValues()
    */
 void Wsieg1::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
 {
+  int ctr = 0;
 
+  int xLL_gloc = p_gloc;
+  int xGV_gloc = p_gloc+1;
+  int xT1_gloc = p_gloc+2;
+  int xT2_gloc = p_gloc+3;
+  int xT3_gloc = p_gloc+4;
+  int xT4_gloc = p_gloc+5;
+  int xout_gloc = p_gloc+6;
+  double yLL;
+  double dyLL_dxLL=0.0,dyLL_dxGV=0.0;
+  double dyLL_dxT1=0.0,dyLL_dxT2=0.0;
+  double dyLL_dxT3=0.0,dyLL_dxT4=0.0;
+  double dyLL_ddw=0.0;
+  int    dw_gloc;
+  double dw;
+
+  dw = getGenerator()->getSpeedDeviation(&dw_gloc);
+
+  // Partial derivatives of xLL equation
+  rows[ctr] = xLL_gloc; cols[ctr] = xLL_gloc;
+  rows[ctr+1] = xLL_gloc; cols[ctr+1] = dw_gloc;
+  
+  values[ctr] = values[ctr+1] = 0.0;
+  if(iseq_diff[0]) {
+    values[ctr] = -1.0/T1 - shift;
+    values[ctr+1] = (1.0 - T2/T1)*K/T1;
+    dyLL_dxLL = 1.0;
+    dyLL_ddw  = T2/T1*K;
+  } else {
+    values[ctr] = -1.0;
+    values[ctr+1] = K;
+    dyLL_dxLL = 1.0;
+  }
+  ctr += 2;
+
+  rows[ctr]   = xGV_gloc; cols[ctr] = xLL_gloc;
+  rows[ctr+1] = xGV_gloc; cols[ctr+1] = xGV_gloc;
+  rows[ctr+2] = xGV_gloc; cols[ctr+2] = dw_gloc;
+
+  values[ctr] = values[ctr+1] = values[ctr+2] = 0.0;
+  values[ctr+3] = values[ctr+4] = values[ctr+5] = values[ctr+6] = 0.0;
+  // Partial derivatives of xGV equation
+  if(xGV_at_min || xGV_at_max) {
+    values[ctr+1] = 1.0;
+  } else {
+    if(!uGV_at_min && !uGV_at_max) {
+      values[ctr]   = -dyLL_dxLL/T3;
+      values[ctr+1] = -1.0/T3 - shift;
+      if(iseq_diff[0]) {
+	values[ctr+2] = (-dyLL_ddw)/T2;
+      }
+    }
+  }
+  ctr += 3;
+
+  // Partial derivatives of xT1 equation
+  rows[ctr] = xT1_gloc; cols[ctr] = xGV_gloc;
+  rows[ctr+1] = xT1_gloc; cols[ctr+1] = xT1_gloc;
+  if(iseq_diff[2]) {
+    values[ctr] = 1.0/T4;
+    values[ctr+1] = -1.0/T4 - shift;
+  } else {
+    values[ctr] = 1.0;
+    values[ctr+1] = -1.0;
+  }
+  ctr += 2;
+
+  // Partial derivatives of xT2 equation
+  rows[ctr] = xT2_gloc; cols[ctr] = xT1_gloc;
+  rows[ctr+1] = xT2_gloc; cols[ctr+1] = xT2_gloc;
+  if(iseq_diff[3]) {
+    values[ctr] = 1.0/T5;
+    values[ctr+1] = -1.0/T5 - shift;
+  } else {
+    values[ctr] = 1.0;
+    values[ctr+1] = -1.0;
+  }
+  ctr += 2;
+
+  // Partial derivatives of xT3 equation
+  rows[ctr] = xT3_gloc; cols[ctr] = xT2_gloc;
+  rows[ctr+1] = xT3_gloc; cols[ctr+1] = xT3_gloc;
+  if(iseq_diff[4]) {
+    values[ctr] = 1.0/T6;
+    values[ctr+1] = -1.0/T6 - shift;
+  } else {
+    values[ctr] = 1.0;
+    values[ctr+1] = -1.0;
+  }
+  ctr += 2;
+
+  // Partial derivatives of xT4 equation
+  rows[ctr] = xT4_gloc; cols[ctr] = xT3_gloc;
+  rows[ctr+1] = xT4_gloc; cols[ctr+1] = xT4_gloc;
+  if(iseq_diff[5]) {
+    values[ctr] = 1.0/T7;
+    values[ctr+1] = -1.0/T7 - shift;
+  } else {
+    values[ctr] = 1.0;
+    values[ctr+1] = -1.0;
+  }
+  ctr += 2;
+
+  rows[ctr] = xout_gloc;  cols[ctr] = xT1_gloc;
+  rows[ctr+1] = xout_gloc; cols[ctr+1] = xT2_gloc;
+  rows[ctr+2] = xout_gloc; cols[ctr+2] = xT3_gloc;
+  rows[ctr+3] = xout_gloc; cols[ctr+3] = xT4_gloc;
+  rows[ctr+4] = xout_gloc; cols[ctr+4] = xout_gloc;
+
+  values[ctr]   = K1;
+  values[ctr+1] = K2;
+  values[ctr+2] = K3;
+  values[ctr+3] = K4;
+  values[ctr+4] = -1.0;
+
+  ctr += 5;
+
+  *nvals = ctr;
 }
 
 /**
@@ -390,11 +438,24 @@ void Wsieg1::setInitialMechanicalPower(double Pmech0)
  */
 double Wsieg1::getMechanicalPower()
 {
-  Pmech1 = xT1 * K1 + xT2 * K3 + xT3 * K5 + xT4 * K7;
-  Pmech2 = xT1 * K2 + xT2 * K4 + xT3 * K6 + xT4 * K8;
+  Pmech1 = xout;
 
   return Pmech1;
 }
+
+/** 
+ * Get the value of the mechanical power and its global location
+ * @return value of the mechanical power
+ *
+ * Note: Used in Jacobian calculation
+ */
+double Wsieg1::getMechanicalPower(int *Pmech_gloc)
+{
+  *Pmech_gloc = p_gloc + 6;
+
+  return getMechanicalPower();
+}
+
 
 /**
  * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
