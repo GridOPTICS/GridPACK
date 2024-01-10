@@ -160,6 +160,13 @@ public:
    * @return value of the mechanical power 
    */
   virtual double getMechanicalPower();
+
+  /** 
+   * Get the value of the mechanical power and its global location
+   * @return value of the mechanical power and its global location
+   */
+  virtual double getMechanicalPower(int *Pmech_gloc);
+
   
   /**
    * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables

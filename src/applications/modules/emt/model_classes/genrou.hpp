@@ -93,6 +93,17 @@ class Genrou: public BaseEMTGenModel
   double getSpeedDeviation() { return dw; }
 
   /**
+   * Return the speed deviation and its global location 
+   * @param[output] rotor speed deviation
+   * @param[output] rotor speed deviation global location
+   */
+  double getSpeedDeviation(int *dw_gloc)
+  {
+    *dw_gloc = p_gloc + 8;
+    return dw;
+  }
+
+  /**
    * Get number of matrix values contributed by generator
    * @return number of matrix values
    */

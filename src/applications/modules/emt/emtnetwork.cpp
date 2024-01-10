@@ -1345,6 +1345,13 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
 	exc->setValues(values);
       }
 
+      if(p_gen[i]->hasGovernor()) {
+	boost::shared_ptr<BaseEMTGovModel> gov = p_gen[i]->getGovernor();
+	gov->setMode(p_mode);
+	gov->setValues(values);
+      }
+
+
     }
 
     for(i=0; i < p_nload; i++) {
