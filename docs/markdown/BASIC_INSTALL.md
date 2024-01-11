@@ -1,4 +1,4 @@
-# GridPACK step=by-step installation instructions
+# GridPACK step-by-step installation instructions
 This document provides a step-by-step guide to install GridPACK and its
 dependencies. They are meant to be used with GridPACK's develop branch. The
 installation instructions have been tested on Linux, MacOS, and Ubuntu. 

@@ -545,17 +545,17 @@ Additional calls are likely to be added to these to allow user-specified paramet
 
 The \texttt{\textbf{DAESolver}} is used to integrate systems of
 differential and algebraic equations (DAE) of the form
-\begin{equation}
+\[
   \mathbf{F} \left( t, \mathbf{u}, \mathbf{\dot{u}} \right) ~=~ 0, ~~ \mathbf{u} \left( t_{0} ~ = ~ \mathbf{u}_{0}
   \right)
-\end{equation}
+\]
 It can also be used to solve systems of ordinary differential
 equations (ODE).  As with other GridPACK math classes,
 \textbf{\texttt{DAESolver}} has real and complex versions.  The
 complex version is discussed here, but the real version behaves
 identically.
 
-At it's simplest, a \texttt{\textbf{DAESolver}} is instantiated with
+At its simplest, a \texttt{\textbf{DAESolver}} is instantiated with
 the constructor
 
 {
