@@ -37,6 +37,9 @@ void Genrou::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &D, idx)) D = 0.0; // D
   data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
   Ra = real(Zsource);
+
+  if (!data->getValue(GENERATOR_RESISTANCE, &Ra, idx)) Ra=0.0; // Ra
+
   if (!data->getValue(GENERATOR_XD, &Xd, idx)) Xd=0.0; // Xd
   if (!data->getValue(GENERATOR_XQ, &Xq, idx)) Xq=0.0; // Xq
   if (!data->getValue(GENERATOR_XDP, &Xdp, idx)) Xdp=0.0; // Xdp

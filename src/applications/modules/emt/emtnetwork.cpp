@@ -216,6 +216,7 @@ void EmtBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
   int i;
   bool has_ex=false,has_gov=false;
 
+  
   for(i=0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
 
@@ -228,6 +229,7 @@ void EmtBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
       p_gen[i]->getGovernor()->setEvent(eman);
     }
   }
+  
 
   if(p_hasfault) {
     p_fault->setEvent(eman);

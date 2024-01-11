@@ -197,13 +197,25 @@ protected:
     try {
       ierr = TSSetTime(p_ts, t0); CHKERRXX(ierr);
       ierr = TSSetTimeStep(p_ts, deltat0); CHKERRXX(ierr);
+      ierr = TSSetPostEventIntervalStep(p_ts, deltat0); CHKERRXX(ierr);
       Vec *xvec(PETScVector(x0));
       ierr = TSSetSolution(p_ts, *xvec);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
   
-  }                                      
+  }
+
+  /// Restart step
+  void p_restartstep()
+  {
+    PetscErrorCode ierr(0);
+    try {
+      ierr = TSRestartStep(p_ts);CHKERRXX(ierr);
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
 
   /// Solve the system

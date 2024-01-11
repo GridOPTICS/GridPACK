@@ -37,6 +37,8 @@ protected:
   
     Emt::EventManager::p_handle(nevent, eventidx, t, state);
 
+    p_sim->p_daesolver->restartstep();
+
   }
 
   
