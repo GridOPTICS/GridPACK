@@ -85,7 +85,7 @@ void Exdc1::load(const boost::shared_ptr<gridpack::component::DataCollection> da
 
   // Calculate saturation curve parameters
   if(SE2 != 0 && E2 != 0.0) {
-    double alpha = std::sqrt(SE1*E1/SE2*E2);
+    double alpha = std::sqrt(SE1*E1/(SE2*E2));
     satA = (alpha*E2 - E1)/(alpha - 1.0);
     satB = SE1*E1/((E1 - satA)*(E1 - satA));
     Efdthresh = satA;
