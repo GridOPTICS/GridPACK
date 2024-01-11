@@ -10,9 +10,7 @@
 -emt_snes_linesearch_type basic
 
 # Numerical integration scheme
--emt_ts_type beuler # Implicit trapezoidal
-#-emt_ts_type rosw
-#-emt_ts_rosw_type 2m
+-emt_ts_type bdf # 2nd order backward BDF method
 
 # Time-step adaptivity
 -emt_ts_adapt_type none # turn off step adaptivity
@@ -24,6 +22,9 @@
 
 # Tolerance for event location
 -emt_ts_event_tol 1e-5
+
+# Step size after event
+-emt_ts_event_post_eventinterval_step 50e-6
 
 # Min. and max. steps (only used when step adaptivity is on)
 -emt_ts_adapt_dt_max 500e-6
