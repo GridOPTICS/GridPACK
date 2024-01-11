@@ -74,6 +74,17 @@ public:
     this->p_initialize(t0, deltat0, x0);
   }
 
+  /// Restart step
+  /**
+   *
+   * Note: PETSc provides functionality to restart a step (see TSRestartStep). This is particularly needed when the step needs to be restarted after a discontinuity.
+   */
+  void restartstep()
+  {
+    this->p_restartstep();
+  }
+
+
   /// Solve the system to when @c end_time or @c maxsteps is exceeded
   /** 
    * This solves the system from the initial time specified by
@@ -124,7 +135,9 @@ protected:
   virtual void p_initialize(const double& t0,
                             const double& deltat0,
                             VectorType& x0) = 0;
-                       
+
+  /// Restart step
+  virtual void p_restartstep() = 0;
 
   /// Solve the system (specialized)
   virtual void p_solve(double& maxtime, int& maxsteps) = 0;
