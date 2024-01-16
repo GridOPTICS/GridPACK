@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Powerflow>
-    <networkConfiguration> case9.raw </networkConfiguration>
+    <networkConfiguration> case2mod.raw </networkConfiguration>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
     <LinearSolver>
@@ -47,15 +47,15 @@
     </NonlinearSolver>
   </Powerflow>
   <EMT>
-    <generatorParameters> case9_GENCLS.dyr </generatorParameters>
-    <simulationTime>5.0</simulationTime>
+    <generatorParameters> case2.dyr </generatorParameters>
+    <simulationTime>0.1</simulationTime>
     <timeStep>0.00005</timeStep>
     <Events>
       <BusFault>
 	<begin>0.05</begin>
 	<end>0.06</end>
-	<bus>9</bus>
-	<type>ThreePhase</type>
+	<bus>2</bus>
+	<type>SLG</type>
 	<Ron>1e-3</Ron>
 	<Rgnd>1e-2</Rgnd>
       </BusFault>
