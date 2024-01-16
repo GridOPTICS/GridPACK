@@ -186,7 +186,7 @@ void EmtFactory::readEvents(gridpack::utility::Configuration::CursorPtr cursor)
 	std::string faulttype = events[idx].cursor->get("type","SLG");
 	std::string faultphases;
 	if(faulttype == "SLG") {
-	  faultphases = events[idx].cursor->get("phases","ABC");
+	  faultphases = events[idx].cursor->get("phases","A");
 	} else if(faulttype == "ThreePhase") {
 	  faultphases = "ABC";
 	}

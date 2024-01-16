@@ -54,7 +54,7 @@
       <BusFault>
 	<begin>0.05</begin>
 	<end>0.06</end>
-	<bus>2</bus>
+	<bus>5</bus>
 	<type>SLG</type>
 	<Ron>1e-3</Ron>
 	<Rgnd>1e-2</Rgnd>
