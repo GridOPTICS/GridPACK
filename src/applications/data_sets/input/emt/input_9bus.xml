@@ -48,7 +48,7 @@
   </Powerflow>
   <EMT>
     <generatorParameters> case9_GENCLS.dyr </generatorParameters>
-    <simulationTime>5.0</simulationTime>
+    <simulationTime>1.0</simulationTime>
     <timeStep>0.00005</timeStep>
     <Events>
       <BusFault>
