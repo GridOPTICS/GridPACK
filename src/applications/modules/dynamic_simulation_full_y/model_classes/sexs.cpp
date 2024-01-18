@@ -6,6 +6,8 @@
 // -----------------------------------------------------------
 /**
  * @file   sexs.cpp
+ * @author Shrirang Abhyankar
+ * @Added:   Nov 6, 2022
  * 
  * @brief  
  * 
@@ -16,8 +18,11 @@
 #include <iostream>
 #include <cstdio>
 
+// Yuan added below 2020-6-23
+//#include <cstdio>
 #include <cstring>
 #include <string>
+// Yuan added above 2020-6-23
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -52,8 +57,9 @@ void gridpack::dynamic_simulation::SexsModel::load(
   if (!data->getValue(EXCITER_TA_OVER_TB, &TA_OVER_TB, idx)) TA_OVER_TB = 0.0; // TA_OVER_TB
   if (!data->getValue(EXCITER_TB, &TB, idx)) TB = 0.0; // TB
   if (!data->getValue(EXCITER_K, &K, idx))   K  = 0.0; // K
-  if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
   if (!data->getValue(EXCITER_EMAX, &EMAX, idx)) EMAX = 0.0; // EMAX
+  if (!data->getValue(EXCITER_EMIN, &EMIN, idx)) EMIN = 0.0; // EMIN
+  if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
 
   TA = TA_OVER_TB*TB;
 
@@ -204,4 +210,26 @@ void gridpack::dynamic_simulation::SexsModel::setExtGenId(std::string ExtGenId)
 	p_ckt = ExtGenId;
 }	
 
+/**
+ * Set internal state parameter in exciter
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::SexsModel::setState(std::string name,
+    double value)
+{
+  return false;
+}
 
+/**
+ * Get internal state parameter in exciter
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::SexsModel::getState(std::string name,
+    double *value)
+{
+  return false;
+}
