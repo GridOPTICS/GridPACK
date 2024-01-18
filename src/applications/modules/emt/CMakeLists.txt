@@ -46,6 +46,7 @@ add_library(gridpack_emt_module
   model_classes/genrou.cpp
   model_classes/constantimpedance.cpp
   model_classes/exdc1.cpp
+  model_classes/sexs.cpp
   model_classes/wsieg1.cpp
 
 )
@@ -88,6 +89,7 @@ install(FILES
   model_classes/genrou.hpp
   model_classes/constantimpedance.hpp
   model_classes/exdc1.hpp
+  model_classes/sexs.hpp
   model_classes/wsieg1.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )

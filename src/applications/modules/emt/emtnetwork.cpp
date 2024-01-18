@@ -21,6 +21,7 @@
 #include <model_classes/genrou.hpp>
 #include <model_classes/constantimpedance.hpp>
 #include <model_classes/exdc1.hpp>
+#include <model_classes/sexs.hpp>
 #include <model_classes/wsieg1.hpp>
 //#include <model_classes/lumpedline.hpp>
 
@@ -535,6 +536,17 @@ void EmtBus::load(const
             p_gen[i]->setExciter(ex);
 	    
 	    exdc1->load(data,i); // load exciter data
+	  }
+    	  if(type == "SEXS") {
+	    Sexs *sexs;
+            sexs = new Sexs;
+	    sexs->setGenerator(p_gen[i]);
+	    
+            boost::shared_ptr<BaseEMTExcModel> ex;
+            ex.reset(sexs);
+            p_gen[i]->setExciter(ex);
+	    
+	    sexs->load(data,i); // load exciter data
 	  }
 	}
       }

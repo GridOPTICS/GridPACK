@@ -72,7 +72,7 @@ public:
    */
   void write(const char* signal, char* string);
 
-    /**
+  /**
    * Get number of matrix values contributed by generator
    * @return number of matrix values
    */

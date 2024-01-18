@@ -258,7 +258,7 @@ int Exdc1::matrixNumValues()
   return 18;
 }
 
-  /**
+/**
    * Return values from Jacobian matrix
    * @param nvals: number of values to be inserted
    * @param values: pointer to matrix block values
