@@ -78,10 +78,12 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
  * Initialize exciter model before calculation
  * @param [output] values - array where initialized exciter variables should be set
  */
-void Sexs::init(gridpack::ComplexType *values)
+void Sexs::init(gridpack::ComplexType* xin) 
 {
-  //gridpack::ComplexType *x = xin+offsetb; // exciter array starts from this location
+  gridpack::ComplexType *x = xin+offsetb; // exciter array starts from this location
   
+  x[0] = x1;
+  x[1] = x2;
 }
 
 /**
