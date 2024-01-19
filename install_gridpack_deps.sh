@@ -126,8 +126,7 @@ function install_petsc {
     --download-cmake \
     --prefix="${PWD}"/install_for_gridpack \
     --scalar-type=complex \
-    --with-shared-libraries=1 \
-    --download-f2cblaslapack=1
+    --with-shared-libraries=1
 
   # build
   echo "Building PETSc"
