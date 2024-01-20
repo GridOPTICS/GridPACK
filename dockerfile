@@ -9,6 +9,8 @@ ENV LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost/install_for_gridpack/lib:${GP_EXT_DEPS}
 
 WORKDIR ${GP_EXT_DEPS}
 
-COPY *.sh .
+COPY install_environment_packages.sh .
+RUN ./install_environment_packages.sh && rm *.sh
 
-RUN (./install_environment_packages.sh && ./install_gridpack_deps.sh) || rm *.sh
+COPY install_gridpack_deps.sh .
+RUN ./install_gridpack_deps.sh && rm *.sh
