@@ -22,48 +22,16 @@ variables:
 
 .multi-distro:
 
-  variables:
+  parallel:
 
-    BASE_IMAGE: ubuntu
-    BASE_IMAGE_TAG: "22.04"
-    IMAGE_TAG: ${BASE_IMAGE}-gridpack-env
-    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${IMAGE_TAG}
+    matrix:
 
-
-check-container-definition-changed:
-
-    image: alpine
-
-    script:
-
-      - touch container-definition-changed
-
-    rules:
-
-      - if: $CI_PIPELINE_SOURCE == "push"
-        changes: [ "dockerfile" ]
-
-
-check-container-tag-exists:
-
-  image: alpine
-
-  variables:
-
-    CONTAINER_REPO_ID: "294"
-
-  script:
-
-    - apk add --no-cache curl
-    - >
-      curl
-      --silent
-      --show-error
-      --location
-      --fail
-      --header "PRIVATE-TOKEN: $CI_JOB_TOKEN "
-      "$CI_API_V4_URL/projects/$CI_PROJECT_ID/registry/repositories/$CONTAINER_REPO_ID/tags/$IMAGE_TAG"
-      1>$null 2>$null || touch container-tag-not-found
+      - BASE_IMAGE: ubuntu
+        BASE_IMAGE_TAG: "22.04"
+        IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
+      - BASE_IMAGE: rockylinux
+        BASE_IMAGE_TAG: "9"
+        IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
@@ -78,16 +46,8 @@ build-container:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
 
-  needs:
-
-      - job: check-container-definition-changed
-        optional: true
-      - job: check-container-tag-exists
-
   script:
 
-    # build image if definition was changed or the tag does not exist in the registry
-    - test -f container-definition-changed || test -f container-tag-not-found || exit 0
     - chmod +x *.sh
     - >
       /kaniko/executor
@@ -97,6 +57,12 @@ build-container:
       --build-arg "https_proxy=$HTTPS_PROXY"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
+
+  rules:
+
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
+    - when: manual
 
 
 build-gridpack:
