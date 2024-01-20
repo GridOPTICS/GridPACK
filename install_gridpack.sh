@@ -91,6 +91,9 @@ function install_gridpack_python {
   # export GRIDPACK_DIR
   export GRIDPACK_DIR="${gridpack_install_dir}"
 
+  # install dependencies
+  pip install mpi4py --user
+
   # build
   echo "Building GridPACK python wrapper"
   ${python_exe} setup.py build
