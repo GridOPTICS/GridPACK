@@ -148,8 +148,6 @@ function install_petsc {
 echo "Installing GridPACK dependencies"
 date
 
-mkdir -p log
-
 install_boost "${BOOST_VERSION:?}"
 install_ga "${GA_VERSION:?}"
 install_petsc "${PETSC_VERSION:?}"
