@@ -74,13 +74,16 @@ function install_gridpack_python {
   pushd python || exit
 
   # set an env var if we are running on RHEL
-  os_id=$(
+  distribution=$(
+    # shellcheck source=/dev/null
     source /etc/os-release
     echo "$ID"
   )
-  if [[ $os_id == "rhel" ]] || [[ $os_id == "centos" ]]; then
-    export RHEL_OPENMPI_HACK=yes
-  fi
+  case $distribution in
+    fedora | rhel | centos | rocky)
+      export RHEL_OPENMPI_HACK=yes
+      ;;
+  esac
 
   # set python executable path
   python_exe=$(which python || which python3)
