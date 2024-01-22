@@ -15,12 +15,12 @@ debian | ubuntu)
   apt update &&
     apt upgrade -y &&
     apt install -y \
-      wget build-essential git python3.11 python3-pip libopenmpi-dev cmake pkg-config
+      wget build-essential git python3.11 python3-pip libopenmpi-dev cmake pkg-config python3-mpi4py
   ;;
 fedora | rhel | centos | rocky)
   dnf update -y &&
     dnf install -y \
-      wget @development git python3.11 python3-pip openmpi-devel cmake pkgconf
+      wget @development git python3.11 python3-pip openmpi-devel cmake pkgconf python3-mpi4py-openmpi
   ;;
 *)
   echo "$distribution not supported"
