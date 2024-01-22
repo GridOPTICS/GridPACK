@@ -7,6 +7,11 @@ ENV GA_VERSION "5.8"
 ENV PETSC_VERSION "3.16.4"
 ENV LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost/install_for_gridpack/lib:${GP_EXT_DEPS}/ga/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
 
+ARG http_proxy
+ARG https_proxy
+ENV http_proxy=${http_proxy}
+ENV https_proxy=${https_proxy}
+
 WORKDIR ${GP_EXT_DEPS}
 
 COPY install_environment_packages.sh .
