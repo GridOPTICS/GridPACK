@@ -1,15 +1,11 @@
 default:
-
   tags: [ basic, gridpack, ikp, k8s ]
-
   artifacts:
-
     when: always
     untracked: true
 
 
 variables:
-
   KUBERNETES_CPU_REQUEST: "1"
   KUBERNETES_CPU_LIMIT: "2"
   KUBERNETES_MEMORY_REQUEST: "4Gi"
@@ -18,34 +14,15 @@ variables:
   https_proxy: ${http_proxy}
 
 
-.multi-distro:
-
-  parallel:
-
-    matrix:
-
-      - BASE_IMAGE: ubuntu
-        BASE_IMAGE_TAG: "22.04"
-        IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
-      - BASE_IMAGE: rockylinux
-        BASE_IMAGE_TAG: "9"
-        IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
-
-
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
-build-container:
-
-  extends: .multi-distro
-
+.build-container:
   timeout: 5 hours
-
   image:
-
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
-
+  variables:
+    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
   script:
-
     - chmod +x *.sh
     - >
       /kaniko/executor
@@ -55,45 +32,61 @@ build-container:
       --build-arg "https_proxy=$https_proxy"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
-
   rules:
-
     - if: $CI_PIPELINE_SOURCE == "push"
       changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
     - when: manual
 
 
-build-gridpack:
-
-  extends: .multi-distro
-
-  image: "${IMAGE_PATH}"
-
+build-container:ubuntu:
+  extends: .build-container
   variables:
+    BASE_IMAGE: ubuntu
+    BASE_IMAGE_TAG: "22.04"
 
+
+build-container:rockylinux:
+  extends: .build-container
+  variables:
+    BASE_IMAGE: rockylinux
+    BASE_IMAGE_TAG: "9"
+
+
+.build-gridpack:
+  variables:
     MAKE_JOBS: "2"
-
-  needs: [ build-container ]
-
   script:
-
     - ./install_gridpack.sh
 
 
-test-gridpack:
+build-gridpack:ubuntu:
+  extends: .build-gridpack
+  image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
+  needs: [ build-container:ubuntu ]
 
-  extends: .multi-distro
 
-  image: ${IMAGE_PATH}
+build-gridpack:rockylinux:
+  extends: .build-gridpack
+  image: ${CI_REGISTRY_IMAGE}:rockylinux-gridpack-env
+  needs: [ build-container:rockylinux ]
 
-  needs: [ build-gridpack ]
 
+.test-gridpack:
   script:
-
     - useradd gridpack
     - chown -R gridpack:gridpack .
     - su gridpack -c 'ctest --test-dir src/build --output-on-failure'
-
   artifacts:
-
     paths: [ src/build/Testing/Temporary ]
+
+
+test-gridpack:ubuntu:
+  extends: .test-gridpack
+  image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
+  needs: [ build-gridpack:ubuntu ]
+
+
+test-gridpack:rockylinux:
+  extends: .test-gridpack
+  image: ${CI_REGISTRY_IMAGE}:rockylinux-gridpack-env
+  needs: [ build-gridpack:rockylinux ]
