@@ -79,13 +79,17 @@ build-container:rockylinux:
 .build-gridpack:ubuntu:
   extends: .build-gridpack
   image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
-  needs: [ build-container:ubuntu ]
+  needs:
+    - job: build-container:ubuntu
+      optional: true
 
 
 build-gridpack:rockylinux:
   extends: .build-gridpack
   image: ${CI_REGISTRY_IMAGE}:rockylinux-gridpack-env
-  needs: [ build-container:rockylinux ]
+  needs:
+    - job: build-container:rockylinux
+      optional: true
 
 
 .test-gridpack:
