@@ -6,11 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   esst4b.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   Oct 12, 2015
- * @Last modified with control block: Oct 1, 2023
  * 
- * @brief  
+ * @brief  ESST4B
  * 
  * 
  */

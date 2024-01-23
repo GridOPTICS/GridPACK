@@ -6,11 +6,8 @@
 // -----------------------------------------------------------
 /**
  * @file   esst4b.cpp
- * @author Shuangshuang Jin 
- * @Last modified:   Oct 12, 2015
- * @Last modified with control block: Oct 1, 2023
  * 
- * @brief  
+ * @brief  ESST4B
  * 
  * 
  */
@@ -71,8 +68,6 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
   if (!data->getValue(EXCITER_XL, &Xl, idx)) Xl = 0.0; // Xl
   if (!data->getValue(EXCITER_THETAP, &Thetap, idx)) Thetap = 0.0; // Thetap, yuan: deg
   
-  //printf("Tr=%f,Kpr=%f,Kir=%f,Vrmax=%f,Vrmin=%f,Ta=%f,Kpm=%f,Kim=%f,Vmmax=%f,Vmmin=%f,Kg=%f,Kp=%f,KI=%f,Vbmax=%f,Kc=%f,Xl=%f,Thetap=%f\n",Tr,Kpr,Kir,Vrmax,Vrmin,Ta,Kpm,Kim,Vmmax,Vmmin,Kg,Kp,KI,Vbmax,Kc,Xl,Thetap);
-
 
   // right now we just hard code Vuel, Voel and Vs
   Vs = 0.0;
@@ -182,13 +177,13 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   // printf("print: inside esst4b model, Ir=%f, Ii=%f\n", Ir, Ii);
   
   if (Kpr == 0.0 && Kir < KI_THRESHOLD) {
-	  Kpr = 1.0;
-	  printf("Kpr and Kir cannot be both zeros; reset Kpr=1.0.\n");
+    Kpr = 1.0;
+    printf("Kpr and Kir cannot be both zeros; reset Kpr=1.0.\n");
   }
   
   if (Kpm == 0.0 && Kim < KI_THRESHOLD) {
-	  Kpm = 1.0;
-	  printf("Kpm and Kim cannot be both zeros; reset Kpm=1.0.\n");
+    Kpm = 1.0;
+    printf("Kpm and Kim cannot be both zeros; reset Kpm=1.0.\n");
   }
 
   if (!zero_TR) {
@@ -223,39 +218,39 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   // LV Gate?
   // assume LV gate always take feedforward path during initialization, may need to adjust Voel
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
-	  if (u1 > Voel) Voel = u1 + 0.1;
-	  LVGate_blk.setparams(Voel);
+    if (u1 > Voel) Voel = u1 + 0.1;
+    LVGate_blk.setparams(Voel);
   }
   
   
   if (!zero_KIM) {
-	  u2 = PIControl_blmM.init_given_y(u1);
-	  // Check limits here, but these would be 
-	  // initial state limit violations that are not possible!
-	  if (OptionToModifyLimitsForInitialStateLimitViolation) {
-		if (u1 > Vmmax) Vmmax = u1+0.1;
-		if (u1 < Vmmin) Vmmin = u1-0.1;
-	  }
+    u2 = PIControl_blmM.init_given_y(u1);
+    // Check limits here, but these would be 
+    // initial state limit violations that are not possible!
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (u1 > Vmmax) Vmmax = u1+0.1;
+      if (u1 < Vmmin) Vmmin = u1-0.1;
+    }
   } else {
-	  u2 = u1/Kpm;
+    u2 = u1/Kpm;
   }
-
+  
   if (!zero_TA) {
-	  u3 = Filter_blkA.init_given_y(u2 + Efd * Kg);
+    u3 = Filter_blkA.init_given_y(u2 + Efd * Kg);
   } else {
-	  u3 = u2 + Efd * Kg;
+    u3 = u2 + Efd * Kg;
   }
   
   if (!zero_KIR) {
-	  u4 = PIControl_blkR.init_given_y(u3);
-	  // Check limits here, but these would be 
-	  // initial state limit violations that are not possible!
-	  if (OptionToModifyLimitsForInitialStateLimitViolation) {
-		if (u3 > Vrmax) Vrmax = u3+0.1;
-		if (u3 < Vrmin) Vrmin = u3-0.1;
-	  }
+    u4 = PIControl_blkR.init_given_y(u3);
+    // Check limits here, but these would be 
+    // initial state limit violations that are not possible!
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (u3 > Vrmax) Vrmax = u3+0.1;
+      if (u3 < Vrmin) Vrmin = u3-0.1;
+    }
   } else {
-	  u4 = u3/Kpr;
+    u4 = u3/Kpr;
   }
 
   if(!zero_TR) {
@@ -284,19 +279,19 @@ void gridpack::dynamic_simulation::Esst4bModel::computeModel(double t_inc,Integr
   if(!zero_KIR) {
     u2 = PIControl_blkR.getoutput(u1, t_inc, int_flag, true);
   } else {
-	u2 = Kpr * u1;
+    u2 = Kpr * u1;
   }
   
   if(!zero_TA) {
     u3 = Filter_blkA.getoutput(u2, t_inc, int_flag, true);
   } else {
-	u3 = u2;
+    u3 = u2;
   }
   
   if(!zero_KIM) {
     u4 = PIControl_blmM.getoutput(u3 - Efd * Kg, t_inc, int_flag, true);
   } else {
-	u4 = Kpm * (u3 - Efd * Kg);
+    u4 = Kpm * (u3 - Efd * Kg);
   }
   u4 = LVGate_blk.getoutput(u4);
   double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); 
