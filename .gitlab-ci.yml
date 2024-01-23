@@ -50,9 +50,10 @@ variables:
       --build-arg "https_proxy=$https_proxy"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-      changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
+  # disabled for troubleshooting
+  # rules:
+    # - if: $CI_PIPELINE_SOURCE == "push"
+    #   changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
 
 
 # disabled for troubleshooting
