@@ -285,5 +285,39 @@ class PiecewiseSlope
     bool  p_increasing; // Increasing (true) or decreasing (false) function
 };
 
+/*
+  LVGate: Implements a LVGate function
+*/
+class LVGate
+{
+  public:
+    LVGate();
+
+    double getoutput(double u);
+
+    void setparams(double);
+
+  private:
+    double p_u; // High V limit for HV Gate
+    
+};
+
+/*
+  HVGate: Implements a HVGate function
+*/
+class HVGate
+{
+  public:
+    HVGate();
+
+    double getoutput(double u);
+
+    void setparams(double);
+
+  private:
+    double p_u; // Low V limit for LV Gate
+    
+};
+
 
 #endif
