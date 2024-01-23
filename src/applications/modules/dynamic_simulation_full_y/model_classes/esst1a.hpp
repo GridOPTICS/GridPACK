@@ -6,11 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   esst1a.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   Oct 12, 2015
- * @Last modified with control block: Sep 11, 2023
  * 
- * @brief  
+ * @brief  ESST1A exciter model
  * 
  * 
  */

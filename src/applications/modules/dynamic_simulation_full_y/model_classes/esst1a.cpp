@@ -6,11 +6,8 @@
 // -----------------------------------------------------------
 /**
  * @file   esst1a.cpp
- * @author Shuangshuang Jin 
- * @Last modified:   Oct 12, 2015
- * @Last modified with control block: Sep 11, 2023
- * 
- * @brief  
+ *
+ * @brief  ESST1A model
  * 
  * 
  */
@@ -79,8 +76,6 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
   if (!data->getValue(EXCITER_KLR, &Klr, idx)) Klr = 0.0; // TBD: Klr
   if (!data->getValue(EXCITER_ILR, &Ilr, idx)) Ilr = 0.0; // TBD: Ilr
 
-  // printf("UEL=%f,VOS=%f,Tr=%f,Vimax=%f,Vimin=%f,Tc=%f,Tb=%f,Tc1=%f,Tb1=%f,Ka=%f,Ta=%f,Vamax=%f,Vamin=%f,Vrmax=%f,Vrmin=%f,Kc=%f,Kf=%f,Tf=%f,Klr=%f,Ilr=%f\n",UEL,VOS,Tr,Vimax,Vimin,Tc,Tb,Tc1,Tb1,Ka,Ta,Vamax,Vamin,Vrmax,Vrmin,Kc,Kf,Tf,Klr,Ilr);
-  
   // right now we just hard code UEL, VOS, Vuel, Voel and Vothsg(Vstab)
   Vothsg = 0.0;
   UEL = 1.0;
@@ -127,12 +122,6 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   if (Tb1 < TS_THRESHOLD * ts) zero_TB1 = true;
   if (Ta < TS_THRESHOLD * ts) zero_TA = true;
   if (Tr < TS_THRESHOLD * ts) zero_TR = true;
-  
-  if (zero_TF) printf("Tf=%f is better at least %d times larger than timestep=%f.\n", Tf, TS_THRESHOLD, ts);
-  if (zero_TB) printf("Tb=%f is better at least %d times larger than timestep=%f.\n", Tb, TS_THRESHOLD, ts);
-  if (zero_TB1) printf("Tb1=%f is better at least %d times larger than timestep=%f.\n", Tb1, TS_THRESHOLD, ts);
-  if (zero_TA) printf("Ta=%f is better at least %d times larger than timestep=%f.\n", Ta, TS_THRESHOLD, ts);
-  if (zero_TR) printf("Tr=%f is better at least %d times larger than timestep=%f.\n", Tr, TS_THRESHOLD, ts);
   
   if(!zero_TR) {
     Filter_blkR.setparams(1.0, Tr);
@@ -257,11 +246,11 @@ void gridpack::dynamic_simulation::Esst1aModel::computeModel(double t_inc,Integr
 
   double u1 = 0.0;
   if (VOS==2.0) {
-	  if ((LadIfd - Ilr) * Klr > 0.0) u1 = VA + Vothsg - (LadIfd - Ilr) * Klr; 
-	  else u1 = VA + Vothsg; 
+    if ((LadIfd - Ilr) * Klr > 0.0) u1 = VA + Vothsg - (LadIfd - Ilr) * Klr; 
+    else u1 = VA + Vothsg; 
   } else {
-	  if ((LadIfd - Ilr) * Klr > 0.0) u1 = VA - (LadIfd - Ilr) * Klr; 
-	  else u1 = VA; 
+    if ((LadIfd - Ilr) * Klr > 0.0) u1 = VA - (LadIfd - Ilr) * Klr; 
+    else u1 = VA; 
   }
 
   double u2 = 0.0;
