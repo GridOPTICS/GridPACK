@@ -570,6 +570,8 @@ class Integrator: public Cblock
        T         Integrator time constant
   **/
   void setparams(double T);
+    
+  void setparams(double T, double xmin, double xmax);
 };
 
 
