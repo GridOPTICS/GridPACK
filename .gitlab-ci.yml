@@ -41,6 +41,7 @@ variables:
       fi
 
     - chmod +x *.sh
+    - env
     - >
       /kaniko/executor
       --context "${CI_PROJECT_DIR}"
