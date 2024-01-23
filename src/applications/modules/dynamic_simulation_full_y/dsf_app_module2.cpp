@@ -111,15 +111,15 @@ bool gridpack::dynamic_simulation::DSFullApp::solveNetwork(int predcorrflag)
 	its += 1;
       }
     }// end of while
-  }else {// p_biterative_solve_network = false
+  } else {// p_biterative_solve_network = false
     /* Non-iterative solution */
-   solver_sptr->solve(*INorton_full, *volt_full);
-   /* Push voltage to buses */
-   nbusMap_sptr->mapToBus(volt_full);
-   p_factory->setVolt(false);
-
-   converged = true;
- } // end of if (p_biterative_solve_network)
+    solver_sptr->solve(*INorton_full, *volt_full);
+    /* Push voltage to buses */
+    nbusMap_sptr->mapToBus(volt_full);
+    p_factory->setVolt(false);
+    
+    converged = true;
+  } // end of if (p_biterative_solve_network)
 
   return converged;
 }
@@ -207,6 +207,7 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
 
   /* Voltage vector */
   volt_full.reset(INorton_full->clone());
+  volt_full->zero();
 
   /* Linear solver */
   solver_sptr.reset(new gridpack::math::LinearSolver (*ybus));
