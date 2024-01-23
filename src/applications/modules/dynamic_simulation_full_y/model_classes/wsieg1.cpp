@@ -6,11 +6,8 @@
 // -----------------------------------------------------------
 /**
  * @file   wsieg1.cpp
- * @author Shuangshuang Jin 
- * @Last modified:   June 11, 2015
- * @Latested modification with control blocks: Jul 26, 2023
  * 
- * @brief: WSIEG1 governor moddel implementation  
+ * @brief: WSIEG1 governor model implementation  
  * 
  * 
  */
@@ -90,45 +87,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
-  int debug_print_params=0;
-  if (debug_print_params) {
-	  printf("---Yuan debug print params below---\n");
-	  printf("---K=%.6f---\n", K);
-	  printf("---T1=%.6f---\n", T1);
-	  printf("---T2=%.6f---\n", T2);
-	  printf("---T3=%.6f---\n", T3);
-	  printf("---Uo=%.6f---\n", Uo);
-	  printf("---Uc=%.6f---\n", Uc);
-	  printf("---Pmax=%.6f---\n", Pmax);
-	  printf("---Pmin=%.6f---\n", Pmin);
-	  printf("---T4=%.6f---\n", T4);
-	  printf("---K1=%.6f---\n", K1);
-	  printf("---K2=%.6f---\n", K2);
-	  printf("---T5=%.6f---\n", T5);
-	  printf("---K3=%.6f---\n", K3);
-	  printf("---K4=%.6f---\n", K4);
-	  printf("---T6=%.6f---\n", T6);
-	  printf("---K5=%.6f---\n", K5);
-	  printf("---K6=%.6f---\n", K6);
-	  printf("---T7=%.6f---\n", T7);
-	  printf("---K7=%.6f---\n", K7);
-	  printf("---K8=%.6f---\n", K8);
-	  printf("---Db1=%.6f---\n", Db1);
-	  printf("---Err=%.6f---\n", Err);
-	  printf("---Db2=%.6f---\n", Db2);
-	  printf("---Gv1=%.6f---\n", Gv1);
-	  printf("---PGv1=%.6f---\n", PGv1);
-	  printf("---Gv2=%.6f---\n", Gv2);
-	  printf("---PGv2=%.6f---\n", PGv2);
-	  printf("---Gv3=%.6f---\n", Gv3);
-	  printf("---PGv3=%.6f---\n", PGv3);
-	  printf("---Gv4=%.6f---\n", Gv4);
-	  printf("---PGv4=%.6f---\n", PGv4);
-	  printf("---Gv5=%.6f---\n", Gv5);
-	  printf("---PGv5=%.6f---\n", PGv5);
-	  printf("---Iblock=%.6f---\n", Iblock);
-  }
-  
   Db1_blk.setparams(Db1, Err);
   Leadlag_blk.setparams(T2, T1);
 
@@ -203,44 +161,44 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
  */
 void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,IntegrationStage int_flag)
 {
-    double u1, y1, u2, y2, u3, y3, u4, y4, u5, y5, u6, y6, u7, y7, u8, y8, u9, y9; 
-    u1 = w;
+  double u1, y1, u2, y2, u3, y3, u4, y4, u5, y5, u6, y6, u7, y7, u8, y8, u9, y9; 
+  u1 = w;
 
-    // y1 = Db1_blk.getoutput(u1);
-	y1 = u1;
+  // y1 = Db1_blk.getoutput(u1);
+  y1 = u1;
 
-    u2 = y1 * K;
-    y2 = Leadlag_blk.getoutput(u2, t_inc, int_flag, true);
-    y4 = GV;
-    u3 = (GV0 -y2 - y4) * 1 / T3; 
-    if (u3 > Uo)
-      u3 = Uo;
-    else if (u3 < Uc) 
-      u3 = Uc;
-    y3 = P_blk.getoutput(u3, t_inc, int_flag, true); 
-	
-	if (y3 > Pmax)
-      y3 = Pmax;
-    else if (y3 < Pmin) 
-      y3 = Pmin;
-	
-    u4 = y3;
-    y4 = Db2_blk.getoutput(u4); 
-    GV = y4;
-    u5 = y4;
-
-    // y5 = NGV_blk.getoutput(u5);
-	y5 = u5;
-
-
-    u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
-    u7 = Filter_blk2.getoutput(u6, t_inc, int_flag, true);
-    u8 = Filter_blk3.getoutput(u7, t_inc, int_flag, true);
-    u9 = Filter_blk4.getoutput(u8, t_inc, int_flag, true);
-
-    Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
-    Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
-	
+  u2 = y1 * K;
+  y2 = Leadlag_blk.getoutput(u2, t_inc, int_flag, true);
+  y4 = GV;
+  u3 = (GV0 -y2 - y4) * 1 / T3; 
+  if (u3 > Uo)
+    u3 = Uo;
+  else if (u3 < Uc) 
+    u3 = Uc;
+  
+  y3 = P_blk.getoutput(u3, t_inc, int_flag, true); 
+    
+  if (y3 > Pmax)
+    y3 = Pmax;
+  else if (y3 < Pmin) 
+    y3 = Pmin;
+    
+  u4 = y3;
+  y4 = Db2_blk.getoutput(u4); 
+  GV = y4;
+  u5 = y4;
+  
+  // y5 = NGV_blk.getoutput(u5);
+  y5 = u5;
+  
+  
+  u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
+  u7 = Filter_blk2.getoutput(u6, t_inc, int_flag, true);
+  u8 = Filter_blk3.getoutput(u7, t_inc, int_flag, true);
+  u9 = Filter_blk4.getoutput(u8, t_inc, int_flag, true);
+  
+  Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
+  Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
 }
 
 /**
