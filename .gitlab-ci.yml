@@ -4,6 +4,8 @@ default:
     when: always
     untracked: true
 
+stages: [ build-container, build-gridpack, test-gridpack ]
+
 
 variables:
   KUBERNETES_CPU_REQUEST: "1"
@@ -16,6 +18,7 @@ variables:
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
 .build-container:
+  stage: build-container
   timeout: 5 hours
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
@@ -72,6 +75,7 @@ build-container:rockylinux:
 
 
 .build-gridpack:
+  stage: build-gridpack
   variables:
     MAKE_JOBS: "2"
   script:
@@ -96,6 +100,7 @@ build-gridpack:rockylinux:
 
 
 .test-gridpack:
+  stage: test-gridpack
   script:
     - useradd gridpack
     - chown -R gridpack:gridpack .
