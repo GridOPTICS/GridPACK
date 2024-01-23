@@ -26,25 +26,7 @@ variables:
   variables:
     IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
   script:
-    - mkdir -p /kaniko/.docker
-    - |
-      cat << EOF > /kaniko/.docker/config.json
-      {
-        "proxies": {
-          "default": {
-            "httpProxy": "${http_proxy}",
-            "httpsProxy": "${https_proxy}"
-          }
-        }
-      }
-      EOF
-
-      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
-        cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
-      fi
-
     - chmod +x *.sh
-    - env
     - >
       /kaniko/executor
       --context "${CI_PROJECT_DIR}"
