@@ -757,6 +757,7 @@ class DSFullBus
     bool p_sink;
     double p_rtpr_scale;
     std::vector<double> p_pg, p_qg, p_savePg, p_negpg, p_negqg, p_genpg_nodynmodel, p_genqg_nodynmodel;
+    std::vector<bool> p_gen_nodynmodel; // Generator does not have a dynamic model specificed in the dyr file
     std::vector<double> p_mva, p_r, p_dstr, p_dtr, p_gpmin, p_gpmax;
     int p_ngen, p_negngen, p_ngen_nodynmodel;
     int p_ndyn_load, p_npowerflow_load;
