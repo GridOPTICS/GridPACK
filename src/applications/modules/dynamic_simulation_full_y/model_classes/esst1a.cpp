@@ -95,6 +95,8 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
     Filter_blkR.setparams(1.0, Tr);
   }
 
+  HVGate_blk1.setparams(Vuel); // is UEL Vuel?
+
   Leadlag_blkBC.setparams(Tc, Tb);
   Leadlag_blkBC1.setparams(Tc1, Tb1);
 
@@ -103,6 +105,9 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
   } else {
     Regulator_gain_blk.setparams(Ka,Vrmin,Vrmax);
   }
+
+  HVGate_blk2.setparams(Vuel); // UEL is Vuel?
+  LVGate_blk.setparams(Voel); // Where to read Voel from? Set it by funciton call as Vuel?
 
   double a[2], b[2];
   a[0] = Tf; a[1] = 1.0;
@@ -242,7 +247,7 @@ void gridpack::dynamic_simulation::Esst1aModel::computeModel(double t_inc,Integr
   else if (leadlag_blk_in < Vimin)
     leadlag_blk_in = Vimin;
 
-  // HV Gate? 
+  leadlag_blk_in = HVGate_blk1.getoutput(leadlag_blk_in);
 
   VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
   
@@ -256,11 +261,9 @@ void gridpack::dynamic_simulation::Esst1aModel::computeModel(double t_inc,Integr
 
   double u1 = VA + Vothsg - (LadIfd - Ilr) * Klr; 
 
-  // HV Gate?
+  double u2 = HVGate_blk2.getoutput(u1);
 
-  // LV Gate?
-
-  double u2 = u1; // to be updated
+  u2 = LVGate_blk.getoutput(u2);
 
   double VT; // to be updated since VT is not a parameter that has been given.
   if (u2 > VT * Vrmax - Kc * LadIfd)
@@ -537,6 +540,11 @@ void gridpack::dynamic_simulation::Esst1aModel::setVothsg(double vtmp)
 void gridpack::dynamic_simulation::Esst1aModel::setVuel(double vtmp)
 {
   Vuel = vtmp;
+}
+
+void gridpack::dynamic_simulation::Esst1aModel::setVoel(double vtmp)
+{
+  Voel = vtmp;
 }
 
 /**

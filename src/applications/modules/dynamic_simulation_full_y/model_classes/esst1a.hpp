@@ -125,6 +125,8 @@ class Esst1aModel : public BaseExciterModel
 
     void setVuel(double vtmp);
 
+    void setVoel(double vtmp);
+
     /**
      * Set internal state parameter in exciter
      * @param name character string corresponding to state variable
@@ -157,7 +159,7 @@ class Esst1aModel : public BaseExciterModel
     double dx1Va_1, dx2Vcomp_1, dx3LL1_1, dx4LL2_1, dx5Deriv_1;*/    
    
     // ESST1A inputs
-    double Vcomp, LadIfd, Vstab, Vothsg, Vuel;
+    double Vcomp, LadIfd, Vstab, Vothsg, Vuel, Voel;
 
     double Vterm; // Terminal voltage (Ec)
  
@@ -171,10 +173,13 @@ class Esst1aModel : public BaseExciterModel
     void computeModel(double t_inc, IntegrationStage int_flag);
 
     Filter Filter_blkR;
+    HVGate HVGate_blk1; 
     LeadLag Leadlag_blkBC;
     LeadLag Leadlag_blkBC1;
     Filter Regulator_blk;
     GainLimiter Regulator_gain_blk;
+    HVGate HVGate_blk2; 
+    LVGate LVGate_blk; 
     Cblock Feedback_blkF;
 
     double Vf; // Output of Feedback block
