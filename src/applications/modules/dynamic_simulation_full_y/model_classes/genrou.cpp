@@ -228,7 +228,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
 
   Efdinit = Efd;
   Pmechinit = Pmech;
-
+  // printf("print: yuan debug here, inside genrou model, Ir=%f, Ii=%f\n", Ir, Ii);
   // Initialize exciter
   if (p_hasExciter) {
     p_exciter = getExciter();
@@ -236,6 +236,9 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
     p_exciter->setVcomp(mag); 
     p_exciter->setFieldVoltage(Efd);
     p_exciter->setFieldCurrent(LadIfd);
+    //---yuan add below 20231024---//
+    p_exciter->setIri(Ir, Ii); 
+    //---yuan add above 20231024---//
     p_exciter->init(mag, ang, ts);
   }
 

@@ -118,6 +118,11 @@ class BaseExciterModel
 	virtual void setWideAreaFreqforPSS(double freq);	
 
     virtual bool getVoltageDip(double Vt) {return false;}
+	
+	//---yuan add below 20231024---//
+	virtual void setIri(double vIr, double vIi);
+	//---yuan add above 20231024---//
+
   
 	// Yuan added below 2020-6-23
 	/** 

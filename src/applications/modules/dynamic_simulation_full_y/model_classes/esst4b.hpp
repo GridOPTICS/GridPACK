@@ -6,10 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   esst4b.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   Oct 12, 2015
  * 
- * @brief  
+ * @brief  ESST4B
  * 
  * 
  */
@@ -19,6 +17,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_exciter_model.hpp"
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -122,6 +122,19 @@ class Esst4bModel : public BaseExciterModel
      */
     void setOmega(double omega);
 
+    void setVuel(double vtmp);
+
+    void setVs(double vtmp);
+
+    /** 
+     * Set the value of the terminal current
+     */
+    void setIri(double vIr, double vIi);
+
+    void setVoel(double vtmp);
+    
+    void setVcomp(double vtmp);
+
   private:
 
     //double S10, S12; 
@@ -129,27 +142,41 @@ class Esst4bModel : public BaseExciterModel
     // Exciter ESST4B parameters from dyr
     double Tr, Kpr, Kir, Vrmax, Vrmin, Ta, Kpm;
     double Kim, Vmmax, Vmmin, Kg, Kp, KI;
-    double Vbmax, Kc, Xl, Kpang, Vgmax;
+    double Vbmax, Kc, Xl, Thetap;
+
+    bool zero_TR; // Time constant TR for measurement block is zero, no transfer function
+    bool zero_TA; // Time constant TA for measurement block is zero, no transfer function  
     
-    // ESST4B state variables
-    double x1Vm, x2Vcomp, x3Va, x4Vr;    
-    double x1Vm_1, x2Vcomp_1, x3Va_1, x4Vr_1;
-    double dx1Vm, dx2Vcomp, dx3Va, dx4Vr;    
-    double dx1Vm_1, dx2Vcomp_1, dx3Va_1, dx4Vr_1;
+    bool zero_KIM; // Integrator gain KIM for PI controller is zero, no transfer function
+    bool zero_KIR; // Integrator gain KIR for PI controller is zero, no transfer function
+
+    Filter Filter_blkR;
+    PIControl PIControl_blkR;
+    Filter Filter_blkA;
+    PIControl PIControl_blmM;
+    LVGate LVGate_blk;
+
+    double Vuel, Vs;
+    double Vref; // Reference voltage
+    double Vmeas; // Ouptut of voltage measurement block
+    double Voel;
+    
+    double Kpang, Vgmax; // TBD
    
     // ESST4B inputs
-    double Vcomp, Vterm, Theta, Ir, Ii, LadIfd, Vstab;
+    double Vcomp, Vterm, Theta, Ir, Ii, LadIfd, Vstab; // Ir, Ii: terminal current
  
     // Field Voltage Output
     double Efd;
 
     // Keep around 
-    double Vref;
     double Kpvr, Kpvi, Kpir, Kpii;
 
     double presentMag, presentAng;
   
     bool OptionToModifyLimitsForInitialStateLimitViolation;
+
+    void computeModel(double t_inc,IntegrationStage int_flag);
 
 };
 }  // dynamic_simulation

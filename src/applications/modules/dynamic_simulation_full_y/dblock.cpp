@@ -182,7 +182,6 @@ double PiecewiseSlope::getoutput(double u)
 
   return yout;
 }
-
   
 double PiecewiseSlope::init_given_y(double yout)
 {
@@ -202,7 +201,6 @@ double PiecewiseSlope::init_given_y(double yout)
 
   return u;
 }
-    
     
 //-------------------
 //   LV Gate
