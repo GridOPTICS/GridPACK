@@ -50,7 +50,6 @@ variables:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
       changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
-    - when: manual
 
 
 # disabled for troubleshooting
