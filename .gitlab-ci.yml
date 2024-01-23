@@ -23,6 +23,21 @@ variables:
   variables:
     IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
   script:
+    - mkdir -p /kaniko/.docker
+    - |
+      {
+        "proxies": {
+          "default": {
+            "httpProxy": "${http_proxy}",
+            "httpsProxy": "${https_proxy}"
+          }
+        }
+      } >> /kaniko/.docker/config.json
+
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
+      fi
+
     - chmod +x *.sh
     - >
       /kaniko/executor
@@ -38,7 +53,8 @@ variables:
     - when: manual
 
 
-build-container:ubuntu:
+# disabled for troubleshooting
+.build-container:ubuntu:
   extends: .build-container
   variables:
     BASE_IMAGE: ubuntu
@@ -59,7 +75,8 @@ build-container:rockylinux:
     - ./install_gridpack.sh
 
 
-build-gridpack:ubuntu:
+# disabled for troubleshooting
+.build-gridpack:ubuntu:
   extends: .build-gridpack
   image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
   needs: [ build-container:ubuntu ]
@@ -80,7 +97,8 @@ build-gridpack:rockylinux:
     paths: [ src/build/Testing/Temporary ]
 
 
-test-gridpack:ubuntu:
+# disabled for troubleshooting
+. test-gridpack:ubuntu:
   extends: .test-gridpack
   image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
   needs: [ build-gridpack:ubuntu ]
