@@ -9,7 +9,7 @@
 /**
  * @file   petsc_configurable.cpp
  * @author William A. Perkins
- * @date   2016-06-16 12:24:02 d3g096
+ * @date   2023-08-24 09:41:08 d3g096
  * 
  * @brief  
  * 
@@ -173,9 +173,7 @@ PETScConfigurable::p_processOptions(utility::Configuration::CursorPtr props)
   PetscErrorCode ierr(0);
   try {
     ierr = PetscOptionsInsertString(
-#if PETSC_VERSION_GE(3,7,0)
                                     NULL,
-#endif
                                     p_loadedOptions.c_str()); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -202,9 +200,7 @@ PETScConfigurable::p_unprocessOptions(void)
                     << *o << "\"" << std::endl;
         }
         ierr = PetscOptionsClearValue(
-#if PETSC_VERSION_GE(3,7,0)
                                     NULL,
-#endif
                                     o->c_str());
       } catch (const PETSC_EXCEPTION_TYPE& e) {
         throw PETScException(ierr, e);

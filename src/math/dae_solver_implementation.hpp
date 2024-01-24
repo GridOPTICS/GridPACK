@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-05 09:15:09 d3g096
+ * @date   2023-09-13 08:34:39 d3g096
  * 
  * @brief  
  * 
@@ -57,12 +57,12 @@ public:
     : parallel::Distributed(comm),
       utility::Configurable("DAESolver"),
       utility::Uncopyable(),
+      p_J(new MatrixType(comm,local_size,local_size)),
+      p_J_allocated(true),
       p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
       p_eventManager(eman),
       p_doAdaptive(true)
-  {
-    p_J = new gridpack::math::Matrix(comm,local_size,local_size);
-  }
+  { }
 
   DAESolverImplementation(const parallel::Communicator& comm, 
                           const int local_size,
@@ -74,6 +74,7 @@ public:
       utility::Configurable("DAESolver"),
       utility::Uncopyable(),
       p_J(J),
+      p_J_allocated(false),
       p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
       p_eventManager(eman),
       p_doAdaptive(true)
@@ -84,12 +85,16 @@ public:
   /// Destructor
   ~DAESolverImplementation(void)
   {
+    if (p_J_allocated) delete p_J;
   }
 
 protected:
 
   /// A matrix to hold the Jacobian
   MatrixType *p_J;
+
+  /// Is p_J locally allocated?
+  bool p_J_allocated;
 
   /// A function to build the RHS vector
   FunctionBuilder p_Fbuilder;

@@ -1,3 +1,0 @@
-include LICENSE
-global-include CMakeLists.txt *.cmake
-recursive-include src *

@@ -101,7 +101,7 @@ double Cblock::getoutput(double u)
   
 double Cblock::getoutput(double u,double dt,double xmin,double xmax,double ymin,double ymax,IntegrationStage stage, bool dostateupdate)
 {
-  double x_n,y_n,x_n1;
+  double x_n,y_n=0.0,x_n1;
 
   if(stage == PREDICTOR) x_n = x[0];
   else x_n = p_xhat[0];

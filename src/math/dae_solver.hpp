@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2019-12-05 07:52:33 d3g096
+ * @date   2023-09-13 07:37:27 d3g096
  * 
  * @brief  
  * 
@@ -72,7 +72,7 @@ public:
 
   DAESolverT(const parallel::Communicator& comm, 
              const int local_size,
-	     Matrix* J,
+	     MatrixType* J,
              JacobianBuilder& jbuilder,
              FunctionBuilder& fbuilder,
              EventManagerPtr eman);

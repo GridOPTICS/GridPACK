@@ -6,7 +6,7 @@
 // -------------------------------------------------------------
 /**
  * @file   dsf_main.cpp
- * @date   2016-07-14 14:23:30 d3g096
+ * @date   2023-11-08 09:22:59 d3g096
  *
  * @brief
  */
@@ -16,6 +16,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/parser/dictionary.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
@@ -27,18 +28,10 @@
 int
 main(int argc, char **argv)
 {
+  gridpack::Environment env(argc, argv, NULL, 200000, 200000);
+
   gridpack::NoPrint *noprint_ins = gridpack::NoPrint::instance();
   noprint_ins->setStatus(false);
-  
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
-
-  // Intialize Math libraries
-  gridpack::math::Initialize(&argc,&argv);
 
   if (1) {
     gridpack::utility::CoarseTimer *timer =
@@ -123,11 +116,5 @@ main(int argc, char **argv)
     timer->dump();
   }
 
-  GA_Terminate();
-
-  // Terminate Math libraries
-  gridpack::math::Finalize();
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
 }
 

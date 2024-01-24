@@ -28,6 +28,8 @@ gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
 {
 	bconfig_sptr_set = false;
 	p_PFuseNonLinear = false;
+
+	ds_app_sptr.reset(new gridpack::dynamic_simulation::DSFullApp());
 }
 
 /**
@@ -296,8 +298,6 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
  int dscase_idx){ 
 // the definition of struct Event is at
 // /src/applications/modules/dynamic_simulation_full_y/dsf_components.hpp
-
-  ds_app_sptr.reset(new gridpack::dynamic_simulation::DSFullApp());
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config_sptr->getCursor("Configuration.Dynamic_simulation");

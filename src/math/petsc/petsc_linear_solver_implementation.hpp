@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-18 13:40:01 d3g096
+ * @date   2023-08-24 09:44:02 d3g096
  * 
  * @brief  
  * 
@@ -121,11 +121,7 @@ protected:
       if (p_matrixSet && this->p_constSerialMatrix) {
         // KSPSetOperators can be skipped
       } else {
-#if PETSC_VERSION_LT(3,5,0)
-        ierr = KSPSetOperators(p_KSP, *Amat, *Amat, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
-#else
         ierr = KSPSetOperators(p_KSP, *Amat, *Amat); CHKERRXX(ierr);
-#endif
         p_matrixSet = true;
       }
 

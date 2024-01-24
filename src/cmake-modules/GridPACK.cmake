@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:41:26 d3g096
+# Last Change: 2023-08-28 13:18:39 d3g096
 # -------------------------------------------------------------
 
 
@@ -163,3 +163,24 @@ function(gridpack_add_run_test test_name test_target test_input)
     gridpack_add_parallel_run_test("${test_name}" ${test_target}  "${test_input}")
   endif ()
 endfunction(gridpack_add_run_test)
+
+
+# -------------------------------------------------------------
+# gridpack_set_lu_solver
+#
+# This takes a GridPACK input XML file, looks for any occurance of
+# "superlu_dist" and changes it to "mumps" if SuperLU_DIST is not
+# available in the build. The result is copied to the specified
+# output.
+# -------------------------------------------------------------
+macro(gridpack_set_lu_solver inputxml outputxml)
+add_custom_command(
+  OUTPUT "${outputxml}"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${inputxml}"
+  -D OUTPUT:PATH="${outputxml}"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${inputxml}"
+)
+endmacro()

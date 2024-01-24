@@ -10,8 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2022-10-05 09:26:46 d3g096
-# -------------------------------------------------------------
+
 
 # 
 cmake_minimum_required (VERSION 3.5.0)
@@ -34,13 +33,11 @@ enable_language(CXX)
 # where to look for special .cmake files
 list (APPEND CMAKE_MODULE_PATH 
     "${GridPACK_SOURCE_DIR}/cmake-modules"
-    "${GridPACK_SOURCE_DIR}/../cmake-jedbrown"
 )
 include(GridPACK)
 
 # add user configuration options
 option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
-option (USE_OLD_PETSC "Use older versions of PETSc" OFF)
 if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
@@ -113,16 +110,6 @@ endif()
 # suppress any checks to see if test codes run. Only check for compilation.
 # use for cross-compilation situations
 option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
-
-# should cplex or gurobi be used
-option(USE_CPLEX
-  "Use optimization software CPLEX libraries." OFF)
-
-option(USE_GUROBI
-  "Use optimization software GUROBI libraries." OFF)
-
-option(USE_GLPK
-  "Use GNU linear programming kit optimization software library." OFF)
 
 # BUILD_SHARED_LIBS is a CMake option and is understood by the CMake build
 # system, independently of declaring it here
@@ -300,57 +287,59 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
-if (NOT USE_OLD_PETSC)
+
 include(FindPkgConfig)
+
+if (NOT PETSC_DIR)
+  message(FATAL_ERROR "PETSC_DIR is not set, do so with -D PETSC_DIR=...")
+endif()
+  
 # Include petsc package path in pkg_config_path                                                                      
 set(ENV{PKG_CONFIG_PATH}
-${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig                         
+  ${PETSC_DIR}/lib/pkgconfig:${PETSC_DIR}/${PETSC_ARCH}/lib/pkgconfig
 )
 pkg_check_modules(PETSC REQUIRED IMPORTED_TARGET PETSc)
-else()
-find_package (PETSc REQUIRED)
-endif()
+
 message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (NOT USE_OLD_PETSC)
-if(EXISTS "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
-  set(petscconf "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
-elseif(EXISTS "${PETSC_DIR}/include/petscconf.h")
-  set(petscconf "${PETSC_DIR}/include/petscconf.h")
- else()
-  message(FATAL_ERROR "Could not find PETSc configuration header file
+  if(EXISTS "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+    set(petscconf "${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h")
+  elseif(EXISTS "${PETSC_DIR}/include/petscconf.h")
+    set(petscconf "${PETSC_DIR}/include/petscconf.h")
+  else()
+    message(FATAL_ERROR "Could not find PETSc configuration header file
 petscconf.h")
-endif()
+  endif()
 
-# checks
-# define PETSc variables                                                                                           
-include(CheckSymbolExists)
-check_symbol_exists(PETSC_HAVE_PARMETIS ${petscconf} PETSC_HAVE_PARMETIS)
-check_symbol_exists(PETSC_USE_REAL_DOUBLE ${petscconf} PETSC_USE_REAL_DOUBLE)
-check_symbol_exists(PETSC_USE_COMPLEX ${petscconf} PETSC_USE_COMPLEX)
-check_symbol_exists(PETSC_LANGUAGE_CXX ${petscconf} PETSC_CLANGUAGE_Cxx)
-check_symbol_exists(PETSC_HAVE_SUPERLU_DIST ${petscconf}
-PETSC_HAVE_SUPERLU_DIST)
-check_symbol_exists(PETSC_HAVE_MUMPS ${petscconf} PETSC_HAVE_MUMPS)
+  # checks
+  # define PETSc variables                                                                                           
+  include(CheckSymbolExists)
+  check_symbol_exists(PETSC_HAVE_PARMETIS ${petscconf} PETSC_HAVE_PARMETIS)
+  check_symbol_exists(PETSC_USE_REAL_DOUBLE ${petscconf} PETSC_USE_REAL_DOUBLE)
+  check_symbol_exists(PETSC_USE_COMPLEX ${petscconf} PETSC_USE_COMPLEX)
+  check_symbol_exists(PETSC_LANGUAGE_CXX ${petscconf} PETSC_CLANGUAGE_Cxx)
+  check_symbol_exists(PETSC_HAVE_SUPERLU_DIST ${petscconf}
+    PETSC_HAVE_SUPERLU_DIST)
+  check_symbol_exists(PETSC_HAVE_MUMPS ${petscconf} PETSC_HAVE_MUMPS)
 else()
-if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
-  include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
-elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
-  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
-elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
-  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
-else()
-  message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
-endif()
+  if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+    include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+  elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+    include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+  elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+    include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+  else()
+    message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
+  endif()
 
-message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
+  message(STATUS "PETSC_LIBRARY_SINGLE: ${PETSC_LIBRARY_SINGLE}")
 
+  # checks 
 
-# checks 
-
-if (NOT PETSC_HAVE_MPI)
-  message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
-endif()
+  if (NOT PETSC_HAVE_MPI)
+    message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
+  endif()
 endif()
 
 # PETSc can be compiled for double precsion (--with-precision=double)
@@ -413,29 +402,6 @@ else(BUILD_GA)
 endif(BUILD_GA)
 message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
 message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")
-
-# -------------------------------------------------------------
-#  Add optimization libraries, if requested
-# -------------------------------------------------------------
-# add the CPLEX library?
-if( USE_CPLEX)
-  message(STATUS "Checking cplex ...")
-  find_package(CPLEX REQUIRED)
-endif( USE_CPLEX)
-
-# add the GUROBI library?
-IF( USE_GUROBI)
-  message(STATUS "Checking Gurobi ...")
-  find_package(GUROBI REQUIRED)
-endif (USE_GUROBI)
-
-if(USE_GLPK)
-  message(STATUS "Checking glpk ...")
-  find_package(GLPK REQUIRED)
-endif(USE_GLPK)
-
-#message(STATUS "Checking concert ...")
-#find_package(CONCERT REQUIRED)
 
 # -------------------------------------------------------------
 # Doxygen
@@ -532,8 +498,6 @@ add_subdirectory(analysis)
 add_subdirectory(partition)
 add_subdirectory(factory)
 add_subdirectory(mapper)
-add_subdirectory(expression)
-add_subdirectory(optimization)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/dynamic_simulation_full_y)
 add_subdirectory(applications/contingency_analysis)
@@ -542,16 +506,12 @@ add_subdirectory(applications/state_estimation)
 add_subdirectory(applications/kalman_ds)
 add_subdirectory(applications/dynamic_simulation_dae)
 add_subdirectory(applications/hadrec)
-add_subdirectory(applications/development/powerflow2)
-add_subdirectory(applications/development/dynamic_simulation_reduced_y)
-add_subdirectory(applications/development/dynamic_simulation_implicit)
 add_subdirectory(applications/development/wind_dsa)
 add_subdirectory(applications/examples/hello_world)
 add_subdirectory(applications/examples/resistor_grid)
 add_subdirectory(applications/examples/powerflow)
 add_subdirectory(applications/examples/contingency_analysis)
 add_subdirectory(applications/modules/powerflow)
-add_subdirectory(applications/modules/dynamic_simulation)
 add_subdirectory(applications/modules/dynamic_simulation_full_y)
 add_subdirectory(applications/modules/state_estimation)
 add_subdirectory(applications/modules/kalman_ds)

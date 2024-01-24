@@ -51,7 +51,7 @@
     <timeStep>0.005</timeStep>
     <windFile>texas_2k_scenfile_5_full.txt</windFile>
     <!--loadFile>load_2000.txt</loadFile-->
-    <faultList> tamu_2000_faults.xml </faultList>
+    <EventList> tamu_2000_faults.xml </EventList>
     <generatorWatch>
       <generator>
         <busID> 1048 </busID>

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-26 14:25:10 d3g096
+ * @date   2023-08-24 09:47:08 d3g096
  * 
  * @brief  
  * 
@@ -188,38 +188,6 @@ protected:
   }
 
 
-#if PETSC_VERSION_LT(3,5,0)
-  /// Routine to assemble Jacobian that is sent to PETSc
-  static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat *jac, Mat *B, 
-                                     MatStructure *flag, void *dummy)
-  {
-    PetscErrorCode ierr(0);
-
-    // Necessary C cast
-    PetscNonlinearSolverImplementation *solver =
-      (PetscNonlinearSolverImplementation *)dummy;
-
-    // Copy PETSc's current estimate into 
-
-    // Should be the case, but just make sure
-    BOOST_ASSERT(*jac == *solver->p_petsc_J);
-    BOOST_ASSERT(*B == *solver->p_petsc_J);
-
-    // Not sure about this
-    BOOST_ASSERT(x == *(solver->p_petsc_X));
-
-    // May need to do this, which seems slow.
-    // ierr = VecCopy(x, *(solver->p_petsc_X)); CHKERRQ(ierr);
-
-    // Call the user-specified function (object) to form the Jacobian
-    (solver->p_jacobian)(*(solver->p_X), *(solver->p_J));
-
-    *flag = SAME_NONZERO_PATTERN;
-
-    return ierr;
-  }
-
-#else
   /// Routine to assemble Jacobian that is sent to PETSc
   static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat jac, Mat B, 
                                      void *dummy)
@@ -247,8 +215,6 @@ protected:
 
     return ierr;
   }
-
-#endif
 
   /// Routine to assemble RHS that is sent to PETSc
   static PetscErrorCode FormFunction(SNES snes, Vec x, Vec f, void *dummy)

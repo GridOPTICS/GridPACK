@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2019-11-20 10:01:00 d3g096
+ * @date   2023-08-23 14:53:57 d3g096
  * 
  * @brief  
  * 
@@ -162,6 +162,7 @@ protected:
     IdxType lo, hi;
     this->localIndexRange(lo, hi);
     this->setElementRange(lo, hi, p_localElements.get());
+    this->ready();
     // may want to keep this around if operation is done alot
     p_localElements.reset();
   }

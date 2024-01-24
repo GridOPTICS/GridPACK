@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2022-10-05 08:15:59 d3g096
+# Last Change: 2023-08-23 12:35:13 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -80,7 +80,6 @@ if (PETSC_FOUND)
     petsc/petsc_vector.cpp
     petsc/petsc_vector_wrapper.cpp
     petsc/petsc_matrix.cpp
-    petsc/ga_matrix.cpp
     petsc/petsc_matrix_operations.cpp
     petsc/petsc_matrix_wrapper.cpp
     petsc/petsc_matrix.cpp
@@ -358,15 +357,6 @@ endif()
 add_executable(bouncing_ball_test test/bouncing_ball_test.cpp)
 target_link_libraries(bouncing_ball_test gridpack_math ${target_libraries})
 
-
-# -------------------------------------------------------------
-# Test GA-based Dense Matrix
-# -------------------------------------------------------------
-if (PETSC_FOUND)
-  add_executable(petsc_ga_matrix_test test/petsc_ga_matrix.cpp) 
-  target_link_libraries(petsc_ga_matrix_test gridpack_math ${target_libraries})
-  gridpack_add_unit_test(petsc_ga_matrix petsc_ga_matrix_test)
-endif()
 
 # -------------------------------------------------------------
 # installation

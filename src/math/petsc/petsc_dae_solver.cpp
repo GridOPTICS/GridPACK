@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.cpp
  * @author William A. Perkins
- * @date   2019-11-21 07:41:15 d3g096
+ * @date   2023-09-13 07:48:08 d3g096
  * 
  * @brief  
  * 
@@ -47,7 +47,7 @@ DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm,
 template <typename T, typename I>
 DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm, 
                              const int local_size,
-			     Matrix* J,
+			     DAESolverT<T, I>::MatrixType* J,
                              DAESolverT<T, I>::JacobianBuilder& jbuilder,
                              DAESolverT<T, I>::FunctionBuilder& fbuilder,
                              DAESolverT<T, I>::EventManagerPtr eman)
@@ -71,7 +71,7 @@ DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm,
 template 
 DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm, 
                                     const int local_size,
-				    gridpack::math::Matrix* J,
+				    DAESolverT<ComplexType>::MatrixType* J,
                                     DAESolverT<ComplexType>::JacobianBuilder& jbuilder,
                                     DAESolverT<ComplexType>::FunctionBuilder& fbuilder,
                                     DAESolverT<ComplexType>::EventManagerPtr eman);
@@ -86,7 +86,7 @@ DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm,
 template 
 DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm, 
                                  const int local_size,
-				 Matrix *J,
+                                 DAESolverT<RealType>::MatrixType *J,
                                  DAESolverT<RealType>::JacobianBuilder& jbuilder,
                                  DAESolverT<RealType>::FunctionBuilder& fbuilder,
                                  DAESolverT<RealType>::EventManagerPtr eman);

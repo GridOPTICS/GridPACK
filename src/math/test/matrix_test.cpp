@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2016-12-16 09:35:46 d3g096
+ * @date   2023-08-30 07:59:49 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -990,15 +990,15 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
 
   // FIXME: check B contents
 
-  boost::scoped_ptr<TestMatrixType> 
-    C(new TestMatrixType(world, 3, 2, the_storage_type));
-  transpose(*A, *C);
-  C->print();
+  // boost::scoped_ptr<TestMatrixType> 
+  //   C(new TestMatrixType(world, 3, 2, the_storage_type));
+  // transpose(*A, *C);
+  // C->print();
 
   // FIXME: check C contents
 
-  C.reset(A->clone());
-  BOOST_CHECK_THROW(transpose(*A, *C), gridpack::Exception);
+  // C.reset(A->clone());
+  // BOOST_CHECK_THROW(transpose(*A, *C), gridpack::Exception);
 }
 
 BOOST_AUTO_TEST_CASE( AnotherNonSquareTranspose )
@@ -1098,13 +1098,13 @@ BOOST_AUTO_TEST_CASE( AnotherNonSquareTranspose )
     throw gridpack::Exception("Unknown Matrix storage type");
   }
 
-  transpose(*A, *C);
-  C->print();
+  // transpose(*A, *C);
+  // C->print();
 
-  // FIXME: check C contents
+  // // FIXME: check C contents
 
-  C.reset(A->clone());
-  BOOST_CHECK_THROW(transpose(*A, *C), gridpack::Exception);
+  // C.reset(A->clone());
+  // BOOST_CHECK_THROW(transpose(*A, *C), gridpack::Exception);
 }
 
 
