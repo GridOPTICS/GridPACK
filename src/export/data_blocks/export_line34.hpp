@@ -109,8 +109,11 @@ class ExportLine34
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
               // No default for this value
-              data->getValue(BRANCH_NAME,&sval,j);
-              sprintf(ptr,"\'%s\'",sval.c_str());
+              if (data->getValue(BRANCH_NAME,&sval,j)) {
+                sprintf(ptr,"\'%s\'",sval.c_str());
+              } else {
+                sprintf(ptr,"\' \'");
+              }
               ptr += strlen(ptr);
               rval = 0.0;
               if (!data->getValue(BRANCH_RATE1,&rval,j)) {
