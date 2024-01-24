@@ -82,10 +82,10 @@ function install_ga {
     echo "$ID"
   )
   case $distribution in
-    fedora | rhel | centos | rocky)
-      # add mpicc to path (from openmpi-devel)
-      export PATH=$PATH:/usr/lib64/openmpi/bin
-      ;;
+  fedora | rhel | centos | rocky)
+    echo "Loading mpi4py module"
+    module load "mpi/openmpi-$(arch)"
+    ;;
   esac
 
   # build
