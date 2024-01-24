@@ -1518,9 +1518,9 @@ void EmtBranch::load(
     p_L[0][2] = p_L[2][0] = Lm;
     p_L[1][2] = p_L[2][1] = Lm;
 
-    double Cp = C1;
-    double Cg = 3*C1*C0/(C0 - C1);
-    p_C[0][0] = p_C[1][1] = p_C[2][2] = Cp + Cg;
+    double Cp = (2*C1 + C0)/3.0;
+    double Cg = (C0 - C1)/3.0;
+    p_C[0][0] = p_C[1][1] = p_C[2][2] = Cp;
     p_C[0][1] = p_C[1][0] = Cg;
     p_C[0][2] = p_C[2][0] = Cg;
     p_C[1][2] = p_C[2][1] = Cg;
