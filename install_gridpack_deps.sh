@@ -75,6 +75,19 @@ function install_ga {
 
   pushd ga || exit
 
+  # check if we are running on RHEL
+  distribution=$(
+    # shellcheck source=/dev/null
+    source /etc/os-release
+    echo "$ID"
+  )
+  case $distribution in
+    fedora | rhel | centos | rocky)
+      # add mpicc to path (from openmpi-devel)
+      export PATH=$PATH:/usr/lib64/openmpi/bin
+      ;;
+  esac
+
   # build
   echo "Configuring Global Arrays"
   ./configure \
