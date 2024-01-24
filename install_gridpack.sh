@@ -13,7 +13,8 @@ function install_gridpack {
   local gridpack_deps_dir=$1
   local gridpack_build_dir=$2
   local gridpack_install_dir=$3
-  : "${gridpack_deps_dir:?}" "${gridpack_build_dir:?}" "${gridpack_install_dir:?}"
+  local distribution=$4
+  : "${gridpack_deps_dir:?}" "${gridpack_build_dir:?}" "${gridpack_install_dir:?}" "${distribution:?}"
 
   # remove existing build and install dir
   rm -rf "$gridpack_build_dir"
@@ -28,6 +29,15 @@ function install_gridpack {
 
   # remove existing cmake output
   rm -rf CMake*
+
+
+  # load module related to mpi4py
+  case $distribution in
+    fedora | rhel | centos | rocky)
+      echo "Loading mpi4py module"
+      module load "mpi/openmpi-$(arch)"
+      ;;
+  esac
 
   # generate make files
   echo "Generating GridPACK make files"
@@ -65,7 +75,8 @@ function install_gridpack_python {
   # args
   local gridpack_build_dir=$1
   local gridpack_install_dir=$2
-  : "${gridpack_build_dir:?}" "${gridpack_install_dir:?}"
+  local distribution=$3
+  : "${gridpack_build_dir:?}" "${gridpack_install_dir:?}" "${distribution:?}"
 
   # update submodules
   echo "Updating GridPACK submodules"
@@ -74,11 +85,6 @@ function install_gridpack_python {
   pushd python || exit
 
   # set an env var if we are running on RHEL
-  distribution=$(
-    # shellcheck source=/dev/null
-    source /etc/os-release
-    echo "$ID"
-  )
   case $distribution in
     fedora | rhel | centos | rocky)
       export RHEL_OPENMPI_HACK=yes
@@ -121,7 +127,13 @@ date
 build_dir=${PWD}/src/build
 install_dir=${PWD}/src/install
 
-install_gridpack "${GP_EXT_DEPS:?}" "$build_dir" "$install_dir"
-install_gridpack_python "$build_dir" "$install_dir"
+distribution=$(
+  # shellcheck source=/dev/null
+  source /etc/os-release
+  echo "$ID"
+)
+
+install_gridpack "${GP_EXT_DEPS:?}" "$build_dir" "$install_dir" "$distribution"
+install_gridpack_python "$build_dir" "$install_dir" "$distribution"
 
 echo "Completed GridPACK installation"
