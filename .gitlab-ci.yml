@@ -4,6 +4,7 @@ default:
     when: always
     untracked: true
 
+
 stages: [ build-container, build-gridpack, test-gridpack ]
 
 
@@ -35,14 +36,12 @@ variables:
       --build-arg "https_proxy=$https_proxy"
       --dockerfile "${CI_PROJECT_DIR}/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
-  # disabled for troubleshooting
-  # rules:
-    # - if: $CI_PIPELINE_SOURCE == "push"
-    #   changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
 
 
-# disabled for troubleshooting
-.build-container:ubuntu:
+build-container:ubuntu:
   extends: .build-container
   variables:
     BASE_IMAGE: ubuntu
@@ -64,8 +63,7 @@ build-container:rockylinux:
     - ./install_gridpack.sh
 
 
-# disabled for troubleshooting
-.build-gridpack:ubuntu:
+build-gridpack:ubuntu:
   extends: .build-gridpack
   image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
   needs:
@@ -91,8 +89,7 @@ build-gridpack:rockylinux:
     paths: [ src/build/Testing/Temporary ]
 
 
-# disabled for troubleshooting
-. test-gridpack:ubuntu:
+test-gridpack:ubuntu:
   extends: .test-gridpack
   image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
   needs: [ build-gridpack:ubuntu ]
