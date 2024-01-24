@@ -35,6 +35,9 @@ fedora | rhel | centos | rocky)
     wget @development git python3.11 python3-pip openmpi-devel cmake pkgconf \
     python3-mpi4py-openmpi
 
+  # add mpicc to path (from openmpi-devel)
+  export PATH=$PATH:/usr/lib64/openmpi/bin
+
   ;;
 *)
   echo "$distribution not supported"
