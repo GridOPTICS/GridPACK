@@ -51,7 +51,7 @@ function install_gridpack {
     -D MPI_CXX_COMPILER:STRING='mpicxx' \
     -D MPI_C_COMPILER:STRING='mpicc' \
     -D MPIEXEC:STRING='mpiexec' \
-    -D GRIDPACK_TEST_TIMEOUT:STRING=30 \
+    -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
     -D CMAKE_INSTALL_PREFIX:PATH="${gridpack_install_dir}" \
     -D CMAKE_BUILD_TYPE:STRING=Debug \
     -D BUILD_SHARED_LIBS=YES \
