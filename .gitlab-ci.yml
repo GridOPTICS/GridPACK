@@ -48,13 +48,6 @@ build-container:ubuntu:
     BASE_IMAGE_TAG: "22.04"
 
 
-build-container:rockylinux:
-  extends: .build-container
-  variables:
-    BASE_IMAGE: rockylinux
-    BASE_IMAGE_TAG: "9"
-
-
 .build-gridpack:
   stage: build-gridpack
   variables:
@@ -68,14 +61,6 @@ build-gridpack:ubuntu:
   image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
   needs:
     - job: build-container:ubuntu
-      optional: true
-
-
-build-gridpack:rockylinux:
-  extends: .build-gridpack
-  image: ${CI_REGISTRY_IMAGE}:rockylinux-gridpack-env
-  needs:
-    - job: build-container:rockylinux
       optional: true
 
 
@@ -93,9 +78,3 @@ test-gridpack:ubuntu:
   extends: .test-gridpack
   image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
   needs: [ build-gridpack:ubuntu ]
-
-
-test-gridpack:rockylinux:
-  extends: .test-gridpack
-  image: ${CI_REGISTRY_IMAGE}:rockylinux-gridpack-env
-  needs: [ build-gridpack:rockylinux ]
