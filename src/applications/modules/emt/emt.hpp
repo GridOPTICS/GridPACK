@@ -128,10 +128,9 @@ public:
     emt_network->updateBranches();
 
     // Evaluate the residual f(x) - xdot
-       p_factory->setMode(RESIDUAL_EVAL);
-       p_VecMapper->mapToVector(F);
-       F.ready();
-
+    p_factory->setMode(RESIDUAL_EVAL);
+    p_VecMapper->mapToVector(F);
+    F.ready();
   }
 
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff

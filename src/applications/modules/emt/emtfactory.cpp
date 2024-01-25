@@ -179,21 +179,22 @@ void EmtFactory::readEvents(gridpack::utility::Configuration::CursorPtr cursor)
 	bus_local_idx = p_network->getLocalBusIndices(busnum);
 	if(bus_local_idx.size()) {
 	  bus = dynamic_cast<EmtBus*>(p_network->getBus(bus_local_idx[0]).get());
-	}
-	// Read fault parameters
-	double ton  = events[idx].cursor->get("begin",0.0);
-	double toff = events[idx].cursor->get("end",0.0);
-	std::string faulttype = events[idx].cursor->get("type","SLG");
-	std::string faultphases;
-	if(faulttype == "SLG") {
-	  faultphases = events[idx].cursor->get("phases","A");
-	} else if(faulttype == "ThreePhase") {
-	  faultphases = "ABC";
-	}
-	double Ron = events[idx].cursor->get("Ron",1e-2);
-	double Rgnd = events[idx].cursor->get("Rgnd",1e-3);
+	
+	  // Read fault parameters
+	  double ton  = events[idx].cursor->get("begin",0.0);
+	  double toff = events[idx].cursor->get("end",0.0);
+	  std::string faulttype = events[idx].cursor->get("type","SLG");
+	  std::string faultphases;
+	  if(faulttype == "SLG") {
+	    faultphases = events[idx].cursor->get("phases","A");
+	  } else if(faulttype == "ThreePhase") {
+	    faultphases = "ABC";
+	  }
+	  double Ron = events[idx].cursor->get("Ron",1e-2);
+	  double Rgnd = events[idx].cursor->get("Rgnd",1e-3);
 
-	bus->setFault(ton,toff,faulttype,faultphases,Ron,Rgnd);
+	  bus->setFault(ton,toff,faulttype,faultphases,Ron,Rgnd);
+	}
       }
     }
   }
