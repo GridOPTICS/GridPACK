@@ -707,8 +707,6 @@ int EmtBus::matrixNumValues()
   for(i=0; i < nconnbranch; i++) {
     EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
 
-    if(branch->isGhost()) continue;
-    
     int fbusnum = branch->getBus1OriginalIndex();
     int tbusnum = branch->getBus2OriginalIndex();
     
@@ -797,8 +795,6 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   for(i=0; i < nconnbranch; i++) {
     EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
 
-    if(branch->isGhost()) continue;
-    
     int fbusnum = branch->getBus1OriginalIndex();
     int tbusnum = branch->getBus2OriginalIndex();
       
@@ -1147,14 +1143,12 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
     i_br[0] = i_br[1] = i_br[2] = 0.0;
     for(i=0; i < nconnbranch; i++) {
       EmtBranch *branch = dynamic_cast<EmtBranch*>(branches[i].get());
-
-      if(branch->isGhost()) continue;
       
       int fbusnum = branch->getBus1OriginalIndex();
       int tbusnum = branch->getBus2OriginalIndex();
-      
+
       int nparlines = branch->getNumParallelLines();
-      
+
       for(j=0; j < nparlines; j++) {
 	if(!branch->getStatus(j)) continue;
 
@@ -1565,9 +1559,9 @@ void EmtBranch::setTime(double time)
 void EmtBranch::getCurrent(int idx,double *ia, double *ib, double *ic) {
   double *i = p_ibr + 3*idx;
   
-  *ia = i[0];
-  *ib = i[1];
-  *ic = i[2];
+  *ia = p_iptr[0];
+  *ib = p_iptr[1];
+  *ic = p_iptr[2];
 }
 
 /**
@@ -1909,7 +1903,7 @@ void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
   if(p_mode == XVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
       if(p_status[i]) {
-	iptr[0]     = ibr[0] = real(x[0]);
+	iptr[0] = ibr[0] = real(x[0]);
 	iptr[1] = ibr[1] = real(x[1]);
 	iptr[2] = ibr[2] = real(x[2]);
 
