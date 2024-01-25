@@ -136,7 +136,6 @@ function install_petsc {
     --download-parmetis \
     --download-suitesparse \
     --download-f2cblaslapack \
-    --download-cmake \
     --prefix="${PWD}"/install_for_gridpack \
     --scalar-type=complex \
     --with-shared-libraries=1
