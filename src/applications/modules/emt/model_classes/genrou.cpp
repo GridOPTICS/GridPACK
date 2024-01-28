@@ -92,9 +92,9 @@ void Genrou::init(gridpack::ComplexType* xin)
   ib = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE);
   ic = Im*sin(OMEGA_S*p_time + Ia + TWOPI_OVER_THREE);
 
-  iabc[0] = ia*mbase/sbase;
-  iabc[1] = ib*mbase/sbase;
-  iabc[2] = ic*mbase/sbase;
+  iabc[0] = ia;
+  iabc[1] = ib;
+  iabc[2] = ic;
 
   vabc[0] = p_va;
   vabc[1] = p_vb;
@@ -161,9 +161,9 @@ void Genrou::init(gridpack::ComplexType* xin)
   x[6] = psi2q;
   x[7] = delta;
   x[8] = dw;
-  x[9] = iabc[0];
-  x[10] = iabc[1];
-  x[11] = iabc[2];
+  x[9] = iabc[0]*mbase/sbase;
+  x[10] = iabc[1]*mbase/sbase;
+  x[11] = iabc[2]*mbase/sbase;
 
 }
 
@@ -670,7 +670,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *row
   rows[ctr+8] = ia_idx; cols[ctr+8] = ia_idx;
 
   double Tdq0inv[3][3],dTdq0inv_ddelta[3][3];
-  double scal = sbase/mbase;
+  double scal = mbase/sbase;
 
   getTdq0inv(p_time,theta,Tdq0inv);
   getdTdq0invdtheta(p_time,theta,dTdq0inv_ddelta);
