@@ -88,7 +88,9 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
   Db1_blk.setparams(Db1, Err);
-  Leadlag_blk.setparams(T2, T1);
+  if(T1 != 0 && T2 != 0) {
+    Leadlag_blk.setparams(T2, T1);
+  }
 
   P_blk.setparams(1.0, Pmin, Pmax); // need another method to take Pmax and Pmin
   Db2_blk.setparams(Db2, Db2);
@@ -102,10 +104,18 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   uin[4] = Gv5; yin[0] = PGv5;
   NGV_blk.setparams(5, uin, yin);
 
-  Filter_blk1.setparams(1.0, T4);
-  Filter_blk2.setparams(1.0, T5);
-  Filter_blk3.setparams(1.0, T6);
-  Filter_blk4.setparams(1.0, T7);
+  if(T4 != 0) {
+    Filter_blk1.setparams(1.0, T4);
+  }
+  if(T5 != 0) {
+    Filter_blk2.setparams(1.0, T5);
+  }
+  if(T6 != 0) {
+    Filter_blk3.setparams(1.0, T6);
+  }
+  if(T7 != 0) {
+    Filter_blk4.setparams(1.0, T7);
+  }
 
 
 }
@@ -123,16 +133,51 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   // Backword initialization 
   if (K1 + K3 + K5 + K7 > 0) {
      u9 = Pmech1 / (K1 + K3 + K5 + K7);
-     u8 = Filter_blk4.init_given_y(u9);
-     u7 = Filter_blk3.init_given_y(u8);
-     u6 = Filter_blk2.init_given_y(u7);
-     u5 = Filter_blk1.init_given_y(u6);
+     if(T7 == 0) {
+       u8 = u9;
+     } else {
+       u8 = Filter_blk4.init_given_y(u9);
+     }
+
+     if(T6 == 0) {
+       u7 = u8;
+     } else {
+       u7 = Filter_blk3.init_given_y(u8);
+     }
+     if(T5 == 0) {
+       u6 = u7;
+     } else {
+       u6 = Filter_blk2.init_given_y(u7);
+     }
+     if(T4 == 0) {
+       u5 = u6;
+     } else {
+       u5 = Filter_blk1.init_given_y(u6);
+     }
   } else if (K2 + K4 + K6 + K8 > 0) {
      u9 = Pmech2 / (K2 + K4 + K6 + K8);
-     u8 = Filter_blk4.init_given_y(u9);
-     u7 = Filter_blk3.init_given_y(u8);
-     u6 = Filter_blk2.init_given_y(u7);
-     u5 = Filter_blk1.init_given_y(u6);
+
+     if(T7 == 0) {
+       u8 = u9;
+     } else {
+       u8 = Filter_blk4.init_given_y(u9);
+     }
+
+     if(T6 == 0) {
+       u7 = u8;
+     } else {
+       u7 = Filter_blk3.init_given_y(u8);
+     }
+     if(T5 == 0) {
+       u6 = u7;
+     } else {
+       u6 = Filter_blk2.init_given_y(u7);
+     }
+     if(T4 == 0) {
+       u5 = u6;
+     } else {
+       u5 = Filter_blk1.init_given_y(u6);
+     }
   } else 
      u5 = 0;
 
@@ -151,8 +196,10 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   }
 
   GV0 = GV;
-
-  u1 = Leadlag_blk.init_given_y(0.0);
+  
+  if(T1 != 0 && T2 != 0) {
+    u1 = Leadlag_blk.init_given_y(0.0);
+  }
 
 }
 
@@ -168,7 +215,11 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
   y1 = u1;
 
   u2 = y1 * K;
-  y2 = Leadlag_blk.getoutput(u2, t_inc, int_flag, true);
+  if(T1 == 0 || T2 == 0) {
+    y2 = u2;
+  } else {
+    y2 = Leadlag_blk.getoutput(u2, t_inc, int_flag, true);
+  }
   y4 = GV;
   u3 = (GV0 -y2 - y4) * 1 / T3; 
   if (u3 > Uo)
@@ -191,11 +242,26 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
   // y5 = NGV_blk.getoutput(u5);
   y5 = u5;
   
-  
-  u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
-  u7 = Filter_blk2.getoutput(u6, t_inc, int_flag, true);
-  u8 = Filter_blk3.getoutput(u7, t_inc, int_flag, true);
-  u9 = Filter_blk4.getoutput(u8, t_inc, int_flag, true);
+  if(T4 == 0) {
+    u6 = u5;
+  } else {
+    u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
+  }
+  if(T5 == 0) {
+    u7 = u6;
+  } else {
+    u7 = Filter_blk2.getoutput(u6, t_inc, int_flag, true);
+  }
+  if(T6 == 0) {
+    u8 = u7;
+  } else {
+    u8 = Filter_blk3.getoutput(u7, t_inc, int_flag, true);
+  }
+  if(T7 == 0) {
+    u9 = u8;
+  } else {
+    u9 = Filter_blk4.getoutput(u8, t_inc, int_flag, true);
+  }
   
   Pmech1 = K1 * u6 + K3 * u7 + K5 * u8 + K7 * u9;
   Pmech2 = K2 * u6 + K4 * u7 + K6 * u8 + K8 * u9;
