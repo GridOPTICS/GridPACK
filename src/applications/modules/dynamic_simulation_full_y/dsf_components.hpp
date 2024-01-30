@@ -22,7 +22,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF, LINESTATUSCHANGE, GENSTATUSCHANGE};
+  enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay, branch_trip_action, bus_Yload_change_P, bus_Yload_change_Q, BUSFAULTON,BUSFAULTOFF, LINESTATUSCHANGE, GENSTATUSCHANGE,INIT_V};
 
 // Utility structure to encapsulate information about fault events
 struct Event{
