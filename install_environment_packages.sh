@@ -33,7 +33,7 @@ fedora | rhel | centos | rocky)
   # install required packages
   dnf install --assumeyes \
     wget @development git python3.11 python3-pip openmpi-devel cmake pkgconf \
-    python3-mpi4py-openmpi boost-openmpi
+    python3-mpi4py-openmpi
   ;;
 *)
   echo "$distribution not supported"
