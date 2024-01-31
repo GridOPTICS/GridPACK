@@ -15,6 +15,7 @@ variables:
   KUBERNETES_MEMORY_LIMIT: "8Gi"
   http_proxy: "http://proxy01.pnl.gov:3128"
   https_proxy: ${http_proxy}
+  MAKE_JOBS: "2"
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
@@ -50,8 +51,6 @@ build-container:ubuntu:
 
 .build-gridpack:
   stage: build-gridpack
-  variables:
-    MAKE_JOBS: "2"
   script:
     - ./build/install_gridpack.sh
 
