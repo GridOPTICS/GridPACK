@@ -38,7 +38,7 @@ variables:
       --destination "${IMAGE_PATH}" > build.log 2>&1
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
-      changes: [ "dockerfile", "install_environment_packages.sh", "install_gridpack_deps.sh" ]
+      changes: [ "build/**/*" ]
 
 
 build-container:ubuntu:
@@ -53,7 +53,7 @@ build-container:ubuntu:
   variables:
     MAKE_JOBS: "2"
   script:
-    - ./install_gridpack.sh
+    - ./build/install_gridpack.sh
 
 
 build-gridpack:ubuntu:
