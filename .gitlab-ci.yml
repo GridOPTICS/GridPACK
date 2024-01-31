@@ -24,14 +24,14 @@ variables:
   variables:
     IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
   script:
-    - chmod +x *.sh
+    - chmod +x build/*.sh
     - >
       /kaniko/executor
-      --context "${CI_PROJECT_DIR}/build"
+      --context build
       --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
       --build-arg "http_proxy=$http_proxy"
       --build-arg "https_proxy=$https_proxy"
-      --dockerfile "${CI_PROJECT_DIR}/build/dockerfile"
+      --dockerfile build/dockerfile
       --destination "${IMAGE_PATH}" > build.log 2>&1
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
