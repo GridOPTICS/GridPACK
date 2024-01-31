@@ -24,7 +24,6 @@ variables:
   variables:
     IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
   script:
-    - chmod +x build/*.sh
     - >
       /kaniko/executor
       --context build
@@ -48,9 +47,7 @@ build-container:ubuntu:
 .build-gridpack:
   stage: build-gridpack
   script:
-    - ls
-    - chmod +x build/install_gridpack.sh
-    - ./build/install_gridpack.sh
+    - /bin/bash ./build/install_gridpack.sh
 
 
 build-gridpack:ubuntu:
