@@ -101,7 +101,7 @@ function install_ga {
 
   # install
   echo "Installing Global Arrays"
-  make -j "$(nproc)" install
+  make -j "${MAKE_JOBS:-$(nproc)}" install
 
   popd || exit
 
