@@ -48,6 +48,8 @@ build-container:ubuntu:
 .build-gridpack:
   stage: build-gridpack
   script:
+    - ls
+    - chmod +x build/install_gridpack.sh
     - ./build/install_gridpack.sh
 
 
