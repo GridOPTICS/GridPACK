@@ -24,7 +24,7 @@ function install_boost {
 
   # unpack
   echo "Unpacking Boost"
-  tar -xf boost.tar.gz && rm boost.tar.gz
+  tar -xf boost.tar.gz && rm -f boost.tar.gz
 
   # remove version from dir name
   mv "boost_${boost_version//./_}" boost
@@ -68,7 +68,7 @@ function install_ga {
 
   # unpack
   echo "Unpacking Global Arrays"
-  tar -xf ga.tar.gz && rm ga.tar.gz
+  tar -xf ga.tar.gz && rm -f ga.tar.gz
 
   # remove version from dir name
   mv "ga-${ga_version}" ga
