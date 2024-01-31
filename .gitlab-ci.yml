@@ -10,6 +10,8 @@ stages: [ build-container, build-gridpack, test-gridpack ]
 
 variables:
   MAKE_JOBS: "2"
+  OMPI_ALLOW_RUN_AS_ROOT: "1"
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: "1"
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
