@@ -34,10 +34,6 @@ case $distribution in
     dnf install --assumeyes \
       wget @development git python3.11 python3-pip openmpi-devel cmake pkgconf \
       python3-mpi4py-openmpi
-
-    # load the mpi module
-    source /etc/profile.d/modules.sh
-    module load "mpi/openmpi-$(arch)"
     ;;
 
   *)

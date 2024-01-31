@@ -29,9 +29,6 @@ function install_gridpack {
   # remove existing cmake output
   rm -rf CMake*
 
-  # load mpi module
-  source load_mpi_module.sh
-
   # generate make files
   echo "Generating GridPACK make files"
   cmake \
