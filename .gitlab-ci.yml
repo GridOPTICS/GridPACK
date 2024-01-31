@@ -9,12 +9,6 @@ stages: [ build-container, build-gridpack, test-gridpack ]
 
 
 variables:
-  KUBERNETES_CPU_REQUEST: "1"
-  KUBERNETES_CPU_LIMIT: "2"
-  KUBERNETES_MEMORY_REQUEST: "4Gi"
-  KUBERNETES_MEMORY_LIMIT: "8Gi"
-  http_proxy: "http://proxy01.pnl.gov:3128"
-  https_proxy: ${http_proxy}
   MAKE_JOBS: "2"
 
 
