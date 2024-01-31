@@ -27,17 +27,15 @@ Because the cmake command takes a large number of arguments, it is usually a goo
 rm -rf CMake*
 
 cmake -Wdev \
-      -D BOOST_ROOT:STRING='\$HOME/software_new/boost_1_55_0' \
-      -D PETSC_DIR:STRING='\$HOME/software_new/petsc-3.6.0' \
+      -D BOOST_ROOT:STRING='$HOME/software/boost_1_65_0' \
+      -D PETSC_DIR:STRING='$HOME/software/petsc-3.16.0' \
       -D PETSC_ARCH:STRING='linux-openmpi-gnu-cxx' \
-      -D PARMETIS_DIR:STRING= \
-        '\$HOME/software_new/petsc-3.6.0/linux-openmpi-gnu-cxx/lib' \
-      -D GA_DIR:STRING='\$HOME/software_new/ga-5-4-ib' \
+      -D GA_DIR:STRING='$HOME/software/ga-5-8' \
       -D USE_PROGRESS_RANKS:BOOL=FALSE \
       -D MPI_CXX_COMPILER:STRING='mpicxx' \
       -D MPI_C_COMPILER:STRING='mpicc' \
       -D MPIEXEC:STRING='mpiexec' \
-      -D CMAKE_INSTALL_PREFIX:PATH='\$GRIDPACK/src/build/install' \
+      -D CMAKE_INSTALL_PREFIX:PATH='$GRIDPACK/src/build/install' \
       -D CMAKE_BUILD_TYPE:STRING='RELWITHDEBINFO' \
       -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
       -D CMAKE_VERBOSE_MAKEFILE:STRING=TRUE \
@@ -47,7 +45,12 @@ cmake -Wdev \
 
 The first line removes any configuration files that may be left over from a previous configuration attempt. Removing these files is generally a good idea since parameters from a previous unsuccessful attempt may bleed over into the current configuration and either spoil the configuration itself or lead to problems when you try to compile the code. 
 
-The Boost, PETSc, Parmetis and Global Array library locations are specified by the \texttt{\textbf{BOOST\_ROOT}}, \texttt{\textbf{PETSC\_DIR}}, \texttt{\textbf{PARMETIS\_DIR}} and \texttt{\textbf{GA\_DIR}} variables. The \texttt{\textbf{PETSC\_ARCH}} variable specifies the particular build within PETSc that you want GridPACK to use. It is usually possible when configuring and building PETSc to have it download and build Parmetis as well. This was done in the example above and thus the Parmetis libraries are located within the PETSc source tree in the directory corresponding to the architecture specified in \texttt{\textbf{PETSC\_ARCH}}.
+The Boost, PETSc, Parmetis and Global Array library locations are specified by
+the \texttt{\textbf{BOOST\_ROOT}}, \texttt{\textbf{PETSC\_DIR}} and
+\texttt{\textbf{GA\_DIR}} variables. In most cases, Parmetis can be built with
+PETSc and will be detected by the CMake build system. In the rare case that this
+is not true, the location of Parmetis can be specified with the
+\texttt{\textbf{PARMETIS\_DIR}} variable.  The \texttt{\textbf{PETSC\_ARCH}} variable specifies the particular build within PETSc that you want GridPACK to use.
 
 The Global Arrays library can be built using a number of different runtimes. The default runtime uses MPI two-sided communication. While it is very easy to use, this runtime does not scale well beyond a dozen or so processors. Users interested on running on large numbers of cores should look at configuring Global Arrays with other runtimes. A high performing GA runtime that is available on all platforms is called progress ranks. While it is very robust, this runtime has a peculiarity in that it reserves one MPI process per SMP node to manage communication. Thus, if you request a total of 20 MPI processes on 4 nodes with 5 processes running on each node only 4 MPI process per node will actually be available to the application for a total of 16. In order to notify GridPACK that you are using this runtime, you need to set the parameter \texttt{\textbf{USE\_PROGRESS\_RANKS}} to true. In the example above, we are not using progress ranks so we set \texttt{\textbf{USE\_PROGRESS\_RANKS}} to false.  The \texttt{\textbf{GA\_EXTRA\_LIBS}} parameter can be used to include extra libraries in the link step that are not picked up as part of the configuration process. For this example, this parameter is not needed.
 

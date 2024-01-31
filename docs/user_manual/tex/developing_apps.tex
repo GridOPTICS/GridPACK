@@ -493,10 +493,10 @@ The last part of building an application is creating the top level application d
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc,argv);
-
-  gridpack::powerflow::PFApp app;
-  app.execute();
-
+  {
+    gridpack::powerflow::PFApp app;
+    app.execute();
+  }
 }
 \end{Verbatim}
 }
