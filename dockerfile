@@ -15,7 +15,7 @@ ENV https_proxy=${https_proxy}
 WORKDIR ${GP_EXT_DEPS}
 
 COPY install_environment_packages.sh .
-RUN ./install_environment_packages.sh && rm *.sh
+RUN ./install_environment_packages.sh && rm ./install_environment_packages.sh
 
 COPY install_gridpack_deps.sh .
-RUN ./install_gridpack_deps.sh && rm *.sh
+RUN ./install_gridpack_deps.sh && rm ./install_gridpack_deps.sh
