@@ -5,38 +5,44 @@
 set -xeuo pipefail
 
 distribution=$(
-  # shellcheck source=/dev/null
   source /etc/os-release
   echo "$ID"
 )
 
 case $distribution in
-debian | ubuntu)
 
-  apt-get update
-  apt-get upgrade --yes
+  debian | ubuntu)
 
-  # install required packages
-  apt-get install --yes \
-    wget build-essential git python3.11 python3-pip libopenmpi-dev cmake pkg-config python3-mpi4py
-  ;;
+    apt-get update
+    apt-get upgrade --yes
 
-fedora | rhel | centos | rocky)
+    # install required packages
+    apt-get install --yes \
+      wget build-essential git python3.11 python3-pip libopenmpi-dev cmake pkg-config python3-mpi4py
+    ;;
 
-  dnf upgrade --assumeyes --verbose
+  fedora | rhel | centos | rocky)
 
-  # use epel and crb repos
-  # https://wiki.rockylinux.org/rocky/repo/#notes-on-epel
-  dnf install epel-release --assumeyes
-  crb enable
+    dnf upgrade --assumeyes --verbose
 
-  # install required packages
-  dnf install --assumeyes \
-    wget @development git python3.11 python3-pip openmpi-devel cmake pkgconf \
-    python3-mpi4py-openmpi
-  ;;
-*)
-  echo "$distribution not supported"
-  exit 1
-  ;;
+    # use epel and crb repos
+    # https://wiki.rockylinux.org/rocky/repo/#notes-on-epel
+    dnf install epel-release --assumeyes
+    crb enable
+
+    # install required packages
+    dnf install --assumeyes \
+      wget @development git python3.11 python3-pip openmpi-devel cmake pkgconf \
+      python3-mpi4py-openmpi
+
+    # load the mpi module
+    source /etc/profile.d/modules.sh
+    module load "mpi/openmpi-$(arch)"
+    ;;
+
+  *)
+    echo "$distribution not supported"
+    exit 1
+    ;;
+
 esac
