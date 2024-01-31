@@ -31,6 +31,9 @@ function install_boost {
 
   pushd boost || exit
 
+  # load the mpi module
+  source load_mpi_module.sh
+
   # bootstrap
   echo "Bootstrapping Boost"
   ./bootstrap.sh \
