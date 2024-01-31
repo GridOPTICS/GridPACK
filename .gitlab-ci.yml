@@ -25,11 +25,11 @@ variables:
     - chmod +x *.sh
     - >
       /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
+      --context "${CI_PROJECT_DIR}/build"
       --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
       --build-arg "http_proxy=$http_proxy"
       --build-arg "https_proxy=$https_proxy"
-      --dockerfile "${CI_PROJECT_DIR}/dockerfile"
+      --dockerfile "${CI_PROJECT_DIR}/build/dockerfile"
       --destination "${IMAGE_PATH}" > build.log 2>&1
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
