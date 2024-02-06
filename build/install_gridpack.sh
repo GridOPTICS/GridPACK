@@ -4,7 +4,13 @@
 # gridPACK is built in src/build and installed to src/install
 # run this from the top level GridPACK directory
 
-set -xeuo pipefail
+# bash options:
+# - xtrace: print each command before executing it
+# - errexit: exit on error
+# - nounset: treat unset variables as errors
+# - pipefail: treat whole pipeline as errored if any commands within error
+# https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
+set -o xtrace -o errexit -o nounset -o pipefail
 
 function install_gridpack {
   echo "--- GridPACK ---"
