@@ -17,8 +17,9 @@ ENV https_proxy=${https_proxy}
 WORKDIR ${GP_EXT_DEPS}
 
 COPY lib.sh install_from_source_deps.sh ./
-RUN . ./lib.sh \
+SHELL ["/bin/bash", "-c"]
+RUN source ./lib.sh \
   && install_packages \
   && load_mpi_module \
-  && /bin/bash ./install_from_source_deps.sh \
+  && source ./install_from_source_deps.sh \
   && rm *.sh
