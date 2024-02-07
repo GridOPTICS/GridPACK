@@ -11,11 +11,15 @@ stages: [ build-container, build-gridpack, test-gridpack ]
 variables:
   MAKE_JOBS: "2"
 
-check-container-tag-exists:
+
+check-container-definition-changed:
   image: alpine
   script:
-    - apk add --no-cache curl jq
-    - /bin/bash ./check_container_tag_exists.sh
+    - touch container-definition-changed
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes: [ "build/**/*" ]
+
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
 .build-container:
@@ -24,27 +28,18 @@ check-container-tag-exists:
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
-  variables:
-    IMAGE_PATH: ${CI_REGISTRY_IMAGE}:${BASE_IMAGE}-gridpack-env
+  needs: [ check-container-definition-changed ]
   script:
-    - >
-      /kaniko/executor
-      --context build
-      --build-arg "BASE_IMAGE=${BASE_IMAGE}:${BASE_IMAGE_TAG}"
-      --build-arg "http_proxy=$http_proxy"
-      --build-arg "https_proxy=$https_proxy"
-      --dockerfile build/dockerfile
-      --destination "${IMAGE_PATH}" > build.log 2>&1
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-      changes: [ "build/**/*" ]
+    - local force_build="false"
+    - test -f container-definition-changed && force_build="true"
+    - . ./build/lib.sh
+    - check_build_container "${BASE_IMAGE}" "${force_build}" > build.log 2>&1
 
 
 build-container:ubuntu:
   extends: .build-container
   variables:
-    BASE_IMAGE: ubuntu
-    BASE_IMAGE_TAG: "22.04"
+    BASE_IMAGE: ubuntu:22.04
 
 
 .build-gridpack:
