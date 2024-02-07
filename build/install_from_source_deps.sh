@@ -11,10 +11,7 @@
 set -o xtrace -o errexit -o nounset -o pipefail
 
 function install_boost {
-  local boost_version=$1
-
-  # check args
-  : "${boost_version:?}"
+  local boost_version=${1:?}
 
   echo "--- Installing Boost ${boost_version} ---"
 
@@ -58,10 +55,7 @@ function install_boost {
 }
 
 function install_ga {
-  local ga_version=$1
-
-  # check args
-  : "${ga_version:?}"
+  local ga_version=${1:?}
 
   echo "--- Installing Global Arrays ${ga_version} ---"
 
@@ -102,10 +96,7 @@ function install_ga {
 }
 
 function install_petsc {
-  local petsc_version=$1
-
-  # check args
-  : "${petsc_version:?}"
+  local petsc_version=${1:?}
 
   echo "--- Installing PETSc ${petsc_version} ---"
 

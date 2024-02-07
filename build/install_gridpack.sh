@@ -16,10 +16,9 @@ function install_gridpack {
   echo "--- GridPACK ---"
 
   # args
-  local gridpack_deps_dir=$1
-  local gridpack_build_dir=$2
-  local gridpack_install_dir=$3
-  : "${gridpack_deps_dir:?}" "${gridpack_build_dir:?}" "${gridpack_install_dir:?}"
+  local gridpack_deps_dir=${1:?}
+  local gridpack_build_dir=${2:?}
+  local gridpack_install_dir=${3:?}
 
   # remove existing build and install dir
   rm -rf "$gridpack_build_dir"
@@ -69,9 +68,8 @@ function install_gridpack_python {
   echo "--- GridPACK python wrapper ---"
 
   # args
-  local gridpack_build_dir=$1
-  local gridpack_install_dir=$2
-  : "${gridpack_build_dir:?}" "${gridpack_install_dir:?}"
+  local gridpack_build_dir=${1:?}
+  local gridpack_install_dir=${2:?}
 
   # update submodules
   echo "Updating GridPACK submodules"
