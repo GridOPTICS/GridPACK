@@ -1,19 +1,6 @@
 #! /bin/bash
 
 # contains functions to use across multiple scripts
-# source these functions from the same dir using:
-#   script_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-#   source "$script_root/lib.sh"
-# https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
-
-# reference line to copy-paste, not necessarily to source
-# bash options:
-# - xtrace: print each command before executing it
-# - errexit: exit on error
-# - nounset: treat unset variables as errors
-# - pipefail: treat whole pipeline as errored if any commands within error
-# https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
-# set -o xtrace -o errexit -o nounset -o pipefail
 
 # print a set of args as a comma-space seperated list
 # usage:
