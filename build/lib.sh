@@ -135,6 +135,8 @@ function glab_api {
   local api_url=${CI_API_V4_URL:?}
   local api_token=${CI_JOB_TOKEN:?}
 
+  check_installed curl
+
   # construct the form data
   local form_data=""
   for item in "${form_items[@]}"; do
@@ -165,6 +167,8 @@ function glab_api {
 function get_container_registry_repo_id {
   local project_id=${CI_PROJECT_ID:?}
   local project_path_slug=${CI_PROJECT_PATH_SLUG:?}
+
+  check_installed jq
 
   # jq query:
   # - raw-output: output raw strings instead of json
