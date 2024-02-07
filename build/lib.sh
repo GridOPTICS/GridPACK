@@ -232,25 +232,24 @@ function build_container {
 
 # build container image if not available in registry or force_rebuild = 'true'
 # usage:
-#   check_build_container "ubuntu:22.04" "true"
-# needs: /kaniko/executor, jq, curl, $CI_API_V4_URL, $CI_JOB_TOKEN, $CI_PROJECT_ID,
-#   $CI_PROJECT_PATH_SLUG, $HTTP_PROXY, $HTTPS_PROXY, $CI_REGISTRY_IMAGE
-function check_build_container {
+#   check_container_needs_built "ubuntu:22.04"
+# needs: jq, curl, $CI_API_V4_URL, $CI_JOB_TOKEN, $CI_PROJECT_ID, $CI_PROJECT_PATH_SLUG
+function check_container_needs_built {
   local tag=${1:?}
-  local force_rebuild=${2:-false}
 
   local repo_id
   repo_id=$(get_container_registry_repo_id)
 
-  if [[ "$force_rebuild" == "true" ]] || ! container_tag_exists "$repo_id" "$tag"; then
-    # in case the build fails, remove the tag from the registry
-    # this will signal to the next pipeline that the container image still needs rebuilt
-    # even if relevant files have not changed
-    # the alternative is to unknowingly use an outdated image in subsequent pipelines
-    # and there are cases where a rebuild can succeed without any changes
+  # if we see a file in the current directory called "container-definition-changed"
+  # or the tag does not exist in the registry, then the container needs rebuilt
+  if test -f ./container-definition-changed || ! container_tag_exists "$repo_id" "$tag"; then
+    # in case the build fails, delete the image associated with this tag from the registry
+    # this will signal to potential subsequent pipelines that the container image still needs
+    # rebuilt even if relevant files have not changed
+    # this provents unknowingly using an outdated image in subsequent pipelines
     delete_container_tag "$repo_id" "$tag"
 
-    # build container image and push to registry
-    build_container "$tag"
+    # signal to the next job via an empty file artifact that the container needs built
+    touch ./container-needs-built
   fi
 }

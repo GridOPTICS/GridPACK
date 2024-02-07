@@ -3,6 +3,7 @@ default:
   artifacts:
     when: always
     untracked: true
+  image: alpine
 
 
 stages: [ build-container, build-gridpack, test-gridpack ]
@@ -10,15 +11,34 @@ stages: [ build-container, build-gridpack, test-gridpack ]
 
 variables:
   MAKE_JOBS: "2"
+  UBUNTU_BASE_IMAGE: "ubuntu:22.04"
+  UBUNTU_ENV_IMAGE: "ubuntu-gridpack-env"
+  ROCKY_BASE_IMAGE: "rockylinux:9"
+  ROCKY_ENV_IMAGE: "rocky-gridpack-env"
 
 
 check-container-definition-changed:
-  image: alpine
   script:
     - touch container-definition-changed
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
       changes: [ "build/**/*" ]
+
+
+.check-container-needs-built:
+  needs:
+    - job: check-container-definition-changed
+      optional: true
+  script:
+    - apk add --no-cache curl jq
+    - . ./build/lib.sh
+    - check_container_needs_built "${BASE_IMAGE}"
+
+
+check-container-needs-built:ubuntu:
+  extends: .check-container-needs-built
+  variables:
+    BASE_IMAGE: ${UBUNTU_BASE_IMAGE}
 
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
@@ -28,18 +48,17 @@ check-container-definition-changed:
   image:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
-  needs: [ check-container-definition-changed ]
   script:
-    - local force_build="false"
-    - test -f container-definition-changed && force_build="true"
     - . ./build/lib.sh
-    - check_build_container "${BASE_IMAGE}" "${force_build}" > build.log 2>&1
+    - test -f container-definition-changed &&
+      build_container "${BASE_IMAGE}" > build.log 2>&1
 
 
 build-container:ubuntu:
   extends: .build-container
+  needs: [ check-container-needs-built:ubuntu ]
   variables:
-    BASE_IMAGE: ubuntu:22.04
+    BASE_IMAGE: ${UBUNTU_BASE_IMAGE}
 
 
 .build-gridpack:
@@ -50,23 +69,19 @@ build-container:ubuntu:
 
 build-gridpack:ubuntu:
   extends: .build-gridpack
-  image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
-  needs:
-    - job: build-container:ubuntu
-      optional: true
+  image: ${CI_REGISTRY_IMAGE}:${UBUNTU_ENV_IMAGE}
+  needs: [ build-container:ubuntu ]
 
 
 .test-gridpack:
   stage: test-gridpack
   script:
-    - useradd gridpack
-    - chown -R gridpack:gridpack .
-    - su gridpack -c 'ctest --test-dir src/build --output-on-failure'
+    - ctest --test-dir src/build --output-on-failure
   artifacts:
     paths: [ src/build/Testing/Temporary ]
 
 
 test-gridpack:ubuntu:
   extends: .test-gridpack
-  image: ${CI_REGISTRY_IMAGE}:ubuntu-gridpack-env
+  image: ${CI_REGISTRY_IMAGE}:${UBUNTU_ENV_IMAGE}
   needs: [ build-gridpack:ubuntu ]
