@@ -45,13 +45,13 @@ class Constantimpedance: public BaseEMTLoadModel
      *  Set Jacobian values
      *  @param values a 2-d array of Jacobian block for the bus
      */
-    bool setJacobian(gridpack::ComplexType **values);
+    bool setJacobian(gridpack::RealType **values);
 
     /**
      * Initialize load model before calculation
      * @param [output] values - array where initialized load variables should be set
      */
-  void init(gridpack::ComplexType *values);
+  void init(gridpack::RealType *values);
 
     /**
      * Write output from loads to a string.
@@ -98,7 +98,7 @@ class Constantimpedance: public BaseEMTLoadModel
    * @param rows: pointer to matrix block rows
    * @param cols: pointer to matrix block cols
    */
-  void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
+  void matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols);
 
   /**
    * Return vector values from the load model 
@@ -108,7 +108,7 @@ class Constantimpedance: public BaseEMTLoadModel
    * for e.g., the entries in the residual vector from the load
    * object
    */
-  void vectorGetValues(gridpack::ComplexType *values);
+  void vectorGetValues(gridpack::RealType *values);
 
   /**
    * Pass solution vector values to the load object
@@ -118,7 +118,7 @@ class Constantimpedance: public BaseEMTLoadModel
    * to the load object,
    * for e.g., the state vector values for this load
    */
-  void setValues(gridpack::ComplexType *values);
+  void setValues(gridpack::RealType *values);
 
   private:
     // Load parameters

@@ -72,8 +72,8 @@ class EmtFactory
   /**
    * Set events 
    */
-  void setEvents(gridpack::math::DAESolver::EventManagerPtr,
-      gridpack::mapper::GenVectorMap<EmtNetwork>*);
+  void setEvents(gridpack::math::RealDAESolver::EventManagerPtr,
+		 gridpack::mapper::GenVectorMap<EmtNetwork,gridpack::RealType,gridpack::math::RealVector>*);
 
   /** 
    * Reset flags after event is handled

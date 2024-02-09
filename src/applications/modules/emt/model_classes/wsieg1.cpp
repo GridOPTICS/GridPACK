@@ -115,9 +115,9 @@ void Wsieg1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
  * Initialize governor model before calculation
  * @param [output] values - array where initialized governor variables should be set
  */
-void Wsieg1::init(gridpack::ComplexType* xin) 
+void Wsieg1::init(gridpack::RealType* xin) 
 {
-  gridpack::ComplexType *x = xin+offsetb; // governor array starts from this location
+  gridpack::RealType *x = xin+offsetb; // governor array starts from this location
   
   BaseEMTGenModel* gen=getGenerator();
   double dw = gen->getSpeedDeviation();
@@ -191,25 +191,25 @@ void Wsieg1::write(const char* signal, char* string)
  * function to push values from vectors back onto governors
  * @param values array containing governor state variables
 */
-void Wsieg1::setValues(gridpack::ComplexType *val)
+void Wsieg1::setValues(gridpack::RealType *val)
 {
-  gridpack::ComplexType *values = val+offsetb; // governor array starts from this location
+  gridpack::RealType *values = val+offsetb; // governor array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    xLL = real(values[0]);
-    xGV = real(values[1]);
-    xT1 = real(values[2]);
-    xT2 = real(values[3]);
-    xT3 = real(values[4]);
-    xT4 = real(values[5]);
-    xout = real(values[6]);
+    xLL = values[0];
+    xGV = values[1];
+    xT1 = values[2];
+    xT2 = values[3];
+    xT3 = values[4];
+    xT4 = values[5];
+    xout = values[6];
   } else if(p_mode == XDOTVECTOBUS) {
-    dxLL = real(values[0]);
-    dxGV = real(values[1]);
-    dxT1 = real(values[2]);
-    dxT2 = real(values[3]);
-    dxT3 = real(values[4]);
-    dxT4 = real(values[5]);
+    dxLL = values[0];
+    dxGV = values[1];
+    dxT1 = values[2];
+    dxT2 = values[3];
+    dxT3 = values[4];
+    dxT4 = values[5];
   }
 }
 
@@ -217,9 +217,9 @@ void Wsieg1::setValues(gridpack::ComplexType *val)
  * Return the values of the governor vector block
  * @param values: pointer to vector values
  */
-void Wsieg1::vectorGetValues(gridpack::ComplexType *values)
+void Wsieg1::vectorGetValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *f = values+offsetb; // exciter array starts from this location
+  gridpack::RealType *f = values+offsetb; // exciter array starts from this location
 
   int x1_idx = 0;
   int x2_idx = 1;
@@ -277,7 +277,7 @@ void Wsieg1::vectorGetValues(gridpack::ComplexType *values)
  * Set Jacobian block
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool Wsieg1::setJacobian(gridpack::ComplexType **values)
+bool Wsieg1::setJacobian(gridpack::RealType **values)
 {
 
   return true;
@@ -299,7 +299,7 @@ int Wsieg1::matrixNumValues()
    * @param rows: pointer to matrix block rows
    * @param cols: pointer to matrix block cols
    */
-void Wsieg1::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void Wsieg1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
 
@@ -484,7 +484,7 @@ void Wsieg1::setVcomp(double Vcomp)
 /**
  * Update the event function values
  */
-void Wsieg1::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+void Wsieg1::eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues)
 {
   int offset    = getLocalOffset();
   int xLL_idx = offset;
@@ -499,12 +499,12 @@ void Wsieg1::eventFunction(const double&t,gridpack::ComplexType *state,std::vect
   double dw = gen->getSpeedDeviation();
   double uGV;
 
-  xLL  = real(state[xLL_idx]);
-  xGV  = real(state[xGV_idx]);
-  xT1  = real(state[xT1_idx]);
-  xT2  = real(state[xT2_idx]);
-  xT3  = real(state[xT3_idx]);
-  xT4  = real(state[xT4_idx]);
+  xLL  = state[xLL_idx];
+  xGV  = state[xGV_idx];
+  xT1  = state[xT1_idx];
+  xT2  = state[xT2_idx];
+  xT3  = state[xT3_idx];
+  xT4  = state[xT4_idx];
 
   if(iseq_diff[0]) {
     yLL = xLL + T2/T1*K*dw;
@@ -599,7 +599,7 @@ void Wsieg1::resetEventFlags()
 /**
  * Event handler
  */
-void Wsieg1::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Wsieg1::eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state)
 {
   int offset    = getLocalOffset();
   int xLL_idx = offset;
@@ -614,12 +614,12 @@ void Wsieg1::eventHandlerFunction(const bool *triggered, const double& t, gridpa
   double dw = gen->getSpeedDeviation();
   double uGV;
 
-  xLL  = real(state[xLL_idx]);
-  xGV  = real(state[xGV_idx]);
-  xT1  = real(state[xT1_idx]);
-  xT2  = real(state[xT2_idx]);
-  xT3  = real(state[xT3_idx]);
-  xT4  = real(state[xT4_idx]);
+  xLL  = state[xLL_idx];
+  xGV  = state[xGV_idx];
+  xT1  = state[xT1_idx];
+  xT2  = state[xT2_idx];
+  xT3  = state[xT3_idx];
+  xT4  = state[xT4_idx];
 
   if(iseq_diff[0]) {
     yLL = xLL + T2/T1*K*dw;
@@ -674,19 +674,19 @@ void Wsieg1::eventHandlerFunction(const bool *triggered, const double& t, gridpa
 /**
  * Set event
  */
-void Wsieg1::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void Wsieg1::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
-  gridpack::math::DAESolver::EventPtr e(new Wsieg1Event(this));
+  gridpack::math::RealDAESolver::EventPtr e(new Wsieg1Event(this));
 
   eman->add(e);
 }
 
-void Wsieg1Event::p_update(const double& t,gridpack::ComplexType *state)
+void Wsieg1Event::p_update(const double& t,gridpack::RealType *state)
 {
   p_gov->eventFunction(t,state,p_current);
 }
 
-void Wsieg1Event::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Wsieg1Event::p_handle(const bool *triggered, const double& t, gridpack::RealType *state)
 {
   p_gov->eventHandlerFunction(triggered,t,state);
 }

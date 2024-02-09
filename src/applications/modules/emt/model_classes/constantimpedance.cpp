@@ -29,13 +29,13 @@ void Constantimpedance::load(const boost::shared_ptr<gridpack::component::DataCo
  * Initialize load model before calculation
  * @param [output] xin - array where initialized load variables should be set
  */
-void Constantimpedance::init(gridpack::ComplexType* xin)
+void Constantimpedance::init(gridpack::RealType* xin)
 {
   double VD,VQ;
   double Yp,Yq;
   double R,L;
   double Im,Ia;
-  gridpack::ComplexType *x = xin + offsetb;
+  gridpack::RealType *x = xin + offsetb;
 
   VD = p_Vm0*cos(p_Va0);
   VQ = p_Vm0*sin(p_Va0);
@@ -87,18 +87,18 @@ void Constantimpedance::write(const char* signal, char* string)
  * function to push values from vectors back onto loads
  * @param values array containing load state variables
 */
-void Constantimpedance::setValues(gridpack::ComplexType *values)
+void Constantimpedance::setValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *x = values+offsetb; // load array starts from this location
+  gridpack::RealType *x = values+offsetb; // load array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    p_i[0]  = real(x[0]);
-    p_i[1]  = real(x[1]);
-    p_i[2]  = real(x[2]);
+    p_i[0]  = x[0];
+    p_i[1]  = x[1];
+    p_i[2]  = x[2];
   } else if(p_mode == XDOTVECTOBUS) {
-    p_idot[0]  = real(x[0]);
-    p_idot[1]  = real(x[1]);
-    p_idot[2]  = real(x[2]);
+    p_idot[0]  = x[0];
+    p_idot[1]  = x[1];
+    p_idot[2]  = x[2];
   } 
 
 }
@@ -109,9 +109,9 @@ void Constantimpedance::setValues(gridpack::ComplexType *values)
  * @return: false if load does not contribute
  *        vector element
  */
-void Constantimpedance::vectorGetValues(gridpack::ComplexType *values)
+void Constantimpedance::vectorGetValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *f = values+offsetb; // load array starts from this location
+  gridpack::RealType *f = values+offsetb; // load array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
     if(abs(ql) < 1e-6) {// no ql
@@ -175,7 +175,7 @@ int Constantimpedance::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void Constantimpedance::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void Constantimpedance::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
 
@@ -229,7 +229,7 @@ void Constantimpedance::matrixGetValues(int *nvals, gridpack::ComplexType *value
  * Set Jacobian values
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool Constantimpedance::setJacobian(gridpack::ComplexType **values)
+bool Constantimpedance::setJacobian(gridpack::RealType **values)
 {
 			      
   return true;

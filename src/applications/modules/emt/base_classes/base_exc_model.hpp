@@ -54,14 +54,14 @@ public:
    * Set Jacobian block
    * @param values a 2-d array of Jacobian block for the bus
    */
-  virtual bool setJacobian(gridpack::ComplexType **values);
+  virtual bool setJacobian(gridpack::RealType **values);
 
   
   /**
    * Initialize exciter model before calculation
    * @param [output] values - array where initialized exciter variables should be set
    */
-  virtual void init(gridpack::ComplexType *values);
+  virtual void init(gridpack::RealType *values);
   
   /**
    * Write output from exciters to a string.
@@ -117,7 +117,7 @@ public:
    */
   void setInitialFieldVoltage(double fldv) {Efd0 = fldv; }
   
-  virtual void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+  virtual void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
    * Return the number of variables
@@ -145,7 +145,7 @@ public:
    * @param rows: pointer to matrix block rows
    * @param cols: pointer to matrix block cols
    */
-  virtual void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
+  virtual void matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols);
 
 
   /**
@@ -156,7 +156,7 @@ public:
    * for e.g., the entries in the residual vector from the generator
    * object
    */
-  virtual void vectorGetValues(gridpack::ComplexType *values);
+  virtual void vectorGetValues(gridpack::RealType *values);
 
   /**
    * Pass solution vector values to the generator object
@@ -166,7 +166,7 @@ public:
    * to the generator object,
    * for e.g., the state vector values for this generator
    */
-  virtual void setValues(gridpack::ComplexType *values);
+  virtual void setValues(gridpack::RealType *values);
   
   /** 
    * Get the value of the field voltage parameter

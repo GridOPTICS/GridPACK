@@ -68,7 +68,7 @@ void EmtFactory::setTSshift(double shift)
 /** 
  * Add events from buses and branches to the event manager 
 */
-void EmtFactory::setEvents(gridpack::math::DAESolver::EventManagerPtr eman,gridpack::mapper::GenVectorMap<EmtNetwork> *vecmap)
+void EmtFactory::setEvents(gridpack::math::RealDAESolver::EventManagerPtr eman,gridpack::mapper::GenVectorMap<EmtNetwork,gridpack::RealType,gridpack::math::RealVector> *vecmap)
 {
   int numBuses = p_network->numBuses();
   int numBranches = p_network->numBranches();

@@ -30,12 +30,12 @@ void BaseEMTExcModel::load(const boost::shared_ptr<gridpack::component::DataColl
 {
 }
 
-bool BaseEMTExcModel::setJacobian(gridpack::ComplexType **values)
+bool BaseEMTExcModel::setJacobian(gridpack::RealType **values)
 {
   return false;
 }
 
-void BaseEMTExcModel::init(gridpack::ComplexType *values)
+void BaseEMTExcModel::init(gridpack::RealType *values)
 {
 }
 
@@ -52,7 +52,7 @@ void BaseEMTExcModel::write(const char* signal, char* string)
 /**
  * Set Event
  */
-void BaseEMTExcModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void BaseEMTExcModel::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
 
 }
@@ -62,16 +62,16 @@ int BaseEMTExcModel::matrixNumValues()
   return 0;
 }
 
-void BaseEMTExcModel::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void BaseEMTExcModel::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   *nvals = 0;
 }
 
-void BaseEMTExcModel::vectorGetValues(gridpack::ComplexType *values)
+void BaseEMTExcModel::vectorGetValues(gridpack::RealType *values)
 {
 }
 
-void BaseEMTExcModel::setValues(gridpack::ComplexType *values)
+void BaseEMTExcModel::setValues(gridpack::RealType *values)
 {
 }
 

@@ -206,7 +206,7 @@ void Emt::setup()
 
   
   /* Create mapper for vector */
-  p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork>(emt_network);
+  p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork,gridpack::RealType,gridpack::math::RealVector>(emt_network);
 
   /* Set up global locations for buses and branches
      These indices are used during setting values in
@@ -215,7 +215,7 @@ void Emt::setup()
   p_factory->setGlobalLocations();
 
   /* Create mapper for matrix */
-  p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork>(emt_network);
+  p_MatMapper = new gridpack::mapper::GenMatrixMap<EmtNetwork,gridpack::RealType,gridpack::math::RealMatrix>(emt_network);
 
   /* Jacobian matrix */
   p_J = p_MatMapper->createMatrix();
@@ -228,14 +228,14 @@ void Emt::setup()
   // Set up solver
   int lsize = p_X->localSize();
 
-  DAESolver::JacobianBuilder daejacobian = boost::ref(*this);
-  DAESolver::FunctionBuilder daefunction = boost::ref(*this);
-  DAESolver::EventManagerPtr eman(new EmtEventManager(this));
+  RealDAESolver::JacobianBuilder daejacobian = boost::ref(*this);
+  RealDAESolver::FunctionBuilder daefunction = boost::ref(*this);
+  RealDAESolver::EventManagerPtr eman(new EmtEventManager(this));
 
   p_factory->setEvents(eman,p_VecMapper);
 
-  gridpack::math::Matrix* mat_ptr = p_J.get();
-  p_daesolver = new DAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);
+  gridpack::math::RealMatrix* mat_ptr = p_J.get();
+  p_daesolver = new RealDAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);
   p_daesolver->configure(p_configcursor);
 
   // Get simulation time length

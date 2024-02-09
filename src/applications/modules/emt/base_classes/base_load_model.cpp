@@ -24,7 +24,7 @@ BaseEMTLoadModel::~BaseEMTLoadModel(void)
  * Set Jacobian values
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool BaseEMTLoadModel::setJacobian(gridpack::ComplexType **values)
+bool BaseEMTLoadModel::setJacobian(gridpack::RealType **values)
 {
   return false;
 }
@@ -55,7 +55,7 @@ void BaseEMTLoadModel::load(const boost::shared_ptr<gridpack::component::DataCol
  * Initialize load model before calculation
  * @param [output] values - array where initialized load variables should be set
  */
-void BaseEMTLoadModel::init(gridpack::ComplexType *values)
+void BaseEMTLoadModel::init(gridpack::RealType *values)
 {
 }
 
@@ -120,7 +120,7 @@ int BaseEMTLoadModel::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void BaseEMTLoadModel::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void BaseEMTLoadModel::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   *nvals = 0;
 }
@@ -134,7 +134,7 @@ void BaseEMTLoadModel::matrixGetValues(int *nvals, gridpack::ComplexType *values
  * for e.g., the entries in the residual vector from the load
  * object
    */
-void BaseEMTLoadModel::vectorGetValues(gridpack::ComplexType *values)
+void BaseEMTLoadModel::vectorGetValues(gridpack::RealType *values)
 {
 }
 
@@ -146,7 +146,7 @@ void BaseEMTLoadModel::vectorGetValues(gridpack::ComplexType *values)
  * to the load object,
  * for e.g., the state vector values for this load
  */
-void BaseEMTLoadModel::setValues(gridpack::ComplexType *values)
+void BaseEMTLoadModel::setValues(gridpack::RealType *values)
 {
 }
 

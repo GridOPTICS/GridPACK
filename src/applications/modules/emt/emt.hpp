@@ -27,12 +27,12 @@ public:
   
   // Typedef for some objects
   
-  typedef gridpack::math::DAESolver DAESolver;
-  typedef DAESolver::VectorType VectorType;
-  typedef DAESolver::Event Event;
-  typedef DAESolver::EventPtr EventPtr;
-  typedef DAESolver::EventManager EventManager;
-  typedef DAESolver::EventManagerPtr EventManagerPtr;
+  typedef gridpack::math::RealDAESolver RealDAESolver;
+  typedef RealDAESolver::VectorType VectorType;
+  typedef RealDAESolver::Event Event;
+  typedef RealDAESolver::EventPtr EventPtr;
+  typedef RealDAESolver::EventManager EventManager;
+  typedef RealDAESolver::EventManagerPtr EventManagerPtr;
   
   /**
      Basic Constructor
@@ -81,9 +81,9 @@ public:
 
   /// Build the DAE Jacobian
   void operator() (const double& time, 
-		   const gridpack::math::Vector& X, 
-		   const gridpack::math::Vector& Xdot, 
-		   const double& shift, gridpack::math::Matrix& J)
+		   const gridpack::math::RealVector& X, 
+		   const gridpack::math::RealVector& Xdot, 
+		   const double& shift, gridpack::math::RealMatrix& J)
   {
     p_factory->setTSshift(shift);
     // Push current values in X vector back into network components
@@ -108,8 +108,8 @@ public:
 
   /// Build the DAE RHS function
   void operator() (const double& time, 
-		   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-		   gridpack::math::Vector& F)
+		   const gridpack::math::RealVector& X, const gridpack::math::RealVector& Xdot, 
+		   gridpack::math::RealVector& F)
   {
     p_factory->setTime(time);
 
@@ -134,7 +134,7 @@ public:
   }
 
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff
-  void  operator() (const gridpack::math::Vector& X, gridpack::math::Vector& F)
+  void  operator() (const gridpack::math::RealVector& X, gridpack::math::RealVector& F)
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
@@ -152,7 +152,7 @@ public:
   }
 
   // Build the Jacobian for the nonlinear solver at tfaulton or tfaultoff
-  void  operator() (const gridpack::math::Vector& X,gridpack::math::Matrix& J)
+  void  operator() (const gridpack::math::RealVector& X,gridpack::math::RealMatrix& J)
   {
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
@@ -200,15 +200,15 @@ public:
   EmtFactory *p_factory;
 
   // Mappers for creating vectors and matrices
-  gridpack::mapper::GenVectorMap<EmtNetwork> *p_VecMapper;
-  gridpack::mapper::GenMatrixMap<EmtNetwork> *p_MatMapper;
+  gridpack::mapper::GenVectorMap<EmtNetwork,gridpack::RealType,gridpack::math::RealVector> *p_VecMapper;
+  gridpack::mapper::GenMatrixMap<EmtNetwork,gridpack::RealType,gridpack::math::RealMatrix> *p_MatMapper;
 
-  boost::shared_ptr<gridpack::math::Vector> p_X; // Solution vector
-  boost::shared_ptr<gridpack::math::Vector> p_R; // Residual vector
-  boost::shared_ptr<gridpack::math::Matrix> p_J; // Jacobian matrix
+  boost::shared_ptr<gridpack::math::RealVector> p_X; // Solution vector
+  boost::shared_ptr<gridpack::math::RealVector> p_R; // Residual vector
+  boost::shared_ptr<gridpack::math::RealMatrix> p_J; // Jacobian matrix
 
   // DAE solver
-  gridpack::math::DAESolver *p_daesolver;
+  gridpack::math::RealDAESolver *p_daesolver;
 
   /// These class needs to see inside Emt
   friend class EmtTimedFaultEvent;
