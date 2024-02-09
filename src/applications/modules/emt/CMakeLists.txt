@@ -85,10 +85,10 @@ install(FILES
 
 install(FILES
   model_classes/gencls.hpp
-#  model_classes/genrou.hpp
+  model_classes/genrou.hpp
   model_classes/constantimpedance.hpp
-#  model_classes/exdc1.hpp
-#  model_classes/wsieg1.hpp
+  model_classes/exdc1.hpp
+  model_classes/wsieg1.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )
 
