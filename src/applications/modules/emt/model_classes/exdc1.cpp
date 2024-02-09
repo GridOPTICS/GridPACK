@@ -96,9 +96,9 @@ void Exdc1::load(const boost::shared_ptr<gridpack::component::DataCollection> da
  * Initialize exciter model before calculation
  * @param [output] values - array where initialized exciter variables should be set
  */
-void Exdc1::init(gridpack::ComplexType* xin) 
+void Exdc1::init(gridpack::RealType* xin) 
 {
-  gridpack::ComplexType *x = xin+offsetb; // exciter array starts from this location
+  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
   double Ec = sqrt(VD*VD + VQ*VQ);
   double yLL;
   double Vf=0.0;
@@ -155,22 +155,22 @@ void Exdc1::write(const char* signal, char* string)
  * function to push values from vectors back onto exciters
  * @param values array containing exciter state variables
 */
-void Exdc1::setValues(gridpack::ComplexType *val)
+void Exdc1::setValues(gridpack::RealType *val)
 {
-  gridpack::ComplexType *values = val+offsetb; // exciter array starts from this location
+  gridpack::RealType *values = val+offsetb; // exciter array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    Vmeas = real(values[0]);
-    xLL = real(values[1]);
-    VR = real(values[2]);
-    Efd   = real(values[3]);
-    xf   = real(values[4]);
+    Vmeas = values[0];
+    xLL   = values[1];
+    VR    = values[2];
+    Efd   = values[3];
+    xf    = values[4];
   } else if(p_mode == XDOTVECTOBUS) {
-    dVmeas = real(values[0]);
-    dxLL = real(values[1]);
-    dVR = real(values[2]);
-    dEfd   = real(values[3]);
-    dxf   = real(values[4]);
+    dVmeas = values[0];
+    dxLL   = values[1];
+    dVR    = values[2];
+    dEfd   = values[3];
+    dxf    = values[4];
   }
 }
 
@@ -180,9 +180,9 @@ void Exdc1::setValues(gridpack::ComplexType *val)
  * @return: false if generator does not contribute
  *        vector element
  */
-void Exdc1::vectorGetValues(gridpack::ComplexType *values)
+void Exdc1::vectorGetValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *f = values+offsetb; // exciter array starts from this location
+  gridpack::RealType *f = values+offsetb; // exciter array starts from this location
 
   double Ec,yLL,Vf,SE=0.0;
 
@@ -235,7 +235,7 @@ void Exdc1::vectorGetValues(gridpack::ComplexType *values)
  * Set Jacobian block
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool Exdc1::setJacobian(gridpack::ComplexType **values)
+bool Exdc1::setJacobian(gridpack::RealType **values)
 {
   return false;
 }
@@ -265,7 +265,7 @@ int Exdc1::matrixNumValues()
    * @param rows: pointer to matrix block rows
    * @param cols: pointer to matrix block cols
    */
-void Exdc1::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void Exdc1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
 
@@ -443,7 +443,7 @@ bool Exdc1::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,d
 /**
  * Update the event function values
  */
-void Exdc1::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+void Exdc1::eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues)
 {
   int offset    = getLocalOffset();
   int Vmeas_idx = offset;
@@ -452,11 +452,11 @@ void Exdc1::eventFunction(const double&t,gridpack::ComplexType *state,std::vecto
   int Efd_idx   = offset+3;
   int xf_idx    = offset+4;
 
-  Vmeas = real(state[Vmeas_idx]);
-  xLL   = real(state[xLL_idx]);
-  VR    = real(state[VR_idx]);
-  Efd   = real(state[Efd_idx]);
-  xf    = real(state[xf_idx]);
+  Vmeas = state[Vmeas_idx];
+  xLL   = state[xLL_idx];
+  VR    = state[VR_idx];
+  Efd   = state[Efd_idx];
+  xf    = state[xf_idx];
 
   /* Only considering limits on VR */
   double Vf,yLL,dVR_dt;
@@ -517,7 +517,7 @@ void Exdc1::resetEventFlags()
 /**
  * Event handler
  */
-void Exdc1::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Exdc1::eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state)
 {
   int offset    = getLocalOffset();
   int Vmeas_idx = offset;
@@ -526,11 +526,11 @@ void Exdc1::eventHandlerFunction(const bool *triggered, const double& t, gridpac
   int Efd_idx   = offset+3;
   int xf_idx    = offset+4;
 
-  Vmeas = real(state[Vmeas_idx]);
-  xLL   = real(state[xLL_idx]);
-  VR    = real(state[VR_idx]);
-  Efd   = real(state[Efd_idx]);
-  xf    = real(state[xf_idx]);
+  Vmeas = state[Vmeas_idx];
+  xLL   = state[xLL_idx];
+  VR    = state[VR_idx];
+  Efd   = state[Efd_idx];
+  xf    = state[xf_idx];
 
   /* Only considering limits on VR */
   double Vf,yLL,dVR_dt;
@@ -566,19 +566,19 @@ void Exdc1::eventHandlerFunction(const bool *triggered, const double& t, gridpac
 /**
  * Set event
  */
-void Exdc1::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void Exdc1::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
-  gridpack::math::DAESolver::EventPtr e(new Exdc1Event(this));
+  gridpack::math::RealDAESolver::EventPtr e(new Exdc1Event(this));
 
   eman->add(e);
 }
 
-void Exdc1Event::p_update(const double& t,gridpack::ComplexType *state)
+void Exdc1Event::p_update(const double& t,gridpack::RealType *state)
 {
   p_exc->eventFunction(t,state,p_current);
 }
 
-void Exdc1Event::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Exdc1Event::p_handle(const bool *triggered, const double& t, gridpack::RealType *state)
 {
   p_exc->eventHandlerFunction(triggered,t,state);
 }

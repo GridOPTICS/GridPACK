@@ -61,10 +61,10 @@ class Fault: public gridpack::component::BaseComponent
      *  Set Jacobian values
      *  @param values a 2-d array of Jacobian block for the bus
      */
-    bool setJacobian(gridpack::ComplexType **values);
+    bool setJacobian(gridpack::RealType **values);
 
 
-    void init(gridpack::ComplexType *values);
+    void init(gridpack::RealType *values);
 
     /**
      * Write output from loads to a string.
@@ -111,7 +111,7 @@ class Fault: public gridpack::component::BaseComponent
    * @param rows: pointer to matrix block rows
    * @param cols: pointer to matrix block cols
    */
-  void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
+  void matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols);
 
   /**
    * Return vector values from the fault model 
@@ -121,7 +121,7 @@ class Fault: public gridpack::component::BaseComponent
    * for e.g., the entries in the residual vector from the fault
    * object
    */
-  void vectorGetValues(gridpack::ComplexType *values);
+  void vectorGetValues(gridpack::RealType *values);
 
   /**
    * Pass solution vector values to the fault object
@@ -131,7 +131,7 @@ class Fault: public gridpack::component::BaseComponent
    * to the fault object,
    * for e.g., the state vector values for this fault
    */
-  void setValues(gridpack::ComplexType *values);
+  void setValues(gridpack::RealType *values);
 
   void setBusLocalOffset(int offset) {p_busoffset = offset;}
 
@@ -153,7 +153,7 @@ class Fault: public gridpack::component::BaseComponent
 
   void resetEventFlags(void) {}
 
-  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+  void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
    * Copy over voltage from the bus
@@ -186,12 +186,12 @@ class Fault: public gridpack::component::BaseComponent
   /**
    * Update the event function values
    */
-  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
+  void eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues);
 
   /**
    * Event handler function 
    */
-  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state);
 
   private:
   
@@ -223,12 +223,12 @@ class Fault: public gridpack::component::BaseComponent
 // goes off.
 // -------------------------------------------------------------
 class FaultEvent
-  : public gridpack::math::DAESolver::Event
+  : public gridpack::math::RealDAESolver::Event
 {
 public:
 
   /// Default constructor.
-  FaultEvent(Fault *fault): gridpack::math::DAESolver::Event(2),p_fault(fault)
+  FaultEvent(Fault *fault): gridpack::math::RealDAESolver::Event(2),p_fault(fault)
   {
     // A fault requires that the DAE solver be reset. 
     std::fill(p_term.begin(), p_term.end(), false);
@@ -245,9 +245,9 @@ public:
 protected:
   Fault *p_fault;
 
-  void p_update(const double& t, gridpack::ComplexType *state);
+  void p_update(const double& t, gridpack::RealType *state);
 
-  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state);
+  void p_handle(const bool *triggered, const double& t, gridpack::RealType *state);
 
 };
 

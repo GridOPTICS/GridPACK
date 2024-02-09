@@ -62,12 +62,12 @@ void Genrou::load(const boost::shared_ptr<gridpack::component::DataCollection> d
  * Initialize generator model before calculation
  * @param [output] xin - array where initialized generator variables should be set
  */
-void Genrou::init(gridpack::ComplexType* xin)
+void Genrou::init(gridpack::RealType* xin)
 {
   double IGD,IGQ; // Machine currents in cartesian coordinates
   double Pg, Qg;  // Generator real and reactive power
   double dw0=0.0;  // Initial machine speed deviation
-  gridpack::ComplexType *x = xin+offsetb; // generator array starts from this location
+  gridpack::RealType *x = xin+offsetb; // generator array starts from this location
 
   Pg = pg/mbase;
   Qg = qg/mbase;
@@ -194,36 +194,36 @@ void Genrou::write(const char* signal, char* string)
  * function to push values from vectors back onto generators
  * @param values array containing generator state variables
 */
-void Genrou::setValues(gridpack::ComplexType *values)
+void Genrou::setValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *x = values+offsetb; // generator array starts from this location
+  gridpack::RealType *x = values+offsetb; // generator array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    psid  = real(x[0]);
-    psiq  = real(x[1]);
-    psi0  = real(x[2]);
-    Eqp   = real(x[3]);
-    psi1d   = real(x[4]);
-    Edp     = real(x[5]);
-    psi2q = real(x[6]);
-    delta = real(x[7]);
-    dw = real(x[8]);
-    iabc[0] = real(x[9]);
-    iabc[1] = real(x[10]);
-    iabc[2] = real(x[11]);
+    psid  = x[0];
+    psiq  = x[1];
+    psi0  = x[2];
+    Eqp   = x[3];
+    psi1d   = x[4];
+    Edp     = x[5];
+    psi2q = x[6];
+    delta = x[7];
+    dw = x[8];
+    iabc[0] = x[9];
+    iabc[1] = x[10];
+    iabc[2] = x[11];
   } else if(p_mode == XDOTVECTOBUS) {
-    dpsid  = real(x[0]);
-    dpsiq  = real(x[1]);
-    dpsi0  = real(x[2]);
-    dEqp   = real(x[3]);
-    dpsi1d   = real(x[4]);
-    dEdp     = real(x[5]);
-    dpsi2q = real(x[6]);
-    ddelta = real(x[7]);
-    ddw = real(x[8]);
-    diabc[0] = real(x[9]);
-    diabc[1] = real(x[10]);
-    diabc[2] = real(x[11]);
+    dpsid  = x[0];
+    dpsiq  = x[1];
+    dpsi0  = x[2];
+    dEqp   = x[3];
+    dpsi1d   = x[4];
+    dEdp     = x[5];
+    dpsi2q = x[6];
+    ddelta = x[7];
+    ddw = x[8];
+    diabc[0] = x[9];
+    diabc[1] = x[10];
+    diabc[2] = x[11];
   } 
 }
 
@@ -233,9 +233,9 @@ void Genrou::setValues(gridpack::ComplexType *values)
  * @return: false if generator does not contribute
  *        vector element
  */
-void Genrou::vectorGetValues(gridpack::ComplexType *values)
+void Genrou::vectorGetValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *f = values+offsetb; // generator array starts from this location
+  gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
     double theta = delta - PI/2.0;
@@ -372,7 +372,7 @@ int Genrou::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void Genrou::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
   // Set up some indices
@@ -751,7 +751,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *row
  * Set Jacobian values
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool Genrou::setJacobian(gridpack::ComplexType **values)
+bool Genrou::setJacobian(gridpack::RealType **values)
 {
   return true;
 }

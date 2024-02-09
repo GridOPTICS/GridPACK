@@ -44,13 +44,13 @@ public:
    * Set Jacobian block
    * @param values a 2-d array of Jacobian block for the bus
    */
-  bool setJacobian(gridpack::ComplexType **values);
+  bool setJacobian(gridpack::RealType **values);
   
   /**
    * Initialize governor model before calculation
    * @param [output] values - array where initialized governor variables should be set
    */
-  void init(gridpack::ComplexType *values);
+  void init(gridpack::RealType *values);
   
   /**
    * Write output from governors to a string.
@@ -75,13 +75,13 @@ public:
    * function to push values from vectors back onto governors
    * @param values array containing governor state variables
    */
-  void setValues(gridpack::ComplexType*);
+  void setValues(gridpack::RealType*);
   
   /**
    * Return the values of the governor vector block
    * @param values: pointer to vector values
    */
-  void vectorGetValues(gridpack::ComplexType *values);
+  void vectorGetValues(gridpack::RealType *values);
 
   /**
    * Get number of matrix values contributed by generator
@@ -96,7 +96,7 @@ public:
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-  void matrixGetValues(int *nvals,gridpack::ComplexType *values,
+  void matrixGetValues(int *nvals,gridpack::RealType *values,
       int *rows, int *cols);
 
   /**
@@ -136,17 +136,17 @@ public:
     /**
    * Set Event 
    */
-  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+  void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
    * Update the event function values
    */
-  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
+  void eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues);
 
   /**
    * Event handler function 
    */
-  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state);
 
   /**
    * Updated limiter flags after event has occured. Only called when the network is resolved
@@ -192,12 +192,12 @@ private:
 
 // Class for defining events for ESST1a model
 class Wsieg1Event
-  :public gridpack::math::DAESolver::Event
+  :public gridpack::math::RealDAESolver::Event
 {
 public:
 
   // Default constructor
-  Wsieg1Event(Wsieg1 *gov):gridpack::math::DAESolver::Event(4),p_gov(gov)
+  Wsieg1Event(Wsieg1 *gov):gridpack::math::RealDAESolver::Event(4),p_gov(gov)
   {
     std:fill(p_term.begin(),p_term.end(),false);
 
@@ -210,9 +210,9 @@ public:
 protected:
   Wsieg1 *p_gov;
 
-  void p_update(const double& t, gridpack::ComplexType *state);
+  void p_update(const double& t, gridpack::RealType *state);
 
-  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state);
+  void p_handle(const bool *triggered, const double& t, gridpack::RealType *state);
 };
 
 #endif
