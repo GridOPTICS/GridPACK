@@ -46,13 +46,13 @@ class Genrou: public BaseEMTGenModel
      *  Set Jacobian values
      *  @param values a 2-d array of Jacobian block for the bus
      */
-    bool setJacobian(gridpack::ComplexType **values);
+    bool setJacobian(gridpack::RealType **values);
 
     /**
      * Initialize generator model before calculation
      * @param [output] values - array where initialized generator variables should be set
      */
-  void init(gridpack::ComplexType *values);
+  void init(gridpack::RealType *values);
 
     /**
      * Write output from generators to a string.
@@ -116,7 +116,7 @@ class Genrou: public BaseEMTGenModel
    * @param rows: pointer to matrix block rows
    * @param cols: pointer to matrix block cols
    */
-  void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
+  void matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols);
 
   /**
    * Return vector values from the generator model 
@@ -126,7 +126,7 @@ class Genrou: public BaseEMTGenModel
    * for e.g., the entries in the residual vector from the generator
    * object
    */
-  void vectorGetValues(gridpack::ComplexType *values);
+  void vectorGetValues(gridpack::RealType *values);
 
   /**
    * Pass solution vector values to the generator object
@@ -136,7 +136,7 @@ class Genrou: public BaseEMTGenModel
    * to the generator object,
    * for e.g., the state vector values for this generator
    */
-  void setValues(gridpack::ComplexType *values);
+  void setValues(gridpack::RealType *values);
 
   /**
    * Returns the initial field voltage (Efd(t0))

@@ -46,13 +46,13 @@ public:
    * Set Jacobian block
    * @param values a 2-d array of Jacobian block for the bus
    */
-  bool setJacobian(gridpack::ComplexType **values);
+  bool setJacobian(gridpack::RealType **values);
   
   /**
    * Initialize exciter model before calculation
    * @param [output] values - array where initialized exciter variables should be set
    */
-  void init(gridpack::ComplexType *values);
+  void init(gridpack::RealType *values);
   
   /**
    * Write output from exciters to a string.
@@ -85,7 +85,7 @@ public:
    * @param rows: pointer to matrix block rows
    * @param cols: pointer to matrix block cols
    */
-  void matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols);
+  void matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols);
 
   /**
    * Return vector values from the generator model 
@@ -95,7 +95,7 @@ public:
    * for e.g., the entries in the residual vector from the generator
    * object
    */
-  void vectorGetValues(gridpack::ComplexType *values);
+  void vectorGetValues(gridpack::RealType *values);
 
   /**
    * Pass solution vector values to the generator object
@@ -105,7 +105,7 @@ public:
    * to the generator object,
    * for e.g., the state vector values for this generator
    */
-  void setValues(gridpack::ComplexType *values);
+  void setValues(gridpack::RealType *values);
 
   /** 
    * Get the value of the field voltage parameter
@@ -131,17 +131,17 @@ public:
   /**
    * Set Event 
    */
-  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+  void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
    * Update the event function values
    */
-  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
+  void eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues);
 
   /**
    * Event handler function 
    */
-  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state);
 
   /**
    * Updated limiter flags after event has occured. Only called when the network is resolved
@@ -191,12 +191,12 @@ private:
 
 // Class for defining events for Exdc1 model
 class Exdc1Event
-  :public gridpack::math::DAESolver::Event
+  :public gridpack::math::RealDAESolver::Event
 {
 public:
 
   // Default constructor
-  Exdc1Event(Exdc1 *exc):gridpack::math::DAESolver::Event(2),p_exc(exc)
+  Exdc1Event(Exdc1 *exc):gridpack::math::RealDAESolver::Event(2),p_exc(exc)
   {
     std:fill(p_term.begin(),p_term.end(),false);
 
@@ -209,9 +209,9 @@ public:
 protected:
   Exdc1 *p_exc;
 
-  void p_update(const double& t, gridpack::ComplexType *state);
+  void p_update(const double& t, gridpack::RealType *state);
 
-  void p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state);
+  void p_handle(const bool *triggered, const double& t, gridpack::RealType *state);
 };
 
 

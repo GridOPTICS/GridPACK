@@ -16,9 +16,9 @@ Fault::~Fault(void)
 {
 }
 
-void Fault::init(gridpack::ComplexType* xin)
+void Fault::init(gridpack::RealType* xin)
 {
-  gridpack::ComplexType *x = xin + offsetb;
+  gridpack::RealType *x = xin + offsetb;
 
   x[0] = ifault[0] = 0.0;
   x[1] = ifault[1] = 0.0;
@@ -52,14 +52,14 @@ void Fault::write(const char* signal, char* string)
  * function to push values from vectors back onto faults
  * @param values array containing fault state variables
 */
-void Fault::setValues(gridpack::ComplexType *values)
+void Fault::setValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *x = values+offsetb; // load array starts from this location
+  gridpack::RealType *x = values+offsetb; // load array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    ifault[0]  = real(x[0]);
-    ifault[1]  = real(x[1]);
-    ifault[2]  = real(x[2]);
+    ifault[0]  = x[0];
+    ifault[1]  = x[1];
+    ifault[2]  = x[2];
   } 
 }
 
@@ -69,9 +69,9 @@ void Fault::setValues(gridpack::ComplexType *values)
  * @return: false if fault does not contribute
  *        vector element
  */
-void Fault::vectorGetValues(gridpack::ComplexType *values)
+void Fault::vectorGetValues(gridpack::RealType *values)
 {
-  gridpack::ComplexType *f = values+offsetb; // fault array starts from this location
+  gridpack::RealType *f = values+offsetb; // fault array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
     f[0] = ifault[0];
@@ -144,7 +144,7 @@ int Fault::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void Fault::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows, int *cols)
+void Fault::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
 
@@ -242,7 +242,7 @@ void Fault::matrixGetValues(int *nvals, gridpack::ComplexType *values, int *rows
  * Set Jacobian values
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool Fault::setJacobian(gridpack::ComplexType **values)
+bool Fault::setJacobian(gridpack::RealType **values)
 {
 			      
   return true;
@@ -271,9 +271,9 @@ void Fault::setparams(double faultontime, double faultofftime, std::string type,
   
 }
 
-void Fault::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void Fault::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
-  gridpack::math::DAESolver::EventPtr e(new FaultEvent(this));
+  gridpack::math::RealDAESolver::EventPtr e(new FaultEvent(this));
 
   eman->add(e);
 
@@ -282,13 +282,13 @@ void Fault::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
 /**
  * Update the event function values
  */
-void Fault::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+void Fault::eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues)
 {
   int offset    = getLocalOffset();
 
-  ifault[0] = real(state[offset]);
-  ifault[1] = real(state[offset+1]);
-  ifault[2] = real(state[offset+2]);
+  ifault[0] = state[offset];
+  ifault[1] = state[offset+1];
+  ifault[2] = state[offset+2];
 
   evalues[0] = ton - t;
   evalues[1] = toff - t;
@@ -298,13 +298,13 @@ void Fault::eventFunction(const double&t,gridpack::ComplexType *state,std::vecto
 /**
  * Event handler
  */
-void Fault::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Fault::eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state)
 {
   int offset    = getLocalOffset();
 
-  ifault[0] = real(state[offset]);
-  ifault[1] = real(state[offset+1]);
-  ifault[2] = real(state[offset+2]);
+  ifault[0] = state[offset];
+  ifault[1] = state[offset+1];
+  ifault[2] = state[offset+2];
 
   if(triggered[0]) {
     faulton = 1;
@@ -315,12 +315,12 @@ void Fault::eventHandlerFunction(const bool *triggered, const double& t, gridpac
   }
 }
 
-void FaultEvent::p_update(const double& t,gridpack::ComplexType *state)
+void FaultEvent::p_update(const double& t,gridpack::RealType *state)
 {
   p_fault->eventFunction(t,state,p_current);
 }
 
-void FaultEvent::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void FaultEvent::p_handle(const bool *triggered, const double& t, gridpack::RealType *state)
 {
   p_fault->eventHandlerFunction(triggered,t,state);
 }

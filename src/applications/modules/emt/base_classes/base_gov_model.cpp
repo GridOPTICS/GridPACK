@@ -44,7 +44,7 @@ void BaseEMTGovModel::load(const boost::shared_ptr<gridpack::component::DataColl
  * Initialize governor model before calculation
  * @param [output] values - array where initialized governor variables should be set
  */
-void BaseEMTGovModel::init(gridpack::ComplexType *values)
+void BaseEMTGovModel::init(gridpack::RealType *values)
 {
 }
 
@@ -75,7 +75,7 @@ void BaseEMTGovModel::write(const char* signal, char* string)
  * Set Jacobian block
  * @param values a 2-d array of Jacobian block for the bus
  */
-bool BaseEMTGovModel::setJacobian(gridpack::ComplexType **values)
+bool BaseEMTGovModel::setJacobian(gridpack::RealType **values)
 {
   return false;
 }
@@ -86,7 +86,7 @@ bool BaseEMTGovModel::setJacobian(gridpack::ComplexType **values)
  * @return: false if governor does not contribute
  *        vector element
  */
-void BaseEMTGovModel::vectorGetValues(gridpack::ComplexType *values)
+void BaseEMTGovModel::vectorGetValues(gridpack::RealType *values)
 {
 }
 
@@ -95,7 +95,7 @@ void BaseEMTGovModel::vectorGetValues(gridpack::ComplexType *values)
  * function to push values from vectors back onto governors
  * @param values array containing governor state variables
 */
-void BaseEMTGovModel::setValues(gridpack::ComplexType *values)
+void BaseEMTGovModel::setValues(gridpack::RealType *values)
 {
 }
 
@@ -115,7 +115,7 @@ int BaseEMTGovModel::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void BaseEMTGovModel::matrixGetValues(int *nvals,gridpack::ComplexType *values,
+void BaseEMTGovModel::matrixGetValues(int *nvals,gridpack::RealType *values,
     int *rows, int *cols)
 {
 }
@@ -169,6 +169,6 @@ void BaseEMTGovModel::setVcomp(double Vcomp)
 /**
  * Set Event
  */
-void BaseEMTGovModel::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void BaseEMTGovModel::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
 }

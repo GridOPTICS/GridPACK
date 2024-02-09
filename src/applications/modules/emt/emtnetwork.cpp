@@ -211,7 +211,7 @@ void EmtBus::getVoltageGlobalLocation(int* startgloballoc) const
  * Add events
  * @eman - EventManager pointer
  */
-void EmtBus::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
+void EmtBus::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
   int i;
   bool has_ex=false,has_gov=false;
@@ -772,7 +772,7 @@ int EmtBus::matrixNumValues()
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
  */
-void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
+void EmtBus::matrixGetValues(int *nvals, gridpack::RealType *values,
     int *rows, int *cols)
 {
   int ctr=0;
@@ -924,11 +924,11 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::ComplexType *values,
   *nvals = ctr;
 }
 
-void EmtBus::matrixGetValues(gridpack::math::Matrix &matrix)
+void EmtBus::matrixGetValues(gridpack::math::RealMatrix &matrix)
 {
   int i,j;
   int row_idx[9],col_idx[9];
-  gridpack::ComplexType val[9];
+  gridpack::RealType val[9];
   
   if(p_isolated) {
     row_idx[0] = p_vecidx[0];
@@ -1028,11 +1028,11 @@ int EmtBus::vectorNumElements() const
  * @param values array of element values
  * @param idx array of element indices
  */
-void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
+void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 {
   bool has_ex=false, has_gv=false;
   int i;
-  gridpack::ComplexType *x,*f;
+  gridpack::RealType *x,*f;
   for(i=0; i < p_nvar; i++) {
     idx[i] = p_vecidx[i];
   }
@@ -1274,15 +1274,15 @@ void EmtBus::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
  * Set network elements based on values in vector
  * @param array containing vector values
  */
-void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
+void EmtBus::vectorSetElementValues(gridpack::RealType *values)
 {
   int i;
   double va,vb,vc;
   
   if(p_mode == XVECTOBUS) {
-    *p_vptr     = va = real(values[0]);
-    *(p_vptr+1) = vb = real(values[1]);
-    *(p_vptr+2) = vc = real(values[2]);
+    *p_vptr     = va = values[0];
+    *(p_vptr+1) = vb = values[1];
+    *(p_vptr+2) = vc = values[2];
 
     if(p_isolated) return;
 
@@ -1323,9 +1323,9 @@ void EmtBus::vectorSetElementValues(gridpack::ComplexType *values)
 
     
   } else if(p_mode == XDOTVECTOBUS) {
-    p_dvdt[0] = real(values[0]);
-    p_dvdt[1] = real(values[1]);
-    p_dvdt[2] = real(values[2]);
+    p_dvdt[0] = values[0];
+    p_dvdt[1] = values[1];
+    p_dvdt[2] = values[2];
 
     if(p_isolated) return;
 
@@ -1693,7 +1693,7 @@ int EmtBranch::matrixNumValues()
  * @param rows list of row indices
  * @param cols list of column indices
  */
-void EmtBranch::matrixGetValues(int *nvals,gridpack::ComplexType *values,
+void EmtBranch::matrixGetValues(int *nvals,gridpack::RealType *values,
     int *rows, int *cols)
 {
   int ctr=0;
@@ -1747,7 +1747,7 @@ void EmtBranch::matrixGetValues(int *nvals,gridpack::ComplexType *values,
   *nvals = ctr;
 }
 
-void EmtBranch::matrixGetValues(gridpack::math::Matrix &matrix)
+void EmtBranch::matrixGetValues(gridpack::math::RealMatrix &matrix)
 {
 
 }
@@ -1801,14 +1801,14 @@ int EmtBranch::vectorNumElements() const
  * @param values array of element values
  * @param idx array of element indices
  */
-void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
+void EmtBranch::vectorGetElementValues(gridpack::RealType *values, int *idx)
 {
   int i;
   for(i=0; i < p_nvar; i++) {
     idx[i] = p_vecidx[i];
   }
   if(p_mode == INIT_X) { /* Initialization of values */
-    gridpack::ComplexType *x = values;
+    gridpack::RealType *x = values;
     for(i=0; i < p_nparlines; i++) {
       double *ibr = p_ibr + 3*i;
       ibr[0] = ibr[1] = ibr[2] = 0.0;
@@ -1846,7 +1846,7 @@ void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
       x[2] = ibr[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
     }
   } else if(p_mode == RESIDUAL_EVAL) {
-    gridpack::ComplexType *f = values;
+    gridpack::RealType *f = values;
     for(i=0; i < p_nparlines; i++) {
       double *ibr = p_ibr + 3*i;
       if(!p_status[i]) continue;
@@ -1892,20 +1892,20 @@ void EmtBranch::vectorGetElementValues(gridpack::ComplexType *values, int *idx)
  * Set network elements based on values in vector
  * @param array containing vector values
  */
-void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
+void EmtBranch::vectorSetElementValues(gridpack::RealType *values)
 {
   int i,l=0;
   double *ibr    = p_ibr;
   double *iptr   = p_iptr;
   double *dibrdt = p_didt;
-  gridpack::ComplexType *x = values;
+  gridpack::RealType *x = values;
 
   if(p_mode == XVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
       if(p_status[i]) {
-	iptr[0] = ibr[0] = real(x[0]);
-	iptr[1] = ibr[1] = real(x[1]);
-	iptr[2] = ibr[2] = real(x[2]);
+	iptr[0] = ibr[0] = x[0];
+	iptr[1] = ibr[1] = x[1];
+	iptr[2] = ibr[2] = x[2];
 
 	iptr += 3;
 	x += 3;
@@ -1915,9 +1915,9 @@ void EmtBranch::vectorSetElementValues(gridpack::ComplexType *values)
   } else if(p_mode == XDOTVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
       if(p_status[i]) {
-	dibrdt[0] = real(x[0]);
-	dibrdt[1] = real(x[1]);
-	dibrdt[2] = real(x[2]);
+	dibrdt[0] = x[0];
+	dibrdt[1] = x[1];
+	dibrdt[2] = x[2];
 
 	x += 3;
       }
