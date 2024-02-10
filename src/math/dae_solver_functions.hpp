@@ -40,12 +40,19 @@ struct DAEBuilder {
                         const double& shift, MatrixType& J)> 
   Jacobian;
 
-  /// Functions that compute the RHS
+  /// Functions that compute the implicit function
   typedef 
   boost::function<void (const double& time, 
                         const VectorType& x, const VectorType& xdot, 
                         VectorType& F)> 
   Function;
+
+  /// Functions that compute the rhs function
+  typedef 
+  boost::function<void (const double& time, 
+                        const VectorType& x, 
+                        VectorType& F)> 
+  RHSFunction;
 
   /// Functions that are called before and after a time step
   typedef  boost::function<void (const double& time)> StepFunction;

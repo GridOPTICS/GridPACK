@@ -49,6 +49,7 @@ public:
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
   typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
@@ -84,6 +85,22 @@ public:
     if (eman) p_eventv.resize(eman->size());
   }
 
+  PETScDAESolverImplementation(const parallel::Communicator& comm, 
+                               const int local_size,
+			       MatrixType* J,
+                               JacobianBuilder& jbuilder,
+                               FunctionBuilder& fbuilder,
+			       RHSFunctionBuilder& rbuilder,
+                               EventManagerPtr eman)
+    : DAESolverImplementation<T, I>(comm, local_size, J, jbuilder, fbuilder, rbuilder,eman),
+      PETScConfigurable(this->communicator()),
+      p_ts(),
+      p_petsc_J(NULL),
+      p_eventv(),
+      p_termFlag(false)
+  {
+    if (eman) p_eventv.resize(eman->size());
+  }
 
   /// Destructor
   ~PETScDAESolverImplementation(void)
@@ -307,7 +324,7 @@ protected:
   }
 
 
-  /// Routine to assemble RHS that is sent to PETSc
+  /// Routine to assemble IFunction that is sent to PETSc
   static PetscErrorCode FormIFunction(TS ts, PetscReal t, Vec x, Vec xdot, 
                                       Vec F, void *dummy)
   {
@@ -325,6 +342,22 @@ protected:
     return ierr;
   }
 
+  /// Routine to assemble RHSFunction that is sent to PETSc
+  static PetscErrorCode FormRHSFunction(TS ts, PetscReal t, Vec x, 
+                                      Vec F, void *dummy)
+  {
+    PetscErrorCode ierr(0);
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    boost::scoped_ptr<VectorType> 
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
+      ftmp(new VectorType(new PETScVectorImplementation<T, I>(F, false)));
+
+    (solver->p_RHSbuilder)(t, *xtmp, *ftmp);
+    return ierr;
+  }
 
   /// Routine called after each time step
   static PetscErrorCode PostTimeStep(TS ts)

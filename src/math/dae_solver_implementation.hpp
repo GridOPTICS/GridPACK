@@ -45,6 +45,7 @@ public:
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
   typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
@@ -81,6 +82,23 @@ public:
   {
   }
 
+    DAESolverImplementation(const parallel::Communicator& comm, 
+                          const int local_size,
+			  MatrixType* J,
+                          JacobianBuilder& jbuilder,
+                          FunctionBuilder& fbuilder,
+			  RHSFunctionBuilder& rbuilder,
+                          EventManagerPtr eman)
+    : parallel::Distributed(comm),
+      utility::Configurable("DAESolver"),
+      utility::Uncopyable(),
+      p_J(J),
+      p_J_allocated(false),
+      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder), p_RHSbuilder(rbuilder),
+      p_eventManager(eman),
+      p_doAdaptive(true)
+  {
+  }
 
   /// Destructor
   ~DAESolverImplementation(void)
@@ -96,8 +114,11 @@ protected:
   /// Is p_J locally allocated?
   bool p_J_allocated;
 
-  /// A function to build the RHS vector
+  /// A function to build the IFunction vector
   FunctionBuilder p_Fbuilder;
+
+  /// A function to build the RHS Function vector
+  RHSFunctionBuilder p_RHSbuilder;
 
   /// A function to build the Jacobian
   JacobianBuilder p_Jbuilder;
