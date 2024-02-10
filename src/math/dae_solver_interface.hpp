@@ -43,6 +43,7 @@ public:
   typedef typename DAEBuilder<T, I>::MatrixType MatrixType;
   typedef typename DAEBuilder<T, I>::Jacobian JacobianBuilder;
   typedef typename DAEBuilder<T, I>::Function FunctionBuilder;
+  typedef typename DAEBuilder<T, I>::RHSFunction RHSFunctionBuilder;
   typedef typename DAEBuilder<T, I>::StepFunction StepFunction;
   typedef typename gridpack::math::DAEEventManagerT<T, I> EventManager;
   typedef typename boost::shared_ptr<EventManager> EventManagerPtr;
