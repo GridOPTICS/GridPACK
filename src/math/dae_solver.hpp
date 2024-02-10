@@ -46,6 +46,7 @@ public:
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
   typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
   typedef typename DAESolverInterface<T, I>::Event Event;
@@ -76,6 +77,15 @@ public:
              JacobianBuilder& jbuilder,
              FunctionBuilder& fbuilder,
              EventManagerPtr eman);
+
+  DAESolverT(const parallel::Communicator& comm, 
+             const int local_size,
+	     MatrixType* J,
+             JacobianBuilder& jbuilder,
+             FunctionBuilder& fbuilder,
+	     RHSFunctionBuilder& rbuilder,
+             EventManagerPtr eman);
+
 
   /// Constructor used if no events are necessary
   /** 
