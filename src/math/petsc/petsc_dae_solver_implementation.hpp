@@ -234,6 +234,18 @@ protected:
     }
   }
 
+  /// Get time step
+  double p_gettimestep()
+  {
+    PetscErrorCode ierr(0);
+    try {
+      double dt;
+      ierr = TSGetTimeStep(p_ts,&dt);CHKERRXX(ierr);
+      return dt;
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Solve the system
   void p_solve(double& maxtime, int& maxsteps)

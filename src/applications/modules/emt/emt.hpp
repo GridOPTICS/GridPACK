@@ -85,6 +85,8 @@ public:
 		   const gridpack::math::RealVector& Xdot, 
 		   const double& shift, gridpack::math::RealMatrix& J)
   {
+    double dt = p_daesolver->gettimestep();
+    
     p_factory->setTSshift(shift);
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
