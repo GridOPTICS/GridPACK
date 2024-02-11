@@ -133,6 +133,14 @@ public:
     p_impl->restartstep();
   }
 
+  /**
+   * gettimestep - returns the current time-step
+   * @param [output] dt - current time step
+   **/
+  double gettimestep()
+  {
+    return p_impl->gettimestep();
+  }
 
   /// Solve the system to when @c end_time or @c maxsteps is exceeded
   /** 
@@ -182,7 +190,12 @@ protected:
     p_impl->restartstep();
   }
                        
-
+  /// Get time step
+  double p_gettimestep()
+  {
+    return p_impl->gettimestep();
+  }
+  
   /// Solve the system (specialized)
   void p_solve(double& maxtime, int& maxsteps)
   {
