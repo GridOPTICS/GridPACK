@@ -46,7 +46,8 @@ public:
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
   typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::PreStepFunction PreStepFunction;
+  typedef typename DAESolverInterface<T, I>::PostStepFunction PostStepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
   /// Default constructor.
@@ -124,10 +125,10 @@ protected:
   JacobianBuilder p_Jbuilder;
 
   /// An optional function to call before each time step
-  StepFunction p_preStepFunc;
+  PreStepFunction p_preStepFunc;
 
   /// An optional function to call after each time step
-  StepFunction p_postStepFunc;
+  PostStepFunction p_postStepFunc;
 
   /// An optional event manager
   EventManagerPtr p_eventManager;
@@ -144,13 +145,13 @@ protected:
   }
 
   /// Set a function to call before each time step (specialized)
-  void p_preStep(StepFunction& f)
+  void p_preStep(PreStepFunction& f)
   {
     p_preStepFunc = f;
   }
 
   /// Set a function to call after each time step (specialized)
-  void p_postStep(StepFunction& f)
+  void p_postStep(PostStepFunction& f)
   {
     p_postStepFunc = f;
   }

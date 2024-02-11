@@ -54,8 +54,16 @@ struct DAEBuilder {
                         VectorType& F)> 
   RHSFunction;
 
-  /// Functions that are called before and after a time step
-  typedef  boost::function<void (const double& time)> StepFunction;
+  /// Functions that are called before a time step
+  typedef  boost::function<void (const double& time,
+				 const double& timestep,
+				 const VectorType& x)>
+  PreStepFunction;
+
+  /// Functions that are called after a time step
+  typedef  boost::function<void (const double& time,
+				 const VectorType& x)>
+  PostStepFunction;
 
 };
 

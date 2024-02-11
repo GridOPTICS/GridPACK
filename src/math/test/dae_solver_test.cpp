@@ -87,13 +87,13 @@ public:
                            VectorType& F) = 0;
 
   /// Report the time before the timestep
-  static void reportPreTime(const double time)
+  static void reportPreTime(const double time,const double timestep,const VectorType& X)
   {
     std::cerr << "Pre  time step: the time is now " << time << std::endl;
   }
 
   /// Report the time after the timestep
-  static void reportPostTime(const double time)
+  static void reportPostTime(const double time, const VectorType& X)
   {
     std::cerr << "Post time step: the time is now " << time << std::endl;
   }
@@ -109,16 +109,18 @@ public:
   {
     TheSolverType::JacobianBuilder jbuilder = boost::ref(*this);
     TheSolverType::FunctionBuilder fbuilder = boost::ref(*this);
-    TheSolverType::StepFunction sfunc;
+    TheSolverType::PreStepFunction  prefunc;
+    TheSolverType::PostStepFunction postfunc;
+
     TheSolverType::EventManagerPtr eman;
     
     TheSolverType solver(comm, p_size, jbuilder, fbuilder, eman);
     solver.configure(conf);
 
-    sfunc = &reportPreTime;
-    solver.preStep(sfunc);
-    sfunc = &reportPostTime;
-    solver.postStep(sfunc);
+    prefunc = &reportPreTime;
+    solver.preStep(prefunc);
+    postfunc = &reportPostTime;
+    solver.postStep(postfunc);
 
     std::auto_ptr<VectorType> x(initial(comm));
     

@@ -44,7 +44,8 @@ public:
   typedef typename DAEBuilder<T, I>::Jacobian JacobianBuilder;
   typedef typename DAEBuilder<T, I>::Function FunctionBuilder;
   typedef typename DAEBuilder<T, I>::RHSFunction RHSFunctionBuilder;
-  typedef typename DAEBuilder<T, I>::StepFunction StepFunction;
+  typedef typename DAEBuilder<T, I>::PreStepFunction PreStepFunction;
+  typedef typename DAEBuilder<T, I>::PostStepFunction PostStepFunction;
   typedef typename gridpack::math::DAEEventManagerT<T, I> EventManager;
   typedef typename boost::shared_ptr<EventManager> EventManagerPtr;
   typedef typename EventManager::Event Event;
@@ -113,13 +114,13 @@ public:
   }
 
   /// Set a function to call before each time step
-  void preStep(StepFunction& f)
+  void preStep(PreStepFunction& f)
   {
     this->p_preStep(f);
   }
 
   /// Set a function to call before each time step
-  void postStep(StepFunction& f)
+  void postStep(PostStepFunction& f)
   {
     this->p_postStep(f);
   }
@@ -153,10 +154,10 @@ protected:
   virtual void p_solve(double& maxtime, int& maxsteps) = 0;
 
   /// Set a function to call before each time step (specialized)
-  virtual void p_preStep(StepFunction& f) = 0;
+  virtual void p_preStep(PreStepFunction& f) = 0;
 
   /// Set a function to call after each time step (specialized)
-  virtual void p_postStep(StepFunction& f) = 0;
+  virtual void p_postStep(PostStepFunction& f) = 0;
 
   /// Has the solver been terminated by an event (specialized)
   virtual bool p_terminated(void) const = 0;

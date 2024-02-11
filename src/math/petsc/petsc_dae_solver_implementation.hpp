@@ -50,7 +50,8 @@ public:
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
   typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::PreStepFunction PreStepFunction;
+  typedef typename DAESolverInterface<T, I>::PostStepFunction PostStepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
   /// Default constructor.
@@ -385,8 +386,13 @@ protected:
 
     if (solver->p_postStepFunc) {
       PetscReal thetime;
+      Vec       x;
       ierr = TSGetTime(ts, &thetime); CHKERRXX(ierr);
-      solver->p_postStepFunc(thetime);
+      ierr = TSGetSolution(ts,&x);CHKERRXX(ierr);
+
+      boost::scoped_ptr<VectorType> 
+	xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false)));
+      solver->p_postStepFunc(thetime, *xtmp);
     }
     return ierr;
   }
@@ -404,9 +410,15 @@ protected:
       (PETScDAESolverImplementation *)dummy;
 
     if (solver->p_preStepFunc) {
-      PetscReal thetime;
+      PetscReal thetime, thetimestep;
+      Vec       x;
       ierr = TSGetTime(ts, &thetime); CHKERRXX(ierr);
-      solver->p_preStepFunc(thetime);
+      ierr = TSGetTimeStep(ts, &thetimestep); CHKERRXX(ierr);
+      ierr = TSGetSolution(ts,&x);CHKERRXX(ierr);
+
+      boost::scoped_ptr<VectorType> 
+	xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false)));
+      solver->p_preStepFunc(thetime, thetimestep, *xtmp);
     }
     return ierr;
   }
