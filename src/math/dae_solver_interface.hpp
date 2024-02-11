@@ -85,6 +85,12 @@ public:
     this->p_restartstep();
   }
 
+  /* return time step */
+  double gettimestep()
+  {
+    return this->p_gettimestep();
+  }
+
 
   /// Solve the system to when @c end_time or @c maxsteps is exceeded
   /** 
@@ -140,6 +146,9 @@ protected:
   /// Restart step
   virtual void p_restartstep() = 0;
 
+  /// Get time step
+  virtual double p_gettimestep() = 0;
+  
   /// Solve the system (specialized)
   virtual void p_solve(double& maxtime, int& maxsteps) = 0;
 
