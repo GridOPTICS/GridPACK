@@ -55,6 +55,8 @@ then
    -D Boost_DIR:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib/cmake/Boost-1.78.0 \
    -D Boost_LIBRARIES:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib \   
    -D Boost_INCLUDE_DIRS:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/include \
+   -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
+   -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE \
    -D PETSC_DIR:PATH=${GP_EXT_DEPS}/petsc/install_for_gridpack \                  
    -D MPI_CXX_COMPILER:STRING='mpicxx' \     
    -D MPI_C_COMPILER:STRING='mpicc' \                                         
