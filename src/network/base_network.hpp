@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2024-10-14 08:23:58 d3g096
+ * @date   2025-01-29 11:04:38 d3g096
  * 
  * @brief  
  * 
@@ -263,7 +263,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public parallel::Distributed
+  : public NetworkTopologyInterface
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -286,7 +286,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : parallel::Distributed(comm)
+  : NetworkTopologyInterface(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;
