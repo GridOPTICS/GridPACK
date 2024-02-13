@@ -8,7 +8,7 @@
  * @file   sexs.cpp
  * @author Shrirang Abhyankar
  * @Added:   Nov 6, 2022
- * @Modified by Shuangshuang Jin: Jan 18, 2024
+ * @Modified by Shuangshuang Jin: Feb 13, 2024
  * 
  * @brief  
  * 
@@ -21,10 +21,10 @@
 
 Sexs::Sexs(void)
 {
-  x1 = 0.0;
-  dx1 = 0.0;
-  x2 = 0.0;
-  dx2 = 0.0;
+  Vmeas = 0.0;
+  dVmeas = 0.0;
+  xLL = 0.0;
+  dxLL = 0.0;
   TA_OVER_TB = 0.0;
   TB = 0.0;
   K = 0.0;
@@ -82,8 +82,67 @@ void Sexs::init(gridpack::ComplexType* xin)
 {
   gridpack::ComplexType *x = xin+offsetb; // exciter array starts from this location
   
-  x[0] = x1;
-  x[1] = x2;
+  double yLL;
+
+  // Efd is already set by the generator model
+  Efd = Efd0;
+
+  Vmeas = Ec;
+
+  yLL = Efd / K;
+
+  Vref = yLL + Vmeas - Vs;
+
+  if(TB != 0 && TA != 0) xLL = (1 - TA/TB)*(Vref - Vmeas + Vs);
+  else xLL = Vref - Vmeas + Vs;
+
+  /* // exdc1 example
+  // Efd is already set by the generator model
+  Efd = Efd0;
+  
+  Vmeas    = Ec;
+  xf       = -KF/TF*Efd;
+
+  if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+  VR = (SE + KE)*Efd;
+
+  yLL     = VR/KA;
+
+  Vf   = xf + KF/TF*Efd;
+  Vref = yLL + Vmeas + Vf;
+
+  if(TB != 0 && TC != 0) xLL = (1 - TC/TB)*(Vref - Vmeas - Vf);
+  else xLL = Vref - Vmeas - Vf;
+
+  x[0] = Vmeas;
+  x[1] = xLL;
+  x[2] = VR;
+  x[3] = Efd;
+  x[4] = xf;
+
+  // esst1a example
+
+  Ec = sqrt(VD*VD + VQ*VQ);
+  Vfd = Klr*(LadIfd - Ilr); 
+  Vmeas    = Ec;
+  xf       = -Kf/Tf*Efd0;
+  Va       = Efd0 + Vfd;
+  yLL2     = Va/Ka;
+  yLL1     = yLL2;
+  if(iseq_diff[2]) xLL2    = (1.0 - Tc1/Tb1)*yLL2;
+  else xLL2 = yLL2;
+  Vref     = yLL1 + Vmeas + Vf;
+  if(iseq_diff[1]) xLL1    = (1.0 - Tc/Tb)*(Vref - Vmeas - Vf);
+  else xLL1 = Vref - Vmeas - Vf;
+
+  values[0] = Vmeas;
+  values[1] = xLL1;
+  values[2] = xLL2;
+  values[3] = Va;
+  values[4] = xf;*/
+
+  x[0] = Vmeas;
+  x[1] = xLL;
 }
 
 /**
@@ -114,7 +173,7 @@ void Sexs::init(gridpack::ComplexType* xin)
   // Note: Vm is same as Ec
   Vref = Vm + u1 - Vs;   // Voltage reference initial value
 
-}*/
+}
 
 /**
  * Write output from exciters to a string.
@@ -138,6 +197,20 @@ void Sexs::write(const char* signal, char* string)
 {
 }
 
+void Sexs::setVstab(double Vstab)
+{
+  Vs = Vstab;
+}
+
+/**
+ * Set the initial field voltage (at t = tstart) for the exciter
+ * @param fldv value of the field voltage
+ */
+void Sexs::setInitialFieldVoltage(double fldv)
+{
+  Efd0 = fldv;
+}
+
 /**
  * Set the internal values of the voltage magnitude and phase angle. Need this
  * function to push values from vectors back onto exciters
@@ -148,11 +221,11 @@ void Sexs::setValues(gridpack::ComplexType *val)
   gridpack::ComplexType *values = val+offsetb; // exciter array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    x1 = real(values[0]);
-    x2 = real(values[1]);
+    Vmeas = real(values[0]);
+    xLL = real(values[1]);
   } else if(p_mode == XDOTVECTOBUS) {
-    dx1 = real(values[0]);
-    dx2 = real(values[1]);
+    dVmeas = real(values[0]);
+    dxLL = real(values[1]);
   }
 }
 
@@ -166,6 +239,31 @@ void Sexs::vectorGetValues(gridpack::ComplexType *values)
 {
   gridpack::ComplexType *f = values+offsetb; // exciter array starts from this location
 
+  double EC, yLL;
+
+  double vabc[3],vdq0[3];
+
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  double delta = getGenerator()->getAngle();
+  
+  abc2dq0(vabc,p_time,delta,vdq0);
+  double Vd, Vq;
+  Vd = vdq0[0]; Vq = vdq0[1];
+
+  if(p_mode == RESIDUAL_EVAL) {
+    // Vmeas equation
+    f[0] = -Vmeas + Ec;
+
+    // xLL equation
+    if(TB != 0 && TA != 0) {
+      f[1] = (-xLL + (1 - TA/TB)*(Vref - Vmeas + Vs))/TB - dxLL;
+      yLL = xLL + TA/TB*(Vref - Vmeas + Vs);
+    } else {
+      f[1] = -xLL + Vref - Vmeas + Vs;
+      yLL = xLL;
+    }
+  }
   /*double Ec,yLL,Vf,SE=0.0;
 
   double vabc[3],vdq0[3];
@@ -272,20 +370,17 @@ bool Sexs::setJacobian(gridpack::ComplexType **values)
 
 /**
    Non-zero pattern of the Jacobian (x denotes non-zero entry)
-         Vmeas    xLL    VR    Efd    xf    delta    va    vb    vc
- eq.0 |    x                                  x      x     x     x
- eq.1 |    x      x             x     x
- eq.2 |    x      x      x      x     x
- eq.3 |                  x      x
- eq.4 |                         x     x
+         Vmeas    xLL     delta    va    vb    vc
+ eq.0 |    x                x      x     x     x
+ eq.1 |    x      x          
 
- Number of non-zeros = 5 + 4 + 5 + 2 + 2 = 18 
+ Number of non-zeros = 5 + 2 = 7 
  * Get number of matrix values contributed by exciter
  * @return number of matrix values
  */
 int Sexs::matrixNumValues()
 {
-  return 18;
+  return 7;
 }
 
 /**

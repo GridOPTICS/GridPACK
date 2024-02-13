@@ -163,6 +163,18 @@ class Sexs : public BaseEMTExcModel
      */
     void resetEventFlags(void);
 
+    /**
+     * Set the initial voltage stabilizer signal
+     * @param stabilizing signal input
+    **/
+    void setVstab(double vstab);
+
+    /**
+     * Set the initial field voltage (at t = tstart) for the exciter
+     * @param fldv value of the field voltage
+     */
+    void setInitialFieldVoltage(double fldv);
+
   private:
 
     // Internal variables
@@ -172,12 +184,12 @@ class Sexs : public BaseEMTExcModel
     double TA_OVER_TB, TA, TB, K, TE, EMIN, EMAX;
 
     // SEXS state variables
-    double x1; // First integrator
-    double x2; // Second integrator
+    double Vmeas; // First integrator
+    double xLL; // Second integrator
 
     // SEXS derivatives
-    double dx1;
-    double dx2;
+    double dVmeas;
+    double dxLL;
 
     // Model inputs
     double Ec; // Terminal voltage
@@ -186,6 +198,9 @@ class Sexs : public BaseEMTExcModel
   
     // Model outputs 
     double Efd;     // Field Voltage
+
+    // Initial Field Voltage (at t= 0)
+    double Efd0;
 
 };
 

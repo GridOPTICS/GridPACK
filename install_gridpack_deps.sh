@@ -111,7 +111,7 @@ then
   # Install PETSc
   echo "Installing PETSc 3.16.4"
     
-  ./configure --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake --prefix=${PWD}/install_for_gridpack --scalar-type=complex --with-shared-libraries=1 --download-f2cblaslapack=1
+  ./configure --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-cmake --prefix=${PWD}/install_for_gridpack --scalar-type=complex --with-shared-libraries=1 
 
   # Build PETSc
   echo "Building PETSc 3.16.4"
