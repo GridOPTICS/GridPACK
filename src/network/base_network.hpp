@@ -7,19 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
  * @date   2025-01-29 11:39:28 d3g096
-=======
- * @date   2024-02-13 08:31:49 d3g096
->>>>>>> Start a network topology query interface and implement a couple of methods
-=======
- * @date   2024-03-13 07:40:15 d3g096
->>>>>>> Implement network load/gen/storage query thru HADREC and Python
-=======
- * @date   2024-04-18 14:00:57 d3g096
->>>>>>> Add bus and branch connectivity methods to analytics
  * 
  * @brief  
  * 
@@ -275,7 +263,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public parallel::Distributed
+  : public NetworkTopologyInterface
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -298,7 +286,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : parallel::Distributed(comm)
+  : NetworkTopologyInterface(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;
@@ -1251,14 +1239,7 @@ void partition(void)
   for (size_t i=0; i<nbus; i++) {
     getBus(i)->setData(getBusData(i));
   }
-<<<<<<< HEAD
-<<<<<<< HEAD
   nbranch = p_branches.size();
-=======
->>>>>>> Modified routines to get number of generators, loads, etc. so that they only
-=======
-  nbranch = p_branches.size();
->>>>>>> Fixed a bug in initializing analytics interface and added calls to powerflow
   for (size_t i=0; i<nbranch; i++) {
     getBranch(i)->setData(getBranchData(i));
   }
@@ -2584,94 +2565,6 @@ void broadcastNetworkData(int idx)
   boost::mpi::broadcast(comm, p_network_data, idx);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-/// Get the number of generators on the network
-/**
- * collective
- *
- *
- * @return number of generators on the entire network
- */
-int numGenerators(void)
-{
-  int result(0);
-  const int nBus(p_buses.size());
-  
-  for (int i = 0; i < nBus; ++i) {
-    if (p_buses[i].p_activeBus) {
-      result += p_buses[i].p_bus->numGenerators();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-/// Get the number of loads on the network
-/**
- * collective
- *
- * @return number of loads on the entire network
- */
-int numLoads(void)
-{
-  int result(0);
-  const int nBus(p_buses.size());
-  
-  for (int i = 0; i < nBus; ++i) {
-    if (p_buses[i].p_activeBus) {
-      result += p_buses[i].p_bus->numLoads();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-/// Get the number of storage units on the network
-/**
- * collective
- *
- * @return number of storage units on the entire network
- */
-int numStorage(void)
-{
-  int result(0);
-  const int nBus(p_buses.size());
-  
-  for (int i = 0; i < nBus; ++i) {
-    if (p_buses[i].p_activeBus) {
-      result += p_buses[i].p_bus->numStorage();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-/// Get the number of lines in the network
-/**
- * collective
- *
- * @return number of lines the entire network
- */
-int numLines(void)
-{
-  int result(0);
-  const int nBranch(p_branches.size());
-  
-  for (int i = 0; i < nBranch; ++i) {
-    if (p_branches[i].p_activeBranch) {
-      result += p_branches[i].p_branch->numLines();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-  
->>>>>>> Implement network load/gen/storage query thru HADREC and Python
-=======
->>>>>>> Cleaned up network analytics implementation and added query functions to
 protected:
 
 /**
