@@ -48,6 +48,7 @@
   </Powerflow>
   <EMT>
     <generatorParameters> case2.dyr </generatorParameters>
+    <machineIntegrationType> EXPLICIT </machineIntegrationType>
     <simulationTime>0.1</simulationTime>
     <timeStep>0.00005</timeStep>
     <Events>
