@@ -166,6 +166,15 @@ void Emt::setup()
 
   p_configcursor = p_config->getCursor("Configuration.EMT");
 
+  p_emtmachineintegrationtype = IMPLICIT;
+
+  
+  // Get machine integration algorithm
+  std::string macinttype;
+  macinttype = p_configcursor->get("machineIntegrationType","");
+
+  if(macinttype == "EXPLICIT") p_emtmachineintegrationtype = EXPLICIT;
+
   // Read generator data
   std::string filename;
   gridpack::parser::PTI23_parser<EmtNetwork> parser(emt_network);
@@ -187,6 +196,9 @@ void Emt::setup()
   /* Load data from Data Collection objects to Bus and Branch components */
   p_factory->load();
 
+  /* Set integration type for machines */
+  p_factory->setMachineIntegrationType(p_emtmachineintegrationtype);
+  
   /* Set up connectivity information */
   p_factory->setComponents();
 
@@ -230,6 +242,8 @@ void Emt::setup()
 
   RealDAESolver::JacobianBuilder daejacobian = boost::ref(*this);
   RealDAESolver::FunctionBuilder daefunction = boost::ref(*this);
+  RealDAESolver::PreStepFunction prestepfunction = boost::ref(*this);
+  RealDAESolver::PostStepFunction poststepfunction = boost::ref(*this);
   RealDAESolver::EventManagerPtr eman(new EmtEventManager(this));
 
   p_factory->setEvents(eman,p_VecMapper);
@@ -237,6 +251,9 @@ void Emt::setup()
   gridpack::math::RealMatrix* mat_ptr = p_J.get();
   p_daesolver = new RealDAESolver(p_comm,lsize,mat_ptr,daejacobian,daefunction, eman);
   p_daesolver->configure(p_configcursor);
+  p_daesolver->preStep(prestepfunction);
+  p_daesolver->postStep(poststepfunction);
+  
 
   // Get simulation time length
   double t(0.0),tstep,tmax;
