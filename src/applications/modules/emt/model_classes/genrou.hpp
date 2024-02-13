@@ -184,6 +184,9 @@ class Genrou: public BaseEMTGenModel
   double idq0[3]; // terminal current in dq0 reference frame
   double vabc[3]; // terminal voltage in abc reference frame
 
+  // Is the flux sensitive to speed? (0 or 1)
+  int flux_speed_sensitivity;
+  
   // Generator variables and their derivatives
   double psid,psiq,psi0; 
   double psi1d,psi2q,Edp,Eqp,delta,dw;
