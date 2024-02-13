@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2023-10-25 08:28:44 d3g096
+ * @date   2024-04-17 09:16:12 d3g096
  * 
  * @brief  
  * 
@@ -19,6 +19,7 @@
 #define _hadrec_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include <gridpack/network/network_topology_interface.hpp>
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
@@ -44,6 +45,7 @@ struct HADRECAction
 
 
 class HADRECAppModule
+  : public gridpack::network::NetworkTopologyInterface
 {
   public:
     /**
@@ -379,6 +381,13 @@ class HADRECAppModule
    bool getState(int bus_id, std::string dev_id, std::string device,
        std::string name, double *value);
 
+  /// Network query: Get the number of buses
+  int totalBuses(void);
+
+  /// Network query: Get the number of branches
+  int totalBranches(void);
+
+
   private:
    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
 	boost::shared_ptr<gridpack::powerflow::PFNetwork> pf_network;
@@ -387,8 +396,6 @@ class HADRECAppModule
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullApp> ds_app_sptr;
 	
-   gridpack::parallel::Communicator p_comm;
-
     int t_total;
 	int t_config;
 	

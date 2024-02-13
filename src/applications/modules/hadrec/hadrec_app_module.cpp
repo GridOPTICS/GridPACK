@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2023-10-25 08:29:55 d3g096
+ * @date   2024-04-17 09:16:00 d3g096
  * 
  * @brief  
  * 
@@ -18,13 +18,15 @@
 #include "hadrec_app_module.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/math/math.hpp"
+#include <gridpack/utilities/exception.hpp>
 #include <vector>
 
 /**
  * Basic constructor
  */
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
-  : config_sptr(new gridpack::utility::Configuration())
+  : gridpack::network::NetworkTopologyInterface(),
+    config_sptr(new gridpack::utility::Configuration())
 {
 	bconfig_sptr_set = false;
 	p_PFuseNonLinear = false;
@@ -50,9 +52,6 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     //t_total = timer->createCategory("Dynamic Simulation: Total Application");
     //timer->start(t_total);
 
-    gridpack::parallel::Communicator world;
-	//world.reset(new gridpack::parallel::Communicator() );
-
     // read configuration file 
     t_config = timer->createCategory("Dynamic Simulation: Config");
     timer->start(t_config);
@@ -65,9 +64,9 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
 	
 	if (!bconfig_sptr_set){
 		if (inputfile) {
-			config_sptr->open(inputfile, world);
+                  config_sptr->open(inputfile, this->communicator());
 		} else {
-			config_sptr->open("input.xml",world);
+                  config_sptr->open("input.xml", this->communicator());
 		}
 		bconfig_sptr_set = true;
 	}
@@ -79,7 +78,7 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     bool useNonLinear = false;
     useNonLinear = cursor->get("UseNonLinear", useNonLinear);
 	
-    pf_network.reset(new gridpack::powerflow::PFNetwork(world));
+    pf_network.reset(new gridpack::powerflow::PFNetwork(this->communicator()));
 
     pf_app_sptr.reset(new gridpack::powerflow::PFAppModule()) ;
 	
@@ -105,11 +104,9 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
 	
     // setup dynamic simulation network
    
-    ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(world));
+    ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(this->communicator()));
 	//pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     //  gridpack::dynamic_simulation::DSFullBranch>(ds_network);
-    p_comm = world;
-	
 }
 
 /**
@@ -123,9 +120,6 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu_withFlag(
     //t_total = timer->createCategory("Dynamic Simulation: Total Application");
     //timer->start(t_total);
 
-    gridpack::parallel::Communicator world;
-	//world.reset(new gridpack::parallel::Communicator() );
-
     // read configuration file 
     t_config = timer->createCategory("Dynamic Simulation: Config");
     timer->start(t_config);
@@ -138,9 +132,9 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu_withFlag(
 	
 	if (!bconfig_sptr_set){
 		if (inputfile) {
-			config_sptr->open(inputfile, world);
+                  config_sptr->open(inputfile, this->communicator());
 		} else {
-			config_sptr->open("input.xml",world);
+                  config_sptr->open("input.xml",this->communicator());
 		}
 		bconfig_sptr_set = true;
 	}
@@ -152,7 +146,7 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu_withFlag(
     bool useNonLinear = false;
     useNonLinear = cursor->get("UseNonLinear", useNonLinear);
 	
-    pf_network.reset(new gridpack::powerflow::PFNetwork(world));
+    pf_network.reset(new gridpack::powerflow::PFNetwork(this->communicator()));
 
     pf_app_sptr.reset(new gridpack::powerflow::PFAppModule()) ;
 	
@@ -180,11 +174,9 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu_withFlag(
 	
     // setup dynamic simulation network
    
-    ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(world));
+    ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(this->communicator()));
 	//pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     //  gridpack::dynamic_simulation::DSFullBranch>(ds_network);
-    p_comm = world;
-	
 	return pf_succ_flag;
 	
 }
@@ -200,9 +192,6 @@ void gridpack::hadrec::HADRECAppModule::readPowerFlowData(
     //t_total = timer->createCategory("Dynamic Simulation: Total Application");
     //timer->start(t_total);
 
-    gridpack::parallel::Communicator world;
-	//world.reset(new gridpack::parallel::Communicator() );
-
     // read configuration file 
     t_config = timer->createCategory("Dynamic Simulation: Config");
     timer->start(t_config);
@@ -215,9 +204,9 @@ void gridpack::hadrec::HADRECAppModule::readPowerFlowData(
 	
 	if (!bconfig_sptr_set){
 		if (inputfile) {
-			config_sptr->open(inputfile, world);
+			config_sptr->open(inputfile, this->communicator());
 		} else {
-			config_sptr->open("input.xml",world);
+			config_sptr->open("input.xml",this->communicator());
 		}
 		bconfig_sptr_set = true;
 	}
@@ -229,7 +218,7 @@ void gridpack::hadrec::HADRECAppModule::readPowerFlowData(
     //bool useNonLinear = false;
     p_PFuseNonLinear = cursor->get("UseNonLinear", p_PFuseNonLinear);
 	
-    pf_network.reset(new gridpack::powerflow::PFNetwork(world));
+    pf_network.reset(new gridpack::powerflow::PFNetwork(this->communicator()));
 
     pf_app_sptr.reset(new gridpack::powerflow::PFAppModule()) ;
 	
@@ -243,11 +232,9 @@ void gridpack::hadrec::HADRECAppModule::readPowerFlowData(
 	
 	// setup dynamic simulation network
    
-    ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(world));
+    ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(this->communicator()));
 	//pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     //  gridpack::dynamic_simulation::DSFullBranch>(ds_network);
-    p_comm = world;
-	
 }
 
 /**
@@ -907,3 +894,36 @@ bool gridpack::hadrec::HADRECAppModule::getState(int bus_id,
 {
   return ds_app_sptr->getState(bus_id, dev_id, device, name, value);
 }
+
+
+int gridpack::hadrec::HADRECAppModule::totalBuses(void)
+{
+  int result(0);
+
+  if (ds_network) {
+    result = ds_network->totalBuses();
+  } else if (pf_network) {
+    result = pf_network->totalBuses();
+  } else {
+    throw gridpack::Exception("HADRECAppModule::totalBuses(): network not defined");
+  }
+
+  return result;
+}
+
+
+int gridpack::hadrec::HADRECAppModule::totalBranches(void)
+{
+  int result(0);
+
+  if (ds_network) {
+    result = ds_network->totalBranches();
+  } else if (pf_network) {
+    result = pf_network->totalBranches();
+  } else {
+    throw gridpack::Exception("HADRECAppModule::totalBranches(): network not defined");
+  }
+
+  return result;
+}
+
