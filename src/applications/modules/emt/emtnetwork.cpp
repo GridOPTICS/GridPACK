@@ -22,6 +22,7 @@
 #include <model_classes/constantimpedance.hpp>
 #include <model_classes/exdc1.hpp>
 #include <model_classes/wsieg1.hpp>
+#include <model_classes/regca1.hpp>
 //#include <model_classes/lumpedline.hpp>
 
 
@@ -547,6 +548,10 @@ void EmtBus::load(const
 	Genrou *genrou;
 	genrou = new Genrou;
 	p_gen[i] = genrou;
+      } else if(type == "REGCA1") {
+	Regca1 *regca1;
+	regca1 = new Regca1;
+	p_gen[i] = regca1;
       }
 
       // Set status
@@ -883,14 +888,18 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::RealType *values,
 
     p_gen[i]->getCurrentGlobalLocation(&i_gloc);
 
-    rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
-    rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
-    rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
-    
-    values[ctr]   = 1.0;
-    values[ctr+1] = 1.0;
-    values[ctr+2] = 1.0;
-    ctr += 3;
+    if(i_gloc != -1) {
+      // i_gloc = -1 indicates that there are no variables for the model, hence
+      // there is no jacobian contribution for currents
+      rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
+      rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
+      rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
+      
+      values[ctr]   = 1.0;
+      values[ctr+1] = 1.0;
+      values[ctr+2] = 1.0;
+      ctr += 3;
+    }
   }
 
   for(i=0; i < p_nload; i++) {
