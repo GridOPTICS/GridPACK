@@ -43,10 +43,27 @@ class EmtFactory
     ~EmtFactory() {}
 
   /**
+   * prestep - calls the prestep function for the bus and branch components
+   */
+  void preStep(double, double);
+
+  /**
+   * poststep - calls the post step function for the bus and branch components
+   */
+  void postStep(double);
+
+  /**
+   * Set the type of integration algorithm for machines
+   *
+   */
+
+  void setMachineIntegrationType(EMTMachineIntegrationType type);
+
+  /**
    * setTime - set the current time onto bus and branch components
    */
   void setTime(double);
-  
+
   /**
    * Set the shift value provided by TS onto bus and branch components 
    */

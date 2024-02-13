@@ -106,11 +106,46 @@ void EmtBus::setTSshift(double shift)
 }
 
 /**
-  Set the shift value provided by TS
+  Set the current time provided by TS
 */
 void EmtBus::setTime(double time)
 {
   p_time = time;
+}
+
+/**
+ * Set the type of integration algorithm for machine
+ */
+void EmtBus::setMachineIntegrationType(EMTMachineIntegrationType type)
+{
+  int i;
+
+  for(i = 0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) continue;
+    
+    p_gen[i]->setIntegrationType(type);
+  }
+}
+
+/**
+   Prestep function
+*/
+void EmtBus::preStep(double time, double timestep)
+{
+  int i;
+  
+  for(i = 0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) continue;
+    
+    p_gen[i]->preStep(time,timestep);
+  }
+}
+
+/**
+   Poststep function
+*/
+void EmtBus::postStep(double)
+{
 }
 
 
@@ -1533,6 +1568,15 @@ void EmtBranch::setMode(int mode)
 }
 
 /**
+  Set current time
+*/
+void EmtBranch::setTime(double time)
+{
+  p_time = time;
+}
+
+
+/**
   Set the shift value provided by TS
 */
 void EmtBranch::setTSshift(double shift)
@@ -1541,11 +1585,17 @@ void EmtBranch::setTSshift(double shift)
 }
 
 /**
-  Set the shift value provided by TS
+   preStep function
 */
-void EmtBranch::setTime(double time)
+void EmtBranch::preStep(double time, double timestep)
 {
-  p_time = time;
+}
+
+/**
+   postStep function
+*/
+void EmtBranch::postStep(double time)
+{
 }
 
 /**

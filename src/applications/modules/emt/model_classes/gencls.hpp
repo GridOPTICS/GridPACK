@@ -42,11 +42,21 @@ class Gencls: public BaseEMTGenModel
         data, int idx);
 
 
-    /**
-     *  Set Jacobian values
-     *  @param values a 2-d array of Jacobian block for the bus
-     */
-    bool setJacobian(gridpack::RealType **values);
+  /**
+   * return number of variables
+   */
+  void getnvar(int *nvar);
+
+  /**
+     Prestep function
+  */
+  void preStep(double time ,double timestep);
+
+  /**
+     Poststep function
+  */
+  void postStep(double time);
+
 
     /**
      * Initialize generator model before calculation

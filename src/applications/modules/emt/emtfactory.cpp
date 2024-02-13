@@ -20,12 +20,60 @@
 #include <gridpack/math/dae_solver.hpp>
 
 /**
+ * Calls the prestep function for the buses and branches
+ *
+ */
+void EmtFactory::preStep(double time, double timestep) 
+{
+  int numBuses = p_network->numBuses();
+  int numBranches = p_network->numBranches();
+  int i;
+  
+  for(i=0; i < numBuses; i++) {
+    dynamic_cast<EmtBus*>(p_network->getBus(i).get())->preStep(time,timestep); 
+  }
+
+  for(i=0; i < numBranches; i++) {
+    dynamic_cast<EmtBranch*>(p_network->getBranch(i).get())->preStep(time,timestep); 
+  }
+}
+
+/**
+ * Calls the poststep function for the buses and branches
+ *
+ */
+void EmtFactory::postStep(double time) 
+{
+  int numBuses = p_network->numBuses();
+  int numBranches = p_network->numBranches();
+  int i;
+  
+  for(i=0; i < numBuses; i++) {
+    dynamic_cast<EmtBus*>(p_network->getBus(i).get())->postStep(time); 
+  }
+
+  for(i=0; i < numBranches; i++) {
+    dynamic_cast<EmtBranch*>(p_network->getBranch(i).get())->postStep(time); 
+  }
+}
+
+/**
+ * Set the type of integration algorithm for machines
+ *
+ */
+void EmtFactory::setMachineIntegrationType(EMTMachineIntegrationType type) 
+{
+  int numBuses = p_network->numBuses();
+  int i;
+  
+  for(i=0; i < numBuses; i++) {
+    dynamic_cast<EmtBus*>(p_network->getBus(i).get())->setMachineIntegrationType(type); 
+  }
+}
+
+/**
  * Set the current time provided by TS onto bus and branch components
  *
- * This is expensive. Should rather set the value of shift in the factory and then
- * have the bus components point to it. Thus, we only need to set the shift value
- * value once in the factory and it will be seen by the bus components.
- * This is not implemented currently though
  */
 void EmtFactory::setTime(double time) 
 {

@@ -25,6 +25,14 @@
 #define TWO_OVER_THREE (2.0/3.0)
 #define TWOPI_OVER_THREE (TWO_OVER_THREE*PI)
 
+// This is used during calculations to set x/xdot vector to bus, calculate residual, 
 enum EMTMode{NONE,INIT_X,RESIDUAL_EVAL,XVECTOBUS,XDOTVECTOBUS,FAULT_EVAL,XVECPRETOBUS};
+
+// Type of integration algorithm used for machines
+// Explicit - Use explicit integration scheme (forward Euler)
+// Implicit - Use implicit integration scheme (machine equations included in the system equations)
+// IMPLICITEXPLICIT - Uses PETSc's IMEX method, machines use explicit, network uses implicit
+// Note :- Some of the machines may not have all the different variants available
+enum EMTMachineIntegrationType{EXPLICIT,IMPLICIT,IMPLICITEXPLICIT};
 
 #endif

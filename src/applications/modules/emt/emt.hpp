@@ -135,6 +135,23 @@ public:
     F.ready();
   }
 
+  /// Prestep function
+  void operator() (const double& time,
+		   const double& timestep,
+		   const gridpack::math::RealVector& X)
+  {
+    // Prestep
+    p_factory->preStep(time,timestep);
+    
+  }
+
+    /// Poststep function
+  void operator() (const double& time,
+		   const gridpack::math::RealVector& X)
+  {
+    p_factory->postStep(time);
+  }
+
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff
   void  operator() (const gridpack::math::RealVector& X, gridpack::math::RealVector& F)
   {
@@ -211,6 +228,9 @@ public:
 
   // DAE solver
   gridpack::math::RealDAESolver *p_daesolver;
+
+  // Integration algorithm for machines
+  EMTMachineIntegrationType p_emtmachineintegrationtype;
 
   /// These class needs to see inside Emt
   friend class EmtTimedFaultEvent;
