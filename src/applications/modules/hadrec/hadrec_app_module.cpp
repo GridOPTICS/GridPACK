@@ -25,7 +25,8 @@
  * Basic constructor
  */
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
-  : config_sptr(new gridpack::utility::Configuration())
+  : gridpack::network::NetworkTopologyInterface(),
+    config_sptr(new gridpack::utility::Configuration())
 {
 	bconfig_sptr_set = false;
 	p_PFuseNonLinear = false;

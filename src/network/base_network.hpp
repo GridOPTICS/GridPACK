@@ -7,7 +7,11 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
+<<<<<<< HEAD
  * @date   2025-01-29 11:39:28 d3g096
+=======
+ * @date   2024-02-13 08:31:49 d3g096
+>>>>>>> Start a network topology query interface and implement a couple of methods
  * 
  * @brief  
  * 
@@ -263,7 +267,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public parallel::Distributed
+  : public NetworkTopologyInterface
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -286,7 +290,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : parallel::Distributed(comm)
+  : NetworkTopologyInterface(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;
