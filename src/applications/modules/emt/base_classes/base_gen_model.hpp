@@ -94,7 +94,18 @@ public:
    * set current time
    */
   void setTime(double time) {p_time = time; }
-  
+
+  /**
+     Prestep function
+  */
+  virtual void preStep(double time ,double timestep);
+
+  /**
+     Poststep function
+  */
+  virtual void postStep(double time);
+
+
   /**
    * Copy over voltage from the bus
    */
@@ -155,7 +166,7 @@ public:
    * Return the number of variables
    * @param [output] nvar - number of variables
    */
-  void getnvar(int *nvar) {*nvar = nxgen;}
+  virtual void getnvar(int *nvar) {*nvar = nxgen;}
 
   /**
    * Get number of matrix values contributed by generator
@@ -275,6 +286,12 @@ public:
    * @param [in] Efd - Exciter field voltage
    */
   void setFieldVoltage(double fldv) {Efd = fldv; }
+
+  /**
+   * Set the type of machine integration algorithm
+   * @param [in] type - the integration type
+   */
+  void setIntegrationType(EMTMachineIntegrationType type) {integrationtype = type;}
   
  protected:
   double        pg; /**< Generator active power output */
@@ -290,6 +307,7 @@ public:
   bool          p_hasExciter; // Flag indicating whether this generator has exciter
   double        Efd; // Field voltage 
   bool          p_hasGovernor; // Flag indicating whether this generator has governor
+  EMTMachineIntegrationType integrationtype;
   boost::shared_ptr<BaseEMTExcModel> p_exciter; // Exciter
   boost::shared_ptr<BaseEMTGovModel> p_governor; // Governor
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */

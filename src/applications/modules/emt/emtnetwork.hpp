@@ -209,6 +209,23 @@ public:
   void setTime(double);
 
   /**
+   * Set the type of integration algorithm for machines
+   *
+   */
+  void setMachineIntegrationType(EMTMachineIntegrationType); 
+  
+  /**
+     Prestep function
+  */
+  void preStep(double,double);
+
+  /**
+     Poststep function
+  */
+  void postStep(double);
+
+  
+  /**
      Set buffer size for exchange
   */
   int getXCBufSize(void);
@@ -391,6 +408,16 @@ public:
   */
   void setTime(double);
 
+  /**
+     Prestep function
+  */
+  void preStep(double,double);
+
+  /**
+     Poststep function
+  */
+  void postStep(double);
+  
   /**
    * getCurrent - returns the line current
    *

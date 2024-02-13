@@ -222,3 +222,16 @@ double BaseEMTGenModel::getInitialFieldVoltage()
   return 0.0;
 }
 
+/**
+   Prestep function
+*/
+void BaseEMTGenModel::preStep(double time, double timestep)
+{
+}
+
+/**
+   Poststep function
+*/
+void BaseEMTGenModel::postStep(double time)
+{
+}
