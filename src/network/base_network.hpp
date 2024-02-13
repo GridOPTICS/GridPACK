@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2022-10-05 08:51:23 d3g096
+ * @date   2024-02-13 08:31:49 d3g096
  * 
  * @brief  
  * 
@@ -28,7 +28,7 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/type_traits.hpp>
 #include <ga.h>
-#include "gridpack/parallel/distributed.hpp"
+#include "gridpack/network/network_topology_interface.hpp"
 #include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
@@ -263,7 +263,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public parallel::Distributed
+  : public NetworkTopologyInterface
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -286,7 +286,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : parallel::Distributed(comm)
+  : NetworkTopologyInterface(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;

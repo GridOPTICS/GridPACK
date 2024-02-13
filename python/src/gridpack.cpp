@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2023-03-06 11:58:00 d3g096
+// Last Change: 2024-02-13 10:41:33 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -281,6 +281,12 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("applyAction", &gph::HADRECAppModule::applyAction)
     .def("getObservations", &gph::HADRECAppModule::getObservations,
          py::return_value_policy::copy)
+    ;
+
+  // These are some network topology query methods
+  hadapp
+    .def("totalBuses", &gph::HADRECAppModule::totalBuses)
+    .def("totalBranches", &gph::HADRECAppModule::totalBranches)
     ;
 
   // These methods need to be reworked char * and/or optional args
@@ -631,6 +637,8 @@ PYBIND11_MODULE(gridpack, gpm) {
              return py::cast<py::none>(Py_None);
            }
          })
+
+    
     ;
   
 
