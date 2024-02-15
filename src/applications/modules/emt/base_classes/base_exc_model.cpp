@@ -30,11 +30,6 @@ void BaseEMTExcModel::load(const boost::shared_ptr<gridpack::component::DataColl
 {
 }
 
-bool BaseEMTExcModel::setJacobian(gridpack::RealType **values)
-{
-  return false;
-}
-
 void BaseEMTExcModel::init(gridpack::RealType *values)
 {
 }
@@ -85,6 +80,15 @@ double BaseEMTExcModel::getFieldVoltage(int *Efd_gloc)
   *Efd_gloc = -1;
   return 0.0;
 }
+
+/**
+ * Get the current command references during initialization
+ */
+void BaseEMTExcModel::getInitialIpcmdIqcmd(double *Ipcmd0, double *Iqcmd0)
+{
+  p_gen->getInitialIpcmdIqcmd(Ipcmd0, Iqcmd0);
+}
+
 
 
 bool BaseEMTExcModel::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)

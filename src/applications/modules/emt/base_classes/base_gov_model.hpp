@@ -38,7 +38,22 @@ public:
    * Basic destructor
    */
   virtual ~BaseEMTGovModel();
-  
+
+  /**
+     Prestep function
+  */
+  virtual void preStep(double time ,double timestep) { }
+
+  /**
+     Poststep function
+  */
+  virtual void postStep(double time) { }
+
+  /**
+    Number of variables
+  */ 
+  virtual void getnvar(int *nvar) { *nvar = nxgov; }
+
   /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
 
@@ -102,11 +117,6 @@ public:
    * set current time
    */
   void setTime(double time) {p_time = time; }
-
-  /**
-   * return number of variables/states
-   */
-  void getnvar(int *nvar) {*nvar = nxgov; }
 
   virtual void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
     
@@ -219,12 +229,19 @@ public:
 
   virtual void resetEventFlags(void) {}
 
+  /**
+   * Set type of integration algorithm
+   */
+  void setIntegrationType(EMTMachineIntegrationType type) { integrationtype = type; }
+
 protected:
   double        VD, VQ;
   double        p_va, p_vb, p_vc; // Instantaneous bus voltages
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
   double        p_time; // Current time
+
+  EMTMachineIntegrationType integrationtype; // Integration type 
 
   BaseEMTGenModel *p_gen;
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
