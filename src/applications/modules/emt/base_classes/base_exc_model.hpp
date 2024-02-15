@@ -42,6 +42,41 @@ public:
   virtual ~BaseEMTExcModel();
 
   /**
+     Prestep function
+  */
+  virtual void preStep(double time ,double timestep) { }
+  
+  /**
+     Poststep function
+  */
+  virtual void postStep(double time) { }
+
+  /**
+    Number of variables
+  */ 
+  virtual void getnvar(int *nvar) { *nvar = nxexc; }
+
+  /**
+     Set the reference power inputs
+  **/
+  virtual void setPrefQext(double Pref, double Qext) { }
+
+  /**
+     Get the current command references
+  **/
+  virtual void getIpcmdIqcmd(double *Ipcmd, double *Iqcmd) { }
+
+  /**
+     Get the power order - used by pitch controller model
+  */
+  virtual double getPord() { return 0.0; }
+
+  /**
+     Set omega_g - from drive train model
+  */
+  virtual void setOmega(double omega) { }
+
+  /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
 
    * Load data from DataCollection object into corresponding
@@ -50,13 +85,6 @@ public:
    */
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
 
-  /**
-   * Set Jacobian block
-   * @param values a 2-d array of Jacobian block for the bus
-   */
-  virtual bool setJacobian(gridpack::RealType **values);
-
-  
   /**
    * Initialize exciter model before calculation
    * @param [output] values - array where initialized exciter variables should be set
@@ -120,12 +148,6 @@ public:
   virtual void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
-   * Return the number of variables
-   * @param [output] nvar - number of variables
-   */
-  void getnvar(int *nvar) {*nvar = nxexc;}
-
-  /**
    * Set the offset for first variable for the exciter in the array for all bus variables 
    * @param offset offset
    */
@@ -174,13 +196,18 @@ public:
    */
   virtual double getFieldVoltage();
 
+  /**
+   * Get the current command references during initialization
+   */
+  void getInitialIpcmdIqcmd(double *Ipcmd0, double *Iqcmd0);
+
+  
   /** 
    * Get the value of the field voltage parameter
    * and return the global location of field voltage variable
    * @return value of field voltage
    */
   virtual double getFieldVoltage(int *Efd_gloc);
-
 
   /**
    * Partial derivatives of field voltage Efd w.r.t. exciter variables
@@ -244,6 +271,10 @@ public:
    */
   void setMachineAngle(double deltain) {p_delta = deltain; }
 
+  /**
+   * Set type of integration algorithm
+   */
+  void setIntegrationType(EMTMachineIntegrationType type) {integrationtype = type; }
 
 protected:
   double        VD, VQ;
@@ -252,8 +283,12 @@ protected:
   double        p_Vm0, p_Va0; /** Initial voltage magnitude and angle **/
   double        p_va,p_vb,p_vc; /** Bus voltage **/
   double        p_delta;   /** Machine angle */
-  double        Efd0;
-  double        shift; // shift (multiplier) used in the Jacobian calculation.i
+  double        Efd0;  /** Initial field voltage (for exciters) */
+  double        Ipcmd0, Iqcmd0; /** Initial current setpoints (for electrical controllers) */
+  double        shift; // shift (multiplier) used in the Jacobian calculation
+  
+  EMTMachineIntegrationType integrationtype; // Integration type 
+
   BaseEMTGenModel* p_gen; // Generator model
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator

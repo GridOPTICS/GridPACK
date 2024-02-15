@@ -275,6 +275,12 @@ public:
   virtual double getInitialFieldVoltage();
 
   /**
+   * Returns the initial current setpoints needed to
+   * initialize the electrical controller
+   * For renewable plants only
+   */
+  virtual void getInitialIpcmdIqcmd(double *ipcmd0, double *iqcmd0) { }
+  /**
    * Returns the initial mechanical power (Pmech(t0))
    * @param [out] Pmech0 - Initial mechanical power
    */

@@ -82,6 +82,17 @@ class Regca1 : public BaseEMTGenModel
   void getCurrentGlobalLocation(int *i_gloc);
 
   /**
+   * Returns the initial current setpoints needed to
+   * initialize the electrical controller
+   * For renewable plants only
+   */
+  void getInitialIpcmdIqcmd(double *Ipcmd0, double *Iqcmd0)
+  {
+    *Ipcmd0 = Ipcmd;
+    *Iqcmd0 = Iqcmd;
+  }
+
+  /**
    * Return the rotor speed deviation
    * @param 
    */
@@ -163,7 +174,10 @@ class Regca1 : public BaseEMTGenModel
    * Return the machine angle
    * @param [output] delta - machine angle
    */
-  double getAngle() {  }
+  double getAngle()
+  {
+    return theta;
+  }
 
   /**
    * Return the machine angle and its global location
@@ -171,7 +185,8 @@ class Regca1 : public BaseEMTGenModel
    */
   double getAngle(int *delta_gloc)
   {
-    return 0.0;
+    return theta;
+    *delta_gloc = -1;
   }
   private:
     // parameters

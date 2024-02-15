@@ -50,6 +50,7 @@ add_library(gridpack_emt_module
   model_classes/exdc1.cpp
   model_classes/wsieg1.cpp
   model_classes/regca1.cpp
+  model_classes/reeca1.cpp
 
 )
 
@@ -95,6 +96,7 @@ install(FILES
   model_classes/exdc1.hpp
   model_classes/wsieg1.hpp
   model_classes/regca1.hpp
+  model_classes/reeca1.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )
 
