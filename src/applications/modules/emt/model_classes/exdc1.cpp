@@ -232,15 +232,6 @@ void Exdc1::vectorGetValues(gridpack::RealType *values)
 }
 
 /**
- * Set Jacobian block
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool Exdc1::setJacobian(gridpack::RealType **values)
-{
-  return false;
-}
-
-/**
    Non-zero pattern of the Jacobian (x denotes non-zero entry)
          Vmeas    xLL    VR    Efd    xf    delta    va    vb    vc
  eq.0 |    x                                  x      x     x     x

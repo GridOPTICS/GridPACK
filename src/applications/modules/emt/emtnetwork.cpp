@@ -23,6 +23,7 @@
 #include <model_classes/exdc1.hpp>
 #include <model_classes/wsieg1.hpp>
 #include <model_classes/regca1.hpp>
+#include <model_classes/reeca1.hpp>
 //#include <model_classes/lumpedline.hpp>
 
 
@@ -125,6 +126,14 @@ void EmtBus::setMachineIntegrationType(EMTMachineIntegrationType type)
     if(!p_gen[i]->getStatus()) continue;
     
     p_gen[i]->setIntegrationType(type);
+
+    if(p_gen[i]->hasExciter()) {
+      p_gen[i]->getExciter()->setIntegrationType(type);
+    }
+
+    if(p_gen[i]->hasGovernor()) {
+      p_gen[i]->getGovernor()->setIntegrationType(type);
+    }
   }
 }
 
@@ -137,7 +146,11 @@ void EmtBus::preStep(double time, double timestep)
   
   for(i = 0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
-    
+
+    if(p_gen[i]->hasExciter()) {
+      boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+      exc->preStep(time,timestep);
+    }
     p_gen[i]->preStep(time,timestep);
   }
 }
@@ -145,10 +158,20 @@ void EmtBus::preStep(double time, double timestep)
 /**
    Poststep function
 */
-void EmtBus::postStep(double)
+void EmtBus::postStep(double time)
 {
-}
+  int i;
 
+  for(i = 0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) continue;
+
+    if(p_gen[i]->hasExciter()) {
+      boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+      exc->postStep(time);
+    }
+    p_gen[i]->postStep(time);
+  }
+}
 
 /**
   *  Check if the bus is isolated. Returns true if the bus is isolated
@@ -575,6 +598,16 @@ void EmtBus::load(const
             p_gen[i]->setExciter(ex);
 	    
 	    exdc1->load(data,i); // load exciter data
+	  } else if(type == "REECA1") {
+	    Reeca1 *reeca1;
+            reeca1 = new Reeca1;
+	    reeca1->setGenerator(p_gen[i]);
+	    
+            boost::shared_ptr<BaseEMTExcModel> ex;
+            ex.reset(reeca1);
+            p_gen[i]->setExciter(ex);
+	    
+	    reeca1->load(data,i); // load exciter data
 	  }
 	}
       }
