@@ -52,9 +52,9 @@ public:
   void getnvar(int *nvar);
 
   /**
-     Set the reference power inputs
+     Set the initial reference power inputs
   **/
-   void setPrefQext(double Pref, double Qext) { }
+  void getInitialPrefQext(double *Prefout, double *Qextout);
 
   /**
      Get the power order - used by pitch controller model
