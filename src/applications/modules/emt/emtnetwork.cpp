@@ -1160,10 +1160,8 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 
       if(p_gen[i]->hasExciter()) {
 	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
-	double Efd0;
-	Efd0 = p_gen[i]->getInitialFieldVoltage();
-	exc->setVoltage(VR,VI);
-	exc->setInitialFieldVoltage(Efd0);
+	exc->setVoltage(va,vb,vc); // Instantaneous voltages
+	exc->setVoltage(VR,VI); // Initial real and imaginary part of voltage phasor
 	exc->init(x);
       }
 
