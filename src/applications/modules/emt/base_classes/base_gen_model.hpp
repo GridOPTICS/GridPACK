@@ -150,6 +150,26 @@ public:
   virtual double getAngle() { return 0.0; }
 
   /**
+   * Return the generator real and reactive power
+   * @param [input] time - the current time
+   * @param [output] Pg - generator real power
+   * @param [output] Qg - generator reactive power
+   *
+   * Note: Power is on system MVA base
+   */
+  virtual void getPower(double time, double *Pg, double *Qg) { }
+
+  /**
+   * Return the generator initial real and reactive power
+   * @param [output] Pg(t0) - generator real power
+   * @param [output] Qg(t0) - generator reactive power
+   *
+   * Note: Power is pu on system MVA base
+   */
+  virtual void getInitialPower(double *Pg, double *Qg) { }
+
+  
+  /**
    * Return the machine angle and its global location
    * @param [output] delta - machine angle
    * @param [output] delta_gloc - global location of machine angle

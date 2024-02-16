@@ -75,6 +75,25 @@ class Regca1 : public BaseEMTGenModel
    */
   void getCurrent(double *ia, double *ib, double *ic);
 
+    /**
+   * Return the generator real and reactive power
+   * @param [input] time - current time
+   * @param [output] Pg - generator real power
+   * @param [output] Qg - generator reactive power
+   *
+   * Note: Power is on system MVA base
+   */
+  virtual void getPower(double time, double *Pg, double *Qg);
+
+  /**
+   * Return the generator initial real and reactive power
+   * @param [output] Pg(t0) - generator real power
+   * @param [output] Qg(t0) - generator reactive power
+   *
+   * Note: Power is pu on system MVA base
+   */
+  virtual void getInitialPower(double *Pg, double *Qg);
+
   /**
    * Return the global location for the generator current injection 
    * @param [output] i_gloc - global location for the first current variable
