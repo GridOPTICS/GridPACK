@@ -168,6 +168,23 @@ bool BaseEMTGenModel::hasGovernor()
     return p_hasGovernor;
 }
 
+void BaseEMTGenModel::setPlantController(boost::shared_ptr<BaseEMTPlantControllerModel> &pcontroller)
+{ 
+  p_plantcontroller = pcontroller;
+  p_hasPlantController = true;
+}
+
+
+boost::shared_ptr<BaseEMTPlantControllerModel> BaseEMTGenModel::getPlantController()
+{
+  return p_plantcontroller;
+}
+
+bool BaseEMTGenModel::hasPlantController()
+{
+    return p_hasPlantController;
+}
+
 /**
  * Get number of matrix values contributed by generator
  * @return number of matrix values

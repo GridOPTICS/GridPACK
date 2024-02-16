@@ -552,6 +552,16 @@ void Reeca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 }
 
 /**
+   Get the initial reference power inputs
+**/
+void Reeca1::getInitialPrefQext(double *Prefout, double *Qextout)
+{
+  *Prefout = Pref;
+  *Qextout = Qref;
+}
+
+
+/**
    Get the current command references
 **/
 void Reeca1::getIpcmdIqcmd(double *Ipcmdout, double *Iqcmdout)

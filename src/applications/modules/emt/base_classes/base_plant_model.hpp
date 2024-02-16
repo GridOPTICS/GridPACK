@@ -5,15 +5,15 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   base_exc_model.hpp
+ * @file   base_plant_model.hpp
  * 
- * @brief  Base exciter class header file
+ * @brief  Base model for plant controller
  * 
  * 
  */
 
-#ifndef _base_exc_model_h_
-#define _base_exc_model_h_
+#ifndef _base_emt_plant_model_h_
+#define _base_emt_plant_model_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
@@ -24,8 +24,9 @@
 #include <gridpack/math/dae_solver.hpp>
 
 class BaseEMTGenModel; // Forward declaration for BaseGenModel
+class BaseEMTExcModel; // Forward declaration for BaseExcModel
 
-class BaseEMTExcModel : public gridpack::component::BaseComponent
+class BaseEMTPlantControllerModel : public gridpack::component::BaseComponent
 {
   /* Inheriting the BaseComponent class allows use of functions
      for loading data and accessing/setting values in the vector/matrix
@@ -34,12 +35,12 @@ public:
   /**
    * Basic constructor
    */
-  BaseEMTExcModel();
+  BaseEMTPlantControllerModel();
   
   /**
    * Basic destructor
    */
-  virtual ~BaseEMTExcModel();
+  virtual ~BaseEMTPlantControllerModel();
 
   /**
      Prestep function
@@ -54,27 +55,12 @@ public:
   /**
     Number of variables
   */ 
-  virtual void getnvar(int *nvar) { *nvar = nxexc; }
+  virtual void getnvar(int *nvar) { *nvar = nxplant; }
 
   /**
-     Get the initial reference power inputs
-  **/
-  virtual void getInitialPrefQext(double *Pref, double *Qext) { }
-
-  /**
-     Get the current command references
-  **/
-  virtual void getIpcmdIqcmd(double *Ipcmd, double *Iqcmd) { }
-
-  /**
-     Get the power order - used by pitch controller model
+     Get the plant controller output
   */
-  virtual double getPord() { return 0.0; }
-
-  /**
-     Set omega_g - from drive train model
-  */
-  virtual void setOmega(double omega) { }
+  virtual void getPrefQext(double *Pref, double *Qext) { }
 
   /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
@@ -139,12 +125,6 @@ public:
    */
   void setInitialVoltage(double inVm,double inVa) {p_Vm0 = inVm; p_Va0 = inVa;}
 
-  /**
-   * Get the initial field voltage (at t = tstart) for the exciter
-   * @param fldv value of the field voltage
-   */
-  double getInitialFieldVoltage();
-  
   virtual void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
@@ -190,42 +170,26 @@ public:
    */
   virtual void setValues(gridpack::RealType *values);
   
-  /** 
-   * Get the value of the field voltage parameter
-   * @return value of field voltage
-   */
-  virtual double getFieldVoltage();
-
-  /**
-   * Get the current command references during initialization
-   */
-  void getInitialIpcmdIqcmd(double *Ipcmd0, double *Iqcmd0);
-
-  
-  /** 
-   * Get the value of the field voltage parameter
-   * and return the global location of field voltage variable
-   * @return value of field voltage
-   */
-  virtual double getFieldVoltage(int *Efd_gloc);
-
-  /**
-   * Partial derivatives of field voltage Efd w.r.t. exciter variables
-   * @param xexc_loc locations of exciter variables
-   * @param dEfd_dxexc partial derivatives of field voltage w.r.t exciter variables
-   * @param dEfd_dxgen partial derivatives of field voltage w.r.t. generator variables
-   */
-  virtual bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
-
   /**
    * Set the generator associated with this exciter
    **/
   void setGenerator(BaseEMTGenModel* generator) {p_gen = generator; }
 
   /**
-   * Get the generator associated with this exciter
+   * Set the electrical controller associated with this plant controller
+   */
+  void setElectricalController(BaseEMTExcModel* econtroller) {p_econ = econtroller; }
+
+  /**
+   * Get the generator associated with this plant controller
    */
   BaseEMTGenModel* getGenerator() { return p_gen; }
+
+  /**
+   * Get the electrical controller associated with this plant controller
+   */
+  BaseEMTExcModel* getElectricalController() { return p_econ; }
+
 
   /**
    * Set an internal variable that can be used to control the behavior of the
@@ -267,11 +231,6 @@ public:
   void setVoltage(double inva, double invb,double invc) {p_va = inva; p_vb = invb; p_vc = invc;}
 
   /**
-   * Set Machine angle
-   */
-  void setMachineAngle(double deltain) {p_delta = deltain; }
-
-  /**
    * Set type of integration algorithm
    */
   void setIntegrationType(EMTMachineIntegrationType type) {integrationtype = type; }
@@ -282,17 +241,18 @@ protected:
   double        p_time;   /** Current time */
   double        p_Vm0, p_Va0; /** Initial voltage magnitude and angle **/
   double        p_va,p_vb,p_vc; /** Bus voltage **/
-  double        p_delta;   /** Machine angle */
   double        shift; // shift (multiplier) used in the Jacobian calculation
   
   EMTMachineIntegrationType integrationtype; // Integration type 
 
   BaseEMTGenModel* p_gen; // Generator model
+  BaseEMTExcModel* p_econ; // Electrical Controller model
+  
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator
   int           p_glocvoltage; // Global location for the first voltage variable for the bus
 
-  int           nxexc;    /** Number of variables for the exciter model */
+  int           nxplant;    /** Number of variables for the model */
   int           p_busoffset; /** Starting location for bus variables in the local state vector */
   int           p_nrows;  // number of rows (equations) contributed by this excitor
   int           p_ncols;  // number of columns (variables) contributed by this excitor

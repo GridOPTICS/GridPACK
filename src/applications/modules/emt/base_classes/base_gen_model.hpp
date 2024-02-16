@@ -21,9 +21,11 @@
 #include <gridpack/math/matrix.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_plant_model.hpp>
 
 class BaseEMTExcModel; // Forward declaration for BaseEMTExcModel
 class BaseEMTGovModel; // Forward declaration for BaseEMTGovModel
+class BaseEMTPlantControllerModel; // Forward declaration for BaseEMTPlantControllerModel
 
 class BaseEMTGenModel : public gridpack::component::BaseComponent
 {
@@ -241,6 +243,13 @@ public:
   
   bool hasGovernor();
 
+  void setPlantController(boost::shared_ptr<BaseEMTPlantControllerModel> &p_plantcontroller);
+
+  boost::shared_ptr<BaseEMTPlantControllerModel> getPlantController();
+  
+  bool hasPlantController();
+
+
   /**
    * Set an internal variable that can be used to control the behavior of the
    * component. This function doesn't need to be implemented, but if needed,
@@ -315,9 +324,11 @@ public:
   bool          p_hasExciter; // Flag indicating whether this generator has exciter
   double        Efd; // Field voltage 
   bool          p_hasGovernor; // Flag indicating whether this generator has governor
+  bool          p_hasPlantController; // Flag indicating whether this generator has plant controller
   EMTMachineIntegrationType integrationtype;
   boost::shared_ptr<BaseEMTExcModel> p_exciter; // Exciter
   boost::shared_ptr<BaseEMTGovModel> p_governor; // Governor
+  boost::shared_ptr<BaseEMTPlantControllerModel> p_plantcontroller; // Plant Controller
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator
   
