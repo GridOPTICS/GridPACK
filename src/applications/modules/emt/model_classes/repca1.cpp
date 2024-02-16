@@ -45,10 +45,6 @@ void Repca1::getPrefQext(double *Prefout, double *Qextout)
 void Repca1::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
   BaseEMTPlantControllerModel::load(data,idx); // load parameters in base exciter model
-  data->getValue(CASE_SBASE,&p_sbase);
-  data->getValue(BUS_NUMBER,&p_bus_num);
-  data->getValue(GENERATOR_ID, &p_gen_id, idx);
-  if(!data->getValue(GENERATOR_MBASE,&p_mbase,idx)) p_mbase = 100.0;
   
   if(!data->getValue(GENERATOR_REPCA_IREG,&ireg,idx)) ireg = p_bus_num;
   if(!data->getValue(GENERATOR_REPCA_RC,&Rc,idx)) Rc = 0.0;
@@ -238,7 +234,7 @@ void Repca1::vectorGetValues(gridpack::RealType *values)
 */
 void Repca1::preStep(double time ,double timestep)
 {
-  double Pgen,Qgen, Vt;
+  double Pgen,Qgen, Vd, Vq, Vt;
   double vabc[3],vdq0[3],theta;
   
   if(integrationtype != EXPLICIT) return;
@@ -251,7 +247,10 @@ void Repca1::preStep(double time ,double timestep)
   
   abc2dq0(vabc,time,theta,vdq0);
 
-  Vt = vdq0[0];
+  Vd = vdq0[0];
+  Vq = vdq0[1];
+
+  Vt = sqrt(Vd*Vd + Vq*Vq);
 
   if(Vt < Vfrz) {
     Vfreeze = true;
@@ -263,6 +262,13 @@ void Repca1::preStep(double time ,double timestep)
   // Pref part
   double ferr,dP;
 
+  Freq = getGenerator()->getFreq();
+
+  getGenerator()->getPower(time,&Pg,&Qg);
+  // Convert power to mbase
+  Pg *= sbase/mbase;
+  Qg *= sbase/mbase;
+  
   if(FreqFLAG) {
     ferr = Freq_ref - Freq;
     ferr = Freqerr_deadband.getoutput(ferr);

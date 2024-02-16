@@ -102,9 +102,25 @@ void BaseEMTExcModel::getInitialIpcmdIqcmd(double *Ipcmd0, double *Iqcmd0)
   p_gen->getInitialIpcmdIqcmd(Ipcmd0, Iqcmd0);
 }
 
-
-
 bool BaseEMTExcModel::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
 {
   return false;
 }
+
+void BaseEMTExcModel::setPlantController(boost::shared_ptr<BaseEMTPlantControllerModel> &pcontroller)
+{ 
+  p_plantcontroller = pcontroller;
+  p_hasPlantController = true;
+}
+
+
+boost::shared_ptr<BaseEMTPlantControllerModel> BaseEMTExcModel::getPlantController()
+{
+  return p_plantcontroller;
+}
+
+bool BaseEMTExcModel::hasPlantController()
+{
+    return p_hasPlantController;
+}
+

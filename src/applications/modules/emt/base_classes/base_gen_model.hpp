@@ -160,6 +160,13 @@ public:
   virtual void getPower(double time, double *Pg, double *Qg) { }
 
   /**
+   * Return the generator frequency (pu)
+   * @param [output] freq - machine frequency
+   *
+   * Note: Frequency is per unit. Steady-state frequency is 1.0
+  */
+  virtual double getFreq() { return 1.0; }
+  /**
    * Return the generator initial real and reactive power
    * @param [output] Pg(t0) - generator real power
    * @param [output] Qg(t0) - generator reactive power

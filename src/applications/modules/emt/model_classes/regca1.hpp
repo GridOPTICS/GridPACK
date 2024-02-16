@@ -86,6 +86,15 @@ class Regca1 : public BaseEMTGenModel
   virtual void getPower(double time, double *Pg, double *Qg);
 
   /**
+   * Return the generator frequency (pu)
+   * @param [output] freq - machine frequency
+   *
+   * Note: Frequency is per unit. Steady-state frequency is 1.0
+  */
+  double getFreq();
+
+
+  /**
    * Return the generator initial real and reactive power
    * @param [output] Pg(t0) - generator real power
    * @param [output] Qg(t0) - generator reactive power
@@ -259,7 +268,14 @@ class Regca1 : public BaseEMTGenModel
   double Vt, VR, VI;
 
   // State variables and derivatives
+  // These are not really state variables
+  // They are just to record/store some values
+  double Vm,Pgen,Qgen,Freq;
+  double Vm_save, Pgen_save, Qgen_save, Freq_save;
+  
   double iabc[3], diabc[3];
+
+  
 
   // phase voltages
   double vabc[3], vdq0[3], idq0[3];

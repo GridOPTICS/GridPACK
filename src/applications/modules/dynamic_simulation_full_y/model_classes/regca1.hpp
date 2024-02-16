@@ -208,7 +208,7 @@ class Regca1Generator : public BaseGeneratorModel
   double Vt, theta, VR, VI;
 
   // Internal variables used in printing
-  double Pref; // Plant/Torque controller reference power
+  double Pref, Qref; // Plant/Torque controller reference power
   double Taero; // Aerodynamic torque
   double Thetapitch; // Pitch angle (degrees)
   double domega_g;    // Drive train gen. speed deviation (pu)

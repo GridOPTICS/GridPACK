@@ -405,9 +405,11 @@ void Reeca1::preStep(double time ,double timestep)
   double theta = getGenerator()->getAngle();
   
   abc2dq0(vabc,time,theta,vdq0);
-  double Vt, Vq;
-  Vt = vdq0[0]; Vq = vdq0[1];
+  double Vd, Vq;
+  Vd = vdq0[0]; Vq = vdq0[1];
 
+  Vt = sqrt(Vd*Vd + Vq*Vq);
+  
   Voltage_dip = getVoltageDip(Vt);
 
   if(!Voltage_dip) {
@@ -451,6 +453,10 @@ void Reeca1::preStep(double time ,double timestep)
 
   // Current limit logic, calculate limits for Ipcmd and Iqcmd
   CurrentLimitLogic(PQFLAG,Vt_filter,Ipcmd,Iqcmd,&Ipmin,&Ipmax,&Iqmin,&Iqmax);
+
+  if(p_hasPlantController) {
+    getPlantController()->getPrefQext(&Pref,&Qref);
+  }
 
   // Pref limiter output
   // Update the previous value for the rate limiter block

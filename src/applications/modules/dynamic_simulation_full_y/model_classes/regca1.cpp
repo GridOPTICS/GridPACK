@@ -167,7 +167,7 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
   Iqcmd = Iq_blk.init_given_y(Iq);
   Vt_filter = Vt_filter_blk.init_given_u(Vt);
 
-  double Qext, Pord;
+  double Pord;
   double domega_t = 0.0;
 
   // Initialize electrical controller model
@@ -180,7 +180,7 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
     p_exciter->init(Vm, Va, ts);
 	
     Pref = p_exciter->getPref( );
-    Qext = p_exciter->getQext( );
+    Qref = p_exciter->getQext( );
     Pord = p_exciter->getPord( );
   }
 
@@ -188,7 +188,7 @@ void gridpack::dynamic_simulation::Regca1Generator::init(double Vm,
   if (p_hasPlantController){
     p_plant = getPlantController();
     p_plant->setGenPQV(p_pg, p_qg, Vm);
-    p_plant->setPrefQext(Pref, Qext);
+    p_plant->setPrefQext(Pref, Qref);
     p_plant->setExtBusNum(p_bus_num);
     
     p_plant->init(Vm, Va, ts);
@@ -311,7 +311,6 @@ void gridpack::dynamic_simulation::Regca1Generator::predictor_currentInjection(b
 void gridpack::dynamic_simulation::Regca1Generator::computeModel(double t_inc, IntegrationStage int_flag,bool flag)
 {
   double Pg,Qg;
-  double Qext;
   double Iq_olim; // Current injection for over-voltage
   bool Vdip; // Voltage dip flag for electrical controller
   
@@ -349,7 +348,7 @@ void gridpack::dynamic_simulation::Regca1Generator::computeModel(double t_inc, I
     }
 		
     Pref = Pref_plant = p_plant->getPref();
-    Qext = p_plant->getQext();
+    Qref = p_plant->getQext();
   }
 
   if(p_hasTorqueController) {
@@ -375,7 +374,7 @@ void gridpack::dynamic_simulation::Regca1Generator::computeModel(double t_inc, I
   //get ipcmd and iqcmd from the exctier REECA1 MODEL
   if (p_hasExciter){
     p_exciter = getExciter();
-    p_exciter->setPrefQext(Pref, Qext);
+    p_exciter->setPrefQext(Pref, Qref);
     p_exciter->setVterminal(Vt);
 
     p_exciter->setGeneratorPower(Pg,Qg);
