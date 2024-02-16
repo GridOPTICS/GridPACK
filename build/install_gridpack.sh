@@ -85,9 +85,9 @@ function install_gridpack_python {
 
   # set an env var if we are running on RHEL
   case $distribution in
-    fedora | rhel | centos | rocky)
-      export RHEL_OPENMPI_HACK=yes
-      ;;
+  fedora | rhel | centos | rocky)
+    export RHEL_OPENMPI_HACK=yes
+    ;;
   esac
 
   # set python executable path
@@ -126,7 +126,9 @@ date
 build_dir=${PWD}/src/build
 install_dir=${PWD}/src/install
 
-install_gridpack "${GP_EXT_DEPS:?}" "$build_dir" "$install_dir"
+gp_ext_deps=${GP_EXT_DEPS:-/gridpack-dependencies}
+
+install_gridpack "$gp_ext_deps" "$build_dir" "$install_dir"
 install_gridpack_python "$build_dir" "$install_dir"
 
 echo "Completed GridPACK installation"

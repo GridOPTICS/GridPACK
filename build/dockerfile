@@ -1,25 +1,42 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-ENV GP_EXT_DEPS=/gridpack-dependencies
-ENV BOOST_VERSION="1.78.0"
-ENV GA_VERSION="5.8"
-ENV PETSC_VERSION="3.16.4"
-ENV LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost/install_for_gridpack/lib:${GP_EXT_DEPS}/ga/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
-ENV OMPI_ALLOW_RUN_AS_ROOT="1"
-ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM="1"
+SHELL ["/bin/bash", "-c"]
 
 ARG http_proxy
 ARG https_proxy
-ENV http_proxy=${http_proxy}
-ENV https_proxy=${https_proxy}
+
+ENV GP_EXT_DEPS=/gridpack-dependencies \
+  HTTP_PROXY=${http_proxy} \
+  HTTPS_PROXY=${https_proxy} \
+  OMPI_ALLOW_RUN_AS_ROOT="1" \
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM="1" \
+  LD_LIBRARY_PATH="${GP_EXT_DEPS}/boost/install_for_gridpack/lib:${GP_EXT_DEPS}/ga/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib"
 
 WORKDIR ${GP_EXT_DEPS}
+RUN mkdir logs
 
-COPY lib.sh install_from_source_deps.sh ./
-SHELL ["/bin/bash", "-c"]
-RUN source ./lib.sh \
-  && install_packages \
+COPY install_package_deps_lib.sh ./
+RUN set -xeuo pipefail \
+  && source ./install_package_deps_lib.sh \
+  && install_packages 2>&1 | tee logs/install_packages.log
+
+COPY install_boost.sh ./
+RUN set -xeuo pipefail \
+  && source ./install_package_deps_lib.sh \
   && load_mpi_module \
-  && source ./install_from_source_deps.sh \
-  && rm *.sh
+  && bash ./install_boost.sh 2>&1 | tee logs/install_boost.log
+
+COPY install_ga.sh ./
+RUN set -xeuo pipefail \
+  && source ./install_package_deps_lib.sh \
+  && load_mpi_module \
+  && bash ./install_ga.sh 2>&1 | tee logs/install_ga.log
+
+COPY install_petsc.sh ./
+RUN set -xeuo pipefail \
+  && source ./install_package_deps_lib.sh \
+  && load_mpi_module \
+  && bash ./install_petsc.sh 2>&1 | tee logs/install_petsc.log
+
+RUN rm *.sh
