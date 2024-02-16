@@ -24,6 +24,7 @@
 #include <model_classes/wsieg1.hpp>
 #include <model_classes/regca1.hpp>
 #include <model_classes/reeca1.hpp>
+#include <model_classes/repca1.hpp>
 //#include <model_classes/lumpedline.hpp>
 
 
@@ -43,6 +44,7 @@ EmtBus::EmtBus(void)
   p_neqsgen = NULL;
   p_neqsexc= NULL;
   p_neqsgov= NULL;
+  p_neqsplant = NULL;
   p_gen     = NULL;
   //  p_fault   = NULL;
   p_hasfault = false;
@@ -80,6 +82,7 @@ EmtBus::~EmtBus(void)
     free(p_neqsgen);
     free(p_neqsexc);
     free(p_neqsgov);
+    free(p_neqsplant);
     free(p_gen);
   }
 
@@ -134,6 +137,10 @@ void EmtBus::setMachineIntegrationType(EMTMachineIntegrationType type)
     if(p_gen[i]->hasGovernor()) {
       p_gen[i]->getGovernor()->setIntegrationType(type);
     }
+
+    if(p_gen[i]->hasPlantController()) {
+      p_gen[i]->getPlantController()->setIntegrationType(type);
+    }
   }
 }
 
@@ -146,6 +153,11 @@ void EmtBus::preStep(double time, double timestep)
   
   for(i = 0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
+
+    if(p_gen[i]->hasPlantController()) {
+      boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
+      plant->preStep(time,timestep);
+    }
 
     if(p_gen[i]->hasExciter()) {
       boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
@@ -164,6 +176,11 @@ void EmtBus::postStep(double time)
 
   for(i = 0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
+
+    if(p_gen[i]->hasPlantController()) {
+      boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
+      plant->postStep(time);
+    }
 
     if(p_gen[i]->hasExciter()) {
       boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
@@ -206,6 +223,11 @@ void EmtBus::setLocalOffset(int offset)
     if(p_gen[i]->hasGovernor()) {
       p_gen[i]->getGovernor()->setBusLocalOffset(offset);
     }
+
+    if(p_gen[i]->hasPlantController()) {
+      p_gen[i]->getPlantController()->setBusLocalOffset(offset);
+    }
+
   }
 
   if(p_hasfault) {
@@ -233,6 +255,11 @@ void EmtBus::resetEventFlags()
     if(p_gen[i]->hasGovernor()) {
       p_gen[i]->getGovernor()->resetEventFlags();
     }
+
+    if(p_gen[i]->hasPlantController()) {
+      p_gen[i]->getPlantController()->resetEventFlags();
+    }
+
   }
 
   if(p_hasfault) {
@@ -273,7 +300,7 @@ void EmtBus::getVoltageGlobalLocation(int* startgloballoc) const
 void EmtBus::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
   int i;
-  bool has_ex=false,has_gov=false;
+  bool has_ex=false,has_gov=false,has_pcon=false;
 
   
   for(i=0; i < p_ngen; i++) {
@@ -287,6 +314,12 @@ void EmtBus::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
     if(has_gov) {
       p_gen[i]->getGovernor()->setEvent(eman);
     }
+
+    has_pcon = static_cast<bool>(p_gen[i]->getPlantController());
+    if(has_pcon) {
+      p_gen[i]->getPlantController()->setEvent(eman);
+    }
+    
   }
   
 
@@ -352,12 +385,14 @@ void EmtBus::setup()
     p_neqsgen = (int*)malloc(p_ngen*sizeof(int));
     p_neqsexc = (int*)malloc(p_ngen*sizeof(int));
     p_neqsgov = (int*)malloc(p_ngen*sizeof(int));
+    p_neqsplant = (int*)malloc(p_ngen*sizeof(int));
   }
 
   for(i=0; i < p_ngen; i++) {
     p_neqsgen[i] = 0;
     p_neqsexc[i] = 0;
     p_neqsgov[i] = 0;
+    p_neqsplant[i] = 0;
 
     if(!p_gen[i]->getStatus()) continue;
 
@@ -368,6 +403,7 @@ void EmtBus::setup()
 
     bool has_ex = p_gen[i]->hasExciter();
     bool has_gv = p_gen[i]->hasGovernor();
+    bool has_pcon = p_gen[i]->hasPlantController();
 
     if (has_ex) {
       p_gen[i]->getExciter()->getnvar(&p_neqsexc[i]);
@@ -377,9 +413,14 @@ void EmtBus::setup()
       p_gen[i]->getGovernor()->getnvar(&p_neqsgov[i]);
       p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
     }
-    
+
+    if (has_pcon) {
+      p_gen[i]->getPlantController()->getnvar(&p_neqsplant[i]);
+      p_gen[i]->getPlantController()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i]);
+    }
+
     /* Update number of variables for this bus */
-    p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
+    p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i]+p_neqsplant[i];
   }
 
   if(p_nload) {
@@ -425,7 +466,8 @@ void EmtBus::setGlobalLocation()
     
     bool has_ex = p_gen[i]->hasExciter();
     bool has_gv = p_gen[i]->hasGovernor();
-
+    bool has_plant = p_gen[i]->hasPlantController();
+    
     if (has_ex) {
       // Set the global location for the first variable
       p_gen[i]->getExciter()->setGlobalLocation(gloc);
@@ -433,10 +475,17 @@ void EmtBus::setGlobalLocation()
       p_gen[i]->getExciter()->setVoltageGlobalLocation(vgloc);
       gloc += p_neqsexc[i];
     }
+
     if (has_gv) {
       // Set the global location for the first variable 
       p_gen[i]->getGovernor()->setGlobalLocation(gloc);
       gloc += p_neqsgov[i];
+    }
+
+    if (has_plant) {
+      // Set the global location for the first variable 
+      p_gen[i]->getPlantController()->setGlobalLocation(gloc);
+      gloc += p_neqsplant[i];
     }
   }
 
@@ -540,6 +589,7 @@ void EmtBus::load(const
   gridpack::utility::StringUtils util;
   bool has_ex;
   bool has_gv;
+  bool has_plantcontroller = false;
 
   // Read Generators 
   // Get number of generators incident on this bus
@@ -631,6 +681,26 @@ void EmtBus::load(const
 	  }
 	}
       }
+
+      data->getValue(HAS_PLANT_CONTROLLER,&has_plantcontroller,i);
+      if(has_plantcontroller) {
+	if(data->getValue(PLANT_CONTROLLER_MODEL, &model, i)) {
+	  type = util.trimQuotes(model);
+	  if((type == "REPCA1") || (type == "REPCTA1")) {
+	    Repca1 *repca1;
+	    repca1 = new Repca1;
+	    repca1->setGenerator(p_gen[i]);
+	    repca1->setElectricalController(p_gen[i]->getExciter().get());
+
+	    boost::shared_ptr<BaseEMTPlantControllerModel> plant;
+	    plant.reset(repca1);
+	    p_gen[i]->setPlantController(plant);
+	    
+	    // Handle plant controller data loading
+	    repca1->load(data,i); // load plant controller model
+	  }
+	}
+      }      
     }
   }
 
@@ -811,6 +881,13 @@ int EmtBus::matrixNumValues()
       numvals += numvals_gov;
     }
 
+    if(p_gen[i]->hasPlantController()) {
+      int numvals_plant;
+      numvals_plant = p_gen[i]->getPlantController()->matrixNumValues();
+      numvals += numvals_plant;
+    }
+
+
   }
 
   for(i=0; i < p_nload; i++) {
@@ -918,6 +995,12 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::RealType *values,
       ctr += nvals_gov;
     }
 
+    if(p_gen[i]->hasPlantController()) {
+      int nvals_plant = 0;
+      p_gen[i]->getPlantController()->setTSshift(p_TSshift);
+      p_gen[i]->getPlantController()->matrixGetValues(&nvals_plant, values+ctr, rows+ctr, cols+ctr);
+      ctr += nvals_plant;
+    }
 
     p_gen[i]->getCurrentGlobalLocation(&i_gloc);
 
@@ -1173,6 +1256,13 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	gov->setInitialMechanicalPower(Pmech0);
 	gov->init(x);
       }
+
+      if(p_gen[i]->hasPlantController()) {
+	boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
+	plant->setVoltage(va,vb,vc); // Instantaneous voltages
+	plant->setVoltage(VR,VI); // Initial real and imaginary part of voltage phasor
+	plant->init(x);
+      }
     }
 
     for(i=0; i < p_nload; i++) {
@@ -1273,6 +1363,17 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	gov->setVoltage(v[0],v[1],v[2]);
 	
 	gov->vectorGetValues(f);
+      }
+
+            /* Exciter residual evaluation */
+      if(p_gen[i]->hasExciter()) {
+	boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
+	plant->setMode(p_mode);
+	plant->setTime(p_time);
+    
+	plant->setVoltage(v[0],v[1],v[2]);
+	
+	plant->vectorGetValues(f);
       }
 
       /* Get generator current */
@@ -1380,6 +1481,11 @@ void EmtBus::vectorSetElementValues(gridpack::RealType *values)
 	gov->setValues(values);
       }
 
+            if(p_gen[i]->hasExciter()) {
+	boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
+	plant->setMode(p_mode);
+	plant->setValues(values);
+      }
     }
 
     for(i=0; i < p_nload; i++) {
@@ -1422,7 +1528,11 @@ void EmtBus::vectorSetElementValues(gridpack::RealType *values)
 	gov->setValues(values);
       }
 
-
+      if(p_gen[i]->hasPlantController()) {
+	boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
+	plant->setMode(p_mode);
+	plant->setValues(values);
+      }
     }
 
     for(i=0; i < p_nload; i++) {
