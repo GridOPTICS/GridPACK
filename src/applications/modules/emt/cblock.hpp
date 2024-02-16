@@ -520,7 +520,7 @@ class Filter: public Cblock
              
               
    Differential equation:
-       dx_dt = u
+       T*dx_dt = u
 
    Output:
     y = x

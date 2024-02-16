@@ -140,10 +140,10 @@ public:
   void setInitialVoltage(double inVm,double inVa) {p_Vm0 = inVm; p_Va0 = inVa;}
 
   /**
-   * Set the initial field voltage (at t = tstart) for the exciter
+   * Get the initial field voltage (at t = tstart) for the exciter
    * @param fldv value of the field voltage
    */
-  void setInitialFieldVoltage(double fldv) {Efd0 = fldv; }
+  double getInitialFieldVoltage();
   
   virtual void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
@@ -283,8 +283,6 @@ protected:
   double        p_Vm0, p_Va0; /** Initial voltage magnitude and angle **/
   double        p_va,p_vb,p_vc; /** Bus voltage **/
   double        p_delta;   /** Machine angle */
-  double        Efd0;  /** Initial field voltage (for exciters) */
-  double        Ipcmd0, Iqcmd0; /** Initial current setpoints (for electrical controllers) */
   double        shift; // shift (multiplier) used in the Jacobian calculation
   
   EMTMachineIntegrationType integrationtype; // Integration type 

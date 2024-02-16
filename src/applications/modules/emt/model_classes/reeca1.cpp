@@ -234,6 +234,9 @@ void Reeca1::init(gridpack::RealType* xin)
   // Initialize Vt filter block
   Vt_filter = Vt_filter_blk.init_given_u(Vt);
 
+  // Get current commands
+  getInitialIpcmdIqcmd(&Ipcmd,&Iqcmd);
+  
   // Ipcmd related blocks initialization
   // Initial value of Ipcmd provided by generator controller
   Pord = Vt_filter*Ipcmd;
@@ -347,11 +350,172 @@ void Reeca1::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // exciter array starts from this location
 }
 
+
+/**
+ * Implements current limiting logic updating limits for Ipcmd and Iqcmd
+ * Logic from PowerWorld online documentation 
+ * https://www.powerworld.com/WebHelp/Content/TransientModels_HTML/Exciter%20REEC_A.htm
+ **/
+void Reeca1::CurrentLimitLogic(int PQFLAG,double Vt_filter, double Ipcmd, double Iqcmd,double *Ipmin_out, double *Ipmax_out, double *Iqmin_out, double *Iqmax_out)
+{
+  double Ipmax_temp,Iqmax_temp;
+  double I_temp;
+
+  *Ipmin_out = 0.0;
+  
+  // Iqmax look up from VDL1
+  Iqmax_temp = VDL1.getoutput(Vt_filter);
+  // Ipmax look up from VDL2
+  Ipmax_temp = VDL2.getoutput(Vt_filter);
+
+  if(!PQFLAG) { // Q priority
+    if (Imax < Iqmax_temp) Iqmax_temp = Imax;
+    // *************
+    // Need to add timer logic here
+    // *************
+    I_temp = Imax*Imax - Iqcmd*Iqcmd;
+    if(I_temp < 0) I_temp = 0;
+    else I_temp = sqrt(I_temp);
+    if(I_temp < Ipmax_temp) Ipmax_temp = I_temp;
+  } else { // P priority
+    if(Imax < Ipmax_temp) Ipmax_temp = Imax;
+    I_temp = Imax*Imax - Ipcmd*Ipcmd;
+    if(I_temp < 0) I_temp = 0.0;
+    else I_temp = sqrt(I_temp);
+    if(I_temp < Iqmax_temp) Iqmax_temp = I_temp;
+  }
+
+  *Ipmax_out =  Ipmax_temp;
+  *Iqmin_out = -Iqmax_temp;
+  *Iqmax_out =  Iqmax_temp;
+}
+
+
 /**
    Prestep function
 */
 void Reeca1::preStep(double time ,double timestep)
 {
+  if(integrationtype != EXPLICIT) return;
+
+  double vabc[3],vdq0[3];
+
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  double theta = getGenerator()->getAngle();
+  
+  abc2dq0(vabc,time,theta,vdq0);
+  double Vt, Vq;
+  Vt = vdq0[0]; Vq = vdq0[1];
+
+  Voltage_dip = getVoltageDip(Vt);
+
+  if(!Voltage_dip) {
+    if(Voltage_dip_prev) {
+      // Recovered from voltage dip
+      // Check if thld == 0, in this case there is
+      // no transition to state 2
+      if(fabs(Thld) < 1e-6) Iqinj_sw = 0;
+      else if(fabs(Thld) > 1e-6) {
+	// Thld is positive, transition to state 2,
+	// Set timer
+	thld_timer = 0.0;
+	Iqinj_sw = 2;
+      }	else {
+	// Thld is negative, transition to state 1
+	thld_timer = 0.0;
+	Iqinj_sw = 1;
+      }
+    } else {
+      if(Iqinj_sw == 1) {
+	thld_timer += timestep;
+	if(thld_timer > 1 - Thld) Iqinj_sw = 0;
+      } else if(Iqinj_sw == 2) {
+	thld_timer += timestep;
+	if(thld_timer > Thld) Iqinj_sw = 0;
+      }
+    }
+  } else {
+    if(Iqinj_sw == 0) {
+      Iqinj_sw = 1;
+      thld_timer = 0.0;
+    }
+  }
+
+  bool updateState = !Voltage_dip; // freezestate logic : updateState = 0 when no voltage dip, otherwise 1
+  
+  // Get terminal voltage measurement
+  Vt_filter = Vt_filter_blk.getoutput(Vt,timestep,true);
+  // Cap Vt_filter at 0.01, i.e., if Vt_filter < 0.01, Vt_filter = 0.01
+  Vt_filter_lowcap_out = Vt_filter_lowcap_blk.getoutput(Vt_filter);
+
+  // Current limit logic, calculate limits for Ipcmd and Iqcmd
+  CurrentLimitLogic(PQFLAG,Vt_filter,Ipcmd,Iqcmd,&Ipmin,&Ipmax,&Iqmin,&Iqmax);
+
+  // Pref limiter output
+  // Update the previous value for the rate limiter block
+  Pref_limit_out = Pref_limit_blk.getoutput(Pref,timestep,true);
+
+  double Pord_blk_in;
+
+  // Pord block input based on PFLAG
+  if(!PFLAG) {
+    Pord_blk_in = Pref_limit_out;
+  } else {
+    Pord_blk_in = Pref_limit_out*omega_g;
+  }
+
+  // Pord block output, updateState = 0 (freezeState) if voltage_dip = 1
+  Pord = Pord_blk.getoutput(Pord_blk_in,timestep,updateState);
+
+  // Ipcmd - output to generator controller
+  Ipcmd = Ipcmd_limit_blk.getoutput(Pord/Vt_filter_lowcap_out,Ipmin,Ipmax);
+
+  // ****************
+  // Iqcmd calculation
+  // ****************
+  double Qext;
+  if(!PFFLAG) {
+    Qext = Qref;
+  } else {
+    // **** TO BE IMPLEMENTED
+    // Need to get Pe
+  }
+
+  double Iq_lag_blk_in, Iq_Qflag;
+  if(!QFLAG) {
+    // Input to Iq_lag_blk
+    Iq_lag_blk_in = Qext/Vt_filter_lowcap_out;
+    Iq_Qflag = Iq_lag_blk.getoutput(Iq_lag_blk_in,timestep,updateState);
+  } else {
+    double Vlim_blk_in;
+    if(!VFLAG) {
+      Vlim_blk_in = Qext + Vbias;
+    } else {
+      double Qlim_blk_out;
+      Qlim_blk_out = Qlim_blk.getoutput(Qext);
+      Vlim_blk_in = Q_PI_blk.getoutput(Qlim_blk_out - Qgen);
+    }
+    double Verr_PI_blk_in;
+    Verr_PI_blk_in = Vlim_blk.getoutput(Vlim_blk_in);
+
+    Iq_Qflag = Verr_PI_blk.getoutput(Verr_PI_blk_in - Vt_filter,timestep,Iqmin,Iqmax,-1000.0,1000.0,updateState);
+  }
+
+  if(Iqinj_sw == 0) {
+    Iqinj = 0;
+  } else if(Iqinj_sw == 1) {
+    /* Get Iqinj */
+    V_err = V_err_deadband.getoutput(Vref0 - Vt_filter);
+    Iqv = Kqv*V_err;
+    Iqinj = Iqv_limit_blk.getoutput(Iqv);
+  } else if(Iqinj_sw == 2) {
+    Iqinj = Iqfrz;
+  }
+
+  Iqcmd = Iq_Qflag + Iqinj;
+
+  Iqcmd = Iqcmd_limit_blk.getoutput(Iqcmd,Iqmin,Iqmax);
 
 }
 
@@ -360,6 +524,9 @@ void Reeca1::preStep(double time ,double timestep)
 */
 void Reeca1::postStep(double time)
 {
+  Voltage_dip = getVoltageDip(Vt);
+
+  Voltage_dip_prev = Voltage_dip;
 }
 
 /**
@@ -383,6 +550,16 @@ void Reeca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   int ctr = 0;
   *nvals = ctr;		     
 }
+
+/**
+   Get the current command references
+**/
+void Reeca1::getIpcmdIqcmd(double *Ipcmdout, double *Iqcmdout)
+{
+  *Ipcmdout = Ipcmd;
+  *Iqcmdout = Iqcmd;
+}
+
 
 /**
  * Update the event function values

@@ -82,6 +82,15 @@ double BaseEMTExcModel::getFieldVoltage(int *Efd_gloc)
 }
 
 /**
+ * Get the initial field voltage (at t = tstart) for the exciter
+ * @param fldv value of the field voltage
+ */
+double BaseEMTExcModel::getInitialFieldVoltage()
+{
+  return p_gen->getInitialFieldVoltage();
+}
+
+/**
  * Get the current command references during initialization
  */
 void BaseEMTExcModel::getInitialIpcmdIqcmd(double *Ipcmd0, double *Iqcmd0)
