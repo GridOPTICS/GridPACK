@@ -57,11 +57,6 @@ public:
    void setPrefQext(double Pref, double Qext) { }
 
   /**
-     Get the current command references
-  **/
-   void setIpcmdIqcmd(double *Ipcmd, double *Iqcmd) { }
-
-  /**
      Get the power order - used by pitch controller model
   */
    double getPord() { return 0.0; }
@@ -124,13 +119,7 @@ public:
    */
   void setInitialVoltage(double inVm,double inVa) {p_Vm0 = inVm; p_Va0 = inVa;}
 
-  /**
-   * Set the initial field voltage (at t = tstart) for the exciter
-   * @param fldv value of the field voltage
-   */
-  void setInitialFieldVoltage(double fldv) {Efd0 = fldv; }
-  
-   void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
+  void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
    * Update the event function values
@@ -177,6 +166,12 @@ public:
    * for e.g., the state vector values for this generator
    */
    void setValues(gridpack::RealType *values);
+
+  /**
+     Get the current command references
+  **/
+  void getIpcmdIqcmd(double *Ipcmdout, double *Iqcmdout);
+
   
 private:
   double Vt;               // Terminal voltage magnitude
@@ -278,6 +273,9 @@ private:
   int p_bus_num;
 
   bool getVoltageDip(double);
+
+  void CurrentLimitLogic(int PQFLAG,double Vt_filter, double Ipcmd, double Iqcmd,double *Ipmin_out, double *Ipmax_out, double *Iqmin_out, double *Iqmax_out);
+
 
 };
 

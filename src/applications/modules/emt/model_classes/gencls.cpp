@@ -166,6 +166,9 @@ void Gencls::setValues(gridpack::RealType *values)
 */
 void Gencls::preStep(double time ,double timestep)
 {
+  if(integrationtype != EXPLICIT) {
+    return;
+  }
   double Pe;
   double ddelta_dt,ddw_dt;
 

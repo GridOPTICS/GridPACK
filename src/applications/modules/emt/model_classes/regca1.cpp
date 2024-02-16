@@ -79,7 +79,7 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  Pll_block.setparams(1.0,10.0);
+  Pll_block.setparams(10.0,50.0);
 
   // Integrator block
   angle_block.setparams(1.0);
@@ -203,9 +203,14 @@ void Regca1::preStep(double time ,double timestep)
 
   dw    = Pll_block.getoutput(Vq, timestep, true);
   theta = angle_block.getoutput(dw, timestep, true);
+
   
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
 
+  if(hasExciter()) {
+    getExciter()->getIpcmdIqcmd(&Ipcmd,&Iqcmd);
+  }
+  
   if(lvplsw) {
     Lvpl_out = Lvpl_blk.getoutput(Vt_filter);
 

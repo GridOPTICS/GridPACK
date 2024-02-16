@@ -280,6 +280,8 @@ public:
    * For renewable plants only
    */
   virtual void getInitialIpcmdIqcmd(double *ipcmd0, double *iqcmd0) { }
+
+  
   /**
    * Returns the initial mechanical power (Pmech(t0))
    * @param [out] Pmech0 - Initial mechanical power

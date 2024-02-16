@@ -104,8 +104,8 @@ void Exdc1::init(gridpack::RealType* xin)
   double Vf=0.0;
   double SE=0.0;
 
-  // Efd is already set by the generator model
-  Efd = Efd0;
+  // Get initial field voltage
+  Efd = getInitialFieldVoltage();
   
   Vmeas    = Ec;
   xf       = -KF/TF*Efd;
