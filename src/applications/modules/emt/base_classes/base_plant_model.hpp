@@ -237,7 +237,9 @@ public:
 
 protected:
   double        VD, VQ;
-  int           status; /**< Exciter status */
+  int           status; /**< Plant status */
+  double        mbase,sbase; /** Machine base and system MVA base */
+  int           busnum; /** Bus number */
   double        p_time;   /** Current time */
   double        p_Vm0, p_Va0; /** Initial voltage magnitude and angle **/
   double        p_va,p_vb,p_vc; /** Bus voltage **/

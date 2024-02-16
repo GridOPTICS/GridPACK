@@ -79,7 +79,7 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  Pll_block.setparams(10.0,50.0);
+  Pll_block.setparams(0.01,1.0);
 
   // Integrator block
   angle_block.setparams(1.0);
@@ -202,7 +202,7 @@ void Regca1::preStep(double time ,double timestep)
   Vq = vdq0[1];
 
   dw    = Pll_block.getoutput(Vq, timestep, true);
-  theta = angle_block.getoutput(dw, timestep, true);
+  theta = angle_block.getoutput(OMEGA_S*dw, timestep, true);
 
   
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
@@ -262,7 +262,59 @@ void Regca1::vectorGetValues(gridpack::RealType *values)
   if(p_mode == RESIDUAL_EVAL) {
 
   }
+}
 
+/**
+ * Return the generator real and reactive power
+ * @param [input] time - the current time
+ * @param [output] Pg - generator real power
+ * @param [output] Qg - generator reactive power
+ *
+ * Note: Power is on system MVA base
+ */
+void Regca1::getPower(double time,double *Pg, double *Qg)
+{
+  double Vt, Vq, It, Iq;
+  gridpack::ComplexType V,I,S;
+  double idq0[3];
+  double Pgen,Qgen;
+  
+  vabc[0] = p_va;
+  vabc[1] = p_vb;
+  vabc[2] = p_vc;
+
+  abc2dq0(vabc,time,theta,vdq0);
+  abc2dq0(iabc,time,theta,idq0);
+
+  Vt = vdq0[0];
+  Vq = vdq0[1];
+
+  It = idq0[0];
+  Iq = idq0[1];
+
+  V = gridpack::ComplexType(Vt,Vq);
+  I = gridpack::ComplexType(It,Iq);
+
+  S = V*conj(I);
+  Pgen = real(S);
+  Qgen = imag(S);
+
+  *Pg = Pgen*mbase/sbase;
+  *Qg = Qgen*mbase/sbase;
+
+}
+
+/**
+ * Return the generator initial real and reactive power
+ * @param [output] Pg(t0) - generator real power
+ * @param [output] Qg(t0) - generator reactive power
+ *
+ * Note: Power is pu on system MVA base
+ */
+void Regca1::getInitialPower(double *Pg, double *Qg)
+{
+  *Pg = pg*mbase/sbase;
+  *Qg = qg*mbase/sbase;
 }
 
 /**

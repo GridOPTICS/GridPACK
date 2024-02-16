@@ -340,7 +340,8 @@ private:
   int           *p_neqsload; // Number of equations for each load
   int           *p_neqsgen; // Number of equations for each generator
   int           *p_neqsexc; // Number of equations for each exciter 
-  int           *p_neqsgov; // Number of equations for each governor 
+  int           *p_neqsgov; // Number of equations for each governor
+  int           *p_neqsplant; // Number of equations for each plant controller
   
   friend class boost::serialization::access;
   
