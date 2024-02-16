@@ -635,6 +635,7 @@ void EmtBus::load(const
 
       has_ex = false;
       data->getValue(HAS_EXCITER,&has_ex,i);
+      boost::shared_ptr<BaseEMTExcModel> ex;
       if(has_ex) {
 	if(data->getValue(EXCITER_MODEL, &model, i)) {
 	  type = util.trimQuotes(model);
@@ -643,7 +644,6 @@ void EmtBus::load(const
             exdc1 = new Exdc1;
 	    exdc1->setGenerator(p_gen[i]);
 	    
-            boost::shared_ptr<BaseEMTExcModel> ex;
             ex.reset(exdc1);
             p_gen[i]->setExciter(ex);
 	    
@@ -653,7 +653,6 @@ void EmtBus::load(const
             reeca1 = new Reeca1;
 	    reeca1->setGenerator(p_gen[i]);
 	    
-            boost::shared_ptr<BaseEMTExcModel> ex;
             ex.reset(reeca1);
             p_gen[i]->setExciter(ex);
 	    
@@ -694,7 +693,9 @@ void EmtBus::load(const
 
 	    boost::shared_ptr<BaseEMTPlantControllerModel> plant;
 	    plant.reset(repca1);
+	    
 	    p_gen[i]->setPlantController(plant);
+	    ex->setPlantController(plant);
 	    
 	    // Handle plant controller data loading
 	    repca1->load(data,i); // load plant controller model
@@ -1365,8 +1366,8 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	gov->vectorGetValues(f);
       }
 
-            /* Exciter residual evaluation */
-      if(p_gen[i]->hasExciter()) {
+      /* Exciter residual evaluation */
+      if(p_gen[i]->hasPlantController()) {
 	boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
 	plant->setMode(p_mode);
 	plant->setTime(p_time);
@@ -1481,7 +1482,7 @@ void EmtBus::vectorSetElementValues(gridpack::RealType *values)
 	gov->setValues(values);
       }
 
-            if(p_gen[i]->hasExciter()) {
+      if(p_gen[i]->hasPlantController()) {
 	boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
 	plant->setMode(p_mode);
 	plant->setValues(values);

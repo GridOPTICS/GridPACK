@@ -4,12 +4,12 @@
 
 Regca1::Regca1(void)
 {
-  nxgen   = 3; // Number of variables for this model
+  nxgen   = 4; // Number of variables for this model
 }
 
 void Regca1::getnvar(int *nvar)
 {
-  if(integrationtype == EXPLICIT) nxgen = 0;
+  if(integrationtype == EXPLICIT) nxgen = 4;
   *nvar = nxgen;
 }
 
@@ -128,9 +128,9 @@ void Regca1::init(gridpack::RealType* xin)
 
   // Initialize blocks
   // PLL
-  dw = 0.0;
-  double Vq = Pll_block.init_given_y(dw);
+  double Vq = Pll_block.init_given_y(OMEGA_S);
 
+  dw = 0.0;
   theta = p_Va0;
   angle_block.init_given_y(theta);
 
@@ -138,6 +138,11 @@ void Regca1::init(gridpack::RealType* xin)
   Ipcmd = Ip_blk.init_given_y(Ip);
   Iqcmd = Iq_blk.init_given_y(Iq);
   Vt_filter = Vt_filter_blk.init_given_u(p_Vm0);
+
+  x[0] = p_Vm0;    // Voltage magnitude
+  x[1] = pg/sbase; // Real power
+  x[2] = qg/sbase; // Reactive power
+  x[3] = 1.0;     // Frequency
 }
 
 /**
@@ -171,17 +176,14 @@ void Regca1::setValues(gridpack::RealType *values)
 {
   gridpack::RealType *x = values+offsetb; // generator array starts from this location
 
-  /*
   if(p_mode == XVECTOBUS) {
-    iabc[0]  = x[0];
-    iabc[1]  = x[1];
-    iabc[2]  = x[2];
+    Vm  = x[0];
+    Pgen  = x[1];
+    Qgen  = x[2];
+    Freq  = x[3];
   } else if(p_mode == XDOTVECTOBUS) {
-    diabc[0]  = x[0];
-    diabc[1]  = x[1];
-    diabc[2]  = x[2];
   }
-  */
+  
 }
 
 /**
@@ -189,7 +191,7 @@ void Regca1::setValues(gridpack::RealType *values)
 */
 void Regca1::preStep(double time ,double timestep)
 {
-  double Vt,Vq;
+  double Vd,Vq, Vt;
   double Iq_olim;
 
   vabc[0] = p_va;
@@ -198,13 +200,18 @@ void Regca1::preStep(double time ,double timestep)
 
   abc2dq0(vabc,time,theta,vdq0);
 
-  Vt = vdq0[0];
+  Vd = vdq0[0];
   Vq = vdq0[1];
 
-  dw    = Pll_block.getoutput(Vq, timestep, true);
-  theta = angle_block.getoutput(OMEGA_S*dw, timestep, true);
+  Vt = sqrt(Vd*Vd + Vq*Vq);
 
+  Vm_save = Vt;
   
+  double omega;
+  omega    = Pll_block.getoutput(Vq, timestep, true);
+  dw = omega - OMEGA_S;
+  theta = angle_block.getoutput(dw, timestep, true);
+
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
 
   if(hasExciter()) {
@@ -233,11 +240,8 @@ void Regca1::preStep(double time ,double timestep)
   idq0[1] = Iqout*mbase/sbase;
   idq0[2] = 0.0;
 
-  /*
-  double Irout = Ipout*cos(theta) - Iqout*sin(theta);
-  double Iiout = Ipout*sin(theta) + Iqout*cos(theta);
-  */
-
+  getPower(time,&Pgen_save,&Qgen_save);
+  Freq_save = getFreq();
 }
 
 /**
@@ -260,9 +264,28 @@ void Regca1::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-
+    f[0] = Vm - Vm_save;
+    f[1] = Pgen - Pgen_save;
+    f[2] = Qgen - Qgen_save;
+    f[3] = Freq - Freq_save;
   }
 }
+
+/**
+ * Return the generator frequency (pu)
+ * @param [output] freq - machine frequency
+ *
+ * Note: Frequency is per unit. Steady-state frequency is 1.0
+ */
+double Regca1::getFreq()
+{
+  double pufreq;
+
+  pufreq = (dw + OMEGA_S)/(2*PI*FREQ);
+
+  return pufreq;
+}
+
 
 /**
  * Return the generator real and reactive power
@@ -274,10 +297,9 @@ void Regca1::vectorGetValues(gridpack::RealType *values)
  */
 void Regca1::getPower(double time,double *Pg, double *Qg)
 {
-  double Vt, Vq, It, Iq;
+  double Vd, Vq, Id, Iq;
   gridpack::ComplexType V,I,S;
   double idq0[3];
-  double Pgen,Qgen;
   
   vabc[0] = p_va;
   vabc[1] = p_vb;
@@ -286,14 +308,14 @@ void Regca1::getPower(double time,double *Pg, double *Qg)
   abc2dq0(vabc,time,theta,vdq0);
   abc2dq0(iabc,time,theta,idq0);
 
-  Vt = vdq0[0];
+  Vd = vdq0[0];
   Vq = vdq0[1];
 
-  It = idq0[0];
+  Id = idq0[0];
   Iq = idq0[1];
 
-  V = gridpack::ComplexType(Vt,Vq);
-  I = gridpack::ComplexType(It,Iq);
+  V = gridpack::ComplexType(Vd,Vq);
+  I = gridpack::ComplexType(Id,Iq);
 
   S = V*conj(I);
   Pgen = real(S);
@@ -313,8 +335,8 @@ void Regca1::getPower(double time,double *Pg, double *Qg)
  */
 void Regca1::getInitialPower(double *Pg, double *Qg)
 {
-  *Pg = pg*mbase/sbase;
-  *Qg = qg*mbase/sbase;
+  *Pg = pg/sbase;
+  *Qg = qg/sbase;
 }
 
 /**
@@ -350,20 +372,13 @@ void Regca1::getCurrentGlobalLocation(int *i_gloc)
  * Get number of matrix values contributed by generator
  * @return number of matrix values
 
- Non-zero pattern of the Jacobian (x denotes non-zero value)
-
-          ia   ib   ic    va    vb    vc
- eq. 1 |   x               x
- eq. 2 |        x                x
- eq. 3 |             x                 x
-
- Number of non-zero values = 6
+ Number of non-zero values = 4
  */
 int Regca1::matrixNumValues()
 {
   int numVals;
 
-  numVals = 6;
+  numVals = 4;
 
   return numVals;
 }
@@ -378,6 +393,24 @@ int Regca1::matrixNumValues()
 void Regca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
+
+  rows[ctr] = p_gloc;
+  cols[ctr] = p_gloc;
+  values[ctr] = 1.0;
+
+  rows[ctr+1] = p_gloc+1;
+  cols[ctr+1] = p_gloc+1;
+  values[ctr+1] = 1.0;
+
+  rows[ctr+2] = p_gloc+2;
+  cols[ctr+2] = p_gloc+2;
+  values[ctr+2] = 1.0;
+
+  rows[ctr+3] = p_gloc+3;
+  cols[ctr+3] = p_gloc+3;
+  values[ctr+3] = 1.0;
+
+  ctr += 4;
 
   *nvals = ctr;
 }

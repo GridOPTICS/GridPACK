@@ -167,7 +167,6 @@ private:
   double Tg;
   double Vfrz;      // State freeze voltage
 
-  std::string p_gen_id;
   int p_bus_num;
 
   // Model blocks
@@ -214,7 +213,6 @@ private:
 
   // Internal variables
   double Vt;
-  double p_sbase,p_mbase; // System base and machine Mbase
   double Vref; // Reference voltage used in QV control
   bool   Vfreeze; // Flag to check if Vfreeze state is active (Vt < Vfrz)
 
