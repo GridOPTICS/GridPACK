@@ -129,6 +129,7 @@ void Repca1::init(gridpack::RealType* xin)
 
   // Get Initial Pref and Qref
   getElectricalController()->getInitialPrefQext(&Pref, &Qref);
+  Plant_ref = Pref;
 
   // Get machine power
   getGenerator()->getInitialPower(&Pg, &Qg);

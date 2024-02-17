@@ -150,17 +150,22 @@ void EmtBus::setMachineIntegrationType(EMTMachineIntegrationType type)
 void EmtBus::preStep(double time, double timestep)
 {
   int i;
+  double *v = p_vptr;
   
   for(i = 0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
 
+    p_gen[i]->setVoltage(v[0],v[1],v[2]);
+    
     if(p_gen[i]->hasPlantController()) {
       boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
+      plant->setVoltage(v[0],v[1],v[2]);
       plant->preStep(time,timestep);
     }
 
     if(p_gen[i]->hasExciter()) {
       boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
+      exc->setVoltage(v[0],v[1],v[2]);
       exc->preStep(time,timestep);
     }
     p_gen[i]->preStep(time,timestep);
