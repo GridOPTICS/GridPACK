@@ -140,6 +140,17 @@ public:
 		   const double& timestep,
 		   const gridpack::math::RealVector& X)
   {
+    p_factory->setTime(time);
+
+    // Push current values in X vector back into network components
+    p_factory->setMode(XVECTOBUS);
+
+    p_VecMapper->mapToNetwork(X);
+
+    // Update ghost buses and branches
+    emt_network->updateBuses();
+    emt_network->updateBranches();
+
     // Prestep
     p_factory->preStep(time,timestep);
     
