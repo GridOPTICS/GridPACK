@@ -66,6 +66,11 @@ build-gridpack:ubuntu:
 .test-gridpack:
   stage: test-gridpack
   script:
+    # load mpi module if on RHEL
+    - . ./build/install_package_deps_lib.sh
+    - load_mpi_module
+
+    # run tests
     - ctest --test-dir src/build --output-on-failure
   artifacts:
     paths: [src/build/Testing/Temporary]
