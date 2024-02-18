@@ -22,21 +22,12 @@ RUN set -xeuo pipefail \
   && install_packages 2>&1 | tee logs/install_packages.log
 
 COPY install_boost.sh ./
-RUN set -xeuo pipefail \
-  && source ./install_package_deps_lib.sh \
-  && load_mpi_module \
-  && bash ./install_boost.sh 2>&1 | tee logs/install_boost.log
+RUN set -xeuo pipefail && bash ./install_boost.sh 2>&1 | tee logs/install_boost.log
 
 COPY install_ga.sh ./
-RUN set -xeuo pipefail \
-  && source ./install_package_deps_lib.sh \
-  && load_mpi_module \
-  && bash ./install_ga.sh 2>&1 | tee logs/install_ga.log
+RUN set -xeuo pipefail && bash ./install_ga.sh 2>&1 | tee logs/install_ga.log
 
 COPY install_petsc.sh ./
-RUN set -xeuo pipefail \
-  && source ./install_package_deps_lib.sh \
-  && load_mpi_module \
-  && bash ./install_petsc.sh 2>&1 | tee logs/install_petsc.log
+RUN set -xeuo pipefail && bash ./install_petsc.sh 2>&1 | tee logs/install_petsc.log
 
 RUN rm *.sh

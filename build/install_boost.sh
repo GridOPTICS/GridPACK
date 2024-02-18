@@ -1,5 +1,12 @@
 #! /bin/bash
 
+# get the parent directory of this script
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
+# load mpi module for RHEL
+source "$script_dir/install_package_deps_lib.sh"
+load_mpi_module
+
 boost_version="${BOOST_VERSION:-1.78.0}"
 
 echo "--- Installing Boost ${boost_version} ---"
