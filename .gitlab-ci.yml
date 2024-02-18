@@ -5,7 +5,7 @@ default:
     untracked: true
   image: alpine
 
-stages: [build-container, build-gridpack, test-gridpack]
+stages: [check-container, build-container, build-gridpack, test-gridpack]
 
 variables:
   MAKE_JOBS: "2"
@@ -15,6 +15,7 @@ variables:
   ROCKY_ENV_IMAGE: "rocky-gridpack-env"
 
 check-container-definition-changed:
+  stage: check-container
   script:
     - touch container-definition-changed
   rules:
@@ -22,6 +23,7 @@ check-container-definition-changed:
       changes: ["build/**/*"]
 
 .check-container-needs-built:
+  stage: check-container
   needs:
     - job: check-container-definition-changed
       optional: true
