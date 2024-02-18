@@ -34,6 +34,9 @@ function install_gridpack {
   # remove existing cmake output
   rm -rf CMake*
 
+  # load mpi module for RHEL
+  load_mpi_module
+
   # generate make files
   echo "Generating GridPACK make files"
   cmake \
@@ -77,18 +80,11 @@ function install_gridpack_python {
 
   pushd python || exit
 
-  # detect distribution
-  distribution=$(
-    source /etc/os-release
-    echo "$ID"
-  )
-
-  # set an env var if we are running on RHEL
-  case $distribution in
-  fedora | rhel | centos | rocky)
+  # export RHEL_OPENMPI_HACK for RHEL
+  distribution=$(get_base_distro)
+  if test "$distribution" = "rhel"; then
     export RHEL_OPENMPI_HACK=yes
-    ;;
-  esac
+  fi
 
   # set python executable path
   python_exe=$(which python || which python3)
@@ -119,6 +115,12 @@ function install_gridpack_python {
 
   echo "GridPACK python wrapper installation complete"
 }
+
+# get the parent directory of this script
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
+# load the `load_mpi_module`, `get_base_distro` functions
+source "$script_dir/install_package_deps_lib.sh"
 
 echo "Installing GridPACK"
 date
