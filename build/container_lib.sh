@@ -40,14 +40,14 @@ check_installed() {
 # usage:
 #   glab_api GET /projects/123/registry/repositories
 #   glab_api POST /projects/123/registry/repositories "name=foo" "path=bar"
-# needs: curl, $CI_API_V4_URL, $CI_JOB_TOKEN
+# needs: curl, $CI_API_V4_URL, $API_TOKEN
 function glab_api {
   local method=${1:?}
   local endpoint=${2:?}
   local form_items=("${@:3}")
 
   local api_url=${CI_API_V4_URL:?}
-  local api_token=${CI_JOB_TOKEN:?}
+  local api_token=${API_TOKEN:?}
 
   check_installed curl
 
@@ -69,8 +69,7 @@ function glab_api {
   curl \
     --no-progress-meter \
     --fail \
-    --location \
-    --header "JOB-TOKEN: ${api_token}" \
+    --location \ --header "PRIVATE-TOKEN: ${api_token}" \
     --request "${method}" \
     "${form_data}${api_url}${endpoint}"
 }
@@ -78,7 +77,7 @@ function glab_api {
 # get the id of a container registry repo for a project by path
 # usage:
 #   get_container_registry_repo_id
-# needs: jq, curl, $CI_API_V4_URL, $CI_JOB_TOKEN, $CI_PROJECT_ID, $CI_PROJECT_PATH_SLUG
+# needs: jq, curl, $CI_API_V4_URL, $API_TOKEN, $CI_PROJECT_ID, $CI_PROJECT_PATH_SLUG
 function get_container_registry_repo_id {
   local project_id=${CI_PROJECT_ID:?}
   local project_path_slug=${CI_PROJECT_PATH_SLUG:?}
@@ -99,7 +98,7 @@ function get_container_registry_repo_id {
 # check if a tag exists in a project's container registry
 # usage:
 #   container_tag_exists 123 "my-tag"
-# needs: curl, $CI_API_V4_URL, $CI_JOB_TOKEN, $CI_PROJECT_ID
+# needs: curl, $CI_API_V4_URL, $API_TOKEN, $CI_PROJECT_ID
 function container_tag_exists {
   local reg_repo_id=${1:?}
   local image_tag=${2:?}
@@ -112,7 +111,7 @@ function container_tag_exists {
 # delete tag from a project's container registry
 # usage:
 #  delete_container_tag 123 "my-tag"
-# needs: curl, $CI_API_V4_URL, $CI_JOB_TOKEN, $CI_PROJECT_ID
+# needs: curl, $CI_API_V4_URL, $API_TOKEN, $CI_PROJECT_ID
 function delete_container_tag {
   local reg_repo_id=${1:?}
   local image_tag=${2:?}
@@ -148,7 +147,7 @@ function build_container {
 # build container image if not available in registry or force_rebuild = 'true'
 # usage:
 #   check_container_needs_built "ubuntu:22.04"
-# needs: jq, curl, $CI_API_V4_URL, $CI_JOB_TOKEN, $CI_PROJECT_ID, $CI_PROJECT_PATH_SLUG
+# needs: jq, curl, $CI_API_V4_URL, $API_TOKEN, $CI_PROJECT_ID, $CI_PROJECT_PATH_SLUG
 function check_container_needs_built {
   local tag=${1:?}
 
