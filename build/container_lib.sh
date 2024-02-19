@@ -121,29 +121,6 @@ function delete_container_tag {
   glab_api DELETE "/projects/${project_id}/registry/repositories/${reg_repo_id}/tags/${image_tag}" >/dev/null
 }
 
-# build the container image with kaniko
-# usage:
-#   build_container "ubuntu:22.04"
-# needs: /kaniko/executor, $HTTP_PROXY, $HTTPS_PROXY, $CI_REGISTRY_IMAGE
-function build_container {
-  local base_image=${1:?}
-
-  local project_registry=${CI_REGISTRY_IMAGE:?}
-
-  # strip tag from base image
-  local base_image_no_tag=${base_image%%:*}
-
-  # build with kaniko
-  # https://github.com/GoogleContainerTools/kaniko
-  /kaniko/executor \
-    --context build \
-    --build-arg "BASE_IMAGE=${base_image}" \
-    --build-arg "http_proxy=${HTTP_PROXY}" \
-    --build-arg "https_proxy=${HTTPS_PROXY}" \
-    --dockerfile build/dockerfile \
-    --destination "${project_registry}:${base_image_no_tag}-gridpack-env"
-}
-
 # build container image if not available in registry or force_rebuild = 'true'
 # usage:
 #   check_container_needs_built "ubuntu:22.04"
