@@ -3,7 +3,7 @@ default:
   artifacts:
     when: always
     untracked: true
-  image: alpine
+  image: ubuntu:22.04
 
 stages: [check-container, build-container, build-gridpack, test-gridpack]
 
@@ -28,8 +28,7 @@ check-container-definition-changed:
     - job: check-container-definition-changed
       optional: true
   script:
-    - apk add --no-cache curl jq
-    - . ./build/container_lib.sh
+    - source ./build/container_lib.sh
     - check_container_needs_built "${BASE_IMAGE}"
 
 check-container-needs-built:ubuntu:
