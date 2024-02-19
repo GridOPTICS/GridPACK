@@ -76,10 +76,11 @@ function glab_api {
 # get the id of a container registry repo for a project by path
 # usage:
 #   get_container_registry_repo_id
-# needs: jq, curl, $CI_API_V4_URL, $API_TOKEN, $CI_PROJECT_ID, $CI_PROJECT_PATH_SLUG
+# needs: jq, curl, $CI_API_V4_URL, $API_TOKEN, $CI_PROJECT_ID, $CI_PROJECT_PATH
 function get_container_registry_repo_id {
   local project_id=${CI_PROJECT_ID:?}
-  local project_path_slug=${CI_PROJECT_PATH_SLUG:?}
+  : "${CI_PROJECT_PATH:?}"
+  local project_path=${CI_PROJECT_PATH,,}
 
   check_installed jq
 
@@ -91,7 +92,7 @@ function get_container_registry_repo_id {
   # - select the id prop
   # https://jqlang.github.io/jq/manual/
   glab_api GET "/projects/${project_id}/registry/repositories" \
-  | jq --raw-output --exit-status ".[] | select(.path == \"${project_path_slug}\") | .id"
+  | jq --raw-output --exit-status ".[] | select(.path == \"${project_path}\") | .id"
 }
 
 # check if a tag exists in a project's container registry
