@@ -70,7 +70,7 @@ function glab_api {
     --no-progress-meter \
     --fail \
     --location \
-    --header "PRIVATE-TOKEN: ${api_token}" \
+    --header "JOB-TOKEN: ${api_token}" \
     --request "${method}" \
     "${form_data}${api_url}${endpoint}"
 }
