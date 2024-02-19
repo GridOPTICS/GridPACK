@@ -86,7 +86,6 @@ function get_container_registry_repo_id {
   check_installed jq
 
   response=$(glab_api GET "/projects/${project_id}/registry/repositories")
-  echo "${response}"
 
   # jq query:
   # - raw-output: output raw strings instead of json
@@ -95,7 +94,7 @@ function get_container_registry_repo_id {
   # - where the registry repo path is the one we care about
   # - select the id prop
   # https://jqlang.github.io/jq/manual/
-  jq --raw-output --exit-status ".[] | select(.path == \"${project_path_slug}\") | .id" <<< "${response}"
+  echo "${response}" | jq --raw-output --exit-status ".[] | select(.path == \"${project_path_slug}\") | .id"
 }
 
 # check if a tag exists in a project's container registry
