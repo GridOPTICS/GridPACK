@@ -64,8 +64,6 @@ function glab_api {
   # - header: send private token for authentication
   # - request: specify the HTTP method
   # https://docs.gitlab.com/ee/api/container_registry.html
-  echo "${api_url}${endpoint}"
-  echo "${form_data}"
   curl \
     --no-progress-meter \
     --fail \
@@ -85,8 +83,6 @@ function get_container_registry_repo_id {
 
   check_installed jq
 
-  response=$(glab_api GET "/projects/${project_id}/registry/repositories")
-
   # jq query:
   # - raw-output: output raw strings instead of json
   # - exit-status: return 1 if no results
@@ -94,7 +90,8 @@ function get_container_registry_repo_id {
   # - where the registry repo path is the one we care about
   # - select the id prop
   # https://jqlang.github.io/jq/manual/
-  echo "${response}" | jq --raw-output --exit-status ".[] | select(.path == \"${project_path_slug}\") | .id"
+  glab_api GET "/projects/${project_id}/registry/repositories" \
+  | jq --raw-output --exit-status ".[] | select(.path == \"${project_path_slug}\") | .id"
 }
 
 # check if a tag exists in a project's container registry
