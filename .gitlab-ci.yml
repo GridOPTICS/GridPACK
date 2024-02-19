@@ -67,6 +67,9 @@ build-container:ubuntu:
   stage: build-gridpack
   script:
     - /bin/bash ./build/install_gridpack.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes: ["build/**/*", "src/**/*", "python/**/*"]
 
 build-gridpack:ubuntu:
   extends: .build-gridpack
@@ -84,6 +87,9 @@ build-gridpack:ubuntu:
     - ctest --test-dir src/build --output-on-failure
   artifacts:
     paths: [src/build/Testing/Temporary]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes: ["build/**/*", "src/**/*", "python/**/*"]
 
 test-gridpack:ubuntu:
   extends: .test-gridpack
