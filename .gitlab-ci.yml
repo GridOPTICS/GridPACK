@@ -47,7 +47,7 @@ check-container-needs-built:ubuntu:
     entrypoint: [""]
   script:
     - source ./build/container_lib.sh
-    - (test -f container-definition-changed || test -f container-needs-built) && build_container "${BASE_IMAGE}" > build.log 2>&1
+    - test -f container-needs-built && build_container "${BASE_IMAGE}" > build.log 2>&1
 
 build-container:ubuntu:
   extends: .build-container
