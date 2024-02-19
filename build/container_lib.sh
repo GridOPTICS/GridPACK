@@ -64,6 +64,8 @@ function glab_api {
   # - header: send private token for authentication
   # - request: specify the HTTP method
   # https://docs.gitlab.com/ee/api/container_registry.html
+  echo "${api_url}${endpoint}"
+  echo "${form_data}"
   curl \
     --no-progress-meter \
     --fail \

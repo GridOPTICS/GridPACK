@@ -28,6 +28,7 @@ check-container-definition-changed:
     - job: check-container-definition-changed
       optional: true
   script:
+    - set -o xtrace -o errexit -o nounset -o pipefail
     - apt-get update && apt-get install -y curl jq
     - source ./build/container_lib.sh
     - check_container_needs_built "${BASE_IMAGE}"
