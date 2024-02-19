@@ -28,7 +28,7 @@ check-container-definition-changed:
     - job: check-container-definition-changed
       optional: true
   script:
-    - apt-get update && apt-get install -y jq
+    - apt-get update && apt-get install -y curl jq
     - source ./build/container_lib.sh
     - check_container_needs_built "${BASE_IMAGE}"
 
