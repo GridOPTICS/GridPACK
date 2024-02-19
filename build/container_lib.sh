@@ -69,7 +69,8 @@ function glab_api {
   curl \
     --no-progress-meter \
     --fail \
-    --location \ --header "PRIVATE-TOKEN: ${api_token}" \
+    --location \
+    --header "PRIVATE-TOKEN: ${api_token}" \
     --request "${method}" \
     "${form_data}${api_url}${endpoint}"
 }
