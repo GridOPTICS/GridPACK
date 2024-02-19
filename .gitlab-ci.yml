@@ -31,12 +31,12 @@ check-container-definition-changed:
     - set -o xtrace -o errexit -o nounset -o pipefail
     - apt-get update && apt-get install -y curl jq
     - source ./build/container_lib.sh
-    - check_container_needs_built "${BASE_IMAGE}"
+    - check_container_needs_built "${ENV_IMAGE}"
 
 check-container-needs-built:ubuntu:
   extends: .check-container-needs-built
   variables:
-    BASE_IMAGE: ${UBUNTU_BASE_IMAGE}
+    ENV_IMAGE: ${UBUNTU_ENV_IMAGE}
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
 .build-container:
@@ -47,8 +47,7 @@ check-container-needs-built:ubuntu:
     entrypoint: [""]
   script:
     - source ./build/container_lib.sh
-    - test -f container-definition-changed &&
-      build_container "${BASE_IMAGE}" > build.log 2>&1
+    - (test -f container-definition-changed || test -f container-needs-built) && build_container "${BASE_IMAGE}" > build.log 2>&1
 
 build-container:ubuntu:
   extends: .build-container
