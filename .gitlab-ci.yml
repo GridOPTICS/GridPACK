@@ -28,6 +28,7 @@ check-container-definition-changed:
     - job: check-container-definition-changed
       optional: true
   script:
+    - apt-get update && apt-get install -y jq
     - source ./build/container_lib.sh
     - check_container_needs_built "${BASE_IMAGE}"
 
@@ -44,7 +45,7 @@ check-container-needs-built:ubuntu:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
   script:
-    - . ./build/container_lib.sh
+    - source ./build/container_lib.sh
     - test -f container-definition-changed &&
       build_container "${BASE_IMAGE}" > build.log 2>&1
 
@@ -68,7 +69,7 @@ build-gridpack:ubuntu:
   stage: test-gridpack
   script:
     # load mpi module if on RHEL
-    - . ./build/install_package_deps_lib.sh
+    - source ./build/install_package_deps_lib.sh
     - load_mpi_module
 
     # run tests
