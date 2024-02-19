@@ -50,7 +50,7 @@ check-container-needs-built:ubuntu:
       test -f container-needs-built \
       && /kaniko/executor \
         --context build \
-        --build-arg "BASE_IMAGE=${base_image}" \
+        --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
         --build-arg "http_proxy=${HTTP_PROXY}" \
         --build-arg "https_proxy=${HTTPS_PROXY}" \
         --dockerfile build/dockerfile \
