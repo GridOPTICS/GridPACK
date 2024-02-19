@@ -47,12 +47,13 @@ check-container-needs-built:ubuntu:
     entrypoint: [""]
   script:
     - test -f container-needs-built || exit 0
-    - /kaniko/executor \
-      --context build \
-      --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
-      --build-arg "http_proxy=${HTTP_PROXY}" \
-      --build-arg "https_proxy=${HTTPS_PROXY}" \
-      --dockerfile build/dockerfile \
+    - >-
+      /kaniko/executor
+      --context build
+      --build-arg "BASE_IMAGE=${BASE_IMAGE}"
+      --build-arg "http_proxy=${HTTP_PROXY}"
+      --build-arg "https_proxy=${HTTPS_PROXY}"
+      --dockerfile build/dockerfile
       --destination "${CI_REGISTRY_IMAGE}:${ENV_IMAGE}" > build.log 2>&1
 
 build-container:ubuntu:
