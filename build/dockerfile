@@ -19,15 +19,15 @@ RUN mkdir logs
 COPY install_package_deps_lib.sh ./
 RUN set -xeuo pipefail \
   && source ./install_package_deps_lib.sh \
-  && install_packages 2>&1 | tee logs/install_packages.log
+  && install_packages >logs/install_packages.log 2>&1
 
 COPY install_boost.sh ./
-RUN set -xeuo pipefail && bash ./install_boost.sh 2>&1 | tee logs/install_boost.log
+RUN bash -o xtrace -o errexit -o nounset -o pipefail ./install_boost.sh >logs/install_boost.log 2>&1
 
 COPY install_ga.sh ./
-RUN set -xeuo pipefail && bash ./install_ga.sh 2>&1 | tee logs/install_ga.log
+RUN bash -o xtrace -o errexit -o nounset -o pipefail ./install_ga.sh >logs/install_ga.log 2>&1
 
 COPY install_petsc.sh ./
-RUN set -xeuo pipefail && bash ./install_petsc.sh 2>&1 | tee logs/install_petsc.log
+RUN bash -o xtrace -o errexit -o nounset -o pipefail ./install_petsc.sh >logs/install_petsc.log 2>&1
 
 RUN rm *.sh

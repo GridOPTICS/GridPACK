@@ -1,5 +1,8 @@
 #! /bin/bash
 
+# get the parent directory of this script
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
 petsc_version="${PETSC_VERSION:-3.16.4}"
 
 echo "--- Installing PETSc ${petsc_version} ---"
@@ -14,6 +17,10 @@ git checkout "tags/v${petsc_version}" -b "v${petsc_version}"
 
 export PETSC_DIR=${PWD}
 export PETSC_ARCH=build-dir
+
+# load mpi module for RHEL
+source "$script_dir/install_package_deps_lib.sh"
+load_mpi_module
 
 # install
 echo "Configuring PETSc"
