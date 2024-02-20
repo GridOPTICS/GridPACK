@@ -51,6 +51,7 @@ check-container-needs-built:rocky:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
   script:
+    - set -o errexit -o nounset -o pipefail
     - test -f container-needs-built || exit 0
     - >-
       /kaniko/executor
@@ -59,7 +60,7 @@ check-container-needs-built:rocky:
       --build-arg "http_proxy=${HTTP_PROXY}"
       --build-arg "https_proxy=${HTTPS_PROXY}"
       --dockerfile build/dockerfile
-      --destination "${CI_REGISTRY_IMAGE}:${ENV_IMAGE}" > build.log 2>&1
+      --destination "${CI_REGISTRY_IMAGE}:${ENV_IMAGE}" 2>&1 | tee build.log
 
 build-container:ubuntu:
   extends: .build-container
