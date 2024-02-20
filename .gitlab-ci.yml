@@ -38,6 +38,11 @@ check-container-needs-built:ubuntu:
   variables:
     ENV_IMAGE: ${UBUNTU_ENV_IMAGE}
 
+check-container-needs-built:rocky:
+  extends: .check-container-needs-built
+  variables:
+    ENV_IMAGE: ${ROCKY_ENV_IMAGE}
+
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
 .build-container:
   stage: build-container
@@ -63,6 +68,13 @@ build-container:ubuntu:
     BASE_IMAGE: ${UBUNTU_BASE_IMAGE}
     ENV_IMAGE: ${UBUNTU_ENV_IMAGE}
 
+build-container:rocky:
+  extends: .build-container
+  needs: [check-container-needs-built:rocky]
+  variables:
+    BASE_IMAGE: ${ROCKY_BASE_IMAGE}
+    ENV_IMAGE: ${ROCKY_ENV_IMAGE}
+
 .build-gridpack:
   stage: build-gridpack
   script:
@@ -75,6 +87,11 @@ build-gridpack:ubuntu:
   extends: .build-gridpack
   image: ${CI_REGISTRY_IMAGE}:${UBUNTU_ENV_IMAGE}
   needs: [build-container:ubuntu]
+
+build-gridpack:rocky:
+  extends: .build-gridpack
+  image: ${CI_REGISTRY_IMAGE}:${ROCKY_ENV_IMAGE}
+  needs: [build-container:rocky]
 
 .test-gridpack:
   stage: test-gridpack
@@ -95,3 +112,8 @@ test-gridpack:ubuntu:
   extends: .test-gridpack
   image: ${CI_REGISTRY_IMAGE}:${UBUNTU_ENV_IMAGE}
   needs: [build-gridpack:ubuntu]
+
+test-gridpack:rocky:
+  extends: .test-gridpack
+  image: ${CI_REGISTRY_IMAGE}:${ROCKY_ENV_IMAGE}
+  needs: [build-gridpack:rocky]
