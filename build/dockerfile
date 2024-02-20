@@ -6,8 +6,8 @@ SHELL ["/bin/bash", "-c"]
 ARG http_proxy
 ARG https_proxy
 
-ENV GP_EXT_DEPS=/gridpack-dependencies \
-  HTTP_PROXY=${http_proxy} \
+ENV GP_EXT_DEPS=/gridpack-dependencies
+ENV HTTP_PROXY=${http_proxy} \
   HTTPS_PROXY=${https_proxy} \
   OMPI_ALLOW_RUN_AS_ROOT="1" \
   OMPI_ALLOW_RUN_AS_ROOT_CONFIRM="1" \
