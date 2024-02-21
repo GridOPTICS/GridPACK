@@ -51,7 +51,7 @@ check-container-needs-built:rocky:
     name: gcr.io/kaniko-project/executor:v1.9.0-debug
     entrypoint: [""]
   script:
-    - set -o errexit -o nounset -o pipefail
+    - set -o errexit -o pipefail
     - test -f container-needs-built || test "$FORCE_CONTAINER_BUILD" = "true" || exit 0
     - >-
       /kaniko/executor
