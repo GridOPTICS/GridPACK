@@ -57,7 +57,7 @@ better performance for all process counts, especially after four processors or
 so. After 16 processors, the performance of the two-sided runtime has degraded
 to the point that the overall runtime for the calculation starts increasing.
 
-<img src="../images/GA_perf.png" alt="drawing" width="600"/>
+<img src="../images/Polish_CA.png" alt="drawing" width="600"/>
 
 Global Arrays is a relatively straightforward build if MPI is available on your
 system. To configure GA with the basic two-sided runtime (suitable for
