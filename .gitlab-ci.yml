@@ -51,6 +51,7 @@ check-container-needs-built:rocky:
   extends: .check-container-needs-built
   variables:
     ENV_IMAGE: ${ROCKY_ENV_IMAGE}
+  when: manual # todo remove when ready to test with rockylinux
 
 # https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
 .build-container:
@@ -84,6 +85,7 @@ build-container:rocky:
   variables:
     BASE_IMAGE: ${ROCKY_BASE_IMAGE}
     ENV_IMAGE: ${ROCKY_ENV_IMAGE}
+  when: manual # todo remove when ready to test with rockylinux
 
 .build-gridpack:
   stage: build-gridpack
@@ -106,6 +108,7 @@ build-gridpack:rocky:
   extends: .build-gridpack
   image: ${CI_REGISTRY_IMAGE}:${ROCKY_ENV_IMAGE}
   needs: [build-container:rocky]
+  when: manual # todo remove when ready to test with rockylinux
 
 .test-gridpack:
   stage: test-gridpack
@@ -135,3 +138,4 @@ test-gridpack:rocky:
   extends: .test-gridpack
   image: ${CI_REGISTRY_IMAGE}:${ROCKY_ENV_IMAGE}
   needs: [build-gridpack:rocky]
+  when: manual # todo remove when ready to test with rockylinux
