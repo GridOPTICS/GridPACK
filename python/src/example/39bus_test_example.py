@@ -49,7 +49,7 @@ noprintflag = gridpack.NoPrint()
 noprintflag.setStatus(False) # Setting this to True will disable all printing to stdout
 
 # Create GridPACK environment and pass the communicator to it
-env = gridpack.Environment(comm)
+env = gridpack.Environment()
 
 # Create hadrec module
 hadapp = gridpack.hadrec.Module()
