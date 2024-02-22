@@ -5,8 +5,7 @@ set -x
 # This script should be run from the top-level GridPACK directory.
 
 # Flag for install GridPACK and GridPACK python wrapper
-install_gridpack=true
-install_gridpack_shared=true
+install_gridpack=false
 install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
