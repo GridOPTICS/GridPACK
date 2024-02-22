@@ -5,7 +5,11 @@ default:
     untracked: true
   image: ubuntu:22.04
 
-stages: [check-container, build-container, build-gridpack, test-gridpack]
+stages:
+- check-container
+- build-container
+- build-gridpack
+- test-gridpack
 
 variables:
   MAKE_JOBS: "2"
@@ -21,11 +25,11 @@ check-container-definition-changed:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
       changes:
-        - "build/dockerfile"
-        - "build/install_package_deps_lib.sh"
-        - "build/install_boost.sh"
-        - "build/install_ga.sh"
-        - "build/install_petsc.sh"
+        - "build-system/dockerfile"
+        - "build-system/install_package_deps_lib.sh"
+        - "build-system/install_boost.sh"
+        - "build-system/install_ga.sh"
+        - "build-system/install_petsc.sh"
 
 .check-container-needs-built:
   stage: check-container
@@ -35,7 +39,7 @@ check-container-definition-changed:
   script:
     - set -o xtrace -o errexit -o nounset -o pipefail
     - apt-get update && apt-get install -y curl jq
-    - source ./build/container_lib.sh
+    - source ./build-system/container_lib.sh
     - check_container_needs_built "${ENV_IMAGE}"
 
 check-container-needs-built:ubuntu:
@@ -60,11 +64,11 @@ check-container-needs-built:rocky:
     - test -f container-needs-built || test "$FORCE_CONTAINER_BUILD" = "true" || exit 0
     - >-
       /kaniko/executor
-      --context build
+      --context build-system
       --build-arg "BASE_IMAGE=${BASE_IMAGE}"
       --build-arg "http_proxy=${HTTP_PROXY}"
       --build-arg "https_proxy=${HTTPS_PROXY}"
-      --dockerfile build/dockerfile
+      --dockerfile build-system/dockerfile
       --destination "${CI_REGISTRY_IMAGE}:${ENV_IMAGE}" 2>&1 | tee build.log
 
 build-container:ubuntu:
@@ -84,10 +88,13 @@ build-container:rocky:
 .build-gridpack:
   stage: build-gridpack
   script:
-    - /bin/bash ./build/install_gridpack.sh
+    - /bin/bash ./build-system/install_gridpack.sh
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
-      changes: ["build/**/*", "src/**/*", "python/**/*"]
+      changes:
+        - "build-system/**/*"
+        - "src/**/*"
+        - "python/**/*"
     - if: $CI_PIPELINE_SOURCE == "web"
 
 build-gridpack:ubuntu:
@@ -104,7 +111,7 @@ build-gridpack:rocky:
   stage: test-gridpack
   script:
     # load mpi module if on RHEL
-    - source ./build/install_package_deps_lib.sh
+    - source ./build-system/install_package_deps_lib.sh
     - load_mpi_module
 
     # run tests
@@ -113,7 +120,10 @@ build-gridpack:rocky:
     paths: [src/build/Testing/Temporary]
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
-      changes: ["build/**/*", "src/**/*", "python/**/*"]
+      changes:
+        - "build-system/**/*"
+        - "src/**/*"
+        - "python/**/*"
     - if: $CI_PIPELINE_SOURCE == "web"
 
 test-gridpack:ubuntu:
