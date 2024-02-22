@@ -60,6 +60,18 @@ void Ieeet1::getnvar(int *nvar)
 void Ieeet1::preStep(double time, double timestep)
 {
   if(integrationtype != EXPLICIT) return;
+
+  double vabc[3],vdq0[3];
+
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  double delta = getGenerator()->getAngle();
+  
+  abc2dq0(vabc,p_time,delta,vdq0);
+  double Vd, Vq;
+  Vd = vdq0[0]; Vq = vdq0[1];
+  
+  Ec = sqrt(Vd*Vd + Vq*Vq);
   
   if(!zero_TR) {
     Vmeas = Vmeas_blk.getoutput(Ec,timestep,true);
