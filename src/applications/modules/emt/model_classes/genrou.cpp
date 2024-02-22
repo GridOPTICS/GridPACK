@@ -558,9 +558,11 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
     int Efd_idx;
     double Efd;
     Efd = getExciter()->getFieldVoltage(&Efd_idx);
-    rows[ctr] = Eqp_idx; cols[ctr] = Efd_idx;
-    values[ctr] = 1.0/Tdop;
-    ctr += 1;
+    if(Efd_idx >= 0) { // Exciter is using implicit integration
+      rows[ctr] = Eqp_idx; cols[ctr] = Efd_idx;
+      values[ctr] = 1.0/Tdop;
+      ctr += 1;
+    }
   }
 
   // Derivative of dpsi1d_dt
