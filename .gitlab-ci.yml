@@ -20,7 +20,12 @@ check-container-definition-changed:
     - touch container-definition-changed
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
-      changes: ["build/**/*"]
+      changes:
+        - "build/dockerfile"
+        - "build/install_package_deps_lib.sh"
+        - "build/install_boost.sh"
+        - "build/install_ga.sh"
+        - "build/install_petsc.sh"
 
 .check-container-needs-built:
   stage: check-container
