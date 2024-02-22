@@ -1,0 +1,141 @@
+default:
+  tags: [basic, gridpack, ikp, k8s]
+  artifacts:
+    when: always
+    untracked: true
+  image: ubuntu:22.04
+
+stages:
+- check-container
+- build-container
+- build-gridpack
+- test-gridpack
+
+variables:
+  MAKE_JOBS: "2"
+  UBUNTU_BASE_IMAGE: "ubuntu:22.04"
+  UBUNTU_ENV_IMAGE: "ubuntu-gridpack-env"
+  ROCKY_BASE_IMAGE: "rockylinux:9"
+  ROCKY_ENV_IMAGE: "rocky-gridpack-env"
+
+check-container-definition-changed:
+  stage: check-container
+  script:
+    - touch container-definition-changed
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes:
+        - "build-system/dockerfile"
+        - "build-system/install_package_deps_lib.sh"
+        - "build-system/install_boost.sh"
+        - "build-system/install_ga.sh"
+        - "build-system/install_petsc.sh"
+
+.check-container-needs-built:
+  stage: check-container
+  needs:
+    - job: check-container-definition-changed
+      optional: true
+  script:
+    - set -o xtrace -o errexit -o nounset -o pipefail
+    - apt-get update && apt-get install -y curl jq
+    - source ./build-system/container_lib.sh
+    - check_container_needs_built "${ENV_IMAGE}"
+
+check-container-needs-built:ubuntu:
+  extends: .check-container-needs-built
+  variables:
+    ENV_IMAGE: ${UBUNTU_ENV_IMAGE}
+
+check-container-needs-built:rocky:
+  extends: .check-container-needs-built
+  variables:
+    ENV_IMAGE: ${ROCKY_ENV_IMAGE}
+  when: manual # todo remove when ready to test with rockylinux
+
+# https://docs.gitlab.com/ee/ci/docker/using_kaniko.html#building-an-image-with-kaniko-behind-a-proxy
+.build-container:
+  stage: build-container
+  timeout: 5 hours
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.0-debug
+    entrypoint: [""]
+  script:
+    - set -o errexit -o pipefail
+    - test -f container-needs-built || test "$FORCE_CONTAINER_BUILD" = "true" || exit 0
+    - >-
+      /kaniko/executor
+      --context build-system
+      --build-arg "BASE_IMAGE=${BASE_IMAGE}"
+      --build-arg "http_proxy=${HTTP_PROXY}"
+      --build-arg "https_proxy=${HTTPS_PROXY}"
+      --dockerfile build-system/dockerfile
+      --destination "${CI_REGISTRY_IMAGE}:${ENV_IMAGE}" 2>&1 | tee build.log
+
+build-container:ubuntu:
+  extends: .build-container
+  needs: [check-container-needs-built:ubuntu]
+  variables:
+    BASE_IMAGE: ${UBUNTU_BASE_IMAGE}
+    ENV_IMAGE: ${UBUNTU_ENV_IMAGE}
+
+build-container:rocky:
+  extends: .build-container
+  needs: [check-container-needs-built:rocky]
+  variables:
+    BASE_IMAGE: ${ROCKY_BASE_IMAGE}
+    ENV_IMAGE: ${ROCKY_ENV_IMAGE}
+  when: manual # todo remove when ready to test with rockylinux
+
+.build-gridpack:
+  stage: build-gridpack
+  script:
+    - /bin/bash ./build-system/install_gridpack.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes:
+        - "build-system/**/*"
+        - "src/**/*"
+        - "python/**/*"
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+build-gridpack:ubuntu:
+  extends: .build-gridpack
+  image: ${CI_REGISTRY_IMAGE}:${UBUNTU_ENV_IMAGE}
+  needs: [build-container:ubuntu]
+
+build-gridpack:rocky:
+  extends: .build-gridpack
+  image: ${CI_REGISTRY_IMAGE}:${ROCKY_ENV_IMAGE}
+  needs: [build-container:rocky]
+  when: manual # todo remove when ready to test with rockylinux
+
+.test-gridpack:
+  stage: test-gridpack
+  script:
+    # load mpi module if on RHEL
+    - source ./build-system/install_package_deps_lib.sh
+    - load_mpi_module
+
+    # run tests
+    - ctest --test-dir src/build --output-on-failure
+  artifacts:
+    paths: [src/build/Testing/Temporary]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      changes:
+        - "build-system/**/*"
+        - "src/**/*"
+        - "python/**/*"
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+test-gridpack:ubuntu:
+  extends: .test-gridpack
+  image: ${CI_REGISTRY_IMAGE}:${UBUNTU_ENV_IMAGE}
+  needs: [build-gridpack:ubuntu]
+
+test-gridpack:rocky:
+  extends: .test-gridpack
+  image: ${CI_REGISTRY_IMAGE}:${ROCKY_ENV_IMAGE}
+  needs: [build-gridpack:rocky]
+  when: manual # todo remove when ready to test with rockylinux

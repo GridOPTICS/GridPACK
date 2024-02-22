@@ -3,6 +3,9 @@
 # GridPACK<sup>TM</sup>-->
 # GridPACK: High-Performance Electric Grid Simulation
 
+![PNNL Build Status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2FGridOPTICS%2FGridPACK%2Fcommits%2Fdevelop%2Fstatus&query=%24.state&logo=gitlab&label=build%20status&color=white
+)
+
 GridPACK is an open-source high-performance (HPC) package for simulation of large-scale electrical grids. Powered by distributed (parallel) computing and high-performance numerical solvers, GridPACK offers several applications forfast simulation of electrical transmission systems. GridPACK includes a number of prebuilt applications that can be directly used. The most commonly used and well-developed are:
 - AC Power Flow
 - Dynamics Simulation
@@ -18,7 +21,7 @@ In addition, GridPACK is also a framework to simplify the development of new app
 See the [instructions](docs/markdown/BASIC_INSTALL.md) for installing GridPACK, prerequisite software, and installation notes for different platforms.
 
 ## Usage
-See [User manual](docs/user_manual/GridPACK.pdf) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md) for more info. 
+See [User manual](docs/user_manual/GridPACK.pdf) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md) for more info.
 
 - Quick Guide (To do)
 
@@ -36,16 +39,16 @@ The best (and fastest) way to reach us for any technical questions is by posting
 
 ## Citing GridPACK
 ```
-@article{doi:10.1177/1094342015607609, 
-author = {Bruce Palmer and William Perkins and Yousu Chen and Shuangshuang Jin and David C allahan and Kevin Glass and Ruisheng Diao and Mark Rice and Stephen Elbert and Mallikarjun a Vallem and Zhenyu Huang}, 
-title ={GridPACKTM: A framework for developing power grid simulations on high-performance computing platforms}, 
-journal = {The International Journal of High Performance Computing Applications}, 
-volume = {30}, 
-number = {2}, 
-pages = {223-240}, 
-year = {2016}, 
-doi = {10.1177/1094342015607609}, 
-URL = {https://doi.org/10.1177/1094342015607609}, 
+@article{doi:10.1177/1094342015607609,
+author = {Bruce Palmer and William Perkins and Yousu Chen and Shuangshuang Jin and David C allahan and Kevin Glass and Ruisheng Diao and Mark Rice and Stephen Elbert and Mallikarjun a Vallem and Zhenyu Huang},
+title ={GridPACKTM: A framework for developing power grid simulations on high-performance computing platforms},
+journal = {The International Journal of High Performance Computing Applications},
+volume = {30},
+number = {2},
+pages = {223-240},
+year = {2016},
+doi = {10.1177/1094342015607609},
+URL = {https://doi.org/10.1177/1094342015607609},
 eprint = {https://doi.org/10.1177/1094342015607609}
 ```
 
@@ -69,7 +72,7 @@ GridPACK has been developed through funding from various sources over the years.
 ## Copyright
 Copyright &copy; 2013, Battelle Memorial Institute.
 
-GridPACK<sup>TM</sup> is a free software distributed under a BSD 2-clause license. You may reuse, modify, and redistribute the software. 
+GridPACK<sup>TM</sup> is a free software distributed under a BSD 2-clause license. You may reuse, modify, and redistribute the software.
 
 See the [license](src/LICENSE.md) file for details.
 

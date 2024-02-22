@@ -1,0 +1,33 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+SHELL ["/bin/bash", "-c"]
+
+ARG http_proxy
+ARG https_proxy
+
+ENV GP_EXT_DEPS=/gridpack-dependencies
+ENV HTTP_PROXY=${http_proxy} \
+  HTTPS_PROXY=${https_proxy} \
+  OMPI_ALLOW_RUN_AS_ROOT="1" \
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM="1" \
+  LD_LIBRARY_PATH="${GP_EXT_DEPS}/boost/install_for_gridpack/lib:${GP_EXT_DEPS}/ga/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib"
+
+WORKDIR ${GP_EXT_DEPS}
+RUN mkdir logs
+
+COPY install_package_deps_lib.sh ./
+RUN set -xeuo pipefail \
+  && source ./install_package_deps_lib.sh \
+  && install_packages >logs/install_packages.log 2>&1
+
+COPY install_boost.sh ./
+RUN bash -o xtrace -o errexit -o nounset -o pipefail ./install_boost.sh >logs/install_boost.log 2>&1
+
+COPY install_ga.sh ./
+RUN bash -o xtrace -o errexit -o nounset -o pipefail ./install_ga.sh >logs/install_ga.log 2>&1
+
+COPY install_petsc.sh ./
+RUN bash -o xtrace -o errexit -o nounset -o pipefail ./install_petsc.sh >logs/install_petsc.log 2>&1
+
+RUN rm *.sh
