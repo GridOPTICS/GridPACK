@@ -655,9 +655,13 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 
   if(hasGovernor()) {
     // Partial derivatives w.r.t Governor
-    rows[ctr] = dw_idx; cols[ctr] = TM_idx;
-    values[ctr] = Minv*(1/(1+dw));
-    ctr += 1;
+    if(TM_idx >= 0) {
+      // >=0 indiciates governor is using implicit method
+      // so we also need to set the derivative
+      rows[ctr] = dw_idx; cols[ctr] = TM_idx;
+      values[ctr] = Minv*(1/(1+dw));
+      ctr += 1;
+    }
   }
   
   // derivative of currents iabc
