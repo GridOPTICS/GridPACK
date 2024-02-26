@@ -26,6 +26,7 @@
 #include <model_classes/regca1.hpp>
 #include <model_classes/reeca1.hpp>
 #include <model_classes/repca1.hpp>
+#include <model_classes/tgov1.hpp>
 //#include <model_classes/lumpedline.hpp>
 
 
@@ -163,6 +164,13 @@ void EmtBus::preStep(double time, double timestep)
       plant->setVoltage(v[0],v[1],v[2]);
       plant->preStep(time,timestep);
     }
+
+    if(p_gen[i]->hasGovernor()) {
+      boost::shared_ptr<BaseEMTGovModel> gov = p_gen[i]->getGovernor();
+      gov->setVoltage(v[0],v[1],v[2]);
+      gov->preStep(time,timestep);
+    }
+
 
     if(p_gen[i]->hasExciter()) {
       boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
@@ -692,6 +700,17 @@ void EmtBus::load(const
 	    
 	    // Handle governor data loading
 	    wsieg1->load(data,i); // load governor model
+	  } else if(type == "TGOV1") {
+	    Tgov1 *tgov1;
+	    tgov1 = new Tgov1;
+	    tgov1->setGenerator(p_gen[i]);
+
+	    boost::shared_ptr<BaseEMTGovModel> gov;
+	    gov.reset(tgov1);
+	    p_gen[i]->setGovernor(gov);
+	    
+	    // Handle governor data loading
+	    tgov1->load(data,i); // load governor model
 	  }
 	}
       }
