@@ -9,33 +9,75 @@
  * 
  * @brief  
  * 
- * 
+ * @ Updated by Shuangshuang Jin in March 2024.
  */
 
-#include <vector>
-#include <iostream>
-#include <cstdio>
+#include <sexs.hpp>
+#include <gridpack/include/gridpack.hpp>
+#include <constants.hpp>
 
-#include <cstring>
-#include <string>
+Sexs::Sexs(void)
+{
+  Vmeas = 0.0;
+  dVmeas = 0.0;
+  xLL = 0.0;
+  dxLL = 0.0;
+  TA_OVER_TB = 0.0;
+  TB = 0.0;
+  K = 0.0;
+  TE = 0.0;
+  EMIN = 0.0;
+  EMAX = 0.0;
 
-#include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/parser/dictionary.hpp"
-#include "base_exciter_model.hpp"
-#include "sexs.hpp"
+  zero_TE = false; 
 
-/**
- *  Basic constructor
- */
-gridpack::dynamic_simulation::SexsModel::SexsModel(void)
+  nxexc = 2;
+}
+
+Sexs::~Sexs(void)
 {
 }
 
-/**
- *  Basic destructor
- */
-gridpack::dynamic_simulation::SexsModel::~SexsModel(void)
+void Sexs::getnvar(int *nvar)
 {
+  if(integrationtype == EXPLICIT) nxexc = 0;
+  *nvar = nxexc;
+}
+
+void Sexs::preStep(double time, double timestep)
+{
+  if(integrationtype != EXPLICIT) return;
+
+  double vabc[3],vdq0[3];
+
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  double delta = getGenerator()->getAngle();
+  
+  abc2dq0(vabc,p_time,delta,vdq0);
+  double Vd, Vq;
+  Vd = vdq0[0]; Vq = vdq0[1];
+  
+  Ec = sqrt(Vd*Vd + Vq*Vq);
+
+
+  Vmeas = Ec;
+  double Verr = Vref - Vmeas + Vs;
+
+  double filter_blk_in;
+  filter_blk_in = leadlagblock.getoutput(Verr,timestep,true);
+
+  if(!zero_TE) {
+    Efd = filterblock.getoutput(filter_blk_in,timestep,true);
+  } else {
+    Efd = gainblock.getoutput(filter_blk_in,EMIN,EMAX);
+  }
+
+}
+
+void Sexs::postStep(double time)
+{
+
 }
 
 /**
@@ -45,9 +87,7 @@ gridpack::dynamic_simulation::SexsModel::~SexsModel(void)
  * TODO: might want to move this functionality to
  * SexsModel
  */
-void gridpack::dynamic_simulation::SexsModel::load(
-    boost::shared_ptr<gridpack::component::DataCollection>
-    data, int idx)
+void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
   if (!data->getValue(EXCITER_TA_OVER_TB, &TA_OVER_TB, idx)) TA_OVER_TB = 0.0; // TA_OVER_TB
   if (!data->getValue(EXCITER_TB, &TB, idx)) TB = 0.0; // TB
@@ -58,151 +98,341 @@ void gridpack::dynamic_simulation::SexsModel::load(
 
   TA = TA_OVER_TB*TB;
 
-  // Set parameters for the first block
-  leadlagblock.setparams(TA,TB);
+  if(integrationtype != IMPLICIT) {
+    // Set up blocks
+    // Set parameters for the first block
+    leadlagblock.setparams(TA,TB);
 
-  zero_TE = false;
-  if(fabs(TE) < 1e-6) {
-    zero_TE = true;
-  }
-  
-  // Set parameters for the second block
-  if(!zero_TE) {
-    filterblock.setparams(K,TE,EMIN,EMAX,-1000.0,1000);
-  } else {
-    gainblock.setparams(K,EMIN,EMAX);
+    zero_TE = false;
+    if(fabs(TE) < 1e-6) {
+      zero_TE = true;
+    }
+    
+    // Set parameters for the second block
+    if(!zero_TE) {
+      filterblock.setparams(K,TE,EMIN,EMAX,-1000.0,1000);
+    } else {
+      gainblock.setparams(K,EMIN,EMAX);
+    }
   }
 
   Vs = 0.0; 
 }
 
+
 /**
  * Initialize exciter model before calculation
- * @param mag voltage magnitude
- * @param ang voltage angle
- * @param ts time step 
+ * @para
  */
-void gridpack::dynamic_simulation::SexsModel::init(double Vm, double ang, double ts)
+void Sexs::init(gridpack::RealType* xin)
 {
-  double y1,u1;
+  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
+  double Ec = sqrt(VD*VD + VQ*VQ);
 
-  // For initialization, we are given the output for the model Efd.
-  // To initialize the model blocks, we need to go backwards starting
-  // from initializing second block and then the first one and then
-  // calculating the model input Vref
+  // Get initial field voltage
+  Efd = getInitialFieldVoltage();
+
+  if(integrationtype != IMPLICIT) {
+    // Initialization for explicit integration
   
-  // Initialize second block
-  if(!zero_TE) {
-    y1 = filterblock.init_given_y(Efd);
+    double y1,u1;
+
+    // For initialization, we are given the output for the model Efd.
+    // To initialize the model blocks, we need to go backwards starting
+    // from initializing second block and then the first one and then
+    // calculating the model input Vref
+    
+    // Initialize second block
+    if(!zero_TE) {
+      y1 = filterblock.init_given_y(Efd);
+    } else {
+      y1 = std::min(EMAX,std::max(EMIN,Efd/K));
+    }
+
+    // Initialize first block
+    u1 = leadlagblock.init_given_y(y1); 
+
+    Vref = Ec + u1 - Vs;   // Voltage reference initial value
   } else {
-    y1 = std::min(EMAX,std::max(EMIN,Efd/K));
-  }
+      double yLL;
 
-  // Initialize first block
-  u1 = leadlagblock.init_given_y(y1); 
+      Vmeas = Ec;
 
-  // Note: Vm is same as Ec
-  Vref = Vm + u1 - Vs;   // Voltage reference initial value
+      // Efd is already set by the generator model
+      yLL = Efd / K;
 
-}
+      Vref = yLL + Vmeas - Vs;
 
-/**
- * Predict new state variables for time step
- * @param t_inc time step increment
- * @param flag initial step if true
- */
-void gridpack::dynamic_simulation::SexsModel::predictor(double t_inc, bool flag)
-{
-  double u1,y1;
+      if(TB != 0 && TA != 0) xLL = (1 - TA/TB)*(Vref - Vmeas + Vs);
+      else xLL = Vref - Vmeas + Vs;
 
-  u1 = Vref + Vs - Ec;
-
-  // Calculate first block output, last input flag = true
-  // tells the block to do the state update (predictor update)
-  y1 = leadlagblock.getoutput(u1,t_inc,PREDICTOR,true);
-
-  // Calculate second block output, last input flag = true
-  // tells the block to do the state update (predictor update)
-  if(!zero_TE) {
-    Efd = filterblock.getoutput(y1,t_inc,PREDICTOR,true);
-  } else {
-    Efd = gainblock.getoutput(y1);
+      x[0] = Vmeas;
+      x[1] = xLL;
   }
 }
 
 /**
- * Correct state variables for time step
- * @param t_inc time step increment
- * @param flag initial step if true
+ * Write output from exciters to a string.
+ * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if bus is contributing string to output, false otherwise
  */
-void gridpack::dynamic_simulation::SexsModel::corrector(double t_inc, bool flag)
+bool Sexs::serialWrite(char *string, const int bufsize,const char *signal)
 {
-  double u1,y1;
+  return false;
+}
 
-  u1 = Vref + Vs - Ec;
+/**
+ * Write out exciter state
+ * @param signal character string used to determine behavior
+ * @param string buffer that contains output
+ */
+void Sexs::write(const char* signal, char* string)
+{
+}
 
-  // Calculate first block output, last input flag = true
-  // tells the block to do the state update (corrector update)
-  y1 = leadlagblock.getoutput(u1,t_inc,CORRECTOR,true);
+/**
+ * Set the internal values of the voltage magnitude and phase angle. Need this
+ * function to push values from vectors back onto exciters
+ * @param values array containing exciter state variables
+*/
+void Sexs::setValues(gridpack::RealType *val)
+{
+  gridpack::RealType *values = val+offsetb; // exciter array starts from this location
 
-  // Calculate second block output, last input flag = true
-  // tells the block to do the state update (corrector update)
-  if(!zero_TE) {
-    Efd = filterblock.getoutput(y1,t_inc,CORRECTOR,true);
-  } else {
-    Efd = gainblock.getoutput(y1);
+  if(integrationtype == EXPLICIT) return;
+
+  if(p_mode == XVECTOBUS) {
+    Vmeas = values[0];
+    xLL = values[1];
+  } else if(p_mode == XDOTVECTOBUS) {
+    dVmeas = values[0];
+    dxLL = values[1];
   }
 }
 
 /**
- * Set the field voltage parameter inside the exciter
- * @param fldv value of the field voltage
+ * Return the values of the generator vector block
+ * @param values: pointer to vector values
+ * @return: false if generator does not contribute
+ *        vector element
  */
-void gridpack::dynamic_simulation::SexsModel::setFieldVoltage(double fldv)
+void Sexs::vectorGetValues(gridpack::RealType *values)
 {
-  // This is the initial value of Efd using during initialization
-  Efd = fldv;
+  gridpack::RealType *f = values+offsetb; // exciter array starts from this location
+
+  if(integrationtype == EXPLICIT) return;
+
+  double Ec,yLL,Vf,SE=0.0, VRin;
+
+  double vabc[3],vdq0[3];
+
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  double delta = getGenerator()->getAngle();
+  
+  abc2dq0(vabc,p_time,delta,vdq0);
+  double Vd, Vq;
+  Vd = vdq0[0]; Vq = vdq0[1];
+  
+  Ec = sqrt(Vd*Vd + Vq*Vq);
+  
+  if(p_mode == RESIDUAL_EVAL) {
+      // Vmeas equation
+    f[0] = -Vmeas + Ec;
+
+    // xLL equation
+    if(TB != 0 && TA != 0) {
+      f[1] = (-xLL + (1 - TA/TB)*(Vref - Vmeas + Vs))/TB - dxLL;
+      yLL = xLL + TA/TB*(Vref - Vmeas + Vs);
+    } else {
+      f[1] = -xLL + Vref - Vmeas + Vs;
+      yLL = xLL;
+    }
+  }
+}
+
+
+/**
+   Non-zero pattern of the Jacobian (x denotes non-zero entry)
+         Vmeas    xLL     delta    va    vb    vc
+ eq.0 |    x                x      x     x     x
+ eq.1 |    x      x          
+
+ Number of non-zeros = 5 + 2 = 7 
+ * Get number of matrix values contributed by exciter
+ * @return number of matrix values
+ */
+int Sexs::matrixNumValues()
+{
+  int nmat = 0;
+  if(integrationtype == IMPLICIT) nmat = 7;
+  return nmat;
+}
+
+
+/**
+ * Return values from Jacobian matrix
+ * @param nvals: number of values to be inserted
+ * @param values: pointer to matrix block values
+ * @param rows: pointer to matrix block rows
+ * @param cols: pointer to matrix block cols
+ */
+void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
+{
+  int ctr = 0;
+
+  if(integrationtype != IMPLICIT) {
+    *nvals = ctr;
+    return;
+  }
+    
+  int Vmeas_idx = p_gloc;
+  int xLL_idx = p_gloc + 1;
+  int delta_idx;
+  int va_idx    = p_glocvoltage;
+  int vb_idx    = p_glocvoltage+1;
+  int vc_idx    = p_glocvoltage+2;
+
+  double delta = getGenerator()->getAngle(&delta_idx);
+  double Tdq0[3][3];
+  double dTdq0ddelta[3][3];
+
+  getTdq0(p_time,delta,Tdq0);
+  getdTdq0dtheta(p_time,delta,dTdq0ddelta);
+
+  double Ec, Vd, Vq, V0;
+  double vabc[3],vdq0[3];
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  abc2dq0(vabc,p_time,delta,vdq0);
+  Vd = vdq0[0]; Vq = vdq0[1]; V0 = vdq0[2];
+
+  Ec = sqrt(Vd*Vd + Vq*Vq);
+
+  double dEc_dVd,dEc_dVq;
+  dEc_dVd = Vd/Ec; dEc_dVq = Vq/Ec;
+
+  double dVd_dvabc[3], dVq_dvabc[3];
+  dVd_dvabc[0] = Tdq0[0][0]; dVd_dvabc[1] = Tdq0[0][1]; dVd_dvabc[2] = Tdq0[0][2];
+  dVq_dvabc[0] = Tdq0[1][0]; dVq_dvabc[1] = Tdq0[1][1]; dVq_dvabc[2] = Tdq0[1][2];
+
+  double dVd_ddelta = dTdq0ddelta[0][0]*vabc[0] + dTdq0ddelta[0][1]*vabc[1] + dTdq0ddelta[0][2]*vabc[2];
+  double dVq_ddelta = dTdq0ddelta[1][0]*vabc[0] + dTdq0ddelta[1][1]*vabc[1] + dTdq0ddelta[1][2]*vabc[2];
+
+  rows[ctr] = Vmeas_idx;  cols[ctr] = Vmeas_idx;
+  rows[ctr+1] = Vmeas_idx; cols[ctr+1] = delta_idx;
+  rows[ctr+2] = Vmeas_idx; cols[ctr+2] = va_idx;
+  rows[ctr+3] = Vmeas_idx; cols[ctr+3] = vb_idx;
+  rows[ctr+4] = Vmeas_idx; cols[ctr+4] = vb_idx;
+
+  values[ctr]   = -1.0;
+  values[ctr+1] = (dEc_dVd*dVd_ddelta + dEc_dVq*dVq_ddelta);
+  values[ctr+2] = (dEc_dVd*dVd_dvabc[0] + dEc_dVq*dVq_dvabc[0]);
+  values[ctr+3] = (dEc_dVd*dVd_dvabc[1] + dEc_dVq*dVq_dvabc[1]);
+  values[ctr+4] = (dEc_dVd*dVd_dvabc[2] + dEc_dVq*dVq_dvabc[2]);
+  
+  ctr += 5;
+
+  rows[ctr]   = xLL_idx; cols[ctr] = Vmeas_idx;
+  rows[ctr+1]   = xLL_idx; cols[ctr+1] = xLL_idx;
+
+  //double dVf_dxf = 1.0;
+  //double dVf_dEfd = KF/TF;
+  double param = (1 - TA/TB);
+  double dyLL_dVmeas = 0.0, dyLL_dxLL = 0.0;
+  //double dyLL_dEfd = 0.0, dyLL_dxf = 0.0;
+  if(TA != 0 && TB != 0) {
+    values[ctr] = (param*-1)/TB;
+    values[ctr+1] = -1.0/TB - shift;
+    //values[ctr+2] = (param*(-dVf_dEfd))/TB;
+    //values[ctr+3] = (param*(-dVf_dxf))/TB;
+
+    dyLL_dVmeas = TA/TB*-1.0;
+    dyLL_dxLL = 1.0;
+    //dyLL_dEfd = TC/TB*-KF/TF;
+    //dyLL_dxf  = TC/TB*-1.0;
+  } else {
+    values[ctr] = -1.0;
+    values[ctr+1] = -1.0;
+    //values[ctr+2] = -dVf_dEfd;
+    //values[ctr+3] = -dVf_dxf;
+
+    dyLL_dxLL = 1.0;
+  }
+
+  ctr += 2;
+  *nvals = ctr;
+
 }
 
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage
  */
-double gridpack::dynamic_simulation::SexsModel::getFieldVoltage()
+double Sexs::getFieldVoltage()
 {
   return Efd;
 }
 
 /** 
- * Set the value of terminal voltage
- * 
+ * Get the value of the field voltage parameter
+ * and its global location
+ * @return value of field voltage
  */
-void gridpack::dynamic_simulation::SexsModel::setVterminal(double Vm)
+double Sexs::getFieldVoltage(int *Efd_gloc)
 {
-  Ec = Vm;
+  if(integrationtype == IMPLICIT) {
+    *Efd_gloc = p_gloc + 2;
+  } else {
+    *Efd_gloc = -1;
+  }
+  return Efd;
 }
 
-void gridpack::dynamic_simulation::SexsModel::setVstab(double Vstab)
+bool Sexs::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
 {
-  Vs = Vstab;
+  return false;
 }
 
-/** 
- * Set the exciter bus number
- * @return value of exciter bus number
+/**
+ * Update the event function values
  */
-void gridpack::dynamic_simulation::SexsModel::setExtBusNum(int ExtBusNum)
+void Sexs::eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType>& evalues)
 {
-	p_bus_id = ExtBusNum;
-}	
 
-/** 
- * Set the exciter generator id
- * @return value of generator id
+}
+
+/**
+ * Event handler
  */
-void gridpack::dynamic_simulation::SexsModel::setExtGenId(std::string ExtGenId)
+void Sexs::eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state)
 {
-	p_ckt = ExtGenId;
-}	
+
+}
+
+/**
+ * Set event
+ */
+void Sexs::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
+{
+
+}
+
+/**
+ * Set the field voltage parameter inside the exciter
+ * @param fldv value of the field voltage
+ */
+void Sexs::setFieldVoltage(double fldv)
+{
+  // This is the initial value of Efd using during initialization
+  Efd = fldv;
+}
+
+
+
+
 
 
