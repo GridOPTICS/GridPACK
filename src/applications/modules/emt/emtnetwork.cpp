@@ -27,8 +27,7 @@
 #include <model_classes/reeca1.hpp>
 #include <model_classes/repca1.hpp>
 #include <model_classes/tgov1.hpp>
-//#include <model_classes/lumpedline.hpp>
-
+#include <model_classes/lumpedline.hpp>
 
 /**
  *  Simple constructor
@@ -1606,6 +1605,7 @@ EmtBranch::EmtBranch(void)
   p_hasInductance = false;
   p_hasResistance = false;
   p_TSshift = 1.0;
+  p_neqsbranch = NULL;
 }
 
 /**
@@ -1613,6 +1613,12 @@ EmtBranch::EmtBranch(void)
  */
 EmtBranch::~EmtBranch(void)
 {
+  if(p_nparlines) {
+    for(int i=0; i < p_nparlines; i++) {
+      if(p_branch[i]) delete(p_branch[i]);
+    }
+    free(p_neqsbranch);
+  }
   if(p_nvar) {
     delete [] p_ibr;
     delete [] p_didt;
@@ -1626,6 +1632,12 @@ void EmtBranch::setup()
   p_nvar = 0;
 
   for(i = 0; i < p_nparlines; i++) {
+    p_neqsbranch = (int*)malloc(p_nparlines*sizeof(int));
+
+    for(int i=0; i < p_nparlines; i++) {
+      p_neqsbranch[i] = 0;
+    }
+
     p_localoffset.push_back(p_nvar);
     if(!p_status[i]) continue;
 
@@ -1675,6 +1687,10 @@ void EmtBranch::load(
   p_lineR.reserve(p_nparlines);
   p_lineX.reserve(p_nparlines);
 
+  if(p_nparlines) {
+    p_branch = (BaseEMTBranchModel**)malloc(p_nparlines*sizeof(BaseEMTBranchModel*));
+  }
+
 
   try {
     if(p_nparlines > 1) {
@@ -1687,6 +1703,43 @@ void EmtBranch::load(
   for(i=0; i < p_nparlines; i++) {
     // Get line parameters
     data->getValue(BRANCH_STATUS,&status,i);
+
+    if(!status) {
+      p_branch[i] = new BaseEMTBranchModel;
+      p_branch[i]->setStatus(status);
+    }
+
+    p_branch[i] = NULL;
+
+    // Check if branch is transmission line or transformer
+    bool is_xfmr = false;
+    double tap = 1.0;
+    data->getValue(BRANCH_TAP,&tap,i);
+
+    if(tap) {
+      is_xfmr = true;
+    }
+
+    if(!is_xfmr) {
+      Lumpedline *lumpedline;
+      lumpedline = new Lumpedline;
+      p_branch[i] = lumpedline;
+
+      // Load parameters
+      p_branch[i]->load(data,i); // load data
+    } else {
+      // Transformers to be handled later
+      Lumpedline *lumpedline;
+      lumpedline = new Lumpedline;
+      p_branch[i] = lumpedline;
+      
+      p_branch[i]->setStatus(status);
+      
+      // Load parameters
+      p_branch[i]->load(data,i); // load data
+    }
+
+    
     data->getValue(BRANCH_CKT,&cktid,i);
     // Positive sequence values
     data->getValue(BRANCH_R,&R,i);

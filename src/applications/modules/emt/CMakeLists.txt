@@ -56,6 +56,7 @@ add_library(gridpack_emt_module
   model_classes/regca1.cpp
   model_classes/reeca1.cpp
   model_classes/repca1.cpp
+  model_classes/lumpedline.cpp
 
 )
 
@@ -107,6 +108,7 @@ install(FILES
   model_classes/regca1.hpp
   model_classes/reeca1.hpp
   model_classes/repca1.hpp
+  model_classes/lumpedline.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )
 
