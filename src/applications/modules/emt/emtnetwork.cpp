@@ -1685,10 +1685,6 @@ void EmtBranch::load(
   }
 
   for(i=0; i < p_nparlines; i++) {
-    //    LumpedLineModel *lumpedline;
-    //    lumpedpi = new LumpedLineModel;
-    //    p_impl[i] = lumpedline;
-
     // Get line parameters
     data->getValue(BRANCH_STATUS,&status,i);
     data->getValue(BRANCH_CKT,&cktid,i);
