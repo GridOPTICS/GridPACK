@@ -23,7 +23,18 @@ Figure~\ref{fig:relationship}.
 
 %\textcolor{red}{\texttt{\textbf{Figure 1.}} Relationship between major GridPACK components.}
 
-A full description of a power grid network requires specification of both the network topology and the physical properties of the bus and branch components. The combination of the models and the network generate algebraic equations that can be solved to get desired system properties. GridPACK supplies numerous modules to simplify the process of specifying the model and solving it. These include power grid components that describe the physics of the different network models or analyses, grid component factories that initialize the grid components, mappers that convert the current state of the grid components into matrices and vectors, solvers that supply the preconditioner and solver functionality necessary to implement solution algorithms, input and output modules that allow developers to import and export data, and other utility modules that support standard code develop operations like timing, event logging, and error handling.
+A full description of a power grid network requires specification of both the
+network topology and the physical properties of the bus and branch components.
+The combination of the models and the network generate algebraic equations that
+can be solved to get desired system properties. GridPACK supplies numerous
+modules to simplify the process of specifying the model and solving it. These
+include power grid components that describe the physics of the different network
+models or analyses, grid component factories that initialize the grid
+components, mappers that convert the current state of the grid components into
+matrices and vectors, solvers that supply the preconditioner and solver
+functionality necessary to implement solution algorithms, input and output
+modules that allow developers to import and export data, and other utility
+modules that support standard code development operations like timing, event logging, and error handling.
 
 Many of these modules are constructed using libraries developed elsewhere so as
 to minimize framework development time. However, by wrapping them in interfaces
@@ -64,4 +75,12 @@ Application files should include the \texttt{\textbf{gridpack.hpp}} header file.
 
 at the top of the application .hpp and/or .cpp files. This file contains definitions of all the GridPACK modules and their associated functions.
 
-Matrices and vectors in GridPACK were originally complex but now either complex or real matrices can be created using the library. Inside the GridPACK implementation, the underlying distributed matrices are either complex or real, but the framework adds a layer that supports both types of objects, even if the underlying math library does not. However, computations on complex matrices will perform better if the underlying math library is configured to use complex matrices directly. This should be kept in mind when choosing the math library to build GridPACK on. The underlying PETSc library can be configured to support either real or complex matrices. Complex numbers are represented in GridPACK as having type \texttt{\textbf{ComplexType}}. The real and imaginary parts of a complex number \texttt{\textbf{x}} can be obtained using the functions \texttt{\textbf{real(x)}} and \texttt{\textbf{imag(x)}}.
+Matrices and vectors in GridPACK were originally complex but now either complex
+or real matrices can be created using the library. Inside the GridPACK
+implementation, the underlying distributed matrices are either complex or real,
+but the framework adds a layer that supports both types of objects, even if the
+underlying math library does not. However, computations on complex matrices will
+perform better if the underlying math library is configured to use complex
+matrices directly. This should be kept in mind when choosing the math library to
+build GridPACK on. The underlying PETSc library can be configured to support
+either real or complex matrices, but not both at the same time. Complex numbers are represented in GridPACK as having type \texttt{\textbf{ComplexType}}. The real and imaginary parts of a complex number \texttt{\textbf{x}} can be obtained using the functions \texttt{\textbf{real(x)}} and \texttt{\textbf{imag(x)}}.

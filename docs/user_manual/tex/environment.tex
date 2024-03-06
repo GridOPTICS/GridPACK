@@ -34,3 +34,29 @@ options that are supported directly by the \texttt{\textbf{Environment}} class
 are \texttt{\textbf{-h}} and \texttt{\textbf{-help}}. If the application is invoked
 with these options, then the program will print out whatever information is stored
 in the \texttt{\textbf{help}} variable and then exit.
+
+When using the \texttt{\textbf{Environment}} object to initialize GridPACK, it
+is important to set the main body of the code apart from the creation of the
+\texttt{\textbf{Environment}} object. The code should have a structure that
+looks like
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int main(int argc, char **argv)
+{
+  gridpack::Environment env(argc,argv);
+  {
+    // Main body of code goes here
+  }
+  return 0;
+}
+\end{Verbatim}
+}
+
+This form guarantees that all objects created by the application are destroy
+first before the \texttt{\textbf{Environment}} destructor is called. This is
+important since otherwise the destructors for some objects in the application
+may be called after the Global Array or MPI environments have been shut down and
+if they rely on calls in the Global Array or MPI libraries, the application will
+not exit cleanly.

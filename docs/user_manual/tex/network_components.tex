@@ -5,7 +5,7 @@ Network component is a generic term for objects representing buses and branches.
 Network components cover a fairly broad range of behaviors and there is little
 that can be said about them outside the context of a specific problem. Each
 component inherits from a matrix-vector interface, which enables the framework
-to generate matrices and vectors from the network in a relatively
+to generate matrices and vectors from the network in a
 straightforward way. In addition, buses inherit from a base bus interface and
 branches inherit from a base branch interface. The relationship between these
 interfaces is shown in Figure~\ref{fig:components}.
@@ -25,7 +25,23 @@ These base interfaces provide mechanisms for accessing the neighbors of a bus or
 
 Of these interfaces, the matrix-vector interfaces are the most important. The \texttt{\textbf{MatVecInterface}} is used for most calculations that directly model the physics of the power grid and described problems where the dependent and independent variables are associated with buses. 
 
-The \texttt{\textbf{GenMatVecInterface}} is used for problems where variables are also associated with branches, such as state estimation or Kalman filter calculations. This section will describe the \texttt{\textbf{MatVecInterface}}, the \texttt{\textbf{GenMatVecInterface}} is described in more detail later in this document. The \texttt{\textbf{MatVecInterface}} is designed to answer the question of what block of data is contributed by a bus or branch to a matrix or vector and what the dimensions of the block are. For example, in constructing the Y-matrix for a power flow problem using a real-valued formulation, the grid components representing buses contribute a 2$\mathrm{\times}$2 block to the diagonal of the matrix. Similarly, the grid components representing branches contribute a 2$\mathrm{\times}$2 block to the off-diagonal elements. (Note that if the Y-matrix is expressed as a complex matrix, then the blocks are of size 1$\mathrm{\times}$1.) The location of these blocks in the matrix is determined by the location of the corresponding buses and branches in the network, but the indexing calculations required to determine how this location maps to a location in the matrix can be made completely transparent to the user via the mapper module. 
+The \texttt{\textbf{GenMatVecInterface}} is used for problems where variables
+are also associated with branches, such as state estimation or Kalman filter
+calculations. This section will describe the \texttt{\textbf{MatVecInterface}},
+the \texttt{\textbf{GenMatVecInterface}} is described in more detail later in
+this document. The \texttt{\textbf{MatVecInterface}} is designed to answer the
+question of what block of data is contributed by a bus or branch to a matrix or
+vector and what the dimensions of the block are. For example, in constructing
+the Y-matrix for a power flow problem using a real-valued formulation, the grid
+components representing buses contribute a 2$\mathrm{\times}$2 block to the
+diagonal of the matrix. Similarly, the grid components representing branches
+contribute a 2$\mathrm{\times}$2 block to the off-diagonal elements. (Note that
+if the Y-matrix is expressed as a complex matrix, then the blocks are of size
+1$\mathrm{\times}$1.) The location of these blocks in the matrix is determined
+by the relative locations of the corresponding buses and branches in the network
+and the ordering of buses. The indexing calculations required to determine how
+these locations map to a location in the matrix can be quite complicated,
+particularly when combined with a parallel decomposition of the data, but can be made completely transparent to the user via the mapper module. 
 
 Because the matrix-vector interface focuses on small blocks, it is relatively easy for power grid engineers to write the corresponding methods. The full matrices and vectors can then be generated from the network using simple calls to the mapper interface (see the discussion below on the mapper module). All of the base network component classes reside in the \texttt{\textbf{gridpack::component}} namespace.
 
@@ -50,7 +66,7 @@ The \texttt{\textbf{matrixDiagSize}} function returns the size of the matrix blo
 
 The \texttt{\textbf{matrixDiagValues}} function returns the actual values for the matrix block associated with the bus for which the function is invoked. The values are returned as a linear array with values returned in column-major order. For a 2$\mathrm{\times}$2 block, this means the first value is at the (0,0) position, the second value is at the (1,0) position, the third value is at the (0,1) position and the fourth value is at the (1,1) position. This function also returns true if the bus contributes to the matrix and false otherwise. This may seem redundant, since the \texttt{\textbf{matrixDiagSize}} function has already returned this information but it turns out there are certain applications where it is desirable for the \texttt{\textbf{matrixDiagSize}} function to return true and the \texttt{\textbf{matrixDiagValues}} function to return false. The buffer \texttt{\textbf{values}} is supplied by the calling program and is expected to be big enough, based on the dimensions returned by the \texttt{\textbf{matrixDiagSize}} function, to contain all returned values.
 
-The functions that are used to return values for off-diagonal matrix elements are listed below. These are usually only implemented for branches.
+The functions that are used to return values for off-diagonal matrix elements are listed below. These are only implemented for branches.
 
 {
 \color{red}
@@ -65,7 +81,17 @@ virtual bool matrixReverseValues(ComplexType *values)
 \end{Verbatim}
 }
 
-Only the complex versions of these functions are listed but equivalent functions for real matrices are available. These functions work in a similar way to the functions for creating blocks along the diagonal, except that they split off-diagonal matrix calculations into forward elements and reverse elements. The initial approximate location of an off-diagonal matrix element in a matrix is based in some internal indices assigned to the buses at either end of the branch. Suppose that these indices are \texttt{\textbf{i}}, corresponding to the ``from'' bus and \texttt{\textbf{j}}, corresponding to the ``to'' bus. The ``forward'' functions assume that the request is for the \texttt{\textbf{ij}} element while the ``reverse'' functions assume that the request is for the \texttt{\textbf{ji}} element. Another way of looking at this is the following: as discussed below, branches contain pointers to two buses. The first is the ``from'' bus and the second is the ``to'' bus. The forward functions assume that the ``from'' bus corresponds to the first index of the element, the reverse functions assume that the ``from'' bus corresponds to the second index of the element. Note that if a bus does not contribute to a matrix, then the branches that are connected to the bus should also not contribute to the matrix.
+Only the complex versions of these functions are listed but equivalent functions
+for real matrices are available. These functions work in a similar way to the
+functions for creating blocks along the diagonal, except that they split
+off-diagonal matrix calculations into forward elements and reverse elements. The
+initial approximate location of an off-diagonal matrix element in a matrix is
+based in some internal indices assigned to the buses at either end of the
+branch. Suppose that these indices are \texttt{\textbf{i}}, corresponding to the
+``from'' bus and \texttt{\textbf{j}}, corresponding to the ``to'' bus. The
+``forward'' functions assume that the request is for the \texttt{\textbf{ij}}
+block of elements while the ``reverse'' functions assume that the request is for
+the \texttt{\textbf{ji}} block of elements. Another way of looking at this is the following: as discussed below, branches contain pointers to two buses. The first is the ``from'' bus and the second is the ``to'' bus. The forward functions assume that the ``from'' bus corresponds to the first index of the element, the reverse functions assume that the ``from'' bus corresponds to the second index of the element. Note that if a bus does not contribute to a matrix, then the branches that are connected to the bus should also not contribute to the matrix.
 
 The final set of functions in the \texttt{\textbf{MatVecInterface}} that are of interest to application developers are designed to set up vectors. These are usually implemented only for buses. These functions are analogous to the functions for creating matrix elements
 
@@ -100,7 +126,10 @@ virtual void load(const boost::shared_ptr<DataCollection> &data)
 \end{Verbatim}
 }
 
-is used to instantiate components based on data in the network configuration file that is used to create the network. It is used in conjunction with the \texttt{\textbf{DataCollection}} object, which is described in more detail below. Networks are generally created by first instantiating a network parser. The parser is used to read in an external network file and create the network topology. The next step is to invoke the partition function on the network to get all network elements properly distributed between processors. At this point, the network, including ghost buses and branches, is complete and each bus and branch has a \texttt{\textbf{DataCollection}} object containing all the data in the network configuration file that pertains to that particular bus or branch. The data in the \texttt{\textbf{DataCollection}} object is stored as simple key-value pairs. This data is used to initialize the corresponding bus or branch by invoking the load function on all buses and branches in the system. The bus and branch classes must implement the \texttt{\textbf{load}} function to extract the correct parameters from the \texttt{\textbf{DataCollection}} object and use them to assign internal component parameters.
+is used to instantiate components based on data in the network configuration
+file that is used to create the network. It is used in conjunction with the
+\texttt{\textbf{DataCollection}} object, which is described in more detail
+below (section~\ref{data_interface}). Networks are generally created by first instantiating a network parser. The parser is used to read in an external network file and create the network topology. The next step is to invoke the partition function on the network to get all network elements properly distributed between processors. At this point, the network, including ghost buses and branches, is complete and each bus and branch has a \texttt{\textbf{DataCollection}} object containing all the data in the network configuration file that pertains to that particular bus or branch. The data in the \texttt{\textbf{DataCollection}} object is stored as simple key-value pairs. This data is used to initialize the corresponding bus or branch by invoking the load function on all buses and branches in the system. The bus and branch classes must implement the \texttt{\textbf{load}} function to extract the correct parameters from the \texttt{\textbf{DataCollection}} object and use them to assign internal component parameters.
 
 Only one type of bus and one type of branch is associated with each network but many different types of equations can be generated by the network. To allow developers to embed many different behaviors into a single network and to control at what points in the simulation those behaviors can be manifested, the concept of modes is used. The function
 
@@ -228,7 +257,7 @@ bool getReferenceBus() const
 
 The first function can be used (if called with the argument true) to designate a bus as the reference bus and the second function can be called to inquire whether a bus is the reference bus. A reference bus is usually set when the network configuration file is read in and does not need to be set explicitly by the application.
 
-Finally, it is often useful for exporting results if the original index of the bus is available. This can be recovered using the function
+Finally, it is often useful when exporting results if the original index of the bus is available. This can be recovered using the function
 
 {
 \color{red}
@@ -237,7 +266,9 @@ int getOriginalIndex() const
 \end{Verbatim}
 }
 
-The functions in the \texttt{\textbf{BaseBusComponent}} class only work correctly after a call to the base factory method \texttt{\textbf{setComponents}}, which is described below. Other functions in the \texttt{\textbf{BaseBusComponent}} class are needed within the framework but are not usually required by application developers.
+The functions in the \texttt{\textbf{BaseBusComponent}} class only work
+correctly after a call to the base factory method
+\texttt{\textbf{setComponents}}, which is described in section~\ref{factory}. Other functions in the \texttt{\textbf{BaseBusComponent}} class are needed within the framework but are not usually required by application developers.
 
 The \texttt{\textbf{BaseBranchComponent}} class is similar to the \texttt{\textbf{BaseBusComponent}} class and provides basic information about branches and the buses at either end of the branch. To retrieve pointers to the buses at the ends of the branch, the following two functions are available
 
@@ -263,4 +294,4 @@ int getBus2OriginalIndex() const
 \end{Verbatim}
 }
 
-These functions get the original index of ``from'' and ``to'' buses. Unlike buses, the branches are not characterized by a single index. Similar to the functions in the \texttt{\textbf{BaseBusComponent}} class, the functions in the \texttt{\textbf{BaseBranchComponent}} class will not work correctly until the \texttt{\textbf{setComponents}} method has been called in the base factory class.
+These functions get the original index of ``from'' and ``to'' buses. Similar to the functions in the \texttt{\textbf{BaseBusComponent}} class, the functions in the \texttt{\textbf{BaseBranchComponent}} class will not work correctly until the \texttt{\textbf{setComponents}} method has been called in the base factory class.

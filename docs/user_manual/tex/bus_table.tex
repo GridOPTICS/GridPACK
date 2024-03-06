@@ -1,6 +1,6 @@
 \section{Bus Tables}
 
-The bus table module was created to allow applications to update the properties of buses over multiple scenarios. This module is designed to read files of the form
+The bus table I/O module was created to allow applications to update the properties of buses over multiple scenarios. This module is designed to read files of the form
 
 {
 \color{red}
@@ -49,6 +49,11 @@ void getValues(int idx, std::vector<double> &values)
 }
 
 The first function returns a list of the local bus indices to which the data applies, the second function returns a list of the corresponding device tags and the third function returns the values from column \texttt{\textbf{idx}} in the table.
+The index \texttt{\textbf{idx}} refers to the columns of bus data, not the
+actual numbers of columns in the file, so it ignores the columns describing the
+bus indices and the device tags. Index 0 in this function refers to the first
+column of bus data, which is actually the third column in the file.
+
 After calling the functions, the data can be applied to the appropriate buses using a loop of the form
 
 {
@@ -62,7 +67,10 @@ For (i=0; i<indices.size(); i++) {
 \end{Verbatim}
 }
 
-where \texttt{\textbf{setProperty}} is a user-defined function in the \texttt{\textbf{MyBus}} class that does something useful with the data. This example assumes that the \texttt{\textbf{getLocalIndices}} and \texttt{\textbf{getTags}} functions have already been called outside the loop.
+where \texttt{\textbf{setProperty}} is a user-defined function in the
+\texttt{\textbf{MyBus}} class that does something useful with the data. This
+example assumes that the \texttt{\textbf{getLocalIndices}},
+\texttt{\textbf{getTags}} and \texttt{\textbf{getValues}} functions have already been called outside the loop.
 
 The number of columns of properties can be accessed using the function
 
@@ -72,5 +80,3 @@ The number of columns of properties can be accessed using the function
 int getNumColumns()
 \end{Verbatim}
 }
-
-This function is provided as a method for accessing the total number of scenarios directly from the bus table input, instead of having to include it as a separate parameter.

@@ -1,8 +1,38 @@
-\chapter{Generalized Matrix-Vector Interface}\label{gen_matvec}
+\chapter{Generalized Matrix-Vector Interface}
 
-The matrix-vector interface described earlier is suitable for problems where the independent and dependent variables are both associated with buses. However, it does not work for systems where some variables are associated with branches. This can occur in optimization problems such as state estimation, where measurements are made on both buses and branches. Every measurement contributes an equation to the state-estimation optimization, which results in dependent variables associated with branches. To handle these types of problems, a more general approach to creating matrices and vectors is required. This is implemented via the \texttt{\textbf{GenMatVecInterface}} class. As illustrated in Figure 5, the \texttt{\textbf{BaseComponent}} class directly inherits from this interface, along with the \texttt{\textbf{MatVecInterface}}. 
+The matrix-vector interface described earlier is suitable for problems where the
+independent and dependent variables are both associated with buses. This is
+usually true for systems where Kirchhoff's law is strictly enforced. However,
+this interface does not work for systems where some variables are associated
+with branches. This can occur in optimization problems such as state estimation,
+where measurements are made on both buses and branches. Every measurement
+contributes an equation to the state-estimation optimization, which results in
+dependent variables associated with branches. To handle these types of problems,
+a more general approach to creating matrices and vectors is required. This is
+implemented via the \texttt{\textbf{GenMatVecInterface}} class described below.
 
-Unlike the \texttt{\textbf{MatVecInterface}} class, there is no definitive way to map which elements are contributed by a branch or bus, and the number of elements contributed by a branch or bus does not reduce to simple blocks. Thus, the idea that buses and branches contribute simple blocks of data must be abandoned. The \texttt{\textbf{GenMatVecInterface}} just assumes that buses and branches contribute some number of equations (dependent variables) to the matrix and that they also contribute some number of independent variables to the matrix. This is information is embedded in the function calls
+In general, the \texttt{\textbf{GenMatVecInterface}} is much more complicated to
+use than the matrix-vector interface described in Section~\ref{mapper}. However,
+we believe that it is still simpler than managing the index calculations needed
+to construct the matrix equations required by methods such as state estimation
+and dynamic state estimation (Kalman filter). User that are interested in
+implementing calculations using the \texttt{\textbf{GenMatVecInterface}} are
+encouraged to follow the documentation in the user manual and to also study the
+implementation in existing GridPACK applications.
+
+\section{Generalized Matrix-Vector Mappers}\label{gen_matvec}
+
+Unlike the \texttt{\textbf{MatVecInterface}} class, there is no definitive way
+to map which elements are contributed by a branch or bus, and the number of
+elements contributed by a branch or bus does not reduce to simple blocks. Thus,
+the idea that buses and branches contribute simple blocks of data must be
+abandoned. The \texttt{\textbf{GenMatVecInterface}} just assumes that buses and
+branches contribute some number of equations (dependent variables) to the matrix
+and that they also contribute some number of independent variables to the
+matrix. As illustrated in Figure 5, the \texttt{\textbf{BaseComponent}} class
+directly inherits from this interface, along with the
+\texttt{\textbf{MatVecInterface}}.  The information on number of equations and
+number of variables is embedded in the function calls
 
 {
 \color{red}
@@ -55,7 +85,9 @@ void SEBus::matrixSetRowIndex(int irow, int idx)
 \end{Verbatim}
 }
 
-The row indices for the Jacobian and R${}^{-1}$ are stored in two separate STL arrays \texttt{\textbf{p\_rowJidx}} and \texttt{\textbf{p\_rowRidx}}. For the state estimation example, the number of rows (for both the Jacobian and R${}^{-1}$) is equal to the number of measurements associated with the component. These measurements are held in an internal list in some order. If the number of measurements on the bus is M then the \texttt{\textbf{irow}} index will run from 0,..,M-1, with the \texttt{\textbf{irow}} index corresponding to the \texttt{\textbf{irow}} element in the list of measurements. The independent variables are also assumed to be ordered in some fashion. Again, for the state estimation example, the phase angle is indexed by 0 and the voltage magnitude is indexed by 1. 
+The row indices for the Jacobian and $R^{-1}$ are stored in two separate STL
+arrays \texttt{\textbf{p\_rowJidx}} and \texttt{\textbf{p\_rowRidx}}. For the
+state estimation example, the number of rows (for both the Jacobian and $R^{-1}$) is equal to the number of measurements associated with the component. These measurements are held in an internal list in some order. If the number of measurements on the bus is M then the \texttt{\textbf{irow}} index will run from 0,..,M-1, with the \texttt{\textbf{irow}} index corresponding to the \texttt{\textbf{irow}} element in the list of measurements. The independent variables are also assumed to be ordered in some fashion. Again, for the state estimation example, the phase angle is indexed by 0 and the voltage magnitude is indexed by 1. 
 
 The function for accessing the row indices is implemented as
 
@@ -73,7 +105,12 @@ int gridpack::state_estimation::SEBus::matrixGetRowIndex(int idx)
 \end{Verbatim}
 }
 
-Again, depending on the mode, this function will return different values and for this reason, these functions need to be implemented by the user. They cannot be implemented as part of the framework because the number of modes is application-specific and controlled by the developer.
+Again, depending on the mode, this function will return different values and for
+this reason, these functions need to be implemented by the user. They cannot be
+implemented as part of the framework because the number of modes is
+application-specific and controlled by the developer. However, the form of these
+functions is fairly standard and can be generalized in a straightforward way
+from the examples presented here.
 
 The functions that are used to actually evaluate matrix elements are
 
@@ -87,10 +124,24 @@ virtual void matrixGetValues(ComplexType *values,
 \end{Verbatim}
 }
 
-The first function returns the total number of matrix elements that will be evaluated by the component. This is used inside the mapper to allocate arrays that hold matrix elements coming from the components. The second function is used to evaluate actual matrix elements, along with their row and column indices. The real-valued version of \texttt{\textbf{matrixGetValues}} replaces \texttt{\textbf{ComplexType}} with \texttt{\textbf{double}}. This function is the one that will make use of the \texttt{\textbf{matrixGetRowIndex}} and \texttt{\textbf{matrixGetColIndex}} functions. The evaluation of the \texttt{\textbf{matrixNumValues}} function can be quite complicated. For the state estimation Jacobian matrix, the number of matrix elements contributed by a component depends on the number of measurements associated with that component and the number of variables that couple to that measurement. A measurement on a bus will usually contribute two values for the independent variables on the bus, plus an additional two values for each bus that is attached to the center bus via a branch. This number will be modified slightly if one of the buses in this group is a reference bus. For branches, the number of matrix elements contributed by each measurement is approximately four, two elements for each bus at either end of the branch. This number may drop if one of the buses is a reference bus.
+The first function returns the total number of matrix elements that will be
+evaluated by the component. This is used inside the mapper to allocate arrays
+that hold matrix elements coming from the components. The second function is
+used to evaluate actual matrix elements, along with their row and column
+indices. The real-valued version of \texttt{\textbf{matrixGetValues}} replaces
+\texttt{\textbf{ComplexType}} with \texttt{\textbf{double}}.
+The \texttt{\textbf{matrixGetRowIndex}} and \texttt{\textbf{matrixGetColIndex}}
+functions are used in implementing the \texttt{\textbf{matrixGetValues}} function.
 
-The \texttt{\textbf{matrixGetValues}} function is used to evaluate each of the matrix elements. It also gets the matrix indices for this element from the appropriate network component. The number of matrix elements returned by this function must correspond to the number returned by the \texttt{\textbf{matrixNumValues}} function. To see how the assignment of the indices works, we can look at the matrix element of the Jacobian corresponding to the gradient of a real power injection measurement \textit{P${}_{i}$} on bus \textit{i} with respect to the phase angle on another bus \textit{j} that is connected to \textit{i} via a single branch. The contribution to the Jacobian from this measurement is given by the formula\[\frac{\partial P_i}{\partial {\theta }_j}=V_iV_j(G_{ij}{\mathrm{sin} \left({\theta }_i-{\theta }_j\right)-B_{ij}{\mathrm{cos} ({\theta }_i-{\theta }_j)\ }\ })\] 
-Suppose \textit{P${}_{i}$} is measurement \textit{k} on the bus. Then the row index \texttt{\textbf{im}} for this matrix element can be evaluated by calling the function
+The evaluation of the \texttt{\textbf{matrixNumValues}} function can be quite complicated. For the state estimation Jacobian matrix, the number of matrix elements contributed by a component depends on the number of measurements associated with that component and the number of variables that couple to that measurement. A measurement on a bus will usually contribute two values for the independent variables on the bus, plus an additional two values for each bus that is attached to the center bus via a branch. This number will be modified slightly if one of the buses in this group is a reference bus. For branches, the number of matrix elements contributed by each measurement is approximately four, two elements for each bus at either end of the branch. This number may drop if one of the buses is a reference bus.
+
+The \texttt{\textbf{matrixGetValues}} function is used to evaluate each of the matrix elements. It also gets the matrix indices for this element from the appropriate network component. The number of matrix elements returned by this function must correspond to the number returned by the \texttt{\textbf{matrixNumValues}} function. To see how the assignment of the indices works, we can look at the matrix element of the Jacobian corresponding to the gradient of a real power injection measurement \textit{P${}_{i}$} on bus \textit{i} with respect to the phase angle on another bus \textit{j} that is connected to \textit{i} via a single branch. The contribution to the Jacobian from this measurement is given by the formula
+\[
+\frac{\partial P_i}{\partial {\theta }_j}=V_iV_j(G_{ij}{\mathrm{sin}
+\left({\theta }_i-{\theta }_j\right)-B_{ij}{\mathrm{cos}
+({\theta }_i-{\theta }_j)\ }\ })
+\] 
+Suppose $P_{i}$ is measurement $k$ on the bus. Then the row index \texttt{\textbf{im}} for this matrix element can be evaluated by calling the function
 
 {
 \color{red}
@@ -110,6 +161,7 @@ The column index is associated with the phase angle variable on the remote bus \
 
 This function is called with the argument 0 since the dependent variables are
 always ordered as phase angle (0) followed by voltage magnitude (1). The full list of Jacobian matrix elements can be obtained by looping over all measurements. For each bus measurement, there are contributions from the dependent variables on each connected bus plus two contributions from the calling bus. Similarly, for each branch measurement there are approximately four contributions coming from the independent variables associated with the buses at each end of the branch. A simple counter variable can be used to make sure that the matrix element value and the corresponding row and column indices stored in the same location of the \texttt{\textbf{values}}, \texttt{\textbf{rows }}and \texttt{\textbf{cols}} arrays that are returned by the \texttt{\textbf{getMatrixValues}} function.
+
 The \texttt{\textbf{GenMatVecInterface}} also includes functions for setting up vectors. These work in a very similar way to the generalized matrix functions, so they will only be described briefly. The two functions
 
 {

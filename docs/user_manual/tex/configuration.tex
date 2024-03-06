@@ -2,18 +2,27 @@
 
 The configuration module is designed to provide a central mechanism for directing information from the input file to the components making up a given application. For example, information about convergence thresholds and maximum numbers of iterations might need to be picked up by the solver module from an external configuration file. The configuration module is designed to read files using a simple XML format that supports a hierarchical input. This can be used to control which input gets directed to individual objects in the application, even if the object is a framework component and cannot be modified by the application developer.
 
-The \texttt{\textbf{Configuration}} class is in the namespace \texttt{\textbf{gridpack::utility}}. This class follows the C++ singleton pattern and does not have a public constructor. The static method \texttt{\textbf{configuration()}} returns a pointer to the shared instance of this class and guaratantees that the same instance is used by all modules in an application. The shared instance can be initialized with data from an external file using the code
+The \texttt{\textbf{Configuration}} class is in the namespace
+\texttt{\textbf{gridpack::utility}}. This class follows the C++ singleton
+pattern and does not have a public constructor. The static method
+\texttt{\textbf{configuration()}} returns a pointer to the shared instance of
+this class and guarantees that the same instance is used by all modules in an application. The shared instance can be initialized with data from an external file using the code
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
 gridpack::utility::Configuration * c = 
   gridpack::utility::Configuration::configuration() ; 
-c->open(input_file, MPI_COMM_WORLD);
+c->open(input_file, comm);
 \end{Verbatim}
 }
 
-The input file uses XML syntax. The single top-level element must be named ``Configuration'' but other elements may have module- and application-specific names. Refer elsewhere in this document for details.  For illustration purposes, an example configuration file might look like: 
+where \texttt{\textbf{comm}} is a GridPACK \texttt{\textbf{Communicator}}.
+
+The input file uses XML syntax. The single top-level element must be named
+``Configuration'' but other elements may have module- and application-specific
+names. Refer elsewhere in this document for details.  For illustration purposes,
+an example configuration file for a power flow calculation might look like: 
 
 {
 \color{blue}
@@ -63,7 +72,7 @@ The first argument has type\texttt{\textbf{ Configuration::KeyType}} which is a 
 \begin{Verbatim}[fontseries=b]
  int get(const KeyType &, int default_value) const ;
 
- bool get(const KeyType &, int *) const;
+ bool get(const KeyType &, int *value) const;
 \end{Verbatim}
 }
 
@@ -82,7 +91,7 @@ std::string s = p->get("networkConfiguration",
 \end{Verbatim}
 }
 
-An additional use of such cursors is to access lists of values. The method 
+An additional use of such cursors is to access lists of values. The method
 
 {
 \color{red}
@@ -93,13 +102,15 @@ void children(ChildCursors &);
 \end{Verbatim}
 }
 
-can be used to get a vector of all the elements that are children in the name hierarchy of some element. These children need not have unique names, as illustrated by the children of the ``Faults'' element shown above. In this example, each of the children is a cursor that can be used to access ``StartFault'', ``EndFault'', and ``Branch'' parameters for each of the ``Fault'' blocks. Again, returning to the sample input above, the following code will return a list of faults
+can be used to get a vector of all the elements that are children in the name
+hierarchy of some element. These children need not have unique names, as
+illustrated by the children of the ``Faults'' element shown in the XML file above. In this example, each of the children is a cursor that can be used to access ``StartFault'', ``EndFault'', and ``Branch'' parameters for each of the ``Fault'' blocks. Again, returning to the sample input above, the following code will return a list of faults
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
 Configuration::CursorPtr p = 
-c->getCursor("Configuration.DynamicSimulation.Faults");
+   c->getCursor("Configuration.DynamicSimulation.Faults");
 ChildCursors faults;
 p->children(faults);
 \end{Verbatim}

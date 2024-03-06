@@ -1,6 +1,8 @@
 \section{Math Module}
 
-The math module provides support in GridPACK for distributed matrices and vectors, linear solvers, non-linear solvers, and preconditioners. Once created, matrices can be treated as opaque objects and manipulated using a high level syntax that is comparable to writing Matlab code. The distributed matrix and vector data structures themselves are based on external solver libraries and represent relatively lightweight wrappers on multipurpose HPC codes. The current math module is built on the PETSc library but other libraries, such as Hypre and Trilinos could potentially be used instead.
+The math module provides support in GridPACK for distributed matrices
+and vectors, linear solvers, non-linear solvers with preconditioning
+and DAE/ODE system time integration. Once created, vectors and matrices can be treated as opaque objects and manipulated using a high level syntax that is comparable to writing Matlab code. The distributed matrix and vector data structures themselves are based on external solver libraries and represent relatively lightweight wrappers on multipurpose HPC codes. The current math module is built on the PETSc library but other libraries, such as Hypre and Trilinos could potentially be used instead.
 
 The main functionality associated with the math module is the ability to instantiate new matrices and vectors, add individual matrix and vector elements (and their values) to the matrix/vector objects, invoke the assemble operation on the object, perform basic algebraic operations, such as matrix-vector multiply, and solve systems of algebraic equations. The assemble operation is designed to give the library a chance to set up internal data structures and repartition the matrix elements, etc. in a way that will optimize subsequent calculations. Inclusion of this operation follows the syntax of most solver libraries when they construct a matrix or vector. 
 
@@ -8,9 +10,9 @@ In addition to basic matrix operations, the math module contains linear and non-
 
 The functionality in the math component is distributed between the classes \texttt{\textbf{Matrix}} , \texttt{\textbf{RealMatrix}}, \texttt{\textbf{Vector}}, \texttt{\textbf{RealVector}}, \texttt{\textbf{LinearSolver}}, 
 
-\texttt{\textbf{RealLinearSolver}}, \texttt{\textbf{NonLinearSolver}}, and \texttt{\textbf{RealNonlinearSolver}}
-
-%\texttt{\textbf{Vector, RealVector}}, LinearSolver, \texttt{\textbf{ RealLinearSolver, NonlinearSolver}} and \texttt{\textbf{RealNonlinearSolver}}. 
+\texttt{\textbf{RealLinearSolver}}, \texttt{\textbf{NonLinearSolver}},
+\texttt{\textbf{RealNonlinearSolver}}, \texttt{\textbf{DAESolver}},
+and \texttt{\textbf{RealDAESolver}}
 
 Each of these classes is in the \texttt{\textbf{gridpack::math}} namespace and
 is described below. Like the \texttt{\textbf{BaseNetwork}} class, there are a
@@ -19,7 +21,7 @@ do not need to be used by users. Most of the functions related to matrix/vector
 instantiation and creation are used inside the mapper classes described in
 section~\ref{mapper}, which eliminates the need for users to deal with them directly. However, users may be interested in creating functions not covered by existing library methods and in this case access to these functions is useful.
 
-An additional note on the math module class names is in order. Originally, GridPACK only supported complex objects and used the names \texttt{\textbf{Vector}}, \texttt{\textbf{Matrix}}, etc. More recently, the capability for supporting real objects was added and hence the new names \texttt{\textbf{RealVector}}, etc. The original names continued to be used for complex objects to maintain backwards compatibility. Complex objects can also be accessed using the names \texttt{\textbf{ComplexVector}}, \texttt{\textbf{ComplexMatrix}}, etc., which are mapped to the original complex objects.
+An additional note on the math module class names is in order. Originally, GridPACK only supported complex objects and used the names \texttt{\textbf{Vector}}, \texttt{\textbf{Matrix}}, etc. More recently, the capability for supporting real values was added and hence the new names \texttt{\textbf{RealVector}}, etc. The original names continued to be used for complex objects to maintain backwards compatibility. Complex objects can also be accessed using the names \texttt{\textbf{ComplexVector}}, \texttt{\textbf{ComplexMatrix}}, etc., which are mapped to the original complex objects.
 
 \subsection{Matrices}
 
@@ -536,3 +538,226 @@ If you are only interested in using the \texttt{\textbf{NonlinearSolver}}, then 
 }
 
 Additional calls are likely to be added to these to allow user-specified parameters from the input deck to be sent to the solver. In the case of the \texttt{\textbf{NonlinearSolver}}, these can be used to specify which PETSc solver should be used. More details on how to use the non-linear solvers can be found by looking at the powerflow module in the GridPACK source code.
+
+
+\subsection{Differential Algebraic Equation Solvers}
+\label{sec:dae-solver}
+
+The \texttt{\textbf{DAESolver}} is used to integrate systems of
+differential and algebraic equations (DAE) of the form
+\[
+  \mathbf{F} \left( t, \mathbf{u}, \mathbf{\dot{u}} \right) ~=~ 0, ~~ \mathbf{u} \left( t_{0} ~ = ~ \mathbf{u}_{0}
+  \right)
+\]
+It can also be used to solve systems of ordinary differential
+equations (ODE).  As with other GridPACK math classes,
+\textbf{\texttt{DAESolver}} has real and complex versions.  The
+complex version is discussed here, but the real version behaves
+identically.
+
+At its simplest, a \texttt{\textbf{DAESolver}} is instantiated with
+the constructor
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    DAESolver(const parallel::Communicator& comm, 
+              const int local_size,
+              DAESolver::JacobianBuilder& jbuilder,
+              DAESolver::FunctionBuilder& fbuilder)
+\end{Verbatim}
+}
+
+\texttt{\textbf{DAESolver}}, like \texttt{\textbf{NonlinearSolver}},
+requires some helper functions.  A helper function can be an actual
+function or a functor.  
+
+The system Jacobian matrix is computed by the
+\texttt{\textbf{DAESolver::JacobianBuilder}} helper which requires the
+following arguments:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    (const double& time, 
+     const DAESolver::VectorType& x, const DAESolver::VectorType& xdot, 
+     const double& shift, DAESolver::MatrixType& J)
+\end{Verbatim}
+}
+
+where the vectors \textbf{\texttt{x}} and \textbf{\texttt{xdot}} are
+the system variable state and its time derivative at
+\textbf{\texttt{time}}.
+
+The \texttt{\textbf{DAESolver::FunctionBuilder}} helper is
+used to compute $ \mathbf{F} \left( t, \mathbf{u},  \mathbf{\dot{u}}
+  \right)$ and requires these arguments: 
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    (const double& time, 
+     const DAESolver::VectorType& x, const DAESolver::VectorType& xdot, 
+     DAESolver::VectorType& F)
+\end{Verbatim}
+}
+
+It's usually best to create a functor class or struct with appropriate
+methods and the necessary data for these helpers. For example,
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    struct MyDAEHelper {
+       void operator() (const double& time, 
+                        const DAESolver::VectorType& X, 
+                        const DAESolver::VectorType& Xdot, 
+                        const double& shift, DAESolver::MatrixType& J);
+       void operator() (const double& time, 
+                        const DAESolver::VectorType& X, 
+                        const DAESolver::VectorType& Xdot, 
+                        DAESolver::VectorType& F);
+    };
+\end{Verbatim}
+}
+
+which can be used to create a \texttt{\textbf{DAESolver}} like this.  
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    gridpack::parallel::Communicator comm;
+    MyDAEHelper myhelper;
+    DAESolver::JacobianBuilder jbuilder = boost::ref(myhelper);
+    DAESolver::FunctionBuilder fbuilder = boost::ref(myhelper);
+    DAESolver solver(comm, lrows, jbuilder, fbuilder);
+\end{Verbatim}
+}
+
+To use the solver, first it must be initialized, which is done with
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    DAESolver::initialize(const double& t0,
+                          const double& deltat0,
+                          DAESolver::VectorType& x0);
+\end{Verbatim}
+}
+
+where \textbf{\texttt{t0}} and \textbf{\texttt{deltat0}} are the
+initial time and time step and \textbf{\texttt{x0}} is the initial
+state.  The system is then solved with
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    DAESolver::solve(double& maxtime, int& maxsteps);
+\end{Verbatim}
+}
+
+This advances the time integration until \textbf{\texttt{maxtime}} is
+reached or \textbf{\texttt{maxsteps}} time steps are completed.  The
+actual integration time and steps taken are returned in
+\textbf{\texttt{maxtime}} and \textbf{\texttt{maxsteps}} upon
+completion and the resulting state is placed in the
+\texttt{\textbf{x0}} vector passed to
+\texttt{\textbf{initialize()}}. A subsequent call to
+\textbf{\texttt{solve}} will continue where the previous call left
+off.
+
+In addition to the Jacobian and function builder helper functions, the
+\texttt{\textbf{DAESolver}} accepts functions executed before and
+after each time step that can be used to manipulate, or just report,
+\texttt{\textbf{DAESolver}} progression.  These functions take the
+current time as the only argument.  To illustrate ways to use these,
+\textbf{\texttt{MyDAEHelper}} might be modified to add some facilities
+and pass those to the solver:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    struct MyDAEHelper {
+       [...]
+       void operator() (const double& time); 
+       static void postTimeStep (const double& time);
+    };
+    [...] 
+    DAESolver::StepFunction sfunc;
+    sfunc = boost::ref(myhelper);
+    solver.preStep(sfunc);
+    sfunc = &MyDAEHelper::postTimeStep;
+    solver.postStep(sfunc);
+\end{Verbatim}
+}
+
+The evolution of a \texttt{\textbf{DAESolver}} time integration can be
+manipulated with the use of events.  Events can be used to modify the
+value of one or more time integration variables when a variable value
+changes sign.  Three kinds of events can be created, based on how a
+variable changes sign:
+\begin{description}
+\item[\texttt{\textbf{CrossZeroNegative}}]
+  variable value changes from positive to negative
+\item[\texttt{\textbf{CrossZeroPositive}}]
+  variable value changes from negative to positive
+\item[\texttt{\textbf{CrossZeroEither}}]
+  variable changes sign in either direction
+\end{description}
+Events are described using subclasses of
+\texttt{\textbf{DAESolver::Event}}, which should override
+{ \color{red}
+\begin{Verbatim}[fontseries=b]
+   void p_handle(const bool *triggered, const double& t, T *state)
+\end{Verbatim}
+}
+which does whatever is necessary to adjust the internals of the
+internals of the event when it is triggered, and
+{ \color{red}
+\begin{Verbatim}[fontseries=b]
+   void p_update(const double& t, T *state)
+\end{Verbatim}
+}
+which is used to modify the time integration state vector.
+
+An arbitrary number of events
+can be managed using a \texttt{\textbf{DAESolver::EventManager}}
+instance.  In order to use the event facility, an event manager must
+be created and populated with event instances, then the manager is
+used when creating the solver using this constructor:
+
+{ \color{red}
+\begin{Verbatim}[fontseries=b]
+    DAESolver(const parallel::Communicator& comm, 
+              const int local_size,
+              DAESolver::JacobianBuilder& jbuilder,
+              DAESolver::FunctionBuilder& fbuilder,
+              DAESolver::EventManagerPtr eman);
+\end{Verbatim}
+}
+
+\textbf{\texttt{DAESolver}} can be configured from input.  There is
+one option, \texttt{\textbf{Adaptive}}, which, if true, causes a
+variable time step to be used in the integration.  Also, PETSc options
+can be specified, including an optional prefix.  Some example configuration
+language might look like
+
+{ \color{blue}
+\begin{Verbatim}[fontseries=b]
+  <DAESolver>
+    <Adaptive>true</Adaptive>
+    <PETScPrefix>dsim_</PETScPrefix>
+    <PETScOptions>
+      -ts_type euler
+      -ts_view
+      -ts_monitor
+    </PETScOptions>
+  </DAESolver>
+\end{Verbatim}
+}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../GridPACK"
+%%% End:

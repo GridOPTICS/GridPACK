@@ -1,12 +1,29 @@
 \section{Data Interface}\label{data_interface}
 
-The main route for incorporating information about buses and branches into GridPACK applications is the \texttt{\textbf{DataCollection}} class. Each bus and branch (including ghost buses and ghost branches) has an associated \texttt{\textbf{DataCollection}} object that contains all the parameters associated with that object. The \texttt{\textbf{DataCollection}} class works in conjunction with the \texttt{\textbf{dictionary.hpp}} header file, which defines a unified vocabulary for labeling power grid parameters that are used in applications. The goal of using the dictionary is to create a unified vocabulary for power grid parameters within GridPACK that is independent of the source of the parameters.
+The main route for incorporating information about buses and branches into
+GridPACK applications is the \texttt{\textbf{DataCollection}} class. Each bus
+and branch (including ghost buses and ghost branches) has an associated
+\texttt{\textbf{DataCollection}} object that contains all the parameters
+associated with that object. The \texttt{\textbf{DataCollection}} class works in
+conjunction with the \texttt{\textbf{dictionary.hpp}} header file, which defines
+a unified vocabulary for labeling power grid parameters that are used in
+applications. The \texttt{\textbf{dictionary.hpp}} file includes a collection of
+files in the \texttt{\textbf{parser/variables\_defs}} directory that represent
+variables associated with different network components,
+such as buses, branches, transformers, generators, etc. The goal of using the dictionary is to create a unified vocabulary for power grid parameters within GridPACK that is independent of the source of the parameters.
 
 The \texttt{\textbf{DataCollection}} class is a simple container that can be
 used to store key-value pairs and resides in the
 \texttt{\textbf{gridpack::component}} namespace. When the network is created
 using a standard parser to read a network configuration file (see more on
-parsers in section~\ref{parsers}), each bus and branch created in the network has an associated \texttt{\textbf{DataCollection}} object. This object, in turn, contains all parameters from the configuration file that are associated with that particular bus or branch. The possible key values in the \texttt{\textbf{DataCollection}} object are defined in \texttt{\textbf{dictionary.hpp}} and represent parameters found in power grid applications. Parameters associated with a given key can be retrieved from the \texttt{\textbf{DataCollection}} object using some simple accessors.
+parsers in section~\ref{parsers}), each bus and branch created in the network
+has an associated \texttt{\textbf{DataCollection}} object. This object, in turn,
+contains all parameters from the configuration file that are associated with
+that particular bus or branch. The possible key values in the
+\texttt{\textbf{DataCollection}} object are defined in
+\texttt{\textbf{dictionary.hpp}} and represent parameters found in power grid
+applications.  Parameters associated with a given key can be retrieved from the
+\texttt{\textbf{DataCollection}} object using some simple accessors.
 
 Data can be stored in two ways inside the \texttt{\textbf{DataCollection}} object. The first method assumes that there is only a single instance of the key-value pair, the second assumes there are multiple instances. This second case can occur, for example, if there are multiple generators on a bus. Generators are characterized by a collection of parameters and each generator has its own set of parameters. The generator parameters can be indexed so that they can be matched with a specific generator.
 
@@ -29,11 +46,7 @@ keepaspectratio=true]{figures/Network-objects}
   \label{fig:data-schematic}
 \end{figure}
 
-%\noindent \includegraphics*[width=6.00in, height=4.24in, keepaspectratio=false, trim=0.00in 0.07in 0.00in 0.19in]{image73}
-
-%\textcolor{red}{\texttt{\textbf{Figure 6.}} Schematic diagram representing relationship between the \textbf{DataCollection} objects (green) and the network components (purple). The arrows represent the transfer of data from the data collections to the network components during the \textbf{load} operation.}
-
-Each bus and branch in the figure has an associated \texttt{\textbf{DataCollection}} and network component (bus or branch class) object associated with it. After the network is created, the \texttt{\textbf{DataCollection}} objects are filled with key-value pairs while network components are in an uninitialized state. The information can be transferred from the \texttt{\textbf{DataCollection}} objects to the network components by implementing the network component \texttt{\textbf{load}} function. The load function has a pointer to the associated \texttt{\textbf{DataCollection}} object passed when it is called, so that the contents of the data collection can be accessed using the functions described below.
+After the network is created, the \texttt{\textbf{DataCollection}} objects are filled with key-value pairs while network components are in an uninitialized state. The information can be transferred from the \texttt{\textbf{DataCollection}} objects to the network components by implementing the network component \texttt{\textbf{load}} function. The load function has a pointer to the associated \texttt{\textbf{DataCollection}} object passed when it is called, so that the contents of the data collection can be accessed using the functions described below.
 
 Assuming that a parameter only appears once in the data collection, the contents of a \texttt{\textbf{DataCollection}} object can be accessed using the functions
 
@@ -62,7 +75,13 @@ getValue("SOME_VARIABLE_NAME",&var);
 \end{Verbatim}
 }
 
-If the variable is not found in the data collection, the default value is 1. The returned bool value can also be used to implement defaults or take alternative actions if the value is not found.
+If the variable is not found in the data collection, the default value is 1. The
+returned bool value can also be used to implement defaults or take alternative
+actions if the value is not found. Note that it is important to make match the
+variable type correctly when calling getValue. For example, if a variable is
+stored as type \texttt{\textbf{double}} in the data collection, but you try and
+access it by passing in a variable of type \texttt{\textbf{float}} or
+\texttt{\textbf{int}}, the \texttt{\textbf{getValue}} call will return false.
 
 If the variable is stored multiple times in the \texttt{\textbf{DataCollection}}, then it can be accessed with the functions
 
@@ -79,21 +98,40 @@ bool getValue(const char *name, ComplexType *value, const int idx)
 \end{Verbatim}
 }
 
-where \texttt{\textbf{idx}} is an index that identifies a particular instance of the key. In this case, the key is essentially a combination of the character string \texttt{\textbf{name}} and the index. An example is the parameter describing the generator active power output, \texttt{\textbf{GENERATOR\_PG}}. Because there can be more than one generator on the bus, it is necessary to include an additional index to indicate which generator values are required. Internally, the key then becomes the combination \texttt{\textbf{GENERATOR\_PG:idx}}. The index values are 0-based, so the first value has index 0, the second value has index 1 and so on up to N-1, where N is the total number of values. Note that because the combination of name and index is actually stored internally as a key, it is not necessary that all values of the index between 0 and N-1 be stored in the data collection. If some generators are missing some parameters, that is allowed. It is up to the application to account for these missing values.
+where \texttt{\textbf{idx}} is an index that identifies a particular instance of
+the key. In this case, the key is essentially a combination of the character
+string \texttt{\textbf{name}} and the index. An example is the parameter
+describing the generator active power output, \texttt{\textbf{GENERATOR\_PG}}.
+Because there can be more than one generator on the bus, it is necessary to
+include an additional index to indicate which generator values are required.
+Internally, the key then becomes the combination
+\texttt{\textbf{GENERATOR\_PG:idx}}. The index values are 0-based, so the first
+value has index 0, the second value has index 1 and so on up to N-1, where N is
+the total number of values. Because the combination of name and index
+is actually stored internally as a key, it is not necessary that all values of
+the index between 0 and N-1 be stored in the data collection. If some generators
+are missing some parameters, that is allowed. It is up to the application to
+account for these missing values. It is also important to note that variables
+without an index and those with an index are considered different, so if you
+attempt to access a variable that is indexed without using the indexed version
+of \texttt{\textbf{getValue}}, and visa-versa, the function will return false.
 
 The data collection is generally filled with values after the parser is called
 to create the network. The nomenclature for these values can be found in the
-\texttt{\textbf{dictionary.hpp}} file located under \texttt{\textbf{src/parser}}
-under the main GridPACK directory. This file contains additional files that
+\texttt{\textbf{dictionary.hpp}} file
+in the main GridPACK directory. This file contains additional files that
 include definitions for bus variables, branch variables, etc. in the
 \texttt{\textbf{src/parser/variable\_defs}} directory. Users are encouraged to
 look at these files to find out what parameters might be available to their
-applications. Note that different parameters may be available depending on the
+applications. Different parameters may be available depending on the
 source file that was used to create that calculation. The PSS/E version 23 and
 versions 33-35 files currently supported in GridPACK have significant
 differences and values that are present in the 33-35 files are often not available from a version 23 file.
 
-The aim of using the dictionary is to separate GridPACK applications from data sources so that applications can easily switch between different file formats without having to rewrite code within the application itself. The dictionary provides a common internal nomenclature for power grid parameters. Parsers for different file formats need to map the input data from those formats to the dictionary, but once this is done, all GridPACK applications should, in principle, be able to use any source of data.
+The aim of using the dictionary is to separate GridPACK applications from data
+sources so that applications can easily switch between different file formats
+without having to rewrite code within the application itself. In computure
+science parlance, this is known as an intermediate representation. The dictionary provides a common internal nomenclature for power grid parameters. Parsers for different file formats need to map the input data from those formats to the dictionary, but once this is done, all GridPACK applications should, in principle, be able to use any source of data.
 The definition files themselves have a very simple structure that consists of
 parameter definitions and some supporting documentation. Some examples of
 entries to the \texttt{\textbf{bus\_defs.hpp}} and

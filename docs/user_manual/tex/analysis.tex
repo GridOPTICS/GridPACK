@@ -1,6 +1,10 @@
 \section{Analysis}\label{analysis}
 
-Calculations such as contingency analysis can generate enormous amounts of data that can be further analyzed to discover instabilities or weak points in the system. The StatBlock class described in this section is designed to provide users with a mechanism for storing all this information in a distributed way and then allow them to perform some basic analysis routines on the resulting data array. The basic idea is that each contingency calculation produces a vector of results and this vector can be stored in a large array where one axis is an index that labels the contingency and the other index labels the elements of the vector. Each contingency must produce a vector of the same length. The vector may contain values such as the voltage magnitude on each bus, the real or reactive power generation on each generator, the power flow on each transmission line, or some similar quantity. The assumption is that each element in the vector represents a property of some device on either a bus or a branch and this device can be uniquely identified by a collection of indices that identify the bus or branch and a second two character ID that identifies the device within the bus or branch.
+Calculations such as contingency analysis can generate enormous amounts of data
+that can be further analyzed to discover instabilities or weak points in the
+system. The \texttt{\textbf{StatBlock}} class described in this section is
+designed to provide users with a mechanism for storing all this information in a
+distributed way and then allowing them to perform some analyses on the resulting data array. The basic idea is that each contingency calculation produces a vector of results and this vector can be stored in a large array where one axis is an index that labels the contingency and the other index labels the elements of the vector. Each contingency must produce a vector of the same length. The vector may contain values such as the voltage magnitude on each bus, the real or reactive power generation on each generator, the power flow on each transmission line, or some similar quantity. The assumption is that each element in the vector represents a property of some device on either a bus or a branch and this device can be uniquely identified by a collection of indices that identify the bus or branch and a second two character ID that identifies the device within the bus or branch.
 
 For \textit{N} contingencies, the contingency index runs between 0 and
 \textit{N}, with 0 representing a base case in which no contingency is present.
@@ -29,7 +33,11 @@ StatBlock(const Communicator &comm, int nrows, int ncols)
 \end{Verbatim}
 }
 
-The \texttt{\textbf{Communictor}} represents the collection of processors over which the \texttt{\textbf{StatBlock}} array is defined, the variable \texttt{\textbf{nrows}} is the total number of elements in each data vector that will be added to the array and \texttt{\textbf{ncols}} is the number of columns in the array. For a contingency calculation, ncols should be equal to \textit{N}+1, where the extra column is for the base case. The number of rows and columns are defined at the outset of the calculation, so they must be evaluated before any other calculations are performed.
+The \texttt{\textbf{Communictor}} represents the collection of processors over
+which the \texttt{\textbf{StatBlock}} array is defined, the variable
+\texttt{\textbf{nrows}} is the total number of elements in each data vector that
+will be added to the array and \texttt{\textbf{ncols}} is the number of columns
+in the array. For a contingency calculation, \texttt{\textbf{ncols}} should be equal to \textit{N}+1, where the extra column is for the base case. The number of rows and columns are defined at the outset of the calculation, so they must be evaluated before any other calculations are performed.
 
 Data can be added to the array from any processor using the function
 
@@ -41,7 +49,7 @@ void addColumnValues(int idx, std::vector<double> vals,
 \end{Verbatim}
 }
 
-The value \texttt{\textbf{idx}} is the index of the column into which the vector will be placed. The length of the \texttt{\textbf{vals}} and \texttt{\textbf{mask}} vectors needs to match the value of \texttt{\textbf{nrows}} used in the constructor. The \texttt{\textbf{vals}} vector contains the actual values that are being placed in the \texttt{\textbf{StatBlock}} array. All values are doubles. If an integer value is to be stored in the array, it should first be converted to the corresponding double. The \texttt{\textbf{mask}} vector is a set of set of integer values that can be used to control whether the corresponding value in the \texttt{\textbf{vals}} array is included in any of the statistical operations in \texttt{\textbf{StatBlock}}. For example, a particular contingency calculation might fail altogether and no values are recorded. In this case, the \texttt{\textbf{vals}} vector could be filled with \texttt{\textbf{nrows}} values (these can be any number, but 0.0 is convenient) and the corresponding \texttt{\textbf{mask}} array fill with \texttt{\textbf{nrows}} values of 0. For successful calculations, the \texttt{\textbf{mask}} array is filled with 1s. Later calculations can then exclude the failed contingencies by only including values with a corresponding mask value of 1 (or greater). This guarantees that some information is extracted from the calculation, even if some contingencies failed. Furthermore, by excluding these contingencies instead of setting their values to zero or some other dummy value, the results are not biased by the dummy values. The \texttt{\textbf{addColumnValues}} can be called by any processor.
+The value \texttt{\textbf{idx}} is the index of the column into which the vector will be placed. The length of the \texttt{\textbf{vals}} and \texttt{\textbf{mask}} vectors needs to match the value of \texttt{\textbf{nrows}} used in the constructor. The \texttt{\textbf{vals}} vector contains the actual values that are being placed in the \texttt{\textbf{StatBlock}} array. All values are doubles. If an integer value is to be stored in the array, it should first be converted to the corresponding double. The \texttt{\textbf{mask}} vector is a set of set of integer values that can be used to control whether the corresponding value in the \texttt{\textbf{vals}} array is included in any of the statistical operations in \texttt{\textbf{StatBlock}}. For example, a particular contingency calculation might fail altogether and no values are recorded. In this case, the \texttt{\textbf{vals}} vector could be filled with \texttt{\textbf{nrows}} values (these can be any number, but 0.0 is convenient) and the corresponding \texttt{\textbf{mask}} array fill with \texttt{\textbf{nrows}} values of 0. For successful calculations, the \texttt{\textbf{mask}} array is filled with 1s. Later calculations can then exclude the failed contingencies by only including values with a corresponding mask value of 1 (or greater). This guarantees that some information is extracted from the calculation, even if some contingencies fail. Furthermore, by excluding these contingencies instead of setting their values to zero or some other dummy value, the results are not biased by the dummy values. The \texttt{\textbf{addColumnValues}} can be called by any processor.
 
 In addition to the array values, several other vectors can be added to the array. These are used either to label the output in useful ways or to control some of the analyses. The function
 
@@ -95,9 +103,19 @@ void writeMeanAndRMS(std::string filename, int mval=1, bool flag=true)
 \end{Verbatim}
 }
 
-The parameter \texttt{\textbf{filename}} is the name of the file to which results are written, all values with the corresponding mask value greater than or equal to \texttt{\textbf{mval}} will be included in the calculation and \texttt{\textbf{flag}} can be set to false if it is not necessary to write out the 2-character device ID to the file. For buses, the first column of output is the row index, the second column is the bus ID, the third column is the device ID (optional) and the next three columns are the average value of the parameter across each row, the RMS deviation with respect to the average value, defined as\[RMS={\left[\frac{1}{M-1}\left(\sum^M_{i=1}{x^2_i-M{\overline{x}}^2}\right)\right]}^{1/2}\] 
-where \textit{M} is the total number of elements in the row that satisfy the criteria that the mask value is greater than mval, and the RMS deviation with respect to the base case value
-\[RMS={\left[\frac{1}{M-1}\sum^M_{i=1,\ i\neq b}{{\left(x_i-x_b\right)}^2}\right]}^{1/2}\] 
+The parameter \texttt{\textbf{filename}} is the name of the file to which results are written, all values with the corresponding mask value greater than or equal to \texttt{\textbf{mval}} will be included in the calculation and \texttt{\textbf{flag}} can be set to false if it is not necessary to write out the 2-character device ID to the file. For buses, the first column of output is the row index, the second column is the bus ID, the third column is the device ID (optional) and the next three columns are the average value of the parameter across each row, the RMS deviation with respect to the average value, defined as
+\[
+RMS={\left[\frac{1}{M-1}\left(\sum^M_{i=1}{x^2_i-M{\overline{x}}^2}\right)\right]}^{1/2}
+\] 
+where \textit{M} is the total number of elements in the row that satisfy the
+criteria that the mask value is greater than \texttt{\textbf{mval}}, and the RMS
+deviation with respect to the base case value, $x_b$, defined as
+\[
+RMS={\left[\frac{1}{M-1}\sum^M_{i=1,\ i\neq b}{{\left(x_i-x_b\right)}^2}\right]}^{1/2}
+\] 
+This RMS deviation with respect to the base case value is designed to identify
+cases where the base case may be unstable and almost any contingency has a
+tendency to disturb it.
 The results for branches have a similar format, except that the bus ID column is replaced by two columns, one representing the bus ID for the ``from'' bus and the other representing the bus ID of the ``to'' bus.
 
 The minimum and maximum values for the parameter can be evaluated by calling
@@ -105,7 +123,7 @@ The minimum and maximum values for the parameter can be evaluated by calling
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
-void writeMinAndMax(std::string filename, int mval=1, bool flag=true)
+void writeMinAndMax(std::string filename,int mval=1,bool flag=true)
 \end{Verbatim}
 }
 
@@ -123,7 +141,10 @@ void writeMaskValueCount(str::string filename,
 
 This function evaluates the total number of times the mask value \texttt{\textbf{mval}} occurs in each row. This can be used to identify the number of contingencies for which a device violates its operating parameters. For example, if a contingency is successfully evaluated and there is no violation of operating parameters then the mask value for that device and that contingency is set equal to 1. If the contingency is successfully evaluated but there is a violation of operating parameters, the mask value is set to 2 (the mask value of 0 would still be reserved for contingency calculations that fail completely). Calling the \texttt{\textbf{writeMaskValueCount}} method with \texttt{\textbf{mval}} set to 2 would then reveal the total number of contingencies for each device for which there was a violation. The format for the output file follows the previous pattern, the first columns identify the bus or branch and the device ID and the last column is the number of times the value \texttt{\textbf{mval}} occurs in the mask array for each row.
 
-This functionality is still somewhat complicated so we will illustrate how to use it by showing how to store the generator parameters from a contingency analysis calculation based on power flow simulations of a network. This example is drawn from the existing contingency analysis application released with GridPACK. This example starts by assuming that the \texttt{\textbf{TaskManager}} is being used to distribute power flow simulations on different processor groups within the main calculation. The data for generators is exported from the individual buses using the serialWrite method base component class. For the buses, this has a section that writes out the real and reactive power for each generator on the bus
+Even with these methods, it is still complicated to use this functionality so we
+will examine code to store the generator parameters from a contingency analysis
+calculation based on power flow simulations of a network. This example is drawn
+from the existing contingency analysis application released with GridPACK. We start by assuming that the \texttt{\textbf{TaskManager}} is being used to distribute power flow simulations on different processor groups within the main calculation. The data for generators is exported from the individual buses using the serialWrite method base component class. For the buses, this has a section that writes out the real and reactive power for each generator on the bus
 
 {
 \color{red}
@@ -163,7 +184,11 @@ This functionality is still somewhat complicated so we will illustrate how to us
 
 This code snippet will return a string containing the real and reactive power of each generator on the bus. The string includes a large number of decimal places for the floating point values to avoid large roundoff errors. The length of the string will vary with the number of generators on the bus. The number of generators on the bus is given by the variable \texttt{\textbf{ngen}} and the vector of strings \texttt{\textbf{gid}} contains the two character identifier tag for each generator. The \texttt{\textbf{fail}} variable is designed to prevent the calculation from writing out strings that may cause problems in other parts of the code if the powerflow calculation is unsuccessful.
 
-The real and reactive power output for all generators can be gathered into a single vector using the \texttt{\textbf{writeBusString}} method in the \texttt{\textbf{SerialBusIO}} class. This will gather the strings being returned from each bus into a single vector of strings. The code for doing this is
+The real and reactive power output for all generators can be gathered into a
+single vector using the \texttt{\textbf{writeBusString}} method in the
+\texttt{\textbf{PFAppModule}} class (this is base, in turn, on the
+\texttt{\textbf{writeStrings}} method in the \texttt{\textbf{SerialBusIO}}
+class). This will gather the strings being returned from each bus into a single vector of strings. The code for doing this is
 
 {
 \color{red}
@@ -198,7 +223,7 @@ The real and reactive power output for all generators can be gathered into a sin
         std::vector<std::string> tokens =
           util.blankTokenizer(gen_strings[i]);
         int ngen = tokens.size();
-        for (int j=0; j$<gen; j++) {
+        for (int j=0; j<ngen; j++) {
           ids.push_back(atoi(tokens[j*4].c_str()));
           gen_tags.push_back(tokens[j*4+1]);
           pgen.push_back(0.0);
@@ -254,7 +279,7 @@ The individual tasks are similar. After completing the power flow calculation an
 \end{Verbatim}
 }
 
-The labels only need to be added to \texttt{\textbf{pgen\_stats}} once, so they are not included in the conditional. The conditional itself is for rank 0 on the task communicator, since at this point in the calculation, the results from each task are different. The \texttt{\textbf{task\_id}} variable in this example is assumed to be zero-based, so it is incremented by 1 to get the correct column.
+The labels only need to be added to \texttt{\textbf{pgen\_stats}} once, so they are not included in the conditional. The conditional itself is for rank 0 on the task communicator, since at this point in the calculation, the results from each task are different. The \texttt{\textbf{task\_id}} variable in this example is zero-based, so it is incremented by 1 to get the correct column.
 Once all tasks (contingencies have been completed) the data can be written out using the commands
 
 {
