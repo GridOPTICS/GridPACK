@@ -24,6 +24,7 @@
 #include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_load_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_branch_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/fault.hpp>
 #include <gridpack/math/dae_solver.hpp>
 #include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
@@ -613,7 +614,9 @@ private:
   bool   p_hasResistance;
   bool   p_hasInductance;
 
-  EmtBranch *p_impl;
+  BaseEMTBranchModel **p_branch;    // Branch model
+  int                *p_neqsbranch; // Number of equations for the branch
+
   
   friend class boost::serialization::access;
   
