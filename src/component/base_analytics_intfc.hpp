@@ -58,6 +58,11 @@ public:
   virtual int numStorage();
   
   /**
+   * return number of storage units on bus
+   */
+  virtual int numStorage();
+  
+  /**
    * return number of loads on bus
    */
   virtual int numLoads();
