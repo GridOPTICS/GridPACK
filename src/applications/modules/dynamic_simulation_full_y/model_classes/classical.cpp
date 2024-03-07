@@ -372,10 +372,10 @@ serialWrite(char *string, const int bufsize, const char *signal)
     if (getWatch()) {
       char buf[128];
       std::string tag;
-      if (p_ckt[0] != ' ') {
+      if (p_ckt[1] != ' ') {
         tag = p_ckt;
       } else {
-        tag = p_ckt[1];
+        tag = p_ckt[0];
       }
       sprintf(buf,", %d_%s_angle, %d_%s_speed",p_bus_id,tag.c_str(),
           p_bus_id,tag.c_str());

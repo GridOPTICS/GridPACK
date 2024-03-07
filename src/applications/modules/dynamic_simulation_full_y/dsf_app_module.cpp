@@ -257,6 +257,9 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
   if (ds_idx == -1) {
     cursor = p_config->getCursor("Configuration.Dynamic_simulation");
     filename = cursor->get("generatorParameters","");
+    if (filename == "") {
+      std::cout<<"No Generator Parameter File Found"<<std::endl;
+    }
   } else if (ds_idx >= 0) {
     gridpack::utility::Configuration::CursorPtr dyr_cursor;
     dyr_cursor = p_config->getCursor(
@@ -265,7 +268,7 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
     if (dyr_cursor) dyr_cursor->children(files);
     if (ds_idx < files.size()) {
       if (!files[ds_idx]->get("generatorParams",&filename)) {
-        printf("Unknown generator parameter file specified\n");
+        printf("No generator parameter file specified\n");
         return;
       }
     }
@@ -1396,18 +1399,21 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
         p_gen_ids.push_back(tag);
       }
     }
-	if (!noprint) {				
+	if (!noprint) {
 		sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,tag.c_str());
 		p_busIO->header(buf);
 	}
     if (ncnt > 0) {
       p_generators_read_in = true;
       p_generatorWatch = true;
-	  if (!noprint) {				  
-		sprintf(buf,"Generator Watch Frequency: %d\n",p_generatorWatchFrequency);
-		p_busIO->header(buf);
-	  }
     }
+  }
+  if (ncnt > 0) {
+    if (!noprint) {
+      sprintf(buf,"Generator Watch Frequency: %d\n",p_generatorWatchFrequency);
+      p_busIO->header(buf);
+    }
+    p_save_time_series = true;
   }
 
   // If storing time series data, set up vector to hold results
