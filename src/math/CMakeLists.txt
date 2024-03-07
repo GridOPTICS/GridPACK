@@ -210,6 +210,7 @@ add_dependencies(matrix_inverse matrix_inverse_input)
 # numeric test suite
 # -------------------------------------------------------------
 add_executable(numeric_test test/numeric_test.cpp)
+target_link_libraries(numeric_test ${GLIBC_LIBS})
 gridpack_add_serial_unit_test(numeric numeric_test)
 
 

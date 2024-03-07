@@ -29,6 +29,7 @@ endif()
 add_library(gridpack_components
   base_component.cpp
   data_collection.cpp
+  base_analytics_intfc.cpp
   )
 gridpack_set_library_version(gridpack_components)
 add_dependencies(gridpack_components external_build)
@@ -48,6 +49,7 @@ gridpack_add_unit_test(component_serialization component_serialization_test)
 install(FILES 
   base_component.hpp  
   data_collection.hpp
+  base_analytics_intfc.hpp
   DESTINATION include/gridpack/component
 )
 

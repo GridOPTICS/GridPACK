@@ -26,6 +26,7 @@
 #include "boost/smart_ptr/weak_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/component/base_analytics_intfc.hpp"
 
 #include <boost/serialization/export.hpp>
 
@@ -514,7 +515,7 @@ class BaseComponent
 };
 
 class BaseBusComponent
-  : public BaseComponent {
+  : public BaseComponent, public BaseBusAnalyticsInterface {
   public:
     /**
      * Simple constructor
@@ -633,7 +634,7 @@ class BaseBusComponent
 };
 
 class BaseBranchComponent
-  : public BaseComponent {
+  : public BaseComponent, public BaseBranchAnalyticsInterface {
   public:
     /**
      * Simple constructor
