@@ -61,6 +61,14 @@ int BaseBusAnalyticsInterface::numLoads()
 }
 
 /**
+ * return number of storage units on bus
+ */
+int BaseBusAnalyticsInterface::numStorage()
+{
+  return 0;
+}
+
+/**
  * Simple constructor
  */
 BaseBranchAnalyticsInterface::BaseBranchAnalyticsInterface(void)
