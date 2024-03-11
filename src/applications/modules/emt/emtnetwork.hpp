@@ -30,6 +30,7 @@
 #include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
 
 class Fault; // Forward declaration to resolve circular dependency
+class BaseEMTBranchModel; // Forward declaration of BaseEMTBranch Model
 
 class EmtBus: public gridpack::component::BaseBusComponent 
 {
@@ -570,7 +571,7 @@ public:
   /*
     setLocalOffset - sets the starting location for the variables for this branch in the solution vector
   */
-  void setLocalOffset(int offset) {p_offset = offset;}
+  void setLocalOffset(int offset);
   
   /* Set whether the element is local or ghosted */
   void setGhostStatus(bool isghost) { p_isghost = isghost; }
@@ -579,14 +580,9 @@ public:
   
   void setRank(int rank) { p_rank = rank; }
 
-  int  getStatus(int i) {return p_status[i];}
+  int  getStatus(int i);
 private:
   int p_nparlines; // Number of parallel lines
-  std::vector<int> p_status; // Status of the lines
-  std::vector<std::string> p_cktid; // circuit id
-  std::vector<int> p_localoffset; // local offset used for inserting/retrieving values from vector
-  std::vector<double> p_lineR; // Line resistance
-  std::vector<double> p_lineX; // Line reactance
   int  p_nvar;      // Number of variables for this branch  
   int p_mode;     // Mode used for vectors and matrices
   int  p_gloc;     // Global location for the first variable for this branch in the solution vector
@@ -604,16 +600,6 @@ private:
 
   double *p_iptr; // Pointer used for exchanging values with ghost branches. Note that this pointer is pointed to the buffer used for exchanging values with ghost branches. Its contents should be updated whenever there is a change in v, e.g., when the values from vector X are being mapped to the branches
 
-  double *p_ibr; // Array to hold branch currents. 
-  double* p_didt; // Array to hold derivatives
-
-  // Line parameters
-  double p_R[3][3];
-  double p_L[3][3];
-  double p_C[3][3];
-  bool   p_hasResistance;
-  bool   p_hasInductance;
-
   BaseEMTBranchModel **p_branch;    // Branch model
   int                *p_neqsbranch; // Number of equations for the branch
 
@@ -625,11 +611,6 @@ private:
   {
     ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
       & p_nparlines
-      & p_status
-      & p_cktid
-      & p_localoffset
-      & p_lineR
-      & p_lineX
       & p_nvar
       & p_mode
       & p_time
