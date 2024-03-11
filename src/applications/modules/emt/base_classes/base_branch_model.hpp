@@ -18,7 +18,10 @@
 #include "gridpack/component/base_component.hpp"
 #include <gridpack/applications/modules/emt/constants.hpp>
 #include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
+#include <gridpack/applications/modules/emt/emtnetwork.hpp>
 #include <gridpack/math/matrix.hpp>
+
+class EmtBus; // Forward declaration for EmtBus
 
 class BaseEMTBranchModel : public gridpack::component::BaseComponent
 {
@@ -112,11 +115,19 @@ public:
    */
   virtual void getCurrent(double *ia, double *ib, double *ic);
 
+
   /**
-   * Return the global location for the generator current injection 
+   * Return the global location for the branch current injection 
    * @param [output] i_gloc - global location for the first current variable
    */
   virtual void getCurrentGlobalLocation(int *i_gloc);
+
+  /**
+   * Return the location for the current in the local branch array
+   * @param [output] i_gloc - location for the first current variable in the local branch array
+   */
+  virtual void getCurrentLocalLocation(int *i_loc) { *i_loc = 0; }
+
 
   /**
    * Return the number of variables
@@ -177,7 +188,7 @@ public:
    */
   void setMode(int mode) { p_mode = mode;}
 
-  void setBusLocalOffset(int offset) {p_branchoffset = offset;}
+  void setBranchLocalOffset(int offset) {p_branchoffset = offset;}
 
   /*
     set the location for the first variable in the solution vector
@@ -197,7 +208,19 @@ public:
    * @param [in] type - the integration type
    */
   void setIntegrationType(EMTMachineIntegrationType type) {integrationtype = type;}
-  
+
+  /**
+   * Set the from bus associated with this branch
+   * @param [in] frombus - from bus
+   */
+  void setFromBus(EmtBus *frombus) {fbus = frombus;}
+
+    /**
+   * Set the to bus associated with this branch
+   * @param [in] tobus - to bus
+   */
+  void setToBus(EmtBus *tobus) {tbus = tobus;}
+
  protected:
   int           status; /**< Branch status */
   std::string   cktid; // circuit id
@@ -213,6 +236,9 @@ public:
   int           nxbranch; /* Number of variables for the branch model */
   int           p_branchoffset; /** Offset for the bus variables in the local vector. Used only for events */
   int           p_glocvoltage; /* Global location of the first bus voltage variable. This is set by the bus */
+
+  EmtBus *fbus; // From bus
+  EmtBus *tbus; // To bus
 
   std::vector<int>   p_rowidx; // global index for rows
   std::vector<int>   p_colidx; // global index for columns
