@@ -88,6 +88,12 @@ public:
   void getCurrentGlobalLocation(int *i_gloc);
 
   /**
+   * Return the location for the current in the local branch array
+   * @param [output] i_gloc - location for the first current variable in the local branch array
+   */
+  void getCurrentLocalLocation(int *i_loc);
+
+  /**
    * Return the number of variables
    * @param [output] nvar - number of variables
    */

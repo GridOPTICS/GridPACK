@@ -1602,8 +1602,6 @@ EmtBranch::EmtBranch(void)
   p_nvar = 3;
   p_num_vals = 0;
   p_mode = NONE;
-  p_hasInductance = false;
-  p_hasResistance = false;
   p_TSshift = 1.0;
   p_neqsbranch = NULL;
 }
@@ -1620,10 +1618,32 @@ EmtBranch::~EmtBranch(void)
     free(p_neqsbranch);
   }
   if(p_nvar) {
-    delete [] p_ibr;
-    delete [] p_didt;
     delete [] p_vecidx;
   }
+}
+
+/**
+ * Set local offset for the branch (starting location of variables for this branch in the state vector)
+   and propogate that to the models on this branch. Used for events 
+*/
+void EmtBranch::setLocalOffset(int offset)
+{
+  int i;
+
+  p_offset = offset;
+
+  for(i=0; i < p_nparlines; i++) {
+    if(!p_branch[i]->getStatus()) continue;
+
+    p_branch[i]->setBranchLocalOffset(offset);
+
+  }
+}
+
+/* Get the status of the ith parallel line */
+int EmtBranch::getStatus(int i)
+{
+  return p_branch[i]->getStatus();
 }
 
 void EmtBranch::setup()
@@ -1631,35 +1651,51 @@ void EmtBranch::setup()
   int i;
   p_nvar = 0;
 
-  for(i = 0; i < p_nparlines; i++) {
+  if(p_nparlines) {
     p_neqsbranch = (int*)malloc(p_nparlines*sizeof(int));
+  }
 
-    for(int i=0; i < p_nparlines; i++) {
-      p_neqsbranch[i] = 0;
-    }
+  for(i = 0; i < p_nparlines; i++) {
+    p_neqsbranch[i] = 0;
 
-    p_localoffset.push_back(p_nvar);
-    if(!p_status[i]) continue;
+    if(!p_branch[i]->getStatus()) continue;
+    
+    // Set number of equations for this branch
+    p_branch[i]->getnvar(&p_neqsbranch[i]);
+    
+    // set the offset for the first variable in the branch variable array
+    p_branch[i]->setBranchOffset(p_nvar);
 
-    p_nvar += 3;
-
-    /* Add Capacitive shunt to from and to buses */
+    p_nvar += p_neqsbranch[i];
+    
     EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
     EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
-    busf->addLumpedLineCshunt(p_C,0.5);
-    bust->addLumpedLineCshunt(p_C,0.5);
+
+    p_branch[i]->setFromBus(busf);
+    p_branch[i]->setToBus(bust);
   }
 
   if(p_nvar) {
     p_vecidx = new int[p_nvar];
-    p_ibr  = new double[3*p_nparlines];
-    p_didt = new double[3*p_nparlines];
   }
 }
 
 void EmtBranch::setGlobalLocation()
 {
+  int i;
+  int gloc,nvar;
+  int vfgloc,vtgloc;
+
   p_gloc = p_vecidx[0];
+
+  gloc = p_gloc;
+  for(i = 0; i < p_nparlines; i++) {
+    if(p_branch[i]->getStatus()) {
+      p_branch[i]->setGlobalLocation(gloc);
+    }
+    p_branch[i]->getnvar(&nvar);
+    gloc += nvar;
+  }
 }
 
 /**
@@ -1682,15 +1718,9 @@ void EmtBranch::load(
 
   data->getValue(BRANCH_NUM_ELEMENTS,&p_nparlines);
 
-  p_status.reserve(p_nparlines);
-  p_cktid.reserve(p_nparlines);
-  p_lineR.reserve(p_nparlines);
-  p_lineX.reserve(p_nparlines);
-
   if(p_nparlines) {
     p_branch = (BaseEMTBranchModel**)malloc(p_nparlines*sizeof(BaseEMTBranchModel*));
   }
-
 
   try {
     if(p_nparlines > 1) {
@@ -1707,6 +1737,7 @@ void EmtBranch::load(
     if(!status) {
       p_branch[i] = new BaseEMTBranchModel;
       p_branch[i]->setStatus(status);
+      continue;
     }
 
     p_branch[i] = NULL;
@@ -1724,69 +1755,17 @@ void EmtBranch::load(
       Lumpedline *lumpedline;
       lumpedline = new Lumpedline;
       p_branch[i] = lumpedline;
-
-      // Load parameters
-      p_branch[i]->load(data,i); // load data
     } else {
       // Transformers to be handled later
       Lumpedline *lumpedline;
       lumpedline = new Lumpedline;
       p_branch[i] = lumpedline;
-      
-      p_branch[i]->setStatus(status);
-      
-      // Load parameters
-      p_branch[i]->load(data,i); // load data
     }
 
+    p_branch[i]->setStatus(status);
     
-    data->getValue(BRANCH_CKT,&cktid,i);
-    // Positive sequence values
-    data->getValue(BRANCH_R,&R,i);
-    data->getValue(BRANCH_X,&X,i);
-    data->getValue(BRANCH_B,&Bc,i);
-
-    p_status.push_back(status);
-    p_cktid.push_back(cktid);
-    p_lineR.push_back(R);
-    p_lineX.push_back(X);
-    
-    // Assuming zero sequence values as 3 times of +ve sequence
-    // we get the following phase matrices
-    double R1,L1,C1;
-    double R0,L0,C0;
-
-    if(abs(R) > 1e-6) {
-      p_hasResistance = true;
-    }
-
-    if(abs(X) > 1e-6) {
-      p_hasInductance = true;
-    }
-      
-    R1 = R; L1 = X/OMEGA_S; C1 = Bc/OMEGA_S;
-    R0 = 3*R1; L0 = 3*L1; C0 = 3*C1;
-
-    double Rs = (2*R1 + R0)/3.0;
-    double Rm = (R0 - R1)/3.0;
-    p_R[0][0] = p_R[1][1] = p_R[2][2] = Rs;
-    p_R[0][1] = p_R[1][0] = Rm;
-    p_R[0][2] = p_R[2][0] = Rm;
-    p_R[1][2] = p_R[2][1] = Rm;
-
-    double Ls = (2*L1 + L0)/3.0;
-    double Lm = (L0 - L1)/3.0;
-    p_L[0][0] = p_L[1][1] = p_L[2][2] = Ls;
-    p_L[0][1] = p_L[1][0] = Lm;
-    p_L[0][2] = p_L[2][0] = Lm;
-    p_L[1][2] = p_L[2][1] = Lm;
-
-    double Cp = (2*C1 + C0)/3.0;
-    double Cg = (C0 - C1)/3.0;
-    p_C[0][0] = p_C[1][1] = p_C[2][2] = Cp;
-    p_C[0][1] = p_C[1][0] = Cg;
-    p_C[0][2] = p_C[2][0] = Cg;
-    p_C[1][2] = p_C[2][1] = Cg;
+    // Load parameters
+    p_branch[i]->load(data,i); // load data
   }
   
 }
@@ -1799,6 +1778,12 @@ void EmtBranch::load(
 void EmtBranch::setMode(int mode)
 {
   p_mode = mode;
+
+  for(int i=0; i < p_nparlines; i++) {
+    if(p_branch[i]->getStatus()) {
+      p_branch[i]->setMode(mode);
+    }
+  }
 }
 
 /**
@@ -1807,6 +1792,11 @@ void EmtBranch::setMode(int mode)
 void EmtBranch::setTime(double time)
 {
   p_time = time;
+  for(int i=0; i < p_nparlines; i++) {
+    if(p_branch[i]->getStatus()) {
+      p_branch[i]->setTime(time);
+    }
+  }
 }
 
 
@@ -1816,6 +1806,11 @@ void EmtBranch::setTime(double time)
 void EmtBranch::setTSshift(double shift)
 {
   p_TSshift = shift;
+  for(int i=0; i < p_nparlines; i++) {
+    if(p_branch[i]->getStatus()) {
+      p_branch[i]->setTSshift(shift);
+    }
+  }
 }
 
 /**
@@ -1823,6 +1818,11 @@ void EmtBranch::setTSshift(double shift)
 */
 void EmtBranch::preStep(double time, double timestep)
 {
+  for(int i=0; i < p_nparlines; i++) {
+    if(p_branch[i]->getStatus()) {
+      p_branch[i]->preStep(time,timestep);
+    }
+  }
 }
 
 /**
@@ -1830,6 +1830,11 @@ void EmtBranch::preStep(double time, double timestep)
 */
 void EmtBranch::postStep(double time)
 {
+  for(int i=0; i < p_nparlines; i++) {
+    if(p_branch[i]->getStatus()) {
+      p_branch[i]->postStep(time);
+    }
+  }
 }
 
 /**
@@ -1840,12 +1845,11 @@ void EmtBranch::postStep(double time)
  * @param[output] ib - phase b current
  * @param[output] ic - phase c current
  */
-void EmtBranch::getCurrent(int idx,double *ia, double *ib, double *ic) {
-  double *i = p_ibr + 3*idx;
-  
-  *ia = p_iptr[0];
-  *ib = p_iptr[1];
-  *ic = p_iptr[2];
+void EmtBranch::getCurrent(int idx,double *ia, double *ib, double *ic)
+{
+  if(p_branch[idx]->getStatus()) {
+    p_branch[idx]->getCurrent(ia, ib, ic);
+  }
 }
 
 /**
@@ -1859,10 +1863,10 @@ void EmtBranch::getCurrent(int idx,double *ia, double *ib, double *ic) {
 */
 void EmtBranch::getCurrentGlobalLocation(int j, int *startgloballoc) const
 {
-  *startgloballoc = p_vecidx[3*j];
+  if(p_branch[j]->getStatus()) {
+    p_branch[j]->getCurrentGlobalLocation(startgloballoc);
+  }
 }
-
-
 
 /**
  * Return number of rows (dependent variables) that branch contributes
@@ -1948,24 +1952,12 @@ int EmtBranch::matrixNumValues()
     // so just return the number
     return p_num_vals;
   }
-  // else execute the following code to compute the
-  // number of matrix elements
-  if(p_hasInductance) {
-    // fval = (vf - R*i - vt) - L*di_dt
-    // dfval_dvf = I => 3 entries
-    // dfval_di  = -R - sL => 9 entries
-    // dfval_dvt = -I => 3 entries
-    // Total 15 entries
-    numvals += 15;
-  } else {
-    // fval = vf - R*i - vt
-    // dfval_dvf = I => 3 entries
-    // dfval_di = -R => 9 entries
-    // dfval_dvt = -I => 3 entries
-    // Total 15 entries
-    numvals += 15;
+  for(i = 0; i < p_nparlines; i++) {
+    if(p_branch[i]->getStatus()) {
+      numvals += p_branch[i]->matrixNumValues();
+    }
   }
-  
+
   p_num_vals = numvals;
   return p_num_vals;
 }
@@ -1980,55 +1972,19 @@ int EmtBranch::matrixNumValues()
 void EmtBranch::matrixGetValues(int *nvals,gridpack::RealType *values,
     int *rows, int *cols)
 {
+  int i;
   int ctr=0;
-  int i,j,k;
-  int vf_gloc,vt_gloc,i_gloc;
-
+  int nvals_branchi=0,nvals_branch=0;
+  
   for(i=0; i < p_nparlines; i++) {
-    if(!p_status[i]) continue;
+    if(!p_branch[i]->getStatus()) continue;
 
-    EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
-    EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
-
-    getCurrentGlobalLocation(i,&i_gloc);
+    p_branch[i]->matrixGetValues(&nvals_branchi, values+ctr, rows+ctr, cols+ctr);
     
-    busf->getVoltageGlobalLocation(&vf_gloc);
-    bust->getVoltageGlobalLocation(&vt_gloc);
-
-    if(p_hasInductance) {
-      for(j=0; j < 3; j++) {
-	for(k=0; k < 3; k++) {
-	  rows[ctr]   = i_gloc + j;
-	  cols[ctr]   = i_gloc + k;
-	  values[ctr] = -p_R[j][k] - p_TSshift*p_L[j][k];
-	  ctr++;
-	}
-      }
-    } else {
-      for(j=0; j < 3; j++) {
-	for(k=0; k < 3; k++) {
-	  rows[ctr]   = i_gloc + j;
-	  cols[ctr]   = i_gloc + k;
-	  values[ctr] = -p_R[j][k];
-	  ctr++;
-	}
-      }
-    }
-
-    // Partial derivatives w.r..t voltages
-    for(j=0; j < 3; j++) {
-      rows[ctr] = i_gloc + j;
-      cols[ctr] = vf_gloc + j;
-      values[ctr] = 1.0;
-
-      rows[ctr+1] = i_gloc + j;
-      cols[ctr+1] = vt_gloc + j;
-      values[ctr+1] = -1.0;
-
-      ctr += 2;
-    }
+    nvals_branch += nvals_branchi;
   }
-  *nvals = ctr;
+
+  *nvals = nvals_branch;
 }
 
 void EmtBranch::matrixGetValues(gridpack::math::RealMatrix &matrix)
@@ -2038,7 +1994,7 @@ void EmtBranch::matrixGetValues(gridpack::math::RealMatrix &matrix)
 
 int EmtBranch::getXCBufSize(void)
 {
-  return p_nvar*sizeof(double);
+  return 3*p_nparlines*sizeof(double);
 }
 
 void EmtBranch::setXCBuf(void *buf)
@@ -2067,7 +2023,6 @@ void EmtBranch::vectorGetElementIndices(int *idx)
   int i;
   for (i=0; i<p_nvar; i++) {
     idx[i] = p_vecidx[i];
-    //    printf("Branch %d -- %d: p_vecidx[%d] = %d\n",this->getBus1OriginalIndex(),this->getBus2OriginalIndex(),i,p_vecidx[i]);
   }
 }
 
@@ -2094,80 +2049,23 @@ void EmtBranch::vectorGetElementValues(gridpack::RealType *values, int *idx)
   if(p_mode == INIT_X) { /* Initialization of values */
     gridpack::RealType *x = values;
     for(i=0; i < p_nparlines; i++) {
-      double *ibr = p_ibr + 3*i;
-      ibr[0] = ibr[1] = ibr[2] = 0.0;
-      if(!p_status[i]) continue;
+      int i_loc;
+      if(!p_branch[i]->getStatus()) continue;
+
+      p_branch[i]->getCurrentLocalLocation(&i_loc);
       
-      EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
-      EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
+      p_iptr[3*i]   = x[i_loc];
+      p_iptr[3*i+1] = x[i_loc+1];
+      p_iptr[3*i+2] = x[i_loc+2];
 
-      double Vmf,Vaf,Vmt,Vat;
-      double VDf,VQf,VDt,VQt;
-      busf->getInitialVoltage(&Vmf,&Vaf);
-      bust->getInitialVoltage(&Vmt,&Vat);
-
-      VDf = Vmf*cos(Vaf);
-      VQf = Vmf*sin(Vaf);
-      VDt = Vmt*cos(Vat);
-      VQt = Vmt*sin(Vat);
-
-      gridpack::ComplexType Vf = gridpack::ComplexType(VDf,VQf);
-      gridpack::ComplexType Vt = gridpack::ComplexType(VDt,VQt);
-
-      gridpack::ComplexType Zline = gridpack::ComplexType(p_lineR[i],p_lineX[i]);
-
-      gridpack::ComplexType Iline = (Vf - Vt)/Zline;
-
-      double Ilinem,Ilinea;
-
-      Ilinem = abs(Iline);
-      Ilinea = atan2(imag(Iline),real(Iline));
-
-      x += p_localoffset[i];
-
-      x[0] = ibr[0] = Ilinem*sin(Ilinea);
-      x[1] = ibr[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0);
-      x[2] = ibr[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
+      p_branch[i]->init(x);
     }
   } else if(p_mode == RESIDUAL_EVAL) {
     gridpack::RealType *f = values;
     for(i=0; i < p_nparlines; i++) {
-      double *ibr = p_ibr + 3*i;
-      if(!p_status[i]) continue;
-      
-      EmtBus *busf = dynamic_cast<EmtBus*>((getBus1()).get());
-      EmtBus *bust = dynamic_cast<EmtBus*>((getBus2()).get());
+      if(!p_branch[i]->getStatus()) continue;
 
-      double vf[3],vt[3];
-
-      busf->getVoltages(&vf[0],&vf[1],&vf[2]);
-      bust->getVoltages(&vt[0],&vt[1],&vt[2]);
-
-      double vf_minus_vt[3];
-      
-      vf_minus_vt[0] = vf[0] - vt[0];
-      vf_minus_vt[1] = vf[1] - vt[1];
-      vf_minus_vt[2] = vf[2] - vt[2];
-      
-      if(p_hasInductance) {
-	double Ribr[3],Ldidt[3];
-	// vf - R*ibr - vt - L*didt = 0
-	matvecmult3x3(p_R, ibr,Ribr); // fval1 = R*ibr
-	matvecmult3x3(p_L,p_didt,Ldidt); // fval2 = L*didt
-	f[0] = vf_minus_vt[0] - Ribr[0] - Ldidt[0];
-	f[1] = vf_minus_vt[1] - Ribr[1] - Ldidt[1];
-	f[2] = vf_minus_vt[2] - Ribr[2] - Ldidt[2];
-      } else {
-	double Ribr[3];
-
-	matvecmult3x3(p_R,ibr,Ribr);
-
-	f[0] = -Ribr[0] + vf_minus_vt[0];
-	f[1] = -Ribr[1] + vf_minus_vt[1];
-	f[2] = -Ribr[2] + vf_minus_vt[2];
-      }
-      
-      f += p_localoffset[i];
+      p_branch[i]->vectorGetValues(f);
     }
   }    
 }
@@ -2178,38 +2076,33 @@ void EmtBranch::vectorGetElementValues(gridpack::RealType *values, int *idx)
  */
 void EmtBranch::vectorSetElementValues(gridpack::RealType *values)
 {
-  int i,l=0;
-  double *ibr    = p_ibr;
-  double *iptr   = p_iptr;
-  double *dibrdt = p_didt;
+  int i;
   gridpack::RealType *x = values;
+  int  i_loc;
 
   if(p_mode == XVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
-      if(p_status[i]) {
-	iptr[0] = ibr[0] = x[0];
-	iptr[1] = ibr[1] = x[1];
-	iptr[2] = ibr[2] = x[2];
+      if(p_branch[i]->getStatus()) {
+	p_branch[i]->setMode(p_mode);
 
-	iptr += 3;
-	x += 3;
+	p_branch[i]->getCurrentLocalLocation(&i_loc);
+
+	p_iptr[3*i]   = x[i_loc];
+	p_iptr[3*i+1] = x[i_loc + 1];
+	p_iptr[3*i+2] = x[i_loc + 2];
+
+	p_branch[i]->setValues(x);
       }
-      ibr += 3;
     }
   } else if(p_mode == XDOTVECTOBUS) {
     for(i=0; i < p_nparlines; i++) {
-      if(p_status[i]) {
-	dibrdt[0] = x[0];
-	dibrdt[1] = x[1];
-	dibrdt[2] = x[2];
-
-	x += 3;
+      if(p_branch[i]->getStatus()) {
+	p_branch[i]->setMode(p_mode);
+	p_branch[i]->setValues(x);
       }
-      dibrdt += 3;
     }
   }
 }
-
 
 
 /**

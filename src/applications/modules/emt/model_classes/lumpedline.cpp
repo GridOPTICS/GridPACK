@@ -75,6 +75,37 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
  */
 void Lumpedline::init(gridpack::RealType *values)
 {
+  double *x = values + offsetb;
+  
+  fbus->addLumpedLineCshunt(p_C,0.5);
+  tbus->addLumpedLineCshunt(p_C,0.5);
+
+  double Vmf,Vaf,Vmt,Vat;
+  double VDf,VQf,VDt,VQt;
+  fbus->getInitialVoltage(&Vmf,&Vaf);
+  tbus->getInitialVoltage(&Vmt,&Vat);
+
+  VDf = Vmf*cos(Vaf);
+  VQf = Vmf*sin(Vaf);
+  VDt = Vmt*cos(Vat);
+  VQt = Vmt*sin(Vat);
+
+  gridpack::ComplexType Vf = gridpack::ComplexType(VDf,VQf);
+  gridpack::ComplexType Vt = gridpack::ComplexType(VDt,VQt);
+
+  gridpack::ComplexType Zline = gridpack::ComplexType(R,X);
+
+  gridpack::ComplexType Iline = (Vf - Vt)/Zline;
+
+  double Ilinem,Ilinea;
+  
+  Ilinem = abs(Iline);
+  Ilinea = atan2(imag(Iline),real(Iline));
+
+  x[0] = Ilinem*sin(Ilinea);
+  x[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0);
+  x[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
+
 }
 
 /**
@@ -108,7 +139,18 @@ void Lumpedline::write(const char* signal, char* string)
  */
 void Lumpedline::getCurrent(double *ia, double *ib, double *ic)
 {
-  *ia = *ib = *ic = 0.0;
+  *ia = ibr[0];
+  *ib = ibr[1];
+  *ic = ibr[2];
+}
+
+/**
+ * Return the location for the current in the local branch array
+ * @param [output] i_loc - location for the first current variable in the local branch array
+ */
+void Lumpedline::getCurrentLocalLocation(int *i_loc)
+{
+  *i_loc = offsetb;
 }
 
 /**
@@ -126,7 +168,24 @@ void Lumpedline::getCurrentGlobalLocation(int *i_gloc)
  */
 int Lumpedline::matrixNumValues()
 {
-  return 0;
+  int numvals = 0;
+  if(p_hasInductance) {
+    // fval = (vf - R*i - vt) - L*di_dt
+    // dfval_dvf = I => 3 entries
+    // dfval_di  = -R - sL => 9 entries
+    // dfval_dvt = -I => 3 entries
+    // Total 15 entries
+    numvals += 15;
+  } else {
+    // fval = vf - R*i - vt
+    // dfval_dvf = I => 3 entries
+    // dfval_di = -R => 9 entries
+    // dfval_dvt = -I => 3 entries
+    // Total 15 entries
+    numvals += 15;
+  }
+
+  return numvals;
 }
 
 /**
@@ -138,7 +197,50 @@ int Lumpedline::matrixNumValues()
  */
 void Lumpedline::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
-  *nvals = 0;
+  int ctr=0;
+  int j,k;
+  int vf_gloc,vt_gloc,i_gloc;
+
+  getCurrentGlobalLocation(&i_gloc);
+    
+  fbus->getVoltageGlobalLocation(&vf_gloc);
+  tbus->getVoltageGlobalLocation(&vt_gloc);
+
+  if(p_hasInductance) {
+    for(j=0; j < 3; j++) {
+      for(k=0; k < 3; k++) {
+	rows[ctr]   = i_gloc + j;
+	cols[ctr]   = i_gloc + k;
+	values[ctr] = -p_R[j][k] - shift*p_L[j][k];
+	ctr++;
+      }
+    }
+  } else {
+    for(j=0; j < 3; j++) {
+      for(k=0; k < 3; k++) {
+	rows[ctr]   = i_gloc + j;
+	cols[ctr]   = i_gloc + k;
+	values[ctr] = -p_R[j][k];
+	ctr++;
+      }
+    }
+  }
+
+  // Partial derivatives w.r..t voltages
+  for(j=0; j < 3; j++) {
+    rows[ctr] = i_gloc + j;
+    cols[ctr] = vf_gloc + j;
+    values[ctr] = 1.0;
+
+    rows[ctr+1] = i_gloc + j;
+    cols[ctr+1] = vt_gloc + j;
+    values[ctr+1] = -1.0;
+
+    ctr += 2;
+  }
+  
+  *nvals = ctr;
+
 }
 
 /**
@@ -151,6 +253,38 @@ void Lumpedline::matrixGetValues(int *nvals, gridpack::RealType *values, int *ro
    */
 void Lumpedline::vectorGetValues(gridpack::RealType *values)
 {
+  double *f = values + offsetb;
+
+  if(p_mode == RESIDUAL_EVAL) {
+    double vf[3],vt[3];
+
+    fbus->getVoltages(&vf[0],&vf[1],&vf[2]);
+    tbus->getVoltages(&vt[0],&vt[1],&vt[2]);
+
+    double vf_minus_vt[3];
+    
+    vf_minus_vt[0] = vf[0] - vt[0];
+    vf_minus_vt[1] = vf[1] - vt[1];
+    vf_minus_vt[2] = vf[2] - vt[2];
+    
+    if(p_hasInductance) {
+      double Ribr[3],Ldidt[3];
+      // vf - R*ibr - vt - L*didt = 0
+      matvecmult3x3(p_R, ibr,Ribr); // fval1 = R*ibr
+      matvecmult3x3(p_L,dibr_dt,Ldidt); // fval2 = L*didt
+      f[0] = vf_minus_vt[0] - Ribr[0] - Ldidt[0];
+      f[1] = vf_minus_vt[1] - Ribr[1] - Ldidt[1];
+      f[2] = vf_minus_vt[2] - Ribr[2] - Ldidt[2];
+    } else {
+      double Ribr[3];
+      
+      matvecmult3x3(p_R,ibr,Ribr);
+      
+      f[0] = -Ribr[0] + vf_minus_vt[0];
+      f[1] = -Ribr[1] + vf_minus_vt[1];
+      f[2] = -Ribr[2] + vf_minus_vt[2];
+    }
+  }
 }
 
 /**
@@ -163,6 +297,17 @@ void Lumpedline::vectorGetValues(gridpack::RealType *values)
  */
 void Lumpedline::setValues(gridpack::RealType *values)
 {
+  gridpack::RealType *x = values + offsetb;
+
+  if(p_mode == XVECTOBUS) {
+    ibr[0] = x[0];
+    ibr[1] = x[1];
+    ibr[2] = x[2];
+  } else if(p_mode == XDOTVECTOBUS) {
+    dibr_dt[0] = x[0];
+    dibr_dt[1] = x[1];
+    dibr_dt[2] = x[2];
+  }
 }
 
 /**
