@@ -45,10 +45,42 @@ public:
   {};
 
   /// Get the number of buses
+  /**
+   * @e not collective
+   *
+   * @return number of buses in entire network
+   **/
   virtual int totalBuses(void) = 0;
 
   /// Get the number of branches
+  /**
+   * @e not collective
+   *
+   * @return number of branches in entire network
+   **/
   virtual int totalBranches(void) = 0;
+
+  /// Get the branch indexes connected to a bus 
+  /**
+   * @e not collective
+   *
+   * @param idx local bus index
+   *
+   * @result vector of local branch indexes
+   **/
+  // virtual std::vector<int> getConnectedBranches(int idx) const = 0;
+
+  /// Get the bus indexes connected to a branch
+  /**
+   * @e not collective
+   *
+   * @param idx local branch index
+   * @param fbus pointer to location to put from-bus (local) index
+   * @param tbus pointer to location to put to-bus (local) index
+   **/
+  // virtual void getBranchEndpoints(int idx, int *fbus, int *tbus) const = 0;
+
+  
 
 };
 
