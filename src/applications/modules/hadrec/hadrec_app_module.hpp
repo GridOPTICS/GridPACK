@@ -7,15 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
-<<<<<<< HEAD
-<<<<<<< HEAD
  * @date   2025-01-29 11:52:49 d3g096
-=======
- * @date   2024-05-02 07:10:04 d3g096
->>>>>>> Add numLines() to HADREC and Python API
-=======
- * @date   2024-04-17 09:16:12 d3g096
->>>>>>> Start a network topology query interface and implement a couple of methods
  * 
  * @brief  
  * 
@@ -398,7 +390,6 @@ class HADRECAppModule
        std::string name, double *value);
 
   /// Network query: Get the number of buses
-<<<<<<< HEAD
   int totalBuses(void) const;
 
   /// Network query: Get the number of branches
@@ -465,13 +456,6 @@ class HADRECAppModule
 
     return ok;
   }
-=======
-  int totalBuses(void);
-
-  /// Network query: Get the number of branches
-  int totalBranches(void);
-
->>>>>>> Start a network topology query interface and implement a couple of methods
 
   private:
    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
@@ -480,14 +464,11 @@ class HADRECAppModule
 	
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullApp> ds_app_sptr;
-<<<<<<< HEAD
 
    boost::shared_ptr<gridpack::analysis::NetworkAnalytics<
      gridpack::powerflow::PFNetwork> > pf_analytics;
    boost::shared_ptr<gridpack::analysis::NetworkAnalytics<
      gridpack::dynamic_simulation::DSFullNetwork> > ds_analytics;
-=======
->>>>>>> Start a network topology query interface and implement a couple of methods
 	
     int t_total;
 	int t_config;
