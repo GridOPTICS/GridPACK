@@ -55,6 +55,14 @@ class DSFullApp
      */
     ~DSFullApp(void);
 
+  /**
+   * Solve power flow and use it to initialize dynamic
+   * simulation. This creates and correctly handles the power flow and
+   * dynamic simulation networks internally. No need to create them
+   * externally.
+   */
+  void solvePowerFlowBeforeDynSimu(const char *inputfile);
+
     /**
      * Read in and partition the dynamic simulation network. The input file is read
      * directly from the Dynamic_simulation block in the configuration file so no
