@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:15:41 d3g096
+// Last Change: 2024-04-17 09:17:35 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -287,6 +287,9 @@ PYBIND11_MODULE(gridpack, gpm) {
   hadapp
     .def("totalBuses", &gph::HADRECAppModule::totalBuses)
     .def("totalBranches", &gph::HADRECAppModule::totalBranches)
+    .def("numGenerators", &gph::HADRECAppModule::numGenerators)
+    .def("numLoads", &gph::HADRECAppModule::numLoads)
+    .def("numStorage", &gph::HADRECAppModule::numStorage)
     ;
 
   // These methods need to be reworked char * and/or optional args

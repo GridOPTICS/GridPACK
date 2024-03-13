@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2023-10-25 09:13:29 d3g096
+# Last Change: 2024-04-17 09:17:51 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -62,6 +62,12 @@ class GridPACKTester(TestCase):
         hadapp.exportPSSE34("pfPSSE34.dat")
         
         hadapp.transferPFtoDS()
+
+        print("Number of buses:  %d" % (hadapp.totalBuses()))
+        print("Number of branches: %d" % (hadapp.totalBranches()))
+        print("Number of generators: %d" % (hadapp.numGenerators()))
+        print("Number of loads: %d" % (hadapp.numLoads()))
+        print("Number of storage units: %d" % (hadapp.numStorage()))
 
         busfaultlist = gridpack.dynamic_simulation.EventVector()
 

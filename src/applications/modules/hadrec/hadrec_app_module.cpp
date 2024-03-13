@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2024-04-17 09:16:00 d3g096
+ * @date   2024-04-17 09:18:21 d3g096
  * 
  * @brief  
  * 
@@ -927,3 +927,47 @@ int gridpack::hadrec::HADRECAppModule::totalBranches(void)
   return result;
 }
 
+int gridpack::hadrec::HADRECAppModule::numGenerators(void)
+{
+  int result(0);
+
+  if (ds_network) {
+    result = ds_network->numGenerators();
+  } else if (pf_network) {
+    result = pf_network->numGenerators();
+  } else {
+    throw gridpack::Exception("HADRECAppModule::numGenerators(): network not defined");
+  }
+
+  return result;
+}
+
+int gridpack::hadrec::HADRECAppModule::numLoads(void)
+{
+  int result(0);
+
+  if (ds_network) {
+    result = ds_network->numLoads();
+  } else if (pf_network) {
+    result = pf_network->numLoads();
+  } else {
+    throw gridpack::Exception("HADRECAppModule::numLoads(): network not defined");
+  }
+
+  return result;
+}
+
+int gridpack::hadrec::HADRECAppModule::numStorage(void)
+{
+  int result(0);
+
+  if (ds_network) {
+    result = ds_network->numStorage();
+  } else if (pf_network) {
+    result = pf_network->numStorage();
+  } else {
+    throw gridpack::Exception("HADRECAppModule::numStorage(): network not defined");
+  }
+
+  return result;
+}
