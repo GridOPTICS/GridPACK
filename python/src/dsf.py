@@ -43,4 +43,7 @@ ds_app.setGeneratorWatch();
 ds_app.setup();
 ds_app.run();
 
-
+# try to force deletion order
+del ds_app
+del comm
+del env
