@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2023-10-25 08:49:45 d3g096
+// Last Change: 2024-04-17 09:21:30 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -247,6 +247,25 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def_readwrite("to_idx", &gpds::Event::to_idx)
     ;
 
+  // -------------------------------------------------------------
+  // gridpack.dynamic_simulation.DSFullApp
+  // -------------------------------------------------------------
+  py::class_<gpds::DSFullApp>(dsm, "DSFullApp")
+    .def(py::init<>())
+    .def("readGenerators", &gpds::DSFullApp::readGenerators)
+    .def("readSequenceData", &gpds::DSFullApp::readSequenceData)
+    .def("initialize", &gpds::DSFullApp::initialize)
+    .def("setGeneratorWatch",
+         [](gpds::DSFullApp& self) { self.setGeneratorWatch(); })
+    .def("setup", &gpds::DSFullApp::setup)
+    .def("run", [](gpds::DSFullApp& self) {self.run();})
+    .def("run", py::overload_cast<double>(&gpds::DSFullApp::run))
+    .def("solvePowerFlowBeforeDynSimu",
+         [](gpds::DSFullApp& self, const std::string& inputfile) {
+           self.solvePowerFlowBeforeDynSimu(inputfile.c_str());
+         })
+         
+    ;
   
   // -------------------------------------------------------------
   // gridpack.hadrec module
