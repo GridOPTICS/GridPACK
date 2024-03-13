@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2024-04-17 09:26:14 d3g096
+# Last Change: 2024-05-09 10:28:21 d3g096
 # -------------------------------------------------------------
 
 import sys, os, time
@@ -93,8 +93,13 @@ class GridPACKTester(TestCase):
         
     # def hadrec_test(self):
 
-    #     d = os.path.dirname(os.path.abspath(__file__))
-    #     os.chdir(d)
+        print("Number of buses:  %d" % (hadapp.totalBuses()))
+        print("Number of branches: %d" % (hadapp.totalBranches()))
+        print("Number of generators: %d" % (hadapp.numGenerators()))
+        print("Number of loads: %d" % (hadapp.numLoads()))
+        print("Number of storage units: %d" % (hadapp.numStorage()))
+
+        busfaultlist = gridpack.dynamic_simulation.EventVector()
 
     #     arg = "input_tamu500_step005.xml"
 
