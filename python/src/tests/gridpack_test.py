@@ -101,6 +101,12 @@ class GridPACKTester(TestCase):
         print("Branches connected to bus 1: ", hadapp.getConnectedBranches(1))
         print("Buses connected to branch 1: ", hadapp.getBranchEndpoints(1))
 
+        print("Number of buses:  %d" % (hadapp.totalBuses()))
+        print("Number of branches: %d" % (hadapp.totalBranches()))
+        print("Number of generators: %d" % (hadapp.numGenerators()))
+        print("Number of loads: %d" % (hadapp.numLoads()))
+        print("Number of storage units: %d" % (hadapp.numStorage()))
+
         busfaultlist = gridpack.dynamic_simulation.EventVector()
 
     #     arg = "input_tamu500_step005.xml"
