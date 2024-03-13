@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2024-02-13 08:31:49 d3g096
+ * @date   2024-03-13 07:40:15 d3g096
  * 
  * @brief  
  * 
@@ -2531,6 +2531,69 @@ void broadcastNetworkData(int idx)
   boost::mpi::communicator comm = this->communicator().getCommunicator();
   boost::mpi::broadcast(comm, p_network_data, idx);
 }
+
+/// Get the number of generators on the network
+/**
+ * collective
+ *
+ *
+ * @return number of generators on the entire network
+ */
+int numGenerators(void)
+{
+  int result(0);
+  const int nBus(p_buses.size());
+  
+  for (int i = 0; i < nBus; ++i) {
+    if (p_buses[i].p_activeBus) {
+      result += p_buses[i].p_bus->numGenerators();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+/// Get the number of loads on the network
+/**
+ * collective
+ *
+ * @return number of loads on the entire network
+ */
+int numLoads(void)
+{
+  int result(0);
+  const int nBus(p_buses.size());
+  
+  for (int i = 0; i < nBus; ++i) {
+    if (p_buses[i].p_activeBus) {
+      result += p_buses[i].p_bus->numLoads();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+  /// Get the number of storage units on the network
+/**
+ * collective
+ *
+ * @return number of storage units on the entire network
+ */
+int numStorage(void)
+{
+  int result(0);
+  const int nBus(p_buses.size());
+  
+  for (int i = 0; i < nBus; ++i) {
+    if (p_buses[i].p_activeBus) {
+      result += p_buses[i].p_bus->numStorage();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+  
 protected:
 
 /**

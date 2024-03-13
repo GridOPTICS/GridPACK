@@ -80,7 +80,15 @@ public:
    **/
   // virtual void getBranchEndpoints(int idx, int *fbus, int *tbus) const = 0;
 
-  
+
+  /// Get the number of generators on the network
+  virtual int numGenerators(void) = 0;
+
+  /// Get the number of loads on the network
+  virtual int numLoads(void) = 0;
+
+  /// Get the number of storage units on the network
+  virtual int numStorage(void) = 0;
 
 };
 
