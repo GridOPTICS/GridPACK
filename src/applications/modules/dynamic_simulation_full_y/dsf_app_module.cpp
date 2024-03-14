@@ -104,7 +104,14 @@ void gridpack::dynamic_simulation::DSFullApp::solvePowerFlowBeforeDynSimu(const 
 {
   gridpack::parallel::Communicator world;
 
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+
   // read configuration file 
+
+  int t_config = timer->createCategory("Dynamic Simulation: Config");
+  timer->start(t_config);
+
   gridpack::utility::Configuration *config =
     gridpack::utility::Configuration::configuration();
   config->open(inputfile,world);
@@ -114,6 +121,10 @@ void gridpack::dynamic_simulation::DSFullApp::solvePowerFlowBeforeDynSimu(const 
   cursor = config->getCursor("Configuration.Powerflow");
   bool useNonLinear = false;
   useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+
+  timer->stop(t_config);
+
+  // perform power flow for network initial state
 
   boost::shared_ptr<gridpack::powerflow::PFNetwork>
     pf_network(new gridpack::powerflow::PFNetwork(world));
