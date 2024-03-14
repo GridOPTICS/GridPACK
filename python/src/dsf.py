@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -------------------------------------------------------------
 # file: dsf.py
+#
+# This emulates the dsf2.x application
 # -------------------------------------------------------------
 
 import sys, os
@@ -30,6 +32,10 @@ env = gridpack.Environment()
 
 comm = gridpack.Communicator()
 
+timer = gridpack.CoarseTimer()
+t_total = timer.createCategory("Dynamic Simulation: Total Application")
+timer.start(t_total)
+
 np = gridpack.NoPrint()
 sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
 np.setStatus (True)
@@ -43,7 +49,11 @@ ds_app.setGeneratorWatch();
 ds_app.setup();
 ds_app.run();
 
-# try to force deletion order
+timer.stop(t_total)
+
+timer.dump()
+
+# try to force deletion order to avoid problems
 del ds_app
 del comm
 del env

@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:21:30 d3g096
+// Last Change: 2024-04-17 09:22:17 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -24,8 +24,10 @@ namespace py = pybind11;
 #include <gridpack/parallel/communicator.hpp>
 #include <gridpack/parallel/task_manager.hpp>
 #include <gridpack/applications/modules/hadrec/hadrec_app_module.hpp>
+#include <gridpack/timer/coarse_timer.hpp>
 
 namespace gp = gridpack;
+namespace gpu = gridpack::utility;
 namespace gpp = gridpack::parallel;
 namespace gph = gridpack::hadrec;
 namespace gpds = gridpack::dynamic_simulation;
@@ -193,6 +195,27 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("divide", &gpp::Communicator::divide)
     .def("split", &gpp::Communicator::split)
     ;
+
+  // -------------------------------------------------------------
+  // gridpack.CoarseTimer
+  // -------------------------------------------------------------
+  py::class_<gpu::CoarseTimer, std::unique_ptr<gpu::CoarseTimer, py::nodelete> >(gpm, "CoarseTimer")
+    .def(py::init([]() {
+                    return std::unique_ptr<gpu::CoarseTimer, py::nodelete>
+                      (gpu::CoarseTimer::instance());
+                  }))
+    .def("createCategory", &gpu::CoarseTimer::createCategory)
+    .def("start", &gpu::CoarseTimer::start)
+    .def("stop", &gpu::CoarseTimer::stop)
+    .def("dump", &gpu::CoarseTimer::dump)
+    .def("currentTime", &gpu::CoarseTimer::currentTime)
+    .def("configTimer", &gpu::CoarseTimer::configTimer)
+    .def("dumpProfile",
+         static_cast<void ( gpu::CoarseTimer::*)(int) const >(&gpu::CoarseTimer::dumpProfile) )
+    .def("dumpProfile",
+         static_cast<void ( gpu::CoarseTimer::*)(std::string) const >(&gpu::CoarseTimer::dumpProfile) )
+    ;
+         
     
   // -------------------------------------------------------------
   // gridpack.TaskCounter
