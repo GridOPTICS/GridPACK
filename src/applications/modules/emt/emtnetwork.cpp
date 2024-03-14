@@ -1848,7 +1848,10 @@ void EmtBranch::postStep(double time)
 void EmtBranch::getCurrent(int idx,double *ia, double *ib, double *ic)
 {
   if(p_branch[idx]->getStatus()) {
-    p_branch[idx]->getCurrent(ia, ib, ic);
+    //   p_branch[idx]->getCurrent(ia, ib, ic);
+    *ia = p_iptr[3*idx];
+    *ib = p_iptr[3*idx+1];
+    *ic = p_iptr[3*idx+2];
   }
 }
 
@@ -2054,11 +2057,12 @@ void EmtBranch::vectorGetElementValues(gridpack::RealType *values, int *idx)
 
       p_branch[i]->getCurrentLocalLocation(&i_loc);
       
+      p_branch[i]->init(x);
+
       p_iptr[3*i]   = x[i_loc];
       p_iptr[3*i+1] = x[i_loc+1];
       p_iptr[3*i+2] = x[i_loc+2];
 
-      p_branch[i]->init(x);
     }
   } else if(p_mode == RESIDUAL_EVAL) {
     gridpack::RealType *f = values;
@@ -2087,11 +2091,11 @@ void EmtBranch::vectorSetElementValues(gridpack::RealType *values)
 
 	p_branch[i]->getCurrentLocalLocation(&i_loc);
 
+	p_branch[i]->setValues(x);
+
 	p_iptr[3*i]   = x[i_loc];
 	p_iptr[3*i+1] = x[i_loc + 1];
 	p_iptr[3*i+2] = x[i_loc + 2];
-
-	p_branch[i]->setValues(x);
       }
     }
   } else if(p_mode == XDOTVECTOBUS) {
