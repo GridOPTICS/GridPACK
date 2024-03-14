@@ -203,9 +203,6 @@ void Lumpedline::matrixGetValues(int *nvals, gridpack::RealType *values, int *ro
 
   getCurrentGlobalLocation(&i_gloc);
     
-  fbus->getVoltageGlobalLocation(&vf_gloc);
-  tbus->getVoltageGlobalLocation(&vt_gloc);
-
   if(p_hasInductance) {
     for(j=0; j < 3; j++) {
       for(k=0; k < 3; k++) {
@@ -225,6 +222,10 @@ void Lumpedline::matrixGetValues(int *nvals, gridpack::RealType *values, int *ro
       }
     }
   }
+
+  fbus->getVoltageGlobalLocation(&vf_gloc);
+  tbus->getVoltageGlobalLocation(&vt_gloc);
+
 
   // Partial derivatives w.r..t voltages
   for(j=0; j < 3; j++) {
