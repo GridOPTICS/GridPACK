@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:22:17 d3g096
+// Last Change: 2024-04-17 09:23:36 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -273,23 +273,100 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   // gridpack.dynamic_simulation.DSFullApp
   // -------------------------------------------------------------
-  py::class_<gpds::DSFullApp>(dsm, "DSFullApp")
+  py::class_<gpds::DSFullApp> dsapp(dsm, "DSFullApp");
+  dsapp
     .def(py::init<>())
-    .def("readGenerators", &gpds::DSFullApp::readGenerators)
-    .def("readSequenceData", &gpds::DSFullApp::readSequenceData)
-    .def("initialize", &gpds::DSFullApp::initialize)
-    .def("setGeneratorWatch",
-         [](gpds::DSFullApp& self) { self.setGeneratorWatch(); })
-    .def("setup", &gpds::DSFullApp::setup)
-    .def("run", [](gpds::DSFullApp& self) {self.run();})
-    .def("run", py::overload_cast<double>(&gpds::DSFullApp::run))
     .def("solvePowerFlowBeforeDynSimu",
          [](gpds::DSFullApp& self, const std::string& inputfile) {
            self.solvePowerFlowBeforeDynSimu(inputfile.c_str());
          })
-         
+    .def("readGenerators", &gpds::DSFullApp::readGenerators,
+         py::arg("ds_idx") = -1)
+    .def("readSequenceData", &gpds::DSFullApp::readSequenceData)
+    .def("initialize", &gpds::DSFullApp::initialize)
+    .def("reload", &gpds::DSFullApp::reload)
+    .def("reset", &gpds::DSFullApp::reset)
+    .def("solve", &gpds::DSFullApp::solve)
+    .def("solvePreInitialize", &gpds::DSFullApp::solvePreInitialize)
+    .def("setup", &gpds::DSFullApp::setup)
+    .def("executeOneSimuStep", &gpds::DSFullApp::executeOneSimuStep)
+    .def("run", [](gpds::DSFullApp& self) {self.run();})
+    .def("run", py::overload_cast<double>(&gpds::DSFullApp::run))
+    .def("scatterInjectionLoad", &gpds::DSFullApp::scatterInjectionLoad)
+    .def("scatterInjectionLoadNew", &gpds::DSFullApp::scatterInjectionLoadNew)
+    .def("scatterInjectionLoadNew_compensateY",
+         &gpds::DSFullApp::scatterInjectionLoadNew_compensateY)
+    .def("scatterInjectionLoadNew_Norton",
+         &gpds::DSFullApp::scatterInjectionLoadNew_Norton)
+    .def("scatterInjectionLoadNewConstCur",
+         &gpds::DSFullApp::scatterInjectionLoadNewConstCur)
     ;
-  
+
+  dsapp
+    .def("setGeneratorWatch",
+         [](gpds::DSFullApp& self) { self.setGeneratorWatch(); })
+    .def("setGeneratorWatch",
+         [](gpds::DSFullApp& self, const std::string& filename) {
+           self.setGeneratorWatch(filename.c_str());
+         })
+    .def("setGeneratorWatch",
+         [](gpds::DSFullApp& self, std::vector<int>& buses,
+            std::vector<std::string>& tags, bool writeFile) {
+           self.setGeneratorWatch(buses, tags, writeFile);
+         },
+         py::arg("buses") = std::vector<int>(),
+         py::arg("tags") = std::vector<std::string>(),
+         py::arg("writeFile") = true
+         )
+    .def("setLoadWatch", &gpds::DSFullApp::setLoadWatch)
+    ;
+
+  dsapp
+    .def("open",
+         [](gpds::DSFullApp& self, const std::string& filename) {
+           self.open(filename.c_str());
+         })
+    .def("close", &gpds::DSFullApp::close)
+    .def("print",
+         [](gpds::DSFullApp& self, const std::string& buf) {
+           self.print(buf.c_str());
+         })
+    .def("isSecure", &gpds::DSFullApp::isSecure)
+    .def("saveTimeSeries", &gpds::DSFullApp::saveTimeSeries)
+    ;
+
+  dsapp
+    .def("modifyDataCollectionGenParam",
+         py::overload_cast<int, std::string, std::string, double>
+         (&gpds::DSFullApp::modifyDataCollectionGenParam))
+    .def("modifyDataCollectionGenParam",
+         py::overload_cast<int, std::string, std::string, int>
+         (&gpds::DSFullApp::modifyDataCollectionGenParam))
+    .def("modifyDataCollectionLoadParam",
+         py::overload_cast<int, std::string, std::string, double>
+         (&gpds::DSFullApp::modifyDataCollectionLoadParam))
+    .def("modifyDataCollectionLoadParam",
+         py::overload_cast<int, std::string, std::string, int>
+         (&gpds::DSFullApp::modifyDataCollectionLoadParam))
+    .def("modifyDataCollectionBusParam",
+         py::overload_cast<int, std::string, double>
+         (&gpds::DSFullApp::modifyDataCollectionBusParam))
+    .def("modifyDataCollectionBusParam",
+         py::overload_cast<int, std::string, int>
+         (&gpds::DSFullApp::modifyDataCollectionBusParam))
+    ;   
+
+  dsapp
+    .def("setState", &gpds::DSFullApp::setState)
+    .def("getState", &gpds::DSFullApp::getState)
+    .def("getTimeStep", &gpds::DSFullApp::getTimeStep)
+    .def("setTimeStep", &gpds::DSFullApp::setTimeStep)
+    .def("setFinalTime", &gpds::DSFullApp::setFinalTime)
+    .def("getFinalTime", &gpds::DSFullApp::getFinalTime)
+    .def("getCurrentTime", &gpds::DSFullApp::getCurrentTime)
+    ;
+
+
   // -------------------------------------------------------------
   // gridpack.hadrec module
   // -------------------------------------------------------------
