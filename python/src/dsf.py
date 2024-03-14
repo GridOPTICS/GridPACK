@@ -42,7 +42,7 @@ np.setStatus (True)
         
 ds_app = DSFullApp()
 ds_app.solvePowerFlowBeforeDynSimu(inname)
-ds_app.readGenerators(-1);
+ds_app.readGenerators();
 ds_app.readSequenceData();
 ds_app.initialize();
 ds_app.setGeneratorWatch();
