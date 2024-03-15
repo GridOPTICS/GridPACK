@@ -195,12 +195,12 @@ class Sexs : public BaseEMTExcModel
     double TA_OVER_TB, TA, TB, K, TE, EMIN, EMAX;
 
     // SEXS state variables
-    double Vmeas; // First integrator
-    double xLL; // Second integrator
+    double xLL; // First integrator
+    double Efd; // Second integrator
 
     // SEXS derivatives
-    double dVmeas;
     double dxLL;
+    double dEfd;
 
     // Control blocks (when using explicit integration)
     // Model transfer blocks
@@ -212,9 +212,10 @@ class Sexs : public BaseEMTExcModel
     double Ec; // Terminal voltage
     double Vref; // Reference voltage
     double Vs;  // Stabilizing voltage signal
-  
-    // Model outputs 
-    double Efd;     // Field Voltage
+
+    bool Efd_at_min,Efd_at_max;
+
+    double Vmeas; // Measured voltage by transducer
 
     //std::string p_ckt; // id of the generator where the exciter is installed on
     //int p_bus_id;  // bus number of the generator 

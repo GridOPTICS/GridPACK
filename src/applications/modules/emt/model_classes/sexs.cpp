@@ -9,7 +9,7 @@
  * 
  * @brief  
  * 
- * @ Updated by Shuangshuang Jin in March 2024.
+ * @ Updated by Shuangshuang Jin on March 15, 2024.
  */
 
 #include <sexs.hpp>
@@ -19,9 +19,10 @@
 Sexs::Sexs(void)
 {
   Vmeas = 0.0;
-  dVmeas = 0.0;
   xLL = 0.0;
   dxLL = 0.0;
+  Efd = 0.0;
+  dEfd = 0.0;
   TA_OVER_TB = 0.0;
   TB = 0.0;
   K = 0.0;
@@ -30,6 +31,8 @@ Sexs::Sexs(void)
   EMAX = 0.0;
 
   zero_TE = false; 
+
+  Efd_at_min = Efd_at_max = false;
 
   nxexc = 2;
 }
@@ -166,8 +169,8 @@ void Sexs::init(gridpack::RealType* xin)
       if(TB != 0 && TA != 0) xLL = (1 - TA/TB)*(Vref - Vmeas + Vs);
       else xLL = Vref - Vmeas + Vs;
 
-      x[0] = Vmeas;
-      x[1] = xLL;
+      x[0] = xLL;
+      x[1] = Efd;
   }
 }
 
@@ -205,11 +208,11 @@ void Sexs::setValues(gridpack::RealType *val)
   if(integrationtype == EXPLICIT) return;
 
   if(p_mode == XVECTOBUS) {
-    Vmeas = values[0];
-    xLL = values[1];
+    xLL = values[0];
+    Efd = values[1];
   } else if(p_mode == XDOTVECTOBUS) {
-    dVmeas = values[0];
-    dxLL = values[1];
+    dxLL = values[0];
+    dEfd = values[1];
   }
 }
 
@@ -240,24 +243,32 @@ void Sexs::vectorGetValues(gridpack::RealType *values)
   Ec = sqrt(Vd*Vd + Vq*Vq);
   
   if(p_mode == RESIDUAL_EVAL) {
-      // Vmeas equation
-    f[0] = -Vmeas + Ec;
-
     // xLL equation
     if(TB != 0 && TA != 0) {
-      f[1] = (-xLL + (1 - TA/TB)*(Vref - Vmeas + Vs))/TB - dxLL;
+      f[0] = (-xLL + (1 - TA/TB)*(Vref - Vmeas + Vs))/TB - dxLL;
       yLL = xLL + TA/TB*(Vref - Vmeas + Vs);
     } else {
-      f[1] = -xLL + Vref - Vmeas + Vs;
+      f[0] = -xLL + Vref - Vmeas + Vs;
       yLL = xLL;
     }
+
+    // Efd equation
+    if(Efd_at_min) {
+      f[1] = Efd - EMAX;
+    } else if(Efd_at_max) {
+      f[1] = Efd - EMIN;
+    } else {
+      if(TE != 0) f[1] = (-Efd + K*yLL)/TE - dEfd;
+      else f[1] = -Efd + K*yLL;
+    }
+
   }
 }
 
 
 /**
    Non-zero pattern of the Jacobian (x denotes non-zero entry)
-         Vmeas    xLL     delta    va    vb    vc
+          xLL    Efd     delta    va    vb    vc
  eq.0 |    x                x      x     x     x
  eq.1 |    x      x          
 
@@ -289,8 +300,8 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
     return;
   }
     
-  int Vmeas_idx = p_gloc;
-  int xLL_idx = p_gloc + 1;
+  int xLL_idx = p_gloc;
+  int Efd_idx = p_gloc + 1;
   int delta_idx;
   int va_idx    = p_glocvoltage;
   int vb_idx    = p_glocvoltage+1;
@@ -322,11 +333,11 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
   double dVd_ddelta = dTdq0ddelta[0][0]*vabc[0] + dTdq0ddelta[0][1]*vabc[1] + dTdq0ddelta[0][2]*vabc[2];
   double dVq_ddelta = dTdq0ddelta[1][0]*vabc[0] + dTdq0ddelta[1][1]*vabc[1] + dTdq0ddelta[1][2]*vabc[2];
 
-  rows[ctr] = Vmeas_idx;  cols[ctr] = Vmeas_idx;
-  rows[ctr+1] = Vmeas_idx; cols[ctr+1] = delta_idx;
-  rows[ctr+2] = Vmeas_idx; cols[ctr+2] = va_idx;
-  rows[ctr+3] = Vmeas_idx; cols[ctr+3] = vb_idx;
-  rows[ctr+4] = Vmeas_idx; cols[ctr+4] = vb_idx;
+  /*rows[ctr] = xLL_idx;  cols[ctr] = xLL_idx;
+  rows[ctr+1] = xLL_idx; cols[ctr+1] = delta_idx;
+  rows[ctr+2] = xLL_idx; cols[ctr+2] = va_idx;
+  rows[ctr+3] = xLL_idx; cols[ctr+3] = vb_idx;
+  rows[ctr+4] = xLL_idx; cols[ctr+4] = vb_idx;
 
   values[ctr]   = -1.0;
   values[ctr+1] = (dEc_dVd*dVd_ddelta + dEc_dVq*dVq_ddelta);
@@ -334,36 +345,49 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
   values[ctr+3] = (dEc_dVd*dVd_dvabc[1] + dEc_dVq*dVq_dvabc[1]);
   values[ctr+4] = (dEc_dVd*dVd_dvabc[2] + dEc_dVq*dVq_dvabc[2]);
   
-  ctr += 5;
+  ctr += 5;*/
 
-  rows[ctr]   = xLL_idx; cols[ctr] = Vmeas_idx;
-  rows[ctr+1]   = xLL_idx; cols[ctr+1] = xLL_idx;
+  rows[ctr]   = xLL_idx; cols[ctr] = xLL_idx;
+  rows[ctr+1]   = xLL_idx; cols[ctr+1] = Efd_idx;
 
-  //double dVf_dxf = 1.0;
-  //double dVf_dEfd = KF/TF;
+  values[ctr] = values[ctr+1] = 0.0;
+
   double param = (1 - TA/TB);
-  double dyLL_dVmeas = 0.0, dyLL_dxLL = 0.0;
-  //double dyLL_dEfd = 0.0, dyLL_dxf = 0.0;
+  double dyLL_dxLL = 0.0, dyLL_dEfd = 0.0;
   if(TA != 0 && TB != 0) {
     values[ctr] = (param*-1)/TB;
     values[ctr+1] = -1.0/TB - shift;
-    //values[ctr+2] = (param*(-dVf_dEfd))/TB;
-    //values[ctr+3] = (param*(-dVf_dxf))/TB;
 
-    dyLL_dVmeas = TA/TB*-1.0;
-    dyLL_dxLL = 1.0;
-    //dyLL_dEfd = TC/TB*-KF/TF;
-    //dyLL_dxf  = TC/TB*-1.0;
+    dyLL_dxLL = TA/TB*-1.0;
+    dyLL_dEfd = 1.0;
   } else {
     values[ctr] = -1.0;
     values[ctr+1] = -1.0;
-    //values[ctr+2] = -dVf_dEfd;
-    //values[ctr+3] = -dVf_dxf;
 
     dyLL_dxLL = 1.0;
   }
 
   ctr += 2;
+
+  rows[ctr] = Efd_idx;  cols[ctr] = xLL_idx;
+  rows[ctr+1] = Efd_idx; cols[ctr+1] = Efd_idx;
+
+  values[ctr] = values[ctr+1] = 0.0;
+
+  if(Efd_at_min || Efd_at_max) {
+    values[ctr+1] = 1.0;
+  } else {
+    if(TE != 0) {
+      values[ctr] =   (K*dyLL_dxLL)/TE;
+      values[ctr+1] = (K*dyLL_dEfd)/TE;
+    } else {
+      values[ctr] =   (K*dyLL_dxLL);
+      values[ctr+1] = (K*dyLL_dEfd);
+    }
+  }
+      
+  ctr += 2;
+
   *nvals = ctr;
 
 }
@@ -385,7 +409,7 @@ double Sexs::getFieldVoltage()
 double Sexs::getFieldVoltage(int *Efd_gloc)
 {
   if(integrationtype == IMPLICIT) {
-    *Efd_gloc = p_gloc + 2;
+    *Efd_gloc = p_gloc + 1;
   } else {
     *Efd_gloc = -1;
   }
