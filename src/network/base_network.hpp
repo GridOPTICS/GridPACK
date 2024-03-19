@@ -7,11 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
-<<<<<<< HEAD
  * @date   2025-01-29 11:39:28 d3g096
-=======
- * @date   2024-03-13 07:40:15 d3g096
->>>>>>> Implement network load/gen/storage query thru HADREC and Python
  * 
  * @brief  
  * 
