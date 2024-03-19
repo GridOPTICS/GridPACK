@@ -1214,6 +1214,16 @@ void partition(void)
   }
   setMap();
 
+  /* initialize network analytics functionality */
+  int nbus = p_buses.size();
+  for (size_t i=0; i<nbus; i++) {
+    getBus(i)->setData(getBusData(i));
+  }
+  for (size_t i=0; i<nbranch; i++) {
+    getBranch(i)->setData(getBranchData(i));
+  }
+
+
   if (!p_no_print) {
     std::cout << me << ": "
       << "I have " 
