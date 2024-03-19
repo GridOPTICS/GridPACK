@@ -40,12 +40,17 @@ public:
    * Set data collection object inside interface
    * @param data_collection pointer to data collection object
    */
-  virtual void setData(DataPtr &data);
+  virtual void setData(DataPtr data);
 
   /**
    * return number of generators on bus
    */
   virtual int numGenerators();
+
+  /**
+   * Return pointer to data collection object stored in the base interface
+   */
+  virtual DataCollection* getData();
   
   /**
    * return number of storage units on bus
@@ -89,7 +94,12 @@ public:
    * Set data collection object inside interface
    * data_collection pointer to data collection object
    */
-  virtual void setData(DataPtr &data);
+  virtual void setData(DataPtr data);
+
+  /**
+   * Return pointer to data collection object stored in the base interface
+   */
+  virtual DataCollection* getData();
 
   /**
    * return number of lines on branch
