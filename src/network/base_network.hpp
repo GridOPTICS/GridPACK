@@ -1247,7 +1247,10 @@ void partition(void)
   for (size_t i=0; i<nbus; i++) {
     getBus(i)->setData(getBusData(i));
   }
+<<<<<<< HEAD
   nbranch = p_branches.size();
+=======
+>>>>>>> Modified routines to get number of generators, loads, etc. so that they only
   for (size_t i=0; i<nbranch; i++) {
     getBranch(i)->setData(getBranchData(i));
   }
