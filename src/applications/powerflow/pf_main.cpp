@@ -80,7 +80,6 @@ int main(int argc, char **argv)
       std::cout<<"Number of loads in network:      "<<nload<<std::endl;
       std::cout<<"Number of lines in network:      "<<nline<<std::endl;
     }
-
     if (useNonLinear) {
       pf_app.nl_solve();
     } else {
