@@ -1219,6 +1219,7 @@ void partition(void)
   for (size_t i=0; i<nbus; i++) {
     getBus(i)->setData(getBusData(i));
   }
+  nbranch = p_branches.size();
   for (size_t i=0; i<nbranch; i++) {
     getBranch(i)->setData(getBranchData(i));
   }
@@ -2583,7 +2584,7 @@ int numLoads(void)
   return result;
 }
 
-  /// Get the number of storage units on the network
+/// Get the number of storage units on the network
 /**
  * collective
  *
@@ -2597,6 +2598,26 @@ int numStorage(void)
   for (int i = 0; i < nBus; ++i) {
     if (p_buses[i].p_activeBus) {
       result += p_buses[i].p_bus->numStorage();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+/// Get the number of lines in the network
+/**
+ * collective
+ *
+ * @return number of lines the entire network
+ */
+int numLines(void)
+{
+  int result(0);
+  const int nBranch(p_branches.size());
+  
+  for (int i = 0; i < nBranch; ++i) {
+    if (p_branches[i].p_activeBranch) {
+      result += p_branches[i].p_branch->numLines();
     }
   }
   this->communicator().sum(&result, 1);

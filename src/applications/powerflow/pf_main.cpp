@@ -69,6 +69,14 @@ int main(int argc, char **argv)
     }
     pf_app.readNetwork(pf_network,config);
     pf_app.initialize();
+    int ngen = pf_network->numGenerators();
+    int nload = pf_network->numLoads();
+    int nline = pf_network->numLines();
+    if (world.rank() == 0) {
+      std::cout<<"Number of generators in network: "<<ngen<<std::endl;
+      std::cout<<"Number of loads in network:      "<<nload<<std::endl;
+      std::cout<<"Number of lines in network:      "<<nline<<std::endl;
+    }
     if (useNonLinear) {
       pf_app.nl_solve();
     } else {
