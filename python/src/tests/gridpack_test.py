@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2024-04-17 09:23:10 d3g096
+# Last Change: 2024-04-17 09:24:38 d3g096
 # -------------------------------------------------------------
 
 import sys, os, time
@@ -53,6 +53,23 @@ class GridPACKTester(TestCase):
         timer.stop(c2)
         timer.stop(c1)
         timer.dump()
+
+    def configure_test(self):
+        comm = gridpack.Communicator()
+        conf = gridpack.Configuration()
+
+        sys.stderr.write("gridpack.Configuration.KeySep = \"%s\"\n" % 
+            (gridpack.Configuration.KeySep))
+
+        sys.stderr.write("conf.KeySep = \"%s\"\n" % (conf.KeySep))
+
+        d = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(d)
+        
+        conf.open("input_tamu500_step005.xml", comm)
+
+        path = ("Configuration%cDynamic_simulation" %
+                ( gridpack.Configuration.KeySep ))
         
     # def hadrec_test(self):
 

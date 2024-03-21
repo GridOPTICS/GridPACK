@@ -100,7 +100,7 @@ gridpack::dynamic_simulation::DSFullApp::~DSFullApp(void)
 {
 }
 
-void gridpack::dynamic_simulation::DSFullApp::solvePowerFlowBeforeDynSimu(const char *inputfile)
+void gridpack::dynamic_simulation::DSFullApp::solvePowerFlowBeforeDynSimu(const char *inputfile, const int& pf_idx)
 {
   gridpack::parallel::Communicator world;
 
@@ -130,7 +130,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePowerFlowBeforeDynSimu(const 
     pf_network(new gridpack::powerflow::PFNetwork(world));
   
   gridpack::powerflow::PFAppModule pf_app;
-  pf_app.readNetwork(pf_network, config);
+  pf_app.readNetwork(pf_network, config, pf_idx);
   pf_app.initialize();
   if (useNonLinear) {
     pf_app.nl_solve();

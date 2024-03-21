@@ -61,7 +61,7 @@ class DSFullApp
    * dynamic simulation networks internally. No need to create them
    * externally.
    */
-  void solvePowerFlowBeforeDynSimu(const char *inputfile);
+  void solvePowerFlowBeforeDynSimu(const char *inputfile, const int& pf_idx = -1);
 
     /**
      * Read in and partition the dynamic simulation network. The input file is read

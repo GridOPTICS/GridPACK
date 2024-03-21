@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:23:58 d3g096
+// Last Change: 2024-04-17 09:24:31 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -215,7 +215,21 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("dumpProfile",
          static_cast<void ( gpu::CoarseTimer::*)(std::string) const >(&gpu::CoarseTimer::dumpProfile) )
     ;
-         
+
+  // -------------------------------------------------------------
+  // gridpack.utility.Configuration
+  // -------------------------------------------------------------
+  py::class_<gpu::Configuration, std::unique_ptr<gpu::Configuration, py::nodelete>> (gpm, "Configuration")
+    .def(py::init([]() {
+                    return std::unique_ptr<gpu::Configuration, py::nodelete>
+                      (gpu::Configuration::configuration());
+                  }))
+    .def_property_readonly_static("KeySep",
+                                  [](py::object) {return gpu::Configuration::KeySep; })
+    .def("open",
+         py::overload_cast<const std::string&, gpp::Communicator>
+         (&gpu::Configuration::open))
+  ;
     
   // -------------------------------------------------------------
   // gridpack.TaskCounter
@@ -277,8 +291,8 @@ PYBIND11_MODULE(gridpack, gpm) {
   dsapp
     .def(py::init<>())
     .def("solvePowerFlowBeforeDynSimu",
-         [](gpds::DSFullApp& self, const std::string& inputfile) {
-           self.solvePowerFlowBeforeDynSimu(inputfile.c_str());
+         [](gpds::DSFullApp& self, const std::string& inputfile, const int& pf_idx) {
+           self.solvePowerFlowBeforeDynSimu(inputfile.c_str(), pf_idx);
          })
     .def("readGenerators", &gpds::DSFullApp::readGenerators,
          py::arg("ds_idx") = -1)

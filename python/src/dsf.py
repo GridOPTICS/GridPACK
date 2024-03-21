@@ -41,7 +41,7 @@ sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
 np.setStatus (True)
         
 ds_app = DSFullApp()
-ds_app.solvePowerFlowBeforeDynSimu(inname)
+ds_app.solvePowerFlowBeforeDynSimu(inname, -1)
 ds_app.readGenerators();
 ds_app.readSequenceData();
 ds_app.initialize();
