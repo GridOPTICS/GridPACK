@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:24:31 d3g096
+// Last Change: 2024-04-17 09:25:05 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -78,6 +78,20 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, boost::shared_ptr<T>, false);
 
 // Some pybind11 magic for a vector of Event
 PYBIND11_MAKE_OPAQUE( std::vector< gpds::Event > )
+
+// -------------------------------------------------------------
+// gridpack::utility::Configuration wrapping
+//
+// pybind11 gets really confused with the Configuration and
+// Configuration::Cursor being the same type.  
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+//  class ConfigurationCursorWrapper
+// -------------------------------------------------------------
+struct ConfigurationCursorWrapper {
+  gpu::Configuration::CursorPtr the_cursor;
+};
 
 
 // Hack to return a value from nextTask functions
@@ -217,8 +231,22 @@ PYBIND11_MODULE(gridpack, gpm) {
     ;
 
   // -------------------------------------------------------------
-  // gridpack.utility.Configuration
+  // gridpack.Configuration
   // -------------------------------------------------------------
+  py::class_< ConfigurationCursorWrapper>(gpm, "ConfigurationCursor")
+    .def("get",
+         [](ConfigurationCursorWrapper& self,
+            const gpu::Configuration::KeyType& key) -> py::object {
+           std::string s;
+           if (self.the_cursor->get(key, &s)) {
+             py::handle py_s =
+               PyUnicode_DecodeLatin1(s.data(), s.length(), nullptr);
+             return py::reinterpret_steal<py::str>(py_s);
+           }
+           return py::object();
+         })
+    ;
+  
   py::class_<gpu::Configuration, std::unique_ptr<gpu::Configuration, py::nodelete>> (gpm, "Configuration")
     .def(py::init([]() {
                     return std::unique_ptr<gpu::Configuration, py::nodelete>
@@ -229,7 +257,24 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("open",
          py::overload_cast<const std::string&, gpp::Communicator>
          (&gpu::Configuration::open))
-  ;
+    .def("getCursor",
+         [] (gpu::Configuration& self, const std::string& path) {
+           ConfigurationCursorWrapper result;
+           result.the_cursor = self.getCursor(path);
+           return(result);
+         })
+    .def("get",
+         [](gpu::Configuration& self,
+            const gpu::Configuration::KeyType& key) -> py::object {
+           std::string s;
+           if (self.get(key, &s)) {
+             py::handle py_s =
+               PyUnicode_DecodeLatin1(s.data(), s.length(), nullptr);
+             return py::reinterpret_steal<py::str>(py_s);
+           }
+           return py::object();
+         })
+    ;
     
   // -------------------------------------------------------------
   // gridpack.TaskCounter
@@ -344,6 +389,10 @@ PYBIND11_MODULE(gridpack, gpm) {
            return self.getEvents();
          },
          py::return_value_policy::copy)
+    .def("getEvents",
+         [](gpds::DSFullApp& self, ConfigurationCursorWrapper c) {
+           return (self.getEvents(c.the_cursor));
+         })
     .def("setEvent", &gpds::DSFullApp::setEvent)
     ;
 

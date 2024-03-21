@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2024-04-17 09:24:38 d3g096
+# Last Change: 2024-04-17 09:25:14 d3g096
 # -------------------------------------------------------------
 
 import sys, os, time
@@ -58,18 +58,35 @@ class GridPACKTester(TestCase):
         comm = gridpack.Communicator()
         conf = gridpack.Configuration()
 
-        sys.stderr.write("gridpack.Configuration.KeySep = \"%s\"\n" % 
-            (gridpack.Configuration.KeySep))
+        print("gridpack.Configuration.KeySep = \"%s\"" % 
+              (gridpack.Configuration.KeySep))
 
-        sys.stderr.write("conf.KeySep = \"%s\"\n" % (conf.KeySep))
+        print("conf.KeySep = \"%s\"" % (conf.KeySep))
 
         d = os.path.dirname(os.path.abspath(__file__))
         os.chdir(d)
         
         conf.open("input_tamu500_step005.xml", comm)
 
+        path = ("Configuration%cDynamic_simulation%stimeStep" %
+                ( gridpack.Configuration.KeySep,
+                  gridpack.Configuration.KeySep))
+        dt = conf.get(path)
+        if (dt):
+            print("dt = %f" % (float(dt)))
+        else:
+            print("path \"%s\" not found" % (path))
+
         path = ("Configuration%cDynamic_simulation" %
-                ( gridpack.Configuration.KeySep ))
+                ( gridpack.Configuration.KeySep))
+
+        cursor = conf.getCursor(path)
+        dt = cursor.get("timeStep")
+        if (dt):
+            print("dt = %f" % (float(dt)))
+        else:
+            print("path \"%s\" not found" % (path))
+
         
     # def hadrec_test(self):
 
