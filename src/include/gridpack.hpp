@@ -13,6 +13,7 @@
 #include "gridpack/component/base_analytics_intfc.hpp"
 #include "gridpack/stream/input_stream.hpp"
 #include "gridpack/analysis/stat_block.hpp"
+#include "gridpack/analysis/network_analytics.hpp"
 #include "gridpack/configuration/configurable.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/configuration/no_print.hpp"
