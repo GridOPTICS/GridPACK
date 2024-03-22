@@ -42,6 +42,7 @@ endif()
 # -------------------------------------------------------------
 install(FILES 
   stat_block.hpp  
+  network_analytics.hpp  
   DESTINATION include/gridpack/analysis
 )
 

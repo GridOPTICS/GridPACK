@@ -121,7 +121,7 @@ gridpack_add_run_test(task_test task_test "")
 # A simple MPI test using boost::test
 # -------------------------------------------------------------
 add_executable(mpi_test test/mpi_test.cpp)
-target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES} ${GLIBC_LIBS})
 add_dependencies(mpi_test external_build)
 gridpack_add_unit_test(mpi_test mpi_test)
 

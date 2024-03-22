@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2022-10-05 08:51:23 d3g096
+ * @date   2024-03-13 07:40:15 d3g096
  * 
  * @brief  
  * 
@@ -28,7 +28,7 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/type_traits.hpp>
 #include <ga.h>
-#include "gridpack/parallel/distributed.hpp"
+#include "gridpack/network/network_topology_interface.hpp"
 #include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
@@ -263,7 +263,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public parallel::Distributed
+  : public NetworkTopologyInterface
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -286,7 +286,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : parallel::Distributed(comm)
+  : NetworkTopologyInterface(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;
@@ -1213,6 +1213,17 @@ void partition(void)
     }
   }
   setMap();
+
+  /* initialize network analytics functionality */
+  int nbus = p_buses.size();
+  for (size_t i=0; i<nbus; i++) {
+    getBus(i)->setData(getBusData(i));
+  }
+  nbranch = p_branches.size();
+  for (size_t i=0; i<nbranch; i++) {
+    getBranch(i)->setData(getBranchData(i));
+  }
+
 
   if (!p_no_print) {
     std::cout << me << ": "
@@ -2531,6 +2542,89 @@ void broadcastNetworkData(int idx)
   boost::mpi::communicator comm = this->communicator().getCommunicator();
   boost::mpi::broadcast(comm, p_network_data, idx);
 }
+
+/// Get the number of generators on the network
+/**
+ * collective
+ *
+ *
+ * @return number of generators on the entire network
+ */
+int numGenerators(void)
+{
+  int result(0);
+  const int nBus(p_buses.size());
+  
+  for (int i = 0; i < nBus; ++i) {
+    if (p_buses[i].p_activeBus) {
+      result += p_buses[i].p_bus->numGenerators();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+/// Get the number of loads on the network
+/**
+ * collective
+ *
+ * @return number of loads on the entire network
+ */
+int numLoads(void)
+{
+  int result(0);
+  const int nBus(p_buses.size());
+  
+  for (int i = 0; i < nBus; ++i) {
+    if (p_buses[i].p_activeBus) {
+      result += p_buses[i].p_bus->numLoads();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+/// Get the number of storage units on the network
+/**
+ * collective
+ *
+ * @return number of storage units on the entire network
+ */
+int numStorage(void)
+{
+  int result(0);
+  const int nBus(p_buses.size());
+  
+  for (int i = 0; i < nBus; ++i) {
+    if (p_buses[i].p_activeBus) {
+      result += p_buses[i].p_bus->numStorage();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+/// Get the number of lines in the network
+/**
+ * collective
+ *
+ * @return number of lines the entire network
+ */
+int numLines(void)
+{
+  int result(0);
+  const int nBranch(p_branches.size());
+  
+  for (int i = 0; i < nBranch; ++i) {
+    if (p_branches[i].p_activeBranch) {
+      result += p_branches[i].p_branch->numLines();
+    }
+  }
+  this->communicator().sum(&result, 1);
+  return result;
+}
+
+  
 protected:
 
 /**
