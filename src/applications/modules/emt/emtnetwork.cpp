@@ -944,7 +944,7 @@ int EmtBus::matrixNumValues()
 
     numvals += numvals_fault;
   }
-  
+  numvals += 6; // Extra buffer in case the count is incorrect
   p_num_vals = numvals;
   return p_num_vals;
 }
