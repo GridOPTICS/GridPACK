@@ -49,13 +49,18 @@ public:
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
 
   /**
-   * Initialize generator model before calculation
-   * @param [output] values - array where initialized generator variables should be set
+   * Set up branch model before calculation
+   */
+  virtual void setup() {}
+  
+  /**
+   * Initialize branch model before calculation
+   * @param [output] values - array where initialized branch variables should be set
    */
   virtual void init(gridpack::RealType *values);
   
   /**
-   * Write output from generators to a string.
+   * Write output from branchs to a string.
    * @param string (output) string with information to be printed out
    * @param bufsize size of string buffer in bytes
    * @param signal an optional character string to signal to this
@@ -66,7 +71,7 @@ public:
 			   const char *signal);
   
   /**
-   * Write out generator state
+   * Write out branch state
    * @param signal character string used to determine behavior
    * @param string buffer that contains output
    */
@@ -108,7 +113,7 @@ public:
   void setTSshift(double inshift) {shift = inshift;}
   
   /**
-   * Return the generator current injection 
+   * Return the branch current injection 
    * @param [output] ia - phase a current
    * @param [output] ib - phase b current
    * @param [output] ic - phase c current
@@ -136,7 +141,7 @@ public:
   virtual void getnvar(int *nvar) {*nvar = nxbranch;}
 
   /**
-   * Get number of matrix values contributed by generator
+   * Get number of matrix values contributed by branch
    * @return number of matrix values
    */
   virtual int matrixNumValues();
@@ -152,27 +157,27 @@ public:
 
 
   /**
-   * Return vector values from the generator model 
+   * Return vector values from the branch model 
    * @param values - array of returned values
    *
    * Note: This function is used to return the entries in vector,
-   * for e.g., the entries in the residual vector from the generator
+   * for e.g., the entries in the residual vector from the branch
    * object
    */
   virtual void vectorGetValues(gridpack::RealType *values);
 
   /**
-   * Pass solution vector values to the generator object
+   * Pass solution vector values to the branch object
    * @param values - array of returned values
    *
    * Note: This function is used to pass the entries in vector
-   * to the generator object,
-   * for e.g., the state vector values for this generator
+   * to the branch object,
+   * for e.g., the state vector values for this branch
    */
   virtual void setValues(gridpack::RealType *values);
   
   /**
-   * Set the offset for first variable for the generator in the array for all bus variables 
+   * Set the offset for first variable for the branch in the array for all bus variables 
    * @param offset offset
    */
   void setBranchOffset(int offset) {offsetb = offset;}
@@ -231,7 +236,7 @@ public:
   EMTMachineIntegrationType integrationtype;
 
   int           offsetb; /**< offset for the first variable for the branch in the array for all branch variables */
-  int           p_gloc; // Global location of the first variable for the generator
+  int           p_gloc; // Global location of the first variable for the branch
   
   int           nxbranch; /* Number of variables for the branch model */
   int           p_branchoffset; /** Offset for the bus variables in the local vector. Used only for events */
