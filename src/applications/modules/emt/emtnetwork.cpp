@@ -1673,6 +1673,8 @@ void EmtBranch::setup()
 
     p_branch[i]->setFromBus(busf);
     p_branch[i]->setToBus(bust);
+
+    p_branch[i]->setup();
   }
 
   if(p_nvar) {

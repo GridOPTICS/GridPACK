@@ -40,6 +40,11 @@ public:
   void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
 
   /**
+   * Set up branch model before calculation
+   */
+  void setup();
+
+  /**
    * Initialize generator model before calculation
    * @param [output] values - array where initialized generator variables should be set
    */

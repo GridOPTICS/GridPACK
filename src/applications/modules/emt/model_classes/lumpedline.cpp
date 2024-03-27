@@ -70,6 +70,15 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
 }
 
 /**
+ * Set up branch model before calculation
+ */
+void Lumpedline::setup()
+{
+  fbus->addLumpedLineCshunt(p_C,0.5);
+  tbus->addLumpedLineCshunt(p_C,0.5);
+}
+
+/**
  * Initialize branch model before calculation
  * @param [output] values - array where initialized branch variables should be set
  */
@@ -77,9 +86,6 @@ void Lumpedline::init(gridpack::RealType *values)
 {
   double *x = values + offsetb;
   
-  fbus->addLumpedLineCshunt(p_C,0.5);
-  tbus->addLumpedLineCshunt(p_C,0.5);
-
   double Vmf,Vaf,Vmt,Vat;
   double VDf,VQf,VDt,VQt;
   fbus->getInitialVoltage(&Vmf,&Vaf);
