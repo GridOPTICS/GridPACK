@@ -61,12 +61,23 @@ void BaseEMTBranchModel::write(const char* signal, char* string)
 }
 
 /**
- * Return the branch current injection 
+ * Return the branch from bus current injection 
  * @param [output] ia - phase a current
  * @param [output] ib - phase b current
  * @param [output] ic - phase c current
  */
-void BaseEMTBranchModel::getCurrent(double *ia, double *ib, double *ic)
+void BaseEMTBranchModel::getFromBusCurrent(double *ia, double *ib, double *ic)
+{
+  *ia = *ib = *ic = 0.0;
+}
+
+/**
+ * Return the branch to bus current injection 
+ * @param [output] ia - phase a current
+ * @param [output] ib - phase b current
+ * @param [output] ic - phase c current
+ */
+void BaseEMTBranchModel::getToBusCurrent(double *ia, double *ib, double *ic)
 {
   *ia = *ib = *ic = 0.0;
 }

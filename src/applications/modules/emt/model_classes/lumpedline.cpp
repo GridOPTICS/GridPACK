@@ -3,7 +3,7 @@
 
 Lumpedline::Lumpedline(void)
 {
-  nxbranch  = 3;
+  nxbranch  = 6;
 }
 
 Lumpedline::~Lumpedline(void)
@@ -112,6 +112,9 @@ void Lumpedline::init(gridpack::RealType *values)
   x[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0);
   x[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
 
+  x[3] = x[0];
+  x[4] = x[1];
+  x[5] = x[2];
 }
 
 /**
@@ -138,17 +141,31 @@ void Lumpedline::write(const char* signal, char* string)
 }
 
 /**
- * Return the branch current injection 
+ * Return the branch from bus current injection 
  * @param [output] ia - phase a current
  * @param [output] ib - phase b current
  * @param [output] ic - phase c current
  */
-void Lumpedline::getCurrent(double *ia, double *ib, double *ic)
+void Lumpedline::getFromBusCurrent(double *ia, double *ib, double *ic)
 {
-  *ia = ibr[0];
-  *ib = ibr[1];
-  *ic = ibr[2];
+  *ia = ibr_from[0];
+  *ib = ibr_from[1];
+  *ic = ibr_from[2];
 }
+
+/**
+ * Return the branch to bus current injection 
+ * @param [output] ia - phase a current
+ * @param [output] ib - phase b current
+ * @param [output] ic - phase c current
+ */
+void Lumpedline::getToBusCurrent(double *ia, double *ib, double *ic)
+{
+  *ia = ibr_to[0];
+  *ib = ibr_to[1];
+  *ic = ibr_to[2];
+}
+
 
 /**
  * Return the location for the current in the local branch array
@@ -180,15 +197,18 @@ int Lumpedline::matrixNumValues()
     // dfval_dvf = I => 3 entries
     // dfval_di  = -R - sL => 9 entries
     // dfval_dvt = -I => 3 entries
-    // Total 15 entries
-    numvals += 15;
+    // 6 entries for to bus current equation
+    // Total 21 entries
+    numvals += 21;
+    
   } else {
     // fval = vf - R*i - vt
     // dfval_dvf = I => 3 entries
     // dfval_di = -R => 9 entries
     // dfval_dvt = -I => 3 entries
-    // Total 15 entries
-    numvals += 15;
+    // six entries for to bus current equation
+    // Total 21 entries
+    numvals += 21;
   }
 
   return numvals;
@@ -245,6 +265,23 @@ void Lumpedline::matrixGetValues(int *nvals, gridpack::RealType *values, int *ro
 
     ctr += 2;
   }
+
+  // Partials for to bus current equations
+  for(j = 0; j < 3; j++) {
+    // partial derivative w.r.t. from bus current
+    rows[ctr] = i_gloc + 3 + j;
+    cols[ctr] = i_gloc + j;
+    values[ctr] = -1.0;
+
+    ctr++;
+
+    // partial derivative w.r.t to bus current
+    rows[ctr] = i_gloc + 3 + j;
+    cols[ctr] = i_gloc + 3 + j;
+    values[ctr] = 1.0;
+
+    ctr++;
+  }
   
   *nvals = ctr;
 
@@ -276,20 +313,31 @@ void Lumpedline::vectorGetValues(gridpack::RealType *values)
     
     if(p_hasInductance) {
       double Ribr[3],Ldidt[3];
-      // vf - R*ibr - vt - L*didt = 0
-      matvecmult3x3(p_R, ibr,Ribr); // fval1 = R*ibr
-      matvecmult3x3(p_L,dibr_dt,Ldidt); // fval2 = L*didt
+      // vf - R*ibr_from - vt - L*didt = 0
+      matvecmult3x3(p_R, ibr_from,Ribr); // fval1 = R*ibr
+      matvecmult3x3(p_L,dibrf_dt,Ldidt); // fval2 = L*didt
       f[0] = vf_minus_vt[0] - Ribr[0] - Ldidt[0];
       f[1] = vf_minus_vt[1] - Ribr[1] - Ldidt[1];
       f[2] = vf_minus_vt[2] - Ribr[2] - Ldidt[2];
+
+      // To bus current equation
+      // To bus current is same as from bus current
+      f[3] = ibr_to[0] - ibr_from[0];
+      f[4] = ibr_to[1] - ibr_from[1];
+      f[5] = ibr_to[2] - ibr_from[2];
     } else {
       double Ribr[3];
-      
-      matvecmult3x3(p_R,ibr,Ribr);
+
+      matvecmult3x3(p_R,ibr_from,Ribr);
       
       f[0] = -Ribr[0] + vf_minus_vt[0];
       f[1] = -Ribr[1] + vf_minus_vt[1];
       f[2] = -Ribr[2] + vf_minus_vt[2];
+
+      // To bus current equation
+      f[3] = ibr_to[0] - ibr_from[0];
+      f[4] = ibr_to[1] - ibr_from[1];
+      f[5] = ibr_to[2] - ibr_from[2];
     }
   }
 }
@@ -307,13 +355,19 @@ void Lumpedline::setValues(gridpack::RealType *values)
   gridpack::RealType *x = values + offsetb;
 
   if(p_mode == XVECTOBUS) {
-    ibr[0] = x[0];
-    ibr[1] = x[1];
-    ibr[2] = x[2];
+    ibr_from[0] = x[0];
+    ibr_from[1] = x[1];
+    ibr_from[2] = x[2];
+    ibr_to[0]   = x[3];
+    ibr_to[1]   = x[4];
+    ibr_to[2]   = x[5];
   } else if(p_mode == XDOTVECTOBUS) {
-    dibr_dt[0] = x[0];
-    dibr_dt[1] = x[1];
-    dibr_dt[2] = x[2];
+    dibrf_dt[0] = x[0];
+    dibrf_dt[1] = x[1];
+    dibrf_dt[2] = x[2];
+    dibrt_dt[0] = x[3];
+    dibrt_dt[1] = x[4];
+    dibrt_dt[2] = x[5];
   }
 }
 

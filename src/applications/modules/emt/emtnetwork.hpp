@@ -422,14 +422,25 @@ public:
   void postStep(double);
   
   /**
-   * getCurrent - returns the line current
+   * getFromBusCurrent - returns the line current for from bus
    *
    * @param[input]  idx - For the nth parallel line number, idx = n. For no parallel lines, idx = 0
    * @param[output] ia - phase a current
    * @param[output] ib - phase b current
    * @param[output] ic - phase c current
    */
-  void getCurrent(int idx,double *ia, double *ib, double *ic);
+  void getFromBusCurrent(int idx,double *ia, double *ib, double *ic);
+
+  /**
+   * getToBusCurrent - returns the line current for to bus
+   *
+   * @param[input]  idx - For the nth parallel line number, idx = n. For no parallel lines, idx = 0
+   * @param[output] ia - phase a current
+   * @param[output] ib - phase b current
+   * @param[output] ic - phase c current
+   */
+  void getToBusCurrent(int idx,double *ia, double *ib, double *ic);
+
 
   /**
    * Get the global location of the first current variable in the solution vector
