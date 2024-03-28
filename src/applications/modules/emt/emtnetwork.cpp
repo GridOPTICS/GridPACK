@@ -989,15 +989,23 @@ void EmtBus::matrixGetValues(int *nvals, gridpack::RealType *values,
 
       branch->getCurrentGlobalLocation(j,&i_gloc);
 
-      rows[ctr]   = v_gloc;   cols[ctr]   = i_gloc;
-      rows[ctr+1] = v_gloc+1; cols[ctr+1] = i_gloc+1;
-      rows[ctr+2] = v_gloc+2; cols[ctr+2] = i_gloc+2;
+      rows[ctr]   = v_gloc;   
+      rows[ctr+1] = v_gloc+1; 
+      rows[ctr+2] = v_gloc+2; 
       
       if(thisbusnum == fbusnum) {
+	cols[ctr]   = i_gloc;
+	cols[ctr+1] = i_gloc+1;
+	cols[ctr+2] = i_gloc+2;
+	
 	values[ctr]   = -1.0;
 	values[ctr+1] = -1.0;
 	values[ctr+2] = -1.0;
       } else {
+	cols[ctr]   = i_gloc + 3;
+	cols[ctr+1] = i_gloc + 4;
+	cols[ctr+2] = i_gloc + 5;
+
 	values[ctr]   = 1.0;
 	values[ctr+1] = 1.0;
 	values[ctr+2] = 1.0;
@@ -1352,13 +1360,13 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	if(!branch->getStatus(j)) continue;
 
 	i_bri[0] = i_bri[1] = i_bri[2] = 0.0;
-	branch->getCurrent(j,&i_bri[0],&i_bri[1],&i_bri[2]);
-
 	if(thisbusnum == fbusnum) {
+	  branch->getFromBusCurrent(j,&i_bri[0],&i_bri[1],&i_bri[2]);
 	  i_br[0] += i_bri[0];
 	  i_br[1] += i_bri[1];
 	  i_br[2] += i_bri[2];
 	} else {
+	  branch->getToBusCurrent(j,&i_bri[0],&i_bri[1],&i_bri[2]);
 	  i_br[0] -= i_bri[0];
 	  i_br[1] -= i_bri[1];
 	  i_br[2] -= i_bri[2];
@@ -1840,20 +1848,36 @@ void EmtBranch::postStep(double time)
 }
 
 /**
- * getCurrent - returns the line current
+ * getFromBusCurrent - returns the line current for from bus
  *
  * @param[input]  idx - For the nth parallel line number, idx = n. For no parallel lines, idx = 0
  * @param[output] ia - phase a current
  * @param[output] ib - phase b current
  * @param[output] ic - phase c current
  */
-void EmtBranch::getCurrent(int idx,double *ia, double *ib, double *ic)
+void EmtBranch::getFromBusCurrent(int idx,double *ia, double *ib, double *ic)
 {
   if(p_branch[idx]->getStatus()) {
-    //   p_branch[idx]->getCurrent(ia, ib, ic);
     *ia = p_iptr[3*idx];
     *ib = p_iptr[3*idx+1];
     *ic = p_iptr[3*idx+2];
+  }
+}
+
+/**
+ * getToBusCurrent - returns the line current for the to bus
+ *
+ * @param[input]  idx - For the nth parallel line number, idx = n. For no parallel lines, idx = 0
+ * @param[output] ia - phase a current
+ * @param[output] ib - phase b current
+ * @param[output] ic - phase c current
+ */
+void EmtBranch::getToBusCurrent(int idx,double *ia, double *ib, double *ic)
+{
+  if(p_branch[idx]->getStatus()) {
+    *ia = p_iptr[3*idx+3];
+    *ib = p_iptr[3*idx+4];
+    *ic = p_iptr[3*idx+5];
   }
 }
 
@@ -1999,7 +2023,7 @@ void EmtBranch::matrixGetValues(gridpack::math::RealMatrix &matrix)
 
 int EmtBranch::getXCBufSize(void)
 {
-  return 3*p_nparlines*sizeof(double);
+  return 6*p_nparlines*sizeof(double);
 }
 
 void EmtBranch::setXCBuf(void *buf)
@@ -2064,7 +2088,9 @@ void EmtBranch::vectorGetElementValues(gridpack::RealType *values, int *idx)
       p_iptr[3*i]   = x[i_loc];
       p_iptr[3*i+1] = x[i_loc+1];
       p_iptr[3*i+2] = x[i_loc+2];
-
+      p_iptr[3*i+3] = x[i_loc+3];
+      p_iptr[3*i+4] = x[i_loc+4];
+      p_iptr[3*i+5] = x[i_loc+5];
     }
   } else if(p_mode == RESIDUAL_EVAL) {
     gridpack::RealType *f = values;
@@ -2098,6 +2124,9 @@ void EmtBranch::vectorSetElementValues(gridpack::RealType *values)
 	p_iptr[3*i]   = x[i_loc];
 	p_iptr[3*i+1] = x[i_loc + 1];
 	p_iptr[3*i+2] = x[i_loc + 2];
+	p_iptr[3*i+3] = x[i_loc + 3];
+	p_iptr[3*i+4] = x[i_loc + 4];
+	p_iptr[3*i+5] = x[i_loc + 5];
       }
     }
   } else if(p_mode == XDOTVECTOBUS) {

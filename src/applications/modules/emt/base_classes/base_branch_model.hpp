@@ -113,13 +113,20 @@ public:
   void setTSshift(double inshift) {shift = inshift;}
   
   /**
-   * Return the branch current injection 
+   * Return the branch from bus current injection 
    * @param [output] ia - phase a current
    * @param [output] ib - phase b current
    * @param [output] ic - phase c current
    */
-  virtual void getCurrent(double *ia, double *ib, double *ic);
+  virtual void getFromBusCurrent(double *ia, double *ib, double *ic);
 
+  /**
+   * Return the branch to bus current injection 
+   * @param [output] ia - phase a current
+   * @param [output] ib - phase b current
+   * @param [output] ic - phase c current
+   */
+  virtual void getToBusCurrent(double *ia, double *ib, double *ic);
 
   /**
    * Return the global location for the branch current injection 

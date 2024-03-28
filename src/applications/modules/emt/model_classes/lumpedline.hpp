@@ -45,13 +45,13 @@ public:
   void setup();
 
   /**
-   * Initialize generator model before calculation
-   * @param [output] values - array where initialized generator variables should be set
+   * Initialize branch model before calculation
+   * @param [output] values - array where initialized branch variables should be set
    */
   void init(gridpack::RealType *values);
   
   /**
-   * Write output from generators to a string.
+   * Write output from branchs to a string.
    * @param string (output) string with information to be printed out
    * @param bufsize size of string buffer in bytes
    * @param signal an optional character string to signal to this
@@ -62,7 +62,7 @@ public:
 			   const char *signal);
   
   /**
-   * Write out generator state
+   * Write out branch state
    * @param signal character string used to determine behavior
    * @param string buffer that contains output
    */
@@ -79,15 +79,23 @@ public:
   void postStep(double time);
 
   /**
-   * Return the generator current injection 
+   * Return the branch from bus current injection 
    * @param [output] ia - phase a current
    * @param [output] ib - phase b current
    * @param [output] ic - phase c current
    */
-  void getCurrent(double *ia, double *ib, double *ic);
+  void getFromBusCurrent(double *ia, double *ib, double *ic);
 
   /**
-   * Return the global location for the generator current injection 
+   * Return the branch to bus current injection 
+   * @param [output] ia - phase a current
+   * @param [output] ib - phase b current
+   * @param [output] ic - phase c current
+   */
+  void getToBusCurrent(double *ia, double *ib, double *ic);
+
+  /**
+   * Return the global location for the branch current injection 
    * @param [output] i_gloc - global location for the first current variable
    */
   void getCurrentGlobalLocation(int *i_gloc);
@@ -105,7 +113,7 @@ public:
   void getnvar(int *nvar);
 
   /**
-   * Get number of matrix values contributed by generator
+   * Get number of matrix values contributed by branch
    * @return number of matrix values
    */
   int matrixNumValues();
@@ -121,22 +129,22 @@ public:
 
 
   /**
-   * Return vector values from the generator model 
+   * Return vector values from the branch model 
    * @param values - array of returned values
    *
    * Note: This function is used to return the entries in vector,
-   * for e.g., the entries in the residual vector from the generator
+   * for e.g., the entries in the residual vector from the branch
    * object
    */
   void vectorGetValues(gridpack::RealType *values);
 
   /**
-   * Pass solution vector values to the generator object
+   * Pass solution vector values to the branch object
    * @param values - array of returned values
    *
    * Note: This function is used to pass the entries in vector
-   * to the generator object,
-   * for e.g., the state vector values for this generator
+   * to the branch object,
+   * for e.g., the state vector values for this branch
    */
   void setValues(gridpack::RealType *values);
   
@@ -153,8 +161,9 @@ public:
   bool p_hasInductance;
 
   // Some temporary arrays
-  double ibr[3];
-  double dibr_dt[3];
+  // From bus and to bus current and their derivatives
+  double ibr_from[3],ibr_to[3];
+  double dibrf_dt[3],dibrt_dt[3];
 };
 
 #endif
