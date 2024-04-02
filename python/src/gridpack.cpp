@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:25:05 d3g096
+// Last Change: 2024-04-17 09:25:35 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -384,6 +384,10 @@ PYBIND11_MODULE(gridpack, gpm) {
     ;
 
   dsapp
+    .def("setObservations",
+         [] (gpds::DSFullApp& self, ConfigurationCursorWrapper& cursor) {
+           self.setObservations(cursor.the_cursor);
+         })
     .def("getEvents",
          [](gpds::DSFullApp& self) {
            return self.getEvents();
@@ -412,6 +416,15 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::arg("tags") = std::vector<std::string>(),
          py::arg("writeFile") = true
          )
+    .def("setGeneratorWatch",
+         [](gpds::DSFullApp& self, const std::string& filename,
+            ConfigurationCursorWrapper& cursor) {
+           self.setGeneratorWatch(filename.c_str(), cursor.the_cursor);
+         })
+    .def("setGeneratorWatch",
+         [](gpds::DSFullApp& self, ConfigurationCursorWrapper& cursor) {
+           self.setGeneratorWatch(cursor.the_cursor);
+         })
     .def("setLoadWatch", &gpds::DSFullApp::setLoadWatch)
     ;
 
@@ -488,7 +501,7 @@ PYBIND11_MODULE(gridpack, gpm) {
              std::vector<int> obs_loadBuses;
              std::vector<std::string> obs_loadIDs;
              std::vector<int> obs_busIDs;
-			 std::vector<int> busfreqIDs;
+             std::vector<int> busfreqIDs;
              self.getObservationLists_withBusFreq(obs_genBus, obs_genIDs,
                                                   obs_loadBuses, obs_loadIDs,
                                                   obs_busIDs, busfreqIDs);
