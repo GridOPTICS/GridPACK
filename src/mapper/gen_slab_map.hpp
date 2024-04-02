@@ -86,8 +86,28 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
     Ret(gridpack::math::Matrix::createDense(comm,
           0,p_nColumns,blockSize,0));
 #endif
-  loadBusData(*Ret,false);
-  loadBranchData(*Ret,false);
+  loadBusData<ComplexType,gridpack::math::Matrix>(*Ret,false);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
+boost::shared_ptr<gridpack::math::RealMatrix> mapToRealMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxIndex-p_minIndex+1;
+#if 0
+  boost::shared_ptr<gridpack::math::Matrix>
+    Ret(new gridpack::math::Matrix(comm, blockSize,p_nColumns,
+    gridpack::math::Dense));
+#else
+  boost::shared_ptr<gridpack::math::RealMatrix>
+    Ret(gridpack::math::RealMatrix::createDense(comm,
+          0,p_nColumns,blockSize,0));
+#endif
+  loadBusData<RealType,gridpack::math::RealMatrix>(*Ret,false);
+  loadBranchData<RealType,gridpack::math::RealMatrix>(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   return Ret;
@@ -112,8 +132,8 @@ gridpack::math::Matrix* intMapToMatrix(void)
           0,p_nColumns,blockSize,0));
 #endif
 
-  loadBusData(*Ret,false);
-  loadBranchData(*Ret,false);
+  loadBusData<ComplexType,gridpack::math::Matrix>(*Ret,false);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   return Ret;
@@ -128,8 +148,18 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
 {
   int t_set, t_bus, t_branch;
   matrix.zero();
-  loadBusData(matrix,false);
-  loadBranchData(matrix,false);
+  loadBusData<ComplexType,gridpack::math::Matrix>(matrix,false);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(matrix,false);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
+void mapToRealMatrix(gridpack::math::RealMatrix &matrix)
+{
+  int t_set, t_bus, t_branch;
+  matrix.zero();
+  loadBusData<RealType,gridpack::math::RealMatrix>(matrix,false);
+  loadBranchData<RealType,gridpack::math::RealMatrix>(matrix,false);
   GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
 }
@@ -141,6 +171,11 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   mapToMatrix(*matrix);
+}
+
+void mapToRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
+{
+  mapToRealMatrix(*matrix);
 }
 
 /**
@@ -256,12 +291,83 @@ void mapToNetwork(const gridpack::math::Matrix &matrix)
 #endif
 }
 
+void mapToNetwork(const gridpack::math::RealMatrix &matrix)
+{
+  int i, j, k;
+  RealType *values;
+  RealType **varray;
+  RealType **vptr;
+  int *idx;
+  int *iptr;
+  int ncols, nrows;
+  // get values from buses
+  idx = new int[p_busRows];
+  values = new RealType[p_nColumns*p_busRows];
+  varray = new RealType*[p_busRows];
+  for (i=0; i<p_busRows; i++) {
+    varray[i] = values + i*p_nColumns;
+  }
+  iptr = idx;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->slabSize(&nrows,&ncols);
+      p_network->getBus(i)->slabGetRowIndices(iptr);
+      iptr += nrows;
+    }
+  }
+  matrix.getRowBlock(p_busRows, idx, values);
+  vptr = varray;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->slabSize(&nrows,&ncols);
+      p_network->getBus(i)->slabSetValues(vptr);
+      vptr += nrows;
+    }
+  }
+  delete [] idx;
+  delete [] varray;
+  delete [] values;
+  // get values from branches
+  idx = new int[p_branchRows];
+  values = new RealType[p_nColumns*p_branchRows];
+  varray = new RealType*[p_branchRows];
+  for (i=0; i<p_branchRows; i++) {
+    varray[i] = values + i*p_nColumns;
+  }
+  iptr = idx;
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      p_network->getBranch(i)->slabSize(&nrows,&ncols);
+      p_network->getBranch(i)->slabGetRowIndices(iptr);
+      iptr += nrows;
+    }
+  }
+  matrix.getRowBlock(p_branchRows, idx, values);
+  vptr = varray;
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      p_network->getBranch(i)->slabSize(&nrows,&ncols);
+      p_network->getBranch(i)->slabSetValues(vptr);
+      vptr += nrows;
+    }
+  }
+  delete [] idx;
+  delete [] varray;
+  delete [] values;
+  GA_Pgroup_sync(p_GAgrp);
+}
+
 /**
  * Push data from matrix onto buses and branches. Matrix must be
  * created with the mapToMatrix method using the same GenSlabMap
  * @param matrix matrix containing data to be pushed to network
  */
 void mapToNetwork(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  mapToNetwork(*matrix);
+}
+
+void mapToNetwork(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
 {
   mapToNetwork(*matrix);
 }
@@ -583,12 +689,13 @@ void setIndices(void)
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBusData(gridpack::math::Matrix &matrix, bool flag)
+template <typename _datatype, class _matrixtype>
+void loadBusData(_matrixtype &matrix, bool flag)
 {
   int i, j, k, ivals, jvals;
-  std::vector<ComplexType*> values;
+  std::vector<_datatype*> values;
   for (i=0; i<p_maxValues; i++) {
-    values.push_back(new ComplexType[p_nColumns]);
+    values.push_back(new _datatype[p_nColumns]);
   }
   int *idx = new int[p_maxValues];
   for (i=0; i<p_nBuses; i++) {
@@ -619,12 +726,13 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
+template <typename _datatype, class _matrixtype>
+void loadBranchData(_matrixtype &matrix, bool flag)
 {
   int i, j, k, ivals, jvals;
-  std::vector<ComplexType*> values;
+  std::vector<_datatype*> values;
   for (i=0; i<p_maxValues; i++) {
-    values.push_back(new ComplexType[p_nColumns]);
+    values.push_back(new _datatype[p_nColumns]);
   }
   int *idx = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {

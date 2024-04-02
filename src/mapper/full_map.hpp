@@ -124,11 +124,11 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(*Ret,false);
+  loadBusData<ComplexType,gridpack::math::Matrix>(*Ret,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
   if (p_timer) p_timer->start(t_branch);
-  loadBranchData(*Ret,false);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(*Ret,false);
   if (p_timer) p_timer->stop(t_branch);
   if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
   if (p_timer) p_timer->start(t_set);
@@ -168,11 +168,11 @@ boost::shared_ptr<gridpack::math::RealMatrix> mapToRealMatrix(bool isDense = fal
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadRealBusData(*Ret,false);
+  loadBusData<RealType,gridpack::math::RealMatrix>(*Ret,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
   if (p_timer) p_timer->start(t_branch);
-  loadRealBranchData(*Ret,false);
+  loadBranchData<RealType,gridpack::math::RealMatrix>(*Ret,false);
   if (p_timer) p_timer->stop(t_branch);
   if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
   if (p_timer) p_timer->start(t_set);
@@ -210,12 +210,12 @@ gridpack::math::Matrix* intMapToMatrix(bool isDense = false)
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(*Ret,false);
+  loadBusData<ComplexType,gridpack::math::Matrix>(*Ret,false);
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
   if (p_timer) p_timer->start(t_branch);
-  loadBranchData(*Ret,false);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(*Ret,false);
   if (p_timer) p_timer->stop(t_branch);
   if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
   if (p_timer) p_timer->start(t_set);
@@ -240,11 +240,11 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
   if (p_timer) p_timer->stop(t_set);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(matrix,false);
+  loadBusData<ComplexType,gridpack::math::Matrix>(matrix,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
   if (p_timer) p_timer->start(t_branch);
-  loadBranchData(matrix,false);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(matrix,false);
   if (p_timer) p_timer->stop(t_branch);
   if (p_timer) p_timer->start(t_set);
   GA_Pgroup_sync(p_GAgrp);
@@ -266,11 +266,11 @@ void mapToRealMatrix(gridpack::math::RealMatrix &matrix)
   if (p_timer) p_timer->stop(t_set);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadRealBusData(matrix,false);
+  loadBusData<RealType,gridpack::math::RealMatrix>(matrix,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
   if (p_timer) p_timer->start(t_branch);
-  loadRealBranchData(matrix,false);
+  loadBranchData<RealType,gridpack::math::RealMatrix>(matrix,false);
   if (p_timer) p_timer->stop(t_branch);
   if (p_timer) p_timer->start(t_set);
   GA_Pgroup_sync(p_GAgrp);
@@ -304,8 +304,22 @@ void mapToRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
 void overwriteMatrix(gridpack::math::Matrix &matrix)
 {
   GA_Pgroup_sync(p_GAgrp);
-  loadBusData(matrix,false);
-  loadBranchData(matrix,false);
+  loadBusData<ComplexType,gridpack::math::Matrix>(matrix,false);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(matrix,false);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
+/**
+ * Overwrite elements of existing matrix. This can be used to overwrite selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void overwriteRealMatrix(gridpack::math::RealMatrix &matrix)
+{
+  GA_Pgroup_sync(p_GAgrp);
+  loadBusData<RealType,gridpack::math::RealMatrix>(matrix,false);
+  loadBranchData<RealType,gridpack::math::RealMatrix>(matrix,false);
   GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
 }
@@ -321,6 +335,16 @@ void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 }
 
 /**
+ * Overwrite elements of existing matrix. This can be used to overwrite selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void overwriteRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
+{
+  overwriteRealMatrix(*matrix);
+}
+
+/**
  * Increment elements of existing matrix. This can be used to increment selected
  * elements of a matrix
  * @param matrix existing matrix (should be generated from same mapper)
@@ -328,8 +352,22 @@ void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 void incrementMatrix(gridpack::math::Matrix &matrix)
 {
   GA_Pgroup_sync(p_GAgrp);
-  loadBusData(matrix,true);
-  loadBranchData(matrix,true);
+  loadBusData<ComplexType,gridpack::math::Matrix>(matrix,true);
+  loadBranchData<ComplexType,gridpack::math::Matrix>(matrix,true);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
+/**
+ * Increment elements of existing matrix. This can be used to increment selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void incrementRealMatrix(gridpack::math::RealMatrix &matrix)
+{
+  GA_Pgroup_sync(p_GAgrp);
+  loadBusData<RealType,gridpack::math::RealMatrix>(matrix,true);
+  loadBranchData<RealType,gridpack::math::RealMatrix>(matrix,true);
   GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
 }
@@ -342,6 +380,16 @@ void incrementMatrix(gridpack::math::Matrix &matrix)
 void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   incrementMatrix(*matrix);
+}
+
+/**
+ * Increment elements of existing matrix. This can be used to increment selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void incrementRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
+{
+  incrementRealMatrix(*matrix);
 }
 
 /**
@@ -928,57 +976,13 @@ void setBusOffsets(void)
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBusData(gridpack::math::Matrix &matrix, bool flag)
+template <typename _datatype, class _matrixtype>
+  void loadBusData(_matrixtype &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
   // Add matrix elements
-  ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
-  int j,k;
-  int jcnt = 0;
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      bus = p_network->getBus(i);
-      if (bus->matrixDiagSize(&isize,&jsize)) {
-#ifdef DBG_CHECK
-        int ijsize = isize*jsize;
-        for (k=0; k<ijsize; k++) values[k] = 0.0;
-#endif
-        if (bus->matrixDiagValues(values)) {
-          icnt = 0;
-          for (k=0; k<jsize; k++) {
-            jdx = p_j_busOffsets[jcnt] + k;
-            for (j=0; j<isize; j++) {
-              idx = p_i_busOffsets[jcnt] + j;
-              if (flag) {
-                matrix.addElement(idx, jdx, values[icnt]);
-              } else {
-                matrix.setElement(idx, jdx, values[icnt]);
-              }
-              icnt++;
-            }
-          }
-        }
-        jcnt++;
-      }
-    }
-  }
-
-  // Clean up arrays
-  delete [] values;
-}
-
-/**
- * Add diagonal block contributions from buses to real matrix
- * @param matrix matrix to which contributions are added
- * @param flag flag to distinguish new matrix (true) from old (false)
- */
-void loadRealBusData(gridpack::math::RealMatrix &matrix, bool flag)
-{
-  int i,idx,jdx,isize,jsize,icnt;
-  boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
-  // Add matrix elements
-  RealType *values = new RealType[p_maxIBlock*p_maxJBlock];
+  _datatype *values = new _datatype[p_maxIBlock*p_maxJBlock];
   int j,k;
   int jcnt = 0;
   for (i=0; i<p_nBuses; i++) {
@@ -1018,19 +1022,10 @@ void loadRealBusData(gridpack::math::RealMatrix &matrix, bool flag)
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
+template <typename _datatype, class _matrixtype>
+  void loadBusData(boost::shared_ptr<_matrixtype> &matrix, bool flag)
 {
-  loadBusData(*matrix, flag);
-}
-
-/**
- * Add diagonal block contributions from buses to real matrix
- * @param matrix matrix to which contributions are added
- * @param flag flag to distinguish new matrix (true) from old (false)
- */
-void loadRealBusData(boost::shared_ptr<gridpack::math::RealMatrix> &matrix, bool flag)
-{
-  loadRealBusData(*matrix, flag);
+  loadBusData<_datatype, _matrixtype>(*matrix, flag);
 }
 
 /**
@@ -1080,8 +1075,8 @@ void setBranchOffsets(void)
   }
   if (icnt != p_branchContribution) {
     char buf[256];
-    sprintf(buf,"p[%d] Mismatch in loadBranchData icnt: %d branchContribution: %d\n",
-        p_me,icnt,p_branchContribution);
+    sprintf(buf,"p[%d] Mismatch in seetBranchOffsets icnt: %d"
+        " branchContribution: %d\n",p_me,icnt,p_branchContribution);
     printf("%s",buf);
     throw gridpack::Exception(buf);
   }
@@ -1111,7 +1106,8 @@ void setBranchOffsets(void)
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
+template <typename _datatype, class _matrixtype>
+  void loadBranchData(_matrixtype &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   // Add matrix elements
@@ -1119,7 +1115,7 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   if (p_timer) t_add = p_timer->createCategory("loadBranchData: Add Matrix Elements");
   if (p_timer) p_timer->start(t_add);
   boost::shared_ptr<gridpack::component::BaseBranchComponent> branch;
-  ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
+  _datatype *values = new _datatype[p_maxIBlock*p_maxJBlock];
   int j,k;
   int jcnt = 0;
   for (i=0; i<p_nBranches; i++) {
@@ -1183,101 +1179,16 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   delete [] values;
 }
 
-/**
- * Add off-diagonal block contributions from branches to real matrix
- * @param matrix matrix to which contributions are added
- * @param flag flag to distinguish new matrix (true) from old (false)
- */
-void loadRealBranchData(gridpack::math::RealMatrix &matrix, bool flag)
-{
-  int i,idx,jdx,isize,jsize,icnt;
-  // Add matrix elements
-  int t_add(0);
-  if (p_timer) t_add = p_timer->createCategory("loadBranchData: Add Matrix Elements");
-  if (p_timer) p_timer->start(t_add);
-  boost::shared_ptr<gridpack::component::BaseBranchComponent> branch;
-  RealType *values = new RealType[p_maxIBlock*p_maxJBlock];
-  int j,k;
-  int jcnt = 0;
-  for (i=0; i<p_nBranches; i++) {
-    branch = p_network->getBranch(i);
-    if (branch->matrixForwardSize(&isize,&jsize)) {
-      branch->getMatVecIndices(&idx, &jdx);
-      if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
-#ifdef DBG_CHECK
-        int ijsize = isize*jsize;
-        for (k=0; k<ijsize; k++) values[k] = 0.0;
-#endif
-        if (branch->matrixForwardValues(values)) {
-          icnt = 0;
-          for (k=0; k<jsize; k++) {
-            jdx = p_j_branchOffsets[jcnt] + k;
-            for (j=0; j<isize; j++) {
-              idx = p_i_branchOffsets[jcnt] + j;
-              if (flag) {
-                matrix.addElement(idx, jdx, values[icnt]);
-              } else {
-                matrix.setElement(idx, jdx, values[icnt]);
-              }
-              icnt++;
-            }
-          }
-        }
-        jcnt++;
-      }
-    }
-    if (branch->matrixReverseSize(&isize,&jsize)) {
-      branch->getMatVecIndices(&idx, &jdx);
-      if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
-#ifdef DBG_CHECK
-        int ijsize = isize*jsize;
-        for (k=0; k<ijsize; k++) values[k] = 0.0;
-#endif
-        if (branch->matrixReverseValues(values)) {
-          icnt = 0;
-          // Note that because the indices have been reversed, we need to switch
-          // the ordering of the offsets as well
-          for (k=0; k<jsize; k++) {
-            idx = p_j_branchOffsets[jcnt] + k;
-            for (j=0; j<isize; j++) {
-              jdx = p_i_branchOffsets[jcnt] + j;
-              if (flag) {
-                matrix.addElement(jdx, idx, values[icnt]);
-              } else {
-                matrix.setElement(jdx, idx, values[icnt]);
-              }
-              icnt++;
-            }
-          }
-        }
-        jcnt++;
-      }
-    }
-  }
-  if (p_timer) p_timer->stop(t_add);
-
-  // Clean up array
-  delete [] values;
-}
 
 /**
  * Add off-diagonal block contributions from branches to matrix
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
+template <typename _datatype, class _matrixtype>
+void loadBranchData(boost::shared_ptr<_matrixtype> &matrix, bool flag)
 {
-  loadBranchData(*matrix, flag);
-}
-
-/**
- * Add off-diagonal block contributions from branches to real matrix
- * @param matrix matrix to which contributions are added
- * @param flag flag to distinguish new matrix (true) from old (false)
- */
-void loadRealBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
-{
-  loadRealBranchData(*matrix, flag);
+  loadBranchData<_datatype,_matrixtype>(*matrix, flag);
 }
 
 /**

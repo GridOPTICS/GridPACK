@@ -90,7 +90,7 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(*Ret,true);
+  loadBusData<ComplexType,gridpack::math::Vector>(*Ret,true);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
@@ -114,7 +114,7 @@ boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadRealBusData(*Ret,true);
+  loadBusData<RealType,gridpack::math::RealVector>(*Ret,true);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
@@ -139,7 +139,7 @@ gridpack::math::Vector* intMapToVector(void)
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(*Ret,true);
+  loadBusData<ComplexType,gridpack::math::Vector>(*Ret,true);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
@@ -162,7 +162,7 @@ void mapToVector(gridpack::math::Vector &vector)
   if (p_timer) p_timer->stop(t_set);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(vector,false);
+  loadBusData<ComplexType,gridpack::math::Vector>(vector,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) p_timer->start(t_set);
   vector.ready();
@@ -183,7 +183,7 @@ void mapToRealVector(gridpack::math::RealVector &vector)
   if (p_timer) p_timer->stop(t_set);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadRealBusData(vector,false);
+  loadBusData<RealType,gridpack::math::RealVector>(vector,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) p_timer->start(t_set);
   vector.ready();
@@ -298,7 +298,8 @@ private:
  * @param vector vector to which contributions are added
  * @param flag flag to distinguish new vector (true) from existing vector * (false)
  */
-void loadBusData(gridpack::math::Vector &vector, bool flag)
+template <typename _datatype, class _vectortype>
+void loadBusData(_vectortype &vector, bool flag)
 {
   int i,idx,isize,icnt;
   // Add vector elements
@@ -310,8 +311,8 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   int t_pack, t_add;
   if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
   if (p_timer) p_timer->start(t_pack);
-  ComplexType *vbuf = new ComplexType[p_numValues];
-  ComplexType *vptr = vbuf;
+  _datatype *vbuf = new _datatype[p_numValues];
+  _datatype *vptr = vbuf;
   int *ibuf = new int[p_numValues];
   icnt = 0;
   for (i=0; i<p_busContribution; i++) {
@@ -340,61 +341,10 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
  * @param vector vector to which contributions are added
  * @param flag flag to distinguish new vector (true) from existing vector * (false)
  */
-void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
+template <typename _datatype, class _vectortype>
+void loadBusData(boost::shared_ptr<_vectortype> &vector, bool flag)
 {
-  int i,idx,isize,icnt;
-  // Add vector elements
-  boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
-  int t_bus(0);
-  if (p_timer) t_bus = p_timer->createCategory("loadBusData: Add Vector Elements");
-  if (p_timer) p_timer->start(t_bus);
-  int j;
-  int t_pack, t_add;
-  if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
-  if (p_timer) p_timer->start(t_pack);
-  RealType *vbuf = new RealType[p_numValues];
-  RealType *vptr = vbuf;
-  int *ibuf = new int[p_numValues];
-  icnt = 0;
-  for (i=0; i<p_busContribution; i++) {
-    p_contributingBuses[i]->vectorValues(vptr);
-    isize = p_ISize[i];
-    idx = p_Offsets[i];
-    for (j=0; j<isize; j++) {
-      ibuf[icnt] = idx;
-      idx++;
-      icnt++;
-    }
-    vptr += isize;
-  }
-  if (p_timer) p_timer->stop(t_pack);
-  if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
-  if (p_timer) p_timer->start(t_add);
-  vector.addElements(p_numValues,ibuf,vbuf);
-  if (p_timer) p_timer->stop(t_add);
-  delete [] vbuf;
-  delete [] ibuf;
-  if (p_timer) p_timer->stop(t_bus);
-}
-
-/**
- * Add block contributions from buses to vector
- * @param vector vector to which contributions are added
- * @param flag flag to distinguish new vector (true) from existing vector * (false)
- */
-void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
-{
-  loadBusData(*vector, flag);
-}
-
-/**
- * Add block contributions from buses to vector
- * @param vector vector to which contributions are added
- * @param flag flag to distinguish new vector (true) from existing vector * (false)
- */
-void loadRealBusData(boost::shared_ptr<gridpack::math::RealVector> &vector, bool flag)
-{
-  loadRealBusData(*vector, flag);
+  loadBusData<_datatype,_vectortype>(*vector, flag);
 }
 
 /**

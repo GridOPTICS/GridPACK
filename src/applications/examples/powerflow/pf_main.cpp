@@ -27,16 +27,11 @@ main(int argc, char **argv)
   // Initialize parallel environment. This will start up
   // the underlying communication libraries
   gridpack::Environment env(argc,argv);
-
-  // Initialize Math libraries
-  gridpack::math::Initialize(&argc,&argv);
-
-  // Create the power flow application and execute it
-  gridpack::powerflow::PFApp app;
-  app.execute(argc, argv);
-
-  // Terminate Math libraries
-  gridpack::math::Finalize();
+  {
+    // Create the power flow application and execute it
+    gridpack::powerflow::PFApp app;
+    app.execute(argc, argv);
+  }
 
   return 0;
 }

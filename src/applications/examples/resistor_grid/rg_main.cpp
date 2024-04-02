@@ -22,9 +22,10 @@ int
 main(int argc, char **argv)
 {
   gridpack::Environment env(argc, argv);
-
-  gridpack::resistor_grid::RGApp app;
-  app.execute(argc, argv);
+  {
+    gridpack::resistor_grid::RGApp app;
+    app.execute(argc, argv);
+  }
 
   return 0;
 }
