@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2024-04-17 09:25:14 d3g096
+# Last Change: 2024-04-17 09:26:14 d3g096
 # -------------------------------------------------------------
 
 import sys, os, time
@@ -63,6 +63,8 @@ class GridPACKTester(TestCase):
 
         print("conf.KeySep = \"%s\"" % (conf.KeySep))
 
+        self.assertEqual('.', conf.KeySep)
+
         d = os.path.dirname(os.path.abspath(__file__))
         os.chdir(d)
         
@@ -72,21 +74,22 @@ class GridPACKTester(TestCase):
                 ( gridpack.Configuration.KeySep,
                   gridpack.Configuration.KeySep))
         dt = conf.get(path)
-        if (dt):
-            print("dt = %f" % (float(dt)))
-        else:
-            print("path \"%s\" not found" % (path))
+        self.assertFalse(dt is None)
+        self.assertEqual(float(dt), 0.005)
+        print("dt = %f" % (float(dt)))
 
         path = ("Configuration%cDynamic_simulation" %
                 ( gridpack.Configuration.KeySep))
 
         cursor = conf.getCursor(path)
         dt = cursor.get("timeStep")
-        if (dt):
-            print("dt = %f" % (float(dt)))
-        else:
-            print("path \"%s\" not found" % (path))
 
+        self.assertFalse(dt is None)
+        self.assertEqual(float(dt), 0.005)
+        print("dt = %f" % (float(dt)))
+
+        cursor2 = cursor.getCursor("observations")
+        self.assertFalse(cursor2 is None)
         
     # def hadrec_test(self):
 

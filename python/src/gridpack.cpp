@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:25:35 d3g096
+// Last Change: 2024-04-17 09:26:04 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -245,6 +245,17 @@ PYBIND11_MODULE(gridpack, gpm) {
            }
            return py::object();
          })
+    .def("getCursor",
+         [](ConfigurationCursorWrapper& self,
+            const gpu::Configuration::KeyType& key) -> py::object {
+           gpu::Configuration::CursorPtr s = self.the_cursor->getCursor(key);
+           if (s) {
+             ConfigurationCursorWrapper result;
+             result.the_cursor = s;
+             return py::cast(result);
+           } 
+           return py::object();
+         })
     ;
   
   py::class_<gpu::Configuration, std::unique_ptr<gpu::Configuration, py::nodelete>> (gpm, "Configuration")
@@ -396,7 +407,8 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("getEvents",
          [](gpds::DSFullApp& self, ConfigurationCursorWrapper c) {
            return (self.getEvents(c.the_cursor));
-         })
+         },
+         py::return_value_policy::copy)
     .def("setEvent", &gpds::DSFullApp::setEvent)
     ;
 
