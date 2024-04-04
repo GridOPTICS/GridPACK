@@ -8,6 +8,7 @@
 
 import sys, os
 import gridpack
+import numpy as np
 from gridpack.dynamic_simulation import DSFullApp, Event, EventVector
 
 # -------------------------------------------------------------
@@ -32,7 +33,7 @@ ds_app.solvePowerFlowBeforeDynSimu(inname, 0)
 conf = gridpack.Configuration()
 cursor = conf.getCursor("Configuration.Dynamic_simulation")
 
-ds_app.readGenerators();
+ds_app.readGenerators(0);
 ds_app.readSequenceData();
 ds_app.initialize();
 ds_app.setGeneratorWatch();
@@ -92,23 +93,36 @@ while (not ds_app.isDynSimuDone()):
     ds_app.executeOneSimuStep()       
     print('After step')
 
-    print('Before getObservations')
-    ( vMag, vAng,
-      rSpd, rAng,
-      genP, genQ,
-      fOnline, busfreq) = ds_app.getObservations_withBusFreq()
-    obs_vals = [ float(isteps)*dt ]
-    obs_vals.extend(rSpd)
-    obs_vals.extend(rAng)
-    obs_vals.extend(genP)
-    obs_vals.extend(genQ)
-    obs_vals.extend(vMag)
-    obs_vals.extend(vAng)
-    obs_vals.extend(fOnline)
-    obs_vals.extend(busfreq)
-    print('After getObservations')
+    if 	isteps%outputob_nsimustep == 0:
+        print('Before getObservations')
+        ( vMag, vAng,
+          rSpd, rAng,
+          genP, genQ,
+          fOnline, busfreq) = ds_app.getObservations_withBusFreq()
+        ob_vals = [ float(isteps)*dt ]
+        ob_vals.extend(rSpd)
+        ob_vals.extend(rAng)
+        ob_vals.extend(genP)
+        ob_vals.extend(genQ)
+        ob_vals.extend(vMag)
+        ob_vals.extend(vAng)
+        ob_vals.extend(fOnline)
+        ob_vals.extend(busfreq)
+        print('After getObservations')
+        
+        print('Before insert')
+        observation_list.append(ob_vals)
+        print('After insert')
     isteps = isteps + 1
 
-ds_app = None
+np_data = np.array(observation_list)
 
+import pandas as pd
+pd_data = pd.DataFrame(np_data,columns=csvhead)
+
+csv_wrt_f = '39bus_test_example_dsf_observations'
+
+pd_data.to_csv(csv_wrt_f+'.csv', index=False)
+
+ds_app = None
 env = None
