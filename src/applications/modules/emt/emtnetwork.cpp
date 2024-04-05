@@ -753,7 +753,9 @@ void EmtBus::load(const
     }
 
     std::string lmodel;
+    double ql;
     data->getValue(LOAD_MODEL,&lmodel,i);
+    data->getValue(LOAD_QL, &ql, i); // Reactive part of load
 
     if(lmodel.empty()) {
       // No load model given, so use a R-L impedance model
@@ -762,6 +764,25 @@ void EmtBus::load(const
       p_load[i] = ciload;
 
       p_load[i]->setStatus(lstatus);
+
+      if(lstatus) {
+	// If the reactive portion of load is negative (capacitive load),
+	// add an equivalent shunt capacitor at the bus and remove the
+	// reactive power load part from the load data
+	if(ql < -1e-6) {
+	  double Cload;
+
+	  Cload = ((-ql/p_sbase)/(p_Vm0*p_Vm0))/OMEGA_S;
+
+	  p_Cshunt[0][0] += Cload;
+	  p_Cshunt[1][1] += Cload;
+	  p_Cshunt[2][2] += Cload;
+	  p_hasCapacitiveShunt = true;
+
+	  data->setValue(LOAD_QL, 0.0, i); // Set reactive part of load to 0
+
+	}
+      }
     } else {
       std::string type = util.trimQuotes(lmodel);
       util.toUpper(type);
