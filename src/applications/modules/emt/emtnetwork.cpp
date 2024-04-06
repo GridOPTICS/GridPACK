@@ -28,6 +28,7 @@
 #include <model_classes/repca1.hpp>
 #include <model_classes/tgov1.hpp>
 #include <model_classes/lumpedline.hpp>
+#include <model_classes/transformer.hpp>
 
 /**
  *  Simple constructor
@@ -1788,9 +1789,9 @@ void EmtBranch::load(
       p_branch[i] = lumpedline;
     } else {
       // Transformers to be handled later
-      Lumpedline *lumpedline;
-      lumpedline = new Lumpedline;
-      p_branch[i] = lumpedline;
+      Transformer *transformer;
+      transformer = new Transformer;
+      p_branch[i] = transformer;
     }
 
     p_branch[i]->setStatus(status);
