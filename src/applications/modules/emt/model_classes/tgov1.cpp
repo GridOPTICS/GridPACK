@@ -136,10 +136,12 @@ void Tgov1::init(gridpack::RealType* xin)
   xout = Pmech;
 
   Pref = R*Pmech + dw;
-  
-  x[0] = x1;
-  x[1] = x2;
-  x[2] = xout;
+
+  if(integrationtype == IMPLICIT) {
+    x[0] = x1;
+    x[1] = x2;
+    x[2] = xout;
+  }
 }
 
 /**
@@ -172,6 +174,8 @@ void Tgov1::write(const char* signal, char* string)
 void Tgov1::setValues(gridpack::RealType *val)
 {
   gridpack::RealType *values = val+offsetb; // governor array starts from this location
+
+  if(integrationtype == EXPLICIT) return;
 
   if(p_mode == XVECTOBUS) {
     x1 = values[0];
@@ -208,7 +212,7 @@ void Tgov1::vectorGetValues(gridpack::RealType *values)
 
     Pmech = x2 + T2/T3*x1 + Dt*dw;
 
-    f[xout_idx] = xout - Pmech;
+    f[xout_idx] = Pmech - xout;
   }
 }
 
@@ -267,15 +271,15 @@ void Tgov1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, i
 
   ctr += 2;
 
-  rows[ctr] = xout_gloc; cols[ctr] = x1_gloc;
+  rows[ctr]   = xout_gloc; cols[ctr] = x1_gloc;
   rows[ctr+1] = xout_gloc; cols[ctr+1] = x2_gloc;
   rows[ctr+2] = xout_gloc; cols[ctr+2] = xout_gloc;
   rows[ctr+3] = xout_gloc; cols[ctr+3] = dw_gloc;
 
-  values[ctr] = T2/T3;
+  values[ctr]   = T2/T3;
   values[ctr+1] = 1.0;
-  values[ctr+2] = Dt;
-  values[ctr+3] = -1.0;
+  values[ctr+2] = -1.0;
+  values[ctr+3] = Dt;
   
   ctr += 4;
 
@@ -297,7 +301,7 @@ void Tgov1::setInitialMechanicalPower(double Pmech0)
  */
 double Tgov1::getMechanicalPower()
 {
-  return Pmech;
+  return xout;
 }
 
 /** 

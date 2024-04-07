@@ -15,6 +15,13 @@ Genrou::Genrou(void)
   flux_speed_sensitivity = 0;
 }
 
+void Genrou::getnvar(int *nvar)
+{
+  if(integrationtype == EXPLICIT) nxgen = 10;
+  *nvar = nxgen;
+}
+
+
 Genrou::~Genrou(void)
 {
 }
@@ -151,21 +158,22 @@ void Genrou::init(gridpack::RealType* xin)
   LadIfd = -Eqp - (Xd - Xdp)*(Id - param*dpsi1ddt);
 
   Efd = -LadIfd;
-  
-  // Initialized state variables
-  x[0] = psid;
-  x[1] = psiq;
-  x[2] = psi0;
-  x[3] = Eqp;
-  x[4] = psi1d;
-  x[5] = Edp;
-  x[6] = psi2q;
-  x[7] = delta;
-  x[8] = dw;
-  x[9] = iabc[0]*mbase/sbase;
-  x[10] = iabc[1]*mbase/sbase;
-  x[11] = iabc[2]*mbase/sbase;
 
+  if(integrationtype != EXPLICIT) {
+    // Initialized state variables
+    x[0] = psid;
+    x[1] = psiq;
+    x[2] = psi0;
+    x[3] = Eqp;
+    x[4] = psi1d;
+    x[5] = Edp;
+    x[6] = psi2q;
+    x[7] = delta;
+    x[8] = dw;
+    x[9] = iabc[0]*mbase/sbase;
+    x[10] = iabc[1]*mbase/sbase;
+    x[11] = iabc[2]*mbase/sbase;
+  }
 }
 
 /**
@@ -198,6 +206,8 @@ void Genrou::write(const char* signal, char* string)
 void Genrou::setValues(gridpack::RealType *values)
 {
   gridpack::RealType *x = values+offsetb; // generator array starts from this location
+
+  if(integrationtype != IMPLICIT) return;
 
   if(p_mode == XVECTOBUS) {
     psid  = x[0];
@@ -238,6 +248,8 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
 {
   gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
+  if(integrationtype != IMPLICIT) return;
+
   if(p_mode == RESIDUAL_EVAL) {
     double theta = delta - PI/2.0;
 
@@ -269,9 +281,9 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
     idq0[1] = Iq;
     idq0[2] = I0;
 
-    f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd);// - dpsid;
-    f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq);// - dpsiq;
-    f[2] = OMEGA_S*(Ra*I0 + V0);// - dpsi0;
+    f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd) - dpsid;
+    f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq) - dpsiq;
+    f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
 
     if(hasExciter()) {
       Efd = getExciter()->getFieldVoltage();
@@ -320,9 +332,20 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
    */
 void Genrou::getCurrent(double *ia, double *ib, double *ic)
 {
-  *ia = iabc[0];
-  *ib = iabc[1];
-  *ic = iabc[2];
+  if(integrationtype == IMPLICIT) {
+    *ia = iabc[0];
+    *ib = iabc[1];
+    *ic = iabc[2];
+  } else {
+    double theta = delta - PI/2.0;
+    double igen[3];
+
+    dq02abc(idq0,p_time,theta,igen);
+
+    *ia = igen[0]*mbase/sbase;
+    *ib = igen[1]*mbase/sbase;
+    *ic = igen[2]*mbase/sbase;
+  }
 }
 
 /**
@@ -331,7 +354,11 @@ void Genrou::getCurrent(double *ia, double *ib, double *ic)
  */
 void Genrou::getCurrentGlobalLocation(int *i_gloc)
 {
-  *i_gloc = p_gloc + 9;
+  if(integrationtype == IMPLICIT) {
+    *i_gloc = p_gloc + 9;
+  } else {
+    *i_gloc = -1; // No current variables for this model
+  }
 }
 
 
@@ -359,10 +386,12 @@ void Genrou::getCurrentGlobalLocation(int *i_gloc)
  */
 int Genrou::matrixNumValues()
 {
-  int numVals = 69;
-  if(hasExciter()) numVals += 1;
-  if(hasGovernor()) numVals += 1;
-
+  int numVals = 0;
+  if(integrationtype == IMPLICIT) {
+    numVals = 69 + 10;
+    if(hasExciter()) numVals += 1;
+    if(hasGovernor()) numVals += 1;
+  }
   return numVals;
 }
 
@@ -375,6 +404,9 @@ int Genrou::matrixNumValues()
  */
 void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
+  *nvals = 0;
+  if(integrationtype != IMPLICIT) return;
+  
   int ctr = 0;
   // Set up some indices
   int psid_idx = p_gloc;
@@ -427,7 +459,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   // Derivatives w.r.t dpisd_dt
   // psid
   rows[ctr] = psid_idx; cols[ctr] = psid_idx;
-  values[ctr] = OMEGA_S*Ra*dId_dpsid;// - shift;
+  values[ctr] = OMEGA_S*Ra*dId_dpsid - shift;
   
   rows[ctr+1] = psid_idx; cols[ctr+1] = psiq_idx;
   values[ctr+1] = OMEGA_S*(1 + flux_speed_sensitivity*dw);
@@ -472,7 +504,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   values[ctr] = -OMEGA_S*(1 + flux_speed_sensitivity*dw);
   
   rows[ctr+1] = psiq_idx; cols[ctr+1] = psiq_idx;
-  values[ctr+1] = OMEGA_S*Ra*dIq_dpsiq;// - shift;
+  values[ctr+1] = OMEGA_S*Ra*dIq_dpsiq - shift;
 
   ctr += 2;
 
@@ -511,7 +543,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   // Derivatives w.r.t dpsi0_dt
 
   rows[ctr] = psi0_idx;  cols[ctr] = psi0_idx;
-  values[ctr] = OMEGA_S*Ra*dI0_dpsi0;// - shift;
+  values[ctr] = OMEGA_S*Ra*dI0_dpsi0 - shift;
 
   ctr += 1;
 
@@ -771,3 +803,116 @@ double Genrou::getInitialFieldVoltage()
 {
   return Efd;
 }
+
+/**
+   Prestep function
+*/
+void Genrou::preStep(double time ,double timestep)
+{
+  if(integrationtype != EXPLICIT) {
+    return;
+  }
+
+  double x[9],f[9];
+
+  x[0] = psid;
+  x[1] = psiq;
+  x[2] = psi0;
+  x[3] = Eqp;
+  x[4] = psi1d;
+  x[5] = Edp;
+  x[6] = psi2q;
+  x[7] = delta;
+  x[8] = dw;
+
+  double theta = delta - PI/2.0;
+
+  double tempd1,tempd2,tempq1,tempq2;
+  tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+  tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+  tempq1 = (Xdpp - Xl)/(Xqp - Xl);
+  tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
+  
+  vabc[0] = p_va;
+  vabc[1] = p_vb;
+  vabc[2] = p_vc;
+
+  // Network to machine reference frame transformation
+  abc2dq0(vabc,p_time,theta,vdq0);
+  
+  double Vd, Vq, V0, Id, Iq, I0;
+
+  Vd = vdq0[0];
+  Vq = vdq0[1];
+  V0 = vdq0[2];
+  
+  Id = (psid - tempd1*Eqp - tempd2*psi1d)/-Xdpp;
+  Iq = (psiq + tempq1*Edp - tempq2*psi2q)/-Xdpp;
+  I0 = psi0/-Xl;
+  
+  idq0[0] = Id;
+  idq0[1] = Iq;
+  idq0[2] = I0;
+
+  f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd);
+  f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq);
+  f[2] = OMEGA_S*(Ra*I0 + V0);
+
+  if(hasExciter()) {
+    Efd = getExciter()->getFieldVoltage();
+  }
+		    
+  double dpsi1ddt;
+  double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
+
+  dpsi1ddt = -psi1d + Eqp - (Xdp - Xl)*Id;
+
+  f[3] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop;
+
+  f[4] = dpsi1ddt/Tdopp;
+
+  double dpsi2qdt;
+  double param2 = (Xqp - Xdpp)/((Xqp - Xl)*(Xqp - Xl));
+  
+  dpsi2qdt = -psi2q - Edp - (Xqp - Xl)*Iq;
+
+  f[5] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop;
+
+  f[6] = dpsi2qdt/Tqopp;
+
+  f[7] = OMEGA_S*dw;
+
+  if(hasGovernor()) {
+    TM = getGovernor()->getMechanicalPower();
+  }
+  
+  f[8] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)); 
+
+  for(int i=0; i < 9; i++) {
+    x[i] += timestep*f[i]; // Forward Euler update
+  }
+
+  psid  = x[0];
+  psiq  = x[1];
+  psi0  = x[2];
+  Eqp   = x[3];
+  psi1d = x[4];
+  Edp   = x[5];
+  psi2q = x[6];
+  delta = x[7];
+  dw    = x[8];
+  
+}
+
+/**
+   Post step function
+*/
+void Genrou::postStep(double time)
+{
+  if(integrationtype != EXPLICIT) {
+    return;
+  }
+
+}
+
+
