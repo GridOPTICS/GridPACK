@@ -44,7 +44,7 @@ Ieeet1::Ieeet1(void)
   zero_TA = false;
   zero_TR = false;
 
-  nxexc = 5;
+  nxexc = 4;
 }
 
 Ieeet1::~Ieeet1(void)
@@ -341,7 +341,7 @@ void Ieeet1::vectorGetValues(gridpack::RealType *values)
 int Ieeet1::matrixNumValues()
 {
   int nmat = 0;
-  if(integrationtype == IMPLICIT) nmat = 13;
+  if(integrationtype == IMPLICIT) nmat = 13 + 5;
   return nmat;
 }
 

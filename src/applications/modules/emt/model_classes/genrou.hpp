@@ -99,10 +99,28 @@ class Genrou: public BaseEMTGenModel
    */
   double getSpeedDeviation(int *dw_gloc)
   {
-    *dw_gloc = p_gloc + 8;
+    if(integrationtype != EXPLICIT) {
+      *dw_gloc = p_gloc + 8;
+    } else *dw_gloc = -1;
+    
     return dw;
   }
 
+  /**
+     Prestep function
+  */
+  void preStep(double time ,double timestep);
+  
+  /**
+     Poststep function
+  */
+  void postStep(double time);
+  
+  /**
+     Number of variables
+  */ 
+  void getnvar(int *nvar);
+  
   /**
    * Get number of matrix values contributed by generator
    * @return number of matrix values
