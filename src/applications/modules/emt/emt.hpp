@@ -160,6 +160,12 @@ public:
   void operator() (const double& time,
 		   const gridpack::math::RealVector& X)
   {
+    int nsteps = p_daesolver->getstepnumber();
+    if(nsteps % reuseprecon_nsteps == 0) {
+      //      p_daesolver->reusepreconditioner(-2); // Update preconditioner at next step
+    } else {
+      //      p_daesolver->reusepreconditioner(-1); // Reuse preconditioner
+    }
     p_factory->postStep(time);
   }
 
@@ -242,6 +248,8 @@ public:
 
   // Integration algorithm for machines
   EMTMachineIntegrationType p_emtmachineintegrationtype;
+
+  int reuseprecon_nsteps; // Reuse preconditioner for nsteps
 
   /// These class needs to see inside Emt
   friend class EmtTimedFaultEvent;

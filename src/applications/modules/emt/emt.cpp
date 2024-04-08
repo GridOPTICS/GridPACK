@@ -39,6 +39,8 @@ protected:
 
     p_sim->p_daesolver->restartstep();
 
+    //    p_sim->p_daesolver->reusepreconditioner(-2); // Update preconditioner
+
   }
 
   
@@ -46,12 +48,14 @@ protected:
 
 Emt::Emt(void)
   : p_isSetUp(0),
+    reuseprecon_nsteps(1),
     emt_network(new EmtNetwork(p_comm))
 {}
 
 Emt::Emt(gridpack::parallel::Communicator comm)
   : p_comm(comm),
     p_isSetUp(0),
+    reuseprecon_nsteps(1),
     emt_network(new EmtNetwork(p_comm))
 {}
 
