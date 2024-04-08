@@ -86,12 +86,22 @@ public:
     this->p_restartstep();
   }
 
+  void reusepreconditioner(int niter)
+  {
+    this->p_reusepreconditioner(niter);
+  }
+
   /* return time step */
   double gettimestep()
   {
     return this->p_gettimestep();
   }
 
+  /// Get number of steps
+  int getstepnumber()
+  {
+    return this->p_getstepnumber();
+  }
 
   /// Solve the system to when @c end_time or @c maxsteps is exceeded
   /** 
@@ -149,6 +159,12 @@ protected:
 
   /// Get time step
   virtual double p_gettimestep() = 0;
+
+  /// Get step number
+  virtual int p_getstepnumber() = 0;
+
+  /// Reuse preconditioner
+  virtual void p_reusepreconditioner(int niter) = 0;
   
   /// Solve the system (specialized)
   virtual void p_solve(double& maxtime, int& maxsteps) = 0;

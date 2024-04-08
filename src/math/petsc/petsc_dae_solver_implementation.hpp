@@ -235,6 +235,19 @@ protected:
     }
   }
 
+  /// Reuse preconditioner
+  void p_reusepreconditioner(int niter)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      SNES snes;
+      ierr = TSGetSNES(p_ts,&snes);CHKERRXX(ierr);
+      ierr = SNESSetLagPreconditioner(snes,niter);CHKERRXX(ierr);
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
   /// Get time step
   double p_gettimestep()
   {
@@ -243,6 +256,19 @@ protected:
       double dt;
       ierr = TSGetTimeStep(p_ts,&dt);CHKERRXX(ierr);
       return dt;
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+  
+  /// Get number of steps
+  int p_getstepnumber()
+  {
+    PetscErrorCode ierr(0);
+    try {
+      int nsteps;
+      ierr = TSGetStepNumber(p_ts,&nsteps);CHKERRXX(ierr);
+      return nsteps;
     } catch(const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }

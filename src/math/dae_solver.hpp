@@ -134,6 +134,17 @@ public:
     p_impl->restartstep();
   }
 
+  /// Reuse preconditioner
+  /**
+   *
+   * Note: PETSc provides functionality to lag the preconditioner (see SNESSetLagPreconditioner). This is particularly useful
+   * when for large systems when we can reuse the preconditioner for several steps
+   */
+  void reusepreconditioner(int niter)
+  {
+    p_impl->reusepreconditioner(niter);
+  }
+
   /**
    * gettimestep - returns the current time-step
    * @param [output] dt - current time step
@@ -142,6 +153,16 @@ public:
   {
     return p_impl->gettimestep();
   }
+
+  /**
+   * getstepnumber - returns the number of time steps completed
+   * @param [output] nsteps - number of timesteps
+   **/
+  int getstepnumber()
+  {
+    return p_impl->getstepnumber();
+  }
+
 
   /// Solve the system to when @c end_time or @c maxsteps is exceeded
   /** 
@@ -195,6 +216,19 @@ protected:
   double p_gettimestep()
   {
     return p_impl->gettimestep();
+  }
+
+  /// Get number of steps
+  int p_getstepnumber()
+  {
+    return p_impl->getstepnumber();
+  }
+
+
+  /// Reuse preconditioner
+  void p_reusepreconditioner(int niter)
+  {
+    p_impl->reusepreconditioner(niter);
   }
   
   /// Solve the system (specialized)
