@@ -17,7 +17,7 @@ Genrou::Genrou(void)
 
 void Genrou::getnvar(int *nvar)
 {
-  if(integrationtype == EXPLICIT) nxgen = 10;
+  if(integrationtype == EXPLICIT) nxgen = 0;
   *nvar = nxgen;
 }
 
@@ -281,9 +281,9 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
     idq0[1] = Iq;
     idq0[2] = I0;
 
-    f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd) - dpsid;
-    f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq) - dpsiq;
-    f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
+    f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd); // - dpsid;
+    f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq); // - dpsiq;
+    f[2] = OMEGA_S*(Ra*I0 + V0); // - dpsi0;
 
     if(hasExciter()) {
       Efd = getExciter()->getFieldVoltage();
@@ -459,7 +459,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   // Derivatives w.r.t dpisd_dt
   // psid
   rows[ctr] = psid_idx; cols[ctr] = psid_idx;
-  values[ctr] = OMEGA_S*Ra*dId_dpsid - shift;
+  values[ctr] = OMEGA_S*Ra*dId_dpsid;// - shift;
   
   rows[ctr+1] = psid_idx; cols[ctr+1] = psiq_idx;
   values[ctr+1] = OMEGA_S*(1 + flux_speed_sensitivity*dw);
@@ -504,7 +504,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   values[ctr] = -OMEGA_S*(1 + flux_speed_sensitivity*dw);
   
   rows[ctr+1] = psiq_idx; cols[ctr+1] = psiq_idx;
-  values[ctr+1] = OMEGA_S*Ra*dIq_dpsiq - shift;
+  values[ctr+1] = OMEGA_S*Ra*dIq_dpsiq;// - shift;
 
   ctr += 2;
 
@@ -543,7 +543,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   // Derivatives w.r.t dpsi0_dt
 
   rows[ctr] = psi0_idx;  cols[ctr] = psi0_idx;
-  values[ctr] = OMEGA_S*Ra*dI0_dpsi0 - shift;
+  values[ctr] = OMEGA_S*Ra*dI0_dpsi0; // - shift;
 
   ctr += 1;
 
