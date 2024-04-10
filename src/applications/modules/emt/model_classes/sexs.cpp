@@ -9,7 +9,7 @@
  * 
  * @brief  
  * 
- * @ Updated by Shuangshuang Jin on March 15, 2024.
+ * @ Updated by Shuangshuang Jin on April 10, 2024.
  */
 
 #include <sexs.hpp>
@@ -98,6 +98,7 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
   if (!data->getValue(EXCITER_EMAX, &EMAX, idx)) EMAX = 0.0; // EMAX
   if (!data->getValue(EXCITER_EMIN, &EMIN, idx)) EMIN = 0.0; // EMIN
   if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
+  //printf("%f, %f, %f, %f, %f, %f\n", TA_OVER_TB, TB, K, EMAX, EMIN, TE);
 
   TA = TA_OVER_TB*TB;
 
