@@ -263,7 +263,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public NetworkTopologyInterface
+  : public parallel::Distributed
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -286,7 +286,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : NetworkTopologyInterface(comm)
+  : parallel::Distributed(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;
@@ -2543,88 +2543,6 @@ void broadcastNetworkData(int idx)
   boost::mpi::broadcast(comm, p_network_data, idx);
 }
 
-/// Get the number of generators on the network
-/**
- * collective
- *
- *
- * @return number of generators on the entire network
- */
-int numGenerators(void)
-{
-  int result(0);
-  const int nBus(p_buses.size());
-  
-  for (int i = 0; i < nBus; ++i) {
-    if (p_buses[i].p_activeBus) {
-      result += p_buses[i].p_bus->numGenerators();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-/// Get the number of loads on the network
-/**
- * collective
- *
- * @return number of loads on the entire network
- */
-int numLoads(void)
-{
-  int result(0);
-  const int nBus(p_buses.size());
-  
-  for (int i = 0; i < nBus; ++i) {
-    if (p_buses[i].p_activeBus) {
-      result += p_buses[i].p_bus->numLoads();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-/// Get the number of storage units on the network
-/**
- * collective
- *
- * @return number of storage units on the entire network
- */
-int numStorage(void)
-{
-  int result(0);
-  const int nBus(p_buses.size());
-  
-  for (int i = 0; i < nBus; ++i) {
-    if (p_buses[i].p_activeBus) {
-      result += p_buses[i].p_bus->numStorage();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-/// Get the number of lines in the network
-/**
- * collective
- *
- * @return number of lines the entire network
- */
-int numLines(void)
-{
-  int result(0);
-  const int nBranch(p_branches.size());
-  
-  for (int i = 0; i < nBranch; ++i) {
-    if (p_branches[i].p_activeBranch) {
-      result += p_branches[i].p_branch->numLines();
-    }
-  }
-  this->communicator().sum(&result, 1);
-  return result;
-}
-
-  
 protected:
 
 /**

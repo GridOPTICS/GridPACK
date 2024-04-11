@@ -69,19 +69,11 @@ int main(int argc, char **argv)
     }
     pf_app.readNetwork(pf_network,config);
     pf_app.initialize();
-    int ngen = pf_network->numGenerators();
-    int nload = pf_network->numLoads();
-    int nline = pf_network->numLines();
-    if (world.rank() == 0) {
-      std::cout<<"Properties from network analytics"<<std::endl;
-      std::cout<<"Number of generators in network: "<<ngen<<std::endl;
-      std::cout<<"Number of loads in network:      "<<nload<<std::endl;
-      std::cout<<"Number of lines in network:      "<<nline<<std::endl;
-    }
-    gridpack::analysis::NetworkAnalytics analytics(pf_network);
-    ngen = analytics.numGenerators();
-    nload = analytics.numLoads();
-    nline = analytics.numLines();
+    gridpack::analysis::NetworkAnalytics<gridpack::powerflow::PFNetwork>
+      analytics(pf_network);
+    int ngen = analytics.numGenerators();
+    int nload = analytics.numLoads();
+    int nline = analytics.numLines();
     if (world.rank() == 0) {
       std::cout<<"Properties from analytics module"<<std::endl;
       std::cout<<"Number of generators in network: "<<ngen<<std::endl;
