@@ -24,6 +24,7 @@
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
+#include <gridpack/analysis/network_analytics.hpp>
 
 namespace gridpack {
 namespace hadrec {
@@ -404,6 +405,11 @@ class HADRECAppModule
 	
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullApp> ds_app_sptr;
+
+   boost::shared_ptr<gridpack::analysis::NetworkAnalytics<
+     gridpack::powerflow::PFNetwork> > pf_analytics;
+   boost::shared_ptr<gridpack::analysis::NetworkAnalytics<
+     gridpack::dynamic_simulation::DSFullNetwork> > ds_analytics;
 	
     int t_total;
 	int t_config;

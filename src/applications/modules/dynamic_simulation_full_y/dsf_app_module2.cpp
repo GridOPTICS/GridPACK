@@ -45,6 +45,42 @@ double gridpack::dynamic_simulation::DSFullApp::getCurrentTime()
 }
 
 /**
+ * get total number of generators in network
+ * @return number of generators
+ */
+int gridpack::dynamic_simulation::DSFullApp::numGenerators()
+{
+  return p_analytics->numGenerators();
+}
+
+/**
+ * get total number of loads in network
+ * @return number of loads
+ */
+int gridpack::dynamic_simulation::DSFullApp::numLoads()
+{
+  return p_analytics->numLoads();
+}
+
+/**
+ * get total number of storage units in network
+ * @return number of loads
+ */
+int gridpack::dynamic_simulation::DSFullApp::numStorage()
+{
+  return p_analytics->numStorage();
+}
+
+/**
+ * get total number of lines in network
+ * @return number of lines
+ */
+int gridpack::dynamic_simulation::DSFullApp::numLines()
+{
+  return p_analytics->numLines();
+}
+
+/**
  * Reset data structures
  */
 void gridpack::dynamic_simulation::DSFullApp::reset()

@@ -28,6 +28,7 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/parser/dictionary.hpp"
+#include "gridpack/analysis/network_analytics.hpp"
 //#include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 
 
@@ -635,6 +636,30 @@ class DSFullApp
     */
     double getCurrentTime();
 
+    /**
+     * get total number of generators in network
+     * @return number of generators
+     */
+    int numGenerators();
+
+    /**
+     * get total number of loads in network
+     * @return number of loads
+     */
+    int numLoads();
+
+    /**
+     * get total number of storage units in network
+     * @return number of loads
+     */
+    int numStorage();
+
+    /**
+     * get total number of lines in network
+     * @return number of lines
+     */
+    int numLines();
+
   /**
    * Transfer data from power flow to dynamic simulation
    * @param pf_network power flow network
@@ -1084,6 +1109,10 @@ class DSFullApp
    boost::shared_ptr<gridpack::math::LinearSolver> solver_sptr;
    boost::shared_ptr<gridpack::math::LinearSolver> solver_fy_sptr;
    boost::shared_ptr<gridpack::math::LinearSolver> solver_posfy_sptr;
+
+   // analytics module
+   boost::shared_ptr<gridpack::analysis::NetworkAnalytics<DSFullNetwork> >
+     p_analytics;
    
    int simu_total_steps;
    int S_Steps;

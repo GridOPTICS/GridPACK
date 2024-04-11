@@ -25,8 +25,7 @@
  * Basic constructor
  */
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
-  : gridpack::network::NetworkTopologyInterface(),
-    config_sptr(new gridpack::utility::Configuration())
+  : config_sptr(new gridpack::utility::Configuration())
 {
 	bconfig_sptr_set = false;
 	p_PFuseNonLinear = false;
@@ -90,6 +89,7 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
 	
     pf_app_sptr->readNetwork(pf_network, &(*config_sptr), pfcase_idx);
     pf_app_sptr->initialize();
+    pf_analytics.reset(new gridpack::analysis::NetworkAnalytics(pf_network));
     if (useNonLinear) {
       pf_app_sptr->nl_solve();
     } else {
@@ -158,6 +158,7 @@ bool gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu_withFlag(
 	
     pf_app_sptr->readNetwork(pf_network, &(*config_sptr), pfcase_idx);
     pf_app_sptr->initialize();
+    pf_analytics.reset(new gridpack::analysis::NetworkAnalytics(pf_network));
 	
 	bool pf_succ_flag;
     if (useNonLinear) {
@@ -243,6 +244,7 @@ void gridpack::hadrec::HADRECAppModule::readPowerFlowData(
 bool gridpack::hadrec::HADRECAppModule::solvePowerFlow(){
 	
 	pf_app_sptr->initialize();
+   pf_analytics.reset(new gridpack::analysis::NetworkAnalytics(pf_network));
 	
 	bool pf_succ_flag;
     if (p_PFuseNonLinear) {
@@ -272,6 +274,7 @@ void gridpack::hadrec::HADRECAppModule::transferPFtoDS()
 		    gridpack::dynamic_simulation::DSFullBranch>(ds_network);
 
   ds_app_sptr->transferPFtoDS(pf_network,ds_network);
+  ds_analytics.reset(new gridpack::analysis::NetworkAnalytics(ds_network));
 }
 
 /**
@@ -301,6 +304,7 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
   ds_app_sptr->readGenerators(dscase_idx);
   //printf("ds_app_sptr->initialize:\n");
   ds_app_sptr->initialize();
+  ds_analytics.reset(new gridpack::analysis::NetworkAnalytics(ds_network));
   //printf("ds_app_sptr->setGeneratorWatch:\n");
   ds_app_sptr->setGeneratorWatch();
   //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
@@ -932,9 +936,9 @@ int gridpack::hadrec::HADRECAppModule::numGenerators(void)
   int result(0);
 
   if (ds_network) {
-    result = ds_network->numGenerators();
+    result = ds_analytics->numGenerators();
   } else if (pf_network) {
-    result = pf_network->numGenerators();
+    result = pf_analytics->numGenerators();
   } else {
     throw gridpack::Exception("HADRECAppModule::numGenerators(): network not defined");
   }
@@ -947,9 +951,9 @@ int gridpack::hadrec::HADRECAppModule::numLoads(void)
   int result(0);
 
   if (ds_network) {
-    result = ds_network->numLoads();
+    result = ds_analytics->numLoads();
   } else if (pf_network) {
-    result = pf_network->numLoads();
+    result = pf_analytics->numLoads();
   } else {
     throw gridpack::Exception("HADRECAppModule::numLoads(): network not defined");
   }
@@ -962,9 +966,9 @@ int gridpack::hadrec::HADRECAppModule::numStorage(void)
   int result(0);
 
   if (ds_network) {
-    result = ds_network->numStorage();
+    result = ds_analytics->numStorage();
   } else if (pf_network) {
-    result = pf_network->numStorage();
+    result = pf_analytics->numStorage();
   } else {
     throw gridpack::Exception("HADRECAppModule::numStorage(): network not defined");
   }
