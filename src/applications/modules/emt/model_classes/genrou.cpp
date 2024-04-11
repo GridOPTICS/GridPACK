@@ -281,9 +281,9 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
     idq0[1] = Iq;
     idq0[2] = I0;
 
-    f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd); // - dpsid;
-    f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq); // - dpsiq;
-    f[2] = OMEGA_S*(Ra*I0 + V0); // - dpsi0;
+    f[0] = (Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd) - dpsid;
+    f[1] = (Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq) - dpsiq;
+    f[2] = (Ra*I0 + V0) - dpsi0;
 
     if(hasExciter()) {
       Efd = getExciter()->getFieldVoltage();
@@ -459,40 +459,40 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   // Derivatives w.r.t dpisd_dt
   // psid
   rows[ctr] = psid_idx; cols[ctr] = psid_idx;
-  values[ctr] = OMEGA_S*Ra*dId_dpsid;// - shift;
+  values[ctr] = Ra*dId_dpsid - shift;
   
   rows[ctr+1] = psid_idx; cols[ctr+1] = psiq_idx;
-  values[ctr+1] = OMEGA_S*(1 + flux_speed_sensitivity*dw);
+  values[ctr+1] = (1 + flux_speed_sensitivity*dw);
 
   ctr += 2;
 
   rows[ctr] = psid_idx; cols[ctr] = Eqp_idx;
-  values[ctr] = OMEGA_S*Ra*dId_dEqp;
+  values[ctr] = Ra*dId_dEqp;
 
   rows[ctr+1] = psid_idx; cols[ctr+1] = psi1d_idx;
-  values[ctr+1] = OMEGA_S*Ra*dId_dpsi1d;
+  values[ctr+1] = Ra*dId_dpsi1d;
 
   ctr += 2;
 
   rows[ctr] = psid_idx; cols[ctr] = delta_idx;
-  values[ctr] = OMEGA_S*dvdq0_ddelta[0];
+  values[ctr] = dvdq0_ddelta[0];
 
   rows[ctr+1] = psid_idx; cols[ctr+1] = dw_idx;
-  values[ctr+1] = flux_speed_sensitivity*OMEGA_S*psiq;
+  values[ctr+1] = flux_speed_sensitivity*psiq;
   
   ctr += 2;
   
   rows[ctr]   = psid_idx;
   cols[ctr]   = p_glocvoltage;
-  values[ctr] = OMEGA_S*Tdq0[0][0];
+  values[ctr] = Tdq0[0][0];
 
   rows[ctr+1]   = psid_idx;
   cols[ctr+1]   = p_glocvoltage+1;
-  values[ctr+1] = OMEGA_S*Tdq0[0][1];
+  values[ctr+1] = Tdq0[0][1];
 
   rows[ctr+2]   = psid_idx;
   cols[ctr+2]   = p_glocvoltage+2;
-  values[ctr+2] = OMEGA_S*Tdq0[0][2];
+  values[ctr+2] = Tdq0[0][2];
 
   ctr += 3;
 
@@ -501,40 +501,40 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   // Derivatives w.r.t dpisq_dt
 
   rows[ctr] = psiq_idx; cols[ctr] = psid_idx;
-  values[ctr] = -OMEGA_S*(1 + flux_speed_sensitivity*dw);
+  values[ctr] = -(1 + flux_speed_sensitivity*dw);
   
   rows[ctr+1] = psiq_idx; cols[ctr+1] = psiq_idx;
-  values[ctr+1] = OMEGA_S*Ra*dIq_dpsiq;// - shift;
+  values[ctr+1] = Ra*dIq_dpsiq - shift;
 
   ctr += 2;
 
   rows[ctr] = psiq_idx; cols[ctr] = Edp_idx;
-  values[ctr] = OMEGA_S*Ra*dIq_dEdp;
+  values[ctr] = Ra*dIq_dEdp;
 
   rows[ctr+1] = psiq_idx; cols[ctr+1] = psi2q_idx;
-  values[ctr+1] = OMEGA_S*Ra*dIq_dpsi2q;
+  values[ctr+1] = Ra*dIq_dpsi2q;
 
   ctr += 2;
 
   rows[ctr] = psiq_idx; cols[ctr] = delta_idx;
-  values[ctr] = OMEGA_S*dvdq0_ddelta[1];
+  values[ctr] = dvdq0_ddelta[1];
 
   rows[ctr+1] = psiq_idx; cols[ctr+1] = dw_idx;
-  values[ctr+1] = -OMEGA_S*psid*flux_speed_sensitivity;
+  values[ctr+1] = -psid*flux_speed_sensitivity;
   
   ctr += 2;
   
   rows[ctr]   = psiq_idx;
   cols[ctr]   = p_glocvoltage;
-  values[ctr] = OMEGA_S*Tdq0[1][0];
+  values[ctr] = Tdq0[1][0];
 
   rows[ctr+1]   = psiq_idx;
   cols[ctr+1]   = p_glocvoltage+1;
-  values[ctr+1] = OMEGA_S*Tdq0[1][1];
+  values[ctr+1] = Tdq0[1][1];
 
   rows[ctr+2]   = psiq_idx;
   cols[ctr+2]   = p_glocvoltage+2;
-  values[ctr+2] = OMEGA_S*Tdq0[1][2];
+  values[ctr+2] = Tdq0[1][2];
 
   ctr += 3;
 
@@ -543,26 +543,26 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   // Derivatives w.r.t dpsi0_dt
 
   rows[ctr] = psi0_idx;  cols[ctr] = psi0_idx;
-  values[ctr] = OMEGA_S*Ra*dI0_dpsi0; // - shift;
+  values[ctr] = Ra*dI0_dpsi0 - shift;
 
   ctr += 1;
 
   rows[ctr] = psi0_idx; cols[ctr] = delta_idx;
-  values[ctr] = OMEGA_S*dvdq0_ddelta[2];
+  values[ctr] = dvdq0_ddelta[2];
 
   ctr += 1;
 
   rows[ctr]   = psi0_idx;
   cols[ctr]   = p_glocvoltage;
-  values[ctr] = OMEGA_S*Tdq0[2][0];
+  values[ctr] = Tdq0[2][0];
 
   rows[ctr+1]   = psi0_idx;
   cols[ctr+1]   = p_glocvoltage+1;
-  values[ctr+1] = OMEGA_S*Tdq0[2][1];
+  values[ctr+1] = Tdq0[2][1];
 
   rows[ctr+2]   = psi0_idx;
   cols[ctr+2]   = p_glocvoltage+2;
-  values[ctr+2] = OMEGA_S*Tdq0[2][2];
+  values[ctr+2] = Tdq0[2][2];
 
   ctr += 3;
   
@@ -854,9 +854,9 @@ void Genrou::preStep(double time ,double timestep)
   idq0[1] = Iq;
   idq0[2] = I0;
 
-  f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd);
-  f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq);
-  f[2] = OMEGA_S*(Ra*I0 + V0);
+  f[0] = (Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd);
+  f[1] = (Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq);
+  f[2] = (Ra*I0 + V0);
 
   if(hasExciter()) {
     Efd = getExciter()->getFieldVoltage();

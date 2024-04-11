@@ -9,7 +9,8 @@ Fault::Fault(void)
   Ron = 1e-2;
   Rgnd = 0.1;
 
-  faulton = false;
+  faulton[0] = faulton[1] = faulton[2] = false;
+  faultoff = false;
 }
 
 Fault::~Fault(void)
@@ -77,16 +78,16 @@ void Fault::vectorGetValues(gridpack::RealType *values)
     f[0] = ifault[0];
     f[1] = ifault[1];
     f[2] = ifault[2];
-    if(faulton) {
-      if(faulttype == 1) { // SLG
-	if(faultedphases[0]) f[0] = p_va - (Ron + Rgnd)*ifault[0];
-	if(faultedphases[1]) f[1] = p_vb - (Ron + Rgnd)*ifault[1];
-	if(faultedphases[2]) f[2] = p_vc - (Ron + Rgnd)*ifault[2];
-      } else if(faulttype == 3) { // ThreePhase
-	f[0] = p_va - (Ron + Rgnd)*ifault[0] - Rgnd*ifault[1]         - Rgnd*ifault[2];
-	f[1] = p_vb -         Rgnd*ifault[0] - (Ron + Rgnd)*ifault[1] - Rgnd*ifault[2];
-	f[2] = p_vc -         Rgnd*ifault[0] - Rgnd*ifault[1]         - (Ron + Rgnd)*ifault[2];	
-      }
+
+    if(faulttype == 1) { // SLG
+      if(faulton[0] && faultedphases[0]) f[0] = p_va - (Ron + Rgnd)*ifault[0];
+      if(faulton[1] && faultedphases[1]) f[1] = p_vb - (Ron + Rgnd)*ifault[1];
+      if(faulton[2] && faultedphases[2]) f[2] = p_vc - (Ron + Rgnd)*ifault[2];
+
+    } else if(faulttype == 3) { // ThreePhase
+      if(faulton[0]) f[0] = p_va - (Ron + Rgnd)*ifault[0] - Rgnd*ifault[1]         - Rgnd*ifault[2];
+      if(faulton[1]) f[1] = p_vb -         Rgnd*ifault[0] - (Ron + Rgnd)*ifault[1] - Rgnd*ifault[2];
+      if(faulton[2]) f[2] = p_vc -         Rgnd*ifault[0] - Rgnd*ifault[1]         - (Ron + Rgnd)*ifault[2];	
     }
   }
 }
@@ -183,29 +184,31 @@ void Fault::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, i
     values[ctr+8] = 1.0;
   }
 
-  if(faulton) {
-    if(faulttype == 1) { // SLG
-      if(faultedphases[0]) values[ctr]   = -(Ron + Rgnd);
-      if(faultedphases[1]) values[ctr+1] = -(Ron + Rgnd);
-      if(faultedphases[2]) values[ctr+2] = -(Ron + Rgnd);
+  if(faulttype == 1) { // SLG
+    if(faulton[0] && faultedphases[0]) values[ctr] = -(Ron + Rgnd);
+    if(faulton[1] && faultedphases[1]) values[ctr+1] = -(Ron + Rgnd);
+    if(faulton[2] && faultedphases[2]) values[ctr+2] = -(Ron + Rgnd);
 
-      ctr += 3;
-    } else if(faulttype == 3) { //ThreePhase{
+    ctr += 3;
+  } else if(faulttype == 3) { //ThreePhase{
+    if(faulton[0]) {
       values[ctr]   = -(Ron + Rgnd);
       values[ctr+1] = -Rgnd;
       values[ctr+2] = -Rgnd;
+    }
+
+    if(faulton[1]) {
       values[ctr+3] = -Rgnd;
       values[ctr+4] = -(Ron + Rgnd);;
       values[ctr+5] = -Rgnd;
+    }
+
+    if(faulton[2]) {
       values[ctr+6] = -Rgnd;
       values[ctr+7] = -Rgnd;
       values[ctr+8] = -(Ron + Rgnd);
-
-      ctr += 9;
     }
-  } else {
-    if(faulttype == 1) ctr += 3;
-    else if(faulttype == 3) ctr += 9;
+    ctr += 9;
   }
 
   rows[ctr]   = p_gloc;
@@ -218,17 +221,15 @@ void Fault::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, i
   
   values[ctr] = values[ctr+1] = values[ctr+2] = 0.0;
 
-  if(faulton) {
-    if(faulttype == 1) { // SLG
-      // Partial w.r.t voltages
-      if(faultedphases[0]) values[ctr]   = 1.0;
-      if(faultedphases[1]) values[ctr+1] = 1.0;
-      if(faultedphases[2]) values[ctr+2] = 1.0;
-    } else if(faulttype == 3) { // Three Phase
-      values[ctr] = 1.0;
-      values[ctr+1] = 1.0;
-      values[ctr+2] = 1.0;
-    }
+  if(faulttype == 1) { // SLG
+    // Partial w.r.t voltages
+    if(faulton[0] && faultedphases[0]) values[ctr]   = 1.0;
+    if(faulton[1] && faultedphases[1]) values[ctr+1] = 1.0;
+    if(faulton[2] && faultedphases[2]) values[ctr+2] = 1.0;
+  } else if(faulttype == 3) { // Three Phase
+    if(faulton[0]) values[ctr] = 1.0;
+    if(faulton[1]) values[ctr+1] = 1.0;
+    if(faulton[2]) values[ctr+2] = 1.0;
   }
 
   ctr += 3;
@@ -293,6 +294,12 @@ void Fault::eventFunction(const double&t,gridpack::RealType *state,std::vector<g
   evalues[0] = ton - t;
   evalues[1] = toff - t;
 
+  evalues[2] = evalues[3] = evalues[4] = 1.0;
+  if(faultoff) { /* Time greater than fault off time */
+    if(faulton[0] && faultedphases[0]) evalues[2] = ifault[0];
+    if(faulton[1] && faultedphases[1]) evalues[3] = ifault[1];
+    if(faulton[2] && faultedphases[2]) evalues[4] = ifault[2];
+  }
 } 
 
 /**
@@ -306,13 +313,37 @@ void Fault::eventHandlerFunction(const bool *triggered, const double& t, gridpac
   ifault[1] = state[offset+1];
   ifault[2] = state[offset+2];
 
-  if(triggered[0]) {
-    faulton = 1;
+  if(triggered[0]) { /* Fault on */
+    if(faulttype == 1) {
+      if(faultedphases[0]) faulton[0] = true;
+      if(faultedphases[1]) faulton[1] = true;
+      if(faultedphases[2]) faulton[2] = true;
+    } else if(faulttype == 3) {
+      faulton[0] = faulton[1] = faulton[2] = true;
+    }
   }
 
-  if(triggered[1]) {
-    faulton = 0;
+  if(triggered[1]) { /* Fault is off */
+    faultoff = true;
   }
+
+  if(triggered[2]) {
+    faulton[0] = false; /* Phase A fault current reached zero */
+  }
+  if(triggered[3]) {
+    faulton[1] = false; /* Phase B fault current reached zero */
+  }
+  if(triggered[4]) {
+    faulton[2] = false; /* Phase C fault current reached zero */
+  }
+
+  if(faultoff) {
+    if((faulton[0] + faulton[1] + faulton[2]) == false) { /* Fault has extinguished */
+      faultoff = false;
+    }
+  }
+
+  
 }
 
 void FaultEvent::p_update(const double& t,gridpack::RealType *state)

@@ -118,7 +118,7 @@ void Tgov1::init(gridpack::RealType* xin)
 
   if(integrationtype != IMPLICIT) {
     // Initialize leadlag block
-    delay_blk_out = leadlag_blk.init_given_y(Pmech+Dt*dw);
+    delay_blk_out = leadlag_blk.init_given_y(Pmech-Dt*dw);
     
     double delay_blk_in;
     
@@ -210,7 +210,7 @@ void Tgov1::vectorGetValues(gridpack::RealType *values)
     f[x1_idx] = 1/T1*((1/R)*(Pref - dw) - x1) - dx1;
     f[x2_idx] = (-x2 + (1.0 - T2/T3)*x1)/T3 - dx2;
 
-    Pmech = x2 + T2/T3*x1 + Dt*dw;
+    Pmech = x2 + T2/T3*x1 - Dt*dw;
 
     f[xout_idx] = Pmech - xout;
   }
@@ -279,7 +279,7 @@ void Tgov1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, i
   values[ctr]   = T2/T3;
   values[ctr+1] = 1.0;
   values[ctr+2] = -1.0;
-  values[ctr+3] = Dt;
+  values[ctr+3] = -Dt;
   
   ctr += 4;
 

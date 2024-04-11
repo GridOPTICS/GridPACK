@@ -201,7 +201,8 @@ class Fault: public gridpack::component::BaseComponent
     int    faulttype; // 1 for SLG, 2 for LL, 3 for 3 phase
     int    faultedphases[3]; // Which phases are faulted (1 for faulted, zero for unfaulted
     double ton, toff; // fault on and fault off times
-    bool   faulton;
+    bool   faulton[3];
+    bool   faultoff;
     int    p_gloc; // Global location
     int    p_glocvoltage;
     int    nxfault;
@@ -228,14 +229,15 @@ class FaultEvent
 public:
 
   /// Default constructor.
-  FaultEvent(Fault *fault): gridpack::math::RealDAESolver::Event(2),p_fault(fault)
+  FaultEvent(Fault *fault): gridpack::math::RealDAESolver::Event(5),p_fault(fault)
   {
     // A fault requires that the DAE solver be reset. 
     std::fill(p_term.begin(), p_term.end(), false);
     
     // The event occurs when the values go from positive to negative.
-    std::fill(p_dir.begin(), p_dir.end(),
-              gridpack::math::CrossZeroNegative);
+    std::fill(p_dir.begin(), p_dir.begin()+2,gridpack::math::CrossZeroNegative);
+    std::fill(p_dir.begin()+2, p_dir.end(),
+              gridpack::math::CrossZeroEither);
   }
 
   /// Destructor
