@@ -7,11 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
-<<<<<<< HEAD
  * @date   2025-01-29 11:52:40 d3g096
-=======
- * @date   2024-04-17 09:18:21 d3g096
->>>>>>> Implement network load/gen/storage query thru HADREC and Python
  * 
  * @brief  
  * 
@@ -29,8 +25,7 @@
  * Basic constructor
  */
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
-  : gridpack::network::NetworkTopologyInterface(),
-    config_sptr(new gridpack::utility::Configuration())
+  : config_sptr(new gridpack::utility::Configuration())
 {
 	bconfig_sptr_set = false;
 	p_PFuseNonLinear = false;
@@ -951,7 +946,6 @@ int gridpack::hadrec::HADRECAppModule::totalBranches(void) const
   return result;
 }
 
-<<<<<<< HEAD
 
 std::vector<int>
 gridpack::hadrec::HADRECAppModule::getConnectedBranches(int oidx) const
@@ -1003,16 +997,6 @@ int gridpack::hadrec::HADRECAppModule::numGenerators(const int& bus_idx) const
     result = ds_analytics->numGenerators(bus_idx);
   } else if (pf_analytics) {
     result = pf_analytics->numGenerators(bus_idx);
-=======
-int gridpack::hadrec::HADRECAppModule::numGenerators(void)
-{
-  int result(0);
-
-  if (ds_network) {
-    result = ds_network->numGenerators();
-  } else if (pf_network) {
-    result = pf_network->numGenerators();
->>>>>>> Implement network load/gen/storage query thru HADREC and Python
   } else {
     throw gridpack::Exception("HADRECAppModule::numGenerators(): network not defined");
   }
@@ -1020,7 +1004,6 @@ int gridpack::hadrec::HADRECAppModule::numGenerators(void)
   return result;
 }
 
-<<<<<<< HEAD
 int gridpack::hadrec::HADRECAppModule::numLoads(void) const
 {
   int result(0);
@@ -1044,16 +1027,6 @@ int gridpack::hadrec::HADRECAppModule::numLoads(const int& bus_idx) const
     result = ds_analytics->numLoads(bus_idx);
   } else if (pf_analytics) {
     result = pf_analytics->numLoads(bus_idx);
-=======
-int gridpack::hadrec::HADRECAppModule::numLoads(void)
-{
-  int result(0);
-
-  if (ds_network) {
-    result = ds_network->numLoads();
-  } else if (pf_network) {
-    result = pf_network->numLoads();
->>>>>>> Implement network load/gen/storage query thru HADREC and Python
   } else {
     throw gridpack::Exception("HADRECAppModule::numLoads(): network not defined");
   }
@@ -1061,7 +1034,6 @@ int gridpack::hadrec::HADRECAppModule::numLoads(void)
   return result;
 }
 
-<<<<<<< HEAD
 int gridpack::hadrec::HADRECAppModule::numLines(void) const
 {
   int result(0);
@@ -1115,16 +1087,6 @@ int gridpack::hadrec::HADRECAppModule::numStorage(const int& bus_idx) const
     result = ds_analytics->numStorage(bus_idx);
   } else if (pf_analytics) {
     result = pf_analytics->numStorage(bus_idx);
-=======
-int gridpack::hadrec::HADRECAppModule::numStorage(void)
-{
-  int result(0);
-
-  if (ds_network) {
-    result = ds_network->numStorage();
-  } else if (pf_network) {
-    result = pf_network->numStorage();
->>>>>>> Implement network load/gen/storage query thru HADREC and Python
   } else {
     throw gridpack::Exception("HADRECAppModule::numStorage(): network not defined");
   }
