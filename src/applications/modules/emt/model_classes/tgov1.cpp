@@ -131,8 +131,8 @@ void Tgov1::init(gridpack::RealType* xin)
     return;
   }
 
-  x2 = Pmech;
   x1 = Pmech;
+  x2 = (1 - T2/T3)*x1;
   xout = Pmech;
 
   Pref = R*Pmech + dw;

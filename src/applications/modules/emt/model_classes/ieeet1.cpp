@@ -318,7 +318,9 @@ void Ieeet1::vectorGetValues(gridpack::RealType *values)
       else f[1] = -VR + KA*VRin;
     }
 
-    if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+    if(has_Sat) {
+      if(Efd > Efdthresh) SE = satB*(Efd - satA)*(Efd - satA)/Efd;
+    }
     f[2] = (VR - (SE + KE)*Efd)/TE - dEfd;
 
     // xf equation
@@ -446,7 +448,7 @@ void Ieeet1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 
   double SE = 0.0;
   double dSE_dEfd = 0.0;
-  if(Efd > Efdthresh) {
+  if(has_Sat && Efd > Efdthresh) {
     SE = satB*(Efd - satA)*(Efd - satA)/Efd;
     dSE_dEfd = 2*satB*(Efd - satA)/Efd - SE/Efd;
   }
