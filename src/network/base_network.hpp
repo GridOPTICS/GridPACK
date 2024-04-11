@@ -263,7 +263,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public NetworkTopologyInterface
+  : public parallel::Distributed
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -286,7 +286,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : NetworkTopologyInterface(comm)
+  : parallel::Distributed(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;

@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2025-01-29 11:09:28 d3g096
+ * @date   2025-01-29 11:14:57 d3g096
  * 
  * @brief  
  * 
@@ -25,8 +25,7 @@
  * Basic constructor
  */
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
-  : gridpack::network::NetworkTopologyInterface(),
-    config_sptr(new gridpack::utility::Configuration())
+  : config_sptr(new gridpack::utility::Configuration())
 {
 	bconfig_sptr_set = false;
 	p_PFuseNonLinear = false;
