@@ -271,7 +271,7 @@ private:
 
 template <class _bus, class _branch>
 class BaseNetwork 
-  : public NetworkTopologyInterface
+  : public parallel::Distributed
 {
 
   // Check to make sure that "_bus" is a descendant of BaseBusComponent
@@ -294,7 +294,7 @@ typedef boost::shared_ptr<_branch> BranchPtr;
  * Default constructor.
  */
 explicit BaseNetwork(const parallel::Communicator& comm)
-  : NetworkTopologyInterface(comm)
+  : parallel::Distributed(comm)
 {
   p_refBus = -1;
   p_busXCBufSize = 0;
@@ -2581,6 +2581,7 @@ void broadcastNetworkData(int idx)
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /// Get the number of generators on the network
 /**
@@ -2665,6 +2666,8 @@ int numLines(void)
 
   
 >>>>>>> Implement network load/gen/storage query thru HADREC and Python
+=======
+>>>>>>> Cleaned up network analytics implementation and added query functions to
 protected:
 
 /**
