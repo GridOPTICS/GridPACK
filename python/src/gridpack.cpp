@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2023-03-06 11:58:00 d3g096
+// Last Change: 2023-10-25 08:49:45 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -332,6 +332,18 @@ PYBIND11_MODULE(gridpack, gpm) {
 	.def("exportPSSE23",
          [](gph::HADRECAppModule& self, const std::string& s) {
            self.exportPSSE23(s.c_str());
+         },
+         py::arg("s") = ""
+         )
+	.def("exportPSSE33",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE33(s.c_str());
+         },
+         py::arg("s") = ""
+         )
+	.def("exportPSSE34",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE34(s.c_str());
          },
          py::arg("s") = ""
          )

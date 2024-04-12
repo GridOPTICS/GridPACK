@@ -140,7 +140,8 @@ void gridpack::parser::BranchParser34::parse(
       if (split_line[6].find_first_of('\'',0) != std::string::npos) {
         gridpack::utility::StringUtils util;
         util.trim(split_line[6]);
-        p_branchData[l_idx]->addValue(BRANCH_NAME, split_line[6].c_str(), nelems);
+        std::string tmp = util.trimQuotes(split_line[6]);
+        p_branchData[l_idx]->addValue(BRANCH_NAME, tmp.c_str(), nelems);
       }
     }
     // BRANCH_RATE1-12                              float

@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2020-04-16 10:52:34 d3g096
+ * @date   2023-10-25 08:28:44 d3g096
  * 
  * @brief  
  * 
@@ -342,7 +342,18 @@ class HADRECAppModule
      * @param filename name of file to store network configuration
      */
 	void exportPSSE23(std::string filename);
-	
+
+  /**
+   * Export final solved power flow to PSS/E formatted file, version 33
+   * @param filename name of file to store network configuration
+   */
+  void exportPSSE33(std::string filename);
+
+  /**
+   * Export final solved power flow to PSS/E formatted file, version 34
+   * @param filename name of file to store network configuration
+   */
+  void exportPSSE34(std::string filename);
 
    /**
     * Set the state of some device on the network

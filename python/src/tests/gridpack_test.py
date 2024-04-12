@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2023-03-09 14:54:16 d3g096
+# Last Change: 2023-10-25 09:13:29 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -51,11 +51,16 @@ class GridPACKTester(TestCase):
 
         np = gridpack.NoPrint()
         sys.stdout.write("NoPrint status: %r\n" % (np.status()))
-        np.setStatus(True)
+        # np.setStatus(True)
         sys.stdout.write("NoPrint status: %r\n" % (np.status()))
         
         hadapp = gridpack.hadrec.Module()
         hadapp.solvePowerFlowBeforeDynSimu(arg)
+
+        hadapp.exportPSSE23("pfPSSE23.dat")
+        hadapp.exportPSSE33("pfPSSE33.dat")
+        hadapp.exportPSSE34("pfPSSE34.dat")
+        
         hadapp.transferPFtoDS()
 
         busfaultlist = gridpack.dynamic_simulation.EventVector()
