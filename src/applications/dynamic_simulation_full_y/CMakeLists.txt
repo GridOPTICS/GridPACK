@@ -245,10 +245,7 @@ gridpack_add_run_test("dynamic_simulation_two_area" dsf.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area" dsf2.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
-<<<<<<< HEAD
 if (ENABLE_ENVIRONMENT_FROM_COMM)
   gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
 endif()
-=======
->>>>>>> 8b1dfd60... Fix non-working unit tests and smoke tests for new features. (#164)
 
