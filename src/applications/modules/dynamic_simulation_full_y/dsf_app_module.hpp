@@ -685,7 +685,7 @@ class DSFullApp
      Handle any events
   **/
   void handleEvents();
-  
+
   /**
      run one step of dynamics simulation
   **/

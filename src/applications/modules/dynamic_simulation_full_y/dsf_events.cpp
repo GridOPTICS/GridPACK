@@ -197,7 +197,6 @@ gridpack::dynamic_simulation::DSFullApp::getEvents()
   return getEvents(cursor);
 }
 
-
 /**
  * Read events set in the config file and form a list of events
  * @return a list of events
