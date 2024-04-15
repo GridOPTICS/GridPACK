@@ -77,6 +77,18 @@ add_executable(wind2.x
   wind_driver.cpp
   wind_driver2.cpp
 )
+
+add_executable(wind2.x
+  wind_main2.cpp
+  wind_driver.cpp
+  wind_driver2.cpp
+)
+
+add_executable(wind2.x
+  wind_main2.cpp
+  wind_driver.cpp
+  wind_driver2.cpp
+)
 target_link_libraries(wind.x ${target_libraries})
 target_link_libraries(wind2.x ${target_libraries})
 

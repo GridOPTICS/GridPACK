@@ -67,7 +67,6 @@ void gridpack::dynamic_simulation::DSFullApp::reset()
   p_factory->load();
 }
 
-
 /*
   solve network equations
   predcorrflag = 0 => Predictor stage
@@ -393,8 +392,6 @@ void gridpack::dynamic_simulation::DSFullApp::setGenStatus(int bus_idx, std::str
     bus->setGenStatus(gen_id,status);
   }
 }
-
-
 
 /**
  ** Run till time tend

@@ -216,9 +216,6 @@ void gridpack::contingency_analysis::WindDriver::execute2(int argc, char** argv)
     int idx;
     printf("Number of events: %d\n",events.size());
     for (idx = 0; idx < events.size(); idx++) {
-      printf("Fault %d\n",idx);
-      printf(" Begin fault: %12.6f End fault: %12.6f\n",
-          events[idx].start, events[idx].end);
       if (events[idx].isBusFault) {
         printf(" Bus fault\n");
         printf(" Bus ID: %8d\n", events[idx].bus_idx);

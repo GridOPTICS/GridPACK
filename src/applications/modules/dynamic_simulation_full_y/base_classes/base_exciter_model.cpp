@@ -202,15 +202,11 @@ double gridpack::dynamic_simulation::BaseExciterModel::getIqcmd(){
 	return 0.0;
 }
 
-
-// Yuan added above 2020-6-23
-
 /**
  * Set internal state parameter in exciter
  * @param name character string corresponding to state variable
  * @param value new value for state parameter
- * @return false if no variable corresponding to name is
- found
+ * @return false if no variable corresponding to name is found
  */
 bool gridpack::dynamic_simulation::BaseExciterModel::setState( std::string name,
     double value)
@@ -222,11 +218,24 @@ bool gridpack::dynamic_simulation::BaseExciterModel::setState( std::string name,
  * Get internal state parameter in exciter
  * @param name character string corresponding to state variable
  * @param value current value for state parameter
- * @return false if no variable corresponding to name is
- found
+ * @return false if no variable corresponding to name is found
  */
 bool gridpack::dynamic_simulation::BaseExciterModel::getState( std::string name,
     double *value)
 {
   return false;
+}
+
+/**
+ * Write output from exciter to a string.
+ * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if governor is contributing string to output, false otherwise
+ */
+bool gridpack::dynamic_simulation::BaseExciterModel::serialWrite(char *string,
+    const int bufsize, const char *signal)
+{
+  false;
 }

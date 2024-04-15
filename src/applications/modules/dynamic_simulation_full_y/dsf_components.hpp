@@ -166,8 +166,6 @@ class DSFullBus
    */
   void clearFault();
 
-
-
     /**
      * Set values of YBus matrix. These can then be used in subsequent
      * calculations

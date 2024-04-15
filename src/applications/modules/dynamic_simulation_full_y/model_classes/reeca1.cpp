@@ -572,7 +572,17 @@ double gridpack::dynamic_simulation::Reeca1Model::getPord()
 bool gridpack::dynamic_simulation::Reeca1Model::setState(std::string name,
     double value)
 {
-  return false;
+  bool ret = true;
+
+  if(name == "S0") {
+    Vt_filter_blk.setstate(value);
+  } else if(name == "S1") {
+    Pe_filter_blk.setstate(value);
+  } else if(name == "S2") {
+    Q_PI_blk.setstate(value);
+  } else ret = false;
+  
+  return ret;
 }
 
 /**
@@ -584,5 +594,64 @@ bool gridpack::dynamic_simulation::Reeca1Model::setState(std::string name,
 bool gridpack::dynamic_simulation::Reeca1Model::getState(std::string name,
     double *value)
 {
-  return false;
+  bool ret = true;
+  double state_value = -1E19;
+
+  if(name == "S0") {
+    state_value = Vt_filter_blk.getstate();
+  } else if(name == "S1") {
+    state_value = Pe_filter_blk.getstate();
+  } else if(name == "S2") {
+    state_value = Q_PI_blk.getstate();
+  } else ret = false;
+  
+  *value = state_value;
+  return ret;
+}
+
+/**
+ * Write output from exciter to a string.
+ * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if governor is contributing string to output, false otherwise
+ */
+bool gridpack::dynamic_simulation::Reeca1Model::serialWrite(char *string,
+    const int bufsize, const char *signal)
+{
+  char *ptr = string;
+  bool ret = false;
+  if (!strcmp(signal,"watch_header")) {
+    char buf[128];
+    std::string tag;
+    if(p_gen_id[0] != ' ') {
+      tag = p_gen_id;
+    } else {
+      tag = p_gen_id[1];
+    }
+    sprintf(buf,", %d_%s_REECA1_S0, %d_%s_REECA1_S1, %d_%s_REECA1_S2",p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str());
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
+  } else if (!strcmp(signal,"watch")) {
+    double S0,S1,S2;
+    S0 = Vt_filter_blk.getstate();
+    S1 = Pe_filter_blk.getstate();
+    S2 = Q_PI_blk.getstate();
+
+    char buf[256];
+    sprintf(buf,",%f,%f,%f",
+	    S0,S1,S2);
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
+  }
+  return ret;
 }

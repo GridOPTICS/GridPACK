@@ -86,7 +86,7 @@
 	 <generatorFiles>
 		
 		<generatorFile>  
-        <generatorParams> 14bus_exdc1_gridpack_4.dyr </generatorParams>
+        <generatorParameters> 14bus_exdc1_gridpack_4.dyr </generatorParameters>
 		</generatorFile> 
 		
 	 </generatorFiles> 

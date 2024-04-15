@@ -314,9 +314,29 @@ class Cblock
        x              Control block state variable
 
      Note:
-       This method should be called after the state is updated, either by calling getoutput or updatestate
+       This method should be called after the state is updated, either by calling getoutput or updatestate.
   **/
   double getstate(IntegrationStage stage);
+
+    /**
+     GETSTATE - Returns the internal state variable x for the control block
+
+     Output:
+       x              Control block state variable
+
+     Note:
+  **/
+  double getstate();
+
+
+  /**
+     SETSTATE - Sets the internal state variable x for the control block
+
+     Input:
+       xin      Value of the control variable
+  **/
+  void setstate(double xin);
+
 
   ~Cblock(void);
 };
