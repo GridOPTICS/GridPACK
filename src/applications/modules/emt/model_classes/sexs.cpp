@@ -169,9 +169,9 @@ void Sexs::init(gridpack::RealType* xin)
       if(TB != 0 && TA != 0) xLL = (1 - TA/TB)*(Vref - Vmeas + Vs);
       else xLL = Vref - Vmeas + Vs;
 
-      x[0] = xLL;
-      x[1] = Efd;
-      x[2] = Vmeas;
+      x[0] = Vmeas;
+      x[1] = xLL;
+      x[2] = Efd;
   }
 }
 
