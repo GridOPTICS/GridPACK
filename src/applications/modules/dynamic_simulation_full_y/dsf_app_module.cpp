@@ -185,7 +185,7 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
 
   // partition network
   network->partition();
-  p_analytics.reset(new gridpack::analysis::NetworkAnalytics(network));
+  p_analytics.reset(new gridpack::analysis::NetworkAnalytics<DSFullNetwork>(network));
 
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512, network));
@@ -238,7 +238,7 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   p_monitorGenerators = cursor->get("monitorGenerators",false);
   p_report_dummy_obs = cursor->get("reportNonExistingElements",false);
   p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
-  p_analytics.reset(new gridpack::analysis::NetworkAnalytics(network));
+  p_analytics.reset(new gridpack::analysis::NetworkAnalytics<DSFullNetwork>(network));
 
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512, network));
