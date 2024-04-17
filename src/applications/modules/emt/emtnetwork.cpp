@@ -27,6 +27,7 @@
 #include <model_classes/reeca1.hpp>
 #include <model_classes/repca1.hpp>
 #include <model_classes/tgov1.hpp>
+#include <model_classes/gast.hpp>
 //#include <model_classes/lumpedline.hpp>
 
 
@@ -711,7 +712,18 @@ void EmtBus::load(const
 	    
 	    // Handle governor data loading
 	    tgov1->load(data,i); // load governor model
-	  }
+	  } else if (type == "GAST") {
+          Gast* gast;
+          gast = new Gast;
+          gast->setGenerator(p_gen[i]);
+
+          boost::shared_ptr<BaseEMTGovModel> gov;
+          gov.reset(gast);
+          p_gen[i]->setGovernor(gov);
+
+          // Handle governor data loading
+          gast->load(data, i); // load governor model
+      }
 	}
       }
 
