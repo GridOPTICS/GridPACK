@@ -9,7 +9,7 @@
  * 
  * @brief  
  * 
- * @ Updated by Shuangshuang Jin on April 10, 2024.
+ * @ Updated by Shuangshuang Jin on April 17, 2024.
  */
 
 #include <sexs.hpp>
@@ -34,7 +34,7 @@ Sexs::Sexs(void)
 
   Efd_at_min = Efd_at_max = false;
 
-  nxexc = 2;
+  nxexc = 3;
 }
 
 Sexs::~Sexs(void)
@@ -62,7 +62,6 @@ void Sexs::preStep(double time, double timestep)
   Vd = vdq0[0]; Vq = vdq0[1];
   
   Ec = sqrt(Vd*Vd + Vq*Vq);
-
 
   Vmeas = Ec;
   double Verr = Vref - Vmeas + Vs;
@@ -172,6 +171,7 @@ void Sexs::init(gridpack::RealType* xin)
 
       x[0] = xLL;
       x[1] = Efd;
+      x[2] = Vmeas;
   }
 }
 
@@ -209,11 +209,12 @@ void Sexs::setValues(gridpack::RealType *val)
   if(integrationtype == EXPLICIT) return;
 
   if(p_mode == XVECTOBUS) {
-    xLL = values[0];
-    Efd = values[1];
+    Vmeas = values[0];
+    xLL = values[1];
+    Efd = values[2];
   } else if(p_mode == XDOTVECTOBUS) {
-    dxLL = values[0];
-    dEfd = values[1];
+    dxLL = values[1];
+    dEfd = values[2];
   }
 }
 
@@ -244,23 +245,26 @@ void Sexs::vectorGetValues(gridpack::RealType *values)
   Ec = sqrt(Vd*Vd + Vq*Vq);
   
   if(p_mode == RESIDUAL_EVAL) {
+    // Vmeas equation
+    f[0] = -Vmeas + Ec;
+
     // xLL equation
     if(TB != 0 && TA != 0) {
-      f[0] = (-xLL + (1 - TA/TB)*(Vref - Vmeas + Vs))/TB - dxLL;
+      f[1] = (-xLL + (1 - TA/TB)*(Vref - Vmeas + Vs))/TB - dxLL;
       yLL = xLL + TA/TB*(Vref - Vmeas + Vs);
     } else {
-      f[0] = -xLL + Vref - Vmeas + Vs;
+      f[1] = -xLL + Vref - Vmeas + Vs;
       yLL = xLL;
     }
 
     // Efd equation
     if(Efd_at_min) {
-      f[1] = Efd - EMAX;
+      f[2] = Efd - EMIN;
     } else if(Efd_at_max) {
-      f[1] = Efd - EMIN;
+      f[2] = Efd - EMAX;
     } else {
-      if(TE != 0) f[1] = (-Efd + K*yLL)/TE - dEfd;
-      else f[1] = -Efd + K*yLL;
+      if(TE != 0) f[2] = (-Efd + K*yLL)/TE - dEfd;
+      else f[2] = -Efd + K*yLL;
     }
 
   }
@@ -269,18 +273,19 @@ void Sexs::vectorGetValues(gridpack::RealType *values)
 
 /**
    Non-zero pattern of the Jacobian (x denotes non-zero entry)
-          xLL    Efd     delta    va    vb    vc
- eq.0 |    x                x      x     x     x
- eq.1 |    x      x          
+         Vmeas   xLL     Efd     delta    va    vb    vc
+ eq.2 |    x                       x       x     x     x  
+ eq.0 |    x      x              
+ eq.1 |    x      x       x      
 
- Number of non-zeros = 5 + 2 = 7 
+ Number of non-zeros = 5 + 2 + 3 = 10 
  * Get number of matrix values contributed by exciter
  * @return number of matrix values
  */
 int Sexs::matrixNumValues()
 {
   int nmat = 0;
-  if(integrationtype == IMPLICIT) nmat = 7;
+  if(integrationtype == IMPLICIT) nmat = 10;
   return nmat;
 }
 
@@ -303,6 +308,7 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
     
   int xLL_idx = p_gloc;
   int Efd_idx = p_gloc + 1;
+  int Vmeas_idx = p_gloc + 2;
   int delta_idx;
   int va_idx    = p_glocvoltage;
   int vb_idx    = p_glocvoltage+1;
@@ -334,7 +340,7 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
   double dVd_ddelta = dTdq0ddelta[0][0]*vabc[0] + dTdq0ddelta[0][1]*vabc[1] + dTdq0ddelta[0][2]*vabc[2];
   double dVq_ddelta = dTdq0ddelta[1][0]*vabc[0] + dTdq0ddelta[1][1]*vabc[1] + dTdq0ddelta[1][2]*vabc[2];
 
-  /*rows[ctr] = xLL_idx;  cols[ctr] = xLL_idx;
+  rows[ctr] = Vmeas_idx;  cols[ctr] = Vmeas_idx;
   rows[ctr+1] = xLL_idx; cols[ctr+1] = delta_idx;
   rows[ctr+2] = xLL_idx; cols[ctr+2] = va_idx;
   rows[ctr+3] = xLL_idx; cols[ctr+3] = vb_idx;
@@ -346,21 +352,21 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
   values[ctr+3] = (dEc_dVd*dVd_dvabc[1] + dEc_dVq*dVq_dvabc[1]);
   values[ctr+4] = (dEc_dVd*dVd_dvabc[2] + dEc_dVq*dVq_dvabc[2]);
   
-  ctr += 5;*/
+  ctr += 5;
 
-  rows[ctr]   = xLL_idx; cols[ctr] = xLL_idx;
-  rows[ctr+1]   = xLL_idx; cols[ctr+1] = Efd_idx;
+  rows[ctr]   = xLL_idx; cols[ctr] = Vmeas_idx;
+  rows[ctr+1]   = xLL_idx; cols[ctr+1] = xLL_idx;
 
   values[ctr] = values[ctr+1] = 0.0;
 
   double param = (1 - TA/TB);
-  double dyLL_dxLL = 0.0, dyLL_dEfd = 0.0;
+  double dyLL_dVmeas = 0.0, dyLL_dxLL = 0.0;
   if(TA != 0 && TB != 0) {
     values[ctr] = (param*-1)/TB;
     values[ctr+1] = -1.0/TB - shift;
 
-    dyLL_dxLL = TA/TB*-1.0;
-    dyLL_dEfd = 1.0;
+    dyLL_dVmeas = TA/TB*-1.0;
+    dyLL_dxLL = 1.0;
   } else {
     values[ctr] = -1.0;
     values[ctr+1] = -1.0;
@@ -370,24 +376,27 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
 
   ctr += 2;
 
+  rows[ctr] = Efd_idx;  cols[ctr] = Vmeas_idx;
   rows[ctr] = Efd_idx;  cols[ctr] = xLL_idx;
   rows[ctr+1] = Efd_idx; cols[ctr+1] = Efd_idx;
 
-  values[ctr] = values[ctr+1] = 0.0;
+  values[ctr] = values[ctr+1] = values[ctr+2] = 0.0;
 
   if(Efd_at_min || Efd_at_max) {
-    values[ctr+1] = 1.0;
+    values[ctr+2] = 1.0;
   } else {
     if(TE != 0) {
-      values[ctr] =   (K*dyLL_dxLL)/TE;
-      values[ctr+1] = (K*dyLL_dEfd)/TE;
+      values[ctr] = (K*dyLL_dVmeas)/TE;
+      values[ctr+1] = (K*dyLL_dxLL)/TE;
+      values[ctr+2] = -1.0/TE - shift;
     } else {
-      values[ctr] =   (K*dyLL_dxLL);
-      values[ctr+1] = (K*dyLL_dEfd);
+      values[ctr] =   (K*dyLL_dVmeas);
+      values[ctr+1] = (K*dyLL_dxLL);
+      values[ctr+2] = -1.0/TE;
     }
   }
       
-  ctr += 2;
+  ctr += 3;
 
   *nvals = ctr;
 
