@@ -274,9 +274,9 @@ void Sexs::vectorGetValues(gridpack::RealType *values)
 /**
    Non-zero pattern of the Jacobian (x denotes non-zero entry)
          Vmeas   xLL     Efd     delta    va    vb    vc
- eq.2 |    x                       x       x     x     x  
- eq.0 |    x      x              
- eq.1 |    x      x       x      
+ eq.0 |    x                       x       x     x     x  
+ eq.1 |    x      x              
+ eq.2 |    x      x       x      
 
  Number of non-zeros = 5 + 2 + 3 = 10 
  * Get number of matrix values contributed by exciter
