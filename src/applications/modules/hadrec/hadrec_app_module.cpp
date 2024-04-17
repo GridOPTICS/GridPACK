@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2024-04-17 09:19:09 d3g096
+ * @date   2024-04-17 09:19:30 d3g096
  * 
  * @brief  
  * 
@@ -89,7 +89,8 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
 	
     pf_app_sptr->readNetwork(pf_network, &(*config_sptr), pfcase_idx);
     pf_app_sptr->initialize();
-    pf_analytics.reset(new gridpack::analysis::NetworkAnalytics<gridpack::powerflow::PFNetwork>(pf_network));
+    pf_analytics.reset(new gridpack::analysis::NetworkAnalytics
+                       <gridpack::powerflow::PFNetwork>(pf_network));
     if (useNonLinear) {
       pf_app_sptr->nl_solve();
     } else {
