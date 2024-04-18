@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2024-03-13 07:40:15 d3g096
+ * @date   2024-04-18 14:00:57 d3g096
  * 
  * @brief  
  * 
@@ -760,6 +760,26 @@ int getOriginalBusIndex(int idx)
   return -1;
 }
 
+/**
+ * Get original index of the branch
+ * @param idx local index of branch
+ * @return original index of branch 
+ */
+int getOriginalBranchIndex(int idx)
+{
+  if (idx >= 0 && idx < p_branches.size()) {
+    return p_branches[idx].p_globalBranchIndex;
+  } else {
+    char buf[256];
+    sprintf(buf,"BaseNetwork::getOriginalBranchIndex: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
+    throw gridpack::Exception(buf);
+  }
+  return -1;
+}
 /**
  * Get global index of the bus
  * @param idx local index of bus

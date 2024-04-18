@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-04-17 09:17:35 d3g096
+// Last Change: 2024-04-18 14:26:04 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -287,6 +287,14 @@ PYBIND11_MODULE(gridpack, gpm) {
   hadapp
     .def("totalBuses", &gph::HADRECAppModule::totalBuses)
     .def("totalBranches", &gph::HADRECAppModule::totalBranches)
+    .def("getConnectedBranches", &gph::HADRECAppModule::getConnectedBranches,
+         py::return_value_policy::copy)
+    .def("getBranchEndpoints",
+         [](gph::HADRECAppModule& self, const int& oidx) {
+           int fbus, tbus;
+           self.getBranchEndpoints(oidx, &fbus, &tbus);
+           return py::make_tuple(fbus, tbus);
+         })
     .def("numGenerators", &gph::HADRECAppModule::numGenerators)
     .def("numLoads", &gph::HADRECAppModule::numLoads)
     .def("numStorage", &gph::HADRECAppModule::numStorage)

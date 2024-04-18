@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2024-04-17 09:18:39 d3g096
+ * @date   2024-04-18 14:11:48 d3g096
  * 
  * @brief  
  * 
@@ -383,19 +383,25 @@ class HADRECAppModule
        std::string name, double *value);
 
   /// Network query: Get the number of buses
-  int totalBuses(void);
+  int totalBuses(void) const;
 
   /// Network query: Get the number of branches
-  int totalBranches(void);
+  int totalBranches(void) const;
+
+  /// Network query: Get the branch indexes connected to a bus
+  std::vector<int> getConnectedBranches(int oidx) const;
+
+  /// Network query: Get the bus indexes connected to a branch
+  void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const;
 
   /// Network query: Get the number of generators
-  int numGenerators(void);
+  int numGenerators(void) const;
 
   /// Network query: Get the number of loads
-  int numLoads(void);
+  int numLoads(void) const;
 
   /// Network query: Get the number of storage units
-  int numStorage(void);
+  int numStorage(void) const;
 
 
   private:

@@ -50,7 +50,7 @@ public:
    *
    * @return number of buses in entire network
    **/
-  virtual int totalBuses(void) = 0;
+  virtual int totalBuses(void) const = 0;
 
   /// Get the number of branches
   /**
@@ -58,37 +58,27 @@ public:
    *
    * @return number of branches in entire network
    **/
-  virtual int totalBranches(void) = 0;
+  virtual int totalBranches(void) const = 0;
 
   /// Get the branch indexes connected to a bus 
   /**
-   * @e not collective
+   * @e collective
    *
-   * @param idx local bus index
+   * @param idx original bus index
    *
-   * @result vector of local branch indexes
+   * @result vector of original branch indexes
    **/
-  // virtual std::vector<int> getConnectedBranches(int idx) const = 0;
+  virtual std::vector<int> getConnectedBranches(int oidx) const = 0;
 
   /// Get the bus indexes connected to a branch
   /**
-   * @e not collective
+   * @e collective
    *
-   * @param idx local branch index
-   * @param fbus pointer to location to put from-bus (local) index
-   * @param tbus pointer to location to put to-bus (local) index
+   * @param idx original branch index
+   * @param fbus pointer to location to put from-bus (original) index
+   * @param tbus pointer to location to put to-bus (original) index
    **/
-  // virtual void getBranchEndpoints(int idx, int *fbus, int *tbus) const = 0;
-
-
-  /// Get the number of generators on the network
-  virtual int numGenerators(void) = 0;
-
-  /// Get the number of loads on the network
-  virtual int numLoads(void) = 0;
-
-  /// Get the number of storage units on the network
-  virtual int numStorage(void) = 0;
+  virtual void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const = 0;
 
 };
 

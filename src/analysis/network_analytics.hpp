@@ -8,7 +8,7 @@
 /**
  * @file   network_analytics.hpp
  * @author Bruce Palmer
- * @date   2024-03-22
+ * @date   2024-04-18 14:10:11 d3g096
  * 
  * @brief  
  * This is a utility that can be used to extract properties of the network
@@ -27,6 +27,7 @@
 #include <ga.h>
 #include <map>
 #include <vector>
+#include <tuple>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parallel/communicator.hpp"
 #include "gridpack/network/base_network.hpp"
@@ -134,6 +135,98 @@ template <class _network> class NetworkAnalytics {
     p_network->communicator().sum(&result, 1);
     return result;
   };
+
+  /// Get the number of buses
+  /**
+   * @e not collective
+   *
+   * @return number of buses in entire network
+   **/
+  int totalBuses(void)
+  {
+    return p_network->totalBuses();
+  }
+
+  /// Get the number of branches
+  /**
+   * @e not collective
+   *
+   * @return number of branches in entire network
+   **/
+  int totalBranches(void)
+  {
+    return p_network->totalBranches();
+  }
+
+  /// Get the branch indexes connected to a bus 
+  /**
+   * @e collective
+   *
+   * @param idx original bus index
+   *
+   * @result vector of original branch indexes
+   **/
+  std::vector<int> getConnectedBranches(const int& oidx) const
+  {
+    int rsize(0);
+    std::vector<int> result;
+    std::vector<int> lbusi(p_network->getLocalBusIndices(oidx));
+
+    // look for the active bus index -- it should only be active on
+    // one process -- result should only be filled on one process
+
+    if (!lbusi.empty()) {
+      for (auto ib : lbusi) {
+        if (p_network->getActiveBus(ib)) {
+          typename NetworkType::BusPtr bus(p_network->getBus(ib));
+          std::vector<int> lbranchi(p_network->getConnectedBranches(ib));
+          for (auto ibr : lbranchi) {
+            result.push_back(p_network->getGlobalBranchIndex(ibr));
+          }
+          rsize = result.size();
+        }
+      }
+    }
+
+    p_network->communicator().sum(&rsize, 1);
+
+    // only one process should have non-zeros in result
+
+    if (result.empty()) {
+      result.resize(rsize, 0);
+    }
+    
+    p_network->communicator().sum(&result[0], rsize);
+
+    return result;
+  }
+
+    
+  /// Get the bus indexes connected to a branch
+  /**
+   * @e collective
+   *
+   * @param idx original branch index
+   * @param fbus pointer to location to put from-bus (original) index
+   * @param tbus pointer to location to put to-bus (original) index
+   **/
+  void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const
+  {
+    int fresult(0), tresult(0);
+    int lbranchidx = p_network->getOriginalBranchIndex(idx);
+
+    if (lbranchidx >= 0) {
+      if (p_network->getActiveBranch(lbranchidx)) {
+        p_network->getOriginalBranchEndpoints(lbranchidx, &fresult, &tresult);
+      }
+    }
+    p_network->communicator().sum(&fresult, 1);
+    p_network->communicator().sum(&tresult, 1);
+
+    *fbus = fresult;
+    *tbus = tresult;
+  }
+  
 
   private:
 
