@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2024-04-17 09:19:30 d3g096
+ * @date   2024-04-18 14:17:01 d3g096
  * 
  * @brief  
  * 
@@ -903,14 +903,14 @@ bool gridpack::hadrec::HADRECAppModule::getState(int bus_id,
 }
 
 
-int gridpack::hadrec::HADRECAppModule::totalBuses(void)
+int gridpack::hadrec::HADRECAppModule::totalBuses(void) const
 {
   int result(0);
 
-  if (ds_network) {
-    result = ds_network->totalBuses();
-  } else if (pf_network) {
-    result = pf_network->totalBuses();
+  if (ds_analytics) {
+    result = ds_analytics->totalBuses();
+  } else if (pf_analytics) {
+    result = pf_analytics->totalBuses();
   } else {
     throw gridpack::Exception("HADRECAppModule::totalBuses(): network not defined");
   }
@@ -919,14 +919,14 @@ int gridpack::hadrec::HADRECAppModule::totalBuses(void)
 }
 
 
-int gridpack::hadrec::HADRECAppModule::totalBranches(void)
+int gridpack::hadrec::HADRECAppModule::totalBranches(void) const
 {
   int result(0);
 
-  if (ds_network) {
-    result = ds_network->totalBranches();
-  } else if (pf_network) {
-    result = pf_network->totalBranches();
+  if (ds_analytics) {
+    result = ds_analytics->totalBranches();
+  } else if (pf_analytics) {
+    result = pf_analytics->totalBranches();
   } else {
     throw gridpack::Exception("HADRECAppModule::totalBranches(): network not defined");
   }
@@ -934,13 +934,41 @@ int gridpack::hadrec::HADRECAppModule::totalBranches(void)
   return result;
 }
 
-int gridpack::hadrec::HADRECAppModule::numGenerators(void)
+
+std::vector<int>
+gridpack::hadrec::HADRECAppModule::getConnectedBranches(int oidx) const
+{
+  std::vector<int> result;
+  if (ds_analytics) {
+    result = ds_analytics->getConnectedBranches(oidx);
+  } else if (pf_analytics) {
+    result = pf_analytics->getConnectedBranches(oidx);
+  } else {
+    throw gridpack::Exception("HADRECAppModule::totalBranches(): network not defined");
+  }
+  
+  return result;
+}
+
+void
+gridpack::hadrec::HADRECAppModule::getBranchEndpoints(const int& idx, int *fbus, int *tbus) const
+{
+  if (ds_analytics) {
+    ds_analytics->getBranchEndpoints(idx, fbus, tbus);
+  } else if (pf_analytics) {
+    pf_analytics->getBranchEndpoints(idx, fbus, tbus);
+  } else {
+    throw gridpack::Exception("HADRECAppModule::getBranchEndpoints(): network not defined");
+  }
+}
+
+int gridpack::hadrec::HADRECAppModule::numGenerators(void) const
 {
   int result(0);
 
-  if (ds_network) {
+  if (ds_analytics) {
     result = ds_analytics->numGenerators();
-  } else if (pf_network) {
+  } else if (pf_analytics) {
     result = pf_analytics->numGenerators();
   } else {
     throw gridpack::Exception("HADRECAppModule::numGenerators(): network not defined");
@@ -949,13 +977,13 @@ int gridpack::hadrec::HADRECAppModule::numGenerators(void)
   return result;
 }
 
-int gridpack::hadrec::HADRECAppModule::numLoads(void)
+int gridpack::hadrec::HADRECAppModule::numLoads(void) const
 {
   int result(0);
 
-  if (ds_network) {
+  if (ds_analytics) {
     result = ds_analytics->numLoads();
-  } else if (pf_network) {
+  } else if (pf_analytics) {
     result = pf_analytics->numLoads();
   } else {
     throw gridpack::Exception("HADRECAppModule::numLoads(): network not defined");
@@ -964,13 +992,13 @@ int gridpack::hadrec::HADRECAppModule::numLoads(void)
   return result;
 }
 
-int gridpack::hadrec::HADRECAppModule::numStorage(void)
+int gridpack::hadrec::HADRECAppModule::numStorage(void) const
 {
   int result(0);
 
-  if (ds_network) {
+  if (ds_analytics) {
     result = ds_analytics->numStorage();
-  } else if (pf_network) {
+  } else if (pf_analytics) {
     result = pf_analytics->numStorage();
   } else {
     throw gridpack::Exception("HADRECAppModule::numStorage(): network not defined");
