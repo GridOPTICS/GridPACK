@@ -192,27 +192,6 @@ template <class _network> class NetworkAnalytics {
     return result;
   };
 
-  /**
-   * Get the total number of lines in a specific branch of the network
-   * @param branch_idx @e global branch index
-   * @return total number of lines in branch
-   */
-  int numLines(const int& branch_idx)
-  {
-    int result(0);
-
-    int lidx(p_localFromGlobalBranchIndex(branch_idx));
-
-    if (lidx >= 0) {
-      result = p_network->getBranch(lidx)->numLines();
-    }
-
-    p_network->communicator().sum(&result, 1);
-
-    return result;
-  };
-
-
   /// Get the number of buses
   /**
    * @e not collective

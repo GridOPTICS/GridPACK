@@ -9,6 +9,7 @@
  * @author Bruce Palmer, William Perkins
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
  * @date   2025-01-29 11:39:28 d3g096
 =======
  * @date   2024-02-13 08:31:49 d3g096
@@ -16,6 +17,9 @@
 =======
  * @date   2024-03-13 07:40:15 d3g096
 >>>>>>> Implement network load/gen/storage query thru HADREC and Python
+=======
+ * @date   2024-04-18 14:00:57 d3g096
+>>>>>>> Add bus and branch connectivity methods to analytics
  * 
  * @brief  
  * 

@@ -11,10 +11,14 @@
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Last Change: 2025-05-06 13:10:00 d3g096
 =======
 // Last Change: 2024-04-17 09:17:35 d3g096
 >>>>>>> Implement network load/gen/storage query thru HADREC and Python
+=======
+// Last Change: 2024-04-18 14:26:04 d3g096
+>>>>>>> Add bus and branch connectivity methods to analytics
 // -------------------------------------------------------------
 
 #include "common.hpp"
@@ -348,6 +352,401 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   // powerflow application module
   // -------------------------------------------------------------
+<<<<<<< HEAD
   init_gridpack_pf(gpm);
+=======
+  py::class_<gph::HADRECAppModule> hadapp(hadm, "Module");
+  hadapp
+    .def(py::init<>())
+    .def("transferPFtoDS", &gph::HADRECAppModule::transferPFtoDS)
+    .def("executeDynSimuOneStep", &gph::HADRECAppModule::executeDynSimuOneStep)
+    .def("isDynSimuDone",  &gph::HADRECAppModule::isDynSimuDone)
+    .def("applyAction", &gph::HADRECAppModule::applyAction)
+    .def("getObservations", &gph::HADRECAppModule::getObservations,
+         py::return_value_policy::copy)
+    ;
+
+  // These are some network topology query methods
+  hadapp
+    .def("totalBuses", &gph::HADRECAppModule::totalBuses)
+    .def("totalBranches", &gph::HADRECAppModule::totalBranches)
+    .def("getConnectedBranches", &gph::HADRECAppModule::getConnectedBranches,
+         py::return_value_policy::copy)
+    .def("getBranchEndpoints",
+         [](gph::HADRECAppModule& self, const int& oidx) {
+           int fbus, tbus;
+           self.getBranchEndpoints(oidx, &fbus, &tbus);
+           return py::make_tuple(fbus, tbus);
+         })
+    .def("numGenerators", &gph::HADRECAppModule::numGenerators)
+    .def("numLoads", &gph::HADRECAppModule::numLoads)
+    .def("numStorage", &gph::HADRECAppModule::numStorage)
+    ;
+
+  // These methods need to be reworked char * and/or optional args
+  hadapp
+    .def("scatterInjectionLoad",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ) {
+           self.scatterInjectionLoad(vbusNum, vloadP, vloadQ);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >()
+         )
+	.def("scatterInjectionLoadNew",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ) {
+           self.scatterInjectionLoadNew(vbusNum, vloadP, vloadQ);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >()
+         )
+	.def("scatterInjectionLoadNew_compensateY",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ) {
+           self.scatterInjectionLoadNew_compensateY(vbusNum, vloadP, vloadQ);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >()
+         )
+	.def("scatterInjectionLoadNew_Norton",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vloadP, const std::vector<double>& vloadQ, 
+		   const std::vector<double>& vimpedanceR, const std::vector<double>& vimpedanceI) {
+           self.scatterInjectionLoadNew_Norton(vbusNum, vloadP, vloadQ, vimpedanceR, vimpedanceI);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vloadP") = std::vector< double >(), py::arg("vloadQ") = std::vector< double >(),
+		 py::arg("vimpedanceR") = std::vector< double >(), py::arg("vimpedanceI") = std::vector< double >()
+         )
+	.def("scatterInjectionLoadNewConstCur",
+         [](gph::HADRECAppModule& self, const std::vector<int>& vbusNum, const std::vector<double>& vCurR, const std::vector<double>& vCurI) {
+           self.scatterInjectionLoadNewConstCur(vbusNum, vCurR, vCurI);
+         },
+         py::arg("vbusNum") = std::vector< int >(), py::arg("vCurR") = std::vector< double >(), py::arg("vCurI") = std::vector< double >()
+         )
+    .def("initializeDynSimu",
+         [](gph::HADRECAppModule& self, std::vector< gpds::Event > faults, int dscase_idx) {
+           self.initializeDynSimu(faults, dscase_idx);
+         },
+         py::arg("faults") = std::vector< gpds::Event >(), py::arg("dscase_idx") = -1
+         )
+    .def("solvePowerFlowBeforeDynSimu",
+         [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
+           self.solvePowerFlowBeforeDynSimu(s.c_str(), pfcase_idx);
+         },
+         py::arg("s") = "", py::arg("pfcase_idx") = -1
+         )
+	.def("exportPSSE23",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE23(s.c_str());
+         },
+         py::arg("s") = ""
+         )
+	.def("exportPSSE33",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE33(s.c_str());
+         },
+         py::arg("s") = ""
+         )
+	.def("exportPSSE34",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE34(s.c_str());
+         },
+         py::arg("s") = ""
+         )
+	.def("solvePowerFlowBeforeDynSimu_withFlag",
+         [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
+		   bool flag;
+           flag = self.solvePowerFlowBeforeDynSimu_withFlag(s.c_str(), pfcase_idx);
+		   return flag;
+         },
+         py::arg("s") = "", py::arg("pfcase_idx") = -1
+         )
+	.def("readPowerFlowData",
+         [](gph::HADRECAppModule& self, const std::string& s, int pfcase_idx) {
+           self.readPowerFlowData(s.c_str(), pfcase_idx);
+         },
+         py::arg("s") = "", py::arg("pfcase_idx") = -1
+         )
+	.def("solvePowerFlow",
+         [](gph::HADRECAppModule& self) {
+		   bool flag;
+           flag = self.solvePowerFlow();
+		   return flag;
+         }
+         )
+	.def("setWideAreaControlSignal",
+         [](gph::HADRECAppModule& self, int bus_number, const std::string& genid, double wideAreaControlSignal) {
+           self.setWideAreaControlSignal(bus_number, genid.c_str(), wideAreaControlSignal);
+         },
+		 py::arg("bus_number") = "-1", py::arg("genid") = "", py::arg("wideAreaControlSignal") = 0.0
+         )
+	.def("modifyDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionGenParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionGenParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionLoadParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& s, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionLoadParam(bus_no, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBusParam(bus_no, par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, int bus_no, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBusParam(bus_no, par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+	.def("modifyDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, int bus1, int bus2, const std::string& s, const std::string& par, double modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBranchParam(bus1, bus2, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )		 
+	.def("modifyDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, int bus1, int bus2, const std::string& s, const std::string& par, int modvalue) {
+		   bool flag;
+           flag = self.modifyDataCollectionBranchParam(bus1, bus2, s.c_str(), par.c_str(), modvalue);
+		   return flag;
+         }
+         )
+    .def("fullInitializationBeforeDynSimuSteps",
+         [](gph::HADRECAppModule& self, const std::string& s,
+            const std::vector<gpds::Event>& BusFaults, int pfcase_idx, int dscase_idx) {
+           self.fullInitializationBeforeDynSimuSteps(s.c_str(), BusFaults,
+                                                     pfcase_idx, dscase_idx);
+         },
+         py::arg("s") = "",
+         py::arg("BusFaults") = std::vector<gpds::Event>(),
+         py::arg("pfcase_idx") = -1,
+         py::arg("dscase_idx")
+         )
+    .def("setState",
+         [](gph::HADRECAppModule& self, const int& bus_id, const std::string& dev_id,
+            const std::string& device, const std::string& name,
+            const double& value) {
+           bool status;
+           status = self.setState(bus_id, dev_id, device, name, value);
+           return status;
+         }
+         )
+    .def("getState",
+         [](gph::HADRECAppModule& self, const int& bus_id, const std::string& dev_id,
+            const std::string& device, const std::string& name) -> py::object {
+           bool status;
+           double value;
+           status = self.getState(bus_id, dev_id, device, name, &value);
+
+           // Value is returned if successful.
+           if (status) {
+             return  py::cast(value);
+           }
+
+           // Otherwise, None is returned. 
+           return py::object();
+         }
+         )
+    ;
+
+  // This method returns a tuple containing 3 lists (int, string, int)
+
+  hadapp
+    .def("getObservationLists",
+         [](gph::HADRECAppModule& self) {
+             std::vector<int> obs_genBus;
+             std::vector<std::string> obs_genIDs;
+             std::vector<int> obs_loadBuses;
+             std::vector<std::string> obs_loadIDs;
+             std::vector<int> obs_busIDs;
+             self.getObservationLists(obs_genBus, obs_genIDs,
+                                      obs_loadBuses, obs_loadIDs, obs_busIDs);
+             return py::make_tuple(obs_genBus, obs_genIDs,
+                                   obs_loadBuses, obs_loadIDs, obs_busIDs);
+         })
+    .def("getObservationLists_withBusFreq",
+         [](gph::HADRECAppModule& self) {
+             std::vector<int> obs_genBus;
+             std::vector<std::string> obs_genIDs;
+             std::vector<int> obs_loadBuses;
+             std::vector<std::string> obs_loadIDs;
+             std::vector<int> obs_busIDs;
+			 std::vector<int> busfreqIDs;
+             self.getObservationLists_withBusFreq(obs_genBus, obs_genIDs,
+                                      obs_loadBuses, obs_loadIDs, obs_busIDs, busfreqIDs);
+             return py::make_tuple(obs_genBus, obs_genIDs,
+                                   obs_loadBuses, obs_loadIDs, obs_busIDs, busfreqIDs);
+         })
+    ;
+             
+  // These methods return a tuple on success or False on failure
+  hadapp
+    .def("getBusTotalLoadPower",
+         [](gph::HADRECAppModule& self, const int& busid) -> py::object {
+           double pg, qg;
+           bool flag;
+           flag = self.getBusTotalLoadPower(busid, pg, qg);
+           if (flag) {
+             return py::make_tuple(pg, qg);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getGeneratorPower",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& genid) -> py::object {
+           double pg, qg;
+           bool flag;
+           flag = self.getGeneratorPower(busid, genid, pg, qg);
+           if (flag) {
+             return py::make_tuple(pg, qg);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getPFSolutionSingleBus",
+         [](gph::HADRECAppModule& self, const int& busid) -> py::object {
+           double vmag, vangle;
+           bool flag;
+           flag = self.getPFSolutionSingleBus(busid, vmag, vangle);
+           if (flag) {
+             return py::make_tuple(vmag, vangle);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& genid, const std::string& genparam) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionGenParam(busid, genid, genparam, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionGenParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& genid, const std::string& genparam) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionGenParam(busid, genid, genparam, value);
+           if (flag) {
+             return py::int_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& loadid, const std::string& loadparam) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionLoadParam(busid, loadid, loadparam, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionLoadParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& loadid, const std::string& loadparam) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionLoadParam(busid, loadid, loadparam, value);
+           if (flag) {
+             return py::int_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& param) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionBusParam(busid, param, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBusParam",
+         [](gph::HADRECAppModule& self, const int& busid, const std::string& param) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionBusParam(busid, param, value);
+           if (flag) {
+             return py::int_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, const int& busid1, const int& busid2, const std::string& ckt, const std::string& param) -> py::object {
+           double value;
+           bool flag;
+           flag = self.getDataCollectionBranchParam(busid1, busid2, ckt, param, value);
+           if (flag) {
+             return py::float_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+	.def("getDataCollectionBranchParam",
+         [](gph::HADRECAppModule& self, const int& busid1, const int& busid2, const std::string& ckt, const std::string& param) -> py::object {
+           int value;
+           bool flag;
+           flag = self.getDataCollectionBranchParam(busid1, busid2, ckt, param, value);
+           if (flag) {
+             return py::int_(value);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getZoneLoads",
+         [](gph::HADRECAppModule& self) -> py::object {
+           std::vector<double> load_p, load_q;
+           std::vector<int> zone_id;
+           bool flag = self.getZoneLoads(load_p, load_q, zone_id);
+           if (flag) {
+             return py::make_tuple(load_p, load_q, zone_id);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getZoneGeneratorPower",
+         [](gph::HADRECAppModule& self) -> py::object {
+           std::vector<double> generator_p, generator_q;
+           std::vector<int> zone_id;
+           bool flag = self.getZoneGeneratorPower(generator_p, generator_q, zone_id);
+           if (flag) {
+             return py::make_tuple(generator_p, generator_q, zone_id);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+
+    
+    ;
+  
+>>>>>>> Add bus and branch connectivity methods to analytics
 
 }
