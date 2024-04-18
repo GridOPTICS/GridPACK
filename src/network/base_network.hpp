@@ -7,7 +7,11 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
+<<<<<<< HEAD
  * @date   2025-01-29 11:39:28 d3g096
+=======
+ * @date   2024-04-18 14:00:57 d3g096
+>>>>>>> Add bus and branch connectivity methods to analytics
  * 
  * @brief  
  * 
