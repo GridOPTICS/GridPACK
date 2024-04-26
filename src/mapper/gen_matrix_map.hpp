@@ -78,6 +78,10 @@ GenMatrixMap(boost::shared_ptr<_network> network)
 #ifdef NZ_PER_ROW
   if (p_nz_per_row != NULL) delete [] p_nz_per_row;
 #endif
+  delete [] rows;
+  delete [] cols;
+  delete [] values;
+
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -674,6 +678,10 @@ void numberNonZeros(void)
       delete [] values;
     }
   }
+
+  values = new T[p_maxValues];
+  rows   = new int[p_maxValues];
+  cols   = new int[p_maxValues];
 }
 
 /**
@@ -683,14 +691,10 @@ void numberNonZeros(void)
  */
 void loadBusData(MatrixType &matrix, bool flag)
 {
-  int i, j, nvals;
-  T *values = new T[p_maxValues];
-  int *rows = new int[p_maxValues];
-  int *cols = new int[p_maxValues];
+  int i, j,nv;
+
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      nvals = p_network->getBus(i)->matrixNumValues();
-      int nv=0;
       p_network->getBus(i)->matrixGetValues(&nv,values,rows,cols);
       for (j=0; j<nv; j++) {
         if (flag) {
@@ -701,9 +705,6 @@ void loadBusData(MatrixType &matrix, bool flag)
       }
     }
   }
-  delete [] values;
-  delete [] rows;
-  delete [] cols;
 }
 
 /**
@@ -713,49 +714,40 @@ void loadBusData(MatrixType &matrix, bool flag)
  */
 void loadBranchData(MatrixType &matrix, bool flag)
 {
-  int i, j, nvals;
-  T *values = new T[p_maxValues];
-  int *rows = new int[p_maxValues];
-  int *cols = new int[p_maxValues];
+  int i, j;
   for (i=0; i<p_nBranches; i++) {
-    nvals = p_network->getBranch(i)->matrixNumValues();
-    if (nvals > 0) {
-      int ncols = p_network->getBranch(i)->matrixNumCols();
-      int rmin, rmax;
-      bool isActive = p_network->getActiveBranch(i);
-      if (ncols > 0) {
-        rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
-        rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
-      }
-      int nv=0;
-      p_network->getBranch(i)->matrixGetValues(&nv,values,rows,cols);
-      bool addElem;
-      for (j=0; j<nv; j++) {
-        if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
-          addElem = false;
-          if (ncols > 0) {
-            if (cols[j] >= rmin && cols[j] <= rmax) {
-              if (isActive) addElem = true;
-            } else {
-              addElem = true;
-            }
-          } else {
-            addElem = true;
-          }
-          if (addElem) {
-            if (flag) {
-              matrix.addElement(rows[j],cols[j],values[j]);
-            } else {
-              matrix.setElement(rows[j],cols[j],values[j]);
-            }
-          }
-        }
+    int ncols = p_network->getBranch(i)->matrixNumCols();
+    int rmin, rmax;
+    bool isActive = p_network->getActiveBranch(i);
+    if (ncols > 0) {
+      rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
+      rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
+    }
+    int nv=0;
+    p_network->getBranch(i)->matrixGetValues(&nv,values,rows,cols);
+    bool addElem;
+    for (j=0; j<nv; j++) {
+      if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+	addElem = false;
+	if (ncols > 0) {
+	  if (cols[j] >= rmin && cols[j] <= rmax) {
+	    if (isActive) addElem = true;
+	  } else {
+	    addElem = true;
+	  }
+	} else {
+	  addElem = true;
+	}
+	if (addElem) {
+	  if (flag) {
+	    matrix.addElement(rows[j],cols[j],values[j]);
+	  } else {
+	    matrix.setElement(rows[j],cols[j],values[j]);
+	  }
+	}
       }
     }
   }
-  delete [] values;
-  delete [] rows;
-  delete [] cols;
 }
 
 /**
@@ -815,6 +807,10 @@ int*                        p_nz_per_row;
 
 int*                        p_row_Offsets;
 int*                        p_col_Offsets;
+
+T                           *values;
+int                         *rows;
+int                         *cols;
 
     // global matrix offset arrays
 int                         g_bus_row_offsets;
