@@ -74,6 +74,9 @@ GenVectorMap(boost::shared_ptr<_network> network)
   if (p_BusLocOffsets != NULL) delete [] p_BusLocOffsets;
   if (p_BranchSizes != NULL) delete [] p_BranchSizes;
   if (p_BranchLocOffsets != NULL) delete [] p_BranchLocOffsets;
+
+  delete [] values;
+  delete [] idx;
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -145,8 +148,8 @@ void mapToVector(boost::shared_ptr<VectorType> &vector)
 void mapToNetwork(const VectorType &vector)
 {
   int i, j, nvals;
-  T *values = new T[p_maxValues];
-  int *idx = new int[p_maxValues];
+  //  T *values = new T[p_maxValues];
+  //  int *idx = new int[p_maxValues];
   // get values from buses
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
@@ -169,8 +172,8 @@ void mapToNetwork(const VectorType &vector)
       p_network->getBranch(i)->vectorSetElementValues(values);
     }
   }
-  delete [] values;
-  delete [] idx;
+  //  delete [] values;
+  //  delete [] idx;
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -253,6 +256,10 @@ void getDimensions(void)
       nRows += nval;
     }
   }
+
+  values = new T[p_maxValues];
+  idx    = new int[p_maxValues];
+  
   // Evaluate offsets for each processor
   int *sizebuf = new int[p_nNodes];
   for (i=0; i<p_nNodes; i++) {
@@ -512,8 +519,9 @@ void setIndices(void)
 void loadBusData(VectorType &vector, bool flag)
 {
   int i, j, nvals;
-  T *values = new T[p_maxValues];
-  int *idx = new int[p_maxValues];
+  
+  //  T *values = new T[p_maxValues];
+  //  int *idx = new int[p_maxValues];
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       nvals = p_network->getBus(i)->vectorNumElements();
@@ -527,8 +535,8 @@ void loadBusData(VectorType &vector, bool flag)
       }
     }
   }
-  delete [] values;
-  delete [] idx;
+  //  delete [] values;
+  //  delete [] idx;
 }
 
 /**
@@ -539,8 +547,8 @@ void loadBusData(VectorType &vector, bool flag)
 void loadBranchData(VectorType &vector, bool flag)
 {
   int i, j, nvals;
-  T *values = new T[p_maxValues];
-  int *idx = new int[p_maxValues];
+  //  T *values = new T[p_maxValues];
+  //  int *idx = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
       nvals = p_network->getBranch(i)->vectorNumElements();
@@ -556,8 +564,8 @@ void loadBranchData(VectorType &vector, bool flag)
       }
     }
   }
-  delete [] values;
-  delete [] idx;
+  //  delete [] values;
+  //  delete [] idx;
 }
 
     // Configuration information
@@ -590,6 +598,9 @@ int                         *p_BusLocOffsets;
 int                         *p_BusSizes;
 int                         *p_BranchLocOffsets;
 int                         *p_BranchSizes;
+
+T                           *values;
+int                         *idx;
 
 
     // pointer to timer
