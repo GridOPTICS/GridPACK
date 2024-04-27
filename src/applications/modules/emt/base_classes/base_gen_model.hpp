@@ -336,6 +336,10 @@ public:
    * @param [in] type - the integration type
    */
   void setIntegrationType(EMTMachineIntegrationType type) {integrationtype = type;}
+  /* Return generator id */
+  std::string getid() {
+    return id;
+  }
   
  protected:
   double        pg; /**< Generator active power output */
@@ -343,6 +347,7 @@ public:
   double        mbase; /**< MVA base of the machine */
   int           busnum; /**< Bus number */
   int           status; /**< Machine status */
+  std::string   id; /**< Generator id */
   double        sbase;  /** The system MVA base */
   double        p_time; /** Current time */
   double        shift; // shift (multiplier) used in the Jacobian calculation.

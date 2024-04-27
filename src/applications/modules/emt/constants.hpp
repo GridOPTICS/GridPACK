@@ -18,7 +18,7 @@
 
 #include <gridpack/include/gridpack.hpp>
 
-#define PI (4.0*atan(1.0))
+#define PI 3.1415926535897932384626433832795029
 #define FREQ 60.0
 #define OMEGA_S (2.0*PI*60.0)
 #define DEFAULT_MVABASE 100.0 // Default MVA base 100 MVA
