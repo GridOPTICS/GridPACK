@@ -7,8 +7,6 @@
 # solver used for handling disturbances.
 # For disabling any options use a preceding #, i.e., comment them out.
 
--emt_snes_linesearch_type basic
-
 # Numerical integration scheme
 -emt_ts_type bdf # 2nd order backward BDF method
 
@@ -60,7 +58,7 @@
 #-emt_snes_fd
 
 # Save the output at each time-step
--emt_ts_save_trajectory
--ts_trajectory_keep_files
+#-emt_ts_save_trajectory
+#-ts_trajectory_keep_files
 
 
