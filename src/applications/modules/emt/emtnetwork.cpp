@@ -103,6 +103,16 @@ EmtBus::~EmtBus(void)
     delete(p_vecidx);
   }
 }
+/** Get generator given the generator id */
+BaseEMTGenModel* EmtBus::getGenerator(std::string genid)
+{
+  for(int i=0; i < p_ngen; i++) {
+    if(genid == p_gen[i]->getid()) {
+      return p_gen[i];
+    }
+  }
+  return nullptr;
+}
 
 /**
   Set the shift value provided by TS
@@ -1619,6 +1629,20 @@ void EmtBus::vectorSetElementValues(gridpack::RealType *values)
 bool EmtBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
+  if(!strcmp(signal,"header")) {
+    /* Print output header */
+    int busnum = this->getOriginalIndex();
+    sprintf(string,", %d_va, %d_vb, %d_vc",busnum,busnum,busnum);
+    return true;
+  } else if(!strcmp(signal,"monitor")) {
+    /* Print output */
+    double va, vb, vc;
+    getVoltages(&va,&vb,&vc);
+    sprintf(string,", %6.5f, %6.5f, %6.5f",va,vb,vc);
+    return true;
+  }
+  return false;
+
   return false;
 }
 

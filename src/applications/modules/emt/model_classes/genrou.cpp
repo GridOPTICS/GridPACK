@@ -186,6 +186,15 @@ void Genrou::init(gridpack::RealType* xin)
  */
 bool Genrou::serialWrite(char *string, const int bufsize,const char *signal)
 {
+  if(!strcmp(signal,"header")) {
+    /* Print output header */
+    sprintf(string,", %d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str());
+    return true;
+  } else if(!strcmp(signal,"monitor")) {
+    /* Print output */
+    sprintf(string,", %6.5f, %6.5f",delta,dw);
+    return true;
+  }
   return false;
 }
 
@@ -307,7 +316,7 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
 
     f[6] = dpsi2qdt/Tqopp - dpsi2q;
 
-    f[7] = OMEGA_S*dw - ddelta;
+    f[7] = dw/OMEGA_S - ddelta;
 
     if(hasGovernor()) {
       TM = getGovernor()->getMechanicalPower();
@@ -645,7 +654,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   values[ctr] = -shift;
 
   rows[ctr+1] = delta_idx; cols[ctr+1] = dw_idx;
-  values[ctr+1] = OMEGA_S;
+  values[ctr+1] = 1/OMEGA_S;
 
   ctr += 2;
 
@@ -880,7 +889,7 @@ void Genrou::preStep(double time ,double timestep)
 
   f[6] = dpsi2qdt/Tqopp;
 
-  f[7] = OMEGA_S*dw;
+  f[7] = dw/OMEGA_S;
 
   if(hasGovernor()) {
     TM = getGovernor()->getMechanicalPower();

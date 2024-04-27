@@ -289,6 +289,9 @@ public:
       }
     }
   }
+
+  /** Get generator given the generator id */
+  BaseEMTGenModel* getGenerator(std::string genid);
   
 private:
   // Anything declared here should be set in the Archive class in exactly the same order!!

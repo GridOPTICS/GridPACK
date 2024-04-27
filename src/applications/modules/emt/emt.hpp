@@ -162,11 +162,44 @@ public:
   {
     int nsteps = p_daesolver->getstepnumber();
     if(nsteps % reuseprecon_nsteps == 0) {
-      //      p_daesolver->reusepreconditioner(-2); // Update preconditioner at next step
+      p_daesolver->reusepreconditioner(-2); // Update preconditioner at next step
     } else {
-      //      p_daesolver->reusepreconditioner(-1); // Reuse preconditioner
+      p_daesolver->reusepreconditioner(-1); // Reuse preconditioner
     }
     p_factory->postStep(time);
+
+    if(p_saveoutput) {
+      fprintf(fp_monitor,"%6.5f",time);
+      output_string[0] = '\0';
+      char *ptr = output_string;
+      int len = 0,slen;
+      bool write_data;
+
+      for(int i = 0; i < monitored_buses.size(); i++) {
+	char buf[128];
+	write_data = monitored_buses[i]->serialWrite(buf,128,"monitor");
+	if(write_data) {
+	  slen = strlen(buf);
+	  if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	  len += slen;
+	  ptr += slen;
+	}
+      }
+
+      for(int i = 0; i < monitored_gens.size(); i++) {
+	char buf[128];
+	write_data = monitored_gens[i]->serialWrite(buf,128,"monitor");
+	if(write_data) {
+	  slen = strlen(buf);
+	  if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	  len += slen;
+	  ptr += slen;
+	}
+      }
+      fprintf(fp_monitor,"%s",output_string);
+      fprintf(fp_monitor,"%s","\n");
+    }
+
   }
 
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff
@@ -250,6 +283,22 @@ public:
   EMTMachineIntegrationType p_emtmachineintegrationtype;
 
   int reuseprecon_nsteps; // Reuse preconditioner for nsteps
+
+  void setMonitors(gridpack::utility::Configuration::CursorPtr);
+
+  // Output requested by user?
+  bool p_saveoutput;
+
+  // Output file name
+  std::string p_monitorfile;
+
+  // File pointer
+  FILE *fp_monitor;
+
+  std::vector<BaseEMTGenModel*> monitored_gens;
+  std::vector<EmtBus*> monitored_buses;
+
+  char output_string[512]; // Output is written to this string
 
   /// These class needs to see inside Emt
   friend class EmtTimedFaultEvent;

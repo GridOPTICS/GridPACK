@@ -39,7 +39,7 @@ protected:
 
     p_sim->p_daesolver->restartstep();
 
-    //    p_sim->p_daesolver->reusepreconditioner(-2); // Update preconditioner
+    p_sim->p_daesolver->reusepreconditioner(-2); // Update preconditioner
 
   }
 
@@ -49,12 +49,14 @@ protected:
 Emt::Emt(void)
   : p_isSetUp(0),
     reuseprecon_nsteps(1),
+    p_saveoutput(false),
     emt_network(new EmtNetwork(p_comm))
 {}
 
 Emt::Emt(gridpack::parallel::Communicator comm)
   : p_comm(comm),
     p_isSetUp(0),
+    p_saveoutput(false),
     reuseprecon_nsteps(1),
     emt_network(new EmtNetwork(p_comm))
 {}
@@ -73,6 +75,7 @@ Emt::~Emt(void)
   delete(p_MatMapper);
   delete(p_pfapp);
   delete(p_daesolver);
+  fclose(fp_monitor);
   if(!rank()) printf("Emt: Finished running simulation\n");
 }
 
@@ -161,6 +164,89 @@ void Emt::readnetworkdatafromconfig(void)
   parser.parse(dyrfilename.c_str());
   p_profiler.stopdatareadtimer();
   if(!rank()) printf("Emt: Finished Reading data files %s and %s\n",netfilename.c_str(),dyrfilename.c_str());
+}
+
+void Emt::setMonitors(gridpack::utility::Configuration::CursorPtr p_configcursor)
+{
+  // Set up output
+  gridpack::utility::Configuration::CursorPtr list;
+  list = p_configcursor->getCursor("Monitors");
+  if(list) {
+    p_saveoutput = true;
+    gridpack::utility::Configuration::ChildElements monitors;
+    list->children(monitors);
+    int size = monitors.size();
+    int idx;
+    std::vector<int> gen_buses;
+    std::vector<int> buses;
+    std::vector<std::string> gen_ids;
+    for(idx = 0; idx < size; idx++) {
+      if(strcmp(monitors[idx].name.c_str(),"Generator") == 0) {
+	int busnum = monitors[idx].cursor->get("bus",0);
+	std::vector<int> bus_local_idx;
+	std::string raw_gen_id = monitors[idx].cursor->get("id","1");
+	gridpack::utility::StringUtils util;
+	std::string gen_id = util.clean2Char(raw_gen_id);
+	EmtBus *bus;
+	BaseEMTGenModel *gen;
+	bus_local_idx = emt_network->getLocalBusIndices(busnum);
+	if(bus_local_idx.size()) {
+	  bus = dynamic_cast<EmtBus*>(emt_network->getBus(bus_local_idx[0]).get());
+	  gen = bus->getGenerator(gen_id);
+	  if(gen) {
+	    monitored_gens.push_back(gen);
+	  }
+	}						    
+      } else if(strcmp(monitors[idx].name.c_str(),"Bus") == 0) {
+	int busnum = monitors[idx].cursor->get("bus",0);
+	std::vector<int> bus_local_idx;
+	EmtBus *bus;
+	bus_local_idx = emt_network->getLocalBusIndices(busnum);
+	if(bus_local_idx.size()) {
+	  bus = dynamic_cast<EmtBus*>(emt_network->getBus(bus_local_idx[0]).get());
+	  monitored_buses.push_back(bus);
+	}
+      }
+    }
+    
+    if(p_configcursor->get("MonitorFile",&p_monitorfile)) {
+      fp_monitor = fopen(p_monitorfile.c_str(),"w");
+    } else {
+      fp_monitor = fopen("emtoutput.csv","w");
+    }
+  }
+
+  if(p_saveoutput) {
+    fprintf(fp_monitor,"%s","t ");
+    output_string[0] = '\0';
+    char *ptr = output_string;
+    int len = 0,slen;
+    bool write_data;
+
+    for(int i = 0; i < monitored_buses.size(); i++) {
+      char buf[128];
+      write_data = monitored_buses[i]->serialWrite(buf,128,"header");
+      if(write_data) {
+	slen = strlen(buf);
+	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	len += slen;
+	ptr += slen;
+      }
+    }
+
+    for(int i = 0; i < monitored_gens.size(); i++) {
+      char buf[128];
+      write_data = monitored_gens[i]->serialWrite(buf,128,"header");
+      if(write_data) {
+	slen = strlen(buf);
+	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	len += slen;
+	ptr += slen;
+      }
+    }
+    fprintf(fp_monitor,"%s",output_string);
+    fprintf(fp_monitor,"%s","\n");
+  }
 }
 
 void Emt::setup()
@@ -273,6 +359,9 @@ void Emt::setup()
 
   if(!rank()) printf("Emt:Finished setting up DAE solver\n");
 
+  // Set up output monitors
+  setMonitors(p_configcursor);
+
   p_isSetUp = 1;
   p_profiler.stopsetuptimer();
   if(!rank()) printf("Emt:Set up completed\n");
@@ -296,7 +385,7 @@ void Emt::initialize()
 */
 void Emt::solve()
 {
-  int maxsteps(10000);
+  int maxsteps(100000);
   double final_time;
   p_profiler.startsolvetimer();
   p_simparams.getFinalTime(&final_time);
