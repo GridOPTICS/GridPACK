@@ -21,6 +21,9 @@
 # Tolerance for event location
 -emt_ts_event_tol 1e-5
 
+# Minimum step size for event
+-emt_ts_event_dt_min 1e-6
+
 # Step size after event
 -emt_ts_event_post_eventinterval_step 50e-6
 
