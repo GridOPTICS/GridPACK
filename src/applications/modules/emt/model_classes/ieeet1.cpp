@@ -284,7 +284,7 @@ void Ieeet1::vectorGetValues(gridpack::RealType *values)
 
   if(integrationtype == EXPLICIT) return;
 
-  double Ec,yLL,Vf,SE=0.0, VRin;
+  double Ec,Vf,SE=0.0, VRin;
 
   double vabc[3],vdq0[3];
 
@@ -437,10 +437,10 @@ void Ieeet1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
       values[ctr+2] = -(KA*KF/TF)/TA;
       values[ctr+3] = -KA/TA;
     } else {
-      values[ctr] =   -KA/TA;
-      values[ctr+1] = -1.0/TA;
-      values[ctr+2] = -(KA*KF/TF)/TA;
-      values[ctr+3] = -KA/TA;
+      values[ctr] =   -KA;
+      values[ctr+1] = -1.0;
+      values[ctr+2] = -(KA*KF/TF);
+      values[ctr+3] = -KA;
     }
   }
       
@@ -520,7 +520,7 @@ void Ieeet1::eventFunction(const double&t,gridpack::RealType *state,std::vector<
   xf    = state[xf_idx];
 
   /* Only considering limits on VR */
-  double Vf,yLL,dVR_dt, VRin;
+  double Vf,dVR_dt, VRin;
   Vf = xf + KF/TF*Efd;
   VRin = Vref - Vmeas - Vf;
 
@@ -559,7 +559,7 @@ void Ieeet1::eventHandlerFunction(const bool *triggered, const double& t, gridpa
   xf    = state[xf_idx];
 
   /* Only considering limits on VR */
-  double Vf,yLL,dVR_dt,VRin;
+  double Vf,dVR_dt,VRin;
   Vf = xf + KF/TF*Efd;
   VRin = Vref - Vmeas - Vf;
   dVR_dt = (-VR + KA*VRin)/TA;
