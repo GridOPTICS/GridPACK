@@ -155,8 +155,18 @@ void Regca1::init(gridpack::RealType* xin)
  */
 bool Regca1::serialWrite(char *string, const int bufsize,const char *signal)
 {
+  if(!strcmp(signal,"header")) {
+    /* Print output header */
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_Qg, %d_%s_freq",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
+    return true;
+  } else if(!strcmp(signal,"monitor")) {
+    /* Print output */
+    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,Qgen,Freq);
+    return true;
+  }
   return false;
 }
+
 
 /**
  * Write out generator state
