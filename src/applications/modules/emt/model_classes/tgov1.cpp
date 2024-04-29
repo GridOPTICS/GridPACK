@@ -94,6 +94,8 @@ void Tgov1::preStep(double time ,double timestep)
   // Output mechanical power
   Pmech = leadlag_blk_out - Dt*dw;
 
+  xout = Pmech;
+
 }
 
 /**
