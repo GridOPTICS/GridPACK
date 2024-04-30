@@ -26,6 +26,7 @@
 #include <model_classes/regca1.hpp>
 #include <model_classes/reeca1.hpp>
 #include <model_classes/repca1.hpp>
+#include <model_classes/gdform.hpp>
 #include <model_classes/tgov1.hpp>
 #include <model_classes/lumpedline.hpp>
 #include <model_classes/transformer.hpp>
@@ -649,6 +650,10 @@ void EmtBus::load(const
 	Regca1 *regca1;
 	regca1 = new Regca1;
 	p_gen[i] = regca1;
+      } else if(type == "GDFORM") {
+	Gdform *gdform;
+	gdform = new Gdform;
+	p_gen[i] = gdform;
       }
 
       // Set status
