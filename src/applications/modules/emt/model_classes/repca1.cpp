@@ -131,12 +131,8 @@ void Repca1::init(gridpack::RealType* xin)
   getElectricalController()->getInitialPrefQext(&Pref, &Qref);
   Plant_ref = Pref;
 
-  // Get machine power
+  // Get machine power -- on machine base
   getGenerator()->getInitialPower(&Pg, &Qg);
-
-  // Convert to machine mvabase
-  Pg *= sbase/mbase;
-  Qg *= sbase/mbase;
 
   if(FreqFLAG) {
     double ferr;
@@ -265,10 +261,8 @@ void Repca1::preStep(double time ,double timestep)
 
   Freq = getGenerator()->getFreq();
 
+  // Power is on machine base
   getGenerator()->getPower(time,&Pg,&Qg);
-  // Convert power to mbase
-  Pg *= sbase/mbase;
-  Qg *= sbase/mbase;
   
   if(FreqFLAG) {
     ferr = Freq_ref - Freq;
