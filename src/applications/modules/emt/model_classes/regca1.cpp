@@ -4,12 +4,12 @@
 
 Regca1::Regca1(void)
 {
-  nxgen   = 4; // Number of variables for this model
+  nxgen   = 6; // Number of variables for this model
 }
 
 void Regca1::getnvar(int *nvar)
 {
-  if(integrationtype == EXPLICIT) nxgen = 4;
+  if(integrationtype == EXPLICIT) nxgen = 6;
   *nvar = nxgen;
 }
 
@@ -29,6 +29,7 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 
   // load parameters for the model type
   data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
+  L = imag(Zsource)/OMEGA_S;
 
   if (!data->getValue(GENERATOR_REGC_LVPLSW , &lvplsw, idx)) lvplsw = 0; 
   if (!data->getValue(GENERATOR_REGC_TG  ,    &tg, idx))     tg = 0.02; 
@@ -52,7 +53,7 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Ip_blk.setparams(1.0,tg);
   
   Iq_blk.setparams(-1.0,tg);
-  if(pg > 0.0) {
+  if(qg > 0.0) {
     // Upper limit active with Qg > 0
     Iq_blk.setdxlimits(-1000.0,iqrmax);
   } else {
@@ -79,10 +80,14 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  Pll_block.setparams(0.01,1.0);
+  omega_Pll_block.setparams(0.01,1.0);
 
   // Integrator block
   angle_block.setparams(1.0);
+
+  // Outer current control blocks
+  Er_Pll_block.setparams(0.01,0.05);
+  Ei_Pll_block.setparams(0.01,0.05);
 }
 
 /**
@@ -110,14 +115,18 @@ void Regca1::init(gridpack::RealType* xin)
   double Im = abs(I);
   double Ia = arg(I);
 
+  E = V + I*Zsource;
+  Er = real(E);
+  Ei = imag(E);
+  
   double ia,ib,ic;
   ia = Im*sin(OMEGA_S*p_time + Ia);
   ib = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE);
   ic = Im*sin(OMEGA_S*p_time + Ia + TWOPI_OVER_THREE);
 
-  iabc[0] = ia*mbase/sbase;
-  iabc[1] = ib*mbase/sbase;
-  iabc[2] = ic*mbase/sbase;
+  iabc[0] = ia;
+  iabc[1] = ib;
+  iabc[2] = ic;
 
   vabc[0] = p_va;
   vabc[1] = p_vb;
@@ -126,23 +135,34 @@ void Regca1::init(gridpack::RealType* xin)
   Ip = Pg/p_Vm0;
   Iq = -Qg/p_Vm0;
 
-  // Initialize blocks
-  // PLL
-  double Vq = Pll_block.init_given_y(OMEGA_S);
+  Ipref = Ip;
+  Iqref = Iq;
 
-  dw = 0.0;
-  theta = p_Va0;
-  angle_block.init_given_y(theta);
+  // Initialize blocks
+
+  domega = 0.0;
+  // PLL
+  double Vq = omega_Pll_block.init_given_y(domega);
+
+  omega = OMEGA_S*(1 + domega);
+  
+  delta = p_Va0;
+  angle_block.init_given_y(delta);
+
+  Er_Pll_block.init_given_y(Er);
+  Ei_Pll_block.init_given_y(Ei);
 
   // Assume no limits are hit
   Ipcmd = Ip_blk.init_given_y(Ip);
   Iqcmd = Iq_blk.init_given_y(Iq);
   Vt_filter = Vt_filter_blk.init_given_u(p_Vm0);
 
-  x[0] = p_Vm0;    // Voltage magnitude
-  x[1] = pg/sbase; // Real power
-  x[2] = qg/sbase; // Reactive power
-  x[3] = 1.0;     // Frequency
+  x[0] = ia;
+  x[1] = ib;
+  x[2] = ic;
+  x[3] = ia*mbase/sbase; // current on system base
+  x[4] = ib*mbase/sbase; // current on system base
+  x[5] = ic*mbase/sbase; // current on system base
 }
 
 /**
@@ -157,11 +177,12 @@ bool Regca1::serialWrite(char *string, const int bufsize,const char *signal)
 {
   if(!strcmp(signal,"header")) {
     /* Print output header */
-    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_Qg, %d_%s_freq",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
     return true;
   } else if(!strcmp(signal,"monitor")) {
     /* Print output */
-    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,Qgen,Freq);
+    getPower(p_time,&Pgen,&Qgen);
+    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vt_filter,Pgen,delta,domega);
     return true;
   }
   return false;
@@ -187,11 +208,16 @@ void Regca1::setValues(gridpack::RealType *values)
   gridpack::RealType *x = values+offsetb; // generator array starts from this location
 
   if(p_mode == XVECTOBUS) {
-    Vm  = x[0];
-    Pgen  = x[1];
-    Qgen  = x[2];
-    Freq  = x[3];
+    iabc[0]  = x[0];
+    iabc[1]  = x[1];
+    iabc[2]  = x[2];
+    iout[0]  = x[3];
+    iout[1]  = x[4];
+    iout[2]  = x[5];
   } else if(p_mode == XDOTVECTOBUS) {
+    diabc[0] = x[0];
+    diabc[1] = x[1];
+    diabc[2] = x[2];
   }
   
 }
@@ -208,19 +234,17 @@ void Regca1::preStep(double time ,double timestep)
   vabc[1] = p_vb;
   vabc[2] = p_vc;
 
-  abc2dq0(vabc,time,theta,vdq0);
+  abc2dq0(vabc,time,delta,vdq0);
 
   Vd = vdq0[0];
   Vq = vdq0[1];
 
   Vt = sqrt(Vd*Vd + Vq*Vq);
-
-  Vm_save = Vt;
   
   double omega;
-  omega    = Pll_block.getoutput(Vq, timestep, true);
-  dw = omega - OMEGA_S;
-  theta = angle_block.getoutput(dw, timestep, true);
+  domega = omega_Pll_block.getoutput(Vq, timestep, true);
+  omega  = OMEGA_S*(1 + domega);
+  delta  = angle_block.getoutput(OMEGA_S*domega, timestep, true);
 
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
 
@@ -246,12 +270,12 @@ void Regca1::preStep(double time ,double timestep)
 
   Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
-  idq0[0] = Ipout*mbase/sbase;
-  idq0[1] = Iqout*mbase/sbase;
-  idq0[2] = 0.0;
+  Er = Er_Pll_block.getoutput(Ipout-Ipref,timestep,true);
+  Ei = Ei_Pll_block.getoutput(Iqout-Iqref,timestep,true);
 
-  getPower(time,&Pgen_save,&Qgen_save);
-  Freq_save = getFreq();
+  E = gridpack::ComplexType(Er,Ei);
+  Em = abs(E);
+  Eang = arg(E);
 }
 
 /**
@@ -274,10 +298,19 @@ void Regca1::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-    f[0] = Vm - Vm_save;
-    f[1] = Pgen - Pgen_save;
-    f[2] = Qgen - Qgen_save;
-    f[3] = Freq - Freq_save;
+    eabc[0] = Em*sin(OMEGA_S*p_time + Eang);
+    eabc[1] = Em*sin(OMEGA_S*p_time + Eang - 2.0*PI/3.0);
+    eabc[2] = Em*sin(OMEGA_S*p_time + Eang + 2.0*PI/3.0);
+
+    vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+    
+    f[0] = eabc[0] - vabc[0] - L*diabc[0];
+    f[1] = eabc[1] - vabc[1] - L*diabc[1];
+    f[2] = eabc[2] - vabc[2] - L*diabc[2];
+
+    f[3] = iabc[0]*mbase/sbase - iout[0];
+    f[4] = iabc[1]*mbase/sbase - iout[1];
+    f[5] = iabc[2]*mbase/sbase - iout[2];
   }
 }
 
@@ -291,7 +324,7 @@ double Regca1::getFreq()
 {
   double pufreq;
 
-  pufreq = (dw + OMEGA_S)/(2*PI*FREQ);
+  pufreq = 1 + domega;
 
   return pufreq;
 }
@@ -315,8 +348,8 @@ void Regca1::getPower(double time,double *Pg, double *Qg)
   vabc[1] = p_vb;
   vabc[2] = p_vc;
 
-  abc2dq0(vabc,time,theta,vdq0);
-  abc2dq0(iabc,time,theta,idq0);
+  abc2dq0(vabc,time,delta,vdq0);
+  abc2dq0(iabc,time,delta,idq0);
 
   Vd = vdq0[0];
   Vq = vdq0[1];
@@ -331,8 +364,8 @@ void Regca1::getPower(double time,double *Pg, double *Qg)
   Pgen = real(S);
   Qgen = imag(S);
 
-  *Pg = Pgen*mbase/sbase;
-  *Qg = Qgen*mbase/sbase;
+  *Pg = Pgen;
+  *Qg = Qgen;
 
 }
 
@@ -345,8 +378,8 @@ void Regca1::getPower(double time,double *Pg, double *Qg)
  */
 void Regca1::getInitialPower(double *Pg, double *Qg)
 {
-  *Pg = pg/sbase;
-  *Qg = qg/sbase;
+  *Pg = pg/mbase;
+  *Qg = qg/mbase;
 }
 
 /**
@@ -357,11 +390,9 @@ void Regca1::getInitialPower(double *Pg, double *Qg)
  */
 void Regca1::getCurrent(double *ia, double *ib, double *ic)
 {
-  dq02abc(idq0,p_time,theta,iabc);
-  
-  *ia = iabc[0];
-  *ib = iabc[1];
-  *ic = iabc[2];
+  *ia = iout[0];
+  *ib = iout[1];
+  *ic = iout[2];
 }
 
 /**
@@ -370,11 +401,7 @@ void Regca1::getCurrent(double *ia, double *ib, double *ic)
  */
 void Regca1::getCurrentGlobalLocation(int *i_gloc)
 {
-  if(integrationtype == IMPLICIT) {
-    *i_gloc = p_gloc;
-  } else {
-    *i_gloc = -1; // No variables for this model
-  }
+    *i_gloc = p_gloc + 3;
 }
 
 
@@ -382,13 +409,13 @@ void Regca1::getCurrentGlobalLocation(int *i_gloc)
  * Get number of matrix values contributed by generator
  * @return number of matrix values
 
- Number of non-zero values = 4
+ Number of non-zero values = 12
  */
 int Regca1::matrixNumValues()
 {
   int numVals;
 
-  numVals = 4;
+  numVals = 12;
 
   return numVals;
 }
@@ -404,23 +431,65 @@ void Regca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 {
   int ctr = 0;
 
-  rows[ctr] = p_gloc;
+    rows[ctr] = p_gloc;
   cols[ctr] = p_gloc;
-  values[ctr] = 1.0;
+  values[ctr] = -L*shift;
+
+  rows[ctr+1] = p_gloc;
+  cols[ctr+1] = p_glocvoltage;
+  values[ctr+1] = -1.0;
+
+  ctr += 2;
+
+  rows[ctr] = p_gloc+1;
+  cols[ctr] = p_gloc+1;
+  values[ctr] = -L*shift;
 
   rows[ctr+1] = p_gloc+1;
-  cols[ctr+1] = p_gloc+1;
-  values[ctr+1] = 1.0;
+  cols[ctr+1] = p_glocvoltage+1;
+  values[ctr+1] = -1.0;
 
-  rows[ctr+2] = p_gloc+2;
-  cols[ctr+2] = p_gloc+2;
-  values[ctr+2] = 1.0;
+  ctr += 2;
 
-  rows[ctr+3] = p_gloc+3;
-  cols[ctr+3] = p_gloc+3;
-  values[ctr+3] = 1.0;
+  rows[ctr] = p_gloc+2;
+  cols[ctr] = p_gloc+2;
+  values[ctr] = -L*shift;
 
-  ctr += 4;
+  rows[ctr+1] = p_gloc+2;
+  cols[ctr+1] = p_glocvoltage+2;
+  values[ctr+1] = -1.0;
+
+  ctr += 2;
+
+  rows[ctr] = p_gloc + 3;
+  cols[ctr] = p_gloc;
+  values[ctr] = mbase/sbase;
+
+  rows[ctr+1] = p_gloc + 3;
+  cols[ctr+1] = p_gloc + 3;
+  values[ctr+1] = -1.0;
+
+  ctr += 2;
+
+  rows[ctr] = p_gloc + 4;
+  cols[ctr] = p_gloc + 1;
+  values[ctr] = mbase/sbase;
+
+  rows[ctr+1] = p_gloc + 4;
+  cols[ctr+1] = p_gloc + 4;
+  values[ctr+1] = -1.0;
+
+  ctr += 2;
+
+  rows[ctr] = p_gloc + 5;
+  cols[ctr] = p_gloc + 2;
+  values[ctr] = mbase/sbase;
+
+  rows[ctr+1] = p_gloc + 5;
+  cols[ctr+1] = p_gloc + 5;
+  values[ctr+1] = -1.0;
+
+  ctr += 2;
 
   *nvals = ctr;
 }

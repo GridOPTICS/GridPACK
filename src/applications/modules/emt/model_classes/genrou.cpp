@@ -12,7 +12,7 @@
 Genrou::Genrou(void)
 {
   nxgen   = 12; // Number of variables for this model
-  flux_speed_sensitivity = 1;
+  flux_speed_sensitivity = 0;
 }
 
 void Genrou::getnvar(int *nvar)
