@@ -204,7 +204,7 @@ class Regca1 : public BaseEMTGenModel
    */
   double getAngle()
   {
-    return theta;
+    return delta;
   }
 
   /**
@@ -213,7 +213,7 @@ class Regca1 : public BaseEMTGenModel
    */
   double getAngle(int *delta_gloc)
   {
-    return theta;
+    return delta;
     *delta_gloc = -1;
   }
   private:
@@ -239,18 +239,26 @@ class Regca1 : public BaseEMTGenModel
 
     GainLimiter    Iqlowlim_blk;
 
-    PIControl Pll_block;
-    double    dw; // Output of PLL block
+    PIControl Er_Pll_block;
+    double    Er;
+
+    PIControl Ei_Pll_block;
+    double    Ei;
+  
+    PIControl omega_Pll_block;
+    double    domega; // Output of PLL block
+    double    omega;
 
     Integrator angle_block;
-    double    theta; // Output of angle_block
+    double    delta; // Output of angle_block
   
-    double  Ipout,Iqout; // inverter current output in inverter reference frame
+  double  Ipout,Iqout; // inverter current output in inverter reference frame
   double  Irout, Iiout; // inverter current output in network reference frame
   
     double Ipcmd, Iqcmd, busfreq;  // busfreq is perunit, 1.0
 
-  gridpack::ComplexType Zsource;
+  gridpack::ComplexType Zsource, E;
+  double L;
   
   //    boost::shared_ptr<BaseExciterModel> p_exciter;
   //    boost::shared_ptr<BasePlantControllerModel> p_plant;
@@ -262,23 +270,18 @@ class Regca1 : public BaseEMTGenModel
 
   //  boost::shared_ptr<BaseMechanicalModel> p_aerodynamicmodel;
     
-  gridpack::ComplexType p_INorton;
-  gridpack::ComplexType p_Norton_Ya;
   
   double Vt, VR, VI;
+  double Em, Eang; // Magnitude and angle of internal voltage
 
-  // State variables and derivatives
-  // These are not really state variables
-  // They are just to record/store some values
-  double Vm,Pgen,Qgen,Freq;
-  double Vm_save, Pgen_save, Qgen_save, Freq_save;
-  
-  double iabc[3], diabc[3];
+  double iabc[3], diabc[3], iout[3];
 
-  
+  double Ipref, Iqref; // Ip and Iq references
 
-  // phase voltages
-  double vabc[3], vdq0[3], idq0[3];
+  // voltages and currents
+  double vabc[3], vdq0[3], idq0[3], eabc[3];
+
+  double Pgen,Qgen,Freq;
 
   // Internal variables used in printing
   double Pref; // Plant/Torque controller reference power
