@@ -138,7 +138,7 @@ int BaseBranchAnalyticsInterface::numLines()
   if (p_data != NULL) {
     int i, nline, lcnt, istat;
     if (!p_data->getValue(BRANCH_NUM_ELEMENTS,&nline)) nline = 0;
-    for (i=0; i<nline; i++) {
+    for (i=0, lcnt=0; i<nline; i++) {
       if (p_data->getValue(BRANCH_STATUS,&istat,i)) {
         if (istat > 0) lcnt++;
       } else {
