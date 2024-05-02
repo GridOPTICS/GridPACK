@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2024-04-18 14:11:48 d3g096
+ * @date   2024-05-02 07:10:04 d3g096
  * 
  * @brief  
  * 
@@ -399,6 +399,9 @@ class HADRECAppModule
 
   /// Network query: Get the number of loads
   int numLoads(void) const;
+
+  /// Network query: Get the number of lines
+  int numLines(void) const;
 
   /// Network query: Get the number of storage units
   int numStorage(void) const;

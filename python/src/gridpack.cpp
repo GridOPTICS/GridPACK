@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-05-09 10:29:36 d3g096
+// Last Change: 2024-05-09 10:30:38 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -657,7 +657,7 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::return_value_policy::copy)
     ;
 
-  // These are some network topology query methods
+  // These are some network topology/analytics query methods
   hadapp
     .def("totalBuses", &gph::HADRECAppModule::totalBuses)
     .def("totalBranches", &gph::HADRECAppModule::totalBranches)
@@ -672,6 +672,7 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("numGenerators", &gph::HADRECAppModule::numGenerators)
     .def("numLoads", &gph::HADRECAppModule::numLoads)
     .def("numStorage", &gph::HADRECAppModule::numStorage)
+    .def("numLines", &gph::HADRECAppModule::numLines)
     ;
 
   // These methods need to be reworked char * and/or optional args

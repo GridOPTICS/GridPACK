@@ -10,7 +10,6 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2024-05-09 10:30:03 d3g096
 # -------------------------------------------------------------
 
 import sys, os, time
@@ -97,6 +96,7 @@ class GridPACKTester(TestCase):
         print("Number of branches: %d" % (hadapp.totalBranches()))
         print("Number of generators: %d" % (hadapp.numGenerators()))
         print("Number of loads: %d" % (hadapp.numLoads()))
+        print("Number of lines: %d" % (hadapp.numLines()))
         print("Number of storage units: %d" % (hadapp.numStorage()))
         print("Branches connected to bus 1: ", hadapp.getConnectedBranches(1))
         print("Buses connected to branch 1: ", hadapp.getBranchEndpoints(1))
