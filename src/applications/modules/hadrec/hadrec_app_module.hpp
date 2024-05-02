@@ -7,7 +7,11 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
+<<<<<<< HEAD
  * @date   2025-01-29 11:52:49 d3g096
+=======
+ * @date   2024-05-02 07:10:04 d3g096
+>>>>>>> Add numLines() to HADREC and Python API
  * 
  * @brief  
  * 
