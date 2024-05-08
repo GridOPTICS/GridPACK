@@ -247,15 +247,14 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
         values[0] = ret;
       }
     }
-    if (p_ngen_nodynmodel > 0) {
-      for (int i = 0; i < p_ngen_nodynmodel; i++) {
+    for (int i = 0; i < p_ngen; i++) {
+      if(p_gen_nodynmodel[i]) {
 	p_ybusr = p_ybusr+(-p_genpg_nodynmodel[i])/(p_voltage*p_voltage);
 	p_ybusi = p_ybusi+p_genqg_nodynmodel[i]/(p_voltage*p_voltage);
 	gridpack::ComplexType ret(p_ybusr, p_ybusi);
-	
 	values[0] = ret;
       }
-	}
+    }
     return true;
   } else if (p_mode == jxd) {
     if (p_ngen > 0) {
@@ -851,6 +850,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_qg.clear();
   p_negpg.clear();
   p_negqg.clear();
+  p_gen_nodynmodel.clear();
   p_genpg_nodynmodel.clear();
   p_genqg_nodynmodel.clear();
   p_genid.clear();
@@ -946,6 +946,9 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       data->getValue(GENERATOR_ID, &genid, i);
       p_genid.push_back(genid);
       p_gstatus.push_back(stat);
+      p_gen_nodynmodel.push_back(false);
+      p_genpg_nodynmodel.push_back(0.0);
+      p_genqg_nodynmodel.push_back(0.0);
       p_pg.push_back(pg);
       p_qg.push_back(qg);
       p_savePg.push_back(pg);
@@ -1098,17 +1101,23 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 	if (has_wind_dt) p_generators[icnt]->getDriveTrainModel()->load(data,i);
 	if (has_wind_aero) p_generators[icnt]->getAeroDynamicModel()->load(data,i);
 
-        icnt++;
       } else if (!data->getValue(GENERATOR_MODEL, &model, i) && pg >= 0.0){ 
 	// handle the generators having no dynamic model, need to convert to negative load
-	p_genpg_nodynmodel.push_back(pg);
-	p_genqg_nodynmodel.push_back(qg);
+	BaseGeneratorModel *generator = new gridpack::dynamic_simulation::BaseGeneratorModel;
+	boost::shared_ptr<BaseGeneratorModel> basegen;
+	basegen.reset(generator);
+	p_generators.push_back(basegen);
+
+	p_gen_nodynmodel[i] = true;
+	p_genpg_nodynmodel[i] = pg;
+	p_genqg_nodynmodel[i] = qg;
 	p_ngen_nodynmodel++;
       } else if (pg < 0.0) {
         p_negpg.push_back(pg);
         p_negqg.push_back(qg);
         p_negngen++;
       }
+      icnt++;
     }
   }
 
@@ -1221,12 +1230,13 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_pl = 0.0;
   p_ql = 0.0;
   for (i=0; i<p_npowerflow_load; i++){
-    p_pl+=p_powerflowload_p[i];
-    p_ql+=p_powerflowload_q[i];
+    if(p_powerflowload_status[i]) {
+      p_pl+=p_powerflowload_p[i];
+      p_ql+=p_powerflowload_q[i];
+    }
   }
 
-  if (bdebug_load_model) printf(" Bus %d have %d power flow loads, total %f + j%f \n",
-      idx, p_npowerflow_load, p_pl, p_ql);
+  if (bdebug_load_model) printf(" Bus %d have %d power flow loads, total %f + j%f \n", idx, p_npowerflow_load, p_pl, p_ql);
 
   //get total load P and Q for all dynamic loads at this bus
   double totaldyn_p, totaldyn_q, loadtmp;

@@ -53,6 +53,9 @@ int main(int argc, char **argv)
     bool exportPSSE33 = false;
     std::string filename33;
     exportPSSE33 = cursor->get("exportPSSE_v33",&filename33);
+    bool exportPSSE34 = false;
+    std::string filename34;
+    exportPSSE34 = cursor->get("exportPSSE_v34",&filename34);
     bool noPrint = false;
     cursor->get("suppressOutput",&noPrint);
 
@@ -66,6 +69,18 @@ int main(int argc, char **argv)
     }
     pf_app.readNetwork(pf_network,config);
     pf_app.initialize();
+    gridpack::analysis::NetworkAnalytics<gridpack::powerflow::PFNetwork>
+      analytics(pf_network);
+    int ngen = analytics.numGenerators();
+    int nload = analytics.numLoads();
+    int nline = analytics.numLines();
+    if (world.rank() == 0) {
+      std::cout<<"Properties from analytics module"<<std::endl;
+      std::cout<<"Number of generators in network: "<<ngen<<std::endl;
+      std::cout<<"Number of loads in network:      "<<nload<<std::endl;
+      std::cout<<"Number of lines in network:      "<<nline<<std::endl;
+    }
+
     if (useNonLinear) {
       pf_app.nl_solve();
     } else {
@@ -79,6 +94,9 @@ int main(int argc, char **argv)
     }
     if (exportPSSE33) {
       pf_app.exportPSSE33(filename33);
+    }
+    if (exportPSSE34) {
+      pf_app.exportPSSE34(filename34);
     }
     if (!noPrint) {
       timer ->dump();

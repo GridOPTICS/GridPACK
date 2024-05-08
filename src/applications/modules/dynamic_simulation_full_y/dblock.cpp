@@ -182,6 +182,70 @@ double PiecewiseSlope::getoutput(double u)
 
   return yout;
 }
-    
-    
   
+double PiecewiseSlope::init_given_y(double yout)
+{
+  int i;
+  double u;
+  
+  if(p_increasing  && yout <= p_y[0])   u = p_u[0];
+  if(p_increasing  && yout >= p_y[p_n]) u = p_u[p_n];
+  if(!p_increasing && yout >= p_y[0])   u = p_u[0];
+  if(!p_increasing && yout <= p_y[p_n]) u = p_u[p_n];
+
+  for (i=0; i<p_n; i++) {
+    if (p_y[i] <= yout && yout <= p_y[i+1]) {
+      u = p_u[i] + (p_u[i+1] - p_u[i]) / (p_y[i+1] - p_y[i]) * (yout - p_y[i]);
+    }
+  }
+
+  return u;
+}
+    
+//-------------------
+//   LV Gate
+//-------------------
+
+LVGate::LVGate(void)
+{
+  p_u = 0.0;
+}
+
+void LVGate::setparams(double u)
+{
+  p_u = u;
+}
+
+double LVGate::getoutput(double u)
+{
+  double yout;
+
+  if (u > p_u) u = p_u;
+  yout = u;
+
+  return yout;
+}
+
+//-------------------
+//   HV Gate
+//-------------------
+
+HVGate::HVGate(void)
+{
+  p_u = 0.0;
+}
+
+void HVGate::setparams(double u)
+{
+  p_u = u;
+}
+
+double HVGate::getoutput(double u)
+{
+  double yout;
+
+  if (u < p_u) u = p_u;
+  yout = u;
+
+  return yout;
+}

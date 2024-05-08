@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# -------------------------------------------------------------
+
 
 # 
 cmake_minimum_required (VERSION 3.5.0)
@@ -53,24 +53,20 @@ if (APR_DIR)
 endif()
 
 # check to see if rt library exists. If so, add -lrt to GA_EXTRA_LIBS
+set (GLIBC_LIBS "")
 if (TRUE)
-set (GA_EXTRA_LIBS "")
 find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
+message(STATUS "LIBRT: ${LIBRT}")
 if (LIBRT)
-  if (GA_EXTRA_LIBS)
-    set (GA_EXTRA_LIBS "${GA_EXTRA_LIBS}" "${LIBRT}")
-  else()
-    set (GA_EXTRA_LIBS "${LIBRT}")
-  endif()
+  set (GLIBC_LIBS "${LIBRT}")
 endif()
 
 find_library(LIBDL dl PATHS /lib /usr/lib /usr/local/lib)
 message(STATUS "LIBDL: ${LIBDL}")
-if (GA_EXTRA_LIBS)
-  set(GA_EXTRA_LIBS "${GA_EXTRA_LIBS}" "${LIBDL}")
-else()
-  set(GA_EXTRA_LIBS "${LIBDL}")
+if (LIBDL)
+  set(GLIBC_LIBS "${GLIBC_LIBS}" "${LIBDL}")
 endif()
+set(GA_EXTRA_LIBS "${GA_EXTRA_LIBS}" "${GLIBC_LIBS}")
 endif()
 
 # add HELICS directory

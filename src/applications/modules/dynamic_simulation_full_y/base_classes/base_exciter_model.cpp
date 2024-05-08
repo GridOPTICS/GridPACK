@@ -156,6 +156,10 @@ void gridpack::dynamic_simulation::BaseExciterModel::setWideAreaFreqforPSS(doubl
 {
 }	
 
+void gridpack::dynamic_simulation::BaseExciterModel::setIri(double vIr, double vIi)
+{
+}
+
 // Yuan added below 2020-6-23
 /** 
  * Set the exciter bus number

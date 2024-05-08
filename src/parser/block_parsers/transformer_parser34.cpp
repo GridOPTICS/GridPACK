@@ -9,6 +9,7 @@
  *           Author: Bruce Palmer
  */
 #include "transformer_parser34.hpp"
+#include "ga.h"
 
 /**
  * Constructor
@@ -581,10 +582,10 @@ void gridpack::parser::TransformerParser34::parse(
       double windv1 = atof(split_line3[0].c_str());
       double windv2 = atof(split_line4[0].c_str());
       if(cw == 2) {
-	double nomv1 = atof(split_line3[1].c_str());
-	double nomv2 = atof(split_line4[1].c_str());
-	windv1 = windv1/nomv1;
-	windv2 = windv2/nomv2;
+        double nomv1 = atof(split_line3[1].c_str());
+        double nomv2 = atof(split_line4[1].c_str());
+        windv1 = windv1/nomv1;
+        windv2 = windv2/nomv2;
       }
       double tap = windv1/windv2;
       p_branchData[l_idx]->addValue(BRANCH_TAP,tap,nelems);
@@ -597,6 +598,7 @@ void gridpack::parser::TransformerParser34::parse(
        * BRANCH_R
        */
       double rval = atof(split_line2[0].c_str());
+      p_branchData[l_idx]->addValue(TRANSFORMER_R1_2,rval,nelems);
       rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio to the req of the transformer
       if (sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
@@ -604,7 +606,6 @@ void gridpack::parser::TransformerParser34::parse(
         rval = rval*p_case_sbase/sbase2;
         p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
       }
-      p_branchData[l_idx]->addValue(TRANSFORMER_R1_2,rval,nelems);
 
 
       /*
@@ -612,6 +613,7 @@ void gridpack::parser::TransformerParser34::parse(
        * BRANCH_X
        */
       rval = atof(split_line2[1].c_str());
+      p_branchData[l_idx]->addValue(TRANSFORMER_X1_2,rval,nelems);
       rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio to the xeq of the transformer
       if (sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
@@ -619,7 +621,6 @@ void gridpack::parser::TransformerParser34::parse(
         rval = rval*p_case_sbase/sbase2;
         p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
       }
-      p_branchData[l_idx]->addValue(TRANSFORMER_X1_2,rval,nelems);
 
       // Add parameters from line 3
 
@@ -658,7 +659,7 @@ void gridpack::parser::TransformerParser34::parse(
           atof(split_line3[12].c_str()),nelems);
       p_branchData[l_idx]->addValue(BRANCH_RATE11,
           atof(split_line3[13].c_str()),nelems);
-      p_branchData[l_idx]->addValue(BRANCH_RATE11,
+      p_branchData[l_idx]->addValue(BRANCH_RATE12,
           atof(split_line3[14].c_str()),nelems);
 
       /*
@@ -691,8 +692,6 @@ void gridpack::parser::TransformerParser34::parse(
             atof(split_line3[19].c_str()),nelems);
       }
 
-      /* ignore line 4 for now */
-
       /*
        * type: float
        * TRANSFORMER_VMI
@@ -702,50 +701,7 @@ void gridpack::parser::TransformerParser34::parse(
             atof(split_line3[20].c_str()),nelems);
       }
 
-      /*
-       * type: integer
-       * TRANSFORMER_NTP
-       */
-      if (ntoken > 21) {
-        p_branchData[l_idx]->addValue(TRANSFORMER_NTP,
-            atoi(split_line3[21].c_str()),nelems);
-      }
-
-      /*
-       * type: integer
-       * TRANSFORMER_TAB
-       */
-      if (ntoken > 22) {
-        p_branchData[l_idx]->addValue(TRANSFORMER_TAB,
-            atoi(split_line3[22].c_str()),nelems);
-      }
-
-      /*
-       * type: float
-       * TRANSFORMER_CR
-       */
-      if (ntoken > 23) {
-        p_branchData[l_idx]->addValue(TRANSFORMER_CR,
-            atof(split_line3[23].c_str()),nelems);
-      }
-
-      /*
-       * type: float
-       * TRANSFORMER_CI
-       */
-      if (ntoken > 24) {
-        p_branchData[l_idx]->addValue(TRANSFORMER_CX,
-            atof(split_line3[24].c_str()),nelems);
-      }
-
-      /*
-       * type: float
-       * TRANSFORMER_CNXA
-       */
-      if (ntoken > 25) {
-        p_branchData[l_idx]->addValue(TRANSFORMER_CNXA,
-            atof(split_line3[25].c_str()),nelems);
-      }
+      /* Ignore line 4 for now */
 
       nelems++;
       p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);

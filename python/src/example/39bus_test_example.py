@@ -109,6 +109,17 @@ print (obs_loadBuses)
 print (obs_loadIDs)
 print (obs_busIDs)
 
+# print network analytics
+print("Number of buses:  %d" % (hadapp.totalBuses()))
+print("Number of branches: %d" % (hadapp.totalBranches()))
+print("Number of generators: %d" % (hadapp.numGenerators()))
+print("Number of loads: %d" % (hadapp.numLoads()))
+print("Number of lines: %d" % (hadapp.numLines()))
+print("Number of storage units: %d" % (hadapp.numStorage()))
+print("Branches connected to bus 1: ", hadapp.getConnectedBranches(1))
+print("Buses connected to branch 1: ", hadapp.getBranchEndpoints(1))
+
+
 # create observation names for csv file header writting purpose
 csvhead = []
 csvhead.append('time')

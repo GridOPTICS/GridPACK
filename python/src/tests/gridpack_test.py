@@ -10,7 +10,6 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2023-03-09 14:54:16 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -51,12 +50,26 @@ class GridPACKTester(TestCase):
 
         np = gridpack.NoPrint()
         sys.stdout.write("NoPrint status: %r\n" % (np.status()))
-        np.setStatus(True)
+        # np.setStatus(True)
         sys.stdout.write("NoPrint status: %r\n" % (np.status()))
         
         hadapp = gridpack.hadrec.Module()
         hadapp.solvePowerFlowBeforeDynSimu(arg)
+
+        hadapp.exportPSSE23("pfPSSE23.dat")
+        hadapp.exportPSSE33("pfPSSE33.dat")
+        hadapp.exportPSSE34("pfPSSE34.dat")
+        
         hadapp.transferPFtoDS()
+
+        print("Number of buses:  %d" % (hadapp.totalBuses()))
+        print("Number of branches: %d" % (hadapp.totalBranches()))
+        print("Number of generators: %d" % (hadapp.numGenerators()))
+        print("Number of loads: %d" % (hadapp.numLoads()))
+        print("Number of lines: %d" % (hadapp.numLines()))
+        print("Number of storage units: %d" % (hadapp.numStorage()))
+        print("Branches connected to bus 1: ", hadapp.getConnectedBranches(1))
+        print("Buses connected to branch 1: ", hadapp.getBranchEndpoints(1))
 
         busfaultlist = gridpack.dynamic_simulation.EventVector()
 

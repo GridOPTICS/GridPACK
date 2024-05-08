@@ -360,4 +360,10 @@ void Integrator::setparams(double T)
   setylimits(-1000.0,1000.0);
 }
 
+void Integrator::setparams(double T,double xmin,double xmax)
+{
+  setparams(T);
+  setxlimits(xmin,xmax);
+}
+
 

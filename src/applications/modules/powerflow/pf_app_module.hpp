@@ -174,6 +174,12 @@ class PFAppModule
 	bool getPFSolutionSingleBus(int bus_number, double &bus_mag, double &bus_angle);
 
     /**
+     * Export final configuration to PSS/E v34 formatted file
+     * @param filename name of file to store network configuration
+     */
+    void exportPSSE34(std::string &filename);
+	
+    /**
      * Export final configuration to PSS/E v33 formatted file
      * @param filename name of file to store network configuration
      */

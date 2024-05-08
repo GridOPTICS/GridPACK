@@ -10,7 +10,6 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2023-03-06 11:58:00 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -283,6 +282,24 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::return_value_policy::copy)
     ;
 
+  // These are some network topology/analytics query methods
+  hadapp
+    .def("totalBuses", &gph::HADRECAppModule::totalBuses)
+    .def("totalBranches", &gph::HADRECAppModule::totalBranches)
+    .def("getConnectedBranches", &gph::HADRECAppModule::getConnectedBranches,
+         py::return_value_policy::copy)
+    .def("getBranchEndpoints",
+         [](gph::HADRECAppModule& self, const int& oidx) {
+           int fbus, tbus;
+           self.getBranchEndpoints(oidx, &fbus, &tbus);
+           return py::make_tuple(fbus, tbus);
+         })
+    .def("numGenerators", &gph::HADRECAppModule::numGenerators)
+    .def("numLoads", &gph::HADRECAppModule::numLoads)
+    .def("numStorage", &gph::HADRECAppModule::numStorage)
+    .def("numLines", &gph::HADRECAppModule::numLines)
+    ;
+
   // These methods need to be reworked char * and/or optional args
   hadapp
     .def("scatterInjectionLoad",
@@ -332,6 +349,18 @@ PYBIND11_MODULE(gridpack, gpm) {
 	.def("exportPSSE23",
          [](gph::HADRECAppModule& self, const std::string& s) {
            self.exportPSSE23(s.c_str());
+         },
+         py::arg("s") = ""
+         )
+	.def("exportPSSE33",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE33(s.c_str());
+         },
+         py::arg("s") = ""
+         )
+	.def("exportPSSE34",
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.exportPSSE34(s.c_str());
          },
          py::arg("s") = ""
          )
@@ -631,6 +660,8 @@ PYBIND11_MODULE(gridpack, gpm) {
              return py::cast<py::none>(Py_None);
            }
          })
+
+    
     ;
   
 

@@ -38,6 +38,9 @@
 #include "wtdta1.hpp"
 #include "wtpta1.hpp"
 #include "wttqa1.hpp"
+/*---yuan add below---*/
+#include "esst4b.hpp"
+/*---yuan add above---*/
 
 #include <stdio.h>
 
@@ -143,7 +146,16 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     tmp =  new gridpack::dynamic_simulation::Esst1aModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
-  }else if (type == "REECA1") {
+  }
+  /*---yuan add below---*/
+  else if (type == "ESST4B") {
+    gridpack::dynamic_simulation::Esst4bModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::Esst4bModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  }
+  /*---yuan add above---*/
+  else if (type == "REECA1") {
     gridpack::dynamic_simulation::Reeca1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Reeca1Model;
     ret =
