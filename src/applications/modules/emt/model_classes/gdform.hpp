@@ -292,7 +292,7 @@ class Gdform : public BaseEMTGenModel
   double iabc[3], diabc[3];
 
   // phase voltages
-  double vabc[3], eabc[0], vdq0[3], idq0[3], iout[3];
+  double vabc[3], eabc[3], vdq0[3], idq0[3], iout[3];
 
 };
 
