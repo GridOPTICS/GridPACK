@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2023-12-12 11:05:59 d3g096
+# Last Change: 2024-04-02 08:07:01 d3g096
 # -------------------------------------------------------------
 
 import os
@@ -73,6 +73,8 @@ setup(
         'src/task_manager.py',
         'src/hadrec.py',
         'src/hadrec_comm.py',
+        'src/dsf.py',
+        'src/dsf2.py',
     ],
     test_suite='nose.collector',
     tests_require=['nose'],

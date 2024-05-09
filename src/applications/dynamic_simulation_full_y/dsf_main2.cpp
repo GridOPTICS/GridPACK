@@ -20,56 +20,14 @@ void run_dynamics(int argc, char **argv)
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
   timer->start(t_total);
 
-  gridpack::parallel::Communicator world;
-
-  // read configuration file 
-  int t_config = timer->createCategory("Dynamic Simulation: Config");
-  timer->start(t_config);
-  gridpack::utility::Configuration *config =
-    gridpack::utility::Configuration::configuration();
-  if (argc >= 2 && argv[1] != NULL) { 
-    char inputfile[256]; 
-    sprintf(inputfile,"%s",argv[1]);
-    config->open(inputfile,world);
+  std::string inputfile;
+  if (argc >= 2 && argv[1] != NULL) {
+    inputfile = argv[1];
   } else {
-    config->open("input.xml",world);
+    inputfile = "input.xml";
   }
-  timer->stop(t_config);
-  
-  // setup and run powerflow calculation
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = config->getCursor("Configuration.Powerflow");
-  bool useNonLinear = false;
-  useNonLinear = cursor->get("UseNonLinear", useNonLinear);
-
-  boost::shared_ptr<gridpack::powerflow::PFNetwork>
-    pf_network(new gridpack::powerflow::PFNetwork(world));
-  
-  gridpack::powerflow::PFAppModule pf_app;
-  pf_app.readNetwork(pf_network, config);
-  pf_app.initialize();
-  if (useNonLinear) {
-    pf_app.nl_solve();
-  } else {
-    pf_app.solve();
-  }
-  pf_app.write();
-  pf_app.saveData();
-   
-  // setup and run dynamic simulation calculation
-  boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
-    ds_network(new gridpack::dynamic_simulation::DSFullNetwork(world));
-  
   gridpack::dynamic_simulation::DSFullApp ds_app;
-  pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
-		    gridpack::dynamic_simulation::DSFullBranch>(ds_network);
-
-  // transfer results from PF calculation to DS calculation
-  ds_app.transferPFtoDS(pf_network, ds_network); 
-
-  // run dynamic simulation
-  ds_app.setNetwork(ds_network, config);
-  //ds_app.readNetwork(ds_network,config);
+  ds_app.solvePowerFlowBeforeDynSimu(inputfile.c_str());
   ds_app.readGenerators();
   ds_app.readSequenceData();
   //printf("ds_app.initialize:\n");

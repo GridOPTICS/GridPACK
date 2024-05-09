@@ -61,7 +61,7 @@ public:
    * Write out profile for all processors for requested title
    * @param idx category title
    */
-  void dumpProfile(const std::string title);
+  void dumpProfile(const std::string title) const;
 
   /**
    * Return current time. Can be used to solve timing problems that can't be

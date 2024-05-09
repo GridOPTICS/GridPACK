@@ -135,7 +135,7 @@ total_dataconv_time = 0.0
 timeser = []
 
 while (not hadapp.isDynSimuDone()):
-    print('Time = %4.3f',isteps*simu_time_step)
+    print('Time = %4.3f' % (isteps*simu_time_step))
     # apply line tripping at t = 15.0 seconds
     #if (bApplyAct and( isteps == 3000 )):
         #hadapp.applyAction(linetripact)

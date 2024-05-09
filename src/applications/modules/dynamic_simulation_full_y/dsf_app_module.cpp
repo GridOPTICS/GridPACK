@@ -100,6 +100,59 @@ gridpack::dynamic_simulation::DSFullApp::~DSFullApp(void)
 {
 }
 
+void gridpack::dynamic_simulation::DSFullApp::solvePowerFlowBeforeDynSimu(const char *inputfile, const int& pf_idx)
+{
+  gridpack::parallel::Communicator world;
+
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+
+  // read configuration file 
+
+  int t_config = timer->createCategory("Dynamic Simulation: Config");
+  timer->start(t_config);
+
+  gridpack::utility::Configuration *config =
+    gridpack::utility::Configuration::configuration();
+  config->open(inputfile,world);
+
+  // setup and run powerflow calculation
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.Powerflow");
+  bool useNonLinear = false;
+  useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+
+  timer->stop(t_config);
+
+  // perform power flow for network initial state
+
+  boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network(new gridpack::powerflow::PFNetwork(world));
+  
+  gridpack::powerflow::PFAppModule pf_app;
+  pf_app.readNetwork(pf_network, config, pf_idx);
+  pf_app.initialize();
+  if (useNonLinear) {
+    pf_app.nl_solve();
+  } else {
+    pf_app.solve();
+  }
+  pf_app.write();
+  pf_app.saveData();
+   
+  // setup and run dynamic simulation calculation
+  boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+    ds_network(new gridpack::dynamic_simulation::DSFullNetwork(world));
+  
+  pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
+		    gridpack::dynamic_simulation::DSFullBranch>(ds_network);
+
+  // transfer results from PF calculation to DS calculation
+  this->transferPFtoDS(pf_network, ds_network); 
+  this->setNetwork(ds_network, config);
+}
+  
+
 enum Format{PTI23, PTI33, PTI34, PTI35};
 /**
  * Read in and partition the dynamic simulation network. The input file is read

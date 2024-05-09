@@ -120,13 +120,8 @@ genpar = 'GENERATOR_PF_PGEN'
 testpar = hadapp.getDataCollectionGenParam(genbus, genid, genpar)
 print('GENERATOR_PF_PGEN:', testpar)                                                                                                                                                                
 
-
-
-
-
-
-
-
-
+# (try to) force destruction order to avoid difficulty
+del hadapp
+del run_gridpack_necessary_env
 
 
