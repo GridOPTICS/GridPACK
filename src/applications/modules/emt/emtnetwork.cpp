@@ -30,6 +30,7 @@
 #include <model_classes/tgov1.hpp>
 #include <model_classes/lumpedline.hpp>
 #include <model_classes/transformer.hpp>
+#include <model_classes/sexs.hpp>
 
 /**
  *  Simple constructor
@@ -686,6 +687,15 @@ void EmtBus::load(const
             p_gen[i]->setExciter(ex);
 	    
 	    ieeet1->load(data,i); // load exciter data
+    	  } else  if(type == "SEXS") {
+	    Sexs *sexs;
+            sexs = new Sexs;
+	    sexs->setGenerator(p_gen[i]);
+	    
+            ex.reset(sexs);
+            p_gen[i]->setExciter(ex);
+	    
+	    sexs->load(data,i); // load exciter data
 	  } else if(type == "REECA1") {
 	    Reeca1 *reeca1;
             reeca1 = new Reeca1;
