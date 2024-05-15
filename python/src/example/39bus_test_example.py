@@ -118,6 +118,9 @@ print("Number of lines: %d" % (hadapp.numLines()))
 print("Number of storage units: %d" % (hadapp.numStorage()))
 print("Branches connected to bus 1: ", hadapp.getConnectedBranches(1))
 print("Buses connected to branch 1: ", hadapp.getBranchEndpoints(1))
+print("Lines in branch 1: ", hadapp.numLines(1))
+print("Generators connected to bus 1: ", hadapp.numGenerators(1))
+print("Loads connected to bus 1: ", hadapp.numLoads(1))
 
 
 # create observation names for csv file header writting purpose
