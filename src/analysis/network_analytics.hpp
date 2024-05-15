@@ -135,7 +135,6 @@ template <class _network> class NetworkAnalytics {
     p_network->communicator().sum(&result, 1);
     return result;
   }
-
   
   /**
    * Get the total number of storage units in the network
@@ -191,6 +190,26 @@ template <class _network> class NetworkAnalytics {
     p_network->communicator().sum(&result, 1);
     return result;
   };
+
+  /**
+   * Get the total number of lines in a specific branch of the network
+   * @return total number of lines in branch
+   */
+  int numLines(const int& branch_idx)
+  {
+    int result(0);
+    int lbranchidx = p_network->getOriginalBranchIndex(branch_idx);
+
+    if (lbranchidx >= 0) {
+      if (p_network->getActiveBranch(lbranchidx)) {
+        result += p_network->getBranch(lbranchidx)->numLines();
+      }
+    }
+    p_network->communicator().sum(&result, 1);
+
+    return result;
+  };
+
 
   /// Get the number of buses
   /**
