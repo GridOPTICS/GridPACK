@@ -15,6 +15,7 @@
 
 void run_dynamics(int argc, char **argv)
 {
+  gridpack::parallel::Communicator world;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
