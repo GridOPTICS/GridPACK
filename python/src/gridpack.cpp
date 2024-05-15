@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-05-15 12:32:18 d3g096
+// Last Change: 2024-05-15 14:41:04 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -621,6 +621,36 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("getFinalTime", &gpds::DSFullApp::getFinalTime)
     .def("getCurrentTime", &gpds::DSFullApp::getCurrentTime)
     ;
+
+  dsapp
+    .def("totalBuses", &gpds::DSFullApp::totalBuses)
+    .def("totalBranches", &gpds::DSFullApp::totalBranches)
+    .def("getConnectedBranches", &gpds::DSFullApp::getConnectedBranches,
+         py::return_value_policy::copy)
+    .def("getBranchEndpoints",
+         [](gpds::DSFullApp& self, const int& oidx) {
+           int fbus, tbus;
+           self.getBranchEndpoints(oidx, &fbus, &tbus);
+           return py::make_tuple(fbus, tbus);
+         })
+    .def("numGenerators",
+         py::overload_cast<>(&gpds::DSFullApp::numGenerators, py::const_))
+    .def("numGenerators",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numGenerators, py::const_))
+    .def("numLoads",
+         py::overload_cast<>(&gpds::DSFullApp::numLoads, py::const_))
+    .def("numLoads",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numLoads, py::const_))
+    .def("numStorage",
+         py::overload_cast<>(&gpds::DSFullApp::numStorage, py::const_))
+    .def("numStorage",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numStorage, py::const_))
+    .def("numLines",
+         py::overload_cast<>(&gpds::DSFullApp::numLines, py::const_))
+    .def("numLines",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numLines, py::const_))
+    ;
+    
 
 
   // -------------------------------------------------------------
