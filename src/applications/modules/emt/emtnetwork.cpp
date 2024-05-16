@@ -22,6 +22,7 @@
 #include <model_classes/constantimpedance.hpp>
 #include <model_classes/exdc1.hpp>
 #include <model_classes/ieeet1.hpp>
+#include <model_classes/sexs.hpp>
 #include <model_classes/wsieg1.hpp>
 #include <model_classes/regca1.hpp>
 #include <model_classes/reeca1.hpp>
@@ -686,6 +687,15 @@ void EmtBus::load(const
             p_gen[i]->setExciter(ex);
 	    
 	    ieeet1->load(data,i); // load exciter data
+	  } else  if(type == "SEXS") {
+	    Sexs *sexs;
+            sexs = new Sexs;
+	    sexs->setGenerator(p_gen[i]);
+	    
+            ex.reset(sexs);
+            p_gen[i]->setExciter(ex);
+	    
+	    sexs->load(data,i); // load exciter data
 	  } else if(type == "REECA1") {
 	    Reeca1 *reeca1;
             reeca1 = new Reeca1;
