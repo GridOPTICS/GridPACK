@@ -1680,7 +1680,7 @@ EmtBranch::EmtBranch(void)
 {
   p_nparlines = 0;
   p_iptr = NULL;
-  p_nvar = 6;
+  p_nvar = 0;
   p_num_vals = 0;
   p_mode = NONE;
   p_TSshift = 1.0;
