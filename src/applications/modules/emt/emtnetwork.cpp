@@ -1680,7 +1680,7 @@ EmtBranch::EmtBranch(void)
 {
   p_nparlines = 0;
   p_iptr = NULL;
-  p_nvar = 3;
+  p_nvar = 6;
   p_num_vals = 0;
   p_mode = NONE;
   p_TSshift = 1.0;
@@ -1805,14 +1805,6 @@ void EmtBranch::load(
     p_branch = (BaseEMTBranchModel**)malloc(p_nparlines*sizeof(BaseEMTBranchModel*));
   }
 
-  try {
-    if(p_nparlines > 1) {
-      throw(p_nparlines);
-    }
-  } catch(int nlines) {
-    std::cout << "Parallel lines not allowed\n";
-  }
-
   for(i=0; i < p_nparlines; i++) {
     // Get line parameters
     data->getValue(BRANCH_STATUS,&status,i);
@@ -1827,8 +1819,8 @@ void EmtBranch::load(
 
     // Check if branch is transmission line or transformer
     bool is_xfmr = false;
-    double tap = 1.0;
-    data->getValue(BRANCH_TAP,&tap,i);
+    double tap;
+    if(!data->getValue(BRANCH_TAP,&tap,i)) tap = 0.0;
 
     if(tap) {
       is_xfmr = true;
@@ -1931,9 +1923,9 @@ void EmtBranch::postStep(double time)
 void EmtBranch::getFromBusCurrent(int idx,double *ia, double *ib, double *ic)
 {
   if(p_branch[idx]->getStatus()) {
-    *ia = p_iptr[3*idx];
-    *ib = p_iptr[3*idx+1];
-    *ic = p_iptr[3*idx+2];
+    *ia = p_iptr[6*idx];
+    *ib = p_iptr[6*idx+1];
+    *ic = p_iptr[6*idx+2];
   }
 }
 
@@ -1948,9 +1940,9 @@ void EmtBranch::getFromBusCurrent(int idx,double *ia, double *ib, double *ic)
 void EmtBranch::getToBusCurrent(int idx,double *ia, double *ib, double *ic)
 {
   if(p_branch[idx]->getStatus()) {
-    *ia = p_iptr[3*idx+3];
-    *ib = p_iptr[3*idx+4];
-    *ic = p_iptr[3*idx+5];
+    *ia = p_iptr[6*idx+3];
+    *ib = p_iptr[6*idx+4];
+    *ic = p_iptr[6*idx+5];
   }
 }
 
@@ -2084,6 +2076,7 @@ void EmtBranch::matrixGetValues(int *nvals,gridpack::RealType *values,
     p_branch[i]->matrixGetValues(&nvals_branchi, values+ctr, rows+ctr, cols+ctr);
     
     nvals_branch += nvals_branchi;
+    ctr += nvals_branchi;
   }
 
   *nvals = nvals_branch;
@@ -2158,12 +2151,12 @@ void EmtBranch::vectorGetElementValues(gridpack::RealType *values, int *idx)
       
       p_branch[i]->init(x);
 
-      p_iptr[3*i]   = x[i_loc];
-      p_iptr[3*i+1] = x[i_loc+1];
-      p_iptr[3*i+2] = x[i_loc+2];
-      p_iptr[3*i+3] = x[i_loc+3];
-      p_iptr[3*i+4] = x[i_loc+4];
-      p_iptr[3*i+5] = x[i_loc+5];
+      p_iptr[6*i]   = x[i_loc];
+      p_iptr[6*i+1] = x[i_loc+1];
+      p_iptr[6*i+2] = x[i_loc+2];
+      p_iptr[6*i+3] = x[i_loc+3];
+      p_iptr[6*i+4] = x[i_loc+4];
+      p_iptr[6*i+5] = x[i_loc+5];
     }
   } else if(p_mode == RESIDUAL_EVAL) {
     gridpack::RealType *f = values;
@@ -2194,12 +2187,12 @@ void EmtBranch::vectorSetElementValues(gridpack::RealType *values)
 
 	p_branch[i]->setValues(x);
 
-	p_iptr[3*i]   = x[i_loc];
-	p_iptr[3*i+1] = x[i_loc + 1];
-	p_iptr[3*i+2] = x[i_loc + 2];
-	p_iptr[3*i+3] = x[i_loc + 3];
-	p_iptr[3*i+4] = x[i_loc + 4];
-	p_iptr[3*i+5] = x[i_loc + 5];
+	p_iptr[6*i]   = x[i_loc];
+	p_iptr[6*i+1] = x[i_loc + 1];
+	p_iptr[6*i+2] = x[i_loc + 2];
+	p_iptr[6*i+3] = x[i_loc + 3];
+	p_iptr[6*i+4] = x[i_loc + 4];
+	p_iptr[6*i+5] = x[i_loc + 5];
       }
     }
   } else if(p_mode == XDOTVECTOBUS) {
