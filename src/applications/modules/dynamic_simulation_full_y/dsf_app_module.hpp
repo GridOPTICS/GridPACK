@@ -636,30 +636,6 @@ class DSFullApp
     */
     double getCurrentTime();
 
-    /**
-     * get total number of generators in network
-     * @return number of generators
-     */
-    int numGenerators();
-
-    /**
-     * get total number of loads in network
-     * @return number of loads
-     */
-    int numLoads();
-
-    /**
-     * get total number of storage units in network
-     * @return number of loads
-     */
-    int numStorage();
-
-    /**
-     * get total number of lines in network
-     * @return number of lines
-     */
-    int numLines();
-
   /**
    * Transfer data from power flow to dynamic simulation
    * @param pf_network power flow network
