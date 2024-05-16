@@ -16,6 +16,7 @@ BaseEMTGenModel::BaseEMTGenModel(void)
   nxgen  = 0;
   p_hasExciter = false;
   p_hasGovernor = false;
+  p_hasPlantController = false;
 }
 
 BaseEMTGenModel::~BaseEMTGenModel(void)
