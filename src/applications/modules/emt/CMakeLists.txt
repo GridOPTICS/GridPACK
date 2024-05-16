@@ -54,6 +54,7 @@ add_library(gridpack_emt_module
   model_classes/sexs.cpp
   model_classes/wsieg1.cpp
   model_classes/tgov1.cpp
+  model_classes/gast.cpp
   model_classes/regca1.cpp
   model_classes/reeca1.cpp
   model_classes/repca1.cpp
@@ -109,6 +110,7 @@ install(FILES
   model_classes/sexs.hpp
   model_classes/wsieg1.hpp
   model_classes/tgov1.hpp
+  model_classes/gast.hpp
   model_classes/regca1.hpp
   model_classes/reeca1.hpp
   model_classes/repca1.hpp
