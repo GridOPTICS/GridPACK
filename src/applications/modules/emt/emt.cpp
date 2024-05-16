@@ -50,6 +50,7 @@ Emt::Emt(void)
   : p_isSetUp(0),
     reuseprecon_nsteps(1),
     p_saveoutput(false),
+    fp_monitor(NULL),
     emt_network(new EmtNetwork(p_comm))
 {}
 
@@ -58,6 +59,7 @@ Emt::Emt(gridpack::parallel::Communicator comm)
     p_isSetUp(0),
     p_saveoutput(false),
     reuseprecon_nsteps(1),
+    fp_monitor(NULL),
     emt_network(new EmtNetwork(p_comm))
 {}
 
@@ -75,7 +77,7 @@ Emt::~Emt(void)
   delete(p_MatMapper);
   delete(p_pfapp);
   delete(p_daesolver);
-  fclose(fp_monitor);
+  if(fp_monitor) fclose(fp_monitor);
   if(!rank()) printf("Emt: Finished running simulation\n");
 }
 
