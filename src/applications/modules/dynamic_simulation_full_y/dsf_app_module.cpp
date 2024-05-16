@@ -4926,6 +4926,10 @@ gridpack::dynamic_simulation::DSFullApp::getBranchEndpoints(const int& idx, int 
   }
 }
 
+/**
+ * get total number of generators in network
+ * @return number of generators
+ */
 int gridpack::dynamic_simulation::DSFullApp::numGenerators(void) const
 {
   int result(0);
@@ -4939,6 +4943,10 @@ int gridpack::dynamic_simulation::DSFullApp::numGenerators(void) const
   return result;
 }
 
+/**
+ * get number of generators on a specfic buse
+ * @return number of generators on bus
+ */
 int gridpack::dynamic_simulation::DSFullApp::numGenerators(const int& bus_idx) const
 {
   int result(0);
@@ -4952,6 +4960,10 @@ int gridpack::dynamic_simulation::DSFullApp::numGenerators(const int& bus_idx) c
   return result;
 }
 
+/**
+ * get total number of loads in network
+ * @return number of loads
+ */
 int gridpack::dynamic_simulation::DSFullApp::numLoads(void) const
 {
   int result(0);
@@ -4965,6 +4977,10 @@ int gridpack::dynamic_simulation::DSFullApp::numLoads(void) const
   return result;
 }
 
+/**
+ * get total number of loads in network on a specific bus
+ * @return number of loads on bus
+ */
 int gridpack::dynamic_simulation::DSFullApp::numLoads(const int& bus_idx) const
 {
   int result(0);
@@ -4978,6 +4994,10 @@ int gridpack::dynamic_simulation::DSFullApp::numLoads(const int& bus_idx) const
   return result;
 }
 
+/**
+ * get total number of lines in network
+ * @return number of lines
+ */
 int gridpack::dynamic_simulation::DSFullApp::numLines(void) const
 {
   int result(0);
@@ -4991,6 +5011,10 @@ int gridpack::dynamic_simulation::DSFullApp::numLines(void) const
   return result;
 }
 
+/**
+ * get total number of lines in a specific branch
+ * @return number of lines in branch
+ */
 int gridpack::dynamic_simulation::DSFullApp::numLines(const int& branch_idx) const
 {
   int result(0);
@@ -5004,6 +5028,10 @@ int gridpack::dynamic_simulation::DSFullApp::numLines(const int& branch_idx) con
   return result;
 }
 
+/**
+ * get total number of storage units in network
+ * @return number of loads
+ */
 int gridpack::dynamic_simulation::DSFullApp::numStorage(void) const
 {
   int result(0);
@@ -5017,6 +5045,10 @@ int gridpack::dynamic_simulation::DSFullApp::numStorage(void) const
   return result;
 }
 
+/**
+ * get total number of storage units in network on a specific bus
+ * @return number of loads on bus
+ */
 int gridpack::dynamic_simulation::DSFullApp::numStorage(const int& bus_idx) const
 {
   int result(0);
