@@ -211,9 +211,9 @@ void gridpack::utility::CoarseTimer::dumpProfile(const int idx) const
  * Write out profile for all processors for requested title
  * @param idx category title
  */
-void gridpack::utility::CoarseTimer::dumpProfile(const std::string title)
+void gridpack::utility::CoarseTimer::dumpProfile(const std::string title) const
 {
-  std::map<std::string, int>::iterator it;
+  std::map<std::string, int>::const_iterator it;
   gridpack::parallel::Communicator comm;
   MPI_Comm world = static_cast<MPI_Comm>(comm);
   it = p_title_map.find(title);

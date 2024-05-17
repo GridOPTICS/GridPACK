@@ -8,7 +8,7 @@
 /**
  * @file   network_analytics.hpp
  * @author Bruce Palmer
- * @date   2024-04-18 14:10:11 d3g096
+ * @date   2024-05-15 08:53:01 d3g096
  * 
  * @brief  
  * This is a utility that can be used to extract properties of the network
@@ -83,6 +83,26 @@ template <class _network> class NetworkAnalytics {
   }
 
   /**
+   * Get the total number of generators on a specific bus in the network
+   * @return total number of generators on the bus
+   */
+  int numGenerators(const int& bus_idx)
+  {
+    int result(0);
+
+    int lbusidx = p_network->getOriginalBusIndex(bus_idx);
+
+    if (lbusidx >= 0) {
+      if (p_network->getActiveBus(lbusidx)) {
+        result += p_network->getBranchData(lbusidx)->numGenerators();
+      }
+    }
+
+    p_network->communicator().sum(&result, 1);
+    return result;
+  }
+
+  /**
    * Get the total number of loads in the network
    * @return total number of loads
    */
@@ -100,6 +120,26 @@ template <class _network> class NetworkAnalytics {
     return result;
   }
 
+  /**
+   * Get the total number of loads on a specific bus in the network
+   * @return total number of loads on the bus
+   */
+  int numLoads(const int& bus_idx)
+  {
+    int result(0);
+
+    int lbusidx = p_network->getOriginalBusIndex(bus_idx);
+
+    if (lbusidx >= 0) {
+      if (p_network->getActiveBus(lbusidx)) {
+        result += p_network->getBranchData(lbusidx)->numLoads();
+      }
+    }
+
+    p_network->communicator().sum(&result, 1);
+    return result;
+  }
+  
   /**
    * Get the total number of storage units in the network
    * @return total number of storage units
@@ -119,6 +159,26 @@ template <class _network> class NetworkAnalytics {
   }
 
   /**
+   * Get the total number of storage units on a specific bus in the network
+   * @return total number of storage units on the bus
+   */
+  int numStorage(const int& bus_idx)
+  {
+    int result(0);
+
+    int lbusidx = p_network->getOriginalBusIndex(bus_idx);
+
+    if (lbusidx >= 0) {
+      if (p_network->getActiveBus(lbusidx)) {
+        result += p_network->getBranchData(lbusidx)->numStorage();
+      }
+    }
+
+    p_network->communicator().sum(&result, 1);
+    return result;
+  }
+  
+  /**
    * Get the total number of lines in the network
    * @return total number of lines
    */
@@ -135,6 +195,26 @@ template <class _network> class NetworkAnalytics {
     p_network->communicator().sum(&result, 1);
     return result;
   };
+
+  /**
+   * Get the total number of lines in a specific branch of the network
+   * @return total number of lines in branch
+   */
+  int numLines(const int& branch_idx)
+  {
+    int result(0);
+    int lbranchidx = p_network->getOriginalBranchIndex(branch_idx);
+
+    if (lbranchidx >= 0) {
+      if (p_network->getActiveBranch(lbranchidx)) {
+        result += p_network->getBranch(lbranchidx)->numLines();
+      }
+    }
+    p_network->communicator().sum(&result, 1);
+
+    return result;
+  };
+
 
   /// Get the number of buses
   /**
