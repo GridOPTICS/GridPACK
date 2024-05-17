@@ -670,6 +670,46 @@ class DSFullApp
     pf_network,
     boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
     ds_network);
+
+
+  // Network analytics queries
+
+    /// Network query: Get the number of buses
+  int totalBuses(void) const;
+
+  /// Network query: Get the number of branches
+  int totalBranches(void) const;
+
+  /// Network query: Get the branch indexes connected to a bus
+  std::vector<int> getConnectedBranches(int oidx) const;
+
+  /// Network query: Get the bus indexes connected to a branch
+  void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const;
+
+  /// Network query: Get the number of generators
+  int numGenerators(void) const;
+
+  /// Network query: Get the number of generators on a specific bus
+  int numGenerators(const int& bus_idx) const;
+
+  /// Network query: Get the number of loads
+  int numLoads(void) const;
+
+  /// Network query: Get the number of loads
+  int numLoads(const int& bus_idx) const;
+
+  /// Network query: Get the number of lines
+  int numLines(void) const;
+
+  /// Network query: Get the number of lines in a specific branch
+  int numLines(const int& branch_idx) const;
+
+  /// Network query: Get the number of storage units
+  int numStorage(void) const;
+
+  /// Network query: Get the number of storage units on a specific bus
+  int numStorage(const int& bus_idx) const;
+
   
   private:
 
@@ -1146,7 +1186,6 @@ class DSFullApp
    int t_corrector;
    int t_secure;
    int t_cmIf;
-   
    
 };
 

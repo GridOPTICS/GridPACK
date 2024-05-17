@@ -8,7 +8,7 @@
 /**
  * @file   network_analytics.hpp
  * @author Bruce Palmer
- * @date   2024-05-15 08:53:01 d3g096
+ * @date   2024-05-15 09:12:00 d3g096
  * 
  * @brief  
  * This is a utility that can be used to extract properties of the network
@@ -94,7 +94,7 @@ template <class _network> class NetworkAnalytics {
 
     if (lbusidx >= 0) {
       if (p_network->getActiveBus(lbusidx)) {
-        result += p_network->getBranchData(lbusidx)->numGenerators();
+        result += p_network->getBus(lbusidx)->numGenerators();
       }
     }
 
@@ -132,7 +132,7 @@ template <class _network> class NetworkAnalytics {
 
     if (lbusidx >= 0) {
       if (p_network->getActiveBus(lbusidx)) {
-        result += p_network->getBranchData(lbusidx)->numLoads();
+        result += p_network->getBus(lbusidx)->numLoads();
       }
     }
 
@@ -170,7 +170,7 @@ template <class _network> class NetworkAnalytics {
 
     if (lbusidx >= 0) {
       if (p_network->getActiveBus(lbusidx)) {
-        result += p_network->getBranchData(lbusidx)->numStorage();
+        result += p_network->getBus(lbusidx)->numStorage();
       }
     }
 

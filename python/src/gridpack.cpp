@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-05-09 10:30:38 d3g096
+// Last Change: 2024-05-15 14:41:04 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -360,7 +360,8 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("solvePreInitialize", &gpds::DSFullApp::solvePreInitialize)
     .def("setup", &gpds::DSFullApp::setup)
     .def("executeOneSimuStep", &gpds::DSFullApp::executeOneSimuStep)
-    .def("run", [](gpds::DSFullApp& self) {self.run();})
+    // .def("run", [](gpds::DSFullApp& self) {self.run();})
+    .def("run", py::overload_cast<>(&gpds::DSFullApp::run))
     .def("run", py::overload_cast<double>(&gpds::DSFullApp::run))
     .def("scatterInjectionLoad", &gpds::DSFullApp::scatterInjectionLoad)
     .def("scatterInjectionLoadNew", &gpds::DSFullApp::scatterInjectionLoadNew)
@@ -621,6 +622,36 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("getCurrentTime", &gpds::DSFullApp::getCurrentTime)
     ;
 
+  dsapp
+    .def("totalBuses", &gpds::DSFullApp::totalBuses)
+    .def("totalBranches", &gpds::DSFullApp::totalBranches)
+    .def("getConnectedBranches", &gpds::DSFullApp::getConnectedBranches,
+         py::return_value_policy::copy)
+    .def("getBranchEndpoints",
+         [](gpds::DSFullApp& self, const int& oidx) {
+           int fbus, tbus;
+           self.getBranchEndpoints(oidx, &fbus, &tbus);
+           return py::make_tuple(fbus, tbus);
+         })
+    .def("numGenerators",
+         py::overload_cast<>(&gpds::DSFullApp::numGenerators, py::const_))
+    .def("numGenerators",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numGenerators, py::const_))
+    .def("numLoads",
+         py::overload_cast<>(&gpds::DSFullApp::numLoads, py::const_))
+    .def("numLoads",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numLoads, py::const_))
+    .def("numStorage",
+         py::overload_cast<>(&gpds::DSFullApp::numStorage, py::const_))
+    .def("numStorage",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numStorage, py::const_))
+    .def("numLines",
+         py::overload_cast<>(&gpds::DSFullApp::numLines, py::const_))
+    .def("numLines",
+         py::overload_cast<const int&>(&gpds::DSFullApp::numLines, py::const_))
+    ;
+    
+
 
   // -------------------------------------------------------------
   // gridpack.hadrec module
@@ -669,10 +700,22 @@ PYBIND11_MODULE(gridpack, gpm) {
            self.getBranchEndpoints(oidx, &fbus, &tbus);
            return py::make_tuple(fbus, tbus);
          })
-    .def("numGenerators", &gph::HADRECAppModule::numGenerators)
-    .def("numLoads", &gph::HADRECAppModule::numLoads)
-    .def("numStorage", &gph::HADRECAppModule::numStorage)
-    .def("numLines", &gph::HADRECAppModule::numLines)
+    .def("numGenerators",
+         py::overload_cast<>(&gph::HADRECAppModule::numGenerators, py::const_))
+    .def("numGenerators",
+         py::overload_cast<const int&>(&gph::HADRECAppModule::numGenerators, py::const_))
+    .def("numLoads",
+         py::overload_cast<>(&gph::HADRECAppModule::numLoads, py::const_))
+    .def("numLoads",
+         py::overload_cast<const int&>(&gph::HADRECAppModule::numLoads, py::const_))
+    .def("numStorage",
+         py::overload_cast<>(&gph::HADRECAppModule::numStorage, py::const_))
+    .def("numStorage",
+         py::overload_cast<const int&>(&gph::HADRECAppModule::numStorage, py::const_))
+    .def("numLines",
+         py::overload_cast<>(&gph::HADRECAppModule::numLines, py::const_))
+    .def("numLines",
+         py::overload_cast<const int&>(&gph::HADRECAppModule::numLines, py::const_))
     ;
 
   // These methods need to be reworked char * and/or optional args

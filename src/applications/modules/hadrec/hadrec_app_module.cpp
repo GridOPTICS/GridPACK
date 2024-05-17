@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2024-05-02 07:10:46 d3g096
+ * @date   2024-05-15 12:27:32 d3g096
  * 
  * @brief  
  * 
@@ -977,6 +977,21 @@ int gridpack::hadrec::HADRECAppModule::numGenerators(void) const
   return result;
 }
 
+int gridpack::hadrec::HADRECAppModule::numGenerators(const int& bus_idx) const
+{
+  int result(0);
+
+  if (ds_analytics) {
+    result = ds_analytics->numGenerators(bus_idx);
+  } else if (pf_analytics) {
+    result = pf_analytics->numGenerators(bus_idx);
+  } else {
+    throw gridpack::Exception("HADRECAppModule::numGenerators(): network not defined");
+  }
+
+  return result;
+}
+
 int gridpack::hadrec::HADRECAppModule::numLoads(void) const
 {
   int result(0);
@@ -985,6 +1000,21 @@ int gridpack::hadrec::HADRECAppModule::numLoads(void) const
     result = ds_analytics->numLoads();
   } else if (pf_analytics) {
     result = pf_analytics->numLoads();
+  } else {
+    throw gridpack::Exception("HADRECAppModule::numLoads(): network not defined");
+  }
+
+  return result;
+}
+
+int gridpack::hadrec::HADRECAppModule::numLoads(const int& bus_idx) const
+{
+  int result(0);
+
+  if (ds_analytics) {
+    result = ds_analytics->numLoads(bus_idx);
+  } else if (pf_analytics) {
+    result = pf_analytics->numLoads(bus_idx);
   } else {
     throw gridpack::Exception("HADRECAppModule::numLoads(): network not defined");
   }
@@ -1007,6 +1037,21 @@ int gridpack::hadrec::HADRECAppModule::numLines(void) const
   return result;
 }
 
+int gridpack::hadrec::HADRECAppModule::numLines(const int& branch_idx) const
+{
+  int result(0);
+
+  if (ds_analytics) {
+    result = ds_analytics->numLines(branch_idx);
+  } else if (pf_analytics) {
+    result = pf_analytics->numLines(branch_idx);
+  } else {
+    throw gridpack::Exception("HADRECAppModule::numLines(): network not defined");
+  }
+
+  return result;
+}
+
 int gridpack::hadrec::HADRECAppModule::numStorage(void) const
 {
   int result(0);
@@ -1015,6 +1060,21 @@ int gridpack::hadrec::HADRECAppModule::numStorage(void) const
     result = ds_analytics->numStorage();
   } else if (pf_analytics) {
     result = pf_analytics->numStorage();
+  } else {
+    throw gridpack::Exception("HADRECAppModule::numStorage(): network not defined");
+  }
+
+  return result;
+}
+
+int gridpack::hadrec::HADRECAppModule::numStorage(const int& bus_idx) const
+{
+  int result(0);
+
+  if (ds_analytics) {
+    result = ds_analytics->numStorage(bus_idx);
+  } else if (pf_analytics) {
+    result = pf_analytics->numStorage(bus_idx);
   } else {
     throw gridpack::Exception("HADRECAppModule::numStorage(): network not defined");
   }
