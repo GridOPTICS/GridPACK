@@ -254,7 +254,7 @@ public:
   void setRank(int rank) { p_rank = rank; }
 
   /**
-    Set fault on the bus
+    Set fault event on the bus
 
     @param [in] ton - fault on time
     @param [in] toff - fault off time
@@ -264,6 +264,14 @@ public:
     @param [in] Rgnd - ground resistance
   */
   void setFault(double ton, double toff, std::string type, std::string phases, double Ron, double Rgnd);
+
+  /**
+    Set gen trip event on the bus
+
+    @param [in] tevent - event time
+    @param [in] id - generator id
+  */
+  void setGenTrip(double tevent, std::string id);
 
   void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 

@@ -17,6 +17,9 @@ BaseEMTGenModel::BaseEMTGenModel(void)
   p_hasExciter = false;
   p_hasGovernor = false;
   p_hasPlantController = false;
+
+  p_triptime = -1; // trip time = -1 indicates the generator is not scheduled to trip via any event
+  p_online = 1; // generator is online, not tripped
 }
 
 BaseEMTGenModel::~BaseEMTGenModel(void)
@@ -253,4 +256,46 @@ void BaseEMTGenModel::preStep(double time, double timestep)
 */
 void BaseEMTGenModel::postStep(double time)
 {
+}
+
+void BaseEMTGenModel::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
+{
+  if(p_triptime != -1) {
+    // Timed trip event set
+    gridpack::math::RealDAESolver::EventPtr e(new TimedTripEvent(this));
+    eman->add(e);
+  }
+
+
+
+}
+
+/**
+ * Update the event function values
+ */
+void BaseEMTGenModel::eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues)
+{
+  int offset    = getLocalOffset();
+
+  evalues[0] = p_triptime - t;
+} 
+
+/**
+ * Event handler
+ */
+void BaseEMTGenModel::eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state)
+{
+  if(triggered[0]) { /* Generator tripped */
+    p_online = 0;
+  }
+}
+
+void TimedTripEvent::p_update(const double& t,gridpack::RealType *state)
+{
+  p_gen->eventFunction(t,state,p_current);
+}
+
+void TimedTripEvent::p_handle(const bool *triggered, const double& t, gridpack::RealType *state)
+{
+  p_gen->eventHandlerFunction(triggered,t,state);
 }

@@ -201,7 +201,7 @@ bool Genrou::serialWrite(char *string, const int bufsize,const char *signal)
   } else if(!strcmp(signal,"monitor")) {
     /* Print output */
     double Vm = sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
-    double Pgen = (vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
+    double Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
     sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,delta,dw);
     return true;
   }
@@ -348,12 +348,21 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
       f[10] = igen[1]*mbase/sbase - iabc[1];
       f[11] = igen[2]*mbase/sbase - iabc[2];
     } else {
-      f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd) - dpsid;
-      f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq) - dpsiq;
-      f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
-      f[3] = igen[0]*mbase/sbase - iabc[0];
-      f[4] = igen[1]*mbase/sbase - iabc[1];
-      f[5] = igen[2]*mbase/sbase - iabc[2];
+      if(p_online) {
+	f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd) - dpsid;
+	f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq) - dpsiq;
+	f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
+	f[3] = igen[0]*mbase/sbase - iabc[0];
+	f[4] = igen[1]*mbase/sbase - iabc[1];
+	f[5] = igen[2]*mbase/sbase - iabc[2];
+      } else {
+	f[0] = psid;
+	f[1] = psiq;
+	f[2] = psi0;
+	f[3] = iabc[0];
+	f[4] = iabc[1];
+	f[5] = iabc[2];
+      }
     }
   }
 }
@@ -366,9 +375,9 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
    */
 void Genrou::getCurrent(double *ia, double *ib, double *ic)
 {
-  *ia = iabc[0];
-  *ib = iabc[1];
-  *ic = iabc[2];
+  *ia = p_online*iabc[0];
+  *ib = p_online*iabc[1];
+  *ic = p_online*iabc[2];
 }
 
 /**
@@ -436,7 +445,32 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
     int psid_idx = p_gloc;
     int psiq_idx = p_gloc+1;
     int psi0_idx = p_gloc+2;
+    int ia_idx = p_gloc+3;
+    int ib_idx = p_gloc+4;
+    int ic_idx = p_gloc+5;
 
+    if(!p_online) {
+      rows[ctr]   = psid_idx; cols[ctr] = psid_idx;
+      rows[ctr+1] = psiq_idx; cols[ctr+1] = psiq_idx;
+      rows[ctr+2] = psi0_idx; cols[ctr+2] = psi0_idx;
+      rows[ctr+3] = ia_idx;  cols[ctr+3] = ia_idx;
+      rows[ctr+4] = ib_idx;  cols[ctr+4] = ib_idx;
+      rows[ctr+5] = ic_idx;  cols[ctr+5] = ic_idx;
+
+      values[ctr] = 1.0;
+      values[ctr+1] = 1.0;
+      values[ctr+2] = 1.0;
+      values[ctr+3] = 1.0;
+      values[ctr+4] = 1.0;
+      values[ctr+5] = 1.0;
+
+      ctr += 6;
+
+      *nvals = ctr;
+
+      return;
+    }
+      
     double dId_dpsid;
     double dIq_dpsiq;
     double dI0_dpsi0;
@@ -529,10 +563,6 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
     ctr += 3;
     
     assert(ctr == 14);
-
-    int ia_idx = p_gloc+3;
-    int ib_idx = p_gloc+4;
-    int ic_idx = p_gloc+5;
 
     rows[ctr]   = ia_idx; cols[ctr]   = psid_idx;
     rows[ctr+1] = ia_idx; cols[ctr+1] = psiq_idx;

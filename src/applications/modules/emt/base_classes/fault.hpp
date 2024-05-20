@@ -218,7 +218,7 @@ class Fault: public gridpack::component::BaseComponent
 };
 
 // -------------------------------------------------------------
-// class EmtTimedFaultEvent
+// class FaultEvent
 // 
 // This manages 2 solver events: when the fault goes on and when it
 // goes off.
