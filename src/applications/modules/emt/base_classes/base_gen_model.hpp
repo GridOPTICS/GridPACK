@@ -22,6 +22,8 @@
 #include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_plant_model.hpp>
+#include <gridpack/math/dae_solver.hpp>
+
 
 class BaseEMTExcModel; // Forward declaration for BaseEMTExcModel
 class BaseEMTGovModel; // Forward declaration for BaseEMTGovModel
@@ -304,6 +306,18 @@ public:
 
   virtual void resetEventFlags(void) {}
 
+  void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
+
+  /**
+   * Update the event function values
+   */
+  void eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues);
+
+  /**
+   * Event handler function 
+   */
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state);
+
   /**
    * Returns the initial field voltage (Efd(t0))
    * @param [out] Efd0 - Initial field voltage
@@ -340,6 +354,12 @@ public:
   std::string getid() {
     return id;
   }
+
+  /**
+   * Set the time at which the generator is scheduled to trip
+   * @param [in] triptime - trip time
+   */
+  void setTripTime(double triptime) {p_triptime = triptime; }
   
  protected:
   double        pg; /**< Generator active power output */
@@ -367,6 +387,8 @@ public:
   int           nxgen; /* Number of variables for the generator model */
   int           p_busoffset; /** Offset for the bus variables in the local vector. Used only for events */
   int           p_glocvoltage; /* Global location of the first bus voltage variable. This is set by the bus */
+  double        p_triptime; /* Time at which this generator is scheduled to trip */
+  int           p_online; /* 1 when online, 0 when tripped by a TimedTrip event */
 
   // Arrays used in coupling blocks between generator and exciter. These should be allocated and destroyed by the derived class
   int           *xexc_loc;   // locations for exciter variables in the bus variables array
@@ -379,6 +401,40 @@ public:
 
   std::vector<int>   p_rowidx; // global index for rows
   std::vector<int>   p_colidx; // global index for columns
+};
+
+// -------------------------------------------------------------
+// class TimedTripEvent
+// 
+// This manages 1 solver events: when the generator is tripped
+// goes off.
+// -------------------------------------------------------------
+class TimedTripEvent
+  : public gridpack::math::RealDAESolver::Event
+{
+public:
+
+  /// Default constructor.
+  TimedTripEvent(BaseEMTGenModel *gen): gridpack::math::RealDAESolver::Event(1),p_gen(gen)
+  {
+    // A fault requires that the DAE solver be reset. 
+    std::fill(p_term.begin(), p_term.end(), false);
+    
+    // The event occurs when the values go from positive to negative.
+    std::fill(p_dir.begin(), p_dir.begin()+2,gridpack::math::CrossZeroNegative);
+  }
+
+  /// Destructor
+  ~TimedTripEvent(void)
+  {}
+
+protected:
+  BaseEMTGenModel *p_gen;
+
+  void p_update(const double& t, gridpack::RealType *state);
+
+  void p_handle(const bool *triggered, const double& t, gridpack::RealType *state);
+
 };
 
 #endif
