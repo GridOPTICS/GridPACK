@@ -219,7 +219,22 @@ void EmtFactory::readEvents(gridpack::utility::Configuration::CursorPtr cursor)
     int size = events.size();
     int idx;
     for(idx=0; idx < size; idx++) {
-      if(strcmp(events[idx].name.c_str(),"BusFault") == 0) {
+      if(strcmp(events[idx].name.c_str(),"GenTrip") == 0) {
+	int busnum;
+	std::vector<int> bus_local_idx;
+	EmtBus *bus;
+	busnum = events[idx].cursor->get("bus", 0);
+	bus_local_idx = p_network->getLocalBusIndices(busnum);
+	if(bus_local_idx.size()) {
+	  bus = dynamic_cast<EmtBus*>(p_network->getBus(bus_local_idx[0]).get());
+	  std::string id;
+	  id = events[idx].cursor->get("id","1");
+	  double tevent;
+	  tevent = events[idx].cursor->get("time",0.1);
+
+	  bus->setGenTrip(tevent,id);
+	}
+      } else if(strcmp(events[idx].name.c_str(),"BusFault") == 0) {
 	int busnum;
 	std::vector<int> bus_local_idx;
 	EmtBus *bus;

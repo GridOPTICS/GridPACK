@@ -333,6 +333,8 @@ void EmtBus::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
   for(i=0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
 
+    p_gen[i]->setEvent(eman);
+    
     has_ex = p_gen[i]->hasExciter();
     if(has_ex) {
       p_gen[i]->getExciter()->setEvent(eman);
@@ -369,6 +371,21 @@ void EmtBus::setFault(double ton, double toff, std::string type, std::string pha
 
   p_vecidx = new int[p_nvar];
 
+}
+
+void EmtBus::setGenTrip(double tevent, std::string id)
+{
+  gridpack::utility::StringUtils util;
+  std::string gen_id = util.clean2Char(id);
+
+  BaseEMTGenModel *gen;
+
+  gen = getGenerator(gen_id);
+  if(gen) {
+    if(gen->getStatus()) {
+      gen->setTripTime(tevent);
+    }
+  }
 }
 
 

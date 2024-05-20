@@ -380,11 +380,6 @@ void Emt::initialize()
   //p_X->print();
 }
 
-/**
-  This routine needs to be updated
-  -- Remove the fault stuff and use events instead. Need functionality in
-     GridPACK for handling events.
-*/
 void Emt::solve()
 {
   int maxsteps(100000);
