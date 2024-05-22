@@ -15,7 +15,7 @@ from gridpack.dynamic_simulation import DSFullApp
 # -------------------------------------------------------------
 def network_analytics_dump(ds_app):
     nbus = ds_app.totalBuses()
-    for bus in range(0, nbus):
+    for bus in range(nbus):
         print(bus,
               ds_app.getBusInfoInt(bus, "BUS_NUMBER", -1),
               ds_app.getBusInfoString(bus, "BUS_NAME", -1),
@@ -35,7 +35,15 @@ def network_analytics_dump(ds_app):
                   ds_app.getBusInfoString(bus, "LOAD_ID", l),
                   ds_app.getBusInfoReal(bus, "LOAD_PL", l),
                   ds_app.getBusInfoReal(bus, "LOAD_QL", l))
-
+    nbranch = ds_app.totalBranches()
+    for branch in range(0, nbranch):
+        (f, t) = ds_app.getBranchEndpoints(branch)
+        print(branch, f, t, 
+              ds_app.getBranchInfoInt(branch, "BRANCH_ELEMENTS", -1),
+              ds_app.getBranchInfoInt(branch, "BRANCH_INDEX", -1),
+              ds_app.getBranchInfoString(branch, "BRANCH_NAME", -1),
+              ds_app.getBranchInfoReal(branch, "BRANCH_LENGTH", -1))
+              
             
 
 # -------------------------------------------------------------

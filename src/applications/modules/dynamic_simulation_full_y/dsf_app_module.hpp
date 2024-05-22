@@ -699,6 +699,19 @@ class DSFullApp
     return ok;
   }
   
+  /// Network query: Get a value from the branch's data collection
+  template <typename T>
+  bool
+  getBranchInfo(const int& branch_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (p_analytics) {
+      ok = p_analytics->getBranchInfo(branch_idx, field, value, dev_idx);
+    }
+    return ok;
+  }
+  
 
   
   private:

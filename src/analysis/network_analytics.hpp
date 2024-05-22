@@ -329,6 +329,43 @@ template <class _network> class NetworkAnalytics {
     return ok;
   }
 
+  /**
+   * Get a value from the branch's data collection.  To avoid coding
+   * this a bunch of times, we'll use a broadcast, instead of
+   * all_reduce, from the process where the active branch resides.
+   */
+  template <typename T>
+  bool
+  getBranchInfo(const int& branch_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    int root(0);
+    T result;
+
+    int lidx(p_localFromGlobalBranchIndex(branch_idx));
+
+    if (lidx >= 0) {
+      typename NetworkType::BranchPtr thebranch(p_network->getBranch(lidx));
+      if (dev_idx < 0) {
+        ok = thebranch->getData()->getValue(field.c_str(), &result);
+      } else {
+        ok = thebranch->getData()->getValue(field.c_str(), &result, dev_idx);
+      }
+      if (ok) {
+        root = p_network->processor_rank();
+      }
+    }
+
+    ok = p_network->communicator().any(ok);
+    if (ok) {
+      p_network->communicator().sum(&root, 1);
+      boost::mpi::broadcast(p_network->communicator(), result, root);
+      value = result;
+    }
+    return ok;
+  }
+  
 protected:
 
   /** 

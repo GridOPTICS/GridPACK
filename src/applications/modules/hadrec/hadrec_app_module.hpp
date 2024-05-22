@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2024-05-21 12:18:29 d3g096
+ * @date   2024-05-22 09:32:28 d3g096
  * 
  * @brief  
  * 
@@ -429,6 +429,22 @@ class HADRECAppModule
       ok = ds_analytics->getBusInfo(bus_idx, field, value, dev_idx);
     } else if (pf_analytics) {
       ok = pf_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    }
+
+    return ok;
+  }
+
+  /// Network query: Get a value from the branch' data collection
+  template <typename T>
+  bool
+  getBranchInfo(const int& branch_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (ds_analytics) {
+      ok = ds_analytics->getBranchInfo(branch_idx, field, value, dev_idx);
+    } else if (pf_analytics) {
+      ok = pf_analytics->getBranchInfo(branch_idx, field, value, dev_idx);
     }
 
     return ok;
