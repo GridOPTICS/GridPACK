@@ -15,7 +15,6 @@ from gridpack.dynamic_simulation import DSFullApp
 # -------------------------------------------------------------
 def network_analytics_dump(ds_app):
     nbus = ds_app.totalBuses()
-<<<<<<< HEAD
     for bus in range(nbus):
         print(bus,
               ds_app.getBusInfoInt(bus, "BUS_NUMBER"),
@@ -26,35 +25,19 @@ def network_analytics_dump(ds_app):
               ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"))
         for g in range(ds_app.numGenerators(bus)):
             print(bus, g)
-=======
-    for bus in range(0, nbus):
-        print(bus,
-              ds_app.getBusInfoInt(bus, "BUS_NUMBER", -1),
-              ds_app.getBusInfoString(bus, "BUS_NAME", -1),
-              ds_app.getBusInfoInt(bus, "BUS_TYPE", -1),
-              ds_app.numGenerators(bus),
-              ds_app.numLoads(bus),
-              ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG", -1))
-        for g in range(ds_app.numGenerators(bus)):
->>>>>>> Fix global/original indexing; add data collection interfaces for bus
             print(" gen: ", g,
                   ds_app.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
                   ds_app.getBusInfoString(bus, "GENERATOR_ID", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG", g),
-<<<<<<< HEAD
                   ds_app.getBusInfoReal(bus, "GENERATOR_QG", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g)
             )
-=======
-                  ds_app.getBusInfoReal(bus, "GENERATOR_QG", g))
->>>>>>> Fix global/original indexing; add data collection interfaces for bus
         for l in range(ds_app.numLoads(bus)):
             print("load: ", l,
                   ds_app.getBusInfoInt(bus, "LOAD_NUMBER", l),
                   ds_app.getBusInfoString(bus, "LOAD_ID", l),
                   ds_app.getBusInfoReal(bus, "LOAD_PL", l),
-<<<<<<< HEAD
                   ds_app.getBusInfoReal(bus, "LOAD_QL", l),
                   ds_app.getBusInfoReal(bus, "LOAD_PL_CURRENT", l),
                   ds_app.getBusInfoReal(bus, "LOAD_QL_CURRENT", l))
@@ -69,11 +52,6 @@ def network_analytics_dump(ds_app):
                   ds_app.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', e),
                   ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT', e),
                   ds_app.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT', e))
-=======
-                  ds_app.getBusInfoReal(bus, "LOAD_QL", l))
-
-            
->>>>>>> Fix global/original indexing; add data collection interfaces for bus
 
 # -------------------------------------------------------------
 # variable initialization
@@ -124,10 +102,7 @@ ds_app.solvePreInitialize(faults[0])
 while (not ds_app.isDynSimuDone()):
     ds_app.executeOneSimuStep()
 
-<<<<<<< HEAD
 ds_app.updateData()
-=======
->>>>>>> Fix global/original indexing; add data collection interfaces for bus
 network_analytics_dump(ds_app)
 
 timer.stop(t_total)
