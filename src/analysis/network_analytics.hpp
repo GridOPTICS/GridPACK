@@ -8,7 +8,6 @@
 /**
  * @file   network_analytics.hpp
  * @author Bruce Palmer
- * @date   2024-05-15 09:12:00 d3g096
  * 
  * @brief  
  * This is a utility that can be used to extract properties of the network
@@ -90,12 +89,10 @@ template <class _network> class NetworkAnalytics {
   {
     int result(0);
 
-    int lbusidx = p_network->getOriginalBusIndex(bus_idx);
+    int lidx(p_localFromGlobalBusIndex(bus_idx));
 
-    if (lbusidx >= 0) {
-      if (p_network->getActiveBus(lbusidx)) {
-        result += p_network->getBus(lbusidx)->numGenerators();
-      }
+    if (lidx >= 0) {
+      result = p_network->getBus(lidx)->numGenerators();
     }
 
     p_network->communicator().sum(&result, 1);
@@ -121,24 +118,24 @@ template <class _network> class NetworkAnalytics {
   }
 
   /**
-   * Get the total number of loads on a specific bus in the network
+   * Get the number of loads on a specific bus in the network
+   * @param bus_idx @e global bus index
    * @return total number of loads on the bus
    */
   int numLoads(const int& bus_idx)
   {
     int result(0);
 
-    int lbusidx = p_network->getOriginalBusIndex(bus_idx);
+    int lidx(p_localFromGlobalBusIndex(bus_idx));
 
-    if (lbusidx >= 0) {
-      if (p_network->getActiveBus(lbusidx)) {
-        result += p_network->getBus(lbusidx)->numLoads();
-      }
+    if (lidx >= 0) {
+      result = p_network->getBus(lidx)->numLoads();
     }
 
     p_network->communicator().sum(&result, 1);
     return result;
   }
+
   
   /**
    * Get the total number of storage units in the network
@@ -160,18 +157,17 @@ template <class _network> class NetworkAnalytics {
 
   /**
    * Get the total number of storage units on a specific bus in the network
+   * @param bus_idx @e global bus index
    * @return total number of storage units on the bus
    */
   int numStorage(const int& bus_idx)
   {
     int result(0);
 
-    int lbusidx = p_network->getOriginalBusIndex(bus_idx);
+    int lidx(p_localFromGlobalBusIndex(bus_idx));
 
-    if (lbusidx >= 0) {
-      if (p_network->getActiveBus(lbusidx)) {
-        result += p_network->getBus(lbusidx)->numStorage();
-      }
+    if (lidx >= 0) {
+      result = p_network->getBus(lidx)->numStorage();
     }
 
     p_network->communicator().sum(&result, 1);
@@ -198,18 +194,19 @@ template <class _network> class NetworkAnalytics {
 
   /**
    * Get the total number of lines in a specific branch of the network
+   * @param branch_idx @e global branch index
    * @return total number of lines in branch
    */
   int numLines(const int& branch_idx)
   {
     int result(0);
-    int lbranchidx = p_network->getOriginalBranchIndex(branch_idx);
 
-    if (lbranchidx >= 0) {
-      if (p_network->getActiveBranch(lbranchidx)) {
-        result += p_network->getBranch(lbranchidx)->numLines();
-      }
+    int lidx(p_localFromGlobalBranchIndex(branch_idx));
+
+    if (lidx >= 0) {
+      result = p_network->getBranch(lidx)->numLines();
     }
+
     p_network->communicator().sum(&result, 1);
 
     return result;
@@ -240,43 +237,31 @@ template <class _network> class NetworkAnalytics {
 
   /// Get the branch indexes connected to a bus 
   /**
-   * @e collective
+   * Collective
    *
-   * @param idx original bus index
+   * @param bus_idx @e global bus index
    *
-   * @result vector of original branch indexes
+   * @result vector of @e global branch indexes
    **/
-  std::vector<int> getConnectedBranches(const int& oidx) const
+  std::vector<int> getConnectedBranches(const int& bus_idx) const
   {
-    int rsize(0);
+    int root(0);
     std::vector<int> result;
-    std::vector<int> lbusi(p_network->getLocalBusIndices(oidx));
 
-    // look for the active bus index -- it should only be active on
-    // one process -- result should only be filled on one process
+    int lidx(p_localFromGlobalBusIndex(bus_idx));
 
-    if (!lbusi.empty()) {
-      for (auto ib : lbusi) {
-        if (p_network->getActiveBus(ib)) {
-          typename NetworkType::BusPtr bus(p_network->getBus(ib));
-          std::vector<int> lbranchi(p_network->getConnectedBranches(ib));
-          for (auto ibr : lbranchi) {
-            result.push_back(p_network->getGlobalBranchIndex(ibr));
-          }
-          rsize = result.size();
-        }
+    if (lidx >= 0) {
+      typename NetworkType::BusPtr thebus(p_network->getBus(lidx));
+      int oidx(thebus->getOriginalIndex());
+      std::vector<int> lbranchi(p_network->getConnectedBranches(oidx));
+      for (auto ibr : lbranchi) {
+        result.push_back(p_network->getGlobalBranchIndex(ibr));
       }
+      root = p_network->processor_rank();
     }
 
-    p_network->communicator().sum(&rsize, 1);
-
-    // only one process should have non-zeros in result
-
-    if (result.empty()) {
-      result.resize(rsize, 0);
-    }
-    
-    p_network->communicator().sum(&result[0], rsize);
+    p_network->communicator().sum(&root, 1);
+    boost::mpi::broadcast(p_network->communicator(), result, root);
 
     return result;
   }
@@ -286,9 +271,9 @@ template <class _network> class NetworkAnalytics {
   /**
    * @e collective
    *
-   * @param idx original branch index
-   * @param fbus pointer to location to put from-bus (original) index
-   * @param tbus pointer to location to put to-bus (original) index
+   * @param idx @e global branch index
+   * @param fbus pointer to location to put from-bus (global) index
+   * @param tbus pointer to location to put to-bus (global) index
    **/
   void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const
   {
@@ -306,13 +291,95 @@ template <class _network> class NetworkAnalytics {
     *fbus = fresult;
     *tbus = tresult;
   }
-  
 
+  /**
+   * Get a value from the bus' data collection.  To avoid coding this
+   * a bunch of times, we'll use a broadcast, instead of
+   * all_reduce, from the process where the active bus resides.
+   */
+  template <typename T>
+  bool
+  getBusInfo(const int& bus_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    int root(0);
+    T result;
+
+    int lidx(p_localFromGlobalBusIndex(bus_idx));
+
+    if (lidx >= 0) {
+      typename NetworkType::BusPtr thebus(p_network->getBus(lidx));
+      if (dev_idx < 0) {
+        ok = thebus->getData()->getValue(field.c_str(), &result);
+      } else {
+        ok = thebus->getData()->getValue(field.c_str(), &result, dev_idx);
+      }
+      if (ok) {
+        root = p_network->processor_rank();
+      }
+    }
+
+    ok = p_network->communicator().any(ok);
+    if (ok) {
+      p_network->communicator().sum(&root, 1);
+      boost::mpi::broadcast(p_network->communicator(), result, root);
+      value = result;
+    }
+    return ok;
+  }
+
+protected:
+
+  /** 
+   * Not collective.  
+   *
+   *Given a @e global bus index, find the local bus
+   * index if it is active on this process.  
+   * @param bus_idx global bus index
+   * @return local bus index if active, -1 otherwise
+   */ 
+  int
+  p_localFromGlobalBusIndex(const int& bus_idx) const
+  {
+    int result(-1);
+    const int nBus(p_network->numBuses());
+    for (int i = 0; i < nBus; ++i) {
+      if (p_network->getBus(i)->getGlobalIndex() == bus_idx) {
+        if (p_network->getActiveBus(i)) {
+          result = i;
+        }
+      }
+    }
+    return result;
+  }
+  
+  /** 
+   * Not collective.  
+   *
+   * Given a @e global branch index, find the local branch
+   * index if it is active on this process.  
+   * @param bus_idx global branch index
+   * @return local branch index if active, -1 otherwise
+   */ 
+  int
+  p_localFromGlobalBranchIndex(const int& branch_idx) const
+  {
+    int result(-1);
+    const int nBranch(p_network->numBranches());
+    for (int i = 0; i < nBranch; ++i) {
+      if (p_network->getBranch(i)->getGlobalIndex() == branch_idx) {
+        if (p_network->getActiveBranch(i)) {
+          result = i;
+        }
+      }
+    }
+    return result;
+  }
   private:
 
   NetworkPtr p_network;
 };
-
 
 } // namespace gridpack
 } // namespace analysis

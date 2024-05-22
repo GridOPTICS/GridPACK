@@ -11,6 +11,34 @@ import gridpack
 from gridpack.dynamic_simulation import DSFullApp
 
 # -------------------------------------------------------------
+# network_analytics_dump
+# -------------------------------------------------------------
+def network_analytics_dump(ds_app):
+    nbus = ds_app.totalBuses()
+    for bus in range(0, nbus):
+        print(bus,
+              ds_app.getBusInfoInt(bus, "BUS_NUMBER", -1),
+              ds_app.getBusInfoString(bus, "BUS_NAME", -1),
+              ds_app.getBusInfoInt(bus, "BUS_TYPE", -1),
+              ds_app.numGenerators(bus),
+              ds_app.numLoads(bus),
+              ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG", -1))
+        for g in range(ds_app.numGenerators(bus)):
+            print(" gen: ", g,
+                  ds_app.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
+                  ds_app.getBusInfoString(bus, "GENERATOR_ID", g),
+                  ds_app.getBusInfoReal(bus, "GENERATOR_PG", g),
+                  ds_app.getBusInfoReal(bus, "GENERATOR_QG", g))
+        for l in range(ds_app.numLoads(bus)):
+            print("load: ", l,
+                  ds_app.getBusInfoInt(bus, "LOAD_NUMBER", l),
+                  ds_app.getBusInfoString(bus, "LOAD_ID", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_PL", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_QL", l))
+
+            
+
+# -------------------------------------------------------------
 # variable initialization
 # -------------------------------------------------------------
 program = os.path.basename(sys.argv[0])
@@ -57,7 +85,9 @@ faults = ds_app.getEvents(cursor)
 ds_app.solvePreInitialize(faults[0])
 
 while (not ds_app.isDynSimuDone()):
-    ds_app.executeOneSimuStep();
+    ds_app.executeOneSimuStep()
+
+network_analytics_dump(ds_app)
 
 timer.stop(t_total)
 timer.dump()

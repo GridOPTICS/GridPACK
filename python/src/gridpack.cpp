@@ -10,7 +10,6 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2024-05-15 14:41:04 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -649,9 +648,51 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::overload_cast<>(&gpds::DSFullApp::numLines, py::const_))
     .def("numLines",
          py::overload_cast<const int&>(&gpds::DSFullApp::numLines, py::const_))
+    .def("getBusInfoInt", 
+         [](gpds::DSFullApp& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           int result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getBusInfoBool",
+         [](gpds::DSFullApp& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           bool result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getBusInfoReal",
+         [](gpds::DSFullApp& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           double result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getBusInfoString", 
+         [](gpds::DSFullApp& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           std::string result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
     ;
-    
-
 
   // -------------------------------------------------------------
   // gridpack.hadrec module
@@ -716,6 +757,50 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::overload_cast<>(&gph::HADRECAppModule::numLines, py::const_))
     .def("numLines",
          py::overload_cast<const int&>(&gph::HADRECAppModule::numLines, py::const_))
+    .def("getBusInfoInt", 
+         [](gph::HADRECAppModule& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           int result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getBusInfoBool",
+         [](gph::HADRECAppModule& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           bool result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getBusInfoReal",
+         [](gph::HADRECAppModule& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           double result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
+    .def("getBusInfoString", 
+         [](gph::HADRECAppModule& self, const int& bus_idx,
+            const std::string& name, const int& dev_idx) -> py::object {
+           std::string result;
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           if (ok) {
+             return py::cast(result);
+           } else {
+             return py::cast<py::none>(Py_None);
+           }
+         })
     ;
 
   // These methods need to be reworked char * and/or optional args

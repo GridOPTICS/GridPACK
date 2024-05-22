@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2024-05-15 12:26:40 d3g096
+ * @date   2024-05-21 12:18:29 d3g096
  * 
  * @brief  
  * 
@@ -418,6 +418,21 @@ class HADRECAppModule
   /// Network query: Get the number of storage units on a specific bus
   int numStorage(const int& bus_idx) const;
 
+  /// Network query: Get a value from the bus' data collection
+  template <typename T>
+  bool
+  getBusInfo(const int& bus_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (ds_analytics) {
+      ok = ds_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    } else if (pf_analytics) {
+      ok = pf_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    }
+
+    return ok;
+  }
 
   private:
    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;

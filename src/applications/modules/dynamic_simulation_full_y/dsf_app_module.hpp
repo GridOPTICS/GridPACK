@@ -686,6 +686,20 @@ class DSFullApp
   /// Network query: Get the number of storage units on a specific bus
   int numStorage(const int& bus_idx) const;
 
+  /// Network query: Get a value from the bus' data collection
+  template <typename T>
+  bool
+  getBusInfo(const int& bus_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (p_analytics) {
+      ok = p_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    }
+    return ok;
+  }
+  
+
   
   private:
 
