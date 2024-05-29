@@ -650,20 +650,20 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::overload_cast<const int&>(&gpds::DSFullApp::numLines, py::const_))
     .def("getBusInfoInt", 
          [](gpds::DSFullApp& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            int result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBusInfoBool",
          [](gpds::DSFullApp& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx = -1) -> py::object {
            bool result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
@@ -672,70 +672,70 @@ PYBIND11_MODULE(gridpack, gpm) {
          })
     .def("getBusInfoReal",
          [](gpds::DSFullApp& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            double result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBusInfoString", 
          [](gpds::DSFullApp& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            std::string result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoInt", 
          [](gpds::DSFullApp& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            int result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoBool",
          [](gpds::DSFullApp& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            bool result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoReal",
          [](gpds::DSFullApp& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            double result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoString", 
          [](gpds::DSFullApp& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            std::string result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     ;
 
   // -------------------------------------------------------------
@@ -803,92 +803,92 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::overload_cast<const int&>(&gph::HADRECAppModule::numLines, py::const_))
     .def("getBusInfoInt", 
          [](gph::HADRECAppModule& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            int result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBusInfoBool",
          [](gph::HADRECAppModule& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            bool result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBusInfoReal",
          [](gph::HADRECAppModule& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            double result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBusInfoString", 
          [](gph::HADRECAppModule& self, const int& bus_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            std::string result;
-           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx);
+           bool ok = self.getBusInfo(bus_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoInt", 
          [](gph::HADRECAppModule& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            int result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoBool",
          [](gph::HADRECAppModule& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            bool result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoReal",
          [](gph::HADRECAppModule& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            double result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     .def("getBranchInfoString", 
          [](gph::HADRECAppModule& self, const int& branch_idx,
-            const std::string& name, const int& dev_idx) -> py::object {
+            const std::string& name, const std::optional<int> dev_idx) -> py::object {
            std::string result;
-           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx);
+           bool ok = self.getBranchInfo(branch_idx, name, result, dev_idx.value());
            if (ok) {
              return py::cast(result);
            } else {
              return py::cast<py::none>(Py_None);
            }
-         })
+         }, py::arg("bus_idx"), py::arg("name"), py::arg("dev_idx") = - 1)
     ;
 
   // These methods need to be reworked char * and/or optional args

@@ -17,12 +17,12 @@ def network_analytics_dump(ds_app):
     nbus = ds_app.totalBuses()
     for bus in range(nbus):
         print(bus,
-              ds_app.getBusInfoInt(bus, "BUS_NUMBER", -1),
-              ds_app.getBusInfoString(bus, "BUS_NAME", -1),
-              ds_app.getBusInfoInt(bus, "BUS_TYPE", -1),
+              ds_app.getBusInfoInt(bus, "BUS_NUMBER"),
+              ds_app.getBusInfoString(bus, "BUS_NAME"),
+              ds_app.getBusInfoInt(bus, "BUS_TYPE"),
               ds_app.numGenerators(bus),
               ds_app.numLoads(bus),
-              ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG", -1))
+              ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"))
         for g in range(ds_app.numGenerators(bus)):
             print(" gen: ", g,
                   ds_app.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
@@ -39,10 +39,10 @@ def network_analytics_dump(ds_app):
     for branch in range(0, nbranch):
         (f, t) = ds_app.getBranchEndpoints(branch)
         print(branch, f, t, 
-              ds_app.getBranchInfoInt(branch, "BRANCH_ELEMENTS", -1),
-              ds_app.getBranchInfoInt(branch, "BRANCH_INDEX", -1),
-              ds_app.getBranchInfoString(branch, "BRANCH_NAME", -1),
-              ds_app.getBranchInfoReal(branch, "BRANCH_LENGTH", -1))
+              ds_app.getBranchInfoInt(branch, "BRANCH_ELEMENTS"),
+              ds_app.getBranchInfoInt(branch, "BRANCH_INDEX"),
+              ds_app.getBranchInfoString(branch, "BRANCH_NAME"),
+              ds_app.getBranchInfoReal(branch, "BRANCH_LENGTH"))
               
             
 
