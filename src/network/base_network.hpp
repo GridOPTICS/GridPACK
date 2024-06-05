@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2022-10-05 08:51:23 d3g096
+ * @date   2024-04-18 14:00:57 d3g096
  * 
  * @brief  
  * 
@@ -28,7 +28,7 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/type_traits.hpp>
 #include <ga.h>
-#include "gridpack/parallel/distributed.hpp"
+#include "gridpack/network/network_topology_interface.hpp"
 #include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
@@ -761,6 +761,26 @@ int getOriginalBusIndex(int idx)
 }
 
 /**
+ * Get original index of the branch
+ * @param idx local index of branch
+ * @return original index of branch 
+ */
+int getOriginalBranchIndex(int idx)
+{
+  if (idx >= 0 && idx < p_branches.size()) {
+    return p_branches[idx].p_globalBranchIndex;
+  } else {
+    char buf[256];
+    sprintf(buf,"BaseNetwork::getOriginalBranchIndex: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
+    if (!p_no_print) {
+      printf("%s",buf);
+    }
+    throw gridpack::Exception(buf);
+  }
+  return -1;
+}
+/**
  * Get global index of the bus
  * @param idx local index of bus
  * @return global index of bus 
@@ -1213,6 +1233,17 @@ void partition(void)
     }
   }
   setMap();
+
+  /* initialize network analytics functionality */
+  int nbus = p_buses.size();
+  for (size_t i=0; i<nbus; i++) {
+    getBus(i)->setData(getBusData(i));
+  }
+  nbranch = p_branches.size();
+  for (size_t i=0; i<nbranch; i++) {
+    getBranch(i)->setData(getBranchData(i));
+  }
+
 
   if (!p_no_print) {
     std::cout << me << ": "
@@ -2531,6 +2562,7 @@ void broadcastNetworkData(int idx)
   boost::mpi::communicator comm = this->communicator().getCommunicator();
   boost::mpi::broadcast(comm, p_network_data, idx);
 }
+
 protected:
 
 /**

@@ -15,6 +15,7 @@
 
 void run_dynamics(int argc, char **argv)
 {
+  gridpack::parallel::Communicator world;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
@@ -35,6 +36,14 @@ void run_dynamics(int argc, char **argv)
   ds_app.setGeneratorWatch();
 	
   ds_app.setup();
+  int ngen = ds_app.numGenerators();
+  int nload = ds_app.numLoads();
+  int nline = ds_app.numLines();
+  if (world.rank() == 0) {
+    std::cout << " Number of generators: "<<ngen<<std::endl;
+    std::cout << " Number of loads:      "<<nload<<std::endl;
+    std::cout << " Number of lines:      "<<nline<<std::endl;
+  }
 
   ds_app.run();
 

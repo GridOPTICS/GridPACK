@@ -238,6 +238,7 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
 
   // partition network
   network->partition();
+  p_analytics.reset(new gridpack::analysis::NetworkAnalytics<DSFullNetwork>(network));
 
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512, network));
@@ -290,6 +291,7 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   p_monitorGenerators = cursor->get("monitorGenerators",false);
   p_report_dummy_obs = cursor->get("reportNonExistingElements",false);
   p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
+  p_analytics.reset(new gridpack::analysis::NetworkAnalytics<DSFullNetwork>(network));
 
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(512, network));
@@ -4870,4 +4872,192 @@ void gridpack::dynamic_simulation::DSFullApp::transferPFtoDS(
       }
     }
   }
+}
+
+
+int gridpack::dynamic_simulation::DSFullApp::totalBuses(void) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->totalBuses();
+  } else {
+    throw gridpack::Exception("DSFullApp::totalBuses(): network not defined");
+  }
+
+  return result;
+}
+
+
+int gridpack::dynamic_simulation::DSFullApp::totalBranches(void) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->totalBranches();
+  } else {
+    throw gridpack::Exception("DSFullApp::totalBranches(): network not defined");
+  }
+
+  return result;
+}
+
+
+std::vector<int>
+gridpack::dynamic_simulation::DSFullApp::getConnectedBranches(int oidx) const
+{
+  std::vector<int> result;
+  if (p_analytics) {
+    result = p_analytics->getConnectedBranches(oidx);
+  } else {
+    throw gridpack::Exception("DSFullApp::totalBranches(): network not defined");
+  }
+  
+  return result;
+}
+
+void
+gridpack::dynamic_simulation::DSFullApp::getBranchEndpoints(const int& idx, int *fbus, int *tbus) const
+{
+  if (p_analytics) {
+    p_analytics->getBranchEndpoints(idx, fbus, tbus);
+  } else {
+    throw gridpack::Exception("DSFullApp::getBranchEndpoints(): network not defined");
+  }
+}
+
+/**
+ * get total number of generators in network
+ * @return number of generators
+ */
+int gridpack::dynamic_simulation::DSFullApp::numGenerators(void) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numGenerators();
+  } else {
+    throw gridpack::Exception("DSFullApp::numGenerators(): network not defined");
+  }
+
+  return result;
+}
+
+/**
+ * get number of generators on a specfic buse
+ * @return number of generators on bus
+ */
+int gridpack::dynamic_simulation::DSFullApp::numGenerators(const int& bus_idx) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numGenerators(bus_idx);
+  } else {
+    throw gridpack::Exception("DSFullApp::numGenerators(): network not defined");
+  }
+
+  return result;
+}
+
+/**
+ * get total number of loads in network
+ * @return number of loads
+ */
+int gridpack::dynamic_simulation::DSFullApp::numLoads(void) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numLoads();
+  } else {
+    throw gridpack::Exception("DSFullApp::numLoads(): network not defined");
+  }
+
+  return result;
+}
+
+/**
+ * get total number of loads in network on a specific bus
+ * @return number of loads on bus
+ */
+int gridpack::dynamic_simulation::DSFullApp::numLoads(const int& bus_idx) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numLoads(bus_idx);
+  } else {
+    throw gridpack::Exception("DSFullApp::numLoads(): network not defined");
+  }
+
+  return result;
+}
+
+/**
+ * get total number of lines in network
+ * @return number of lines
+ */
+int gridpack::dynamic_simulation::DSFullApp::numLines(void) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numLines();
+  } else {
+    throw gridpack::Exception("DSFullApp::numLines(): network not defined");
+  }
+
+  return result;
+}
+
+/**
+ * get total number of lines in a specific branch
+ * @return number of lines in branch
+ */
+int gridpack::dynamic_simulation::DSFullApp::numLines(const int& branch_idx) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numLines(branch_idx);
+  } else {
+    throw gridpack::Exception("DSFullApp::numLines(): network not defined");
+  }
+
+  return result;
+}
+
+/**
+ * get total number of storage units in network
+ * @return number of loads
+ */
+int gridpack::dynamic_simulation::DSFullApp::numStorage(void) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numStorage();
+  } else {
+    throw gridpack::Exception("DSFullApp::numStorage(): network not defined");
+  }
+
+  return result;
+}
+
+/**
+ * get total number of storage units in network on a specific bus
+ * @return number of loads on bus
+ */
+int gridpack::dynamic_simulation::DSFullApp::numStorage(const int& bus_idx) const
+{
+  int result(0);
+
+  if (p_analytics) {
+    result = p_analytics->numStorage(bus_idx);
+  } else {
+    throw gridpack::Exception("DSFullApp::numStorage(): network not defined");
+  }
+
+  return result;
 }

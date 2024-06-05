@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-26 07:55:50 d3g096
+# Last Change: 2024-02-13 08:36:11 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -65,6 +65,7 @@ gridpack_add_unit_test(network_partition network_partition)
 # -------------------------------------------------------------
 install(FILES 
   base_network.hpp
+  network_topology_interface.hpp
   DESTINATION include/gridpack/network
 )
 

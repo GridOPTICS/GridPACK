@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2023-10-25 08:28:44 d3g096
+ * @date   2024-05-22 09:32:28 d3g096
  * 
  * @brief  
  * 
@@ -19,10 +19,12 @@
 #define _hadrec_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include <gridpack/network/network_topology_interface.hpp>
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
+#include <gridpack/analysis/network_analytics.hpp>
 
 namespace gridpack {
 namespace hadrec {
@@ -44,6 +46,7 @@ struct HADRECAction
 
 
 class HADRECAppModule
+  : public gridpack::network::NetworkTopologyInterface
 {
   public:
     /**
@@ -379,6 +382,74 @@ class HADRECAppModule
    bool getState(int bus_id, std::string dev_id, std::string device,
        std::string name, double *value);
 
+  /// Network query: Get the number of buses
+  int totalBuses(void) const;
+
+  /// Network query: Get the number of branches
+  int totalBranches(void) const;
+
+  /// Network query: Get the branch indexes connected to a bus
+  std::vector<int> getConnectedBranches(int oidx) const;
+
+  /// Network query: Get the bus indexes connected to a branch
+  void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const;
+
+  /// Network query: Get the number of generators
+  int numGenerators(void) const;
+
+  /// Network query: Get the number of generators on a specific bus
+  int numGenerators(const int& bus_idx) const;
+
+  /// Network query: Get the number of loads
+  int numLoads(void) const;
+
+  /// Network query: Get the number of loads
+  int numLoads(const int& bus_idx) const;
+
+  /// Network query: Get the number of lines
+  int numLines(void) const;
+
+  /// Network query: Get the number of lines in a specific branch
+  int numLines(const int& branch_idx) const;
+
+  /// Network query: Get the number of storage units
+  int numStorage(void) const;
+
+  /// Network query: Get the number of storage units on a specific bus
+  int numStorage(const int& bus_idx) const;
+
+  /// Network query: Get a value from the bus' data collection
+  template <typename T>
+  bool
+  getBusInfo(const int& bus_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (ds_analytics) {
+      ok = ds_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    } else if (pf_analytics) {
+      ok = pf_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    }
+
+    return ok;
+  }
+
+  /// Network query: Get a value from the branch' data collection
+  template <typename T>
+  bool
+  getBranchInfo(const int& branch_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (ds_analytics) {
+      ok = ds_analytics->getBranchInfo(branch_idx, field, value, dev_idx);
+    } else if (pf_analytics) {
+      ok = pf_analytics->getBranchInfo(branch_idx, field, value, dev_idx);
+    }
+
+    return ok;
+  }
+
   private:
    boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
 	boost::shared_ptr<gridpack::powerflow::PFNetwork> pf_network;
@@ -386,9 +457,12 @@ class HADRECAppModule
 	
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> ds_network;
 	boost::shared_ptr<gridpack::dynamic_simulation::DSFullApp> ds_app_sptr;
-	
-   gridpack::parallel::Communicator p_comm;
 
+   boost::shared_ptr<gridpack::analysis::NetworkAnalytics<
+     gridpack::powerflow::PFNetwork> > pf_analytics;
+   boost::shared_ptr<gridpack::analysis::NetworkAnalytics<
+     gridpack::dynamic_simulation::DSFullNetwork> > ds_analytics;
+	
     int t_total;
 	int t_config;
 	

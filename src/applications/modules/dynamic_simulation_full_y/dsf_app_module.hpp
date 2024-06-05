@@ -28,6 +28,7 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/parser/dictionary.hpp"
+#include "gridpack/analysis/network_analytics.hpp"
 //#include "gridpack/applications/modules/hadrec/hadrec_app_module.hpp"
 
 
@@ -645,6 +646,73 @@ class DSFullApp
     pf_network,
     boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
     ds_network);
+
+
+  // Network analytics queries
+
+    /// Network query: Get the number of buses
+  int totalBuses(void) const;
+
+  /// Network query: Get the number of branches
+  int totalBranches(void) const;
+
+  /// Network query: Get the branch indexes connected to a bus
+  std::vector<int> getConnectedBranches(int oidx) const;
+
+  /// Network query: Get the bus indexes connected to a branch
+  void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const;
+
+  /// Network query: Get the number of generators
+  int numGenerators(void) const;
+
+  /// Network query: Get the number of generators on a specific bus
+  int numGenerators(const int& bus_idx) const;
+
+  /// Network query: Get the number of loads
+  int numLoads(void) const;
+
+  /// Network query: Get the number of loads
+  int numLoads(const int& bus_idx) const;
+
+  /// Network query: Get the number of lines
+  int numLines(void) const;
+
+  /// Network query: Get the number of lines in a specific branch
+  int numLines(const int& branch_idx) const;
+
+  /// Network query: Get the number of storage units
+  int numStorage(void) const;
+
+  /// Network query: Get the number of storage units on a specific bus
+  int numStorage(const int& bus_idx) const;
+
+  /// Network query: Get a value from the bus' data collection
+  template <typename T>
+  bool
+  getBusInfo(const int& bus_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (p_analytics) {
+      ok = p_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    }
+    return ok;
+  }
+  
+  /// Network query: Get a value from the branch's data collection
+  template <typename T>
+  bool
+  getBranchInfo(const int& branch_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (p_analytics) {
+      ok = p_analytics->getBranchInfo(branch_idx, field, value, dev_idx);
+    }
+    return ok;
+  }
+  
+
   
   private:
 
@@ -1084,6 +1152,10 @@ class DSFullApp
    boost::shared_ptr<gridpack::math::LinearSolver> solver_sptr;
    boost::shared_ptr<gridpack::math::LinearSolver> solver_fy_sptr;
    boost::shared_ptr<gridpack::math::LinearSolver> solver_posfy_sptr;
+
+   // analytics module
+   boost::shared_ptr<gridpack::analysis::NetworkAnalytics<DSFullNetwork> >
+     p_analytics;
    
    int simu_total_steps;
    int S_Steps;
@@ -1117,7 +1189,6 @@ class DSFullApp
    int t_corrector;
    int t_secure;
    int t_cmIf;
-   
    
 };
 

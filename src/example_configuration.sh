@@ -215,37 +215,26 @@ elif [ $host == "tlaloc" ]; then
     # Custom built 3.16, complex:
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
     #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
-    #      -D USE_OLD_PETSC:BOOL=OFF \
 
     # Custom built 3.16, real:
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
     #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
-    #      -D USE_OLD_PETSC:BOOL=OFF \
 
-    # Custom built 3.14, complex:
-    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
-    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
-    #      -D USE_OLD_PETSC:BOOL=OFF \
-
-    # Custom built 3.14, real:
-    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
-    #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
-    #      -D USE_OLD_PETSC:BOOL=OFF \
+    # Custom built 3.16, complex, w/o superlu_dist:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.16.6" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
 
     # Custom built 3.19, complex:
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
     #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
-    #      -D USE_OLD_PETSC:BOOL=OFF \
 
     # Custom built 3.19, real:
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
     #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
-    #      -D USE_OLD_PETSC:BOOL=OFF \
 
     # Custom built 3.19, complex, w/o superlu_dist:
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
     #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
-    #      -D USE_OLD_PETSC:BOOL=OFF \
 
     if [ -z "$GRIDPACK_DIR" ]; then
         prefix="$HOME/Projects/ExaLearn/gridpack-install"
@@ -255,8 +244,8 @@ elif [ $host == "tlaloc" ]; then
     
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
-          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.14.6" \
-          -D PETSC_ARCH:STRING="ubuntu-real-shared" \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
+          -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
           -D PARMETIS_DIR:PATH="/usr" \
