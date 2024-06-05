@@ -636,30 +636,6 @@ class DSFullApp
     */
     double getCurrentTime();
 
-    /**
-     * get total number of generators in network
-     * @return number of generators
-     */
-    int numGenerators();
-
-    /**
-     * get total number of loads in network
-     * @return number of loads
-     */
-    int numLoads();
-
-    /**
-     * get total number of storage units in network
-     * @return number of loads
-     */
-    int numStorage();
-
-    /**
-     * get total number of lines in network
-     * @return number of lines
-     */
-    int numLines();
-
   /**
    * Transfer data from power flow to dynamic simulation
    * @param pf_network power flow network
@@ -709,6 +685,33 @@ class DSFullApp
 
   /// Network query: Get the number of storage units on a specific bus
   int numStorage(const int& bus_idx) const;
+
+  /// Network query: Get a value from the bus' data collection
+  template <typename T>
+  bool
+  getBusInfo(const int& bus_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (p_analytics) {
+      ok = p_analytics->getBusInfo(bus_idx, field, value, dev_idx);
+    }
+    return ok;
+  }
+  
+  /// Network query: Get a value from the branch's data collection
+  template <typename T>
+  bool
+  getBranchInfo(const int& branch_idx, const std::string& field,
+             T& value, const int& dev_idx = -1)
+  {
+    bool ok(false);
+    if (p_analytics) {
+      ok = p_analytics->getBranchInfo(branch_idx, field, value, dev_idx);
+    }
+    return ok;
+  }
+  
 
   
   private:
