@@ -53,6 +53,7 @@ add_library(gridpack_emt_module
   model_classes/ieeet1.cpp
   model_classes/wsieg1.cpp
   model_classes/tgov1.cpp
+  model_classes/hygov.cpp
   model_classes/regca1.cpp
   model_classes/reeca1.cpp
   model_classes/repca1.cpp
@@ -107,6 +108,7 @@ install(FILES
   model_classes/ieeet1.hpp
   model_classes/wsieg1.hpp
   model_classes/tgov1.hpp
+  model_classes/hygov.hpp
   model_classes/regca1.hpp
   model_classes/reeca1.hpp
   model_classes/repca1.hpp
