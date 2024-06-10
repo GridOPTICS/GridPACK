@@ -1,0 +1,87 @@
+# -*- mode: cmake -*-
+#
+#     Copyright (c) 2013 Battelle Memorial Institute
+#     Licensed under modified BSD License. A copy of this license can be
+#     found
+#     in the LICENSE file in the top level directory of this distribution.
+#
+# -------------------------------------------------------------
+# file: CMakeLists.install.in
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Created January 28, 2014 by William A. Perkins
+# Last Change: 2017-12-08 09:50:43 d3g096
+# -------------------------------------------------------------
+
+cmake_minimum_required(VERSION 2.6.4)
+
+if (NOT GRIDPACK_DIR)
+  set(GRIDPACK_DIR @CMAKE_INSTALL_PREFIX@
+      CACHE PATH "GridPACK installation directory")
+endif()
+
+include("${GRIDPACK_DIR}/lib/GridPACK.cmake")
+
+project(Voltage_Stability)
+
+enable_language(CXX)
+
+gridpack_setup()
+
+add_definitions(${GRIDPACK_DEFINITIONS})
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
+
+add_executable(powerflow.x
+  vs_main.cpp
+  vs_app.cpp
+  vs_factory.cpp
+)
+target_link_libraries(powerflow.x ${GRIDPACK_LIBS})
+
+add_custom_target(powerflow.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS 
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml
+  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
+  ${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml
+  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+)
+add_dependencies(vs.x powerflow.input)
+
