@@ -4,7 +4,7 @@
 
 # Flag for install GridPACK and GridPACK python wrapper
 install_gridpack=true
-install_gridpack_python=true
+install_gridpack_python=false
 
 # Set your python executable here
 python_exe=`which python`
@@ -51,10 +51,10 @@ then
   rm -rf CMake*
 
   cmake_args="-D GA_DIR:STRING=${GP_EXT_DEPS}/ga-5.8/install_for_gridpack \
-   -D BOOST_ROOT:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack \    
-   -D Boost_DIR:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib/cmake/Boost-1.78.0 \
-   -D Boost_LIBRARIES:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/lib \   
-   -D Boost_INCLUDE_DIRS:STRING=${GP_EXT_DEPS}/boost_1_78_0/install_for_gridpack/include \
+   -D BOOST_ROOT:STRING=${GP_EXT_DEPS}/boost_1_81_0/install_for_gridpack \    
+   -D Boost_DIR:STRING=${GP_EXT_DEPS}/boost_1_81_0/install_for_gridpack/lib/cmake/Boost-1.81.0 \
+   -D Boost_LIBRARIES:STRING=${GP_EXT_DEPS}/boost_1_81_0/install_for_gridpack/lib \   
+   -D Boost_INCLUDE_DIRS:STRING=${GP_EXT_DEPS}/boost_1_81_0/install_for_gridpack/include \
    -D PETSC_DIR:PATH=${GP_EXT_DEPS}/petsc/install_for_gridpack \                  
    -D MPI_CXX_COMPILER:STRING='mpicxx' \     
    -D MPI_C_COMPILER:STRING='mpicc' \                                         
@@ -62,7 +62,8 @@ then
    -D GRIDPACK_TEST_TIMEOUT:STRING=30 \                                                     
    -D CMAKE_INSTALL_PREFIX:PATH=${GRIDPACK_INSTALL_DIR} \             
    -D CMAKE_BUILD_TYPE:STRING=Debug \
-   -D BUILD_SHARED_LIBS=YES \
+   -D BUILD_SHARED_LIBS=NO \
+   -D CMAKE_CXX_FLAGS="-std=c++0x" \
    -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE \
     ..   "
  
