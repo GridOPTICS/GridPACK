@@ -71,6 +71,8 @@ then
   # Download, build, and install GA
   cd ${GP_EXT_DEPS}
 
+  rm -rf ga*
+
   echo "Downloading GA-5.8"
 
   wget https://github.com/GlobalArrays/ga/releases/download/v5.8/ga-5.8.tar.gz
@@ -96,6 +98,8 @@ then
   # Install PETSc 3.20.1
   cd ${GP_EXT_DEPS}
 
+  rm -rf petsc*
+  
   # Download
   echo "Downloading PETSc"
 
