@@ -1432,4 +1432,19 @@
  */
 #define GENERATOR_MODEL "GENERATOR_MODEL"
 
+/**
+ * Non-blank alphanumeric string to set the generator playback file	
+ * type: string
+ * indexed
+ */
+#define GENERATOR_PLAYBACK_FILE "GENERATOR_PLAYBACK_FILE"
+
+/**
+ * Generator scaling factor for current
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_PLAYBACK_ISCALE "GENERATOR_PLAYBACK_ISCALE"
+
+
 #endif /* _GENERATOR_VAR_HPP_ */

@@ -42,6 +42,7 @@
 #include "parser_classes/gencls.hpp"
 #include "parser_classes/gensal.hpp"
 #include "parser_classes/genrou.hpp"
+#include "parser_classes/plbi.hpp"
 #include "parser_classes/gdform.hpp"
 #include "parser_classes/regca1.hpp"
 #include "parser_classes/regcb1.hpp"
@@ -430,6 +431,8 @@ class BasePTIParser : public BaseParser<_network>
       double tqf;
       double tvf;
       int    vflag;
+      char   playback_file[512];
+      double playback_iscale;
 	  
       int regc_lvplsw;
       double regc_tg;
@@ -1082,6 +1085,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"GDFORM")) {
             GdformParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+	  } else if (!strcmp(gen_data[i].model,"PLBI")) {
+            PlbiParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"REGCA1")) {
             Regca1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1435,7 +1441,7 @@ class BasePTIParser : public BaseParser<_network>
     bool onGenerator(std::string &device) {
       bool ret = false;
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
-          device == "GDFORM" ||
+          device == "GDFORM" || device == "PLBI" ||
           device == "REGCA1" || device == "REECA1" || device == "REPCA1" ||
 	  device == "REPCTA1" || device == "REGCB1" || device == "REGCC1" ||
           device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
@@ -1589,6 +1595,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "GDFORM") {
               GdformParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+	    } else if (sval == "PLBI") {
+              GenrouParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "REGCA1") {
               Regca1Parser<gen_params> parser;
@@ -1826,6 +1835,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "GDFORM") {
             GdformParser<gen_params> parser;
+            parser.store(split_line,data);
+	  } else if (sval == "PLBI") {
+            PlbiParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "REGCA1") {
             Regca1Parser<gen_params> parser;
