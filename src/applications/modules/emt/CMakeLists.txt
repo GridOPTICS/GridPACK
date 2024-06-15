@@ -48,6 +48,7 @@ add_library(gridpack_emt_module
   base_classes/fault.cpp	
   model_classes/gencls.cpp
   model_classes/genrou.cpp
+  model_classes/genplb.cpp
   model_classes/constantimpedance.cpp
   model_classes/exdc1.cpp
   model_classes/ieeet1.cpp
@@ -104,6 +105,7 @@ install(FILES
 install(FILES
   model_classes/gencls.hpp
   model_classes/genrou.hpp
+  model_classes/genplb.hpp
   model_classes/constantimpedance.hpp
   model_classes/exdc1.hpp
   model_classes/ieeet1.hpp

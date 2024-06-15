@@ -19,6 +19,7 @@
 #include <gridpack/math/dae_solver.hpp>
 #include <model_classes/gencls.hpp>
 #include <model_classes/genrou.hpp>
+#include <model_classes/genplb.hpp>
 #include <model_classes/constantimpedance.hpp>
 #include <model_classes/exdc1.hpp>
 #include <model_classes/ieeet1.hpp>
@@ -673,6 +674,10 @@ void EmtBus::load(const
 	Gdform *gdform;
 	gdform = new Gdform;
 	p_gen[i] = gdform;
+      } else if(type == "GENPLB") {
+	Genplb *genplb;
+	genplb = new Genplb;
+	p_gen[i] = genplb;
       }
 
       // Set status
