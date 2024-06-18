@@ -97,5 +97,108 @@ source install_gridpack.sh
 This will build and install the GridPACK library. The build files will be in `$GRIDPACK_ROOT_DIR/src/build` and the install files will be in `$GRIDPACK_ROOT_DIR/src/install`
 
 ## Executing GridPACK-EMT
-To be completed.
+1. Go to the `bin` folder in GridPACK installation directory 
+` cd $GRIDPACK_ROOT_DIR/src/install/bin`. This is the directory from where you'll run the EMT simulation.
+2. Each GridPACK-EMT simulation run needs four input files.
+- A PETS configuration file where all PETSc configuration options are specified. This file needs to have the name `.petscrc` for PETSc to recognize it.
+- The input network file in PTI raw format.
+- The input dynamic data file with the extension `.dyr`
+- A GridPACK configuration xml file that specifies the configuration for GridPACK and the EMT simulation parameters
+
+GridPACK provides some sample data sets and the `.petscrc` that we can use. So, lets copy these files over to the current directory in the next step.
+3. Next, we'll copy over some input files needed for executing the EMT application. The `$GRIDPACK_ROOT_DIR/src/applications/data_sets/emt` directory has sample EMT data sets for a 2-bus system, 9-bus system, Kundur two-area network, and 39-bus system. Let's copy over the input data files from the `two-bus` directory.
+```
+cp $GRIDPACK_ROOT_DIR/src/applications/data_sets/emt/two-bus/input_2bus.xml .
+cp $GRIDPACK_ROOT_DIR/src/applications/data_sets/emt/two-bus/case2.dyr .
+cp $GRIDPACK_ROOT_DIR/src/applications/data_sets/emt/two-bus/case2mod.raw .
+```
+Additionally, copy-over the PETSc configuration file
+```
+cp $GRIDPACK_ROOT_DIR/src/applications/data_sets/petscoptions/emt/.petscrc .
+```
+Your current directory should now have the files for the two-bus system and the `.petscrc` file. Note, you would not be able to see the `.petscrc` file if you simply do `ls`. You will need to do `ls -a`.
+### GridPACK configuration file
+The `input_2bus.xml` is the GridPACK configuration that controls the input for the EMT simulation. Let's take a look at the main elements of this xml file. Note, the file has some other elements for controlling other features but we will only focus on those that are needed for EMT.
+1. Setting the raw file: The network raw file is set with the tag `<networkConfiguration>`. In the `input_2bus.xml` file the network file is set to
+`<networkConfiguration> case2mod.raw </networkConfiguration>`. Recall `case2mod.raw` is the file we copied. GridPACK supports various version of PTI raw data files including v23, v33, v34, v35. `<networkConfiguration>` tag assumes the file format is v23. If you have files in other versions then add an `_vXX` to the tag where `XX` is the version number. For e.g., to read a v34 file use `<networkConfiguration_v34>` tag.
+2. Setting the dyr file: The dyr file is set with the tag `<generatorParameters>`. In the `input_2bus.xml` file the dyr file is set to 
+`<generatorParameters> case2.dyr </generatorParameters>`
+3. Setting the simulation time and timestep: The simulation time and time-step is set with the tags `<simulationTime>` and `timeStep`, respectively.
+4. Scenarios/Disturbances/Events: GridPACK currently supports two different types of disturbances. These events need to be within the `<Events>` tag. 
+-  Bus faults: Bus faults can be single-phase or three-phase. A three-phase temporary fault can be set for the simulation with the following tags.
+```
+<BusFault>
+  <begin>0.5</begin>
+  <end>0.51</end>
+  <bus>5</bus>
+  <type>ThreePhase</type>
+  <Ron>1e-3</Ron>
+  <Rgnd>1e-2</Rgnd>
+</BusFault>
+```
+Here, `<begin>` is the fault begin time, `<end>` is the fault end time, `<bus>` is the bus number where fault is incident, `<type>` should be `ThreePhase`, `Ron` and `Rgnd` are the per unit fault and ground resistances, respectively.
+
+Similarly, a single-phase to ground fault is specified with
+```
+<BusFault>
+  <begin>0.5</begin>
+  <end>0.51</end>
+  <bus>5</bus>
+  <type>SLG</type>
+  <phase>A</phase>
+  <Ron>1e-3</Ron>
+  <Rgnd>1e-2</Rgnd>
+</BusFault>
+```
+Here, the `<type>` should be `SLG` and the `<phase>` where fault is applied should be specified.
+
+- A generator trip example configuration is shown below
+
+```
+<GenTrip>
+  <bus>5</bus>
+  <id>1</id>
+  <phase>A</phase>
+  <time>1e-3</time>
+</BusFault>
+```
+Here, `<bus>` and `<id>` specify the generator bus number and id, respectively, and `<time>` is the time at which the generator is tripped.
+
+5. Output monitoring: The output from EMT simulation can be saved to output csv file. GridPACK currently supports saving a subset of generator output (generator terminal voltage, generator real power, angle,and per unit speed)
+```
+  <Monitors>
+    <Generator>
+      <bus> 1 </bus>
+      <id> 1 </id>
+    </Generator>
+  </Monitors>
+```
+and three-phase instantaneous bus voltages
+```
+  <Monitors>
+    <Bus>
+      <bus> 1 </bus>
+    </Bus>
+  </Monitors>
+```
+ By default, the output gets saved in `emtoutput.csv`. The output can be set with the following tags. You can multiple `<Generator>` and `<Bus>` monitors.
+
+ ### Example simulation run
+ The EMT application is run with the following command.
+ ```
+ ./emt.x <gridpack_configuration_file>
+ ``` 
+ where `<gridpack_configuration_file>` is the xml configuration file.
+ 
+ For the two-bus system data files we copied, running the emt simulation will result in the following output.
+ ```
+ ./emt.x input_2bus.xml
+ ```
+ At the end of the simulation run, you should see a file name `emtoutput.csv` where the output for Generator at bus 1 is saved.
+
+
+
+
+
+ 
 
