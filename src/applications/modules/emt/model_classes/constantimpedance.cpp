@@ -114,7 +114,7 @@ void Constantimpedance::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // load array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-    if(abs(ql) < 1e-6) {// no ql
+    if(fabs(ql) < 1e-6) {// no ql
       f[0] = (p_va - p_R[0]*p_i[0]);
       f[1] = (p_vb - p_R[1]*p_i[1]);
       f[2] = (p_vc - p_R[2]*p_i[2]);
@@ -188,7 +188,7 @@ void Constantimpedance::matrixGetValues(int *nvals, gridpack::RealType *values, 
   cols[ctr+1] = rows[ctr+1];
   cols[ctr+2] = rows[ctr+2];
 
-  if(abs(ql) < 1e-6) {
+  if(fabs(ql) < 1e-6) {
     values[ctr]   = -p_R[0];
     values[ctr+1] = -p_R[1];
     values[ctr+2] = -p_R[2];
@@ -209,7 +209,7 @@ void Constantimpedance::matrixGetValues(int *nvals, gridpack::RealType *values, 
   cols[ctr+1] = p_glocvoltage+1;
   cols[ctr+2] = p_glocvoltage+2;
 
-  if(abs(ql) < 1e-6) {
+  if(fabs(ql) < 1e-6) {
     values[ctr]   = 1.0;
     values[ctr+1] = 1.0;
     values[ctr+2] = 1.0;
