@@ -404,7 +404,7 @@ void EmtBus::setup()
   for(i=0; i < 3; i++) {
     if(p_hasCapacitiveShunt) break;
     for(j=0; j < 3; j++) {
-      if(abs(p_Cshunt[i][j]) > 1e-6) {
+      if(fabs(p_Cshunt[i][j]) > 1e-6) {
 	p_hasCapacitiveShunt = true;
 	break;
       }
@@ -414,7 +414,7 @@ void EmtBus::setup()
   for(i=0; i < 3; i++) {
     if(p_hasInductiveShunt) break;
     for(j=0; j < 3; j++) {
-      if(abs(p_Lshunt[i][j]) > 1e-6) {
+      if(fabs(p_Lshunt[i][j]) > 1e-6) {
 	p_nvarbus += 3; // Bus also has inductive shunt
 	p_hasInductiveShunt = true;
 	break;
@@ -609,14 +609,14 @@ void EmtBus::load(const
   p_gl /= p_sbase;
   p_bl /= p_sbase;
 
-  if(abs(p_gl) > 1e-6) {
+  if(fabs(p_gl) > 1e-6) {
     p_hasResistiveShunt = true;
     p_Gshunt[0][0] = p_gl;
     p_Gshunt[1][1] = p_gl;
     p_Gshunt[2][2] = p_gl;
   }
 
-  if(abs(p_bl) > 1e-6) {
+  if(fabs(p_bl) > 1e-6) {
     if(p_bl > 0) {
       p_hasCapacitiveShunt = true;
       p_Cshunt[0][0] = p_bl/OMEGA_S;
@@ -1356,12 +1356,14 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
       if(!p_gen[i]->getStatus()) continue;
 
       p_gen[i]->setVoltage(va,vb,vc);
+      p_gen[i]->setTime(p_time);
       p_gen[i]->setInitialVoltage(p_Vm0,p_Va0);
       p_gen[i]->init(x);
 
       if(p_gen[i]->hasExciter()) {
 	boost::shared_ptr<BaseEMTExcModel> exc = p_gen[i]->getExciter();
 	exc->setVoltage(va,vb,vc); // Instantaneous voltages
+	exc->setTime(p_time);
 	exc->setVoltage(VR,VI); // Initial real and imaginary part of voltage phasor
 	exc->init(x);
       }
@@ -1371,6 +1373,7 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	double Pmech0;
 	Pmech0 = p_gen[i]->getInitialMechanicalPower();
 	gov->setVoltage(VR,VI);
+	gov->setTime(p_time);
 	gov->setInitialMechanicalPower(Pmech0);
 	gov->init(x);
       }
@@ -1379,6 +1382,7 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
 	plant->setVoltage(va,vb,vc); // Instantaneous voltages
 	plant->setVoltage(VR,VI); // Initial real and imaginary part of voltage phasor
+	plant->setTime(p_time);
 	plant->init(x);
       }
     }
@@ -1387,6 +1391,7 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
       if(!p_load[i]->getStatus()) continue;
       p_load[i]->setVoltage(va,vb,vc);
       p_load[i]->setInitialVoltage(p_Vm0,p_Va0);
+      p_load[i]->setTime(p_time);
       p_load[i]->init(x);
     }
 
@@ -2165,7 +2170,8 @@ void EmtBranch::vectorGetElementValues(gridpack::RealType *values, int *idx)
       if(!p_branch[i]->getStatus()) continue;
 
       p_branch[i]->getCurrentLocalLocation(&i_loc);
-      
+      p_branch[i]->setTime(p_time);
+
       p_branch[i]->init(x);
 
       p_iptr[6*i]   = x[i_loc];

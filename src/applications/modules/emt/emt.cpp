@@ -372,6 +372,7 @@ void Emt::setup()
 void Emt::initialize()
 {
   p_factory->setMode(INIT_X);
+  p_factory->setTime(0.0);
   p_X = p_VecMapper->mapToVector();
   p_X->ready();
   
