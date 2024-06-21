@@ -136,6 +136,9 @@ class Genplb: public BaseEMTGenModel
   std::string playback_file; // Playback file
   double Iscale;  // Base value for current
 
+  double file_time1,file_time2; // Time instants read from file
+  double file_I1[3],file_I2[3]; // Currents read from file
+
   FILE *fp; // playback file pointer
 
   double p_Rs; // Resistance

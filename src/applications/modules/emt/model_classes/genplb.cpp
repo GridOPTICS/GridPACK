@@ -28,20 +28,38 @@ void Genplb::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 {
   BaseEMTGenModel::load(data,idx); // load parameters in base generator model
   gridpack::ComplexType Zsource;
+  char line[1000];
+  char *out;
 
   // load parameters for the model type
   data->getValue(BUS_NUMBER, &bid);
   data->getValue(GENERATOR_PLAYBACK_FILE,&playback_file,idx);
   data->getValue(GENERATOR_PLAYBACK_ISCALE,&Iscale,idx);
 
+  // Open file
   fp = fopen(playback_file.c_str(), "r");
+  
   if(!fp) {
     has_playback_file = false;
     printf("Could not open generator playback file %s\n",playback_file.c_str());
     exit(1);
   } else {
     has_playback_file = true;
+  
+    // Ignore first line (header info)
+    out = fgets(line,1000,fp);
+    // Read second line (Time = 0)
+    out = fgets(line,1000,fp);
+    
+    sscanf(line, "%lf, %lf, %lf, %lf",&file_time1,&file_I1[0],&file_I1[1],&file_I1[2]);
+    
+    // Read third line (first time instant
+    out = fgets(line,1000,fp);
+
+    sscanf(line, "%lf, %lf, %lf, %lf",&file_time2,&file_I2[0],&file_I2[1],&file_I2[2]);
   }
+
+  
   data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
   p_Rs = real(Zsource);
   p_Xdp = imag(Zsource);
@@ -158,10 +176,43 @@ void Genplb::vectorGetValues(gridpack::RealType *values)
    */
 void Genplb::getCurrent(double *ia, double *ib, double *ic)
 {
+  char line[100];
+  char *out;
 
-  p_iabc[0] = Im*sin(OMEGA_S*p_time + Ia)/Iscale;
-  p_iabc[1] = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE)/Iscale;
-  p_iabc[2] = Im*sin(OMEGA_S*p_time + Ia + TWOPI_OVER_THREE)/Iscale;
+  if(!has_playback_file) {
+    p_iabc[0] = Im*sin(OMEGA_S*p_time + Ia);
+    p_iabc[1] = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE);
+    p_iabc[2] = Im*sin(OMEGA_S*p_time + Ia + TWOPI_OVER_THREE);
+  } else {
+    if(file_time2 < p_time) {
+      file_time1 = file_time2;
+      file_I1[0] = file_I2[0];
+      file_I1[1] = file_I2[1];
+      file_I1[2] = file_I2[2];
+
+      out = fgets(line,1000,fp);
+      if(out == NULL) {
+	printf("End of file");
+	exit(1);
+      } else {
+	sscanf(line, "%lf, %lf, %lf, %lf",&file_time2,&file_I2[0],&file_I2[1],&file_I2[2]);
+      }
+    }
+
+    /* Do interpolation */
+    double I_slope[3];
+    I_slope[0] = (file_I2[0] - file_I1[0])/(file_time2 - file_time1);
+    I_slope[1] = (file_I2[1] - file_I1[1])/(file_time2 - file_time1);
+    I_slope[2] = (file_I2[2] - file_I1[2])/(file_time2 - file_time1);
+
+    double dt = p_time - file_time1;
+
+    // Calculate current. Negative sign because it is a load
+    p_iabc[0] = -(file_I1[0] + dt*I_slope[0])/Iscale; 
+    p_iabc[1] = -(file_I1[1] + dt*I_slope[1])/Iscale; 
+    p_iabc[2] = -(file_I1[2] + dt*I_slope[2])/Iscale; 
+    
+  }     
 
   *ia = p_iabc[0];
   *ib = p_iabc[1];
