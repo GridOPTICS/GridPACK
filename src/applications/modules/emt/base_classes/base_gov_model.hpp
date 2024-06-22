@@ -239,7 +239,7 @@ protected:
   double        p_va, p_vb, p_vc; // Instantaneous bus voltages
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
-  double        p_time; // Current time
+  double        p_time = 0.0; // Current time
 
   EMTMachineIntegrationType integrationtype; // Integration type 
 

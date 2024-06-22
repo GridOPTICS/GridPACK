@@ -364,19 +364,19 @@ public:
  protected:
   double        pg; /**< Generator active power output */
   double        qg; /**< Generator reactive power output */
-  double        mbase; /**< MVA base of the machine */
+  double        mbase = 100; /**< MVA base of the machine */
   int           busnum; /**< Bus number */
-  int           status; /**< Machine status */
+  int           status = 1; /**< Machine status */
   std::string   id; /**< Generator id */
   double        sbase;  /** The system MVA base */
-  double        p_time; /** Current time */
+  double        p_time = 0.0; /** Current time */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
   double        p_Vm0,p_Va0; // Initial bus voltage and angle
   double        p_va, p_vb, p_vc; // phase voltages
-  bool          p_hasExciter; // Flag indicating whether this generator has exciter
+  bool          p_hasExciter = false; // Flag indicating whether this generator has exciter
   double        Efd; // Field voltage 
-  bool          p_hasGovernor; // Flag indicating whether this generator has governor
-  bool          p_hasPlantController; // Flag indicating whether this generator has plant controller
+  bool          p_hasGovernor = false; // Flag indicating whether this generator has governor
+  bool          p_hasPlantController = false; // Flag indicating whether this generator has plant controller
   EMTMachineIntegrationType integrationtype;
   boost::shared_ptr<BaseEMTExcModel> p_exciter; // Exciter
   boost::shared_ptr<BaseEMTGovModel> p_governor; // Governor

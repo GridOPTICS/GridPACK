@@ -315,7 +315,7 @@ private:
   bool   p_isolated;   // flag for isolated bus
   bool   p_hasfault;   // Is there a fault on this bus?
   EMTMode p_mode; // factory mode
-  double p_time;     // current time
+  double p_time = 0.0;     // current time
   double p_TSshift;  // shift value provided by TSIJacobian. 
   int    p_nvar;      // Total number of variables for this bus (includes gen, exc, governor, fault, etc.)
   int    p_nvarbus;   // Only the variables for the bus (no component variables included)
@@ -608,7 +608,7 @@ private:
   int  p_nvar;      // Number of variables for this branch  
   int p_mode;     // Mode used for vectors and matrices
   int  p_gloc;     // Global location for the first variable for this branch in the solution vector
-  double p_time;     // current time
+  double p_time = 0.0;     // current time
   double p_TSshift;  // shift value provided by TSIJacobian.
   bool p_isghost; // Local or ghosted element
   int  p_rank;   // Process rank

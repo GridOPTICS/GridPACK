@@ -204,12 +204,12 @@ public:
  protected:
   double        pl; /**< Load active power */
   double        ql; /**< Load reactive power */
-  double        mbase; /**< MVA base of the machine */
+  double        mbase = 100.0; /**< MVA base of the machine */
   int           busnum; /**< Bus number */
-  int           status; /**< Load status */
-  double        sbase;  /** The system MVA base */
+  int           status = 1; /**< Load status */
+  double        sbase = 100.0;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
-  double        p_time; // current time
+  double        p_time = 0.0; // current time
   double        p_Vm0,p_Va0; // Initial bus voltage and angle
   double        p_va, p_vb, p_vc; // Voltages
 
