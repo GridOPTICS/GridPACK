@@ -18,6 +18,7 @@
 #include <constants.hpp>
 #include <gridpack/math/dae_solver.hpp>
 #include <model_classes/gencls.hpp>
+#include <model_classes/gencvs.hpp>
 #include <model_classes/genrou.hpp>
 #include <model_classes/constantimpedance.hpp>
 #include <model_classes/exdc1.hpp>
@@ -584,8 +585,8 @@ void EmtBus::load(const
   // Assume balanced conditions
   // Three phase voltages
   double va = Vm*sin(Va);
-  double vb = Vm*sin(Va - 2*PI/3.0);
-  double vc = Vm*sin(Va + 2*PI/3.0);
+  double vb = Vm*sin(Va - TWOPI_OVER_THREE);
+  double vc = Vm*sin(Va + TWOPI_OVER_THREE);
 
   if(p_vptr) {
     *p_vptr     = va;
@@ -654,13 +655,23 @@ void EmtBus::load(const
       std::string model;
       data->getValue(GENERATOR_MODEL,&model,i);
 
-      std::string type = util.trimQuotes(model);
-      util.toUpper(type);
+      std::string type;
+
+      if(!model.empty()) {
+	type = util.trimQuotes(model);
+	util.toUpper(type);
+      } else {
+	type = "";
+      }
 
       if(type == "GENCLS") {
         Gencls *clgen;
         clgen = new Gencls;
         p_gen[i] = clgen;
+      } else if(type == "GENCVS") {
+        Gencvs *gencvs;
+        gencvs = new Gencvs;
+        p_gen[i] = gencvs;
       } else if(type == "GENROU") {
 	Genrou *genrou;
 	genrou = new Genrou;
@@ -673,6 +684,11 @@ void EmtBus::load(const
 	Gdform *gdform;
 	gdform = new Gdform;
 	p_gen[i] = gdform;
+      } else {
+	// Assume a constant internal voltage source model
+	Gencvs *gencvs;
+	gencvs = new Gencvs;
+	p_gen[i] = gencvs;
       }
 
       // Set status
@@ -1317,8 +1333,8 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
   if(p_mode == INIT_X) { /* Initialization of values */
     int i;
     double va = p_Vm0*sin(p_Va0);
-    double vb = p_Vm0*sin(p_Va0 - 2*PI/3.0);
-    double vc = p_Vm0*sin(p_Va0 + 2*PI/3.0);
+    double vb = p_Vm0*sin(p_Va0 - TWOPI_OVER_THREE);
+    double vc = p_Vm0*sin(p_Va0 + TWOPI_OVER_THREE);
 
     double VR,VI;
     VR = p_Vm0*cos(p_Va0);
@@ -1348,8 +1364,8 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
       Ishuntang = atan2(imag(Ishunt),real(Ishunt));
 
       x[3] = Ishuntmag*sin(Ishuntang);
-      x[4] = Ishuntmag*sin(Ishuntang-2*PI/3.0);
-      x[5] = Ishuntmag*sin(Ishuntang+2*PI/3.0);
+      x[4] = Ishuntmag*sin(Ishuntang-TWOPI_OVER_THREE);
+      x[5] = Ishuntmag*sin(Ishuntang+TWOPI_OVER_THREE);
     }
 
     for(i=0; i < p_ngen; i++) {
