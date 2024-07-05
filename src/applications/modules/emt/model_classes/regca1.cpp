@@ -80,14 +80,11 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  omega_Pll_block.setparams(0.01,1.0);
+  omega_Pll_block.setparams(0.1,1.0);
 
   // Integrator block
   angle_block.setparams(1.0);
 
-  // Outer current control blocks
-  Er_Pll_block.setparams(0.01,0.05);
-  Ei_Pll_block.setparams(0.01,0.05);
 }
 
 /**
@@ -115,10 +112,6 @@ void Regca1::init(gridpack::RealType* xin)
   double Im = abs(I);
   double Ia = arg(I);
 
-  E = V + I*Zsource;
-  Er = real(E);
-  Ei = imag(E);
-  
   double ia,ib,ic;
   ia = Im*sin(OMEGA_S*p_time + Ia);
   ib = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE);
@@ -146,11 +139,8 @@ void Regca1::init(gridpack::RealType* xin)
 
   omega = OMEGA_S*(1 + domega);
   
-  delta = p_Va0;
+  delta = delta0 = p_Va0;
   angle_block.init_given_y(delta);
-
-  Er_Pll_block.init_given_y(Er);
-  Ei_Pll_block.init_given_y(Ei);
 
   // Assume no limits are hit
   Ipcmd = Ip_blk.init_given_y(Ip);
@@ -240,10 +230,12 @@ void Regca1::preStep(double time ,double timestep)
   Vq = vdq0[1];
 
   Vt = sqrt(Vd*Vd + Vq*Vq);
-  
-  double omega;
-  domega = omega_Pll_block.getoutput(Vq, timestep, true);
-  omega  = OMEGA_S*(1 + domega);
+
+  gridpack::ComplexType Vdq = gridpack::ComplexType(Vd,Vq);
+  double ang;
+  ang = arg(Vdq);
+  domega = omega_Pll_block.getoutput(ang, timestep, true);
+  //  omega  = OMEGA_S*(1 + domega);
   delta  = angle_block.getoutput(OMEGA_S*domega, timestep, true);
 
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
@@ -269,13 +261,6 @@ void Regca1::preStep(double time ,double timestep)
   Iq_olim = std::max(0.0,khv*(Vt - volim));
 
   Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
-
-  Er = Er_Pll_block.getoutput(Ipout-Ipref,timestep,true);
-  Ei = Ei_Pll_block.getoutput(Iqout-Iqref,timestep,true);
-
-  E = gridpack::ComplexType(Er,Ei);
-  Em = abs(E);
-  Eang = arg(E);
 }
 
 /**
@@ -298,16 +283,17 @@ void Regca1::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-    eabc[0] = Em*sin(OMEGA_S*p_time + Eang);
-    eabc[1] = Em*sin(OMEGA_S*p_time + Eang - 2.0*PI/3.0);
-    eabc[2] = Em*sin(OMEGA_S*p_time + Eang + 2.0*PI/3.0);
+    double Ipq0[3], igen[3];
+    Ipq0[0] = Ip;
+    Ipq0[1] = Iq;
+    Ipq0[2] = 0.0;
 
-    vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+    dq02abc(Ipq0,p_time, delta, igen);
+
+    f[0] = igen[0] - iabc[0];
+    f[1] = igen[1] - iabc[1];
+    f[2] = igen[2] - iabc[2];
     
-    f[0] = eabc[0] - vabc[0] - L*diabc[0];
-    f[1] = eabc[1] - vabc[1] - L*diabc[1];
-    f[2] = eabc[2] - vabc[2] - L*diabc[2];
-
     f[3] = iabc[0]*mbase/sbase - iout[0];
     f[4] = iabc[1]*mbase/sbase - iout[1];
     f[5] = iabc[2]*mbase/sbase - iout[2];
@@ -415,7 +401,7 @@ int Regca1::matrixNumValues()
 {
   int numVals;
 
-  numVals = 12;
+  numVals = 9;
 
   return numVals;
 }
@@ -431,35 +417,19 @@ void Regca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 {
   int ctr = 0;
 
-    rows[ctr] = p_gloc;
+  rows[ctr] = p_gloc;
   cols[ctr] = p_gloc;
-  values[ctr] = -L*shift;
-
-  rows[ctr+1] = p_gloc;
-  cols[ctr+1] = p_glocvoltage;
-  values[ctr+1] = -1.0;
-
-  ctr += 2;
-
-  rows[ctr] = p_gloc+1;
-  cols[ctr] = p_gloc+1;
-  values[ctr] = -L*shift;
+  values[ctr] = -1.0;
 
   rows[ctr+1] = p_gloc+1;
-  cols[ctr+1] = p_glocvoltage+1;
+  cols[ctr+1] = p_gloc+1;
   values[ctr+1] = -1.0;
 
-  ctr += 2;
+  rows[ctr+2] = p_gloc+2;
+  cols[ctr+2] = p_gloc+2;
+  values[ctr+2] = -1.0;
 
-  rows[ctr] = p_gloc+2;
-  cols[ctr] = p_gloc+2;
-  values[ctr] = -L*shift;
-
-  rows[ctr+1] = p_gloc+2;
-  cols[ctr+1] = p_glocvoltage+2;
-  values[ctr+1] = -1.0;
-
-  ctr += 2;
+  ctr += 3;
 
   rows[ctr] = p_gloc + 3;
   cols[ctr] = p_gloc;
@@ -490,6 +460,6 @@ void Regca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   values[ctr+1] = -1.0;
 
   ctr += 2;
-
+  
   *nvals = ctr;
 }
