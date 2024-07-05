@@ -1807,6 +1807,8 @@ void EmtBranch::setGlobalLocation()
   int gloc,nvar;
   int vfgloc,vtgloc;
 
+  if(!p_nvar) return;
+  
   p_gloc = p_vecidx[0];
 
   gloc = p_gloc;

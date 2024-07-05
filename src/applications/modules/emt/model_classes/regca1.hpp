@@ -239,18 +239,13 @@ class Regca1 : public BaseEMTGenModel
 
     GainLimiter    Iqlowlim_blk;
 
-    PIControl Er_Pll_block;
-    double    Er;
-
-    PIControl Ei_Pll_block;
-    double    Ei;
-  
     PIControl omega_Pll_block;
     double    domega; // Output of PLL block
     double    omega;
 
     Integrator angle_block;
     double    delta; // Output of angle_block
+    double    delta0; // Initial angle
   
   double  Ipout,Iqout; // inverter current output in inverter reference frame
   double  Irout, Iiout; // inverter current output in network reference frame
@@ -272,7 +267,6 @@ class Regca1 : public BaseEMTGenModel
     
   
   double Vt, VR, VI;
-  double Em, Eang; // Magnitude and angle of internal voltage
 
   double iabc[3], diabc[3], iout[3];
 

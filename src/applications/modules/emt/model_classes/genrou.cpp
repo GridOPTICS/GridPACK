@@ -200,9 +200,16 @@ bool Genrou::serialWrite(char *string, const int bufsize,const char *signal)
     return true;
   } else if(!strcmp(signal,"monitor")) {
     /* Print output */
-    double Vm = sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
-    double Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
-    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,delta,dw);
+    double Vm, Pgen,dspd;
+    if(p_online) {
+      Vm = sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
+      dspd = dw;
+    } else {
+      Vm = p_Vm0;
+      dspd = 0.0;
+    }
+    Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
+    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,delta,dspd);
     return true;
   }
   return false;

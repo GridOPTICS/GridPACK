@@ -106,11 +106,11 @@ void Lumpedline::init(gridpack::RealType *values)
   double Ilinem,Ilinea;
   
   Ilinem = abs(Iline);
-  Ilinea = atan2(imag(Iline),real(Iline));
+  Ilinea = arg(Iline);
 
   x[0] = Ilinem*sin(Ilinea);
-  x[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0);
-  x[2] = Ilinem*sin(Ilinea + 2.0*PI/3.0);
+  x[1] = Ilinem*sin(Ilinea - TWOPI_OVER_THREE);
+  x[2] = Ilinem*sin(Ilinea + TWOPI_OVER_THREE);
 
   x[3] = x[0];
   x[4] = x[1];
