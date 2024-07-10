@@ -52,24 +52,24 @@ class GridPACKBackend(Backend):
         self.n_sub = self._hadapp.totalBuses()
         for bus in range(self.n_sub):
             print(bus,
-                self._hadapp.getBusInfoInt(bus, "BUS_NUMBER", -1),
-                self._hadapp.getBusInfoString(bus, "BUS_NAME", -1),
-                self._hadapp.getBusInfoInt(bus, "BUS_TYPE", -1),
+                # self._hadapp.getBusInfoInt(bus, "BUS_NUMBER", -1),
+                # self._hadapp.getBusInfoString(bus, "BUS_NAME", -1),
+                # self._hadapp.getBusInfoInt(bus, "BUS_TYPE", -1),
                 self._hadapp.numGenerators(bus),
-                self._hadapp.numLoads(bus),
-                self._hadapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG", -1))
+                self._hadapp.numLoads(bus))#,
+                # self._hadapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG", -1))
             for g in range(self._hadapp.numGenerators(bus)):
-                print(" gen: ", g,
-                    self._hadapp.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
-                    self._hadapp.getBusInfoString(bus, "GENERATOR_ID", g),
-                    self._hadapp.getBusInfoReal(bus, "GENERATOR_PG", g),
-                    self._hadapp.getBusInfoReal(bus, "GENERATOR_QG", g))
+                print(" gen: ", g)#,
+                    # self._hadapp.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
+                    # self._hadapp.getBusInfoString(bus, "GENERATOR_ID", g),
+                    # self._hadapp.getBusInfoReal(bus, "GENERATOR_PG", g),
+                    # self._hadapp.getBusInfoReal(bus, "GENERATOR_QG", g))
             for l in range(self._hadapp.numLoads(bus)):
-                print("load: ", l,
-                    self._hadapp.getBusInfoInt(bus, "LOAD_NUMBER", l),
-                    self._hadapp.getBusInfoString(bus, "LOAD_ID", l),
-                    self._hadapp.getBusInfoReal(bus, "LOAD_PL", l),
-                    self._hadapp.getBusInfoReal(bus, "LOAD_QL", l))
+                print("load: ", l)#,
+                    # self._hadapp.getBusInfoInt(bus, "LOAD_NUMBER", l),
+                    # self._hadapp.getBusInfoString(bus, "LOAD_ID", l),
+                    # self._hadapp.getBusInfoReal(bus, "LOAD_PL", l),
+                    # self._hadapp.getBusInfoReal(bus, "LOAD_QL", l))
         
         # then fill the number and location of loads
         self.n_load = self._hadapp.numLoads()
