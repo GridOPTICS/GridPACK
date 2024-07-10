@@ -121,7 +121,6 @@ print("Buses connected to branch 1: ", hadapp.getBranchEndpoints(1))
 print("Lines in branch 1: ", hadapp.numLines(1))
 print("Generators connected to bus 1: ", hadapp.numGenerators(1))
 print("Loads connected to bus 1: ", hadapp.numLoads(1))
-sys.exit(1)
 
 # create observation names for csv file header writting purpose
 csvhead = []
