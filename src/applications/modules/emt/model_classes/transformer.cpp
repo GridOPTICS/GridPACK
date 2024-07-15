@@ -98,7 +98,7 @@ void Transformer::init(gridpack::RealType *values)
   double Ilinem,Ilinea;
   
   Ilinem = abs(Iline);
-  Ilinea = atan2(imag(Iline),real(Iline));
+  Ilinea = arg(Iline);
 
   x[0] = Ilinem*sin(Ilinea)/tap;
   x[1] = Ilinem*sin(Ilinea - 2.0*PI/3.0)/tap;
