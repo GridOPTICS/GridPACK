@@ -65,7 +65,8 @@ void Gencvs::init(gridpack::RealType* xin)
   I = conj(S/V);
   E = V + I*Z;
 
-  double delta = arg(E);
+  delta = arg(E);
+  
   double Im = abs(I);
   double Ia = arg(I);
 
@@ -73,9 +74,9 @@ void Gencvs::init(gridpack::RealType* xin)
 
   double ia,ib,ic;
 
-  ia = Im*sin(Ia);
-  ib = Im*sin(Ia - 2*PI/3.0);
-  ic = Im*sin(Ia + 2*PI/3.0);
+  ia = Im*sin(OMEGA_S*p_time + Ia);
+  ib = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE);
+  ic = Im*sin(OMEGA_S*p_time + Ia + TWOPI_OVER_THREE);
 
   p_iabc[0] = ia;
   p_iabc[1] = ib;
@@ -167,7 +168,7 @@ void Gencvs::vectorGetValues(gridpack::RealType *values)
     p_vabc[2] = p_vc;
 
     // Generator equations
-    if(abs(p_L) > 1e-6) {
+    if(fabs(p_L) > 1e-6) {
       // f = di_dt - idot => L^-1*(e - R*i - v) - idot
       f[0] = (e[0] - p_Rs*p_iabc[0] - p_va)/p_L - p_idot[0];
       f[1] = (e[1] - p_Rs*p_iabc[1] - p_vb)/p_L - p_idot[1];
@@ -242,7 +243,7 @@ void Gencvs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   int vc_idx = p_glocvoltage+2;
 
   // partial derivatives w.r.t. f[0]-f[2]
-  if(abs(p_L) > 1e-6) {
+  if(fabs(p_L) > 1e-6) {
     rows[ctr]   = ia_idx;
     cols[ctr]   = ia_idx;
     values[ctr] = -p_Rs/p_L - shift;

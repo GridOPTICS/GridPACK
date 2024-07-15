@@ -1581,6 +1581,10 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
       f[1] = i_mis[1];
       f[2] = i_mis[2];
     }
+
+    if(fabs(f[0] + f[1] + f[2]) > 1e-3) {
+      printf("Mismatch at bus %d\n",thisbusnum);
+    }
     
   } 
 }

@@ -49,7 +49,7 @@ void Constantimpedance::init(gridpack::RealType* xin)
   L = imag(Z)/OMEGA_S;
 
   Im = abs(I);
-  Ia = atan2(imag(I),real(I));
+  Ia = arg(I);
 
   p_R[0] = p_R[1] = p_R[2] = R;
   p_L[0] = p_L[1] = p_L[2] = L;
