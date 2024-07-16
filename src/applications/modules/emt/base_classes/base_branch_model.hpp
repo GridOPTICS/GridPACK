@@ -234,10 +234,10 @@ public:
   void setToBus(EmtBus *tobus) {tbus = tobus;}
 
  protected:
-  int           status; /**< Branch status */
+  int           status = 0; /**< Branch status */
   std::string   cktid; // circuit id
-  double        sbase;  /** The system MVA base */
-  double        p_time; /** Current time */
+  double        sbase  = 100.0;  /** The system MVA base */
+  double        p_time = 0.0; /** Current time */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
 
   EMTMachineIntegrationType integrationtype;

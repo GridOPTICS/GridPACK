@@ -131,6 +131,7 @@ public:
 
     // Evaluate the residual f(x) - xdot
     p_factory->setMode(RESIDUAL_EVAL);
+    F.zero();
     p_VecMapper->mapToVector(F);
     F.ready();
   }
