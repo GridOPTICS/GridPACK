@@ -304,16 +304,16 @@ public:
 private:
   // Anything declared here should be set in the Archive class in exactly the same order!!
   // Data needed for calculations
-  double p_sbase;   // System MVA base
+  double p_sbase = 100.0;   // System MVA base
   int    p_bustype; // Bus type
   double p_gl,p_bl; // Shunt conductance and susceptance (p.u.)
   double p_pl,p_ql; // Active and reactive load (p.u)
   double p_Vm0,p_Va0;     // Voltage magnitude and angle at t=0 used for building constant impedance load
-  int    p_ngen;    // Number of generators incident on this bus
-  int    p_nload;   // Number of loads incident on this bus
+  int    p_ngen = 0;    // Number of generators incident on this bus
+  int    p_nload = 0;   // Number of loads incident on this bus
   int    p_nactivegen; // Number of active generators (status=1) on this bus
-  bool   p_isolated;   // flag for isolated bus
-  bool   p_hasfault;   // Is there a fault on this bus?
+  bool   p_isolated = false;   // flag for isolated bus
+  bool   p_hasfault = false;   // Is there a fault on this bus?
   EMTMode p_mode; // factory mode
   double p_time = 0.0;     // current time
   double p_TSshift;  // shift value provided by TSIJacobian. 
@@ -323,15 +323,15 @@ private:
   int    p_gloc; // Global location of the first variable for this bus in the solution vector
 
   // EMT data
-  double p_nphases;
+  double p_nphases = 3;
   double p_Cshunt[3][3]; // Shunt capacitance 3X3 block
   // The shunt capacitance is a combination of the bus shunt capacitance
   // and the lumped parameter line capacitance p_C = p_Cshunt + \sum_i^lines_connected{p_Cline_i/2}
   double p_Gshunt[3][3]; // Shunt resistance 3X3 block
   double p_Lshunt[3][3]; // Shunt inductance 3X3 block
-  bool   p_hasCapacitiveShunt; // Does the bus have capacitive shunt
-  bool   p_hasInductiveShunt; // Does the bus have inductive shunt
-  bool   p_hasResistiveShunt; // Does the bus have resistive shunt
+  bool   p_hasCapacitiveShunt = false; // Does the bus have capacitive shunt
+  bool   p_hasInductiveShunt = false; // Does the bus have inductive shunt
+  bool   p_hasResistiveShunt = false; // Does the bus have resistive shunt
 
   // Generalized mapper interface
   std::vector<int>    p_rowidx;   // array holding row indices
@@ -604,7 +604,7 @@ public:
 
   int  getStatus(int i);
 private:
-  int p_nparlines; // Number of parallel lines
+  int p_nparlines = 0; // Number of parallel lines
   int  p_nvar;      // Number of variables for this branch  
   int p_mode;     // Mode used for vectors and matrices
   int  p_gloc;     // Global location for the first variable for this branch in the solution vector
