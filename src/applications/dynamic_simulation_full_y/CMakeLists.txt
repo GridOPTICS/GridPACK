@@ -123,6 +123,16 @@ gridpack_set_lu_solver(
   "${CMAKE_CURRENT_BINARY_DIR}/input_twoarea_renewable_mech.xml"
 )
 
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GAST.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GAST.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENROU.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU.xml"
+)
+
 add_custom_target(dsf.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -177,6 +187,18 @@ add_custom_target(dsf.x.input
   ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea_4renewable_mech.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${CMAKE_CURRENT_BINARY_DIR}  
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GAST.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
@@ -198,6 +220,11 @@ add_custom_target(dsf.x.input
   ${GRIDPACK_DATA_DIR}/raw/kundur-twoarea_v33.raw
   ${CMAKE_CURRENT_BINARY_DIR}/input_twoarea_renewable_mech.xml
   ${GRIDPACK_DATA_DIR}/dyr/kundur-twoarea_4renewable_mech.dyr
+  ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GAST.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GAST.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
 )
 
 add_dependencies(dsf.x dsf.x.input)
@@ -228,6 +255,11 @@ install(FILES
   ${GRIDPACK_DATA_DIR}/dyr/classical_model_3000bus.dyr
   ${CMAKE_CURRENT_SOURCE_DIR}/dsf_main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/dsf_main2.cpp
+  ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GAST.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GAST.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENROU.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
   DESTINATION share/gridpack/example/dynamic_simulation_full_y
 )
 
@@ -245,6 +277,8 @@ gridpack_add_run_test("dynamic_simulation_two_area" dsf.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area" dsf2.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
+gridpack_add_run_test("dynamic_simulation_unit_genrou" dsf2.x input_unit_GAST.xml)
+gridpack_add_run_test("dynamic_simulation_unit_genrou" dsf2.x input_unit_GENROU.xml)
 if (ENABLE_ENVIRONMENT_FROM_COMM)
   gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
 endif()
