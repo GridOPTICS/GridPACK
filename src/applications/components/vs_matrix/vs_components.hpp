@@ -6,8 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   vs_components.hpp
- * @author Bruce Palmer
- * @date   2024-06-07 13:27:00 d3g293
+ * @author Kelvin Tan
+ * @date   2024-07-23 01:06:00 d3g293
  * 
  * @brief  
  * 
@@ -605,6 +605,24 @@ class VSBranch
      */
     void getPQ(VSBus *bus, double *p, double *q);
 
+    /**
+     * Return the sending and receiving voltage of a branch KT
+     * @param vs: Sending bus voltage
+     * @param vr: Receiving bus voltage
+     */
+    void getBranchVoltages(double *vs, double *vr);
+    /**
+     * Return impedance magnitude for line element
+     * @param bus describing sending bus of the branch
+     * @return impedance magnitude KT
+     */
+    double getImpedanceMagnitude(std::string tag);
+    /**
+     * Return fast voltage stability index (FVSI) for the line element
+     * @param tag describing line element on branch
+     * @return voltage stability index
+     */
+    double getVoltageStabilityIndex(std::string tag);
     /**
      * Set the mode to control what matrices and vectors are built when using
      * the mapper
