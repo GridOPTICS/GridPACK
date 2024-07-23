@@ -6,15 +6,10 @@
 // -------------------------------------------------------------
 /**
  * @file   vs_components.cpp
- * @author Bruce Palmer
- * @date   2024-06-07 07:45:40 d3g293
+ * @author Kelvin Tan
+ * @date   2024-07-23 01:00:00 d3g293
  * 
- * @updated Shri Abhyankar
- * Conversion of constant current, constant admittance values from raw file
- * to constant power
- * @date  2022-12-23
-
- * @brief Methods used in power flow application
+ * @brief Methods used in power flow and voltage stability application
  * 
  * 
  */
@@ -2230,7 +2225,61 @@ void gridpack::voltage_stability::VSBranch::getPQ(gridpack::voltage_stability::V
   *p = v1*v2*(ybusr*cs+ybusi*sn);
   *q = v1*v2*(ybusr*sn-ybusi*cs);
 }
-
+/**
+ * Return contribution to constraints
+ * @param vs: Voltage magnitude of sending bus
+ * @param vr: Voltage magnitude of receiving bus
+ */
+void gridpack::voltage_stability::VSBranch::getBranchVoltages(double *vs, double *vr) // KT
+{
+  gridpack::voltage_stability::VSBus *bus1 = 
+    dynamic_cast<gridpack::voltage_stability::VSBus*>(getBus1().get());
+  *vs = bus1->getVoltage();
+  gridpack::voltage_stability::VSBus *bus2 =
+    dynamic_cast<gridpack::voltage_stability::VSBus*>(getBus2().get());
+  *vr = bus2->getVoltage();
+} // KT
+/**
+ * Return impedance magnitude of the line element 
+ * @param tag describing line element on branch
+ * @return impedance magnitude
+ */
+double gridpack::voltage_stability::VSBranch::getImpedanceMagnitude(
+        std::string tag) // KT
+{
+  gridpack::voltage_stability::VSBus *bus1 = 
+    dynamic_cast<gridpack::voltage_stability::VSBus*>(getBus1().get());
+  double zmag, ybusr, ybusi;
+  ybusr = p_ybusr_frwd;
+  ybusi = p_ybusi_frwd;
+  zmag = 1/(ybusr * ybusr + ybusi * ybusi);
+  return zmag;
+} 
+/**
+ * Return fast voltage stability index (FVSI) for the line element
+ * @param tag describing line element on branch
+ * @return voltage stability index
+ */
+double gridpack::voltage_stability::VSBranch::getVoltageStabilityIndex(
+        std::string tag) // KT
+{
+  double vr, vs, x, ybusr, ybusi, FVSI;
+  gridpack::ComplexType z, i, s;
+  s = getComplexPower(tag);
+  double p = real(s);
+  double q = imag(s);
+  i = ComplexType(0.0,1.0);
+  z = ComplexType(0.0,0.0);
+  ybusr = p_ybusr_frwd;
+  ybusi = p_ybusi_frwd;
+  z = 1.0/(ybusr + ybusi*i);
+  x = imag(z);
+  getBranchVoltages(&vs, &vr);
+  auto zmag = getImpedanceMagnitude(tag);
+  FVSI = 4 * (zmag * q/100) / (vs * vs * x);
+  if (FVSI < 0.0) FVSI = -1.0 * FVSI;
+  return FVSI;
+} // KT
 /**
  * Return complex power for line element
  * @param tag describing line element on branch
@@ -2279,8 +2328,10 @@ bool gridpack::voltage_stability::VSBranch::serialWrite(char *string, const int 
     std::vector<std::string> tags = getLineTags();
     int i;
     int ilen = 0;
+    double FVSI = 0.0;
     for (i=0; i<p_elems; i++) {
       s = getComplexPower(tags[i]);
+      FVSI = getVoltageStabilityIndex(tags[i]);
       double p = real(s);
       double q = imag(s);
       if (!p_branch_status[i]) p = 0.0;
@@ -2295,13 +2346,13 @@ bool gridpack::voltage_stability::VSBranch::serialWrite(char *string, const int 
         perf = perf*perf;
       }
       if (rating) {
-        sprintf(buf, "%6d %6d %s %20.12e %20.12e %20.12e %20.12e %1d\n",
+        sprintf(buf, "%6d %6d %s %20.12e %20.12e %20.12e %20.12e %1d  %3f\n",
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-            p,q,perf,p_rateA[i],viol);
+            p,q,perf,p_rateA[i],viol,FVSI);
       } else {
-        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f         %12.6f\n",
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-            p,q);
+            p,q,FVSI);
       }
       ilen += strlen(buf);
       if (ilen<bufsize) sprintf(string,"%s",buf);
