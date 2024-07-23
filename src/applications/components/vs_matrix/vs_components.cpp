@@ -2276,7 +2276,7 @@ double gridpack::voltage_stability::VSBranch::getVoltageStabilityIndex(
   x = imag(z);
   getBranchVoltages(&vs, &vr);
   auto zmag = getImpedanceMagnitude(tag);
-  FVSI = 4 * (zmag * q/100) / (vs * vs * x);
+  FVSI = 4 * (zmag * q/p_sbase) / (vs * vs * x);
   if (FVSI < 0.0) FVSI = -1.0 * FVSI;
   return FVSI;
 } // KT
