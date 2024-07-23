@@ -636,7 +636,7 @@ void gridpack::voltage_stability::VSAppModule::write()
   timer->start(t_write);
   p_branchIO->header("\n   Branch Power Flow\n");
   p_branchIO->header("\n        Bus 1       Bus 2   CKT         P"
-                  "                    Q\n");
+                  "                    Q                   FVSI\n");
   p_branchIO->write();
   //p_branchIO->write("record");
 
