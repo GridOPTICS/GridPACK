@@ -396,7 +396,36 @@ class VSBus
      * Reset power for generators and loads back to original values
      */
     void resetPower();
-
+    
+    /**
+     * Get current generator power
+     * @param tag character ID for generator
+     * @param pg initial value of generator real power
+     * @param status current status of generator
+     */
+    void getGeneratorPower(std::vector<std::string> &tag, 
+        std::vector<double> &pg, std::vector<int> &status);
+    
+    /**
+     * Increment generators real power based off specified value. 
+     * Increment generators in specified area.
+     * @param transfer value to increment generators real power
+     * @param area index of area for incrementing generation
+     * @param zone index of zone for incrementing generation
+     * @param total power generation of an area
+     */
+    void IncrementGeneratorPower(std::string tag, double value, double gtotal);
+    
+    /**
+     * Increment load power based off specified value. 
+     * Increment loads in specified area.
+     * @param transfer value to increment load real power
+     * @param area index of area for incrementing load
+     * @param zone index of zone for incrementing load
+     * @param total active power demand of the area
+     */
+    void IncrementLoadPower(std::string tag, double value, double ltotal); 
+    
     /**
      * Get available margin for generator
      * @param tag character ID for generator
@@ -606,15 +635,16 @@ class VSBranch
     void getPQ(VSBus *bus, double *p, double *q);
 
     /**
-     * Return the sending and receiving voltage of a branch KT
+     * Return the sending and receiving voltage of a branch
      * @param vs: Sending bus voltage
      * @param vr: Receiving bus voltage
+     * @param p_theta: Phase angle difference
      */
-    void getBranchVoltages(double *vs, double *vr);
+    void getBranchVoltages(double *vs, double *vr, double *p_theta));
     /**
      * Return impedance magnitude for line element
      * @param bus describing sending bus of the branch
-     * @return impedance magnitude KT
+     * @return impedance magnitude
      */
     double getImpedanceMagnitude(std::string tag);
     /**
