@@ -296,6 +296,26 @@ class VSAppModule
     void scaleLoadPower(double scale, int area, int zone);
 
     /**
+     * Increment generators real power based off specified value. 
+     * Increment generators in specified area.
+     * @param transfer value to increment generators real power
+     * @param area index of area for incrementing generation
+     * @param zone index of zone for incrementing generation
+     * @param total power generation of an area
+     */
+    void IncrementGeneratorRealPower(double inc, int area, int zone, double gtotal);
+    
+    /**
+     * Increment load power based off specified value. 
+     * Increment loads in specified area.
+     * @param transfer value to increment load real power
+     * @param area index of area for incrementing load
+     * @param zone index of zone for incrementing load
+     * @param total active power demand of the area
+     */
+    void IncrementLoadPower(double inc, int area, int zone, double ltotal);
+    
+    /**
      * Return the total real power load for all loads in the zone. If zone
      * less than 1, then return the total load real power for the area
      * @param area index of area
@@ -471,6 +491,22 @@ class VSAppModule
         std::string branchParam, double *value);
     bool getDataCollectionBranchParam(int bus1, int bus2, std::string ckt,
         std::string branchParam, int *value);
+        
+    /**
+     * Check to see if PV Analysis is complete
+     * @return return true if parameter is not found
+     */
+    bool isPVAnlyDone();
+    
+    /**
+     * Set up PV Curve internal parameters and initialize
+     */
+    void InitializePVCurve();
+    
+    /**
+     * Execute one transfer increment
+     */
+    void IncrementPVCurveStep();
 
   private:
 
@@ -888,6 +924,12 @@ class VSAppModule
 
     // Flag to suppress all printing to standard out
     bool p_no_print;
+    
+    // Variables for PV Analysis
+    bool p_bPVAnlyDone,PV_header;
+    double max_increment, increment, gen_scale, load_scale, zone, lt, gt;
+    double current_increment;
+    int sink_area, src_area;
 
 #ifdef USE_GOSS
     gridpack::goss::GOSSClient p_goss_client;
