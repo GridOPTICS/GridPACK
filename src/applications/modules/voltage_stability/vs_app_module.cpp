@@ -31,6 +31,8 @@
 #include "gridpack/math/math.hpp"
 #include "vs_helper.hpp"
 #include "gridpack/utilities/string_utils.hpp"
+#include <iostream>
+#include <fstream>
 
 #define USE_REAL_VALUES
 
@@ -40,6 +42,14 @@
 gridpack::voltage_stability::VSAppModule::VSAppModule(void)
 {
   p_no_print = false;
+  current_increment = 0.0;
+  p_bPVAnlyDone = true;
+  zone = 0;
+  sink_area = 0;
+  src_area = 0;
+  gt = 0.0;
+  lt = 0.0;
+  PV_header = false;
 }
 
 /**
@@ -136,6 +146,10 @@ void gridpack::voltage_stability::VSAppModule::readNetwork(
   p_max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
   // Phase shift sign
+  max_increment = cursor->get("maxIncrement",0.0);
+  increment = cursor->get("TransferIncrement",0.0);
+  src_area = cursor->get("SourceArea",0);
+  sink_area = cursor->get("SinkArea",0);
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
 
   int t_pti = timer->createCategory("Powerflow: Network Parser");
@@ -1095,6 +1109,34 @@ void gridpack::voltage_stability::VSAppModule::scaleLoadPower(
 }
 
 /**
+ * Increment generators real power based off specified value. 
+ * Increment generators in specified area.
+ * @param transfer value to increment generators real power
+ * @param area index of area for incrementing generation
+ * @param zone index of zone for incrementing generation
+ * @param total power generation of an area
+ */
+void gridpack::voltage_stability::VSAppModule::IncrementGeneratorRealPower(
+    double inc, int area, int zone, double gt)
+{
+  p_factory->IncrementGeneratorRealPower(inc,area,zone,gt);
+}
+
+/**
+ * Increment load power based off specified value. 
+ * Increment loads in specified area.
+ * @param transfer value to increment load real power
+ * @param area index of area for incrementing load
+ * @param zone index of zone for incrementing load
+ * @param total active power demand of the area
+ */
+void gridpack::voltage_stability::VSAppModule::IncrementLoadPower(
+    double inc, int area, int zone, double lt)
+{
+  p_factory->IncrementLoadPower(inc,area,zone,lt);
+}
+
+/**
  * Return the total real power load for all loads in the zone. If zone
  * less than 1, then return the total load real power for the area
  * @param area index of area
@@ -1418,4 +1460,94 @@ bool gridpack::voltage_stability::VSAppModule::getDataCollectionBranchParam(
     std::string branchParam, int *value)
 {
   return p_getDataCollectionBranchParam<int>(bus1, bus2, ckt, branchParam, value);
+}
+
+/**
+ * Check to see if PV Analysis is complete
+ * @return return true if parameter is not found
+ */
+bool gridpack::voltage_stability::VSAppModule::isPVAnlyDone()
+{
+  if (current_increment >= (max_increment)){
+	  p_bPVAnlyDone = true;
+  }
+	return p_bPVAnlyDone;
+}
+
+/**
+ * Set up PV Curve internal parameters and initialize
+ */
+void gridpack::voltage_stability::VSAppModule::InitializePVCurve()
+{
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Powerflow");
+  std::string filename;
+  double bus_mag = 0.0;
+  gt = p_factory->getTotalGenRealPower(src_area,zone);
+  lt = getTotalLoadRealPower(sink_area, zone);
+  p_bPVAnlyDone = false;
+  if (!cursor->get("PVAnalysisData",&filename)) {
+     printf("No PV Analysis output data file specified\n");
+  }
+  else{
+     static int numBus = p_network->numBuses();
+     int i;
+     double bus_varray[numBus] = {};
+     std::ofstream file;
+     file.open(filename.c_str(), std::ofstream::out | std::ofstream::trunc);
+     file.is_open();
+     if(!PV_header){
+       file << "Incremental Transfer (MW),";
+       for (i=0; i<numBus; i++) {
+         if (p_network->getActiveBus(i)) {
+           gridpack::voltage_stability::VSBus *bus =
+             dynamic_cast<gridpack::voltage_stability::VSBus*>
+             (p_network->getBus(i).get());
+           file << "Bus " << bus->getOriginalIndex() << ",";
+         }
+       }
+     file << "\n";
+     PV_header = true;
+     file.close();
+    }
+  }
+}
+
+/**
+ * Execute one transfer increment
+ */
+void gridpack::voltage_stability::VSAppModule::IncrementPVCurveStep()
+{
+  IncrementGeneratorRealPower(increment, src_area, zone, gt);
+  IncrementLoadPower(increment, sink_area, zone, lt);
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Powerflow");
+  std::string filename;
+  double bus_mag = 0.0;
+  if (!cursor->get("PVAnalysisData",&filename)) {
+     printf("No PV Analysis output data file specified\n");
+  }
+  else{
+     static int numBus = p_network->numBuses();
+     int i;
+     double bus_varray[numBus] = {};
+     std::ofstream file;
+     file.open(filename.c_str(), std::ios_base::app);
+     file.is_open();
+     file << current_increment << ",";
+     for (i=0; i<numBus; i++) {
+       if (p_network->getActiveBus(i)) {
+         gridpack::voltage_stability::VSBus *bus =
+           dynamic_cast<gridpack::voltage_stability::VSBus*>
+           (p_network->getBus(i).get());
+         file << bus->getVoltage() << ",";
+       }
+     }
+    file << "\n";
+    file.close();
+    
+  }
+  gt = gt + increment;
+  lt = lt + increment;
+  current_increment = current_increment + increment;
 }
