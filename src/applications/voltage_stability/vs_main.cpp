@@ -101,6 +101,13 @@ int main(int argc, char **argv)
     if (!noPrint) {
       timer ->dump();
     }
+    bool start = pf_app.isPVAnlyDone();
+    pf_app.InitializePVCurve();
+    while(!pf_app.isPVAnlyDone()){
+      pf_app.IncrementPVCurveStep();
+      pf_app.solve();
+      pf_app.saveData();
+    }
   }
 
   return 0;
