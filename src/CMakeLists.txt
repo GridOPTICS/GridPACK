@@ -209,6 +209,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     -Wno-unused-variable
     -Wno-unused-but-set-variable
     -Wno-maybe-uninitialized
+    -Wall
     )
 endif()
 
@@ -218,6 +219,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     -Wno-c++11-extensions
     -Wno-c++11-compat-deprecated-writable-strings
     -Wno-format-security
+    -Wall
     -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
     )
 endif()
