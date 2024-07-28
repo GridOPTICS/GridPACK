@@ -249,7 +249,9 @@ public:
   int           p_branchoffset; /** Offset for the bus variables in the local vector. Used only for events */
   int           p_glocvoltage; /* Global location of the first bus voltage variable. This is set by the bus */
 
+  int     fbusnum; // from bus number
   EmtBus *fbus; // From bus
+  int     tbusnum; // to bus number
   EmtBus *tbus; // To bus
 
   std::vector<int>   p_rowidx; // global index for rows

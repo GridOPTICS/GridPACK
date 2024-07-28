@@ -129,7 +129,7 @@ void Fault::getCurrentGlobalLocation(int *i_gloc)
  */
 int Fault::matrixNumValues()
 {
-  int numVals;
+  int numVals = 0;
   if(faulttype == 1) {
     numVals = 6;
   } else if (faulttype == 3) {
