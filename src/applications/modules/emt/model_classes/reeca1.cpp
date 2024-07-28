@@ -266,7 +266,7 @@ void Reeca1::init(gridpack::RealType* xin)
   Voltage_dip = getVoltageDip(Vt);
 
   // Initialize Vref0 = Vt if Vref0 = 0 in the data file
-  if(fabs(Vref0) < 1e-6) Vref0 = Vt;
+  if(fabs(Vref0) <= 1e-6) Vref0 = Vt;
   
   if(Voltage_dip == 0) {
     Iqinj = 0;
@@ -417,8 +417,8 @@ void Reeca1::preStep(double time ,double timestep)
       // Recovered from voltage dip
       // Check if thld == 0, in this case there is
       // no transition to state 2
-      if(fabs(Thld) < 1e-6) Iqinj_sw = 0;
-      else if(fabs(Thld) > 1e-6) {
+      if(fabs(Thld) <= 1e-6) Iqinj_sw = 0;
+      else if(fabs(Thld) >= 1e-6) {
 	// Thld is positive, transition to state 2,
 	// Set timer
 	thld_timer = 0.0;

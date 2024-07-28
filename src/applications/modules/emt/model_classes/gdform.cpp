@@ -47,7 +47,7 @@ void Gdform::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Edroop_max = Emax;
 
   if (!data->getValue(GENERATOR_TPF, &Tpf, idx)) Tpf = 0.01666; //
-  if(fabs(Tpf) < 1e-6) zero_Tpf = true;
+  if(fabs(Tpf) <= 1e-6) zero_Tpf = true;
 
   if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
   if (!data->getValue(GENERATOR_QMAX, &Qmax, idx)) Qmax=1.0;
@@ -57,10 +57,10 @@ void Gdform::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(GENERATOR_KIQMAX, &kiqmax, idx)) kiqmax=10; // 
 
   if (!data->getValue(GENERATOR_TQF, &Tqf, idx)) Tqf=0.01666; //
-  if(fabs(Tqf) < 1e-6) zero_Tqf = true;
+  if(fabs(Tqf) <= 1e-6) zero_Tqf = true;
 
   if (!data->getValue(GENERATOR_TVF, &Tvf, idx)) Tvf=0.01666; // 
-  if(fabs(Tvf) < 1e-6) zero_Tvf = true;
+  if(fabs(Tvf) <= 1e-6) zero_Tvf = true;
 
   if(!data->getValue(GENERATOR_VFLAG,&Vflag, idx)) Vflag = 0;
 
@@ -341,7 +341,7 @@ void Gdform::vectorGetValues(gridpack::RealType *values)
  */
 double Gdform::getFreq()
 {
-  double pufreq;
+  double pufreq=1.0;
 
   return pufreq;
 }
