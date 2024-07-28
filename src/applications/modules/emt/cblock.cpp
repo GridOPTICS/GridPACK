@@ -128,7 +128,7 @@ double Cblock::getoutput(double u,double dt,bool dostateupdate)
 void Cblock::init(double u, double y)
 {
   double uout;
-  if(fabs(p_A[0]) < 1e-10) x[0] = y;
+  if(fabs(p_A[0]) <= 1e-10) x[0] = y;
   else {
     uout = y/(p_D[0] - p_C[0]*p_B[0]/p_A[0]);
     x[0] = -p_B[0]/p_A[0]*uout;
@@ -138,10 +138,10 @@ void Cblock::init(double u, double y)
 double Cblock::init_given_u(double u)
 {
   double y;
-  if(fabs(p_B[0]) < 1e-10) {
+  if(fabs(p_B[0]) <= 1e-10) {
     x[0] = 0;
     y = p_D[0]*u;
-  } else if(fabs(p_A[0]) < 1e-10) {
+  } else if(fabs(p_A[0]) <= 1e-10) {
     x[0] = 0;
     y = p_D[0]*u;
   } else {
@@ -154,7 +154,7 @@ double Cblock::init_given_u(double u)
 double Cblock::init_given_y(double y)
 {
   double u;
-  if(fabs(p_A[0]) < 1e-10) {
+  if(fabs(p_A[0]) <= 1e-10) {
     u = 0;
     x[0] = y;
   } else {
