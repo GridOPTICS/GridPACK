@@ -134,6 +134,9 @@ public:
     F.zero();
     p_VecMapper->mapToVector(F);
     F.ready();
+    //    X.print(0);
+    //F.print(0);
+    
   }
 
   /// Prestep function
@@ -169,38 +172,7 @@ public:
     }
     p_factory->postStep(time);
 
-    if(p_saveoutput) {
-      fprintf(fp_monitor,"%6.5f",time);
-      output_string[0] = '\0';
-      char *ptr = output_string;
-      int len = 0,slen;
-      bool write_data;
-
-      for(int i = 0; i < monitored_buses.size(); i++) {
-	char buf[128];
-	write_data = monitored_buses[i]->serialWrite(buf,128,"monitor");
-	if(write_data) {
-	  slen = strlen(buf);
-	  if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
-	  len += slen;
-	  ptr += slen;
-	}
-      }
-
-      for(int i = 0; i < monitored_gens.size(); i++) {
-	char buf[128];
-	write_data = monitored_gens[i]->serialWrite(buf,128,"monitor");
-	if(write_data) {
-	  slen = strlen(buf);
-	  if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
-	  len += slen;
-	  ptr += slen;
-	}
-      }
-      fprintf(fp_monitor,"%s",output_string);
-      fprintf(fp_monitor,"%s","\n");
-    }
-
+    save_output(time);
   }
 
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff
@@ -268,6 +240,14 @@ public:
   
   // Factory
   EmtFactory *p_factory;
+
+  // Save output function
+  void save_output(const double& time);
+
+  // Save output no input
+  void save_output() {
+    save_output(0.0);
+  }
 
   // Mappers for creating vectors and matrices
   gridpack::mapper::GenVectorMap<EmtNetwork,gridpack::RealType,gridpack::math::RealVector> *p_VecMapper;

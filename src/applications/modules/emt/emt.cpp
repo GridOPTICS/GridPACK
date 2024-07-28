@@ -326,6 +326,10 @@ void Emt::setup()
 
   if(!rank()) printf("Emt:Finished setting up mappers\n");
 
+  // Set up output monitors
+  setMonitors(p_configcursor);
+
+
   // Initialize
   initialize(); 
 
@@ -361,9 +365,6 @@ void Emt::setup()
 
   if(!rank()) printf("Emt:Finished setting up DAE solver\n");
 
-  // Set up output monitors
-  setMonitors(p_configcursor);
-
   p_isSetUp = 1;
   p_profiler.stopsetuptimer();
   if(!rank()) printf("Emt:Set up completed\n");
@@ -378,6 +379,8 @@ void Emt::initialize()
   
   emt_network->updateBuses();
   emt_network->updateBranches();
+
+  save_output();
   //p_X->print();
 }
 
@@ -389,5 +392,40 @@ void Emt::solve()
   p_simparams.getFinalTime(&final_time);
   p_daesolver->solve(final_time,maxsteps);
   p_profiler.stopsolvetimer();
+}
+
+void Emt::save_output(const double& time)
+{
+  if(p_saveoutput) {
+    fprintf(fp_monitor,"%6.5f",time);
+    output_string[0] = '\0';
+    char *ptr = output_string;
+    int len = 0,slen;
+    bool write_data;
+    
+    for(int i = 0; i < monitored_buses.size(); i++) {
+      char buf[128];
+      write_data = monitored_buses[i]->serialWrite(buf,128,"monitor");
+      if(write_data) {
+	slen = strlen(buf);
+	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	len += slen;
+	ptr += slen;
+      }
+    }
+    
+    for(int i = 0; i < monitored_gens.size(); i++) {
+      char buf[128];
+      write_data = monitored_gens[i]->serialWrite(buf,128,"monitor");
+      if(write_data) {
+	slen = strlen(buf);
+	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	len += slen;
+	ptr += slen;
+      }
+    }
+    fprintf(fp_monitor,"%s",output_string);
+    fprintf(fp_monitor,"%s","\n");
+  }
 }
 
