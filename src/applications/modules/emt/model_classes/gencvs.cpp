@@ -168,7 +168,7 @@ void Gencvs::vectorGetValues(gridpack::RealType *values)
     p_vabc[2] = p_vc;
 
     // Generator equations
-    if(fabs(p_L) > 1e-6) {
+    if(fabs(p_L) >= 1e-6) {
       // f = di_dt - idot => L^-1*(e - R*i - v) - idot
       f[0] = (e[0] - p_Rs*p_iabc[0] - p_va)/p_L - p_idot[0];
       f[1] = (e[1] - p_Rs*p_iabc[1] - p_vb)/p_L - p_idot[1];
@@ -243,7 +243,7 @@ void Gencvs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   int vc_idx = p_glocvoltage+2;
 
   // partial derivatives w.r.t. f[0]-f[2]
-  if(fabs(p_L) > 1e-6) {
+  if(fabs(p_L) >= 1e-6) {
     rows[ctr]   = ia_idx;
     cols[ctr]   = ia_idx;
     values[ctr] = -p_Rs/p_L - shift;

@@ -106,7 +106,7 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
     leadlagblock.setparams(TA,TB);
 
     zero_TE = false;
-    if(fabs(TE) < 1e-6) {
+    if(fabs(TE) <= 1e-6) {
       zero_TE = true;
     }
     

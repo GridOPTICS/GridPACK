@@ -36,16 +36,19 @@ void Transformer::load(const boost::shared_ptr<gridpack::component::DataCollecti
   data->getValue(BRANCH_X,&X,i);
   data->getValue(BRANCH_TAP,&tap,i);
 
-  if(fabs(R) > 1e-6) {
+  if(fabs(R) >= 1e-6) {
     p_hasResistance = true;
   }
 
-  if(fabs(X) > 1e-6) {
+  if(fabs(X) >= 1e-6) {
     p_hasInductance = true;
   }
 
-  R1 = R; L1 = X/OMEGA_S;
-  R0 = 3*R1; L0 = 3*L1;
+  R1 = R;
+  R0 = 3*R1;
+
+  L1 = X/OMEGA_S;
+  L0 = 3*L1;
 
   double Rs = R1;
   double Rm = 0.0;
