@@ -405,7 +405,7 @@ void EmtBus::setup()
   for(i=0; i < 3; i++) {
     if(p_hasCapacitiveShunt) break;
     for(j=0; j < 3; j++) {
-      if(fabs(p_Cshunt[i][j]) > 1e-6) {
+      if(fabs(p_Cshunt[i][j]) >= 1e-6) {
 	p_hasCapacitiveShunt = true;
 	break;
       }
@@ -415,7 +415,7 @@ void EmtBus::setup()
   for(i=0; i < 3; i++) {
     if(p_hasInductiveShunt) break;
     for(j=0; j < 3; j++) {
-      if(fabs(p_Lshunt[i][j]) > 1e-6) {
+      if(fabs(p_Lshunt[i][j]) >= 1e-6) {
 	p_nvarbus += 3; // Bus also has inductive shunt
 	p_hasInductiveShunt = true;
 	break;
@@ -582,6 +582,7 @@ void EmtBus::load(const
   /* Convert from degrees to radians */
   Va *= pi/180.0;
 
+
   // Assume balanced conditions
   // Three phase voltages
   double va = Vm*sin(Va);
@@ -607,17 +608,22 @@ void EmtBus::load(const
   // Read shunts
   data->getValue(BUS_SHUNT_GL,&p_gl);
   data->getValue(BUS_SHUNT_BL,&p_bl);
+  double bswitch_init=0.0; // We consider switched shunts as fixed for now.
+  data->getValue(SHUNT_BINIT, &bswitch_init);
+  if(bswitch_init) {
+    p_bl += bswitch_init;
+  }
   p_gl /= p_sbase;
   p_bl /= p_sbase;
 
-  if(fabs(p_gl) > 1e-6) {
+  if(fabs(p_gl) >= 1e-6) {
     p_hasResistiveShunt = true;
     p_Gshunt[0][0] = p_gl;
     p_Gshunt[1][1] = p_gl;
     p_Gshunt[2][2] = p_gl;
   }
 
-  if(fabs(p_bl) > 1e-6) {
+  if(fabs(p_bl) >= 1e-6) {
     if(p_bl > 0) {
       p_hasCapacitiveShunt = true;
       p_Cshunt[0][0] = p_bl/OMEGA_S;
@@ -824,9 +830,10 @@ void EmtBus::load(const
     }
 
     std::string lmodel;
-    double ql;
+    double pl,ql;
     data->getValue(LOAD_MODEL,&lmodel,i);
     data->getValue(LOAD_QL, &ql, i); // Reactive part of load
+
 
     if(lmodel.empty()) {
       // No load model given, so use a R-L impedance model
@@ -1336,6 +1343,10 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
     double vb = p_Vm0*sin(p_Va0 - TWOPI_OVER_THREE);
     double vc = p_Vm0*sin(p_Va0 + TWOPI_OVER_THREE);
 
+    p_vptr[0] = va;
+    p_vptr[1] = vb;
+    p_vptr[2] = vc;
+
     double VR,VI;
     VR = p_Vm0*cos(p_Va0);
     VI = p_Vm0*sin(p_Va0);
@@ -1569,6 +1580,13 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
       p_fault->vectorGetValues(f);
     }
 
+    /*
+    printf("Bus %d: i_gen[0] = %lf i_gen[1] = %lf i_gen[2] = %lf\n",thisbusnum,i_gen[0],i_gen[1],i_gen[2]);
+    printf("Bus %d: i_load[0] = %lf i_load[1] = %lf i_load[2] = %lf\n",thisbusnum,i_load[0],i_load[1],i_load[2]);
+    printf("Bus %d: i_br[0] = %lf i_br[1] = %lf i_br[2] = %lf\n",thisbusnum,i_br[0],i_br[1],i_br[2]);
+    printf("Bus %d: i_mis[0] = %lf i_mis[1] = %lf i_mis[2] = %lf\n\n",thisbusnum,i_mis[0],i_mis[1],i_mis[2]);
+    */
+    
     if(p_hasCapacitiveShunt) {
       double fval[3];
       // i_mis - Cshunt*dv_dt = 0
@@ -1850,6 +1868,15 @@ void EmtBranch::load(
 
     if(!status) {
       p_branch[i] = new BaseEMTBranchModel;
+      /*
+      int fbusnum,tbusnum;
+      std::string cktid;
+      data->getValue(BRANCH_FROMBUS,&fbusnum);
+      data->getValue(BRANCH_TOBUS,&tbusnum);
+      data->getValue(BRANCH_CKT,&cktid,i);
+      printf("Branch %d -- %d id %s out of service\n",fbusnum,tbusnum,cktid.c_str());
+      */
+
       p_branch[i]->setStatus(status);
       continue;
     }
@@ -2128,7 +2155,7 @@ void EmtBranch::matrixGetValues(gridpack::math::RealMatrix &matrix)
 
 int EmtBranch::getXCBufSize(void)
 {
-  return 6*p_nparlines*sizeof(double);
+  return BRANCHBUFSIZE*sizeof(double);
 }
 
 void EmtBranch::setXCBuf(void *buf)
