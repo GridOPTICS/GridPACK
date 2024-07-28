@@ -23,7 +23,9 @@ BaseEMTBranchModel::~BaseEMTBranchModel(void)
 void BaseEMTBranchModel::load(const boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx)
 {
-  // Get line
+  // Get line parameters
+  data->getValue(BRANCH_FROMBUS,&fbusnum);
+  data->getValue(BRANCH_TOBUS,&tbusnum);
   data->getValue(BRANCH_STATUS,&status,idx);
   data->getValue(BRANCH_CKT,&cktid,idx);
   data->getValue(CASE_SBASE,&sbase); // System MVAbase
