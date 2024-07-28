@@ -36,16 +36,25 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
   data->getValue(BRANCH_X,&X,i);
   data->getValue(BRANCH_B,&Bc,i);
 
-  if(fabs(R) > 1e-6) {
+  if(fabs(R) >= 1e-6) {
     p_hasResistance = true;
   }
 
-  if(fabs(X) > 1e-6) {
+  if(fabs(X) >= 1e-6) {
     p_hasInductance = true;
   }
 
-  R1 = R; L1 = X/OMEGA_S; C1 = Bc/OMEGA_S;
-  R0 = 3*R1; L0 = 3*L1; C0 = 3*C1;
+  if(R < 0 || X < 0.0 || Bc < 0) {
+    printf("%d -- %d: R = %lf, X = %lf, B = %lf\n",fbusnum,tbusnum,R,X,Bc);
+  }
+
+  R1 = R; 
+  R0 = 3*R1; 
+
+  L1 = X/OMEGA_S;
+  L0 = 3*L1;
+
+  C0 = 3*C1; C1 = Bc/OMEGA_S;
 
   double Rs = (2*R1 + R0)/3.0;
   double Rm = (R0 - R1)/3.0;

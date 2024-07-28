@@ -130,9 +130,9 @@ void Ieeet1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(EXCITER_E2, &E2, idx)) E2 = 0.0; // E2
   if (!data->getValue(EXCITER_SE2, &SE2, idx)) SE2 = 0.0; // SE2
 
-  if(fabs(SE1*SE2) < 1e-6) has_Sat = false;
-  if(fabs(TA) < 1e-6) zero_TA = true;
-  if(fabs(TR) < 1e-6) zero_TR = true;
+  if(fabs(SE1*SE2) <= 1e-6) has_Sat = false;
+  if(fabs(TA) <= 1e-6) zero_TA = true;
+  if(fabs(TR) <= 1e-6) zero_TR = true;
 
   if(has_Sat) {
     double alpha = std::sqrt(SE1*E1/(SE2*E2));
