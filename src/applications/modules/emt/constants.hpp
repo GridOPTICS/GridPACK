@@ -35,4 +35,9 @@ enum EMTMode{NONE,INIT_X,RESIDUAL_EVAL,XVECTOBUS,XDOTVECTOBUS,FAULT_EVAL,XVECPRE
 // Note :- Some of the machines may not have all the different variants available
 enum EMTMachineIntegrationType{EXPLICIT,IMPLICIT,IMPLICITEXPLICIT};
 
+// Buffer size for exchange.
+// Note: GridPACK does not allow different buffer sizes for each
+// bus and branch components. So we need to hack it to use equal sizes. Hence, using this rather large buffer size for buses and branches
+#define BRANCHBUFSIZE 60
+
 #endif
