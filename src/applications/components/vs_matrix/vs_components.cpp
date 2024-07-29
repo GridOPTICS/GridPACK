@@ -1787,6 +1787,12 @@ void gridpack::voltage_stability::VSBus::IncrementGeneratorPower(std::string tag
   }
 }
 
+/**
+ * Get current generator power
+ * @param tag character ID for generator
+ * @param pg initial value of generator real power
+ * @param status current status of generator
+ */
 void gridpack::voltage_stability::VSBus::getGeneratorPower(
     std::vector<std::string> &tag, std::vector<double> &pg, std::vector<int> &status)
 {
@@ -2321,7 +2327,7 @@ double gridpack::voltage_stability::VSBranch::getImpedanceMagnitude(
 double gridpack::voltage_stability::VSBranch::getVoltageStabilityIndex(
         std::string tag)
 {
-  double vr, vs, x, ybusr, ybusi, FVSI;
+  double vr, vs, x, r, ybusr, ybusi, FVSI;
   gridpack::ComplexType z, i, s;
   s = getComplexPower(tag);
   double p = real(s);
