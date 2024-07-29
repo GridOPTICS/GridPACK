@@ -640,7 +640,7 @@ class VSBranch
      * @param vr: Receiving bus voltage
      * @param p_theta: Phase angle difference
      */
-    void getBranchVoltages(double *vs, double *vr, double *p_theta));
+    void getBranchVoltages(double *vs, double *vr, double *p_theta);
     /**
      * Return impedance magnitude for line element
      * @param bus describing sending bus of the branch
