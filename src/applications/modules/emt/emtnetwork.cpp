@@ -630,10 +630,17 @@ void EmtBus::load(const
       p_Cshunt[1][1] = p_bl/OMEGA_S;
       p_Cshunt[2][2] = p_bl/OMEGA_S;
     } else {
-      p_hasInductiveShunt = true;
-      p_Lshunt[0][0] = -p_bl/OMEGA_S;
-      p_Lshunt[1][1] = -p_bl/OMEGA_S;
-      p_Lshunt[2][2] = -p_bl/OMEGA_S;
+      // Add it as a load
+      if(!data->getValue(LOAD_NUMBER, &p_nload)) {
+	p_nload = 1;
+	data->addValue(LOAD_NUMBER,p_nload);
+      }	else {
+	p_nload = p_nload + 1;
+	data->setValue(LOAD_NUMBER,p_nload);
+      }
+      data->addValue(LOAD_STATUS,1,p_nload-1);
+      data->addValue(LOAD_QL,-p_bl*p_sbase,p_nload-1);
+      data->addValue(LOAD_PL,0.0,p_nload-1);
     }
   }
       
