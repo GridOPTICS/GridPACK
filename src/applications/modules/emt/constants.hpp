@@ -40,4 +40,7 @@ enum EMTMachineIntegrationType{EXPLICIT,IMPLICIT,IMPLICITEXPLICIT};
 // bus and branch components. So we need to hack it to use equal sizes. Hence, using this rather large buffer size for buses and branches
 #define BRANCHBUFSIZE 60
 
+// PTI file version
+enum PTIFileVersion {PTI23, PTI33, PTI34, PTI35};
+
 #endif

@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <emt.hpp>
 
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/PTI34_parser.hpp"
+#include "gridpack/parser/PTI35_parser.hpp"
+
+
 // -------------------------------------------------------------
 //  class EmtEventManager
 // -------------------------------------------------------------
@@ -252,14 +258,100 @@ void Emt::setMonitors(gridpack::utility::Configuration::CursorPtr p_configcursor
 }
 
 void Emt::setup()
-{
+{  
   if(p_isSetUp) return;
   p_profiler.startsetuptimer();
 
-  p_configcursor = p_config->getCursor("Configuration.EMT");
+  p_configcursor = p_config->getCursor("Configuration.Powerflow");
+
+  std::string networkfilename;
+    
+  if (p_configcursor->get("networkConfiguration_v35",&networkfilename)) {
+
+    gridpack::parser::PTI35_parser<EmtNetwork> parser(emt_network);
+    
+    p_configcursor = p_config->getCursor("Configuration.EMT");
+
+    // Read generator data
+    std::string filename;
+    
+    filename = p_configcursor->get("generatorParameters","");
+
+    try {
+      if(filename.size() > 0) {
+	parser.externalParse(filename.c_str());
+      } else {
+	throw(filename.size());
+      }
+    }
+    catch(int size) {
+      std::cout << "Cannot read dynamic data file %s\n" << filename;
+    }
+
+    printf("[%d]: Came here 3\n", rank());
+
+  } else if (p_configcursor->get("networkConfiguration_v34",&networkfilename)) {
+    gridpack::parser::PTI34_parser<EmtNetwork> parser(emt_network);
+
+        p_configcursor = p_config->getCursor("Configuration.EMT");
+
+    // Read generator data
+    std::string filename;
+    
+    filename = p_configcursor->get("generatorParameters","");
+    try {
+      if(filename.size() > 0) parser.externalParse(filename.c_str());
+      else {
+	throw(filename.size());
+      }
+    }
+    catch(int size) {
+      std::cout << "Cannot read dynamic data file %s\n" << filename;
+    }
+
+  } else if (p_configcursor->get("networkConfiguration_v33",&networkfilename)) {
+    gridpack::parser::PTI33_parser<EmtNetwork> parser(emt_network);
+
+        p_configcursor = p_config->getCursor("Configuration.EMT");
+
+    // Read generator data
+    std::string filename;
+    
+    filename = p_configcursor->get("generatorParameters","");
+    try {
+      if(filename.size() > 0) parser.externalParse(filename.c_str());
+      else {
+	throw(filename.size());
+      }
+    }
+    catch(int size) {
+      std::cout << "Cannot read dynamic data file %s\n" << filename;
+    }
+
+  } else if (p_configcursor->get("networkConfiguration",&networkfilename)) {
+    gridpack::parser::PTI23_parser<EmtNetwork> parser(emt_network);
+
+        p_configcursor = p_config->getCursor("Configuration.EMT");
+
+    // Read generator data
+    std::string filename;
+    
+    filename = p_configcursor->get("generatorParameters","");
+    try {
+      if(filename.size() > 0) parser.externalParse(filename.c_str());
+      else {
+	throw(filename.size());
+      }
+    }
+    catch(int size) {
+      std::cout << "Cannot read dynamic data file %s\n" << filename;
+    }
+  } else {
+    printf("No network configuration file specified\n");
+    exit(0);
+  }
 
   p_emtmachineintegrationtype = IMPLICIT;
-
   
   // Get machine integration algorithm
   std::string macinttype;
@@ -267,21 +359,7 @@ void Emt::setup()
 
   if(macinttype == "EXPLICIT") p_emtmachineintegrationtype = EXPLICIT;
 
-  // Read generator data
-  std::string filename;
-  gridpack::parser::PTI23_parser<EmtNetwork> parser(emt_network);
 
-  filename = p_configcursor->get("generatorParameters","");
-  try {
-    if(filename.size() > 0) parser.externalParse(filename.c_str());
-    else {
-      throw(filename.size());
-    }
-  }
-  catch(int size) {
-    std::cout << "Cannot read dynamic data file %s\n" << filename;
-  }
-    
   /* Create factory */
   p_factory = new EmtFactory(emt_network);
 

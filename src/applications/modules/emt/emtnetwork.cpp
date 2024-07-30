@@ -784,6 +784,9 @@ void EmtBus::load(const
 	    boost::shared_ptr<BaseEMTGovModel> gov;
 	    gov.reset(gast);
 	    p_gen[i]->setGovernor(gov);
+
+	    int busnum;
+	    data->getValue(BUS_NUMBER,&busnum);
 	    
 	    // Handle governor data loading
 	    gast->load(data,i); // load governor model
@@ -792,7 +795,7 @@ void EmtBus::load(const
       }
 
       data->getValue(HAS_PLANT_CONTROLLER,&has_plantcontroller,i);
-      if(has_plantcontroller) {
+      if(has_ex && has_plantcontroller) {
 	if(data->getValue(PLANT_CONTROLLER_MODEL, &model, i)) {
 	  type = util.trimQuotes(model);
 	  if((type == "REPCA1") || (type == "REPCTA1")) {
