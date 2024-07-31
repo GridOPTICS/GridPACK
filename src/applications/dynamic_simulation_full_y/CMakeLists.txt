@@ -129,8 +129,28 @@ gridpack_set_lu_solver(
 )
 
 gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_HYGOV.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_HYGOV.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_REGCA1_REECA1_REPCA1.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_REGCA1_REECA1_REPCA1.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_SEXS.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_SEXS.xml"
+)
+
+gridpack_set_lu_solver(
   "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENROU.xml"
   "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENROU_ESST1A.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_ESST1A.xml"
 )
 
 add_custom_target(dsf.x.input
@@ -196,7 +216,23 @@ add_custom_target(dsf.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_HYGOV.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_REGCA1_REECA1_REPCA1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_SEXS.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
@@ -225,6 +261,14 @@ add_custom_target(dsf.x.input
   ${GRIDPACK_DATA_DIR}/dyr/case9_GAST.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU.xml
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_ESST1A.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_HYGOV.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_HYGOV.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_REGCA1_REECA1_REPCA1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_REGCA1_REECA1_REPCA1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_SEXS.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_SEXS.dyr
 )
 
 add_dependencies(dsf.x dsf.x.input)
@@ -260,6 +304,14 @@ install(FILES
   ${GRIDPACK_DATA_DIR}/dyr/case9_GAST.dyr
   ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENROU.xml
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENROU_ESST1A.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_HYGOV.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_HYGOV.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_REGCA1_REECA1_REPCA1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_REGCA1_REECA1_REPCA1.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_SEXS.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_SEXS.dyr
   DESTINATION share/gridpack/example/dynamic_simulation_full_y
 )
 
@@ -277,8 +329,11 @@ gridpack_add_run_test("dynamic_simulation_two_area" dsf.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area" dsf2.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
-gridpack_add_run_test("dynamic_simulation_unit_genrou" dsf2.x input_unit_GAST.xml)
+gridpack_add_run_test("dynamic_simulation_unit_gast" dsf2.x input_unit_GAST.xml)
 gridpack_add_run_test("dynamic_simulation_unit_genrou" dsf2.x input_unit_GENROU.xml)
+gridpack_add_run_test("dynamic_simulation_unit_hygov" dsf2.x input_unit_HYGOV.xml)
+gridpack_add_run_test("dynamic_simulation_unit_regca1_reeca1_repca1" dsf2.x input_unit_REGCA1_REECA1_REPCA1.xml)
+gridpack_add_run_test("dynamic_simulation_unit_sexs" dsf2.x input_unit_SEXS.xml)
 if (ENABLE_ENVIRONMENT_FROM_COMM)
   gridpack_add_run_test("dynamic_simulation_comm_full_y" dsf_comm.x input_145.xml)
 endif()
