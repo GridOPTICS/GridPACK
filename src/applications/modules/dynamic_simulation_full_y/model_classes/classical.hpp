@@ -51,7 +51,7 @@ class ClassicalGenerator : public BaseGeneratorModel
      * @param index of generator on bus
      */
     void updateData(boost::shared_ptr<gridpack::component::DataCollection> data,
-        int idx)
+        int idx);
 
     /**
      * Initialize generator model before calculation
