@@ -167,7 +167,7 @@ class MotorwLoad : public BaseLoadModel
     // derivatives of state variables for corrector
     double depq_dt, depd_dt, deppq_dt, deppd_dt, dslip_dt;
 
-    // oter varialbes
+    // other varialbes
     double w0, TL, Tm0, p, q, Pmotor, Qmotor, Qmotor_init, sysMVABase;
 	gridpack::ComplexType nortonImpedance_sysMVA;
 	double Fonline;

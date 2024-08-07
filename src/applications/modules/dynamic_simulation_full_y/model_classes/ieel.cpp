@@ -137,16 +137,14 @@ void gridpack::dynamic_simulation::IeelLoad::load(
  * @param data collection object for bus that hosts load
  * @param index of generator on bus
  */
-void gridpack::dynamic_simulation::AcmotorLoad::updateData(
+void gridpack::dynamic_simulation::IeelLoad::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  double pl = getDynLoadP();
-  double ql = getDynLoadQ();
-  if (!data->setValue(LOAD_PL_CURRENT, pl, idx)) {
-    data->addValue(LOAD_PL_CURRENT, pl, idx);
+  if (!data->setValue(LOAD_PL_CURRENT, P, idx)) {
+    data->addValue(LOAD_PL_CURRENT, P, idx);
   }
-  if (!data->setValue(LOAD_QL_CURRENT, ql, idx)) {
-    data->addValue(LOAD_QL_CURRENT, ql, idx);
+  if (!data->setValue(LOAD_QL_CURRENT, Q, idx)) {
+    data->addValue(LOAD_QL_CURRENT, Q, idx);
   }
 
 }
