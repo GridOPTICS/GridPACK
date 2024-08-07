@@ -120,6 +120,29 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
 }
 
 /**
+ * Update parameters in DataCollection object with current values from
+ * generator
+ * @param data collection object for bus that hosts generator
+ * @param index of generator on bus
+ */
+void gridpack::dynamic_simulation::GenrouGenerator::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+{
+  if (!data->setValue(GENERATOR_PG_CURRENT, p_pg, idx)) {
+    data->addValue(GENERATOR_PG_CURRENT, p_pg, idx);
+  }
+  if (!data->setValue(GENERATOR_QG_CURRENT, p_qg, idx)) {
+    data->addValue(GENERATOR_QG_CURRENT, p_qg, idx);
+  }
+  if (p_exciter.get() != NULL) {
+    p_exciter->updateData(data, idx);
+  }
+  if (p_governor.get() != NULL) {
+    p_governor->updateData(data, idx);
+  }
+}
+
+/**
  * Saturation function
  * @ param x
  */
