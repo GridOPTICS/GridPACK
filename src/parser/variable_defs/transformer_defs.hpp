@@ -19,6 +19,12 @@
  *  index are denoted with the keyword "indexed".
  */
 
+/**
+ * Variables that have _CURRENT appended to them may be added to the data
+ * collection during runtime and updated as the simulation
+ * proceeds
+ */
+
 #ifndef _TRANSFORMER_VAR_HPP_
 #define _TRANSFORMER_VAR_HPP_
 
