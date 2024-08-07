@@ -243,6 +243,12 @@ class DSFullBus
      *       bus that were read in when network was initialized
      */
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
+
+    /**
+     * Update data collection object with current values from simulation
+     * @param data: DataCollection object containing parameters for this bus
+     */
+    void updateData(boost::shared_ptr<gridpack::component::DataCollection> &data);
 	
  	/**
      * load parameters for the extended buses from composite load model
@@ -935,6 +941,12 @@ class DSFullBranch
      *       branch that were read in when network was initialized
      */
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
+
+    /**
+     * Update data collection object with current values from simulation
+     * @param data: DataCollection object containing parameters for this branch
+     */
+    void updateData(boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
      * Return the complex admittance of the branch
