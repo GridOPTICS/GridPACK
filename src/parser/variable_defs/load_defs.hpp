@@ -46,7 +46,7 @@
 
 /**
  * Non-blank alphanumeric identifier to distinguish different loads connected to the same bus.
- * Default value: ’1’
+ * Default value: ï¿½1ï¿½
  * type: string
  * indexed
  */
