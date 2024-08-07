@@ -64,7 +64,7 @@
  * indexed
  */
 #define GENERATOR_PG "GENERATOR_PG"
-#define GENERATOR_PG "GENERATOR_PG_CURRENT"
+#define GENERATOR_PG_CURRENT "GENERATOR_PG_CURRENT"
 
 /**
  * Generator reactive power output, entered in MVar
@@ -72,7 +72,7 @@
  * indexed
  */
 #define GENERATOR_QG "GENERATOR_QG"
-#define GENERATOR_QG "GENERATOR_QG_CURRENT"
+#define GENERATOR_QG_CURRENT "GENERATOR_QG_CURRENT"
 
 /**
  * Maximum generator reactive power output; entered in Mvar

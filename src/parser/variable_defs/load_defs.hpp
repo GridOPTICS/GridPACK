@@ -82,7 +82,7 @@
  * indexed
  */
 #define LOAD_PL "LOAD_PL"
-#define LOAD_PL "LOAD_PL_CURRENT"
+#define LOAD_PL_CURRENT "LOAD_PL_CURRENT"
 
 /**
  * Reactive power component of constant power load; entered in MVar
@@ -90,7 +90,7 @@
  * indexed
  */
 #define LOAD_QL "LOAD_QL"
-#define LOAD_QL "LOAD_QL_CURRENT"
+#define LOAD_QL_CURRENT "LOAD_QL_CURRENT"
 
 /**
  * Active power component of constant current load; entered in MW 

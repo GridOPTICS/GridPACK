@@ -48,6 +48,18 @@ void gridpack::dynamic_simulation::BaseExciterModel::load(
 }
 
 /**
+ * Update parameters in DataCollection object with current values from
+ * exciter
+ * @param data collection object for bus that hosts exciter
+ * @param index of generator on bus
+ */
+void gridpack::dynamic_simulation::BaseExciterModel::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection>
+    data, int idx)
+{
+}
+
+/**
  * Initialize exciter model before calculation
  * @param mag voltage magnitude
  * @param ang voltage angle
