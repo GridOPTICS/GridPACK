@@ -3566,13 +3566,14 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
 void gridpack::dynamic_simulation::DSFullBranch::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+#if 0
   int i;
-//  gridpack::dynamic_simulation::DSFullBus *bus1 = getBus1();
   for (i=0; i<p_elems; i++) {
     if (p_xform[i]) {
     } else {
     }
   }
+#endif
 }
 
 /**
