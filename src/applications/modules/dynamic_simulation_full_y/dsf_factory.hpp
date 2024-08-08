@@ -197,6 +197,12 @@ class DSFullFactory
     void resetPower();
 
     /**
+     * Update data collection objects for all buses and branches with
+     * current values from simulations
+     */
+    void updateData();
+
+    /**
      * Set parameters for real time path rating diagnostics
      * @param src_area generation area
      * @param src_zone generation zone
