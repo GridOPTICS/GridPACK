@@ -3718,6 +3718,7 @@ void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 void gridpack::dynamic_simulation::DSFullBranch::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+#if 0
   int i;
   evaluateBranchFlow();
   updateBranchCurrent();
