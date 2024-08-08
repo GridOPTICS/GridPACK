@@ -714,5 +714,24 @@ void gridpack::dynamic_simulation::DSFullFactory::setRTPRParams(
   }
 }
 
+/**
+ * Update data collection objects for all buses and branches with
+ * current values from simulations
+ */
+void gridpack::dynamic_simulation::DSFullFactory::updateData()
+{
+  int i;
+  boost::shared_ptr<gridpack::component::DataCollection> data;
+  for (i=0; i<p_numBus; i++) {
+    data = p_network->getBusData(i);
+    p_buses[i]->updateData(data);
+  }
+  
+  for (i=0; i<p_numBranch; i++) {
+    data = p_network->getBranchData(i);
+    p_branches[i]->updateData(data);
+  }
+}
+
 } // namespace dynamic_simulation
 } // namespace gridpack
