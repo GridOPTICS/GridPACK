@@ -3610,7 +3610,6 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
 }
 
 /**
-<<<<<<< HEAD
  * Evaluate branch flows for the to and from bus on the branch
  */
 void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
@@ -3713,8 +3712,6 @@ void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 }
 
 /**
-=======
->>>>>>> Add modifications to update values in data collection.
  * Update data collection object with current values from simulation
  * @param data: DataCollection object containing parameters for this branch
  */
@@ -3722,7 +3719,6 @@ void gridpack::dynamic_simulation::DSFullBranch::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   int i;
-<<<<<<< HEAD
   evaluateBranchFlow();
   updateBranchCurrent();
   for (i=0; i<p_elems; i++) {
@@ -3751,14 +3747,9 @@ void gridpack::dynamic_simulation::DSFullBranch::updateData(
     }
     if (!data->setValue(BRANCH_IIFLOW_CURRENT, qf, i)) {
       data->addValue(BRANCH_IIFLOW_CURRENT, qf, i);
-=======
-//  gridpack::dynamic_simulation::DSFullBus *bus1 = getBus1();
-  for (i=0; i<p_elems; i++) {
-    if (p_xform[i]) {
-    } else {
->>>>>>> Add modifications to update values in data collection.
     }
   }
+#endif
 }
 
 /**
