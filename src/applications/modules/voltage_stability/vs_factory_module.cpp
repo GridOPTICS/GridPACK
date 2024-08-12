@@ -826,7 +826,9 @@ void gridpack::voltage_stability::VSFactoryModule::IncrementLoadPower(
 double gridpack::voltage_stability::VSFactoryModule::getTotalGenRealPower(int area, int zone)
 {
   double ret = 0.0;
+  std::cout<<"3 Done "<<std::endl;
   int nbus = p_network->numBuses();
+  std::cout<<"4 Done "<<std::endl;
   int i, j, izone;
   for (i=0; i<nbus; i++) {
     gridpack::voltage_stability::VSBus *bus = p_network->getBus(i).get();

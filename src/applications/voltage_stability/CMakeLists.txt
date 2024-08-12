@@ -49,101 +49,103 @@ if (PARMETIS_FOUND)
   include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
 endif()
 
-add_executable(vs.x
-   vs_main.cpp
-)
+#add_executable(vs.x
+#   vs_main.cpp
+#)
 
-target_link_libraries(vs.x ${target_libraries})
+#target_link_libraries(vs.x ${target_libraries})
 
 # Put files necessary to run vs.x in binary directory.
 # gridpack.petscrc is temporary -- it will be incorporated into
 # input.xml
 
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
+if(false)
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
+    COMMAND ${CMAKE_COMMAND}
+    -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
+    -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
+    -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+    -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+    DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
+    )
+  
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
+    COMMAND ${CMAKE_COMMAND}
+    -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml"
+    -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
+    -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+    -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+    DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml"
+    )
+  
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
+    COMMAND ${CMAKE_COMMAND}
+    -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
+    -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
+    -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+    -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+    DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
+    )
+  
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
+    COMMAND ${CMAKE_COMMAND}
+    -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
+    -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
+    -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+    -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+    DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
+    )
+  
+  
+  add_custom_target(vs.x.input
+   
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
+    ${CMAKE_CURRENT_BINARY_DIR}
+  
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+    ${CMAKE_CURRENT_BINARY_DIR}
+  
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+    ${CMAKE_CURRENT_BINARY_DIR}
+  
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
+    ${CMAKE_CURRENT_BINARY_DIR}
+  
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+    ${CMAKE_CURRENT_BINARY_DIR}
+  
+    DEPENDS 
+    ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+    ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
+    ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+    ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
+    ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+    ${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml
+    ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
+    ${CMAKE_CURRENT_BINARY_DIR}/input_european.xml
+    ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+  
   )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
-  )
-
-
-add_custom_target(vs.x.input
- 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  DEPENDS 
-  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
-  ${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}/input_european.xml
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-
-)
-add_dependencies(vs.x vs.x.input)
+endif()
+# add_dependencies(vs.x vs.x.input)
 
 # -------------------------------------------------------------
 # install as a sample application
 # -------------------------------------------------------------
 
-install(TARGETS vs.x DESTINATION bin)
+# install(TARGETS vs.x DESTINATION bin)
   
 # -------------------------------------------------------------
 # Create simple test that runs voltage stability code
 # -------------------------------------------------------------
-gridpack_add_run_test("voltage_stability" vs.x "input_14.xml")
+# gridpack_add_run_test("voltage_stability" vs.x "input_14.xml")
 

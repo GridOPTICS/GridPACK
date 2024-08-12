@@ -15,6 +15,7 @@
  */
 // -------------------------------------------------------------
 
+#include "gridpack/applications/modules/voltage_stability/vs_app_module.hpp"
 #include "pf_app_module.hpp"
 #include "pf_factory_module.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -40,6 +41,10 @@
 gridpack::powerflow::PFAppModule::PFAppModule(void)
 {
   p_no_print = false;
+  current_increment = 0.0;
+  p_bPVAnlyDone = true;
+  sink_area = 0;
+  src_area = 0;
 }
 
 /**
@@ -135,6 +140,11 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_qlim = cursor->get("qlim",0);
   p_max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
+  //KT
+  max_increment = cursor->get("maxIncrement",0.0);
+  increment = cursor->get("TransferIncrement",0.0);
+  src_area = cursor->get("SourceArea",0);
+  sink_area = cursor->get("SinkArea",0);
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
 
@@ -1418,4 +1428,29 @@ bool gridpack::powerflow::PFAppModule::getDataCollectionBranchParam(
     std::string branchParam, int *value)
 {
   return p_getDataCollectionBranchParam<int>(bus1, bus2, ckt, branchParam, value);
+}
+
+/* KT
+*/
+
+bool gridpack::powerflow::PFAppModule::isPVAnlyDone()
+{
+  //gridpack::utility::Configuration::CursorPtr cursor;
+  printf("Increment = %f, Max Increment = %f\n", increment, max_increment);
+  gridpack::parallel::Communicator world;
+  /*
+  boost::shared_ptr<gridpack::voltage_stability::VSNetwork>
+    pf_network(new gridpack::voltage_stability::VSNetwork(world));
+  gridpack::voltage_stability::VSAppModule vs_app;
+  */
+  
+  boost::shared_ptr<gridpack::voltage_stability::VSNetwork>
+    pf_network(new gridpack::voltage_stability::VSNetwork(world));
+
+  gridpack::voltage_stability::VSAppModule vs_app;
+  
+  //gridpack::voltage_stability::VSAppModule vs_app;
+  
+  
+  return vs_app.isPVAnlyDone(increment,max_increment);
 }

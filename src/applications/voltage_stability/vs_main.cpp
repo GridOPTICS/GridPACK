@@ -13,7 +13,7 @@
  * @brief
  */
 // -------------------------------------------------------------
-
+/*
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
@@ -24,6 +24,7 @@ const char* help = "GridPACK power flow application";
 
 int main(int argc, char **argv)
 {
+
   // Initialize libraries (parallel and math)
   gridpack::Environment env(argc,argv,help);
 
@@ -112,4 +113,4 @@ int main(int argc, char **argv)
 
   return 0;
 }
-
+*/

@@ -22,6 +22,8 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
+    gridpack_vsmatrix_components
+    gridpack_voltage_stability_module
     gridpack_pfmatrix_components
     gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
@@ -39,7 +41,6 @@ add_library(gridpack_powerflow_module
   pf_app_module.cpp
   pf_factory_module.cpp
   )
-
 gridpack_set_library_version(gridpack_powerflow_module)
 
 target_link_libraries(gridpack_powerflow_module
