@@ -153,6 +153,36 @@ gridpack_set_lu_solver(
   "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_ESST1A.xml"
 )
 
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENROU_ESST1A_WSIEG1.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_ESST1A_WSIEG1.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENROU_EXDC1.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_EXDC1.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENROU_EXDC1_WSIEG1.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_EXDC1_WSIEG1.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENSAL.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENSAL.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENSAL_ESST1A.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENSAL_ESST1A.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_unit_GENSAL_ESST1A_WSIEG1.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENSAL_ESST1A_WSIEG1.xml"
+)
+
 add_custom_target(dsf.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -235,6 +265,30 @@ add_custom_target(dsf.x.input
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
@@ -263,6 +317,18 @@ add_custom_target(dsf.x.input
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_ESST1A.xml
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_ESST1A_WSIEG1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_EXDC1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENROU_EXDC1_WSIEG1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENSAL.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENSAL_ESST1A.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_unit_GENSAL_ESST1A_WSIEG1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A_WSIEG1.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_unit_HYGOV.xml
   ${GRIDPACK_DATA_DIR}/dyr/case9_HYGOV.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_unit_REGCA1_REECA1_REPCA1.xml
@@ -306,6 +372,18 @@ install(FILES
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
   ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENROU_ESST1A.xml
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENROU_ESST1A_WSIEG1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENROU_EXDC1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENROU_EXDC1_WSIEG1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENSAL.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENSAL_ESST1A.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A.dyr
+  ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_GENSAL_ESST1A_WSIEG1.xml
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENSAL_ESST1A_WSIEG1.dyr
   ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_HYGOV.xml
   ${GRIDPACK_DATA_DIR}/dyr/case9_HYGOV.dyr
   ${GRIDPACK_CURRENT_BINARY_DIR}/input/ds/input_unit_REGCA1_REECA1_REPCA1.xml
