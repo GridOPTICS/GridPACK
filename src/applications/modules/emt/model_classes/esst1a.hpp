@@ -8,6 +8,7 @@
  * @file   esst1a.hpp
  * 
  * @brief ESST1 exciter model header file 
+ * @last updated by Shuangshuang Jin on Aug 14, 2024
  * 
  * 
  */
@@ -41,16 +42,25 @@ public:
 	    data, int idx);
   
   /**
-   * Set Jacobian block
-   * @param values a 2-d array of Jacobian block for the bus
-   */
-  bool setJacobian(gridpack::ComplexType **values);
+     Number of variables
+     */ 
+  void getnvar(int *nvar);
+
+  /**
+     Prestep function
+    */
+  void preStep(double time ,double timestep);
+
+  /**
+     Poststep function
+    */
+  void postStep(double time);
   
   /**
    * Initialize exciter model before calculation
    * @param [output] values - array where initialized exciter variables should be set
    */
-  void init(gridpack::ComplexType *values);
+  void init(gridpack::RealType *values);
   
   /**
    * Write output from exciters to a string.
@@ -71,37 +81,58 @@ public:
   void write(const char* signal, char* string);
 
   /**
-   *  Set the number of variables for this exciter model
-   *  @param [output] number of variables for this model
-   */
-  bool vectorSize(int *nvar) const;
-  
+    * Get number of matrix values contributed by generator
+    * @return number of matrix values
+  */
+  int matrixNumValues();
+
   /**
-   * Set the internal values of the voltage magnitude and phase angle. Need this
-   * function to push values from vectors back onto exciters
-   * @param values array containing exciter state variables
+   * Return values from Jacobian matrix
+   * @param nvals: number of values to be inserted
+   * @param values: pointer to matrix block values
+   * @param rows: pointer to matrix block rows
+   * @param cols: pointer to matrix block cols
    */
-  void setValues(gridpack::ComplexType*);
-  
+  void matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols);
+
   /**
-   * Return the values of the exciter vector block
-   * @param values: pointer to vector values
-   * @return: false if exciter does not contribute
-   *        vector element
+   * Return vector values from the generator model 
+   * @param values - array of returned values
+   *
+   * Note: This function is used to return the entries in vector,
+   * for e.g., the entries in the residual vector from the generator
+   * object
    */
-  bool vectorValues(gridpack::ComplexType *values);
+  void vectorGetValues(gridpack::RealType *values);
+
+  /**
+   * Pass solution vector values to the generator object
+   * @param values - array of returned values
+   *
+   * Note: This function is used to pass the entries in vector
+   * to the generator object,
+   * for e.g., the state vector values for this generator
+   */
+  void setValues(gridpack::RealType *values);
   
   /**
    * Set the initial field voltage (at t = tstart) for the exciter
    * @param fldv value of the field voltage
    */
-  void setInitialFieldVoltage(double fldv);
+  //void setInitialFieldVoltage(double fldv);
   
   /** 
    * Get the value of the field voltage parameter
    * @return value of field voltage
    */
   double getFieldVoltage();
+
+  /** 
+   * Get the value of the field voltage parameter
+   * and its global location
+   * @return value of field voltage
+   */
+  double getFieldVoltage(int *Efd_gloc);
   
   /**
    * Partial derivatives of field voltage Efd w.r.t. exciter variables
@@ -127,9 +158,15 @@ public:
   void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
 
   /**
+   * Set the initial field voltage value
+   * @param initial value of the field voltage
+   */
+  void setFieldVoltage(double fldv);
+
+  /**
    * Updated limiter flags after event has occured. Only called when the network is resolved
    */
-  void resetEventFlags(void);
+  //void resetEventFlags(void);
 
 private:
   
