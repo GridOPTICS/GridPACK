@@ -210,7 +210,6 @@ void Esst1aExc::init(gridpack::RealType* values)
 {
   gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
 
-
   double Ec = sqrt(VD*VD + VQ*VQ);
   double yLL2,yLL1;
   double Vf=0.0,Vfd;
@@ -223,6 +222,8 @@ void Esst1aExc::init(gridpack::RealType* values)
   if (integrationtype != IMPLICIT) {
     // Initialization for explicit integration
     // block-based initialization
+    // Set up blocks
+    // Set parameters for the first block
     if (Tf < TS_THRESHOLD * ts) zero_TF = true;
     if (Tb < TS_THRESHOLD * ts) zero_TB = true;
     if (Tb1 < TS_THRESHOLD * ts) zero_TB1 = true;
@@ -289,7 +290,6 @@ void Esst1aExc::init(gridpack::RealType* values)
     }
     VLL1 = Regulator_blk.init_given_y(VA);
 
-
     VLL = Leadlag_blkBC1.init_given_y(VLL1);
     double u1 = Leadlag_blkBC.init_given_y(VLL);
 
@@ -309,7 +309,6 @@ void Esst1aExc::init(gridpack::RealType* values)
     if (VOS == 1.0) Vop += Vothsg;
     Vmeas = Filter_blkR.init_given_u(Vcomp);
     Vref = u1 + Vmeas - Vop + Vf;
-
   } else {
     Ec = sqrt(VD*VD + VQ*VQ);
     Vfd = Klr*(LadIfd - Ilr); 

@@ -18,6 +18,8 @@
 
 #include <base_exc_model.hpp>
 #include <gridpack/include/gridpack.hpp>
+#include "cblock.hpp"
+#include "dblock.hpp"
 
 class Esst1aExc: public BaseExcModel
 {
