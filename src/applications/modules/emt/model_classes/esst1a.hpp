@@ -215,6 +215,33 @@ private:
   bool Efd_at_min,Efd_at_max;
   bool Vi_at_min,Vi_at_max;
   bool Va_at_min,Va_at_max;
+
+  Filter Filter_blkR;
+  HVGate HVGate_blk1; 
+  LeadLag Leadlag_blkBC;
+  LeadLag Leadlag_blkBC1;
+  Filter Regulator_blk;
+  GainLimiter Regulator_gain_blk;
+  HVGate HVGate_blk2; 
+  LVGate LVGate_blk; 
+  Cblock Feedback_blkF;
+
+  double Vf; // Output of Feedback block
+  bool   zero_TA;      // Time constant TA for regulator block zero, no transfer function
+  bool   zero_TR;      // Time constant TR for measurement block is zero, no transfer function
+
+  bool zero_TF;   // Time constant TF for feedback block, if too small, no transfer function
+  bool zero_TB;   // Time constant TB for first lead lag block, if too small, no transfer function
+  bool zero_TB1;   // Time constant TB1 for second lead lag block, if too small, no transfer function
+  bool OptionToModifyLimitsForInitialStateLimitViolation;
+
+  double VA; // Output of Regulator blk
+  double VLL1; // Output of LeadLag blk BC1
+  double VLL; // Output of LeadLag blk BC
+  double Vref; // Reference voltage
+  double Vmeas; // Output of voltage measurement block
+
+  double Efd;
 };
 
 

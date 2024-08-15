@@ -8,7 +8,7 @@
  * @file   esst1a.cpp
  *  
  * @brief ESST1A exciter model implementation 
- * @last updated by Shuangshuang Jin on Aug 14, 2024
+ * @last updated by Shuangshuang Jin on Aug 15, 2024  
  *
  *
  */
@@ -72,7 +72,73 @@ void Esst1aExc::preStep(double time, double timestep)
 {
   if(integrationtype != EXPLICIT) return;
   
-  // TBD: block-based explicit implementation
+  // block-based explicit implementation (predictor)
+  double vabc[3],vdq0[3];
+
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+
+  double delta = getGenerator()->getAngle();
+  
+  abc2dq0(vabc,p_time,delta,vdq0);
+  double Vd, Vq;
+  Vd = vdq0[0]; Vq = vdq0[1];
+  
+  Ec = sqrt(Vd*Vd + Vq*Vq);
+
+  if(!zero_TR) {
+    Vmeas = Filter_blkR.getoutput(Ec, t_inc, int_flag, true);
+  } else {
+    Vmeas = Ec;
+  }
+  double Vop = 0.0;
+  if (UEL == 1.0) Vop += Vuel;
+  if (VOS == 1.0) Vop += Vothsg;
+  double Verr = Vref - Vmeas + Vop;
+
+  Vf = Feedback_blkF.getoutput(Efd, t_inc, int_flag, true);
+
+  double leadlag_blk_in = Verr - Vf;
+
+  if (leadlag_blk_in > Vimax)
+    leadlag_blk_in = Vimax;
+  else if (leadlag_blk_in < Vimin)
+    leadlag_blk_in = Vimin;
+
+  if (UEL == 2.0) leadlag_blk_in = HVGate_blk1.getoutput(leadlag_blk_in);
+
+  VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
+  
+  VLL1 = Leadlag_blkBC1.getoutput(VLL, t_inc, int_flag, true); 
+
+  if (zero_TA) {
+    VA = Regulator_gain_blk.getoutput(VLL1);
+  } else {
+    VA = Regulator_blk.getoutput(VLL, t_inc, int_flag, true);
+  }
+
+  double u1 = 0.0;
+  if (VOS==2.0) {
+    if ((LadIfd - Ilr) * Klr > 0.0) u1 = VA + Vothsg - (LadIfd - Ilr) * Klr; 
+    else u1 = VA + Vothsg; 
+  } else {
+    if ((LadIfd - Ilr) * Klr > 0.0) u1 = VA - (LadIfd - Ilr) * Klr; 
+    else u1 = VA; 
+  }
+
+  double u2 = 0.0;
+  if (UEL == 3.0) u2 = HVGate_blk2.getoutput(u1);
+  else u2 = u1;
+
+  u2 = LVGate_blk.getoutput(u2);
+
+  double VT = Vterm;
+  
+  if (u2 > VT * Vrmax - Kc * LadIfd)
+    u2 = VT * Vrmax - Kc * LadIfd;
+  else if (u2 < VT * Vrmin)
+    u2 = VT * Vrmin;
+
+  Efd = u2; 
 
 }
 
@@ -126,7 +192,13 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   iseq_diff[4] = 1; // Tf is always > 0
 
   if (integrationtype != IMPLICIT) {
-    // TBD: block-based explicit implementation
+    // block-based explicit implementation
+    // right now we just hard code UEL, VOS, Vuel, Voel and Vothsg(Vstab)
+    Vothsg = 0.0;
+    UEL = 1.0;
+    VOS = 1.0;
+    Vuel = 0.0;
+    Voel = 1000.0;
   }
 }
 
@@ -150,7 +222,94 @@ void Esst1aExc::init(gridpack::RealType* values)
 
   if (integrationtype != IMPLICIT) {
     // Initialization for explicit integration
-    // TBD: block-based initialization
+    // block-based initialization
+    if (Tf < TS_THRESHOLD * ts) zero_TF = true;
+    if (Tb < TS_THRESHOLD * ts) zero_TB = true;
+    if (Tb1 < TS_THRESHOLD * ts) zero_TB1 = true;
+    if (Ta < TS_THRESHOLD * ts) zero_TA = true;
+    if (Tr < TS_THRESHOLD * ts) zero_TR = true;
+    
+    if(!zero_TR) {
+      Filter_blkR.setparams(1.0, Tr);
+    }
+
+    HVGate_blk1.setparams(Vuel); // is UEL Vuel?
+
+    Leadlag_blkBC.setparams(Tc, Tb);
+    Leadlag_blkBC1.setparams(Tc1, Tb1);
+
+    if(!zero_TA) {
+      Regulator_blk.setparams(Ka,Ta,Vrmin,Vrmax,-1000.0,1000.0);
+    } else {
+      Regulator_gain_blk.setparams(Ka,Vrmin,Vrmax);
+    }
+
+    HVGate_blk2.setparams(Vuel); // UEL is Vuel?
+    LVGate_blk.setparams(Voel); // Where to read Voel from? Set it by funciton call as Vuel?
+
+    double a[2], b[2];
+    a[0] = Tf; a[1] = 1.0;
+    b[0] = Kf; b[1] = 0.0;
+    Feedback_blkF.setcoeffs(a, b);
+    
+    Vterm = mag;
+    
+    Vf = Feedback_blkF.init_given_u(Efd);
+    
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (Efd > (Vterm * Vrmax - Kc * LadIfd)) Vrmax = (Efd + Kc * LadIfd) / Vterm+0.21;
+      if (Efd < (Vterm * Vrmin)) Vrmin = Efd / Vterm-0.1;
+    }
+    
+    // LV Gate?
+    // assume LV gate always take feedforward path during initialization, may need to adjust Voel
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (Efd > Voel) Voel = Efd + 0.1;
+      LVGate_blk.setparams(Voel);
+    }
+
+    // HV Gate?
+    // assume HV gate always take feedforward path during initialization, may need to adjust Vuel
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (Efd < Vuel) Vuel = Efd - 0.1;
+      HVGate_blk2.setparams(Vuel);
+    }
+
+    if (VOS==2.0) {
+      if ((LadIfd - Ilr) * Klr > 0.0) VA = (LadIfd - Ilr) * Klr - Vothsg + Efd;
+      else VA = - Vothsg + Efd;
+    } else {
+      if ((LadIfd - Ilr) * Klr > 0.0) VA = (LadIfd - Ilr) * Klr + Efd;
+      else VA = Efd;
+    }
+
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (VA > Vamax) Vamax = VA+0.1;
+      if (VA < Vamin) Vamin = VA-0.1;
+    }
+    VLL1 = Regulator_blk.init_given_y(VA);
+
+
+    VLL = Leadlag_blkBC1.init_given_y(VLL1);
+    double u1 = Leadlag_blkBC.init_given_y(VLL);
+
+    // HV Gate?
+    // assume HV gate always take feedforward path during initialization, may need to adjust Vuel
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (u1 < Vuel) Vuel = u1 - 0.1;
+      HVGate_blk1.setparams(Vuel);
+    }
+    if (OptionToModifyLimitsForInitialStateLimitViolation) {
+      if (u1 > Vimax) Vimax = u1+0.1;
+      if (u1 < Vimin) Vimin = u1-0.1;
+    }
+
+    double Vop = 0.0;
+    if (UEL == 1.0) Vop += Vuel;
+    if (VOS == 1.0) Vop += Vothsg;
+    Vmeas = Filter_blkR.init_given_u(Vcomp);
+    Vref = u1 + Vmeas - Vop + Vf;
+
   } else {
     Ec = sqrt(VD*VD + VQ*VQ);
     Vfd = Klr*(LadIfd - Ilr); 
