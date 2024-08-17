@@ -14,7 +14,9 @@ with warnings.catch_warnings():
                        grid_path=filename,
                        backend=GridPACKBackend()
                        )
-    
+
+print("============ Initialized Environment =============")
+
 # reset environment
 obs = env.reset()
 
