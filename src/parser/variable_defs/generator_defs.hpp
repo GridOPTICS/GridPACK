@@ -19,6 +19,13 @@
  *  index are denoted with the keyword "indexed".
  */
 
+
+/**
+ * Variables that have _CURRENT appended to them may be added to the data
+ * collection during runtime and updated as the simulation
+ * proceeds
+ */
+
 #ifndef _GENERATOR_VAR_HPP_
 #define _GENERATOR_VAR_HPP_
 
@@ -57,6 +64,7 @@
  * indexed
  */
 #define GENERATOR_PG "GENERATOR_PG"
+#define GENERATOR_PG_CURRENT "GENERATOR_PG_CURRENT"
 
 /**
  * Generator reactive power output, entered in MVar
@@ -64,6 +72,7 @@
  * indexed
  */
 #define GENERATOR_QG "GENERATOR_QG"
+#define GENERATOR_QG_CURRENT "GENERATOR_QG_CURRENT"
 
 /**
  * Maximum generator reactive power output; entered in Mvar
@@ -85,6 +94,7 @@
  * indexed
  */
 #define GENERATOR_VS "GENERATOR_VS"
+#define GENERATOR_VS "GENERATOR_VS_CURRENT"
 
 /**
  * Bus number of a remote type 1 or 2 bus whose voltage is to be regulated by this plant to the
@@ -1431,5 +1441,12 @@
  * indexed
  */
 #define GENERATOR_MODEL "GENERATOR_MODEL"
+
+/**
+ * Nominal power of the generator
+ * type: float
+ * indexed
+ */
+#define GENERATOR_NOM_POWER_CURRENT "GENERATOR_NOM_POWER_CURRENT"
 
 #endif /* _GENERATOR_VAR_HPP_ */

@@ -19,6 +19,13 @@
  *  index are denoted with the keyword "indexed".
  */
 
+/**
+ * Variables that have _CURRENT appended to them may be added to the data
+ * collection during runtime and updated as the simulation
+ * proceeds
+ */
+
+
 #ifndef _LOAD_VAR_HPP_
 #define _LOAD_VAR_HPP_
 
@@ -75,6 +82,7 @@
  * indexed
  */
 #define LOAD_PL "LOAD_PL"
+#define LOAD_PL_CURRENT "LOAD_PL_CURRENT"
 
 /**
  * Reactive power component of constant power load; entered in MVar
@@ -82,6 +90,7 @@
  * indexed
  */
 #define LOAD_QL "LOAD_QL"
+#define LOAD_QL_CURRENT "LOAD_QL_CURRENT"
 
 /**
  * Active power component of constant current load; entered in MW 

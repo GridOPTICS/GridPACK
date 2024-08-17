@@ -1285,6 +1285,22 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 }
 
 /**
+ * Update data collection object with current values from simulation
+ * @param data: DataCollection object containing parameters for this bus
+ */
+void gridpack::dynamic_simulation::DSFullBus::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection> &data)
+{
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    p_generators[i]->updateData(data, i);
+  }
+  for (i=0; i<p_ndyn_load; i++) {
+    p_loadmodels[i]->updateData(data, i);
+  }
+}
+
+/**
   * set voltage for the extended buses from composite load model
   */
 void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
@@ -3541,6 +3557,23 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
       }
     }
   }
+}
+
+/**
+ * Update data collection object with current values from simulation
+ * @param data: DataCollection object containing parameters for this branch
+ */
+void gridpack::dynamic_simulation::DSFullBranch::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection> &data)
+{
+#if 0
+  int i;
+  for (i=0; i<p_elems; i++) {
+    if (p_xform[i]) {
+    } else {
+    }
+  }
+#endif
 }
 
 /**

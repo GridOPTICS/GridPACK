@@ -48,9 +48,17 @@ public:
    * Load parameters from DataCollection object into generator model
    * @param data collection of generator parameters from input files
    * @param index of generator on bus
-   * TODO: might want to move this functionality to BaseGeneratorModel
    */
   virtual void load(boost::shared_ptr<gridpack::component::DataCollection> data,
+                    int idx);
+
+  /**
+   * Update parameters in DataCollection object with current values from
+   * generator
+   * @param data collection object for bus that hosts generator
+   * @param index of generator on bus
+   */
+  virtual void updateData(boost::shared_ptr<gridpack::component::DataCollection> data,
                     int idx);
 
   /**

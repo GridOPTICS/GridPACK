@@ -200,6 +200,24 @@ void gridpack::dynamic_simulation::MotorwLoad::load(
 }
 
 /**
+ * Update parameters in DataCollection object with current values from
+ * load
+ * @param data collection object for bus that hosts load
+ * @param index of generator on bus
+ */
+void gridpack::dynamic_simulation::MotorwLoad::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+{
+  if (!data->setValue(LOAD_PL_CURRENT, Pmotor, idx)) {
+    data->addValue(LOAD_PL_CURRENT, Pmotor, idx);
+  }
+  if (!data->setValue(LOAD_QL_CURRENT, Qmotor, idx)) {
+    data->addValue(LOAD_QL_CURRENT, Qmotor, idx);
+  }
+
+}
+
+/**
  * Initialize load model before calculation
  * @param mag voltage magnitude
  * @param ang voltage angle

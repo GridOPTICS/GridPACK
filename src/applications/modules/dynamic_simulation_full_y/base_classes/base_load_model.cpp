@@ -50,6 +50,17 @@ void gridpack::dynamic_simulation::BaseLoadModel::load(
 }
 
 /**
+ * Update parameters in DataCollection object with current values from
+ * load
+ * @param data collection object for bus that hosts load
+ * @param index of generator on bus
+ */
+void gridpack::dynamic_simulation::BaseLoadModel::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+{
+}
+
+/**
  * Initialize load model before calculation
  * @param mag voltage magnitude
  * @param ang voltage angle
