@@ -47,6 +47,7 @@ target_link_libraries(gridpack_powerflow_module
   gridpack_pfmatrix_components
   gridpack_partition
   gridpack_stream
+  ${target_libraries}
   )
 
 

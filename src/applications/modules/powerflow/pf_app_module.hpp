@@ -24,7 +24,6 @@
 #include "pf_factory_module.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"
-//#include "gridpack/applications/modules/voltage_stability/vs_app_module.hpp"
 
 
 #include "gridpack/applications/modules/voltage_stability/vs_factory_module.hpp"
