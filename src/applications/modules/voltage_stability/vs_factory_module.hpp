@@ -188,6 +188,34 @@ class VSFactoryModule
     void scaleLoadPower(double scale, int area, int zone);
 
     /**
+     * Increment generators real power based off specified value. 
+     * Increment generators in specified area.
+     * @param transfer value to increment generators real power
+     * @param area index of area for incrementing generation
+     * @param zone index of zone for incrementing generation
+     * @param total power generation of an area
+     */
+    void IncrementGeneratorRealPower(double inc, int area, int zone, double gtotal);
+    
+    /**
+     * Increment load power based off specified value. 
+     * Increment loads in specified area.
+     * @param transfer value to increment load real power
+     * @param area index of area for incrementing load
+     * @param zone index of zone for incrementing load
+     * @param total active power demand of the area
+     */
+    void IncrementLoadPower(double inc, int area, int zone, double ltotal);
+    
+    /**
+     * Return the total power generation for all generators in the area. 
+     * @param area index of area
+     * @param zone index of zone
+     * @return total power generation
+     */
+    double getTotalGenRealPower(int area, int zone);
+
+    /**
      * Return the total real power load for all loads in the zone. If zone
      * less than 1, then return the total load for the area
      * @param area index of area

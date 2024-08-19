@@ -23,6 +23,8 @@ set(target_libraries
     gridpack_configuration
     gridpack_timer
     gridpack_pfmatrix_components
+    gridpack_vsmatrix_components
+    gridpack_voltage_stability_module
     gridpack_ymatrix_components
     gridpack_dynamic_simulation_full_y_module
     gridpack_powerflow_module

@@ -14,6 +14,8 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_vsmatrix_components
+    gridpack_voltage_stability_module
     gridpack_powerflow_module
     gridpack_pfmatrix_components
     gridpack_ymatrix_components

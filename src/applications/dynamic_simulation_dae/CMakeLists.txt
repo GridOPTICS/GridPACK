@@ -17,6 +17,8 @@ set(target_libraries
     gridpack_dynamic_simulation_dae_module
     gridpack_powerflow_module
     gridpack_pfmatrix_components
+    gridpack_vsmatrix_components
+    gridpack_voltage_stability_module
     gridpack_ymatrix_components
     gridpack_components
     gridpack_partition

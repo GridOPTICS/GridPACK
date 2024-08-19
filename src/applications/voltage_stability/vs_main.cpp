@@ -13,7 +13,7 @@
  * @brief
  */
 // -------------------------------------------------------------
-
+/*
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
@@ -24,6 +24,7 @@ const char* help = "GridPACK power flow application";
 
 int main(int argc, char **argv)
 {
+
   // Initialize libraries (parallel and math)
   gridpack::Environment env(argc,argv,help);
 
@@ -101,8 +102,15 @@ int main(int argc, char **argv)
     if (!noPrint) {
       timer ->dump();
     }
+    bool start = pf_app.isPVAnlyDone();
+    pf_app.InitializePVCurve();
+    while(!pf_app.isPVAnlyDone()){
+      pf_app.IncrementPVCurveStep();
+      pf_app.solve();
+      pf_app.saveData();
+    }
   }
 
   return 0;
 }
-
+*/

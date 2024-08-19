@@ -6,15 +6,10 @@
 // -------------------------------------------------------------
 /**
  * @file   vs_components.cpp
- * @author Bruce Palmer
- * @date   2024-06-07 07:45:40 d3g293
+ * @author Kelvin Tan
+ * @date   2024-07-23 01:00:00 d3g293
  * 
- * @updated Shri Abhyankar
- * Conversion of constant current, constant admittance values from raw file
- * to constant power
- * @date  2022-12-23
-
- * @brief Methods used in power flow application
+ * @brief Methods used in power flow and voltage stability application
  * 
  * 
  */
@@ -1751,6 +1746,68 @@ void gridpack::voltage_stability::VSBus::scaleLoadPower(std::string tag, double 
 }
 
 /**
+ * Increment load power based off specified value. 
+ * Increment loads in specified area.
+ * @param transfer value to increment load real power
+ * @param area index of area for incrementing load
+ * @param zone index of zone for incrementing load
+ * @param total active power demand of the area
+ */
+void gridpack::voltage_stability::VSBus::IncrementLoadPower(std::string tag, double value, double ltotal)
+{
+  int i;
+  double p_lratio;
+  for (i=0; i<p_nload; i++) {
+    if (p_lid[i] == tag && p_lstatus[i] == 1) {
+      p_lratio = p_pl[i]/ltotal;
+      p_pl[i] = value*p_lratio + p_pl[i];
+      break;
+    }
+  }
+}
+
+/**
+ * Increment generators real power based off specified value. 
+ * Increment generators in specified area.
+ * @param transfer value to increment generators real power
+ * @param area index of area for incrementing generation
+ * @param zone index of zone for incrementing generation
+ * @param total power generation of an area
+ */
+void gridpack::voltage_stability::VSBus::IncrementGeneratorPower(std::string tag, double value, double gtotal)
+{
+  int i;
+  double p_gratio;
+  for (i=0; i<p_ngen; i++) {
+    if (p_gid[i] == tag && p_gstatus[i] == 1) {
+      p_gratio = p_pg[i]/gtotal;
+      p_pg[i] = value*p_gratio + p_pg[i];
+      break;
+    }
+  }
+}
+
+/**
+ * Get current generator power
+ * @param tag character ID for generator
+ * @param pg initial value of generator real power
+ * @param status current status of generator
+ */
+void gridpack::voltage_stability::VSBus::getGeneratorPower(
+    std::vector<std::string> &tag, std::vector<double> &pg, std::vector<int> &status)
+{
+  tag.clear();
+  pg.clear();
+  status.clear();
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    tag.push_back(p_gid[i]);
+    pg.push_back(p_savePg[i]);
+    status.push_back(p_gstatus[i]);
+  }
+}
+
+/**
  * Reset power for generators and loads back to original values
  */
 void gridpack::voltage_stability::VSBus::resetPower()
@@ -2230,6 +2287,64 @@ void gridpack::voltage_stability::VSBranch::getPQ(gridpack::voltage_stability::V
   *p = v1*v2*(ybusr*cs+ybusi*sn);
   *q = v1*v2*(ybusr*sn-ybusi*cs);
 }
+/**
+ * Return contribution to constraints
+ * @param vs: Voltage magnitude of sending bus
+ * @param vr: Voltage magnitude of receiving bus
+ */
+void gridpack::voltage_stability::VSBranch::getBranchVoltages(double *vs, double *vr, double *p_theta) 
+{
+  gridpack::voltage_stability::VSBus *bus1 = 
+    dynamic_cast<gridpack::voltage_stability::VSBus*>(getBus1().get());
+  *vs = bus1->getVoltage();
+  gridpack::voltage_stability::VSBus *bus2 =
+    dynamic_cast<gridpack::voltage_stability::VSBus*>(getBus2().get());
+  *vr = bus2->getVoltage();
+  *p_theta = bus1->getPhase() - bus2->getPhase();
+} 
+
+/**
+ * Return impedance magnitude of the line element 
+ * @param tag describing line element on branch
+ * @return impedance magnitude
+ */
+double gridpack::voltage_stability::VSBranch::getImpedanceMagnitude(
+        std::string tag) // KT
+{
+  gridpack::voltage_stability::VSBus *bus1 = 
+    dynamic_cast<gridpack::voltage_stability::VSBus*>(getBus1().get());
+  double zmag, ybusr, ybusi;
+  ybusr = p_ybusr_frwd;
+  ybusi = p_ybusi_frwd;
+  zmag = 1/(ybusr * ybusr + ybusi * ybusi);
+  return zmag;
+} 
+/**
+ * Return fast voltage stability index (FVSI) for the line element
+ * @param tag describing line element on branch
+ * @return voltage stability index
+ */
+double gridpack::voltage_stability::VSBranch::getVoltageStabilityIndex(
+        std::string tag)
+{
+  double vr, vs, x, r, ybusr, ybusi, FVSI;
+  gridpack::ComplexType z, i, s;
+  s = getComplexPower(tag);
+  double p = real(s);
+  double q = imag(s);
+  i = ComplexType(0.0,1.0);
+  z = ComplexType(0.0,0.0);
+  ybusr = p_ybusr_frwd;
+  ybusi = p_ybusi_frwd;
+  z = 1.0/(ybusr + ybusi*i);
+  r = real(z);
+  x = imag(z);
+  getBranchVoltages(&vs, &vr, &p_theta);
+  auto zmag = getImpedanceMagnitude(tag);
+  FVSI = 4 * (zmag * q/p_sbase * x) / (vs * vs * (r*sin(p_theta) + x*cos(p_theta)) * (r*sin(p_theta) + x*cos(p_theta)));
+  if (FVSI < 0.0) FVSI = -1.0 * FVSI;
+  return FVSI;
+}
 
 /**
  * Return complex power for line element
@@ -2279,8 +2394,10 @@ bool gridpack::voltage_stability::VSBranch::serialWrite(char *string, const int 
     std::vector<std::string> tags = getLineTags();
     int i;
     int ilen = 0;
+    double FVSI = 0.0;
     for (i=0; i<p_elems; i++) {
       s = getComplexPower(tags[i]);
+      FVSI = getVoltageStabilityIndex(tags[i]);
       double p = real(s);
       double q = imag(s);
       if (!p_branch_status[i]) p = 0.0;
@@ -2295,13 +2412,13 @@ bool gridpack::voltage_stability::VSBranch::serialWrite(char *string, const int 
         perf = perf*perf;
       }
       if (rating) {
-        sprintf(buf, "%6d %6d %s %20.12e %20.12e %20.12e %20.12e %1d\n",
+        sprintf(buf, "%6d %6d %s %20.12e %20.12e %20.12e %20.12e %1d  %3f\n",
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-            p,q,perf,p_rateA[i],viol);
+            p,q,perf,p_rateA[i],viol,FVSI);
       } else {
-        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f         %12.6f\n",
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-            p,q);
+            p,q,FVSI);
       }
       ilen += strlen(buf);
       if (ilen<bufsize) sprintf(string,"%s",buf);

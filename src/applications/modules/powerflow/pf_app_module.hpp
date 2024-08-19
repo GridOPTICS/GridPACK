@@ -25,6 +25,11 @@
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 
+
+#include "gridpack/applications/modules/voltage_stability/vs_factory_module.hpp"
+#include "gridpack/applications/modules/voltage_stability/vs_app_module.hpp"
+
+
 namespace gridpack {
 namespace powerflow {
 
@@ -352,6 +357,9 @@ class PFAppModule
      * @param flag if true, suppress printing
      */
     void suppressOutput(bool flag);
+    // KT
+    bool isPVAnlyDone();
+    bool p_bPVAnlyDone;
 
 #ifdef USE_GOSS
     /**
@@ -873,7 +881,18 @@ class PFAppModule
 
     // qlim enforce flag
     int p_qlim;
+    
+    
+    double max_increment, increment, current_increment;
+    int sink_area, src_area;
+    
+    
+    //boost::shared_ptr<gridpack::voltage_stability::VSNetwork>
+    //  pf_network(new gridpack::voltage_stability::VSNetwork(world));
 
+    //gridpack::voltage_stability::VSAppModule pf_app;
+    
+    boost::shared_ptr<gridpack::voltage_stability::VSNetwork> v_stability; // KT
     // pointer to bus IO module
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<PFNetwork> > p_busIO;
 

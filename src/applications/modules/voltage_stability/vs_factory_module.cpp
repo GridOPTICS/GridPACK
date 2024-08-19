@@ -758,6 +758,102 @@ void gridpack::voltage_stability::VSFactoryModule::scaleLoadPower(
 }
 
 /**
+ * Increment generators real power based off specified value. 
+ * Increment generators in specified area.
+ * @param transfer value to increment generators real power
+ * @param area index of area for incrementing generation
+ * @param zone index of zone for incrementing generation
+ * @param total power generation of an area
+ */
+void gridpack::voltage_stability::VSFactoryModule::IncrementGeneratorRealPower(
+    double inc, int area, int zone, double gtotal)
+{
+  int nbus = p_network->numBuses();
+  int i, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::voltage_stability::VSBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags = bus->getGenerators();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->IncrementGeneratorPower(tags[j],inc,gtotal);
+      }
+    }
+  }
+}
+
+/**
+ * Increment load power based off specified value. 
+ * Increment loads in specified area.
+ * @param transfer value to increment load real power
+ * @param area index of area for incrementing load
+ * @param zone index of zone for incrementing load
+ * @param total active power demand of the area
+ */
+void gridpack::voltage_stability::VSFactoryModule::IncrementLoadPower(
+    double inc, int area, int zone, double ltotal)
+{
+  int nbus = p_network->numBuses();
+  int i, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::voltage_stability::VSBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags = bus->getLoads();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->IncrementLoadPower(tags[j],inc,ltotal);
+      }
+    }
+  }
+}
+
+/**
+ * Return the total power generation for all generators in the area. 
+ * @param area index of area
+ * @param zone index of zone
+ * @return total power generation
+ */
+double gridpack::voltage_stability::VSFactoryModule::getTotalGenRealPower(int area, int zone)
+{
+  double ret = 0.0;
+  std::cout<<"3 Done "<<std::endl;
+  int nbus = p_network->numBuses();
+  std::cout<<"4 Done "<<std::endl;
+  int i, j, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::voltage_stability::VSBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags;
+      std::vector<double> pg;
+      std::vector<int> status;
+      bus->getGeneratorPower(tags,pg,status);
+      for (j=0; j<tags.size(); j++) {
+        if (static_cast<bool>(status[j])) {
+          ret += pg[j];
+        }
+      }
+    }
+  }
+  p_network->communicator().sum(&ret,1);
+  return ret;
+}
+
+/**
  * Return the total real power load for all loads in the zone. If zone
  * less than 1, then return the total load for the area
  * @param area index of area

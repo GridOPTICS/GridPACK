@@ -14,10 +14,12 @@
 # -------------------------------------------------------------
 
 set(target_libraries
-    gridpack_hadrec_module
     gridpack_dynamic_simulation_full_y_module
     gridpack_powerflow_module
     gridpack_pfmatrix_components
+    gridpack_voltage_stability_module
+    gridpack_vsmatrix_components
+    gridpack_hadrec_module
     gridpack_ymatrix_components
     gridpack_components
     gridpack_stream

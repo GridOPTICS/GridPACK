@@ -19,6 +19,7 @@
 #include <macdecls.h>
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
+#include "gridpack/applications/modules/voltage_stability/vs_app_module.hpp"
 
 const char* help = "GridPACK power flow application";
 
@@ -101,6 +102,16 @@ int main(int argc, char **argv)
     if (!noPrint) {
       timer ->dump();
     }
+    bool start = pf_app.isPVAnlyDone();
+    std::cout<<"Finished Power Flow. Initializing PV analysis: "<<start<<std::endl;
+    /*std::string str = "PVAnalysis.csv";
+    vs_app.InitializePVCurve(str);    
+    std::cout<<"Finished Initialization: "<<std::endl;
+    while(!vs_app.isPVAnlyDone()){
+      vs_app.IncrementPVCurveStep();
+      pf_app.solve();
+      pf_app.saveData();
+    }*/
   }
 
   return 0;
