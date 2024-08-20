@@ -6,7 +6,7 @@
 /**
  * @file   configuration_test.cpp
  * @author William A. Perkins
- * @date   2017-01-10 07:59:05 d3g096
+ * @date   2024-08-20 06:36:13 d3g096
  * 
  * @brief  A test of Configurable and Configuration
  * 
@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <boost/lexical_cast.hpp>
 
 #define BOOST_TEST_NO_MAIN
@@ -74,7 +75,7 @@ protected:
 
 BOOST_AUTO_TEST_CASE( Configurable )
 {
-  std::auto_ptr<gridpack::utility::Configuration> 
+  std::unique_ptr<gridpack::utility::Configuration> 
     config(gridpack::utility::Configuration::configuration());
 
   BOOST_REQUIRE(config.get() != NULL);
@@ -84,7 +85,7 @@ BOOST_AUTO_TEST_CASE( Configurable )
 
   BOOST_REQUIRE(cursor != NULL);
 
-  std::auto_ptr<ConfigurableThing> thing(new ConfigurableThing);
+  std::unique_ptr<ConfigurableThing> thing(new ConfigurableThing);
 
   thing->configure(cursor);
 

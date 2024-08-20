@@ -6,7 +6,7 @@
 /**
  * @file   parmetis_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 08:31:20 d3g096
+ * @date   2024-08-20 06:49:56 d3g096
  * 
  * @brief  Unit tests of ParMETIS-specific code
  * 
@@ -38,10 +38,10 @@ BOOST_AUTO_TEST_CASE( graph_wrapper )
   using gridpack::network::AdjacencyList;
   using gridpack::network::ParMETISGraphWrapper;
 
-  std::auto_ptr<AdjacencyList> 
+  std::unique_ptr<AdjacencyList> 
     adlist(simple_adjacency_list(world, global_nodes));
 
-  std::auto_ptr<ParMETISGraphWrapper>
+  std::unique_ptr<ParMETISGraphWrapper>
     wrapper(new ParMETISGraphWrapper(*adlist));
 
   std::vector<idx_t> vtxdist;

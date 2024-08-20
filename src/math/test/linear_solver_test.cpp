@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2016-12-16 09:30:03 d3g096
+ * @date   2024-08-20 06:39:00 d3g096
  * 
  * @brief  
  * 
@@ -17,6 +17,7 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include <memory>
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
 #include "linear_solver.hpp"
@@ -140,10 +141,10 @@ BOOST_AUTO_TEST_CASE( Versteeg )
   }
     
 
-  std::auto_ptr<gridpack::math::RealMatrix> 
+  std::unique_ptr<gridpack::math::RealMatrix> 
     A(new gridpack::math::RealMatrix(world, local_size, local_size, 
                                  gridpack::math::Sparse));
-  std::auto_ptr<gridpack::math::RealVector>
+  std::unique_ptr<gridpack::math::RealVector>
     b(new gridpack::math::RealVector(world, local_size)),
     x(new gridpack::math::RealVector(world, local_size));
 
@@ -157,14 +158,14 @@ BOOST_AUTO_TEST_CASE( Versteeg )
   A->print();
   b->print();
 
-  std::auto_ptr<gridpack::math::RealLinearSolver> 
+  std::unique_ptr<gridpack::math::RealLinearSolver> 
     solver(new gridpack::math::RealLinearSolver(*A));
 
   BOOST_REQUIRE(test_config);
   solver->configure(test_config);
   solver->solve(*b, *x);
 
-  std::auto_ptr<gridpack::math::RealVector>
+  std::unique_ptr<gridpack::math::RealVector>
     res(multiply(*A, *x));
   res->add(*b, -1.0);
 
@@ -238,33 +239,33 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
   }
     
 
-  std::auto_ptr<gridpack::math::RealMatrix> 
+  std::unique_ptr<gridpack::math::RealMatrix> 
     A(new gridpack::math::RealMatrix(world, local_size, local_size, 
                                  gridpack::math::Sparse)),
     I(new gridpack::math::RealMatrix(world, local_size, local_size, 
                                  gridpack::math::Sparse));
   I->identity();
 
-  std::auto_ptr<gridpack::math::RealVector>
+  std::unique_ptr<gridpack::math::RealVector>
     b(new gridpack::math::RealVector(world, local_size));
 
   assemble(imax, jmax, *A, *b);
   A->ready();
   b->ready();
 
-  std::auto_ptr<gridpack::math::RealLinearSolver> 
+  std::unique_ptr<gridpack::math::RealLinearSolver> 
     solver(new gridpack::math::RealLinearSolver(*A));
 
   BOOST_REQUIRE(test_config);
   solver->configurationKey("LinearMatrixSolver");
   solver->configure(test_config);
 
-  std::auto_ptr<gridpack::math::RealMatrix> 
+  std::unique_ptr<gridpack::math::RealMatrix> 
     Ainv(solver->solve(*I));
-  std::auto_ptr<gridpack::math::RealVector>
+  std::unique_ptr<gridpack::math::RealVector>
     x(multiply(*Ainv, *b));
 
-  std::auto_ptr<gridpack::math::RealVector>
+  std::unique_ptr<gridpack::math::RealVector>
     res(multiply(*A, *x));
   res->add(*b, -1.0);
   res->print();
@@ -335,12 +336,12 @@ BOOST_AUTO_TEST_CASE ( VersteegMatrixInverse )
   solver->configurationKey("LinearMatrixSolver");
   solver->configure(test_config);
 
-  std::auto_ptr<gridpack::math::RealMatrix> 
+  std::unique_ptr<gridpack::math::RealMatrix> 
     Ainv(solver->solve(*I));
-  std::auto_ptr<gridpack::math::RealVector>
+  std::unique_ptr<gridpack::math::RealVector>
     x(multiply(*Ainv, *b));
 
-  std::auto_ptr<gridpack::math::RealVector>
+  std::unique_ptr<gridpack::math::RealVector>
     res(multiply(*A, *x));
   res->add(*b, -1.0);
 
