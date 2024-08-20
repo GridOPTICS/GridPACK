@@ -31,7 +31,7 @@ gridpack::dynamic_simulation::Esst1aModel::Esst1aModel(void)
   zero_TF = false;
   zero_TB = false;
   zero_TB1 = false;
-  OptionToModifyLimitsForInitialStateLimitViolation = true;
+  OptionToModifyLimitsForInitialStateLimitViolation = false;
 
   zero_TA = false;
   zero_TR = false;
@@ -123,14 +123,18 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   if (Ta < TS_THRESHOLD * ts) zero_TA = true;
   if (Tr < TS_THRESHOLD * ts) zero_TR = true;
   
+  // For lead lag block, force time constant of numerator to zero if time constant of denominator is zero
+  if (zero_TB1) Tc1 = 0.0;
+  if (zero_TB) Tc = 0.0;
+  
   if(!zero_TR) {
     Filter_blkR.setparams(1.0, Tr);
   }
 
   HVGate_blk1.setparams(Vuel); // is UEL Vuel?
 
-  Leadlag_blkBC.setparams(Tc, Tb);
-  Leadlag_blkBC1.setparams(Tc1, Tb1);
+  if (!zero_TB) Leadlag_blkBC.setparams(Tc, Tb);
+  if (!zero_TB1) Leadlag_blkBC1.setparams(Tc1, Tb1);
 
   if(!zero_TA) {
     Regulator_blk.setparams(Ka,Ta,Vrmin,Vrmax,-1000.0,1000.0);
@@ -141,6 +145,8 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   HVGate_blk2.setparams(Vuel); // UEL is Vuel?
   LVGate_blk.setparams(Voel); // Where to read Voel from? Set it by funciton call as Vuel?
 
+  // For feedback block, if time constant TF is too small, make it bigger.
+  if (zero_TF) Tf = 2.0 * TS_THRESHOLD * ts;
   double a[2], b[2];
   a[0] = Tf; a[1] = 1.0;
   b[0] = Kf; b[1] = 0.0;
@@ -182,11 +188,16 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
     if (VA > Vamax) Vamax = VA+0.1;
     if (VA < Vamin) Vamin = VA-0.1;
   }
-  VLL1 = Regulator_blk.init_given_y(VA);
+  
+  if (!zero_TA) VLL1 = Regulator_blk.init_given_y(VA);
+  else VLL1 = VA;
 
-
-  VLL = Leadlag_blkBC1.init_given_y(VLL1);
-  double u1 = Leadlag_blkBC.init_given_y(VLL);
+  if (!zero_TB1) VLL = Leadlag_blkBC1.init_given_y(VLL1);
+  else VLL = VLL1;
+  
+  double u1;
+  if (!zero_TB) u1 = Leadlag_blkBC.init_given_y(VLL);
+  else u1 = VLL;
 
   // HV Gate?
   // assume HV gate always take feedforward path during initialization, may need to adjust Vuel
@@ -202,7 +213,10 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   double Vop = 0.0;
   if (UEL == 1.0) Vop += Vuel;
   if (VOS == 1.0) Vop += Vothsg;
-  Vmeas = Filter_blkR.init_given_u(Vcomp);
+  
+  if (!zero_TR) Vmeas = Filter_blkR.init_given_u(Vcomp);
+  else Vmeas = Vcomp;
+  
   Vref = u1 + Vmeas - Vop + Vf;
 
 }
