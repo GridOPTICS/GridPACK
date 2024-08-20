@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2022-09-07 07:21:23 d3g096
+# Last Change: 2024-08-20 07:19:18 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -30,10 +30,8 @@ set(target_libraries
     gridpack_environment
     gridpack_math
     gridpack_partition
-    gridpack_components
     gridpack_parallel
     gridpack_timer
-    gridpack_stream
     ${target_libraries})
 
 add_library(gridpack_block_parsers
@@ -69,7 +67,10 @@ add_library(gridpack_block_parsers
     block_parsers/switched_shunt_parser35.cpp
     )
 gridpack_set_library_version(gridpack_block_parsers)
-add_dependencies(gridpack_block_parsers external_build)
+target_link_libraries(gridpack_block_parsers
+  gridpack_components
+  gridpack_stream
+)
 
 include_directories(AFTER parser_classes)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -85,7 +86,7 @@ endif()
 #target_link_libraries(PTI23_test ${target_libraries})
 
 add_executable(parser_test test/parser_test.cpp)
-target_link_libraries(parser_test ${target_libraries})
+target_link_libraries(parser_test gridpack_block_parsers ${target_libraries})
 
 add_custom_target(test_parser_input
 
@@ -120,7 +121,7 @@ gridpack_add_run_test(parser_test parser_test "IEEE14.raw")
 # TEST: hash_distr_test
 # -------------------------------------------------------------
 add_executable(hash_distr_test test/hash_distr_test.cpp)
-target_link_libraries(hash_distr_test ${target_libraries})
+target_link_libraries(hash_distr_test gridpack_components ${target_libraries})
 
 gridpack_add_unit_test(hash_distr_test hash_distr_test)
 
@@ -128,7 +129,7 @@ gridpack_add_unit_test(hash_distr_test hash_distr_test)
 # TEST: bus_table_test
 # -------------------------------------------------------------
 add_executable(bus_table_test test/bus_table_test.cpp)
-target_link_libraries(bus_table_test ${target_libraries})
+target_link_libraries(bus_table_test gridpack_components ${target_libraries})
 
 # -------------------------------------------------------------
 # installation

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2022-10-05 08:18:54 d3g096
+# Last Change: 2024-08-09 05:55:30 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -45,6 +45,7 @@ gridpack_set_library_version(gridpack_powerflow_module)
 target_link_libraries(gridpack_powerflow_module
   gridpack_pfmatrix_components
   gridpack_partition
+  gridpack_block_parsers
   gridpack_stream
   )
 
