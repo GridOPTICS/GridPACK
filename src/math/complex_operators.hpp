@@ -301,7 +301,7 @@ imaginary_value<ComplexType>::operator() (const ComplexType& x) const
 // base_accumulator_function
 // -------------------------------------------------------------
 template <typename T, typename ResultType>
-struct base_accumulator_function : public std::__unary_function<T, void>
+struct base_accumulator_function
 {
   ResultType accum;
   virtual void operator() (const T& t) = 0;
@@ -310,7 +310,7 @@ struct base_accumulator_function : public std::__unary_function<T, void>
     return accum;
   }
   base_accumulator_function(void) 
-    : std::__unary_function<T, void>(), accum(0.0)
+    : accum(0.0)
   {}
 };
 
