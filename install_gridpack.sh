@@ -92,9 +92,9 @@ then
     rm -rf ${GRIDPACK_INSTALL_DIR}/lib/python
     mkdir ${GRIDPACK_INSTALL_DIR}/lib/python
     
-    PYTHONPATH="${GRIDPACK_DIR}/lib/python:${PYTHONPATH}"
-    export PYTHONPATH
-    ${python_exe} setup.py install --home="$GRIDPACK_DIR"
+    # PYTHONPATH="${GRIDPACK_DIR}/lib/python:${PYTHONPATH}"
+    # export PYTHONPATH
+    ${python_exe} setup.py install # --home="$GRIDPACK_DIR"
     
 fi
 
