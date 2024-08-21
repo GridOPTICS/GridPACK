@@ -94,6 +94,7 @@ ds_app.solvePreInitialize(faults[0])
 
 while (not ds_app.isDynSimuDone()):
     ds_app.executeOneSimuStep()
+    ds_app.updateData()
 
 network_analytics_dump(ds_app)
 
