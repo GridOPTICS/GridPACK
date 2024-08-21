@@ -1,5 +1,6 @@
-import os
+import os, sys
 import numpy as np
+import pandas as pd
 from typing import Optional, Tuple, Union
 
 import grid2op
@@ -8,23 +9,118 @@ from grid2op.Backend import Backend   # required
 import gridpack
 from mpi4py import MPI
 
+class Grid:
+    def __init__(self):
+        pass
+
 class GridPACKBackend(Backend):
     def __init__(self) -> None:
         # Run Backend init
-        super().__init__()
-
-        # Get World communicator
-        comm = MPI.COMM_WORLD
-        
-        print ('before gridpack ini')
-        noprintflag = gridpack.NoPrint()
-        noprintflag.setStatus(False) # Setting this to True will disable all printing to stdout
+        super().__init__(can_be_copied=False)
 
         # Create GridPACK environment and pass the communicator to it
         self.env = gridpack.Environment()
-        
+        comm = gridpack.Communicator()
+
+        np = gridpack.NoPrint()
+        sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
+        np.setStatus (True)
+
         # Create hadrec module
-        self._hadapp = gridpack.hadrec.Module()
+        # FIXME: gridpack.dynamic_simulation.DSFullApp() is unable to retrieve any data
+        self._hadapp = gridpack.dynamic_simulation.DSFullApp()
+
+        self._counter = 0
+
+    def build_grid(self):
+        grid = Grid()
+
+        bus_list = []
+        gen_list = []
+        load_list = []
+        branch_list = []
+
+        # then fill the "n_sub" and "sub_info"
+        self.n_sub = self._hadapp.totalBuses()
+        for bus in range(self.n_sub):
+            # bus list
+            bus_list.append({
+                "name": self._hadapp.getBusInfoString(bus, "BUS_NAME"),
+                "id": self._hadapp.getBusInfoInt(bus, "BUS_NUMBER"),
+                "vn_kv": self._hadapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"),
+                "type": self._hadapp.getBusInfoInt(bus, "BUS_TYPE")
+            })
+            for g in range(self._hadapp.numGenerators(bus)):
+                # generator list
+                gen_list.append({
+                    "name": self._hadapp.getBusInfoString(bus, "GENERATOR_ID", g),
+                    "bus": bus,
+                    "p_mw": self._hadapp.getBusInfoReal(bus, "GENERATOR_PG", g),
+                    "q_mvar": self._hadapp.getBusInfoReal(bus, "GENERATOR_QG", g),
+                    "vm_pu": 1.02,
+                    "min_q_mvar": self._hadapp.getBusInfoReal(bus, "GENERATOR_QMIN", g),
+                    "max_q_mvar": self._hadapp.getBusInfoReal(bus, "GENERATOR_QMAX", g),
+                    "in_service": self._hadapp.getBusInfoBool(bus, "GENERATOR_STAT", g)
+                })
+            for l in range(self._hadapp.numLoads(bus)):
+                # load list
+                load_list.append({
+                    "name": self._hadapp.getBusInfoString(bus, "LOAD_ID", l),
+                    "bus": bus,
+                    "p_mw": self._hadapp.getBusInfoReal(bus, "LOAD_PL", l),
+                    "q_mvar": self._hadapp.getBusInfoReal(bus, "LOAD_QL", l),
+                    "scaling": self._hadapp.getBusInfoInt(bus, "LOAD_SCALE", l), 
+                    "in_service": self._hadapp.getBusInfoBool(bus, "LOAD_STATUS", l)
+                })
+        
+        # branch frame
+        nbranch = self._hadapp.totalBranches()
+        for branch in range(0, nbranch):
+            (f, t) = self._hadapp.getBranchEndpoints(branch)
+            # print(branch, f, t, 
+            #     self._hadapp.getBranchInfoInt(branch, "BRANCH_ELEMENTS"),
+            #     self._hadapp.getBranchInfoInt(branch, "BRANCH_INDEX"),
+            #     self._hadapp.getBranchInfoString(branch, "BRANCH_NAME"),
+            #     self._hadapp.getBranchInfoReal(branch, "BRANCH_LENGTH"))
+            branch_list.append({
+                    "name": self._hadapp.getBranchInfoString(branch, "BRANCH_NAME"), 
+                    "from_bus": f,
+                    "to_bus": t,
+                    "length_km": self._hadapp.getBranchInfoReal(branch, "BRANCH_LENGTH"), 
+                    "r_ohm_per_km": self._hadapp.getBranchInfoReal(branch, "BRANCH_SEQ_RLINZ"),
+                    "x_ohm_per_km": self._hadapp.getBranchInfoReal(branch, "BRANCH_SEQ_XLINZ"),
+                    "max_i_ka": 0.0, 
+                    # FIXME: Need in service value
+                    "in_service": True # self._hadapp.getBranchInfoBool(branch, "BRANCH_STATUS")
+                })
+
+        # convert to dataframes
+        # bus and its results
+        grid.bus = pd.DataFrame(bus_list)
+        grid.res_bus = pd.DataFrame(index=grid.bus.index, columns=["vm_pu"])
+        
+        # gen and its results
+        grid.gen = pd.DataFrame(gen_list)
+        grid.res_gen = pd.DataFrame(index=grid.gen.index, columns=["p_mw", "q_mvar", "vm_pu"])
+        
+        # load and its results
+        grid.load = pd.DataFrame(load_list)
+        grid.res_load = pd.DataFrame(index=grid.load.index, columns=["p_mw", "q_mvar"])
+        
+        # line and its results
+        # NOTE: bus dict is needed to translate actual bus number to dataframe index. The from_bus and to_bus columns in grid.line needs to be replaced with this new index to be consistent across the code. 
+        bus_dict = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
+        grid.line = pd.DataFrame(branch_list)
+        grid.line.from_bus = [bus_dict[b] for b in grid.line.from_bus]
+        grid.line.to_bus = [bus_dict[b] for b in grid.line.to_bus]
+        grid.res_line = pd.DataFrame(index=grid.line.index, columns=["p_from_mw", "p_to_mw", "q_from_mvar", "q_to_mvar", "vm_from_pu", "vm_to_pu", "i_from_ka", "i_to_ka"])
+        
+        # transformers and its results
+        grid.trafo = pd.DataFrame(columns=["name", "from_bus", "to_bus", "hv_bus", "lv_bus", "in_service"])
+        grid.res_trafo = pd.DataFrame(index=grid.trafo.index, columns=["p_hv_mw", "p_lv_mw", "q_hv_mvar", "q_lv_mvar", "vm_hv_pu", "vm_lv_pu", "i_hv_ka", "i_lv_ka"])
+        
+        # return
+        return grid
 
     def load_grid(self, 
                   path : Union[os.PathLike, str], 
@@ -44,49 +140,26 @@ class GridPACKBackend(Backend):
         print(full_path)
         self._hadapp.solvePowerFlowBeforeDynSimu(full_path, 0)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
         print ('Finished Solving Power Flow')
+        self._hadapp.readGenerators();
+        self._hadapp.readSequenceData();
+        self._hadapp.initialize();
+        self._hadapp.setGeneratorWatch();
+
         
-        # FIXME: Get this grid object from hadapp
-        # self._grid = pp.from_json(full_path)
-        
-        # then fill the "n_sub" and "sub_info"
-        self.n_sub = self._hadapp.totalBuses()
-        for bus in range(self.n_sub):
-            print(bus,
-                # self._hadapp.getBusInfoInt(bus, "BUS_NUMBER", -1),
-                # self._hadapp.getBusInfoString(bus, "BUS_NAME", -1),
-                # self._hadapp.getBusInfoInt(bus, "BUS_TYPE", -1),
-                self._hadapp.numGenerators(bus),
-                self._hadapp.numLoads(bus))#,
-                # self._hadapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG", -1))
-            for g in range(self._hadapp.numGenerators(bus)):
-                print(" gen: ", g)#,
-                    # self._hadapp.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
-                    # self._hadapp.getBusInfoString(bus, "GENERATOR_ID", g),
-                    # self._hadapp.getBusInfoReal(bus, "GENERATOR_PG", g),
-                    # self._hadapp.getBusInfoReal(bus, "GENERATOR_QG", g))
-            for l in range(self._hadapp.numLoads(bus)):
-                print("load: ", l)#,
-                    # self._hadapp.getBusInfoInt(bus, "LOAD_NUMBER", l),
-                    # self._hadapp.getBusInfoString(bus, "LOAD_ID", l),
-                    # self._hadapp.getBusInfoReal(bus, "LOAD_PL", l),
-                    # self._hadapp.getBusInfoReal(bus, "LOAD_QL", l))
+        # Building grid object from hadapp
+        self._grid = self.build_grid()
         
         # then fill the number and location of loads
-        self.n_load = self._hadapp.numLoads()
+        self.n_load = self._grid.load.shape[0]
         self.load_to_subid = np.zeros(self.n_load, dtype=int)
         for load_id in range(self.n_load):
-            # pass
-            # FIXME: Missing info from gridpack - check me
-            self.load_to_subid[load_id] = self._hadapp.numLoads(load_id)
+            self.load_to_subid[load_id] = self._grid.load.iloc[load_id]["bus"]
             
         # then fill the number and location of generators
-        # FIXME: Missing info from gridpack
-        self.n_gen = self._hadapp.numGenerators()
+        self.n_gen = self._grid.gen.shape[0]
         self.gen_to_subid = np.zeros(self.n_gen, dtype=int)
         for gen_id in range(self.n_gen):
-            # pass
-            # FIXME: Missing info from gridpack - check me
-            self.gen_to_subid[gen_id] = self._hadapp.numGenerators(gen_id)
+            self.gen_to_subid[gen_id] = self._grid.gen.iloc[gen_id]["bus"]
             
         # then fill the number and location of storage units
         # self.n_storage = self._grid.storage.shape[0]
@@ -105,22 +178,17 @@ class GridPACKBackend(Backend):
         # so we decide here to say: first n "powerlines" of grid2Op
         # will be pandapower powerlines and
         # last k "powerlines" of grid2op will be the trafos of pandapower.
-        self.n_line = self._hadapp.numLines() # self._grid.line.shape[0] + self._grid.trafo.shape[0]
+        self.n_line = self._grid.line.shape[0] + self._grid.trafo.shape[0]
         self.line_or_to_subid = np.zeros(self.n_line, dtype=int)
         self.line_ex_to_subid = np.zeros(self.n_line, dtype=int)
-        # for line_id in range(self._grid.line.shape[0]):
-        #     pass
-            # FIXME: Missing info from gridpack
-            # self.line_or_to_subid[line_id] = self._grid.line.iloc[line_id]["from_bus"]
-            # self.line_ex_to_subid[line_id] = self._grid.line.iloc[line_id]["to_bus"]
+        for line_id in range(self._grid.line.shape[0]):
+            self.line_or_to_subid[line_id] = self._grid.line.iloc[line_id]["from_bus"]
+            self.line_ex_to_subid[line_id] = self._grid.line.iloc[line_id]["to_bus"]
         
-        # FIXME: Missing info from gridpack
-        # nb_powerline = self._grid.line.shape[0]
-        # for trafo_id in range(self._grid.trafo.shape[0]):
-        #     pass
-            # FIXME: Missing info from gridpack
-            # self.line_or_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["hv_bus"]
-            # self.line_ex_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["lv_bus"]
+        nb_powerline = self._grid.line.shape[0]
+        for trafo_id in range(self._grid.trafo.shape[0]):
+            self.line_or_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["hv_bus"]
+            self.line_ex_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["lv_bus"]
             
         # FIXME: Missing info from gridpack
         # and now the thermal limit
@@ -136,30 +204,39 @@ class GridPACKBackend(Backend):
             
         self._compute_pos_big_topo()
 
-        # transfer data from power flow network to dynamic simulation network
-        self._hadapp.transferPFtoDS()
+        # # transfer data from power flow network to dynamic simulation network
+        # self._hadapp.transferPFtoDS()
+        
+        # # define a bus fault
+        # busfault = gridpack.dynamic_simulation.Event()
+        # busfault.start = 1.0 # fault start time
+        # busfault.end = 1.1   # fault end time
+        # busfault.step = 0.005  # fault duration simu time step
+        # busfault.isBus = True
+        # busfault.bus_idx = 22 # bus number of the fault		  
 
-        # define a bus fault
-        busfault = gridpack.dynamic_simulation.Event()
-        busfault.start = 1.0 # fault start time
-        busfault.end = 1.1   # fault end time
-        busfault.step = 0.005  # fault duration simu time step
-        busfault.isBus = True
-        busfault.bus_idx = 22 # bus number of the fault		  
+        # busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
 
-        busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
+        # # initialize the dynamic simulation
+        # self._hadapp.initializeDynSimu(busfaultlist, 0) # 0 inidcates read in the first dyr dynamic parameter file, the xml file supports multiple dyr files read in
 
-        # initialize the dynamic simulation
-        self._hadapp.initializeDynSimu(busfaultlist, 0) # 0 inidcates read in the first dyr dynamic parameter file, the xml file supports multiple dyr files read in
+        # Remember the input file was read into the Configuration singleton
+        conf = gridpack.Configuration()
+        cursor = conf.getCursor("Configuration.Dynamic_simulation")
+
+        faults = self._hadapp.getEvents(cursor)
+
+        self._hadapp.solvePreInitialize(faults[0])
 
     def apply_action(self, backendAction: Union["grid2op.Action._backendAction._BackendAction", None]) -> None:
         '''
         # called for each "step", thousands of times
         # modify the topology, load, generation etc.
         '''
-        return
+        
         # the following few lines are highly recommended
         if backendAction is None:
+            print("===================================")
             return
         
         (
@@ -216,10 +293,10 @@ class GridPACKBackend(Backend):
 
             if new_bus == -1:
                 # element was disconnected
-                dt["in_service"].iloc[line_id_db] = False
+                dt.iloc[line_id_db]["in_service"] = False
             else:
                 # element was connected
-                dt["in_service"].iloc[line_id_db] = True
+                dt.iloc[line_id_db]["in_service"] = True
 
         lines_ex_bus = backendAction.get_lines_ex_bus()
         for line_id, new_bus in lines_ex_bus:
@@ -234,10 +311,17 @@ class GridPACKBackend(Backend):
 
             if new_bus == -1:
                 # element was disconnected
-                dt["in_service"].iloc[line_id_db] = False
+                dt.iloc[line_id_db]["in_service"] = False
             else:
                 # element was connected
-                dt["in_service"].iloc[line_id_db] = True
+                dt.iloc[line_id_db]["in_service"] = True
+
+    def _random_data_generator(self, n_rows, columns):
+        if n_rows > 0:
+            new_data = np.random.rand(n_rows, len(columns))
+            return pd.DataFrame(new_data, columns=columns, dtype="float32")
+        else:
+            return pd.DataFrame(columns=columns)
 
     def runpf(self, is_dc : bool=False):
         '''
@@ -245,7 +329,55 @@ class GridPACKBackend(Backend):
         # run the solver
         '''
         # execute one simulation time step	
-        self._hadapp.executeDynSimuOneStep()  
+        self._hadapp.executeOneSimuStep()  
+
+        # to get current data from dynamic simulation to data collection object
+        self._hadapp.updateData()
+        
+        # counter
+        self._counter += 1
+        print(f"Counter value: {self._counter}")
+
+        # load and generator data
+        self._grid.res_load = self._grid.load[["p_mw", "q_mvar"]]
+        self._grid.res_gen = self._grid.gen[["p_mw", "q_mvar", "vm_pu"]]
+        
+        # line level data
+        nbranch = self._hadapp.totalBranches()
+        vm_from_pu = []
+        vm_to_pu = []
+        for branch in range(0, nbranch):
+            (f, t) = self._hadapp.getBranchEndpoints(branch)
+            # from voltage
+            from_bus = self._grid.bus.index[self._grid.bus['id'] == f].values[0]
+            vm_from_pu.append(self._hadapp.getBusInfoReal(from_bus, 'BUS_VOLTAGE_MAG'))
+            
+            # to voltage
+            to_bus = self._grid.bus.index[self._grid.bus['id'] == t].values[0]
+            vm_to_pu.append(self._hadapp.getBusInfoReal(to_bus, 'BUS_VOLTAGE_MAG'))
+        
+        # convert to data frame
+        self._grid.res_line = self._random_data_generator(self._grid.line.shape[0], columns=self._grid.res_line.columns)
+        self._grid.res_line["vm_from_pu"] = vm_from_pu
+        self._grid.res_line["vm_to_pu"] = vm_to_pu
+        
+        # transformer data
+        self._grid.res_trafo = self._random_data_generator(self._grid.trafo.shape[0], columns=self._grid.res_trafo.columns)
+        
+        print("================= Test Gen and Load =================")
+        for bus in range(self.n_sub):
+            # bus list
+            print(f"Bus {bus} Voltage Magnitude {self._hadapp.getBusInfoReal(bus, 'BUS_VOLTAGE_MAG')}")
+            for g in range(self._hadapp.numGenerators(bus)):
+                # generator list
+                print(f"Generator {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', g)} P(MW): {self._hadapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g)}")
+            for l in range(self._hadapp.numLoads(bus)):
+                # load list
+                print(f"Load {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', l)} P(MW): {self._hadapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l)}")
+            
+        # print(self._grid.trafo, self._grid.res_trafo)
+        sys.exit(1)
+        
         
         return True, None    
     
@@ -270,21 +402,21 @@ class GridPACKBackend(Backend):
         # retrieve the results
         '''
         res = np.full(self.dim_topo, fill_value=-2, dtype=int)
-        # # read results for load
-        # self._aux_get_topo_vect(res, self._grid.load, "bus", self.load_pos_topo_vect)
-        # # then for generators
-        # self._aux_get_topo_vect(res, self._grid.gen, "bus", self.gen_pos_topo_vect)
-        # # then each side of powerlines
-        # self._aux_get_topo_vect(res, self._grid.line, "from_bus", self.line_or_pos_topo_vect)
-        # self._aux_get_topo_vect(res, self._grid.line, "to_bus", self.line_ex_pos_topo_vect)
+        # read results for load
+        self._aux_get_topo_vect(res, self._grid.load, "bus", self.load_pos_topo_vect)
+        # then for generators
+        self._aux_get_topo_vect(res, self._grid.gen, "bus", self.gen_pos_topo_vect)
+        # then each side of powerlines
+        self._aux_get_topo_vect(res, self._grid.line, "from_bus", self.line_or_pos_topo_vect)
+        self._aux_get_topo_vect(res, self._grid.line, "to_bus", self.line_ex_pos_topo_vect)
         
-        # # then for the trafos, but remember pandapower trafos are powerlines in grid2Op....
-        # # so we need to trick it a bit
-        # # (we can do this trick because we put the trafo "at the end" of the powerline in grid2op
-        # # in the Step1_loading.py)
-        # n_line_pp = self._grid.line.shape[0]
-        # self._aux_get_topo_vect(res, self._grid.trafo, "hv_bus", self.line_or_pos_topo_vect, add_id=n_line_pp)
-        # self._aux_get_topo_vect(res, self._grid.trafo, "lv_bus", self.line_ex_pos_topo_vect, add_id=n_line_pp)            
+        # then for the trafos, but remember pandapower trafos are powerlines in grid2Op....
+        # so we need to trick it a bit
+        # (we can do this trick because we put the trafo "at the end" of the powerline in grid2op
+        # in the Step1_loading.py)
+        n_line_pp = self._grid.line.shape[0]
+        self._aux_get_topo_vect(res, self._grid.trafo, "hv_bus", self.line_or_pos_topo_vect, add_id=n_line_pp)
+        self._aux_get_topo_vect(res, self._grid.trafo, "lv_bus", self.line_ex_pos_topo_vect, add_id=n_line_pp)            
         return res
 
     def loads_info(self)-> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -292,7 +424,7 @@ class GridPACKBackend(Backend):
         # retrieve the results
         '''
         # FIXME: Placeholder values
-        return np.ones(self.n_load), np.ones(self.n_load), np.ones(self.n_load)
+        # return np.ones(self.n_load), np.ones(self.n_load), np.ones(self.n_load)
     
         # carefull with copy / deep copy
         load_p = self._grid.res_load["p_mw"].values  # in MW
@@ -310,17 +442,17 @@ class GridPACKBackend(Backend):
         '''
         # retrieve the results
         '''
-        # prod_p = self._grid.res_gen["p_mw"].values  # in MW
-        # prod_q = self._grid.res_gen["q_mvar"].values  # in MVAr
+        prod_p = self._grid.res_gen["p_mw"].values  # in MW
+        prod_q = self._grid.res_gen["q_mvar"].values  # in MVAr
         
-        # # same as for load, gen_v is not directly accessible in pandapower
-        # # we first retrieve the per unit voltage, then convert it to kV
-        # prod_v = self._grid.res_gen["vm_pu"].values
-        # prod_v *= (
-        #     self._grid.bus["vn_kv"].iloc[self.gen_to_subid].values
-        # )  # in kV
-        # return prod_p, prod_q, prod_v
-        return np.ones(self.n_gen), np.ones(self.n_gen), np.ones(self.n_gen)
+        # same as for load, gen_v is not directly accessible in pandapower
+        # we first retrieve the per unit voltage, then convert it to kV
+        prod_v = self._grid.res_gen["vm_pu"].values
+        prod_v *= (
+            self._grid.bus["vn_kv"].iloc[self.gen_to_subid].values
+        )  # in kV
+        return prod_p, prod_q, prod_v
+        # return np.ones(self.n_gen), np.ones(self.n_gen), np.ones(self.n_gen)
 
     def _aux_get_line_info(self, colname_powerline, colname_trafo):
         """
@@ -333,7 +465,8 @@ class GridPACKBackend(Backend):
                 self._grid.res_trafo[colname_trafo].values,
             )
         )
-        return res
+        # NOTE: Typecasting this variable to address numpy abs issue. Need to comeback to this.
+        return np.float32(res)
     
     def lines_or_info(self)-> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -351,7 +484,7 @@ class GridPACKBackend(Backend):
 
         """
         # FIXME: Placeholder values
-        return np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line)
+        # return np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line)
     
         p_or = self._aux_get_line_info("p_from_mw", "p_hv_mw")
         q_or = self._aux_get_line_info("q_from_mvar", "q_hv_mvar")
@@ -376,7 +509,10 @@ class GridPACKBackend(Backend):
                 self._grid.trafo["in_service"].values,
             )
         )
-        v_or[~status] = 0.
+        
+        # NOTE: v_or[~s] doesn't work in this version of python
+        v_or[[~s for s in status]] = 0.
+        
         return p_or, q_or, v_or, a_or
 
     def lines_ex_info(self):
@@ -395,7 +531,7 @@ class GridPACKBackend(Backend):
 
         """
         # FIXME: Placeholder values
-        return np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line)
+        # return np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line), np.ones(self.n_line)
     
         p_ex = self._aux_get_line_info("p_to_mw", "p_lv_mw")
         q_ex = self._aux_get_line_info("q_to_mvar", "q_lv_mvar")
@@ -420,7 +556,10 @@ class GridPACKBackend(Backend):
                 self._grid.trafo["in_service"].values,
             )
         )
-        v_ex[~status] = 0.
+
+        # NOTE: v_or[~s] doesn't work in this version of python
+        v_ex[[~s for s in status]] = 0.
+        
         return p_ex, q_ex, v_ex, a_ex
     
     def close(self):
