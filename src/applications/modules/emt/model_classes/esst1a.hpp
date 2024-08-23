@@ -8,7 +8,7 @@
  * @file   esst1a.hpp
  * 
  * @brief ESST1 exciter model header file 
- * @last updated by Shuangshuang Jin on Aug 14, 2024
+ * @last updated by Shuangshuang Jin on Aug 23, 2024
  * 
  * 
  */
@@ -21,7 +21,7 @@
 #include "cblock.hpp"
 #include "dblock.hpp"
 
-class Esst1aExc: public BaseExcModel
+class Esst1aExc: public BaseEMTExcModel
 {
 public:
   /**
@@ -147,17 +147,17 @@ public:
   /**
    * Set Event 
    */
-  void setEvent(gridpack::math::DAESolver::EventManagerPtr);
+  void setEvent(gridpack::math::RealDAESolver::EventManagerPtr);
 
   /**
    * Update the event function values
    */
-  void eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues);
+  void eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType >& evalues);
 
   /**
    * Event handler function 
    */
-  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state);
+  void eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state);
 
   /**
    * Set the initial field voltage value
@@ -240,8 +240,8 @@ private:
   double VA; // Output of Regulator blk
   double VLL1; // Output of LeadLag blk BC1
   double VLL; // Output of LeadLag blk BC
-  double Vref; // Reference voltage
-  double Vmeas; // Output of voltage measurement block
+  //double Vref; // Reference voltage
+  //double Vmeas; // Output of voltage measurement block
 
   double Efd;
 };
@@ -249,12 +249,12 @@ private:
 
 // Class for defining events for ESST1a model
 class Esst1aExcEvent
-  :public gridpack::math::DAESolver::Event
+  :public gridpack::math::RealDAESolver::Event
 {
 public:
 
   // Default constructor
-  Esst1aExcEvent(Esst1aExc *exc):gridpack::math::DAESolver::Event(4),p_exc(exc)
+  Esst1aExcEvent(Esst1aExc *exc):gridpack::math::RealDAESolver::Event(2),p_exc(exc)
   {
     std:fill(p_term.begin(),p_term.end(),false);
 
@@ -264,6 +264,7 @@ public:
 
   // Destructor
   ~Esst1aExcEvent(void) {}
+
 protected:
   Esst1aExc *p_exc;
 

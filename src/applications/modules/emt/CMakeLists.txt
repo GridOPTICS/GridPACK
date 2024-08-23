@@ -62,7 +62,7 @@ add_library(gridpack_emt_module
   model_classes/gdform.cpp
   model_classes/lumpedline.cpp
   model_classes/transformer.cpp
-
+  model_classes/esst1a.cpp
 )
 
 target_link_libraries(gridpack_emt_module
@@ -119,6 +119,7 @@ install(FILES
   model_classes/gdform.hpp
   model_classes/lumpedline.hpp
   model_classes/transformer.hpp
+  model_classes/esst1a.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )
 

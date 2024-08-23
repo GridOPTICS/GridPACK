@@ -8,7 +8,7 @@
  * @file   esst1a.cpp
  *  
  * @brief ESST1A exciter model implementation 
- * @last updated by Shuangshuang Jin on Aug 15, 2024  
+ * @last updated by Shuangshuang Jin on Aug 23, 2024  
  *
  *
  */
@@ -16,6 +16,8 @@
 #include <esst1a.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
+
+#define TS_THRESHOLD 4
 
 Esst1aExc::Esst1aExc(void)
 {
@@ -56,6 +58,14 @@ Esst1aExc::Esst1aExc(void)
   Va_at_min = Va_at_max = false;
 
   nxexc = 5;
+
+  zero_TF = false;
+  zero_TB = false;
+  zero_TB1 = false;
+  OptionToModifyLimitsForInitialStateLimitViolation = false;
+
+  zero_TA = false;
+  zero_TR = false;
 }
 
 Esst1aExc::~Esst1aExc(void)
@@ -86,7 +96,7 @@ void Esst1aExc::preStep(double time, double timestep)
   Ec = sqrt(Vd*Vd + Vq*Vq);
 
   if(!zero_TR) {
-    Vmeas = Filter_blkR.getoutput(Ec, t_inc, int_flag, true);
+    Vmeas = Filter_blkR.getoutput(Ec, timestep, true);
   } else {
     Vmeas = Ec;
   }
@@ -95,7 +105,7 @@ void Esst1aExc::preStep(double time, double timestep)
   if (VOS == 1.0) Vop += Vothsg;
   double Verr = Vref - Vmeas + Vop;
 
-  Vf = Feedback_blkF.getoutput(Efd, t_inc, int_flag, true);
+  Vf = Feedback_blkF.getoutput(Efd, timestep, true);
 
   double leadlag_blk_in = Verr - Vf;
 
@@ -106,14 +116,14 @@ void Esst1aExc::preStep(double time, double timestep)
 
   if (UEL == 2.0) leadlag_blk_in = HVGate_blk1.getoutput(leadlag_blk_in);
 
-  VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
+  VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, timestep, true);
   
-  VLL1 = Leadlag_blkBC1.getoutput(VLL, t_inc, int_flag, true); 
+  VLL1 = Leadlag_blkBC1.getoutput(VLL, timestep, true); 
 
   if (zero_TA) {
     VA = Regulator_gain_blk.getoutput(VLL1);
   } else {
-    VA = Regulator_blk.getoutput(VLL, t_inc, int_flag, true);
+    VA = Regulator_blk.getoutput(VLL, timestep, true);
   }
 
   double u1 = 0.0;
@@ -155,7 +165,7 @@ void Esst1aExc::postStep(double time)
  */
 void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  BaseExcModel::load(data,idx); // load parameters in base exciter model
+  BaseEMTExcModel::load(data,idx); // load parameters in base exciter model
   
   // load parameters for the model type
   data->getValue(EXCITER_UEL, &UEL, idx);
@@ -206,14 +216,14 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
  * Initialize exciter model before calculation
  * @param [output] values - array where initialized exciter variables should be set
  */
-void Esst1aExc::init(gridpack::RealType* values) 
+void Esst1aExc::init(gridpack::RealType* xin)
 {
   gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
 
   double Ec = sqrt(VD*VD + VQ*VQ);
   double yLL2,yLL1;
   double Vf=0.0,Vfd;
-  BaseGenModel *gen=getGenerator();
+  BaseEMTGenModel *gen=getGenerator();
   double LadIfd = gen->getFieldCurrent();
 
   // Field voltage (Efd0) and bus voltage (VD,VQ) are already set 
@@ -224,20 +234,24 @@ void Esst1aExc::init(gridpack::RealType* values)
     // block-based initialization
     // Set up blocks
     // Set parameters for the first block
-    if (Tf < TS_THRESHOLD * ts) zero_TF = true;
+    /*if (Tf < TS_THRESHOLD * ts) zero_TF = true;
     if (Tb < TS_THRESHOLD * ts) zero_TB = true;
     if (Tb1 < TS_THRESHOLD * ts) zero_TB1 = true;
     if (Ta < TS_THRESHOLD * ts) zero_TA = true;
-    if (Tr < TS_THRESHOLD * ts) zero_TR = true;
+    if (Tr < TS_THRESHOLD * ts) zero_TR = true;*/
     
+    // For lead lag block, force time constant of numerator to zero if time constant of denominator is zero
+    if (zero_TB1) Tc1 = 0.0;
+    if (zero_TB) Tc = 0.0;
+
     if(!zero_TR) {
       Filter_blkR.setparams(1.0, Tr);
     }
 
     HVGate_blk1.setparams(Vuel); // is UEL Vuel?
 
-    Leadlag_blkBC.setparams(Tc, Tb);
-    Leadlag_blkBC1.setparams(Tc1, Tb1);
+    if (!zero_TB) Leadlag_blkBC.setparams(Tc, Tb);
+    if (!zero_TB1) Leadlag_blkBC1.setparams(Tc1, Tb1);
 
     if(!zero_TA) {
       Regulator_blk.setparams(Ka,Ta,Vrmin,Vrmax,-1000.0,1000.0);
@@ -248,12 +262,13 @@ void Esst1aExc::init(gridpack::RealType* values)
     HVGate_blk2.setparams(Vuel); // UEL is Vuel?
     LVGate_blk.setparams(Voel); // Where to read Voel from? Set it by funciton call as Vuel?
 
+    // for feedback block, if time constant TF is too small, make it bigger.
     double a[2], b[2];
     a[0] = Tf; a[1] = 1.0;
     b[0] = Kf; b[1] = 0.0;
     Feedback_blkF.setcoeffs(a, b);
     
-    Vterm = mag;
+    //Vterm = mag; // How to get mag?
     
     Vf = Feedback_blkF.init_given_u(Efd);
     
@@ -288,10 +303,15 @@ void Esst1aExc::init(gridpack::RealType* values)
       if (VA > Vamax) Vamax = VA+0.1;
       if (VA < Vamin) Vamin = VA-0.1;
     }
-    VLL1 = Regulator_blk.init_given_y(VA);
+    if (!zero_TA) VLL1 = Regulator_blk.init_given_y(VA);
+    else VLL1 = VA;
 
-    VLL = Leadlag_blkBC1.init_given_y(VLL1);
-    double u1 = Leadlag_blkBC.init_given_y(VLL);
+    if (!zero_TB1) VLL = Leadlag_blkBC1.init_given_y(VLL1);
+    else VLL = VLL1;
+
+    double u1;
+    if (!zero_TB) u1 = Leadlag_blkBC1.init_given_y(VLL1);
+    else u1 = VLL;
 
     // HV Gate?
     // assume HV gate always take feedforward path during initialization, may need to adjust Vuel
@@ -307,7 +327,8 @@ void Esst1aExc::init(gridpack::RealType* values)
     double Vop = 0.0;
     if (UEL == 1.0) Vop += Vuel;
     if (VOS == 1.0) Vop += Vothsg;
-    Vmeas = Filter_blkR.init_given_u(Vcomp);
+    if (!zero_TR) Vmeas = Filter_blkR.init_given_u(Vcomp);
+    else Vmeas = Vcomp;
     Vref = u1 + Vmeas - Vop + Vf;
   } else {
     Ec = sqrt(VD*VD + VQ*VQ);
@@ -361,7 +382,7 @@ void Esst1aExc::write(const char* signal, char* string)
  * function to push values from vectors back onto exciters
  * @param values array containing exciter state variables
 */
-void Esst1aExc::setValues(gridpack::RealType *values)
+void Esst1aExc::setValues(gridpack::RealType *val)
 {  
   gridpack::RealType *values = val+offsetb; // exciter array starts from this location
 
@@ -394,7 +415,7 @@ void Esst1aExc::setValues(gridpack::RealType *values)
  * @return: false if exciter does not contribute
  *        vector element
  */
-bool Esst1aExc::vectorGetValues(gridpack::RealType *values)
+void Esst1aExc::vectorGetValues(gridpack::RealType *values)
 {
   gridpack::RealType *f = values+offsetb; // exciter array starts from this location
 
@@ -408,7 +429,7 @@ bool Esst1aExc::vectorGetValues(gridpack::RealType *values)
   double Ec,yLL1,yLL2,Vf;
   Ec = sqrt(VD*VD + VQ*VQ);
   double Vi,Efd;
-  BaseGenModel* gen = getGenerator();
+  BaseEMTGenModel* gen = getGenerator();
   LadIfd = gen->getFieldCurrent();
   
   Efd = Va - Klr*(LadIfd - Ilr);
@@ -789,10 +810,10 @@ bool Esst1aExc::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxe
 /**
  * Update the event function values
  */
-void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+void Esst1aExc::eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType>& evalues)
 {
-  
-} 
+
+}
 
 /**
  * Event handler
