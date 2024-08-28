@@ -94,7 +94,7 @@
  * indexed
  */
 #define GENERATOR_VS "GENERATOR_VS"
-#define GENERATOR_VS "GENERATOR_VS_CURRENT"
+#define GENERATOR_VS_CURRENT "GENERATOR_VS_CURRENT"
 
 /**
  * Bus number of a remote type 1 or 2 bus whose voltage is to be regulated by this plant to the
