@@ -1619,6 +1619,15 @@ void gridpack::dynamic_simulation::DSFullApp::resetPower()
 }
 
 /**
+ * Update data collection objects for all buses and branches with
+ * current values from simulations
+ */
+void gridpack::dynamic_simulation::DSFullApp::updateData()
+{
+  return p_factory->updateData();
+}
+
+/**
  * Read in loads that should be monitored during simulation
  */
 void gridpack::dynamic_simulation::DSFullApp::setLoadWatch()

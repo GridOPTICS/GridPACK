@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
- * @date   2024-05-22 09:32:28 d3g096
+ * @date   2024-08-19 14:09:06 d3g096
  * 
  * @brief  
  * 
@@ -106,6 +106,13 @@ class HADRECAppModule
 	* Execute only one simulation time step 
 	*/
 	void executeDynSimuOneStep();
+
+  /**
+   * Update data collection objects for all buses and branches with
+   * current values from simulations
+   */
+  void updateData();
+  
 	
 	/**
 	* Check whether the dynamic simulation is done
