@@ -1292,11 +1292,32 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   int i;
+  std::string name;
   for (i=0; i<p_ngen; i++) {
-    p_generators[i]->updateData(data, i);
+    if (data->getValue(GENERATOR_MODEL,&name,i)) {
+      p_generators[i]->updateData(data, i);
+    } else {
+      if (!data->setValue(GENERATOR_PG_CURRENT, p_pg[i], i)) {
+        data->addValue(GENERATOR_PG_CURRENT, p_pg[i], i);
+      }
+      if (!data->setValue(GENERATOR_QG_CURRENT, p_qg[i], i)) {
+        data->addValue(GENERATOR_QG_CURRENT, p_qg[i], i);
+      }
+    }
   }
-  for (i=0; i<p_ndyn_load; i++) {
-    p_loadmodels[i]->updateData(data, i);
+  int lcnt = 0;
+  for (i=0; i<p_npowerflow_load; i++) {
+    if (data->getValue(LOAD_MODEL,&name,i)) {
+      p_loadmodels[lcnt]->updateData(data, i);
+      lcnt++;
+    } else {
+      if (!data->setValue(LOAD_PL_CURRENT, p_powerflowload_p[i], i)) {
+        data->addValue(LOAD_PL_CURRENT, p_powerflowload_p[i], i);
+      }
+      if (!data->setValue(LOAD_QL_CURRENT, p_powerflowload_q[i], i)) {
+        data->addValue(LOAD_QL_CURRENT, p_powerflowload_q[i], i);
+      }
+    }
   }
 }
 
