@@ -1293,6 +1293,13 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
 {
   int i;
   std::string name;
+  gridpack::ComplexType voltage = getComplexVoltage();
+  double rV = real(voltage);
+  double iV = imag(voltage);
+  rV = sqrt(rV*rV+iV*iV);
+  if (!data->setValue(BUS_VMAG_CURRENT, rV)) {
+    data->addValue(BUS_VMAG_CURRENT, rV);
+  }
   for (i=0; i<p_ngen; i++) {
     if (data->getValue(GENERATOR_MODEL,&name,i)) {
       p_generators[i]->updateData(data, i);
