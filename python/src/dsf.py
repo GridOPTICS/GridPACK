@@ -28,13 +28,18 @@ def network_analytics_dump(ds_app):
                   ds_app.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
                   ds_app.getBusInfoString(bus, "GENERATOR_ID", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG", g),
-                  ds_app.getBusInfoReal(bus, "GENERATOR_QG", g))
+                  ds_app.getBusInfoReal(bus, "GENERATOR_QG", g),
+                  ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
+                  ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g)
+            )
         for l in range(ds_app.numLoads(bus)):
             print("load: ", l,
                   ds_app.getBusInfoInt(bus, "LOAD_NUMBER", l),
                   ds_app.getBusInfoString(bus, "LOAD_ID", l),
                   ds_app.getBusInfoReal(bus, "LOAD_PL", l),
-                  ds_app.getBusInfoReal(bus, "LOAD_QL", l))
+                  ds_app.getBusInfoReal(bus, "LOAD_QL", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_PL_CURRENT", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_QL_CURRENT", l))
     nbranch = ds_app.totalBranches()
     for branch in range(0, nbranch):
         (f, t) = ds_app.getBranchEndpoints(branch)
@@ -94,8 +99,8 @@ ds_app.solvePreInitialize(faults[0])
 
 while (not ds_app.isDynSimuDone()):
     ds_app.executeOneSimuStep()
-    ds_app.updateData()
 
+ds_app.updateData()
 network_analytics_dump(ds_app)
 
 timer.stop(t_total)
