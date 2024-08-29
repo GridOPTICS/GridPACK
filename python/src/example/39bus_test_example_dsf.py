@@ -21,9 +21,10 @@ def network_dump_state(ds_app):
         print(bus,
               ds_app.getBusInfoInt(bus, "BUS_NUMBER"),
               ds_app.getBusInfoString(bus, "BUS_NAME"),
-              ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"))
+              ds_app.getBusInfoReal(bus, "BUS_VMAG_CURRENT"))
         for g in range(ds_app.numGenerators(bus)):
             print(" gen: ", g,
+                  ds_app.getBusInfoString(bus, "GENERATOR_MODEL", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g),
                   )
