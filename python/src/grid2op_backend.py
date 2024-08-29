@@ -138,7 +138,7 @@ class GridPACKBackend(Backend):
         # solve the power flow - to load the grid data
         print('=========== Before Solving Power Flow ===================')
         print(full_path)
-        self._hadapp.solvePowerFlowBeforeDynSimu(full_path, 0)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        self._hadapp.solvePowerFlowBeforeDynSimu(full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
         print ('Finished Solving Power Flow')
         self._hadapp.readGenerators();
         self._hadapp.readSequenceData();
@@ -365,15 +365,17 @@ class GridPACKBackend(Backend):
         self._grid.res_trafo = self._random_data_generator(self._grid.trafo.shape[0], columns=self._grid.res_trafo.columns)
         
         print("================= Test Gen and Load =================")
+        # NOTE: Generator and Load values change only when there are dynamic load/generators. If they are not dynamic, they remain unchanged and we won't see any value in *_CURRENT variables. One possible point of failure is that if the variable name is types incorrectly, then also it will return None and user might end up thinking that the component is not dynamic. One needs to be cautious about that. 
         for bus in range(self.n_sub):
             # bus list
             print(f"Bus {bus} Voltage Magnitude {self._hadapp.getBusInfoReal(bus, 'BUS_VOLTAGE_MAG')}")
             for g in range(self._hadapp.numGenerators(bus)):
                 # generator list
-                print(f"Generator {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', g)} P(MW): {self._hadapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g)}")
+                print(f"Generator {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', g)} P(MW): {self._hadapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g)}")
+                print(f"Generator {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', g)} Q(MVar): {self._hadapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g)}")
             for l in range(self._hadapp.numLoads(bus)):
                 # load list
-                print(f"Load {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', l)} P(MW): {self._hadapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l)}")
+                print(f"Load {self._hadapp.getBusInfoString(bus, 'LOAD_ID', l)} P(MW): {self._hadapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l)}")
             
         # print(self._grid.trafo, self._grid.res_trafo)
         sys.exit(1)

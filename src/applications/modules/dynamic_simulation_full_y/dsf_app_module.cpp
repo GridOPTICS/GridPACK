@@ -1624,7 +1624,8 @@ void gridpack::dynamic_simulation::DSFullApp::resetPower()
  */
 void gridpack::dynamic_simulation::DSFullApp::updateData()
 {
-  return p_factory->updateData();
+  p_factory->updateData();
+  p_factory->dumpData();
 }
 
 /**

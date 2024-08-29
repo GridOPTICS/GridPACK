@@ -1,16 +1,19 @@
 import grid2op
 import warnings
 import sys
-sys.path.append("../")
+sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/")
 from grid2op_backend import GridPACKBackend
 from grid2op.PlotGrid.PlotMatplot import PlotMatplot
 
-filename = "input_39bus_step005_v33.xml"
+# NOTE: You must run this code from the application folder
+filename = "input_9b3g.xml"
+# filename = "input_39bus_step005_v33.xml"
+config_filepath = "/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/example/test_grid2op"
 
 # make environment
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore")
-    env = grid2op.make("test_grid2op",
+    env = grid2op.make(config_filepath,
                        grid_path=filename,
                        backend=GridPACKBackend()
                        )
