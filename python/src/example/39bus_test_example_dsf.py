@@ -12,6 +12,29 @@ import numpy as np
 from gridpack.dynamic_simulation import DSFullApp, Event, EventVector
 
 # -------------------------------------------------------------
+# network_dump_state
+# this matches (some) generator power observations output
+# -------------------------------------------------------------
+def network_dump_state(ds_app):
+    nbus = ds_app.totalBuses()
+    for bus in range(nbus):
+        print(bus,
+              ds_app.getBusInfoInt(bus, "BUS_NUMBER"),
+              ds_app.getBusInfoString(bus, "BUS_NAME"),
+              ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"))
+        for g in range(ds_app.numGenerators(bus)):
+            print(" gen: ", g,
+                  ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
+                  ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g),
+                  )
+        for l in range(ds_app.numLoads(bus)):
+            print("load: ", l,
+                  ds_app.getBusInfoInt(bus, "LOAD_NUMBER", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_PL_CURRENT", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_QL_CURRENT", l)
+                  )
+
+# -------------------------------------------------------------
 # variable initialization
 # -------------------------------------------------------------
 program = os.path.basename(sys.argv[0])
@@ -85,6 +108,8 @@ dt = ds_app.getTimeStep()
 outputob_time_step = 0.005
 outputob_nsimustep = int(outputob_time_step/dt);
 
+ds_app.updateData()
+network_dump_state(ds_app)
 
 isteps = 0
 while (not ds_app.isDynSimuDone()):
@@ -108,6 +133,8 @@ while (not ds_app.isDynSimuDone()):
         ob_vals.extend(vAng)
         ob_vals.extend(fOnline)
         ob_vals.extend(busfreq)
+        ds_app.updateData()
+        network_dump_state(ds_app)
         print('After getObservations')
         
         print('Before insert')
@@ -115,6 +142,8 @@ while (not ds_app.isDynSimuDone()):
         print('After insert')
     isteps = isteps + 1
 
+network_dump_state(ds_app)
+                   
 np_data = np.array(observation_list)
 
 import pandas as pd
