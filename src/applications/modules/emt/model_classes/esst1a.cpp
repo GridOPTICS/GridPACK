@@ -189,6 +189,8 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   data->getValue(EXCITER_KLR, &Klr, idx);
   data->getValue(EXCITER_ILR, &Ilr, idx);
 
+  //printf("Tf = %f, Klr = %f, Ilr = %f\n", Tf, Klr, Ilr); exit(1);
+
   if(fabs(Klr) >= 1e-6) {
     printf("ESST1A model does not support non-zero Klr yet\n");
     exit(1);
