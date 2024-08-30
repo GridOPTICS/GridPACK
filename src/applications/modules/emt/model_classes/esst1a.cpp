@@ -8,7 +8,7 @@
  * @file   esst1a.cpp
  *  
  * @brief ESST1A exciter model implementation 
- * @last updated by Shuangshuang Jin on Aug 23, 2024  
+ * @last updated by Shuangshuang Jin on Aug 30, 2024  
  *
  *
  */
@@ -250,7 +250,7 @@ void Esst1aExc::init(gridpack::RealType* xin)
       Filter_blkR.setparams(1.0, Tr);
     }
 
-    HVGate_blk1.setparams(Vuel); // is UEL Vuel?
+    HVGate_blk1.setparams(Vuel); 
 
     if (!zero_TB) Leadlag_blkBC.setparams(Tc, Tb);
     if (!zero_TB1) Leadlag_blkBC1.setparams(Tc1, Tb1);
@@ -261,10 +261,11 @@ void Esst1aExc::init(gridpack::RealType* xin)
       Regulator_gain_blk.setparams(Ka,Vrmin,Vrmax);
     }
 
-    HVGate_blk2.setparams(Vuel); // UEL is Vuel?
-    LVGate_blk.setparams(Voel); // Where to read Voel from? Set it by funciton call as Vuel?
+    HVGate_blk2.setparams(Vuel); 
+    LVGate_blk.setparams(Voel); 
 
     // for feedback block, if time constant TF is too small, make it bigger.
+    if (zero_TF) Tf = 2.0 * TS_THRESHOLD * ts;
     double a[2], b[2];
     a[0] = Tf; a[1] = 1.0;
     b[0] = Kf; b[1] = 0.0;
@@ -279,14 +280,12 @@ void Esst1aExc::init(gridpack::RealType* xin)
       if (Efd < (Vterm * Vrmin)) Vrmin = Efd / Vterm-0.1;
     }
     
-    // LV Gate?
     // assume LV gate always take feedforward path during initialization, may need to adjust Voel
     if (OptionToModifyLimitsForInitialStateLimitViolation) {
       if (Efd > Voel) Voel = Efd + 0.1;
       LVGate_blk.setparams(Voel);
     }
 
-    // HV Gate?
     // assume HV gate always take feedforward path during initialization, may need to adjust Vuel
     if (OptionToModifyLimitsForInitialStateLimitViolation) {
       if (Efd < Vuel) Vuel = Efd - 0.1;
@@ -312,10 +311,9 @@ void Esst1aExc::init(gridpack::RealType* xin)
     else VLL = VLL1;
 
     double u1;
-    if (!zero_TB) u1 = Leadlag_blkBC1.init_given_y(VLL1);
+    if (!zero_TB) u1 = Leadlag_blkBC.init_given_y(VLL);
     else u1 = VLL;
 
-    // HV Gate?
     // assume HV gate always take feedforward path during initialization, may need to adjust Vuel
     if (OptionToModifyLimitsForInitialStateLimitViolation) {
       if (u1 < Vuel) Vuel = u1 - 0.1;
