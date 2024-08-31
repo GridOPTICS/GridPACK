@@ -275,12 +275,48 @@ class PiecewiseSlope
   **/
   void setparams(int, double *, double *);
 
+  double init_given_y(double yout);
+
   private:
     Slope p_slopes[4];
     double p_u[5]; // Input points for slope calculations
     double p_y[5]; // Output points for slope calculations
     int   p_n;     // Number of segments 
     bool  p_increasing; // Increasing (true) or decreasing (false) function
+};
+
+/*
+  LVGate: Implements a LVGate function
+*/
+class LVGate
+{
+  public:
+    LVGate();
+
+    double getoutput(double u);
+
+    void setparams(double);
+
+  private:
+    double p_u; // High V limit for HV Gate
+    
+};
+
+/*
+  HVGate: Implements a HVGate function
+*/
+class HVGate
+{
+  public:
+    HVGate();
+
+    double getoutput(double u);
+
+    void setparams(double);
+
+  private:
+    double p_u; // Low V limit for LV Gate
+    
 };
 
 

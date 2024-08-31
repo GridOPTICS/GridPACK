@@ -33,6 +33,7 @@
 #include <model_classes/gast.hpp>
 #include <model_classes/lumpedline.hpp>
 #include <model_classes/transformer.hpp>
+#include <model_classes/esst4b.hpp>
 
 /**
  *  Simple constructor
@@ -742,7 +743,16 @@ void EmtBus::load(const
             ex.reset(sexs);
             p_gen[i]->setExciter(ex);
 	    
-	    sexs->load(data,i); // load exciter data
+	    sexs->load(data,i); // load exciter data 
+    } else  if(type == "ESST4B") {
+	    Esst4bExc *esst4b;
+            esst4b = new Esst4bExc;
+	    esst4b->setGenerator(p_gen[i]);
+	    
+            ex.reset(esst4b);
+            p_gen[i]->setExciter(ex);
+	    
+	    esst4b->load(data,i); // load exciter data
 	  } else if(type == "REECA1") {
 	    Reeca1 *reeca1;
             reeca1 = new Reeca1;
