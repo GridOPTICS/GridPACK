@@ -952,7 +952,7 @@ class DSFullBranch
      * Update data collection object with current values from simulation
      * @param data: DataCollection object containing parameters for this branch
      */
-    void updateData(boost::shared_ptr<gridpack::component::DataCollection> &data);
+    void updateBranchPower(boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
      * Return the complex admittance of the branch
