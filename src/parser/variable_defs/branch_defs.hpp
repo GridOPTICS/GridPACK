@@ -35,13 +35,13 @@
  */
 #define BRANCH_INDEX "BRANCH_INDEX"
 /**
- * Branch “from bus”	
+ * Branch ï¿½from busï¿½	
  * type: integer
  */
 #define BRANCH_FROMBUS "BRANCH_FROMBUS"
 
 /**
- * Branch “to bus”	
+ * Branch ï¿½to busï¿½	
  * type: integer
  */
 #define BRANCH_TOBUS "BRANCH_TOBUS"
@@ -156,28 +156,28 @@
 #define BRANCH_SHIFT "BRANCH_SHIFT"
 
 /**
- * Real part of admittance of the line shunt at the “from bus” end of the branch
+ * Real part of admittance of the line shunt at the ï¿½from busï¿½ end of the branch
  * type: real float
  * indexed
  */
 #define BRANCH_SHUNT_ADMTTNC_G1 "BRANCH_SHUNT_ADMTTNC_G1"
 
 /**
- * Imaginary part of admittance of the line shunt at the “from bus” end of the branch
+ * Imaginary part of admittance of the line shunt at the ï¿½from busï¿½ end of the branch
  * type: real float
  * indexed
  */
 #define BRANCH_SHUNT_ADMTTNC_B1 "BRANCH_SHUNT_ADMTTNC_B1"
 
 /**
- * Real part of admittance of the line shunt at the “to bus” end of the branch
+ * Real part of admittance of the line shunt at the ï¿½to busï¿½ end of the branch
  * type: real float
  * indexed
  */
 #define BRANCH_SHUNT_ADMTTNC_G2 "BRANCH_SHUNT_ADMTTNC_G2"
 
 /**
- * Imaginary part of admittance of the line shunt at the “to bus” end of the branch
+ * Imaginary part of admittance of the line shunt at the ï¿½to busï¿½ end of the branch
  * type: real float
  * indexed
  */
