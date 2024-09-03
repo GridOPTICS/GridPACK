@@ -6,8 +6,8 @@ from grid2op_backend import GridPACKBackend
 from grid2op.PlotGrid.PlotMatplot import PlotMatplot
 
 # NOTE: You must run this code from the application folder
-filename = "input_9b3g.xml"
-# filename = "input_39bus_step005_v33.xml"
+# filename = "input_9b3g.xml"
+filename = "input_39bus_step005_v33.xml"
 config_filepath = "/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/example/test_grid2op"
 
 # make environment
