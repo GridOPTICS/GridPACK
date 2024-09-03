@@ -946,7 +946,7 @@ class DSFullBranch
      * Update data collection object with current values from simulation
      * @param data: DataCollection object containing parameters for this branch
      */
-    void updateData(boost::shared_ptr<gridpack::component::DataCollection> &data);
+    void updateBranchPower(boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
      * Return the complex admittance of the branch
@@ -1115,6 +1115,9 @@ class DSFullBranch
 	std::vector<gridpack::ComplexType> p_branchcurrent; //renke add
 	gridpack::ComplexType p_branchfrombusvolt; //renke add
 	gridpack::ComplexType p_branchtobusvolt; //renke add
+
+  std::vector<gridpack::ComplexType> p_branchfrombuspq; //yuan add
+  std::vector<gridpack::ComplexType> p_branchtobuspq; //yuan add
 
   bool p_line_status_change; // Flag to indicate line status change
   gridpack::ComplexType p_yft,p_ytf; // Ybus off-diagonal contributions from this line

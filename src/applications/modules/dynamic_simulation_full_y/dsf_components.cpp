@@ -3563,17 +3563,80 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
  * Update data collection object with current values from simulation
  * @param data: DataCollection object containing parameters for this branch
  */
-void gridpack::dynamic_simulation::DSFullBranch::updateData(
+void gridpack::dynamic_simulation::DSFullBranch::updateBranchPower(
     boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
-#if 0
-  int i;
-  for (i=0; i<p_elems; i++) {
-    if (p_xform[i]) {
-    } else {
-    }
-  }
-#endif
+// #if 0
+//   int i;
+//   for (i=0; i<p_elems; i++) {
+//     if (p_xform[i]) {
+//     } else {
+//     }
+//   }
+// #endif
+
+	int i;
+	double dbranchR, dbranchX;
+  double dbranchB; 
+  double dbranchPhaseShift, dbranchTapRatio;
+	
+	gridpack::dynamic_simulation::DSFullBus *bus1 =
+    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
+    gridpack::dynamic_simulation::DSFullBus *bus2 =
+    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
+	
+	//get bus voltages
+	gridpack::ComplexType c_Z, c_branchcurr;
+  gridpack::ComplexType c_Ysh, c_frombusshuntcurr, c_tobusshuntcurr;
+  gridpack::ComplexType c_branchfrombuspq, c_branchtobuspq;
+	p_branchfrombusvolt = bus1->getComplexVoltage();
+	p_branchtobusvolt = bus2->getComplexVoltage();
+	
+	// printf ("Branch volts bus1, %8.4f+%8.4fj,  bus 2, %8.4f+%8.4fj,\n", real(p_branchfrombusvolt), 
+	// 		imag(p_branchfrombusvolt), real(p_branchtobusvolt),imag(p_branchtobusvolt) );
+	
+	if (!p_branchfrombuspq.empty()){
+		p_branchfrombuspq.clear();
+	}
+
+  if (!p_branchtobuspq.empty()){
+		p_branchtobuspq.clear();
+	}
+	
+	for ( i=0 ; i<p_elems ; i++ ) {
+		dbranchR = p_resistance[i];
+		dbranchX = p_reactance[i];
+    dbranchB = p_charging[i];
+    dbranchPhaseShift = p_phase_shift[i];
+    dbranchTapRatio = p_tap_ratio[i];
+
+		// printf ("Branch %d impedance, %8.4f+%8.4fj \n", i, dbranchR, dbranchX); 
+    // printf ("Branch %d shunt susceptance, %8.4fj \n", i, dbranchB); 
+    // printf ("Branch %d phase shift, %8.4f \n", i, dbranchPhaseShift); 
+    // printf ("Branch %d tap ratio, %8.4f \n", i, dbranchTapRatio); 
+
+		c_Z = gridpack::ComplexType(dbranchR, dbranchX);
+    c_Ysh = gridpack::ComplexType(0, dbranchB/2.0); // shunt susceptance at either end of a branch
+		c_branchcurr = (p_branchfrombusvolt - p_branchtobusvolt)/c_Z;
+		p_branchcurrent.push_back(c_branchcurr);
+		// printf ("Branch %d element current, %8.4f+%8.4fj \n", i, real(p_branchcurrent[i]), 
+		// 	imag(p_branchcurrent[i]) );
+
+    c_frombusshuntcurr = c_Ysh * p_branchfrombusvolt;
+    c_tobusshuntcurr = c_Ysh * p_branchtobusvolt;
+    c_branchfrombuspq = p_branchfrombusvolt * conj(c_branchcurr + c_frombusshuntcurr);
+    c_branchtobuspq = p_branchtobusvolt * conj(c_branchcurr - c_tobusshuntcurr);
+
+    p_branchfrombuspq.push_back(c_branchfrombuspq); // active power P and reactive power Q at "from" bus (P_from + j Q_from)
+    p_branchtobuspq.push_back(c_branchtobuspq); // active power P and reactive power Q at "to" bus (P_to + j Q_to)
+
+    // printf ("Branch %d element from bus apparent power, %8.4f+%8.4fj \n", i, real(p_branchfrombuspq[i]), 
+		// 	imag(p_branchfrombuspq[i]) ); 
+
+    // printf ("Branch %d element to bus apparent power, %8.4f+%8.4fj \n", i, real(p_branchtobuspq[i]), 
+		// 	imag(p_branchtobuspq[i]) );
+
+	}
 }
 
 /**
