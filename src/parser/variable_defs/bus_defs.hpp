@@ -76,6 +76,7 @@
  * type: real float
  */
 #define BUS_VOLTAGE_MAG "BUS_VOLTAGE_MAG"
+#define BUS_VMAG_CURRENT "BUS_VMAG_CURRENT"
 
 /**
  * Bus voltage phase angle, in degrees
