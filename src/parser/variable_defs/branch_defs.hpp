@@ -321,4 +321,32 @@
  */
 #define BRANCH_SEQ_BI "BRANCH_SEQ_BI"
 
+/**
+ * Real power from "from" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_FROM_P_CURRENT "BRANCH_FROM_P_CURRENT"
+
+/**
+ * Reactive power from "from" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_FROM_Q_CURRENT "BRANCH_FROM_Q_CURRENT"
+
+/**
+ * Real power from "to" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_TO_P_CURRENT "BRANCH_TO_P_CURRENT"
+
+/**
+ * Reactive power from "to" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_TO_Q_CURRENT "BRANCH_TO_Q_CURRENT"
+
 #endif /* _BRANCH_VAR_HPP_ */
