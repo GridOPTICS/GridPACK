@@ -729,7 +729,7 @@ void gridpack::dynamic_simulation::DSFullFactory::updateData()
   
   for (i=0; i<p_numBranch; i++) {
     data = p_network->getBranchData(i);
-    p_branches[i]->updateBranchPower(data);
+    p_branches[i]->updateData(data);
   }
 }
 
