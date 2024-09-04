@@ -3588,11 +3588,9 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
 }
 
 /**
- * Update data collection object with current values from simulation
- * @param data: DataCollection object containing parameters for this branch
+ * Evaluate branch flows for the to and from bus on the branch
  */
-void gridpack::dynamic_simulation::DSFullBranch::updateBranchPower(
-    boost::shared_ptr<gridpack::component::DataCollection> &data)
+void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 {
   int i;
   double dbranchR, dbranchX;
@@ -3656,6 +3654,17 @@ void gridpack::dynamic_simulation::DSFullBranch::updateBranchPower(
     // 	imag(p_branchtobuspq[i]) );
 
   }
+}
+
+/**
+ * Update data collection object with current values from simulation
+ * @param data: DataCollection object containing parameters for this branch
+ */
+void gridpack::dynamic_simulation::DSFullBranch::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection> &data)
+{
+  int i;
+  evaluateBranchFlow();
   for (i=0; i<p_elems; i++) {
     if (p_xform[i]) {
     } else {

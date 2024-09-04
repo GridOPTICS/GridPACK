@@ -943,10 +943,15 @@ class DSFullBranch
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
+     * Evaluate branch flows for the to and from bus on the branch
+     */
+    void evaluateBranchFlow();
+
+    /**
      * Update data collection object with current values from simulation
      * @param data: DataCollection object containing parameters for this branch
      */
-    void updateBranchPower(boost::shared_ptr<gridpack::component::DataCollection> &data);
+    void updateData(boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
      * Return the complex admittance of the branch
