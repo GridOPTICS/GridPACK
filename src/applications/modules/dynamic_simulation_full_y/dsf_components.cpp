@@ -3593,9 +3593,7 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
 void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 {
   int i;
-  double dbranchR, dbranchX;
-  double dbranchB; 
-  double dbranchPhaseShift, dbranchTapRatio;
+  double pi = 4.0*atan(1.0);
 
   gridpack::dynamic_simulation::DSFullBus *bus1 =
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
@@ -3603,14 +3601,14 @@ void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
 
   //get bus voltages
-  gridpack::ComplexType c_Z, c_branchcurr;
-  gridpack::ComplexType c_Ysh, c_frombusshuntcurr, c_tobusshuntcurr;
-  gridpack::ComplexType c_branchfrombuspq, c_branchtobuspq;
   p_branchfrombusvolt = bus1->getComplexVoltage();
   p_branchtobusvolt = bus2->getComplexVoltage();
 
   // printf ("Branch volts bus1, %8.4f+%8.4fj,  bus 2, %8.4f+%8.4fj,\n", real(p_branchfrombusvolt), 
   // 		imag(p_branchfrombusvolt), real(p_branchtobusvolt),imag(p_branchtobusvolt) );
+
+  // define branch from and to bus p + jq
+  gridpack::ComplexType c_branchfrombuspq, c_branchtobuspq;
 
   if (!p_branchfrombuspq.empty()){
     p_branchfrombuspq.clear();
@@ -3621,37 +3619,72 @@ void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
   }
 
   for ( i=0 ; i<p_elems ; i++ ) {
-    dbranchR = p_resistance[i];
-    dbranchX = p_reactance[i];
-    dbranchB = p_charging[i];
-    dbranchPhaseShift = p_phase_shift[i];
-    dbranchTapRatio = p_tap_ratio[i];
 
-    // printf ("Branch %d impedance, %8.4f+%8.4fj \n", i, dbranchR, dbranchX); 
-    // printf ("Branch %d shunt susceptance, %8.4fj \n", i, dbranchB); 
-    // printf ("Branch %d phase shift, %8.4f \n", i, dbranchPhaseShift); 
-    // printf ("Branch %d tap ratio, %8.4f \n", i, dbranchTapRatio); 
+    // printf ("Branch %d impedance, %8.4f+%8.4fj \n", i, p_resistance[i], p_reactance[i]); 
+    // printf ("Branch %d shunt susceptance, %8.4fj \n", i, p_charging[i]); 
+    // printf ("Branch %d phase shift, %8.4f \n", i, p_phase_shift[i]); 
+    // printf ("Branch %d tap ratio, %8.4f \n", i, p_tap_ratio[i]); 
 
-    c_Z = gridpack::ComplexType(dbranchR, dbranchX);
-    c_Ysh = gridpack::ComplexType(0, dbranchB/2.0); // shunt susceptance at either end of a branch
-    c_branchcurr = (p_branchfrombusvolt - p_branchtobusvolt)/c_Z;
-    p_branchcurrent.push_back(c_branchcurr);
-    // printf ("Branch %d element current, %8.4f+%8.4fj \n", i, real(p_branchcurrent[i]), 
-    // 	imag(p_branchcurrent[i]) );
+    if (p_xform[i]) {
+      // For transformer, we don't consider charging susceptance
+      // TODO: In PSS/E DataFormats.pdf, phase shift value is in degree. 
+      // However, in getTransformer inside this script file, it seems cos and sin take degree as input. Need to confirm.
 
-    c_frombusshuntcurr = c_Ysh * p_branchfrombusvolt;
-    c_tobusshuntcurr = c_Ysh * p_branchtobusvolt;
-    c_branchfrombuspq = p_branchfrombusvolt * conj(c_branchcurr + c_frombusshuntcurr);
-    c_branchtobuspq = p_branchtobusvolt * conj(c_branchcurr - c_tobusshuntcurr);
+      // calculate complex turn ratio, this part of code is referred to getTransformer
+      gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+      gridpack::ComplexType c_xformsecvolt;
+      a = p_tap_ratio[i]*a;
 
-    p_branchfrombuspq.push_back(c_branchfrombuspq); // active power P and reactive power Q at "from" bus (P_from + j Q_from)
-    p_branchtobuspq.push_back(c_branchtobuspq); // active power P and reactive power Q at "to" bus (P_to + j Q_to)
+      // calculate secondary side voltage of idea transformer
+      c_xformsecvolt = p_branchfrombusvolt / a;
 
-    // printf ("Branch %d element from bus apparent power, %8.4f+%8.4fj \n", i, real(p_branchfrombuspq[i]), 
-    // 	imag(p_branchfrombuspq[i]) ); 
+      // calculate secondary side current and primary side current
+      gridpack::ComplexType c_xformpricur, c_xformseccur, c_xformz;
+      c_xformz = gridpack::ComplexType(p_resistance[i], p_reactance[i]);
+      c_xformseccur = (c_xformsecvolt - p_branchtobusvolt)/c_xformz;
+      c_xformpricur = c_xformseccur / a; // assume pri and sec currents of transformer are in the same direction
 
-    // printf ("Branch %d element to bus apparent power, %8.4f+%8.4fj \n", i, real(p_branchtobuspq[i]), 
-    // 	imag(p_branchtobuspq[i]) );
+      // calculate primary and secondary side complex power
+      c_branchfrombuspq = p_branchfrombusvolt * conj(c_xformpricur);
+      c_branchtobuspq = p_branchtobusvolt * conj(c_xformseccur);
+
+      // store from and to buses complex power into vectors
+      p_branchfrombuspq.push_back(c_branchfrombuspq); // active power P and reactive power Q at "from" bus (P_from + j Q_from)
+      p_branchtobuspq.push_back(c_branchtobuspq); // active power P and reactive power Q at "to" bus (P_to + j Q_to)
+
+    } else {
+      // For transmission line, we consider charging susceptance
+      gridpack::ComplexType c_Z, c_branchcurr;
+      gridpack::ComplexType c_Ysh, c_frombusshuntcurr, c_tobusshuntcurr;
+
+      // calculate line impedance and charging susceptance (on either end of the line)
+      c_Z = gridpack::ComplexType(p_resistance[i], p_reactance[i]);
+      c_Ysh = gridpack::ComplexType(0, p_charging[i]/2.0); // shunt susceptance at either end of a branch
+
+      // calculate line current
+      c_branchcurr = (p_branchfrombusvolt - p_branchtobusvolt)/c_Z;
+  
+      // printf ("Branch %d element current, %8.4f+%8.4fj \n", i, real(c_branchcurr), 
+      // 	imag(c_branchcurr) );
+
+      // calculate currents flowing through charging susceptance on from and to ends
+      c_frombusshuntcurr = c_Ysh * p_branchfrombusvolt;
+      c_tobusshuntcurr = c_Ysh * p_branchtobusvolt;
+
+      // calculate the p + jq at from and to buses
+      c_branchfrombuspq = p_branchfrombusvolt * conj(c_branchcurr + c_frombusshuntcurr);
+      c_branchtobuspq = p_branchtobusvolt * conj(c_branchcurr - c_tobusshuntcurr);
+
+      // store from and to buses complex power into vectors
+      p_branchfrombuspq.push_back(c_branchfrombuspq); // active power P and reactive power Q at "from" bus (P_from + j Q_from)
+      p_branchtobuspq.push_back(c_branchtobuspq); // active power P and reactive power Q at "to" bus (P_to + j Q_to)
+
+      // printf ("Branch %d element from bus apparent power, %8.4f+%8.4fj \n", i, real(p_branchfrombuspq[i]), 
+      // 	imag(p_branchfrombuspq[i]) ); 
+
+      // printf ("Branch %d element to bus apparent power, %8.4f+%8.4fj \n", i, real(p_branchtobuspq[i]), 
+      // 	imag(p_branchtobuspq[i]) );
+    }
 
   }
 }
@@ -3666,25 +3699,25 @@ void gridpack::dynamic_simulation::DSFullBranch::updateData(
   int i;
   evaluateBranchFlow();
   for (i=0; i<p_elems; i++) {
-    if (p_xform[i]) {
-    } else {
-      double pf = real(p_branchfrombuspq[i]);
-      double qf = imag(p_branchfrombuspq[i]);
-      double pt = real(p_branchtobuspq[i]);
-      double qt = imag(p_branchtobuspq[i]);
-      if (!data->setValue(BRANCH_FROM_P_CURRENT, pf, i)) {
-        data->addValue(BRANCH_FROM_P_CURRENT, pf, i);
-      }
-      if (!data->setValue(BRANCH_FROM_Q_CURRENT, qf, i)) {
-        data->addValue(BRANCH_FROM_Q_CURRENT, qf, i);
-      }
-      if (!data->setValue(BRANCH_TO_P_CURRENT, pt, i)) {
-        data->addValue(BRANCH_TO_P_CURRENT, pt, i);
-      }
-      if (!data->setValue(BRANCH_TO_Q_CURRENT, qt, i)) {
-        data->addValue(BRANCH_TO_Q_CURRENT, qt, i);
-      }
+    // Here, it does not need to differentiate transformers or lines for storing the variables.
+    // Treating both transformers and lines as branches
+    double pf = real(p_branchfrombuspq[i]);
+    double qf = imag(p_branchfrombuspq[i]);
+    double pt = real(p_branchtobuspq[i]);
+    double qt = imag(p_branchtobuspq[i]);
+    if (!data->setValue(BRANCH_FROM_P_CURRENT, pf, i)) {
+      data->addValue(BRANCH_FROM_P_CURRENT, pf, i);
     }
+    if (!data->setValue(BRANCH_FROM_Q_CURRENT, qf, i)) {
+      data->addValue(BRANCH_FROM_Q_CURRENT, qf, i);
+    }
+    if (!data->setValue(BRANCH_TO_P_CURRENT, pt, i)) {
+      data->addValue(BRANCH_TO_P_CURRENT, pt, i);
+    }
+    if (!data->setValue(BRANCH_TO_Q_CURRENT, qt, i)) {
+      data->addValue(BRANCH_TO_Q_CURRENT, qt, i);
+    }
+    
   }
 }
 
