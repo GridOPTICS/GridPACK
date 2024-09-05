@@ -29,6 +29,7 @@ void BaseEMTExcModel::load(const boost::shared_ptr<gridpack::component::DataColl
         data, int idx)
 {
   data->getValue(BUS_NUMBER, &busnum);
+  data->getValue(GENERATOR_ID,&id, idx); // Generator ID
   data->getValue(GENERATOR_STAT,&status,idx); // Generator status
   data->getValue(CASE_SBASE,&sbase); // System MVAbase, used in conversion from machine base to system base.
   data->getValue(GENERATOR_MBASE,&mbase,idx); // Machine base (in MVA)
