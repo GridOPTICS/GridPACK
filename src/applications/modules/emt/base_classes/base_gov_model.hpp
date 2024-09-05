@@ -237,7 +237,9 @@ public:
 protected:
   double        VD, VQ;
   double        p_va, p_vb, p_vc; // Instantaneous bus voltages
+  int           busnum;
   int           status; /**< Machine status */
+  std::string   id;
   double        shift; // shift (multiplier) used in the Jacobian calculation.
   double        p_time = 0.0; // Current time
 
