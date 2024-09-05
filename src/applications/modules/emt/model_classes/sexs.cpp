@@ -143,6 +143,14 @@ void Sexs::init(gridpack::RealType* xin)
     // To initialize the model blocks, we need to go backwards starting
     // from initializing second block and then the first one and then
     // calculating the model input Vref
+
+    if(Efd >= EMAX) {
+      Efd = EMAX;
+      printf("Generator %s at bus %d: Efd = %lf > Emax = %lf\n",busnum,id.c_str(),Efd,EMAX);
+    } else if(Efd <= EMIN) {
+      Efd = EMIN;
+      printf("Generator %s at bus %d: Efd = %lf < Emin = %lf\n",busnum,id.c_str(),Efd,EMIN);
+    }
     
     // Initialize second block
     if(!zero_TE) {

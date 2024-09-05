@@ -199,6 +199,7 @@ void Gast::setValues(gridpack::RealType *val)
 {
   gridpack::RealType *values = val+offsetb; // governor array starts from this location
 
+  if(integrationtype == EXPLICIT) return;
   if(p_mode == XVECTOBUS) {
     x1 = values[0];
     x2 = values[1];
