@@ -44,8 +44,12 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
     p_hasInductance = true;
   }
 
-  if(R < 0 || X < 0.0 || Bc < 0) {
-    printf("%d -- %d: R = %lf, X = %lf, B = %lf\n",fbusnum,tbusnum,R,X,Bc);
+  if(R <= 0) {
+    printf("%d -- %d: R = %lf\n",fbusnum,tbusnum,R);
+  }
+
+  if(X <= 0.0) {
+    printf("%d -- %d: X = %lf\n",fbusnum,tbusnum,X);
   }
 
   R1 = R; 

@@ -31,6 +31,7 @@
 #include <model_classes/gdform.hpp>
 #include <model_classes/tgov1.hpp>
 #include <model_classes/gast.hpp>
+#include <model_classes/hygov.hpp>
 #include <model_classes/lumpedline.hpp>
 #include <model_classes/transformer.hpp>
 
@@ -797,6 +798,17 @@ void EmtBus::load(const
 	    
 	    // Handle governor data loading
 	    gast->load(data,i); // load governor model
+	  } else if(type == "HYGOV") {
+	    Hygov *hygov;
+	    hygov = new Hygov;
+	    hygov->setGenerator(p_gen[i]);
+
+	    boost::shared_ptr<BaseEMTGovModel> gov;
+	    gov.reset(hygov);
+	    p_gen[i]->setGovernor(gov);
+
+	    // Handle governor data loading
+	    hygov->load(data,i); // load governor model
 	  }
 	}
       }
