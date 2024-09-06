@@ -8,7 +8,7 @@
  * @file   esst1a.cpp
  *  
  * @brief ESST1A exciter model implementation 
- * @last updated by Shuangshuang Jin on Aug 30, 2024  
+ * @last updated by Shuangshuang Jin on Sep 06, 2024  
  *
  *
  */
@@ -265,13 +265,14 @@ void Esst1aExc::init(gridpack::RealType* xin)
     LVGate_blk.setparams(Voel); 
 
     // for feedback block, if time constant TF is too small, make it bigger.
-    if (zero_TF) Tf = 2.0 * TS_THRESHOLD * ts;
+    // if (zero_TF) Tf = 2.0 * TS_THRESHOLD * ts; // what is ts?
     double a[2], b[2];
     a[0] = Tf; a[1] = 1.0;
     b[0] = Kf; b[1] = 0.0;
     Feedback_blkF.setcoeffs(a, b);
     
     //Vterm = mag; // How to get mag?
+    Vterm = Ec;
     
     Vf = Feedback_blkF.init_given_u(Efd);
     
