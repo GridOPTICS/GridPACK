@@ -21,6 +21,7 @@ with warnings.catch_warnings():
 print("============ Initialized Environment =============")
 
 # reset environment
+print("============ Environment Reset =============")
 obs = env.reset()
 
 # print network analytics
@@ -30,9 +31,13 @@ print("Number of loads: %d" % (obs.n_load))
 print("Number of lines: %d" % (obs.n_line))
 print("Number of storage units: %d" % (obs.n_storage))
 
-## step environment
-# obs, reward, done, info = env.step(env.action_space())
+# step environment
+counter = 0
+while counter < 5:
+    obs, reward, done, info = env.step(env.action_space())
+    counter += 1
 
-# print(env.observation_space)
+print(env.observation_space)
+
 # plot_helper = PlotMatplot(env.observation_space)
 # fig = plot_helper.plot_layout()
