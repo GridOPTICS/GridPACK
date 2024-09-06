@@ -3698,6 +3698,7 @@ void gridpack::dynamic_simulation::DSFullBranch::updateData(
 {
   int i;
   evaluateBranchFlow();
+  updateBranchCurrent();
   for (i=0; i<p_elems; i++) {
     // Here, it does not need to differentiate transformers or lines for storing the variables.
     // Treating both transformers and lines as branches
@@ -3717,7 +3718,14 @@ void gridpack::dynamic_simulation::DSFullBranch::updateData(
     if (!data->setValue(BRANCH_TO_Q_CURRENT, qt, i)) {
       data->addValue(BRANCH_TO_Q_CURRENT, qt, i);
     }
-    
+    pf = real(p_branchcurrent[i]); 
+    qf = imag(p_branchcurrent[i]); 
+    if (!data->setValue(BRANCH_IRFLOW_CURRENT, pf, i)) {
+      data->addValue(BRANCH_IRFLOW_CURRENT, pf, i);
+    }
+    if (!data->setValue(BRANCH_IIFLOW_CURRENT, qf, i)) {
+      data->addValue(BRANCH_IIFLOW_CURRENT, qf, i);
+    }
   }
 }
 
