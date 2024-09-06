@@ -350,31 +350,17 @@
 #define BRANCH_TO_Q_CURRENT "BRANCH_TO_Q_CURRENT"
 
 /**
- * Real branch current from "from" bus
+ * Real branch current
  * type: real float
  * indexed
  */
-#define BRANCH_FROM_IRFLOW_CURRENT "BRANCH_FROM_IRFLOW_CURRENT"
+#define BRANCH_IRFLOW_CURRENT "BRANCH_IRFLOW_CURRENT"
 
 /**
- * Imaginary branch current from "from" bus
+ * Imaginary branch current
  * type: real float
  * indexed
  */
-#define BRANCH_FROM_IIFLOW_CURRENT "BRANCH_FROM_IIFLOW_CURRENT"
-
-/**
- * Real branch current from "to" bus
- * type: real float
- * indexed
- */
-#define BRANCH_TO_IRFLOW_CURRENT "BRANCH_TO_IRFLOW_CURRENT"
-
-/**
- * Imaginary branch current from "to" bus
- * type: real float
- * indexed
- */
-#define BRANCH_TO_IIFLOW_CURRENT "BRANCH_TO_IIFLOW_CURRENT"
+#define BRANCH_IIFLOW_CURRENT "BRANCH_IIFLOW_CURRENT"
 
 #endif /* _BRANCH_VAR_HPP_ */
