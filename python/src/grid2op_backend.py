@@ -136,15 +136,11 @@ class GridPACKBackend(Backend):
             full_path = os.path.join(full_path, filename)
         
         # solve the power flow - to load the grid data
-        print('=========== Before Solving Power Flow ===================')
-        print(full_path)
         self._hadapp.solvePowerFlowBeforeDynSimu(full_path, 0)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
-        print ('Finished Solving Power Flow')
         self._hadapp.readGenerators();
         self._hadapp.readSequenceData();
         self._hadapp.initialize();
         self._hadapp.setGeneratorWatch();
-
         
         # Building grid object from hadapp
         self._grid = self.build_grid()
@@ -323,6 +319,94 @@ class GridPACKBackend(Backend):
         else:
             return pd.DataFrame(columns=columns)
 
+    def _update_gen_load_data(self):
+        # load and generator data
+        # NOTE: Generator and Load values change only when there are dynamic load/generators. If they are not dynamic, the code currently returns the previous value. 
+        gen_data = []
+        load_data = []
+        for bus in range(self.n_sub):
+            # bus list
+            for g in range(self._hadapp.numGenerators(bus)):
+                # gen data
+                gen_data.append({
+                    "p_mw": self._hadapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g),
+                    "q_mvar": self._hadapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g),
+                    "vm_pu": self._hadapp.getBusInfoReal(bus, 'BUS_VOLTAGE_MAG')
+                })
+            for l in range(self._hadapp.numLoads(bus)):
+                # load list
+                load_data.append({
+                    "p_mw": self._hadapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l),
+                    "q_mvar": self._hadapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l)
+                })
+            
+        self._grid.res_load = pd.DataFrame(load_data)
+        self._grid.res_gen = pd.DataFrame(gen_data) # p and q also gets multiplied by 100 - CASE_SBASE
+    
+    def _update_line_transformer_data(self):
+        # line level data - lines and branches could be different. The two end points can have multiple lines but only one branch. 
+        nbranch = self._hadapp.totalBranches()
+        line_data = []
+        # 
+        for branch in range(0, nbranch):
+            n_elements = self._hadapp.getBranchInfoInt(branch, 'BRANCH_NUM_ELEMENTS')
+            for elem_num in range(n_elements):
+                # empty object
+                line_dict = dict()
+                line_dict["branch_num"] = branch
+                line_dict["line_num"] = elem_num
+
+                # end points
+                (f, t) = self._hadapp.getBranchEndpoints(branch)
+                line_dict["from_bus"] = f
+                line_dict["to_bus"] = t
+                
+                # from voltage
+                from_bus = self._grid.bus.index[self._grid.bus['id'] == f].values[0]
+                line_dict["vm_from_pu"] = self._hadapp.getBusInfoReal(from_bus, 'BUS_VOLTAGE_MAG') # * Bus_basekV
+                
+                # to voltage
+                to_bus = self._grid.bus.index[self._grid.bus['id'] == t].values[0]
+                line_dict["vm_to_pu"] = self._hadapp.getBusInfoReal(to_bus, 'BUS_VOLTAGE_MAG') # * Bus_basekV
+
+                # p-values
+                line_dict["p_from_mw"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num)
+                line_dict["p_to_mw"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', elem_num)
+
+                # q-values
+                line_dict["q_from_mvar"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT', elem_num)
+                line_dict["q_to_mvar"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT', elem_num)
+
+                # current values
+                line_dict["i_from_ka"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num)
+                line_dict["i_to_ka"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num)
+
+                line_data.append(line_dict)
+        
+        # res line data using random data generator
+        # self._grid.res_line = self._random_data_generator(self._grid.line.shape[0], columns=self._grid.res_line.columns)
+        # self._grid.res_line["vm_from_pu"] = vm_from_pu
+        # self._grid.res_line["vm_to_pu"] = vm_to_pu # * Bus_basekV
+        # print(self._grid.res_line)
+        self._grid.res_line = pd.DataFrame(line_data)
+        
+        # transformer data
+        self._grid.res_trafo = self._random_data_generator(self._grid.trafo.shape[0], columns=self._grid.res_trafo.columns)
+    
+    def _update_data(self):
+        # to get current data from dynamic simulation to data collection object
+        self._hadapp.updateData()
+        
+        # counter
+        self._counter += 1
+        print(f"Counter value: {self._counter}")
+
+        # update data for loads and generators
+        self._update_gen_load_data()
+
+        # update line and transformer data
+        self._update_line_transformer_data()
+    
     def runpf(self, is_dc : bool=False):
         '''
         # called for each "step", thousands of times
@@ -331,66 +415,15 @@ class GridPACKBackend(Backend):
         # execute one simulation time step	
         self._hadapp.executeOneSimuStep()  
 
-        # to get current data from dynamic simulation to data collection object
-        self._hadapp.updateData()
-        
-        # counter
-        self._counter += 1
-        print(f"Counter value: {self._counter}")
+        # update data in result dataframes
+        self._update_data()
 
-        # load and generator data
-        self._grid.res_load = self._grid.load[["p_mw", "q_mvar"]]
-        self._grid.res_gen = self._grid.gen[["p_mw", "q_mvar", "vm_pu"]] # p and q also gets multiplied by 100 - CASE_SBASE
-        
-        # line level data - lines and branches could be different. The two end points can have multiple lines but only one branch. 
-        nbranch = self._hadapp.totalBranches()
-        vm_from_pu = []
-        vm_to_pu = []
-        # 
-        for branch in range(0, nbranch):
-            (f, t) = self._hadapp.getBranchEndpoints(branch)
-            # from voltage
-            from_bus = self._grid.bus.index[self._grid.bus['id'] == f].values[0]
-            vm_from_pu.append(self._hadapp.getBusInfoReal(from_bus, 'BUS_VOLTAGE_MAG')) # * Bus_basekV
-            
-            # to voltage
-            to_bus = self._grid.bus.index[self._grid.bus['id'] == t].values[0]
-            vm_to_pu.append(self._hadapp.getBusInfoReal(to_bus, 'BUS_VOLTAGE_MAG')) # * Bus_basekV
-
-            # branch values
-            print(
-                "====================BRANCH P and Q values===================",
-                self._hadapp.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT'),
-                self._hadapp.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT'),
-                self._hadapp.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT'),
-                self._hadapp.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT')
-            )
-        
-        # convert to data frame
-        self._grid.res_line = self._random_data_generator(self._grid.line.shape[0], columns=self._grid.res_line.columns)
-        self._grid.res_line["vm_from_pu"] = vm_from_pu
-        self._grid.res_line["vm_to_pu"] = vm_to_pu # * Bus_basekV
-        
-        # transformer data
-        self._grid.res_trafo = self._random_data_generator(self._grid.trafo.shape[0], columns=self._grid.res_trafo.columns)
-        
-        print("================= Test Gen and Load =================")
-        # NOTE: Generator and Load values change only when there are dynamic load/generators. If they are not dynamic, they remain unchanged and we won't see any value in *_CURRENT variables. One possible point of failure is that if the variable name is types incorrectly, then also it will return None and user might end up thinking that the component is not dynamic. One needs to be cautious about that. 
-        for bus in range(self.n_sub):
-            # bus list
-            print(f"Bus {bus} Voltage Magnitude {self._hadapp.getBusInfoReal(bus, 'BUS_VOLTAGE_MAG')}")
-            for g in range(self._hadapp.numGenerators(bus)):
-                # generator list
-                print(f"Generator {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', g)} P(MW): {self._hadapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g)}")
-                print(f"Generator {self._hadapp.getBusInfoString(bus, 'GENERATOR_ID', g)} Q(MVar): {self._hadapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g)}")
-            for l in range(self._hadapp.numLoads(bus)):
-                # load list
-                print(f"Load {self._hadapp.getBusInfoString(bus, 'LOAD_ID', l)} P(MW): {self._hadapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l)}")
-                print(f"Load {self._hadapp.getBusInfoString(bus, 'LOAD_ID', l)} Q(MW): {self._hadapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l)}")
-            
-        # print(self._grid.trafo, self._grid.res_trafo)
-        sys.exit(1)
-        
+        # print(
+        #     self._grid.res_gen, "\n",
+        #     self._grid.res_load, "\n",
+        #     self._grid.res_line, "\n",
+        #     self._grid.res_trafo
+        # )
         
         return True, None    
     
