@@ -70,7 +70,13 @@ void Gast::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
   
   // Set up transfer function blocks
   if(integrationtype != IMPLICIT) {
+    /* Create string for setting name */
+    std::string blkhead = std::to_string(busnum) + "_" + id + "GAST_";
+
+    std::string delay_block_T1_name = blkhead + "delay_blk_T1";
+    delay_blk_T1.setname(delay_block_T1_name.c_str());
     delay_blk_T1.setparams(1.0,T1,Vmin,Vmax,-1000.0,1000.0);
+    
     delay_blk_T2.setparams(1.0,T2);
     delay_blk_T3.setparams(1.0,T3);
   }

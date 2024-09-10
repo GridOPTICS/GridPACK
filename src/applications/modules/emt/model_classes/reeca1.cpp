@@ -163,9 +163,14 @@ void Reeca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Ipmin = 0.0;
   Iqmax = Imax;
   Iqmin = -Iqmax;
+
+  /* Create string for setting name */
+  std::string blkhead = std::to_string(busnum) + "_" + id + "REECA1_";
   
   /* Set up blocks */
   // Vt_filter block
+  std::string Vt_filter_block_name = blkhead + "Vt_filter_blk";
+  Vt_filter_blk.setname(Vt_filter_block_name.c_str());
   Vt_filter_blk.setparams(1.0,Trv);
   // Voltage error deadband
   V_err_deadband.setparams(dbd1,dbd2);
@@ -176,14 +181,20 @@ void Reeca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Iqcmd_limit_blk.setparams(1.0,Iqmin,Iqmax);
   
   // Pe filter block
+  std::string Pe_filter_blk_name = blkhead + "Pe_filter_blk";
+  Pe_filter_blk.setname(Pe_filter_blk_name.c_str());
   Pe_filter_blk.setparams(1.0,Tp);
   // Q limiter block
   Qlim_blk.setparams(1.0,Qmin,Qmax);
   // Q PI control
+  std::string Q_PI_blk_name = blkhead + "Q_PI_blk";
+  Q_PI_blk.setname(Q_PI_blk_name.c_str());
   Q_PI_blk.setparams(Kqp,Kqi,Vmin,Vmax,-10000.0,10000.0);
   // Vlimiter block
   Vlim_blk.setparams(1.0,Vmin,Vmax);
   // Verr PI control
+  std::string Verr_PI_blk_name = blkhead + "Verr_PI_blk";
+  Verr_PI_blk.setname(Verr_PI_blk_name.c_str());
   Verr_PI_blk.setparams(Kvp,Kvi);
   // Iq lag block
   Iq_lag_blk.setparams(1.0,Tiq);
@@ -211,6 +222,8 @@ void Reeca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Pref_limit_blk.setparams(1.0,-1000.0,1000.0,dPmin,dPmax);
 
   // Pord block
+  std::string Pord_blk_name = blkhead + "Pord_blk";
+  Pord_blk.setname(Pord_blk_name.c_str());
   Pord_blk.setparams(1.0,Tpord,Pmin,Pmax,-1000.0,1000.0);
 
   // Ipcmd limiter block

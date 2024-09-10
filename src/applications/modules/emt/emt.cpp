@@ -287,9 +287,6 @@ void Emt::setup()
     catch(int size) {
       std::cout << "Cannot read dynamic data file %s\n" << filename;
     }
-
-    printf("[%d]: Came here 3\n", rank());
-
   } else if (p_configcursor->get("networkConfiguration_v34",&networkfilename)) {
     gridpack::parser::PTI34_parser<EmtNetwork> parser(emt_network);
 

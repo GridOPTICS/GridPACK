@@ -6,6 +6,7 @@ Cblock::Cblock()
   p_order = 1; // For future use
   p_xmin  = p_ymin = p_dxmin = -1000.0;
   p_xmax  = p_ymax = p_dxmax =  1000.0;
+  strcpy(name,"cblock");
 }
 
 Cblock::~Cblock(void)
@@ -148,6 +149,18 @@ double Cblock::init_given_u(double u)
     x[0] = -p_B[0]/p_A[0]*u;
     y    = p_C[0]*x[0] + p_D[0]*u;
   }
+  if(x[0] < p_xmin) {
+    printf("Block %s initial state %lf out of min. bounds %lf\n",name,x[0],p_xmin);
+  } else if(x[0] > p_xmax) {
+    printf("Block %s initial state %lf out of max. bounds %lf\n",name,x[0],p_xmax);
+  }
+
+  if(y < p_ymin) {
+    printf("Block %s initial output %lf out of min. bounds %lf\n",name,y,p_ymin);
+  } else if(y > p_ymax) {
+    printf("Block %s initial output %lf out of max. bounds %lf\n",name,y,p_ymax);
+  }
+  
   return y;
 }
 
@@ -161,6 +174,19 @@ double Cblock::init_given_y(double y)
     u = y/(p_D[0] - p_C[0]*p_B[0]/p_A[0]);
     x[0] = -p_B[0]/p_A[0]*u;
   }
+
+  if(x[0] < p_xmin) {
+    printf("Block %s initial state %lf out of min. bounds %lf\n",name,x[0],p_xmin);
+  } else if(x[0] > p_xmax) {
+    printf("Block %s initial state %lf out of max. bounds %lf\n",name,x[0],p_xmax);
+  }
+
+  if(y < p_ymin) {
+    printf("Block %s initial output %lf out of min. bounds %lf\n",name,y,p_ymin);
+  } else if(y > p_ymax) {
+    printf("Block %s initial output %lf out of max. bounds %lf\n",name,y,p_ymax);
+  }
+  
   return u;
 }
 
@@ -181,6 +207,8 @@ PIControl::PIControl(void): Cblock()
   setxlimits(-1000.0,1000.0);
   setdxlimits(-1000.0,1000.0);
   setylimits(-1000.0,1000.0);
+  strcpy(name,"PI controller");
+    
 }
 
 void PIControl::setparams(double Kp, double Ki)
@@ -230,6 +258,7 @@ Filter::Filter(void)
   setxlimits(-1000.0,1000.0);
   setdxlimits(-1000.0,1000.0);
   setylimits(-1000.0,1000.0);
+  strcpy(name,"Filter");
 }
 
 void Filter::setparams(double K,double T)
@@ -277,7 +306,8 @@ LeadLag::LeadLag(void)
 {
   setxlimits(-1000.0,1000.0);
   setdxlimits(-1000.0,1000.0);
-  setylimits(-1000.0,1000.0);  
+  setylimits(-1000.0,1000.0);
+  strcpy(name,"LeadLag");
 }
 
 void LeadLag::setparams(double TA,double TB)
@@ -322,6 +352,7 @@ void LeadLag::setparams(double TA,double TB,double xmin,double xmax,double dxmin
 
 Integrator::Integrator(void)
 {
+  strcpy(name,"Integrator");
 }
 
 void Integrator::setparams(double T)
