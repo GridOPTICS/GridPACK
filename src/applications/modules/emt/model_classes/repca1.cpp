@@ -83,11 +83,19 @@ void Repca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 
   // Set constants
   Freq_ref = 1.0;
-  
+
+  /* Create string for setting name */
+  std::string blkhead = std::to_string(busnum) + "_" + id + "REPCA1_";
+
   // Set up model blocks
   // V filter block
+  std::string V_filter_block_name = blkhead + "V_filter_blk";
+  V_filter_blk.setname(V_filter_block_name.c_str());
   V_filter_blk.setparams(1.0,Tfltr);
+  
   // Q branch filter block
+  std::string Qbranch_filter_block_name = blkhead + "Qbranch_filter_blk";
+  Qbranch_filter_blk.setname(Qbranch_filter_block_name.c_str());
   Qbranch_filter_blk.setparams(1.0,Tfltr);
 
   // VQerr deadband block
@@ -97,24 +105,35 @@ void Repca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   VQerr_limiter.setparams(1.0,Emin,Emax);
 
   // Qref PI controller
+  std::string Qref_PI_block_name = blkhead + "Qref_PI_blk";
+  Qref_PI_blk.setname(Qref_PI_block_name.c_str());
   Qref_PI_blk.setparams(Kp,Ki,Qmin,Qmax,-1000.0,1000.0);
 
   // Qref lead lag
+  std::string Qref_leadlag_block_name = blkhead + "Qref_leadlag_blk";
+  Qref_leadlag_blk.setname(Qref_leadlag_block_name.c_str());
   Qref_leadlag_blk.setparams(Tft,Tfv);
 
   // Frequency error deadband
   Freqerr_deadband.setparams(fdbd1,fdbd2);
 
   // Pbranch filter block
+  std::string Pbranch_filter_block_name = blkhead + "Pbranch_filter_blk";
+  Pbranch_filter_blk.setname(Pbranch_filter_block_name.c_str());
+
   Pbranch_filter_blk.setparams(1.0,Tp);
 
   // Frequency error limiter
   Freqerr_limiter.setparams(1.0,femin,femax);
 
   // Pref PI block
+  std::string Pref_PI_block_name = blkhead + "Pref_PI_blk";
+  Pref_PI_blk.setname(Pref_PI_block_name.c_str());
   Pref_PI_blk.setparams(Kpg,Kig,Pmin,Pmax,-1000.0,1000.0);
 
   // Pref filter block
+  std::string Pref_filter_block_name = blkhead + "Pref_filter_blk";
+  Pref_filter_blk.setname(Pref_filter_block_name.c_str());
   Pref_filter_blk.setparams(1.0,Tg);
 }
 

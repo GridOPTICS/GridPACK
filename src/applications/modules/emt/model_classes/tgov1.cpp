@@ -60,7 +60,13 @@ void Tgov1::load(const boost::shared_ptr<gridpack::component::DataCollection> da
 
   // Set up transfer function blocks
   if(integrationtype != IMPLICIT) {
+    /* Create string for setting name */
+    std::string blkhead = std::to_string(busnum) + "_" + id + "TGOV1_";
+
     leadlag_blk.setparams(T2,T3);
+
+    std::string delay_block_name = blkhead + "delay_blk";
+    delay_blk.setname(delay_block_name.c_str());
     delay_blk.setparams(1.0,T1,Vmin,Vmax,-1000.0,1000.0);
   }
 }
