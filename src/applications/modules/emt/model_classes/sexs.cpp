@@ -102,6 +102,9 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
 
   if(integrationtype != IMPLICIT) {
     // Set up blocks
+    /* Create string for setting name */
+    std::string blkhead = std::to_string(busnum) + "_" + id + "SEXS_";
+
     // Set parameters for the first block
     leadlagblock.setparams(TA,TB);
 
@@ -112,6 +115,8 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
     
     // Set parameters for the second block
     if(!zero_TE) {
+      std::string E_filter_block_name = blkhead + "E_filter_blk";
+      filterblock.setname(E_filter_block_name.c_str());
       filterblock.setparams(K,TE,EMIN,EMAX,-1000.0,1000);
     } else {
       gainblock.setparams(K,EMIN,EMAX);
@@ -124,7 +129,7 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
 
 /**
  * Initialize exciter model before calculation
- * @para
+ * @param
  */
 void Sexs::init(gridpack::RealType* xin)
 {

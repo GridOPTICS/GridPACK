@@ -75,6 +75,8 @@ class Cblock
 
   double x[1];      /* State variable x */
 
+  char   name[128];  /* Control block name */
+  
   /**
      UPDATESTATE - Updates the linear control block state variable
 
@@ -121,6 +123,17 @@ class Cblock
 
  public:
   Cblock();
+
+  /**
+     SETNAME - set name for the linear control block
+     
+     Inputs:
+     name - name of the control block
+  **/
+  void setname(const char blockname[]) {
+    strcpy(name, blockname);
+  }
+
 
   /**
      SETCOEFFS - Sets the coefficients a,b for the control block transfer function
