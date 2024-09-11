@@ -22,9 +22,20 @@ virtual void setExchange()
 \end{Verbatim}
 }
 
-The \texttt{\textbf{setComponents}} method pushes topology information available from the network into the individual buses and branches using methods in the base component classes. This operation ensures that operations such as \texttt{\textbf{getNeighborBuses}}, etc. work correctly. The topology information is originally only available in the network and it requires additional operations to imbed it in individual buses and branches. Being able to access this information directly from the buses and branches can simplify application programming substantially.
+The \texttt{\textbf{setComponents}} method pushes topology information available
+from the network into the individual buses and branches using methods in the
+base component classes. This operation ensures that operations in the
+\texttt{\textbf{BaseBusComponent}} and \texttt{\textbf{BaseBranchComponent}}
+classes, such as \texttt{\textbf{getNeighborBuses}}, etc. work correctly. The topology information is originally only available in the network and it requires additional operations to imbed it in individual buses and branches. Being able to access this information directly from the buses and branches can simplify application programming substantially.
 
-The \texttt{\textbf{setExchange}} function allocates buffers and sets up pointers in the components so that exchange of data between buses and branches can occur and ghost buses and branches can receive updated values of the exchanged parameters. This function loops over the \texttt{\textbf{getXCBusSize}} and \texttt{\textbf{setXCBuf}} commands defined in the network component classes and guarantees that buffers are properly allocated and exposed to the network components.
+The \texttt{\textbf{setExchange}} function allocates buffers and sets up
+pointers in the components so that exchange of data between buses and branches
+can occur and ghost buses and branches can receive updated values of the
+exchanged parameters. This function loops over the
+\texttt{\textbf{getXCBusSize}} and \texttt{\textbf{setXCBuf}} commands defined
+in the network component classes and guarantees that buffers are properly
+allocated and exposed to the network components. If the application does not use
+exchanges, then this operation is unecessary and need not be called.
 
 Two other functions are defined in the \texttt{\textbf{BaseFactory}} class as convenience functions. The first is
 
@@ -44,7 +55,22 @@ virtual void setMode(int mode)
 \end{Verbatim}
 }
 
+
 This function loops over all buses and branches in the network and invokes each bus and branch \texttt{\textbf{setMode}} method. It can be used to set the behavior of the entire network in single function call.
+The \texttt{\textbf{setMode}} function has been refined to include
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void setBusMode(int mode)
+
+virtual void setBranchMode(int mode)
+\end{Verbatim}
+}
+
+These functions can be used to set modes on only the bus or branch classes. In
+some instances, a matrix or vector may be constructed using only buses or
+branches.
 
 Some utility functions in the \texttt{\textbf{BaseFactory}} class that are occasionally useful are
 
@@ -58,3 +84,18 @@ bool checkTrueSomewhere(bool flag)
 }
 
 The \texttt{\textbf{checkTrue}} function returns true if the variable \texttt{\textbf{flag}} is true on all processors, otherwise it returns false. This function can be used to check if a condition has been violated somewhere in the network. The \texttt{\textbf{checkTrueSomewhere}} function returns true if \texttt{\textbf{flag}} is true on at least one processor. This function can be used to check if a condition is true anywhere in the system.
+
+In the context of debugging, it is occasionally useful to dump the contents of
+the \texttt{\textbf{DataCollection}} objects associated with the network
+components. The factory command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void dumpData()
+\end{Verbatim}
+}
+
+will list the contents of each data collection object in the network to standard
+out. This output can be large for large networks so the use of this function
+should be restricted to smaller networks.

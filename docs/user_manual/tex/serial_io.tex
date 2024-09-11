@@ -88,7 +88,7 @@ busIO.write();
 \end{Verbatim}
 }
 
-The first call creates the \texttt{\textbf{SerialIOBus}} object and specifies the internal buffers size (128 bytes). This buffer must be large enough to incorporate the output from any call to one of the \texttt{\textbf{serialWrite}} calls in the bus components. The next two lines print out the header on top of the bus listing and the last line generates the listing itself. The \texttt{\textbf{serialWrite}} implementation looks like
+The first call creates the \texttt{\textbf{SerialIOBus}} object and specifies the internal buffer size (128 bytes). This buffer must be large enough to incorporate the output from any call to one of the \texttt{\textbf{serialWrite}} calls in the bus components. The next two lines print out the header on top of the bus listing and the last line generates the listing itself. The \texttt{\textbf{serialWrite}} implementation looks like
 
 {
 \color{red}
@@ -107,7 +107,7 @@ bool gridpack::myapp::MyBus::serialWrite(char *string,
 
 For this simple case, \texttt{\textbf{signal}} is ignored as well as the variable
 \texttt{\textbf{bufsize}}. The return value of the function is set to
-\texttt{\textbf{true}}. If more than one type of bus listing was desired,
+\texttt{\textbf{true}}. If more than one type of bus listing is desired,
 additional conditions based on the value of \texttt{\textbf{signal}} could be
 included. For the case of generators, the length of the output may vary from one
 bus to the next since buses can have different numbers of generators associated
@@ -220,7 +220,7 @@ individual transmission lines, each string may describe multiple devices. Note
 that this vector is only produced on one processor (corresponding to rank 0 on
 whatever communicator the network is using). Other processors will have a zero
 length vector. The contents of each string can then be parsed to extract other
-parameters (see section of String Utilities for some useful tools for doing
+parameters (see section~\ref{string_utils} on String Utilities for some useful tools for doing
 this). The powerflow output described above can be parsed to get the voltage
 magnitude and phase angle on each bus. This information can then be stored in a
 vector that can be saved to the \texttt{\textbf{GlobalStore}} or

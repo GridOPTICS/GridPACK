@@ -2,7 +2,8 @@
 
 An example contingency application has been included in the contingency analysis directory. This contingency analysis is simpler than the one available under the \texttt{\textbf{applications}} directory and provides a relatively compact demonstration of some of the advanced features of GridPACK. This application is built entirely around the power flow module, so it has no network component classes of its own. The main functionality is located in the \texttt{\textbf{CADriver}} class that consists of two methods (other than the constructor and destructor). One function is used to read in a list of contingencies and convert them to a corresponding \texttt{\textbf{Contingency}} data structure and the other function executes the contingency analysis calculation. These two functions will be discussed in detail.
 
-The function for reading in the contingencies and converting them to a list of Contingency data structures has the form
+The function for reading in the contingencies and converting them to a list of
+Contingency data structures has the calling signature
 
 {
 \color{red}
@@ -13,7 +14,7 @@ std::vector<gridpack::powerflow::Contingency> getContingencies(
 \end{Verbatim}
 }
 
-The \texttt{\textbf{Contingency}} data structures are defined in as part of the power flow module and exist in the \texttt{\textbf{gridpack::powerflow}} namespace. The list of cursors represented by the contingencies variable is obtained by the calling program before calling this function. The function itself is
+The \texttt{\textbf{Contingency}} data structures are defined as part of the power flow module and exist in the \texttt{\textbf{gridpack::powerflow}} namespace. The list of cursors represented by the contingencies variable is obtained by the calling program before calling this function. The function itself is
 
 {
 \color{red}
@@ -121,13 +122,50 @@ This function is designed to parse input of the form
 
 The \texttt{\textbf{contingencies}} list in the argument consists of a vector of \texttt{\textbf{Configuration}} module cursors, each of which is pointing to one of the \texttt{\textbf{Contingency}} blocks in this input.
 
-The first few lines are used to create the return list, determine the number of contingencies in the \texttt{\textbf{ChildCursors}} list and create a \texttt{\textbf{StringUtils}} object that can be used to parse the input. The function then loops over all cursors in the \texttt{\textbf{contingencies}} list. All contingencies should contain the \texttt{\textbf{contingencyType}} and \texttt{\textbf{contingencyName}} field, so these values are obtained using the get function from the \texttt{\textbf{Configuration}} module. The type can be either ``\texttt{\textbf{Line}}'' or ``\texttt{\textbf{Generator}}''. Based on the type, the function bifurcates into two branches. The ``\texttt{\textbf{Line}}'' branch looks for the strings corresponding to \texttt{\textbf{contingencyLineBuses}} and \texttt{\textbf{contingencyLineNames}} and assigns these to the string variables \texttt{\textbf{buses}} and \texttt{\textbf{names}}. More than one transmission element may be involved in the contingency. The \texttt{\textbf{StringUtils}} \texttt{\textbf{blankTokenizer}} function is used to parse the \texttt{\textbf{buses}} string into a list of strings that can then be converted to a list of integers. These represent the original indices of the buses at each end of the branch. The \texttt{\textbf{names}} string is also converted to a list representing the character tag identifying the individual transmission element between the two buses. This is then reformatted to a consistent 2-character format using the \texttt{\textbf{StringUtils}} \texttt{\textbf{clean2Char}} function. The string vector \texttt{\textbf{string\_vec}} is used to hold the results from \texttt{\textbf{blankTokenizer}}, and the final list of integers and character tags are stored in the variables \texttt{\textbf{bus\_ids}} and \texttt{\textbf{line\_names}}. Each transmission element is characterized by two buses and a character tag, so the number of bus IDs should be twice the number of tags. If this condition is met, then the contingency is assumed to be well formed and a \texttt{\textbf{Contingency}} struct is created for it. After copying the data stored in the variables \texttt{\textbf{ca\_type}}, \texttt{\textbf{ca\_name}}, bus\_ids and \texttt{\textbf{line\_names}}, this contingency is added to the return variable \texttt{\textbf{ret}}.
+The first few lines in the \texttt{\textbf{getContingencies}} function are used
+to create the return list, determine the number of contingencies in the
+\texttt{\textbf{ChildCursors}} list and create a \texttt{\textbf{StringUtils}}
+object that can be used to parse the input. The function then loops over all
+cursors in the \texttt{\textbf{contingencies}} list. All contingencies should
+contain the \texttt{\textbf{contingencyType}} and
+\texttt{\textbf{contingencyName}} field, so these values are obtained using the
+\texttt{\textbf{get}} function from the \texttt{\textbf{Configuration}} module.
+The type can be either ``\texttt{\textbf{Line}}'' or
+``\texttt{\textbf{Generator}}''. Based on the type, the function bifurcates into
+two branches. The ``\texttt{\textbf{Line}}'' branch looks for the strings
+corresponding to \texttt{\textbf{contingencyLineBuses}} and
+\texttt{\textbf{contingencyLineNames}} and assigns these to the string variables
+\texttt{\textbf{buses}} and \texttt{\textbf{names}}. More than one transmission
+element may be involved in the contingency. The \texttt{\textbf{StringUtils}}
+\texttt{\textbf{blankTokenizer}} function is used to parse the
+\texttt{\textbf{buses}} string into a list of strings that can then be converted
+to a list of integers. These represent the original indices of the buses at each
+end of the branch. The \texttt{\textbf{names}} string is also converted to a
+list representing the two character tag identifying the individual transmission
+element between the two buses. This is then reformatted to a consistent
+2-character format using the \texttt{\textbf{StringUtils}}
+\texttt{\textbf{clean2Char}} function. The string vector
+\texttt{\textbf{string\_vec}} is used to hold the results from
+\texttt{\textbf{blankTokenizer}}, and the final list of integers and character
+tags are stored in the variables \texttt{\textbf{bus\_ids}} and
+\texttt{\textbf{line\_names}}. Each transmission element is characterized by two
+buses and a character tag, so the number of bus IDs should be twice the number
+of tags. If this condition is met, then the contingency is assumed to be well
+formed and a \texttt{\textbf{Contingency}} struct is created for it. After
+copying the data stored in the variables \texttt{\textbf{ca\_type}},
+\texttt{\textbf{ca\_name}}, \texttt{\textbf{bus\_ids}} and \texttt{\textbf{line\_names}}, this contingency is added to the return variable \texttt{\textbf{ret}}.
 
-The ``\texttt{\textbf{Generator}}'' branch is similar to the ``Line'' branch. The strings in the \texttt{\textbf{contingencyBuses}} and \texttt{\textbf{contingencyGenerators}} fields are copied into the string variables \texttt{\textbf{buses}} and \texttt{\textbf{gens}}. These are then converted into a list of bus IDs and generator tags using the blankTokenizer function and stored in the list bus\_ids and gen\_ids. A generator is characterized by the original index of the bus that it is associated with and the 2-character generator tag so the size of the \texttt{\textbf{bus\_ids}} and \texttt{\textbf{gen\_ids}} vectors must be equal. If this condition is met, then a \texttt{\textbf{Contingency}} struct is created, the contingency data is copied to it and the struct is added to the return variable \texttt{\textbf{ret}}.
+The ``\texttt{\textbf{Generator}}'' branch is similar to the ``Line'' branch.
+The strings in the \texttt{\textbf{contingencyBuses}} and
+\texttt{\textbf{contingencyGenerators}} fields are copied into the string
+variables \texttt{\textbf{buses}} and \texttt{\textbf{gens}}. These are then
+converted into a list of bus IDs and generator tags using the blankTokenizer
+function and stored in the list \texttt{\textbf{bus\_ids}} and
+\texttt{\textbf{gen\_ids}}. A generator is characterized by the original index of the bus that it is associated with and the 2-character generator tag so the size of the \texttt{\textbf{bus\_ids}} and \texttt{\textbf{gen\_ids}} vectors must be equal. If this condition is met, then a \texttt{\textbf{Contingency}} struct is created, the contingency data is copied to it and the struct is added to the return variable \texttt{\textbf{ret}}.
 
 After all cursor in contingencies have been processed, the \texttt{\textbf{getContingencies}} function returns a list of \texttt{\textbf{Contingency}} structs representing all the contingencies in the original XML input file.
 
-The execute function starts with the code block
+The \texttt{\textbf{execute}} function actually runs the simulation and starts with the code block
 
 {
 \color{red}
@@ -177,7 +215,20 @@ The next few lines are used to parse the input file and determine the size of th
 \end{Verbatim}
 }
 
-A \texttt{\textbf{CursorPtr}} is defined and set to point to the contents of the \texttt{\textbf{Contingency\_analysis}} block in the input file using the \texttt{\textbf{getCursor}} function. This block contains parameters defining some of the properties of the simulation. The \texttt{\textbf{groupSize}} parameter sets the size of the communicator on which individual power flow calculations are run. PThe power flow is not very scalable in GridPACK and it is usually fastest to run it on one processor so the default value is 1. The \texttt{\textbf{minVoltage}} and \texttt{\textbf{maxVoltage}} parameters are the limits, in p.u., for acceptable voltage variations on individual buses. Once the group size has been set, the world communicator is divided into sub communicators using the divide function. This guarantees that each subcommunicator contains at most the number of processes specified using \texttt{\textbf{groupSize}} (one subcommunicator may contain less than this number). Each process is now part of the world communicator and one subcommunicator.
+A \texttt{\textbf{CursorPtr}} is defined and set to point to the contents of the
+\texttt{\textbf{Contingency\_analysis}} block in the input file using the
+\texttt{\textbf{getCursor}} function. This block contains parameters defining
+some of the properties of the simulation. The \texttt{\textbf{groupSize}}
+parameter sets the size of the communicator on which individual power flow
+calculations are run. The power flow is not very scalable in GridPACK and it is
+usually fastest to run it on one processor, so the default value is 1. The
+\texttt{\textbf{minVoltage}} and \texttt{\textbf{maxVoltage}} parameters are the
+limits, in p.u., for acceptable voltage variations on individual buses. Once the
+group size has been set, the world communicator is divided into subcommunicators
+using the divide function. This guarantees that each subcommunicator contains at
+most the number of processes specified using \texttt{\textbf{groupSize}} (one
+subcommunicator may contain less than this number). Each process is now part of
+both the world communicator and one subcommunicator.
 
 The next block of code creates a power flow application on each task communicator and initializes it.
 
@@ -224,7 +275,23 @@ The first line creates a power flow network on the task communicator. The second
 \end{Verbatim}
 }
 
-Note that it has two blocks, \texttt{\textbf{Contingency\_analysis}} and \texttt{\textbf{Powerflow}}. The parameters describing the contingency calculation and the location of the contingencies are located in the first block and the power flow parameters are located in the second block. The \texttt{\textbf{readNetwork}} function will read in the network configuration file and partition the network. The \texttt{\textbf{initialize}} function is used to initialize the network components from the \texttt{\textbf{DataCollection}} objects and assign exchange buffers. The call to \texttt{\textbf{solve}} is used to obtain a power solution to the base problem with no contingencies. Since all tasks have the same data at this point, the network solution is duplicated across all subcommunicators. The final call to \texttt{\textbf{ignoreVoltageViolations}} sets a parameter in each network component that violates the voltage bounds for base case. These components will be ignored in any subsequent checks for voltage violations.
+Note that it has two blocks, \texttt{\textbf{Contingency\_analysis}} and
+\texttt{\textbf{Powerflow}}. The parameters describing the contingency
+calculation and the location of the contingencies are located in the first block
+and the power flow parameters are located in the second block. The
+\texttt{\textbf{readNetwork}} function will read in the network configuration
+file and partition the network. The \texttt{\textbf{initialize}} function is
+used to initialize the network components from the
+\texttt{\textbf{DataCollection}} objects and assign exchange buffers. The call
+to \texttt{\textbf{solve}} is used to obtain a power solution to the base
+problem with no contingencies. Since all tasks have the same data at this point,
+the network solution is duplicated across all subcommunicators. This duplication
+is faster than solving the base case powerflow on one processor and then
+broadcasting the result across the system. The final call to
+\texttt{\textbf{ignoreVoltageViolations}} sets a parameter in each network
+component that violates the voltage bounds for base case. These components will
+be ignored in any subsequent checks for voltage violations. This call is used to
+prevent all contingencies from reporting a violation.
 
 The next step is to read in the contingencies and convert these to a list of contingency data structs.
 
@@ -267,9 +334,15 @@ The next step is to read in the contingencies and convert these to a list of con
 \end{Verbatim}
 }
 
-The location of the contingency file is contained in the \texttt{\textbf{contingencyList}} field in the input file. If this field is not present, the code defaults to the file name \texttt{\textbf{contingencies.xml}}. The contintency file is then opened using the \texttt{\textbf{open}} function in the \texttt{\textbf{Configuration}} module and a cursor is set to the \texttt{\textbf{Contingencies}} block within this file. The \texttt{\textbf{Configuration}} \texttt{\textbf{children}} function returns a list of cursor pointers that point to each of the individual \texttt{\textbf{Contingency}} blocks. The \texttt{\textbf{getContingencies}} function described above parses each of these blocks and returns a vector of contingency data structs. The contingency list is replicated on all processors. Process 0 is used to provide a listing of the contingencies to standard output by looping over the \texttt{\textbf{events}} vector returned by the \texttt{\textbf{getContingencies}} function.
+The location of the contingency file is contained in the
+\texttt{\textbf{contingencyList}} field in the input file. If this field is not
+present, the code defaults to the file name \texttt{\textbf{contingencies.xml}}.
+The contintency file is then opened using the \texttt{\textbf{open}} function in
+the \texttt{\textbf{Configuration}} module and a cursor is set to the
+\texttt{\textbf{Contingencies}} block within this file. The
+\texttt{\textbf{Configuration::children}} function returns a list of cursor pointers that point to each of the individual \texttt{\textbf{Contingency}} blocks. The \texttt{\textbf{getContingencies}} function described above parses each of these blocks and returns a vector of contingency data structs. The contingency list is replicated on all processors. Process 0 is used to provide a listing of the contingencies to standard output by looping over the \texttt{\textbf{events}} vector returned by the \texttt{\textbf{getContingencies}} function.
 
-Once the contingencies have be determined, the code next sets up a task manager on the world communicator and sets the number of tasks equal to the number of contingencies.
+Once the contingencies have been determined, the code next sets up a task manager on the world communicator and sets the number of tasks equal to the number of contingencies.
 
 {
 \color{red}
@@ -280,7 +353,7 @@ Once the contingencies have be determined, the code next sets up a task manager 
 \end{Verbatim}
 }
 
-The task loop is created by defining a task\_id variable and a character string buffer that is used inside the loop to create messages. The task manager then begins iterating over different tasks.
+The task loop is created by defining a \texttt{\textbf{task\_id}} variable and a character string buffer that is used inside the loop to create messages. The task manager then begins iterating over different tasks.
 
 {
 \color{red}
@@ -292,7 +365,9 @@ The task loop is created by defining a task\_id variable and a character string 
 \end{Verbatim}
 }
 
-The call to \texttt{\textbf{nextTask}} takes the task communicator as one of its arguments so the value of \texttt{\textbf{task\_id}} that is returned is the same for all processors on the communicator. This guarantees that each of the processors in this copy of the power flow applicatin is working on the same contingency. If the \texttt{\textbf{nextTask}} function returns false, the tasks have been completed and the code exits from the \texttt{\textbf{while}} loop. At the start of the task, the code prints out a statement to standard out describing which tasks are being executed by each processor.
+The call to \texttt{\textbf{nextTask}} takes the task communicator as one of its
+arguments so the value of \texttt{\textbf{task\_id}} that is returned is the
+same for all processors on the task communicator. This guarantees that each of the processors in this copy of the power flow applicatin is working on the same contingency. If the \texttt{\textbf{nextTask}} function returns false, the tasks have been completed and the code exits from the \texttt{\textbf{while}} loop. At the start of the task, the code prints out a statement to standard out describing which tasks are being executed by each processor.
 
 The next few lines in the task loop are used to open a file so that the output from each task is directed to a separate file. This can be used later to examine individual tasks.
 
@@ -324,7 +399,11 @@ The next few lines in the task loop are used to open a file so that the output f
 \end{Verbatim}
 }
 
-The first line is used to create a name for the output file using the contingency name. The output from the power flow calculation is then redirected to this file using the power flow \texttt{\textbf{open}} function. Next, some information about this particular contingency is written to the file using some calls to the writeHeader method. This includes the number of processors used to calculate the contingency and the details of the contingency itself.
+The first line is used to create a name for the output file using the
+contingency name. The output from the power flow calculation is then redirected
+to this file using the power flow \texttt{\textbf{open}} function. Next, some
+information about this particular contingency is written to the file using some
+calls to the \texttt{\textbf{writeHeader}} method. This includes the number of processors used to calculate the contingency and the details of the contingency itself.
 
 The remaining lines in the while loop are used to solve the power flow equations.
 
@@ -370,3 +449,6 @@ At this point, the contingency application is essentially complete. The remainin
 }
 
 are used to print out a list of how many tasks were evaluated on each processor and to stop the timing of the ``\texttt{\textbf{Total Application}}'' category. The timer \texttt{\textbf{dump}} method will print statistics on the amount of time spent in the total application as well as reporting timings inside the power flow application. The check on the \texttt{\textbf{dump}} call is to verify that all processors have participated in at least one power flow calculation.
+If this condition is not met, then the timing statistics will not be valid (note
+that if this condition is not fulfilled, then it indicates that too many
+processors were requested for the calculation).

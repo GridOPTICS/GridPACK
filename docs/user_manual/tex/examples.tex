@@ -1,8 +1,18 @@
 \chapter{GridPACK Examples}
 
-This section will expand on the discussion of the power flow application and provide additional examples of how GridPACK can be used to develop applications. Two of these are simple applications that have been provided in GridPACK that illustrate how the code works, without necessarily getting involved in the details that would be needed to implement a realistic power grid model. The third example is an in-depth discussion of a simplified version of the contingency analysis application. This provides a good illustration of how to create multi-task simulations and also an example of how to use modules. A more complicated version of contingency analysis is available in the application area. The main difference between the two is that the contingency analysis simulation in the application area performs much more analysis on the results of the individual contingencies.
+This section will expand on the discussion of the power flow application and
+provide additional examples of how GridPACK can be used to develop applications.
+Two of these are simple, non-power grid applications that have been provided in
+GridPACK to illustrate how the code works, without necessarily getting involved in the details that would be needed to implement a realistic power grid model. The third example is an in-depth discussion of a simplified version of the contingency analysis application. This provides a good illustration of how to create multi-task simulations and also an example of how to use modules. A more complicated version of contingency analysis is available in the application area. The main difference between the two is that the contingency analysis simulation in the application area performs much more analysis on the results of the individual contingencies.
 
-All the codes discussed here can be found under the top-level GridPACK directory in \texttt{\textbf{src/applications/examples}}.
-The first of the simple examples consists of a ``hello world'' program that writes a message from a small 10 x 10 square grid of buses and branches. The second example calculates the electric current flow through a square grid of resistors. Both examples are designed to show how the basic features of the GridPACK framework interact with each other. More complicated examples for realistic models can be found in the modules and components directories under applications. Athough these examples represent more complicated bus and branch models, they contain many of the same characteristics that can be found in the hello world and resistor grid programs.
+All the codes discussed here can be found under the top-level GridPACK directory
+in\newline
+\texttt{\textbf{src/applications/examples}}.
+The first of the simple examples consists of a ``hello world'' program that
+writes a message from a small $10 \times 10$ square grid of buses and branches.
+The second example calculates the electric current flow through a square grid of
+resistors. Both examples are designed to show how the basic features of the
+GridPACK framework interact with each other. More realistic examples for
+power grid models can be found in the modules and components directories under applications. Athough these examples represent more complicated bus and branch models, they contain many of the same characteristics that can be found in the hello world and resistor grid programs.
 
-A simplified contingency analysis example is also included that illustrates a great many of the advanced features of GridPACK in a fairly short code. These features include creating your own parser, using subcommunicators and the task manager, using modules and controlling output.
+The simplified contingency analysis example illustrates a great many of the advanced features of GridPACK in a fairly short code. These features include creating your own parser, using subcommunicators and the task manager, using modules and controlling output.

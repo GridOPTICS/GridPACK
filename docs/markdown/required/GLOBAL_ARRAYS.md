@@ -41,14 +41,47 @@ with a limited number of cores. This runtime provides reasonable performance on
 a small number of cores but slows down considerably at larger core counts(our
 experience is that you should limit this runtime to 8 or less processors). It is
 not recommended for large-scale parallel computation.  The progress ranks
-runtime is much higher performing and approaches the performance of the OpenIB
-runtime. It is very reliable and runs on any platform that supports MPI.
+runtime is much higher performing.
+It is very reliable and runs on any platform that supports MPI.
 However, it has one peculiarity in that it reserves one MPI process on each SMP
 node to act as a communication manager. Thus, if you are running your
 calculation on 2 nodes with 5 processes on each node, the GridPACK application
 will only see 8 processes (4 on each node). To make sure that the GridPACK build
 is aware of this, the `USE_PROGRESS_RANKS` parameter should be set to
 `TRUE` when using the progress ranks build of GA.
+
+A comparison of the performance of the progress ranks and two-sided runtimes is
+shown below in Figure 1 for the Polish network test calculation included as
+part of the
+contingency analysis application. Contingency analysis consists of many
+individual tasks that can be distributed at runtime to different processors.
+The progress ranks runtime shows significantly
+better performance for all process counts, especially after four processors or
+so. After 16 processors, the performance of the two-sided runtime has degraded
+to the point that the overall runtime for the calculation starts increasing.
+
+<img src="../images/Polish_CA.png" alt="drawing" width="600"/>
+
+**Figure 1:** Comparison of speedup for the progress ranks and two-sided runtimes
+for a contingency analysis calculation using the Polish network data set.
+
+Dynamic simulation has different features with respect to parallelization
+compared to contingency analysis. A comparision of the progress ranks and
+two-sided runtimes is shown in Figure 2 for a simulation on a 12,000 bus
+model of the
+WECC network. In this case the performance is comparable up to 16 processors.
+The dynamic simulation calculation is more tightly coupled than contingency
+analysis and data must be exchanged at a finer level than individual
+simulations. Because of this, individual dynamic simulation calculations do not
+show speedup beyond the point at which the calculation is divided up between two
+SMP nodes. For the computer used in this calculation, this point is reached at
+16 processors.
+
+<img src="../images/WECC_DS.png" alt="drawing" width="600"/>
+
+**Figure 2:** Comparison of speedup for the progress ranks and two-sided runtimes
+for a single dynamic simulation calculation using a 12,000 bus WECC network data
+set.
 
 Global Arrays is a relatively straightforward build if MPI is available on your
 system. To configure GA with the basic two-sided runtime (suitable for

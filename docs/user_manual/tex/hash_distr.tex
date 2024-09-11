@@ -24,7 +24,10 @@ void distributeBusValues(std::vector<int> &keys,
 \end{Verbatim}
 }
 
-The integer array ``\texttt{\textbf{keys}}'' holds the original indices of the buses that the data in the vector ``\texttt{\textbf{values}}'' is supposed to map to. The \texttt{\textbf{keys}} and \texttt{\textbf{values}} vectors should be the same and the data in the \texttt{\textbf{values}} array at index \textit{n} should be mapped to the bus indicated by the original index stored at the same location in the \texttt{\textbf{keys}} array. This function is collective and must be called on all processors. The amount of data on each processor does not need to be the same and some processors, or even most of them, can have no data (it is still necessary to call the \texttt{\textbf{distributeBusValues}} function across all processors even if some processors contain no data). It also possible that the same original index can appear multiple times in the keys array, i.e., multiple pieces of data can map to the same bus. On output, the values array contains all the data objects that map to buses on that processor and the keys array contains the \textit{local} indices of the bus. This will include data that maps to ghost buses so a piece of data may map to more than one processor in a distributed system.
+The integer array ``\texttt{\textbf{keys}}'' holds the original indices of the
+buses that the data in the vector ``\texttt{\textbf{values}}'' is supposed to
+map to. The \texttt{\textbf{keys}} and \texttt{\textbf{values}} vectors should
+be the same length and the data in the \texttt{\textbf{values}} array at index \textit{n} should be mapped to the bus indicated by the original index stored at the same location in the \texttt{\textbf{keys}} array. This function is collective and must be called on all processors. The amount of data on each processor does not need to be the same and some processors, or even most of them, can have no data (it is still necessary to call the \texttt{\textbf{distributeBusValues}} function across all processors even if some processors contain no data). It also possible that the same original index can appear multiple times in the keys array, i.e., multiple pieces of data can map to the same bus. On output, the values array contains all the data objects that map to buses on that processor and the keys array contains the \textit{local} indices of the bus. This will include data that maps to ghost buses so a piece of data may map to more than one processor in a distributed system.
 
 An analogous command can be used to distribute data to branches. It has the form
 
@@ -60,4 +63,6 @@ void distributeBranchValues(std::vector<std::pair<int,int> > &keys,
 \end{Verbatim}
 }
 
-Instead of moving a single value struct for each bus or branch, these functions move a vector of structs. Each struct must be the same size and contain nvals elements. These functions are useful for assigning a time series of data to buses and branches.
+Instead of moving a single value struct for each bus or branch, these functions
+move a vector of structs. Each struct must be the same size and contain
+\texttt{\textbf{nvals}} elements. These functions are useful for assigning a time series of data to buses and branches.

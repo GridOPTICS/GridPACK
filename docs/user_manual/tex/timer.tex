@@ -2,7 +2,12 @@
 
 Profiling applications is an important part of characterizing performance, identifying bottlenecks and proposing remedies. Profiling in a parallel context is also extremely tricky. Unbalanced applications can lead to incorrect conclusions about performance when load imbalance in one part of the application appears as poor performance in another part of the application. This occurs because the part of the application that appears slow has a global operation that acts as an accumulation point for load imbalance. Nevertheless, the first step in analyzing performance is to be able to time different parts of the code. GridPACK provides a timer functionality that can help users do this. These modules are designed to do relatively coarse-grained profiling, they should not be used to time the inside of computationally intensive loops.
 
-GridPACK contains two different types of timers. The first is a global timer that can be used anywhere in the code and accumulates all results back to the same place for eventual display. Users can get a copy of this timer from any point in the calculation. The second timer is created locally and is designed to only time portions of the code. The second class of timers was created to support task based parallelism where there was an interest in profiling individual tasks instead of getting timing results averaged over all tasks. Both timers can be found in the \texttt{\textbf{gridpack::utility}} namespace.
+GridPACK contains two different types of timers. The first is a global timer
+that can be used anywhere in the code and accumulates all results back to the
+same place for eventual display. Users can get a copy of this timer from any
+point in the calculation. The second timer is created locally and is designed to
+only time portions of the code. The second class of timers was created to
+support task-based parallelism where there was an interest in profiling individual tasks instead of getting timing results averaged over all tasks. Both timers can be found in the \texttt{\textbf{gridpack::utility}} namespace.
 
 The \texttt{\textbf{CoarseTimer}} class represents a timer that is globally accessible from any point in the code. A pointer to this timer can be obtained by calling the function
 
@@ -13,7 +18,7 @@ static CoarseTimer *instance()
 \end{Verbatim}
 }
 
-A category within the timer corresponds to a set of things that are to be timed. A new category in the timer can be created using the command
+A category within the timer corresponds to a portion of the code that is to be timed. A new category in the timer can be created using the command
 
 {
 \color{red}
@@ -112,7 +117,8 @@ double currentTime()
 \end{Verbatim}
 }
 
-returns the current time in seconds (if you want to do timing on your own). If you want control profiling in different sections of the code the command
+returns the current time in seconds (if you want to do timing on your own). If
+you want to control profiling in different sections of the code the command
 
 {
 \color{red}
