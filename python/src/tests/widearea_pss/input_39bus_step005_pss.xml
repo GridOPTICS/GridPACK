@@ -58,7 +58,7 @@
 	 <generatorFiles>
 	 
         <generatorFile>  
-        <generatorParams> IEEE39bus_gridpack_pss.dyr </generatorParams>
+        <generatorParameters> IEEE39bus_gridpack_pss.dyr </generatorParameters>
 		</generatorFile> 
 		
 	 </generatorFiles> 

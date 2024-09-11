@@ -1050,20 +1050,20 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::arg("dscase_idx")
          )
     .def("setState",
-         [](gph::HADRECAppModule& self, const int& bus_id, const std::string& dev_id,
+         [](gph::HADRECAppModule& self, const int& bus_num, const std::string& dev_id,
             const std::string& device, const std::string& name,
             const double& value) {
            bool status;
-           status = self.setState(bus_id, dev_id, device, name, value);
+           status = self.setState(bus_num, dev_id, device, name, value);
            return status;
          }
          )
     .def("getState",
-         [](gph::HADRECAppModule& self, const int& bus_id, const std::string& dev_id,
+         [](gph::HADRECAppModule& self, const int& bus_num, const std::string& dev_id,
             const std::string& device, const std::string& name) -> py::object {
            bool status;
            double value;
-           status = self.getState(bus_id, dev_id, device, name, &value);
+           status = self.getState(bus_num, dev_id, device, name, &value);
 
            // Value is returned if successful.
            if (status) {

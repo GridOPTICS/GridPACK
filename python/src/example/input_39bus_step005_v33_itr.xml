@@ -69,7 +69,7 @@
 	 <generatorFiles>
 	 
         <generatorFile>  
-        <generatorParams> IEEE39bus_exdc1_gridpack.dyr </generatorParams>
+        <generatorParameters> IEEE39bus_exdc1_gridpack.dyr </generatorParameters>
 		</generatorFile> 
 		
 	 </generatorFiles> 

@@ -319,7 +319,7 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(int ds_idx)
     gridpack::utility::Configuration::ChildCursors files;
     if (dyr_cursor) dyr_cursor->children(files);
     if (ds_idx < files.size()) {
-      if (!files[ds_idx]->get("generatorParams",&filename)) {
+      if (!files[ds_idx]->get("generatorParameters",&filename)) {
         printf("Unknown generator parameter file specified\n");
         return;
       }
@@ -4668,15 +4668,16 @@ bool gridpack::dynamic_simulation::DSFullApp::modifyDataCollectionBusParam(
 
 /**
  * Set the state of some device on the network
- * @param bus_id bus ID
+ * @param bus_num bus num
  * @param dev_id two character identifier of device
- * @param type of device (GENERATOR, EXCITER, OR GOVERNOR)
- * @param name of the state variable (ANGLE,SPEED_DEV)
+ * @param device type of device to be modified
+ * @param name string labeling parameter to be modified
  * @param value new value of parameter
- * @return false if this device or
- parameter not found
+ * @return false if this device or parameter not found
+ *
+ * Device type is one of GENERATOR,EXCITER,GOVERNOR,ELECTRICAL_CONTROLLER,PLANT_CONTROLLER
  */
-bool gridpack::dynamic_simulation::DSFullApp::setState(int bus_id,
+bool gridpack::dynamic_simulation::DSFullApp::setState(int bus_num,
     std::string dev_id, std::string device, std::string name, double value)
 {
   gridpack::utility::StringUtils util;
@@ -4686,8 +4687,8 @@ bool gridpack::dynamic_simulation::DSFullApp::setState(int bus_id,
   util.trim(dev_id);
   util.trim(name);
   dev_id = util.clean2Char(dev_id);
-  /* return false if ther is no buse corresponding to this bus ID */
-  std::vector<int> buses = p_network->getLocalBusIndices(bus_id);
+  /* return false if ther is no bus corresponding to this bus number */
+  std::vector<int> buses = p_network->getLocalBusIndices(bus_num);
   if (buses.size() > 0) {
     ret = true;
   }
@@ -4699,10 +4700,18 @@ bool gridpack::dynamic_simulation::DSFullApp::setState(int bus_id,
   int i;
   for (i=0; i<buses.size(); i++) {
     DSFullBus *bus = p_network->getBus(buses[i]).get();
-    if (device == "GENERATOR"  || device == "GOVERNOR" || device == "EXCITER") {
+    if (device == "GENERATOR"  || device == "GOVERNOR" || device == "EXCITER" || device == "ELECTRICAL_CONTROLLER" || device == "PLANT_CONTROLLER") {
       BaseGeneratorModel *generator = bus->getGenerator(dev_id);
       if (generator != NULL) {
-        if (device == "GOVERNOR") {
+	if (device == "PLANT_CONTROLLER") {
+	  BasePlantControllerModel *plantcontroller = generator->getPlantController().get();
+	  if (plantcontroller != NULL) {
+	    ret = plantcontroller->setState(name, value);
+	  }
+	  if (!ret) {
+	    std::cout<<"No parameter "<<name<<" found on plant controller"<<std::endl;
+	  }
+	} else if (device == "GOVERNOR") {
           BaseGovernorModel *governor = generator->getGovernor().get();
           if (governor != NULL) {
             ret = governor->setState(name, value);
@@ -4710,36 +4719,34 @@ bool gridpack::dynamic_simulation::DSFullApp::setState(int bus_id,
           if (!ret) {
             std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
           }
-        } else if (device == "EXCITER") {
+        } else if (device == "EXCITER" || device == "ELECTRICAL_CONTROLLER") {
           BaseExciterModel *exciter = generator->getExciter().get();
           if (exciter != NULL) {
             ret = exciter->setState(name, value);
           }
           if (!ret) {
-            std::cout<<"No parameter "<<name<<" found on exciter"<<std::endl;
+            std::cout<<"No parameter "<<name<<" found on exciter/electrical controller"<<std::endl;
           }
         } else {
           ret = generator->setState(name, value);
           if (!ret) {
-            std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
+            std::cout<<"No parameter "<<name<<" found on generator"<<std::endl;
           }
         }
       } else {
         ret = false;
         if (!ret) {
-          std::cout<<"No generator "<<dev_id<<" found on bus "<<bus_id<<std::endl;
+          std::cout<<"No generator "<<dev_id<<" found on bus "<<bus_num<<std::endl;
         }
       }
     } else if (device == "RELAY") {
       std::cout<<"No setState function implemented for relays "<<std::endl;
     } else if (device == "LOAD") {
       std::cout<<"No setState function implemented for loads "<<std::endl;
-    } else if (device == "PLANT") {
-      std::cout<<"No setState function implemented for plants "<<std::endl;
     } else if (device == "PSS") {
-      std::cout<<"No setState function implemented for PPS "<<std::endl;
+      std::cout<<"No setState function implemented for PSS "<<std::endl;
     } else {
-      std::cout<<"Device not found on bus "<<bus_id<<
+      std::cout<<"Device not found on bus "<<bus_num<<
         " for device "<<dev_id<<std::endl;
     } 
   }
@@ -4748,14 +4755,16 @@ bool gridpack::dynamic_simulation::DSFullApp::setState(int bus_id,
 
 /**
  * Get the state of some device on the network
- * @param  bus_id bus ID
- * @param  dev_id two character identifier of device
- * @param  type of device (GENERATOR, EXCITER, OR GOVERNOR)
- * @param  name of the state variable (ANGLE, SPEED_DEV)
- * @return value current value of parameter
- * @return false if this device or state variable not found
+ * @param bus_num bus number
+ * @param dev_id two character identifier of device
+ * @param device type of device to be modified
+ * @param name string labeling parameter to be modified
+ * @param value current value of parameter
+ *
+ * Device type is one of GENERATOR,EXCITER,GOVERNOR,ELECTRICAL_CONTROLLER,PLANT_CONTROLLER
+ * @return false if this device or parameter not found
  */
-bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_id,
+bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_num,
     std::string dev_id, std::string device, std::string name, double *value)
 {
   gridpack::utility::StringUtils util;
@@ -4765,8 +4774,8 @@ bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_id,
   util.trim(dev_id);
   util.trim(name);
   dev_id = util.clean2Char(dev_id);
-  /* return false if ther is no buse corresponding to this bus ID */
-  std::vector<int> buses = p_network->getLocalBusIndices(bus_id);
+  /* return false if ther is no buse corresponding to this bus number */
+  std::vector<int> buses = p_network->getLocalBusIndices(bus_num);
   if (buses.size() > 0) {
     ret = true;
   }
@@ -4779,10 +4788,18 @@ bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_id,
   for (i=0; i<buses.size(); i++) {
     if (p_network->getActiveBus(buses[i])) {
       DSFullBus *bus = p_network->getBus(buses[i]).get();
-      if (device == "GENERATOR"  || device == "GOVERNOR" || device == "EXCITER") {
+      if (device == "GENERATOR"  || device == "GOVERNOR" || device == "EXCITER" || device == "ELECTRICAL_CONTROLLER" || device == "PLANT_CONTROLLER") {
         BaseGeneratorModel *generator = bus->getGenerator(dev_id);
         if (generator != NULL) {
-          if (device == "GOVERNOR") {
+	  if (device == "PLANT_CONTROLLER") {
+	    BasePlantControllerModel *plantcontroller = generator->getPlantController().get();
+	    if (plantcontroller != NULL) {
+	      ret = plantcontroller->getState(name, value);
+	    }
+	    if (!ret) {
+	      std::cout<<"No parameter "<<name<<" found on plant controller"<<std::endl;
+	    }
+	  } else  if (device == "GOVERNOR") {
             BaseGovernorModel *governor = generator->getGovernor().get();
             if (governor != NULL) {
               ret = governor->getState(name, value);
@@ -4790,36 +4807,34 @@ bool gridpack::dynamic_simulation::DSFullApp::getState(int bus_id,
             if (!ret) {
               std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
             }
-          } else if (device == "EXCITER") {
+          } else if (device == "EXCITER" || device == "ELECTRICAL_CONTROLLER") {
             BaseExciterModel *exciter = generator->getExciter().get();
             if (exciter != NULL) {
               ret = exciter->getState(name, value);
             }
             if (!ret) {
-              std::cout<<"No parameter "<<name<<" found on exciter"<<std::endl;
+              std::cout<<"No parameter "<<name<<" found on exciter/electrical controller"<<std::endl;
             }
           } else {
             ret = generator->getState(name, value);
             if (!ret) {
-              std::cout<<"No parameter "<<name<<" found on governor"<<std::endl;
+              std::cout<<"No parameter "<<name<<" found on generator"<<std::endl;
             }
           }
         } else {
           ret = false;
           if (!ret) {
-            std::cout<<"No generator "<<dev_id<<" found on bus "<<bus_id<<std::endl;
+            std::cout<<"No generator "<<dev_id<<" found on bus "<<bus_num<<std::endl;
           }
         }
       } else if (device == "RELAY") {
         std::cout<<"No getState function implemented for relays "<<std::endl;
       } else if (device == "LOAD") {
         std::cout<<"No getState function implemented for loads "<<std::endl;
-      } else if (device == "PLANT") {
-        std::cout<<"No getState function implemented for plants "<<std::endl;
       } else if (device == "PSS") {
-        std::cout<<"No getState function implemented for PPS "<<std::endl;
+        std::cout<<"No getState function implemented for PSS "<<std::endl;
       } else {
-        std::cout<<"Device not found on bus "<<bus_id<<
+        std::cout<<"Device not found on bus "<<bus_num<<
           " for device "<<dev_id<<std::endl;
       } 
     }

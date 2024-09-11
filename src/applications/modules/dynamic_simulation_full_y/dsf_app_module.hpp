@@ -146,7 +146,6 @@ class DSFullApp
   **/
   void run();
 
-     
 	/**
 	 * execute load scattering, the P and Q values of the STATIC load at certain buses vbusNum will be changed to the values of 
 	 * the vector  vloadP and vloadQ
@@ -292,8 +291,7 @@ class DSFullApp
           : with the setNetwork method
    *
    */
-    std::vector<gridpack::dynamic_simulation::Event>
-      getEvents();
+    std::vector<gridpack::dynamic_simulation::Event> getEvents();
 
   /**
    * Set an event for the dynamic simulation
@@ -589,26 +587,30 @@ class DSFullApp
 
     /**
      * Set the state of some device on the network
-     * @param bus_id bus ID
+     * @param bus_num bus number
      * @param dev_id two character identifier of device
      * @param device type of device to be modified
      * @param name string labeling parameter to be modified
      * @param value new value of parameter
      * @return false if this device or parameter not found
+     *
+     * Device type is one of GENERATOR,EXCITER,GOVERNOR,ELECTRICAL_CONTROLLER,PLANT_CONTROLLER
      */
-    bool setState(int bus_id, std::string dev_id, std::string device,
+    bool setState(int bus_num, std::string dev_id, std::string device,
         std::string name, double value);
 
     /**
      * Get the state of some device on the network
-     * @param bus_id bus ID
+     * @param bus_num bus number
      * @param dev_id two character identifier of device
      * @param device type of device to be modified
      * @param name string labeling parameter to be modified
      * @param value current value of parameter
+     *
+     * Device type is one of GENERATOR,EXCITER,GOVERNOR,ELECTRICAL_CONTROLLER,PLANT_CONTROLLER
      * @return false if this device or parameter not found
      */
-    bool getState(int bus_id, std::string dev_id, std::string device,
+    bool getState(int bus_num, std::string dev_id, std::string device,
         std::string name, double *value);
 
     /*
@@ -759,6 +761,7 @@ class DSFullApp
      Handle any events
   **/
   void handleEvents();
+
   /**
      run one step of dynamics simulation
   **/

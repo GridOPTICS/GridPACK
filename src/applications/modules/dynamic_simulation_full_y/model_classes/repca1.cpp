@@ -309,4 +309,115 @@ void gridpack::dynamic_simulation::Repca1Model::setExtGenId(std::string ExtGenId
   p_gen_id = ExtGenId;
 }
 
+/**
+ * Set internal state parameter in plant controller
+ * @param name character string corresponding to state variable
+ * @param value new value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Repca1Model::setState(std::string name,
+    double value)
+{
+  bool ret = true;
+  if(name == "S0") {
+    V_filter_blk.setstate(value);
+  } else if(name == "S1") {
+    Qbranch_filter_blk.setstate(value);
+  } else if(name == "S2") {
+    Qref_PI_blk.setstate(value);
+  } else if(name == "S3") {
+    Qref_leadlag_blk.setstate(value);
+  } else if(name == "S4") {
+    Pbranch_filter_blk.setstate(value);
+  } else if(name == "S5") {
+    Pref_PI_blk.setstate(value);
+  } else if(name == "S6") {
+    Pref_filter_blk.setstate(value);
+  } else ret = false;
+  return ret;
+}
 
+/**
+ * Get internal state parameter in plant controller
+ * @param name character string corresponding to state variable
+ * @param value current value for state parameter
+ * @return false if no variable corresponding to name is found
+ */
+bool gridpack::dynamic_simulation::Repca1Model::getState(std::string name,
+    double *value)
+{
+  bool ret = true;
+  double state_value = -1E19; // Large negative value is set only when return flag is false, i.e., the name is not found
+
+  if(name == "S0") {
+    state_value = V_filter_blk.getstate();
+  } else if(name == "S1") {
+    state_value = Qbranch_filter_blk.getstate();
+  } else if(name == "S2") {
+    state_value = Qref_PI_blk.getstate();
+  } else if(name == "S3") {
+    state_value = Qref_leadlag_blk.getstate();
+  } else if(name == "S4") {
+    state_value = Pbranch_filter_blk.getstate();
+  } else if(name == "S5") {
+    state_value = Pref_PI_blk.getstate();
+  } else if(name == "S6") {
+    state_value = Pref_filter_blk.getstate();
+  } else ret = false;
+
+  *value = state_value;
+  return ret;
+}
+
+/**
+ * Write output from exciter to a string.
+ * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if governor is contributing string to output, false otherwise
+ */
+bool gridpack::dynamic_simulation::Repca1Model::serialWrite(char *string,
+    const int bufsize, const char *signal)
+{
+  char *ptr = string;
+  bool ret = false;
+
+  if (!strcmp(signal,"watch_header")) {
+    char buf[256];
+    std::string tag;
+    if(p_gen_id[0] != ' ') {
+      tag = p_gen_id;
+    } else {
+      tag = p_gen_id[1];
+    }
+    sprintf(buf,", %d_%s_REPCA1_S0, %d_%s_REPCA1_S1, %d_%s_REPCA1_S2,%d_%s_REPCA1_S3, %d_%s_REPCA1_S4, %d_%s_REPCA1_S5,%d_%s_REPCA1_S6",p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),p_bus_num,tag.c_str());
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
+  } else if (!strcmp(signal,"watch")) {
+    double S0,S1,S2,S3,S4,S5,S6;
+    S0 = V_filter_blk.getstate();
+    S1 = Qbranch_filter_blk.getstate();
+    S2 = Qref_PI_blk.getstate();
+    S3 = Qref_leadlag_blk.getstate();
+    S4 = Pbranch_filter_blk.getstate();
+    S5 = Pref_PI_blk.getstate();
+    S6 = Pref_filter_blk.getstate();
+
+    char buf[256];
+    sprintf(buf,",%f,%f,%f,%f,%f,%f,%f",
+	    S0,S1,S2,S3,S4,S5,S6);
+    if (strlen(buf) <= bufsize) {
+      sprintf(string,"%s",buf);
+      ret = true;
+    } else {
+      ret = false;
+    }
+  }
+
+  return ret;
+}
