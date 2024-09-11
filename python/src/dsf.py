@@ -47,10 +47,10 @@ def network_analytics_dump(ds_app):
         print(branch, f, t, 
               ds_app.getBranchInfoInt(branch, "BRANCH_ELEMENTS"),
               ds_app.getBranchInfoInt(branch, "BRANCH_INDEX"),
-              ds_app.getBranchInfoString(branch, "BRANCH_NAME"),
-              ds_app.getBranchInfoReal(branch, "BRANCH_LENGTH"))
-              
-            
+              ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT'),
+              ds_app.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT'),
+              ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT'),
+              ds_app.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT'))
 
 # -------------------------------------------------------------
 # variable initialization
