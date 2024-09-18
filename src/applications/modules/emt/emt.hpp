@@ -134,7 +134,7 @@ public:
     F.zero();
     p_VecMapper->mapToVector(F);
     F.ready();
-    X.print(0);
+    //X.print(0);
     //F.print(0);
     
   }
