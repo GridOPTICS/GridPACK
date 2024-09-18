@@ -45,7 +45,7 @@ protected:
 
     p_sim->p_daesolver->restartstep();
 
-    p_sim->p_daesolver->reusepreconditioner(-2); // Update preconditioner
+    //    p_sim->p_daesolver->reusepreconditioner(-2); // Update preconditioner
 
   }
 
@@ -220,7 +220,12 @@ void Emt::setMonitors(gridpack::utility::Configuration::CursorPtr p_configcursor
     if(p_configcursor->get("MonitorFile",&p_monitorfile)) {
       fp_monitor = fopen(p_monitorfile.c_str(),"w");
     } else {
-      fp_monitor = fopen("emtoutput.csv","w");
+      if(!rank()) {
+	fp_monitor = fopen("emtoutput.csv","w");
+      } else {
+	std::string outfile = "emtoutput_"+std::to_string(rank())+".csv";
+	fp_monitor = fopen(outfile.c_str(),"w");
+      }
     }
   }
 
