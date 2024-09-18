@@ -4,6 +4,7 @@
 Lumpedline::Lumpedline(void)
 {
   nxbranch  = 6;
+  neg_Z = false;
 }
 
 Lumpedline::~Lumpedline(void)
@@ -50,6 +51,11 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
 
   if(X <= 0.0) {
     printf("%d -- %d: X = %lf\n",fbusnum,tbusnum,X);
+  }
+
+  if(R < 0 || X < 0) {
+    if(R < 0) R = -R;
+    if(X < 0) X = -X;
   }
 
   R1 = R; 
