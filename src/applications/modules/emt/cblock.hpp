@@ -9,6 +9,7 @@
 
 #include <math.h>
 #include <algorithm>
+#include <string.h>
 
 /*
   Linear control block base class - This is the base class for linear blocks. All 
