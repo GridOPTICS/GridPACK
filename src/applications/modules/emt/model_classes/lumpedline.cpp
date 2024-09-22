@@ -4,7 +4,6 @@
 Lumpedline::Lumpedline(void)
 {
   nxbranch  = 6;
-  neg_Z = false;
 }
 
 Lumpedline::~Lumpedline(void)
