@@ -44,18 +44,14 @@ def network_analytics_dump(ds_app):
     nbranch = ds_app.totalBranches()
     for branch in range(0, nbranch):
         (f, t) = ds_app.getBranchEndpoints(branch)
-        print(branch, f, t, 
-              ds_app.getBranchInfoInt(branch, "BRANCH_ELEMENTS"),
-              ds_app.getBranchInfoInt(branch, "BRANCH_INDEX"),
-              ds_app.getBranchInfoString(branch, "BRANCH_NAME"),
-              ds_app.getBranchInfoReal(branch, "BRANCH_LENGTH"),
-              ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT'),
-              ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT'),
-              ds_app.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT'),
-              ds_app.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT')
-            )
-              
-            
+        nelem = ds_app.getBranchInfoInt(branch, "BRANCH_NUM_ELEMENTS")
+        for e in range(0, nelem):
+            print(branch, ds_app.getBranchInfoInt(branch, "BRANCH_INDEX"),
+                  f, t, e, 
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', e),
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', e),
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT', e),
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT', e))
 
 # -------------------------------------------------------------
 # variable initialization

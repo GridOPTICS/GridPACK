@@ -35,6 +35,7 @@ class GridPACKBackend(Backend):
     def build_grid(self):
         grid = Grid()
 
+        # data lists
         bus_list = []
         gen_list = []
         load_list = []
@@ -42,12 +43,15 @@ class GridPACKBackend(Backend):
 
         # then fill the "n_sub" and "sub_info"
         self.n_sub = self._hadapp.totalBuses()
+
         for bus in range(self.n_sub):
+            
             # bus list
+            bus_voltage = self._hadapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG")
             bus_list.append({
                 "name": self._hadapp.getBusInfoString(bus, "BUS_NAME"),
                 "id": self._hadapp.getBusInfoInt(bus, "BUS_NUMBER"),
-                "vn_kv": self._hadapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"),
+                "vn_kv": bus_voltage,
                 "type": self._hadapp.getBusInfoInt(bus, "BUS_TYPE")
             })
             for g in range(self._hadapp.numGenerators(bus)):
@@ -57,7 +61,7 @@ class GridPACKBackend(Backend):
                     "bus": bus,
                     "p_mw": self._hadapp.getBusInfoReal(bus, "GENERATOR_PG", g),
                     "q_mvar": self._hadapp.getBusInfoReal(bus, "GENERATOR_QG", g),
-                    "vm_pu": 1.02,
+                    "vm_pu": bus_voltage,
                     "min_q_mvar": self._hadapp.getBusInfoReal(bus, "GENERATOR_QMIN", g),
                     "max_q_mvar": self._hadapp.getBusInfoReal(bus, "GENERATOR_QMAX", g),
                     "in_service": self._hadapp.getBusInfoBool(bus, "GENERATOR_STAT", g)
@@ -67,8 +71,8 @@ class GridPACKBackend(Backend):
                 load_list.append({
                     "name": self._hadapp.getBusInfoString(bus, "LOAD_ID", l),
                     "bus": bus,
-                    "p_mw": self._hadapp.getBusInfoReal(bus, "LOAD_PL", l),
-                    "q_mvar": self._hadapp.getBusInfoReal(bus, "LOAD_QL", l),
+                    "p_mw": self._hadapp.getBusInfoReal(bus, "LOAD_PL", l) / 100,
+                    "q_mvar": self._hadapp.getBusInfoReal(bus, "LOAD_QL", l) / 100,
                     "scaling": self._hadapp.getBusInfoInt(bus, "LOAD_SCALE", l), 
                     "in_service": self._hadapp.getBusInfoBool(bus, "LOAD_STATUS", l)
                 })
@@ -76,12 +80,10 @@ class GridPACKBackend(Backend):
         # branch frame
         nbranch = self._hadapp.totalBranches()
         for branch in range(0, nbranch):
+            # branch end points
             (f, t) = self._hadapp.getBranchEndpoints(branch)
-            # print(branch, f, t, 
-            #     self._hadapp.getBranchInfoInt(branch, "BRANCH_ELEMENTS"),
-            #     self._hadapp.getBranchInfoInt(branch, "BRANCH_INDEX"),
-            #     self._hadapp.getBranchInfoString(branch, "BRANCH_NAME"),
-            #     self._hadapp.getBranchInfoReal(branch, "BRANCH_LENGTH"))
+            
+            # append data to branch list
             branch_list.append({
                     "name": self._hadapp.getBranchInfoString(branch, "BRANCH_NAME"), 
                     "from_bus": f,
@@ -136,7 +138,7 @@ class GridPACKBackend(Backend):
             full_path = os.path.join(full_path, filename)
         
         # solve the power flow - to load the grid data
-        self._hadapp.solvePowerFlowBeforeDynSimu(full_path, 0)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        self._hadapp.solvePowerFlowBeforeDynSimu(full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
         self._hadapp.readGenerators();
         self._hadapp.readSequenceData();
         self._hadapp.initialize();
@@ -200,28 +202,14 @@ class GridPACKBackend(Backend):
             
         self._compute_pos_big_topo()
 
-        # # transfer data from power flow network to dynamic simulation network
-        # self._hadapp.transferPFtoDS()
-        
-        # # define a bus fault
-        # busfault = gridpack.dynamic_simulation.Event()
-        # busfault.start = 1.0 # fault start time
-        # busfault.end = 1.1   # fault end time
-        # busfault.step = 0.005  # fault duration simu time step
-        # busfault.isBus = True
-        # busfault.bus_idx = 22 # bus number of the fault		  
-
-        # busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
-
-        # # initialize the dynamic simulation
-        # self._hadapp.initializeDynSimu(busfaultlist, 0) # 0 inidcates read in the first dyr dynamic parameter file, the xml file supports multiple dyr files read in
-
         # Remember the input file was read into the Configuration singleton
         conf = gridpack.Configuration()
         cursor = conf.getCursor("Configuration.Dynamic_simulation")
 
+        # get faults
         faults = self._hadapp.getEvents(cursor)
 
+        # solve with faults
         self._hadapp.solvePreInitialize(faults[0])
 
     def apply_action(self, backendAction: Union["grid2op.Action._backendAction._BackendAction", None]) -> None:
@@ -325,23 +313,30 @@ class GridPACKBackend(Backend):
         gen_data = []
         load_data = []
         for bus in range(self.n_sub):
+            # Dynamic simulation values are in pu, need to convert them MW and MVar
+            CASE_SBASE = 1 # self._hadapp.getBusInfoReal(bus, "CASE_SBASE")
+
             # bus list
             for g in range(self._hadapp.numGenerators(bus)):
                 # gen data
                 gen_data.append({
-                    "p_mw": self._hadapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g),
-                    "q_mvar": self._hadapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g),
+                    "p_mw": self._hadapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g) * CASE_SBASE,
+                    "q_mvar": self._hadapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g) * CASE_SBASE,
                     "vm_pu": self._hadapp.getBusInfoReal(bus, 'BUS_VOLTAGE_MAG')
                 })
             for l in range(self._hadapp.numLoads(bus)):
                 # load list
                 load_data.append({
-                    "p_mw": self._hadapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l),
-                    "q_mvar": self._hadapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l)
+                    "p_mw": self._hadapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l) * CASE_SBASE / 100,
+                    "q_mvar": self._hadapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l) * CASE_SBASE / 100
                 })
             
         self._grid.res_load = pd.DataFrame(load_data)
         self._grid.res_gen = pd.DataFrame(gen_data) # p and q also gets multiplied by 100 - CASE_SBASE
+
+        print(self._grid.load)
+        print(self._grid.res_load)
+        sys.exit(1)
     
     def _update_line_transformer_data(self):
         # line level data - lines and branches could be different. The two end points can have multiple lines but only one branch. 
@@ -360,14 +355,18 @@ class GridPACKBackend(Backend):
                 (f, t) = self._hadapp.getBranchEndpoints(branch)
                 line_dict["from_bus"] = f
                 line_dict["to_bus"] = t
+
+                # from and to bus kv
+                f_buskv = 1 # self._hadapp.getBusInfoReal(bus, "BUS_KV") # "BUS_KV"
+                t_buskv = 1 # self._hadapp.getBusInfoReal(bus, "BUS_KV") # "BUS_KV"
                 
                 # from voltage
                 from_bus = self._grid.bus.index[self._grid.bus['id'] == f].values[0]
-                line_dict["vm_from_pu"] = self._hadapp.getBusInfoReal(from_bus, 'BUS_VOLTAGE_MAG') # * Bus_basekV
+                line_dict["vm_from_pu"] = self._hadapp.getBusInfoReal(from_bus, 'BUS_VOLTAGE_MAG') * f_buskv
                 
                 # to voltage
                 to_bus = self._grid.bus.index[self._grid.bus['id'] == t].values[0]
-                line_dict["vm_to_pu"] = self._hadapp.getBusInfoReal(to_bus, 'BUS_VOLTAGE_MAG') # * Bus_basekV
+                line_dict["vm_to_pu"] = self._hadapp.getBusInfoReal(to_bus, 'BUS_VOLTAGE_MAG') * t_buskv
 
                 # p-values
                 line_dict["p_from_mw"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num)
@@ -379,7 +378,7 @@ class GridPACKBackend(Backend):
 
                 # current values
                 line_dict["i_from_ka"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num)
-                line_dict["i_to_ka"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num)
+                line_dict["i_to_ka"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num) # output in amps
 
                 line_data.append(line_dict)
         
@@ -389,6 +388,9 @@ class GridPACKBackend(Backend):
         # self._grid.res_line["vm_to_pu"] = vm_to_pu # * Bus_basekV
         # print(self._grid.res_line)
         self._grid.res_line = pd.DataFrame(line_data)
+        # print(self._grid.line)
+        # print(self._grid.res_line)
+        # sys.exit(1)
         
         # transformer data
         self._grid.res_trafo = self._random_data_generator(self._grid.trafo.shape[0], columns=self._grid.res_trafo.columns)
@@ -406,6 +408,12 @@ class GridPACKBackend(Backend):
 
         # update line and transformer data
         self._update_line_transformer_data()
+
+        # print(self._grid.res_load)
+        # print(self._grid.res_gen)
+        print(self._grid.res_line[["p_from_mw", "p_to_mw", "q_from_mvar", "q_to_mvar"]])
+        # sys.exit(1)
+
     
     def runpf(self, is_dc : bool=False):
         '''
