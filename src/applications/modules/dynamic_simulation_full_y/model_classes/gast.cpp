@@ -93,7 +93,7 @@ void gridpack::dynamic_simulation::GastModel::init(double mag, double ang, doubl
 
   double lv_gate_in1 = AT + KT*(AT - exh_temp_block_out);
 
-  Pref = fuel_valve_block_in + delta_w*R; // Here the assumption is lv_gate_in1 > fuel_valve_block_in.
+  Pref = fuel_valve_block_in + delta_w/R; // Here the assumption is lv_gate_in1 > fuel_valve_block_in.
   // If this condition is not satisfied then Pref value is indeterminate.
 }
 
@@ -153,18 +153,18 @@ void gridpack::dynamic_simulation::GastModel::corrector(double t_inc, bool flag)
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power
  */
-void gridpack::dynamic_simulation::GastModel::setMechanicalPower(double pmech)
+void gridpack::dynamic_simulation::GastModel::setMechanicalPower(double Pmechin)
 {
-  Pmech = pmech; 
+  Pmech = Pmechin; 
 }
 
 /**
  * Set the rotor speed deviation inside the governor
  * @param delta_o value of the rotor speed deviation
  */
-void gridpack::dynamic_simulation::GastModel::setRotorSpeedDeviation(double delta_w)
+void gridpack::dynamic_simulation::GastModel::setRotorSpeedDeviation(double delta_win)
 {
-  delta_w = delta_w;
+  delta_w = delta_win;
 }
 
 /** 
