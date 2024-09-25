@@ -24,6 +24,7 @@ def network_analytics_dump(ds_app):
               ds_app.numLoads(bus),
               ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"))
         for g in range(ds_app.numGenerators(bus)):
+            print(bus, g)
             print(" gen: ", g,
                   ds_app.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
                   ds_app.getBusInfoString(bus, "GENERATOR_ID", g),
@@ -32,6 +33,7 @@ def network_analytics_dump(ds_app):
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g),
                   )
+        # sys.exit(1)
         for l in range(ds_app.numLoads(bus)):
             print("load: ", l,
                   ds_app.getBusInfoInt(bus, "LOAD_NUMBER", l),
