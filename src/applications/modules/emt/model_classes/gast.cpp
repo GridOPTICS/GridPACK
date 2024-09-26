@@ -104,7 +104,7 @@ void Gast::preStep(double time ,double timestep)
   
   // Low value gate
   double LVG_in_1, LVG_in_2, LVG_out;
-  delay_blk_T3_out = delay_blk_T3.getoutput(delay_blk_T2_out);
+
   LVG_in_2 = KT * (AT - delay_blk_T3_out) + AT;
   LVG_in_1 = Loadref - dw/R;
   LVG_out = std::min(LVG_in_1, LVG_in_2);
@@ -114,6 +114,9 @@ void Gast::preStep(double time ,double timestep)
 
   // Leadlag block output and state update
   delay_blk_T2_out = delay_blk_T2.getoutput(delay_blk_T1_out,timestep,true);
+
+  delay_blk_T3_out = delay_blk_T3.getoutput(delay_blk_T2_out,timestep,true);
+
 
   // Output mechanical power
   Pmech = delay_blk_T2_out - Dt*dw;
@@ -157,6 +160,8 @@ void Gast::init(gridpack::RealType* xin)
     
     // Load reference signal
     Loadref = delay_blk_T1_in + dw/R;
+
+    xout = Pmech;
 
     return;
   }
