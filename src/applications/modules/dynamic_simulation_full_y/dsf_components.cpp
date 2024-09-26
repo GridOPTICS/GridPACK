@@ -1178,12 +1178,14 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       data->getValue(LOAD_ID, &loadid, i);
       istat = 1;
       data->getValue(LOAD_STATUS, &istat, i);
-      p_powerflowload_p.push_back(pl);
-      p_powerflowload_p_save.push_back(pl);
-      p_powerflowload_q_save.push_back(ql);
-      p_powerflowload_q.push_back(ql);
-      p_loadid.push_back(loadid);  
-      p_powerflowload_status.push_back(istat);
+      if(istat) {
+	p_powerflowload_p.push_back(pl);
+	p_powerflowload_p_save.push_back(pl);
+	p_powerflowload_q_save.push_back(ql);
+	p_powerflowload_q.push_back(ql);
+	p_loadid.push_back(loadid);  
+	p_powerflowload_status.push_back(istat);
+      }
 
       if (bdebug_load_model) printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
       std::string model;
@@ -1223,17 +1225,14 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 		
   } // end of if (data->getValue(LOAD_NUMBER, &p_npowerflow_load))
 
-  p_ndyn_load = p_loadmodels.size(); 
-  //p_npowerflow_load = p_powerflowload_p.size();
+  p_ndyn_load = p_loadmodels.size();
 
   //sum all the power flow load P and Q at this bus together
   p_pl = 0.0;
   p_ql = 0.0;
-  for (i=0; i<p_npowerflow_load; i++){
-    if(p_powerflowload_status[i]) {
-      p_pl+=p_powerflowload_p[i];
-      p_ql+=p_powerflowload_q[i];
-    }
+  for (i=0; i<p_powerflowload_p.size(); i++){
+    p_pl+=p_powerflowload_p[i];
+    p_ql+=p_powerflowload_q[i];
   }
 
   if (bdebug_load_model) printf(" Bus %d have %d power flow loads, total %f + j%f \n", idx, p_npowerflow_load, p_pl, p_ql);
