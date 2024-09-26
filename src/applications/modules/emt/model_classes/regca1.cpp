@@ -80,7 +80,7 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  omega_Pll_block.setparams(0.1,1.0);
+  omega_Pll_block.setparams(0.01,0.05);
 
   // Integrator block
   angle_block.setparams(1.0);
