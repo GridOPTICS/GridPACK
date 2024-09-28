@@ -386,9 +386,9 @@ void Emt::setup()
 
   // Create bus and branch data exchange
   emt_network->initBusUpdate();
+
   emt_network->initBranchUpdate();
 
-  
   /* Create mapper for vector */
   p_VecMapper = new gridpack::mapper::GenVectorMap<EmtNetwork,gridpack::RealType,gridpack::math::RealVector>(emt_network);
 

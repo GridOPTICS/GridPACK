@@ -100,13 +100,19 @@ void Gdform::init(gridpack::RealType* xin)
 {
   double Pg, Qg;  // Generator real and reactive power
   gridpack::RealType *x = xin+offsetb; // generator array starts from this location
-  double Vr, Vi;
+  double Vr, Vi, Vt;
 
   Pg = pg/mbase;
   Qg = qg/mbase;
 
   Vr = p_Vm0*cos(p_Va0);
   Vi = p_Vm0*sin(p_Va0);
+
+  Vt = sqrt(Vr*Vr + Vi*Vi);
+  
+  Vmeas = Vt;
+  Pinv = Pg;
+  Qinv = Qg;
 
   gridpack::ComplexType V = gridpack::ComplexType(Vr,Vi);
   gridpack::ComplexType S = gridpack::ComplexType(Pg,Qg);
