@@ -164,7 +164,18 @@ void Reeca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Iqmax = Imax;
   Iqmin = -Iqmax;
 
-  /* Create string for setting name */
+}
+
+/**
+ * Initialize exciter model before calculation
+ * @param [output] values - array where initialized exciter variables should be set
+ */
+void Reeca1::init(gridpack::RealType* xin) 
+{
+  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
+  double Vt = sqrt(VD*VD + VQ*VQ);
+
+    /* Create string for setting name */
   std::string blkhead = std::to_string(busnum) + "_" + id + "REECA1_";
   
   /* Set up blocks */
@@ -231,16 +242,6 @@ void Reeca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 
   Voltage_dip_prev = false;
   thld_timer = -1.0;
-}
-
-/**
- * Initialize exciter model before calculation
- * @param [output] values - array where initialized exciter variables should be set
- */
-void Reeca1::init(gridpack::RealType* xin) 
-{
-  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
-  double Vt = sqrt(VD*VD + VQ*VQ);
 
   double Pord_blk_in,Iq_Qflag;
   
