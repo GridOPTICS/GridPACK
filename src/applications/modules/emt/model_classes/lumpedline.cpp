@@ -63,7 +63,7 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
   L1 = X/OMEGA_S;
   L0 = 3*L1;
 
-  C0 = 3*C1; C1 = Bc/OMEGA_S;
+  C1 = Bc/OMEGA_S; C0 = 3*C1;
 
   double Rs = (2*R1 + R0)/3.0;
   double Rm = (R0 - R1)/3.0;
