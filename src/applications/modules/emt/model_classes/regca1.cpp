@@ -47,6 +47,18 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(GENERATOR_REGC_IQRMIN , &iqrmin, idx)) iqrmin = -999.0; 
   if (!data->getValue(GENERATOR_REGC_ACCEL  , &accel, idx))  accel = 0.7;
 
+}
+
+/**
+ * Initialize generator model before calculation
+ * @param [output] xin - array where initialized generator variables should be set
+ */
+void Regca1::init(gridpack::RealType* xin)
+{
+  double Pg, Qg;  // Generator real and reactive power
+  gridpack::RealType *x = xin+offsetb; // generator array starts from this location
+  double Vr, Vi;
+
   // Set up blocks
 
   // transfer function blocks
@@ -85,17 +97,7 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   // Integrator block
   angle_block.setparams(1.0);
 
-}
 
-/**
- * Initialize generator model before calculation
- * @param [output] xin - array where initialized generator variables should be set
- */
-void Regca1::init(gridpack::RealType* xin)
-{
-  double Pg, Qg;  // Generator real and reactive power
-  gridpack::RealType *x = xin+offsetb; // generator array starts from this location
-  double Vr, Vi;
 
   Pg = pg/mbase;
   Qg = qg/mbase;

@@ -64,7 +64,19 @@ void Gdform::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 
   if(!data->getValue(GENERATOR_VFLAG,&Vflag, idx)) Vflag = 0;
 
-  // Initialize blocks
+}
+
+/**
+ * Initialize generator model before calculation
+ * @param [output] xin - array where initialized generator variables should be set
+ */
+void Gdform::init(gridpack::RealType* xin)
+{
+  double Pg, Qg;  // Generator real and reactive power
+  gridpack::RealType *x = xin+offsetb; // generator array starts from this location
+  double Vr, Vi, Vt;
+
+    // Initialize blocks
   if(!zero_Tpf) {
     P_filter_blk.setparams(1.0,Tpf);
   }
@@ -90,17 +102,6 @@ void Gdform::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Qmin_PI_blk.setparams(kpqmax,kiqmax,0.0,1000.0,0.0,1000.0);
 
   Delta_blk.setparams(1.0);
-}
-
-/**
- * Initialize generator model before calculation
- * @param [output] xin - array where initialized generator variables should be set
- */
-void Gdform::init(gridpack::RealType* xin)
-{
-  double Pg, Qg;  // Generator real and reactive power
-  gridpack::RealType *x = xin+offsetb; // generator array starts from this location
-  double Vr, Vi, Vt;
 
   Pg = pg/mbase;
   Qg = qg/mbase;
