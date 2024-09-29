@@ -84,7 +84,18 @@ void Repca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   // Set constants
   Freq_ref = 1.0;
 
-  /* Create string for setting name */
+}
+
+/**
+ * Initialize exciter model before calculation
+ * @param [output] values - array where initialized exciter variables should be set
+ */
+void Repca1::init(gridpack::RealType* xin) 
+{
+  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
+  double Vt = sqrt(VD*VD + VQ*VQ);
+
+    /* Create string for setting name */
   std::string blkhead = std::to_string(busnum) + "_" + id + "REPCA1_";
 
   // Set up model blocks
@@ -135,16 +146,6 @@ void Repca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   std::string Pref_filter_block_name = blkhead + "Pref_filter_blk";
   Pref_filter_blk.setname(Pref_filter_block_name.c_str());
   Pref_filter_blk.setparams(1.0,Tg);
-}
-
-/**
- * Initialize exciter model before calculation
- * @param [output] values - array where initialized exciter variables should be set
- */
-void Repca1::init(gridpack::RealType* xin) 
-{
-  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
-  double Vt = sqrt(VD*VD + VQ*VQ);
 
   // Get Initial Pref and Qref
   getElectricalController()->getInitialPrefQext(&Pref, &Qref);
