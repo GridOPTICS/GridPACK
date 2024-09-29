@@ -100,7 +100,24 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
 
   TA = TA_OVER_TB*TB;
 
+}
+
+
+/**
+ * Initialize exciter model before calculation
+ * @param
+ */
+void Sexs::init(gridpack::RealType* xin)
+{
+  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
+  double Ec = sqrt(VD*VD + VQ*VQ);
+
+  // Get initial field voltage
+  Efd = getInitialFieldVoltage();
+
   if(integrationtype != IMPLICIT) {
+    // Initialization for explicit integration
+
     // Set up blocks
     /* Create string for setting name */
     std::string blkhead = std::to_string(busnum) + "_" + id + "SEXS_";
@@ -121,26 +138,9 @@ void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
     } else {
       gainblock.setparams(K,EMIN,EMAX);
     }
-  }
+ 
+    Vs = 0.0; 
 
-  Vs = 0.0; 
-}
-
-
-/**
- * Initialize exciter model before calculation
- * @param
- */
-void Sexs::init(gridpack::RealType* xin)
-{
-  gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
-  double Ec = sqrt(VD*VD + VQ*VQ);
-
-  // Get initial field voltage
-  Efd = getInitialFieldVoltage();
-
-  if(integrationtype != IMPLICIT) {
-    // Initialization for explicit integration
   
     double y1,u1;
 

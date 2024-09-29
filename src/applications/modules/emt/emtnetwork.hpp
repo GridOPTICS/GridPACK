@@ -305,6 +305,7 @@ private:
   // Anything declared here should be set in the Archive class in exactly the same order!!
   // Data needed for calculations
   double p_sbase = 100.0;   // System MVA base
+  int    p_busnum; // Bus number
   int    p_bustype; // Bus type
   double p_gl,p_bl; // Shunt conductance and susceptance (p.u.)
   double p_pl,p_ql; // Active and reactive load (p.u)
@@ -363,6 +364,7 @@ private:
   {
     ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
       & p_sbase
+      & p_busnum
       & p_bustype
       & p_gl & p_bl
       & p_pl & p_ql

@@ -57,18 +57,6 @@ void Tgov1::load(const boost::shared_ptr<gridpack::component::DataCollection> da
   if (!data->getValue(GOVERNOR_T2, &T2, idx)) T2 = 3.0; 
   if (!data->getValue(GOVERNOR_T3, &T3, idx)) T3 = 10.0; 
   if (!data->getValue(GOVERNOR_DT, &Dt, idx)) Dt = 0.0;
-
-  // Set up transfer function blocks
-  if(integrationtype != IMPLICIT) {
-    /* Create string for setting name */
-    std::string blkhead = std::to_string(busnum) + "_" + id + "TGOV1_";
-
-    leadlag_blk.setparams(T2,T3);
-
-    std::string delay_block_name = blkhead + "delay_blk";
-    delay_blk.setname(delay_block_name.c_str());
-    delay_blk.setparams(1.0,T1,Vmin,Vmax,-1000.0,1000.0);
-  }
 }
 
 /**
@@ -125,6 +113,16 @@ void Tgov1::init(gridpack::RealType* xin)
   double Pmech = gen->getInitialMechanicalPower();
 
   if(integrationtype != IMPLICIT) {
+    // Set up transfer function blocks
+    /* Create string for setting name */
+    std::string blkhead = std::to_string(busnum) + "_" + id + "TGOV1_";
+
+    leadlag_blk.setparams(T2,T3);
+
+    std::string delay_block_name = blkhead + "delay_blk";
+    delay_blk.setname(delay_block_name.c_str());
+    delay_blk.setparams(1.0,T1,Vmin,Vmax,-1000.0,1000.0);
+
     // Initialize leadlag block
     delay_blk_out = leadlag_blk.init_given_y(Pmech-Dt*dw);
     
