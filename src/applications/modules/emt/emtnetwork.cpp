@@ -576,6 +576,8 @@ void EmtBus::load(const
   // Get MVAbase
   data->getValue(CASE_SBASE,&p_sbase);
 
+  data->getValue(BUS_NUMBER,&p_busnum);
+
   // Get Voltage magnitude and angle
   data->getValue(BUS_VOLTAGE_ANG,&Va); // This is in degress
   data->getValue(BUS_VOLTAGE_MAG,&Vm);
@@ -759,6 +761,8 @@ void EmtBus::load(const
 
       has_gv = false;
       data->getValue(HAS_GOVERNOR,&has_gv,i);
+      boost::shared_ptr<BaseEMTGovModel> gov;
+
       if(has_gv) {
 	if(data->getValue(GOVERNOR_MODEL, &model, i)) {
 	  type = util.trimQuotes(model);
@@ -767,7 +771,6 @@ void EmtBus::load(const
 	    wsieg1 = new Wsieg1;
 	    wsieg1->setGenerator(p_gen[i]);
 
-	    boost::shared_ptr<BaseEMTGovModel> gov;
 	    gov.reset(wsieg1);
 	    p_gen[i]->setGovernor(gov);
 	    
@@ -778,7 +781,6 @@ void EmtBus::load(const
 	    tgov1 = new Tgov1;
 	    tgov1->setGenerator(p_gen[i]);
 
-	    boost::shared_ptr<BaseEMTGovModel> gov;
 	    gov.reset(tgov1);
 	    p_gen[i]->setGovernor(gov);
 	    
@@ -789,13 +791,9 @@ void EmtBus::load(const
 	    gast = new Gast;
 	    gast->setGenerator(p_gen[i]);
 
-	    boost::shared_ptr<BaseEMTGovModel> gov;
 	    gov.reset(gast);
 	    p_gen[i]->setGovernor(gov);
 
-	    int busnum;
-	    data->getValue(BUS_NUMBER,&busnum);
-	    
 	    // Handle governor data loading
 	    gast->load(data,i); // load governor model
 	  } else if(type == "HYGOV") {
@@ -803,7 +801,6 @@ void EmtBus::load(const
 	    hygov = new Hygov;
 	    hygov->setGenerator(p_gen[i]);
 
-	    boost::shared_ptr<BaseEMTGovModel> gov;
 	    gov.reset(hygov);
 	    p_gen[i]->setGovernor(gov);
 

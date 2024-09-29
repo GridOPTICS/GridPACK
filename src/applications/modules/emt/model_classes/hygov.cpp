@@ -51,20 +51,6 @@ void Hygov::load(const boost::shared_ptr<gridpack::component::DataCollection> da
   if (!data->getValue(GOVERNOR_DT, &Dt, idx)) Dt = 0.0;
   if (!data->getValue(GOVERNOR_QNL, &qNL, idx))  qNL = 0.0;
 
-  if(integrationtype == IMPLICIT) return;
-
-  /* Create string for setting name */
-  std::string blkhead = std::to_string(busnum) + "_" + id + "HYGOV_";
-
-  filter_block.setparams(1.0,TF);
-  
-  std::string gate_block_name = blkhead + "gate_blk";
-  gate_block.setname(gate_block_name.c_str());
-
-  gate_block.setparams(1/r,1/(r*TR),GMIN,GMAX,-10000,10000);
-  opening_block.setparams(1.0,TG);
-  turbine_flow_block.setparams(TW);
-
 }
 
 /**
@@ -123,6 +109,21 @@ void Hygov::postStep(double time)
 void Hygov::init(gridpack::RealType* xin) 
 {
   if(integrationtype == IMPLICIT) return;
+
+  // Set up transfer function blocks
+  /* Create string for setting name */
+  std::string blkhead = std::to_string(busnum) + "_" + id + "HYGOV_";
+
+  filter_block.setparams(1.0,TF);
+  
+  std::string gate_block_name = blkhead + "gate_blk";
+  gate_block.setname(gate_block_name.c_str());
+
+  gate_block.setparams(1/r,1/(r*TR),GMIN,GMAX,-10000,10000);
+  opening_block.setparams(1.0,TG);
+  turbine_flow_block.setparams(TW);
+
+  // Initialization begins from here
 
   gridpack::RealType *x = xin+offsetb; // governor array starts from this location
   
