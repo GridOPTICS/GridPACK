@@ -55,6 +55,7 @@ protected:
 Emt::Emt(void)
   : p_isSetUp(0),
     reuseprecon_nsteps(1),
+    timestep_prev(1.0),
     p_saveoutput(false),
     fp_monitor(NULL),
     emt_network(new EmtNetwork(p_comm))
@@ -64,6 +65,7 @@ Emt::Emt(gridpack::parallel::Communicator comm)
   : p_comm(comm),
     p_isSetUp(0),
     p_saveoutput(false),
+    timestep_prev(1.0),
     reuseprecon_nsteps(1),
     fp_monitor(NULL),
     emt_network(new EmtNetwork(p_comm))
