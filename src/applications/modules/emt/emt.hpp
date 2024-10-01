@@ -146,6 +146,14 @@ public:
   {
     p_factory->setTime(time);
 
+    int nsteps = p_daesolver->getstepnumber();
+    if(nsteps % reuseprecon_nsteps == 0 || fabs(timestep_prev - timestep) > 1e-6) {
+      p_daesolver->reusepreconditioner(-2); // Update preconditioner at next step
+    } else {
+      p_daesolver->reusepreconditioner(-1); // Reuse preconditioner
+    }
+    timestep_prev = timestep;
+
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
 
@@ -164,12 +172,6 @@ public:
   void operator() (const double& time,
 		   const gridpack::math::RealVector& X)
   {
-    int nsteps = p_daesolver->getstepnumber();
-    if(nsteps % reuseprecon_nsteps == 0) {
-      p_daesolver->reusepreconditioner(-2); // Update preconditioner at next step
-    } else {
-      p_daesolver->reusepreconditioner(-1); // Reuse preconditioner
-    }
     p_factory->postStep(time);
 
     save_output(time);
@@ -264,6 +266,8 @@ public:
   EMTMachineIntegrationType p_emtmachineintegrationtype;
 
   int reuseprecon_nsteps; // Reuse preconditioner for nsteps
+
+  double timestep_prev; // previous time-step
 
   void setMonitors(gridpack::utility::Configuration::CursorPtr);
 
