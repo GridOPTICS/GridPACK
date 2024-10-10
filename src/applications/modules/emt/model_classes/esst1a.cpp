@@ -236,11 +236,11 @@ void Esst1aExc::init(gridpack::RealType* xin)
     // block-based initialization
     // Set up blocks
     // Set parameters for the first block
-    /*if (Tf < TS_THRESHOLD * ts) zero_TF = true;
-    if (Tb < TS_THRESHOLD * ts) zero_TB = true;
-    if (Tb1 < TS_THRESHOLD * ts) zero_TB1 = true;
-    if (Ta < TS_THRESHOLD * ts) zero_TA = true;
-    if (Tr < TS_THRESHOLD * ts) zero_TR = true;*/
+    if (Tf < TS_THRESHOLD * 4.0e-3) zero_TF = true;
+    if (Tb < TS_THRESHOLD * 4.0e-3) zero_TB = true;
+    if (Tb1 < TS_THRESHOLD * 4.0e-3) zero_TB1 = true;
+    if (Ta < TS_THRESHOLD * 4.0e-3) zero_TA = true;
+    if (Tr < TS_THRESHOLD * 4.0e-3) zero_TR = true;
     
     // For lead lag block, force time constant of numerator to zero if time constant of denominator is zero
     if (zero_TB1) Tc1 = 0.0;
@@ -256,9 +256,9 @@ void Esst1aExc::init(gridpack::RealType* xin)
     if (!zero_TB1) Leadlag_blkBC1.setparams(Tc1, Tb1);
 
     if(!zero_TA) {
-      Regulator_blk.setparams(Ka,Ta,Vrmin,Vrmax,-1000.0,1000.0);
+      Regulator_blk.setparams(Ka,Ta,Vamin,Vamax,-1000.0,1000.0);
     } else {
-      Regulator_gain_blk.setparams(Ka,Vrmin,Vrmax);
+      Regulator_gain_blk.setparams(Ka,Vamin,Vamax);
     }
 
     HVGate_blk2.setparams(Vuel); 
@@ -306,7 +306,7 @@ void Esst1aExc::init(gridpack::RealType* xin)
       if (VA < Vamin) Vamin = VA-0.1;
     }
     if (!zero_TA) VLL1 = Regulator_blk.init_given_y(VA);
-    else VLL1 = VA;
+    else VLL1 = VA/Ka;
 
     if (!zero_TB1) VLL = Leadlag_blkBC1.init_given_y(VLL1);
     else VLL = VLL1;
@@ -328,8 +328,8 @@ void Esst1aExc::init(gridpack::RealType* xin)
     double Vop = 0.0;
     if (UEL == 1.0) Vop += Vuel;
     if (VOS == 1.0) Vop += Vothsg;
-    if (!zero_TR) Vmeas = Filter_blkR.init_given_u(Vcomp);
-    else Vmeas = Vcomp;
+    if (!zero_TR) Vmeas = Filter_blkR.init_given_u(Ec);
+    else Vmeas = Ec;
     Vref = u1 + Vmeas - Vop + Vf;
   } else {
     Ec = sqrt(VD*VD + VQ*VQ);

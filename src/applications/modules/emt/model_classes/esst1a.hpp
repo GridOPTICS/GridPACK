@@ -197,7 +197,7 @@ private:
   double Vothsg; // Voltage signal from stabilizer
   double Vuel; // Under excitation limiter voltage
   double Voel; // Over excitation limiter voltage
-  double Vcomp, Vterm, Vstab;
+  double Vterm, Vstab;
   
   // Initial Field Voltage (at t= 0)
   double Efd0;
