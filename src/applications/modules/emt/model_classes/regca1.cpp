@@ -92,7 +92,7 @@ void Regca1::init(gridpack::RealType* xin)
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  omega_Pll_block.setparams(0.01,0.05);
+  omega_Pll_block.setparams(0.001,0.005);
 
   // Integrator block
   angle_block.setparams(1.0);
@@ -174,7 +174,7 @@ bool Regca1::serialWrite(char *string, const int bufsize,const char *signal)
   } else if(!strcmp(signal,"monitor")) {
     /* Print output */
     getPower(p_time,&Pgen,&Qgen);
-    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vt_filter,Pgen,delta,domega);
+    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vt_filter,Pgen*mbase/sbase,delta,domega);
     return true;
   }
   return false;
