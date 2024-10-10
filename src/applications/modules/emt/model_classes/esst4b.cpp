@@ -208,6 +208,9 @@ double Esst4bExc::CalculateVb(double Vterm,
   Ve = sqrt(Ve);
   double Vb = Ve * FEX(Kc * LadIfd / Ve); // FEX function from 1.8.1
   if (Vb > Vbmax) Vb = Vbmax;
+  // a temporary solution
+  Vb = 1.0;
+  //////////////////
   return Vb; 
 }
 
