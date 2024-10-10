@@ -85,6 +85,11 @@ void Gencvs::init(gridpack::RealType* xin)
   x[0] = ia;
   x[1] = ib;
   x[2] = ic;
+
+  p_vabc[0] = p_va;
+  p_vabc[1] = p_vb;
+  p_vabc[2] = p_vc;
+
 }
 
 /**
@@ -97,6 +102,24 @@ void Gencvs::init(gridpack::RealType* xin)
  */
 bool Gencvs::serialWrite(char *string, const int bufsize,const char *signal)
 {
+    if(!strcmp(signal,"header")) {
+    /* Print output header */
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
+    return true;
+  } else if(!strcmp(signal,"monitor")) {
+    /* Print output */
+      double Vm, Pgen,dspd=0.0,vdq0[3],idq0[3];
+      abc2dq0(p_vabc,p_time,delta,vdq0);
+      abc2dq0(p_iabc,p_time,delta,idq0);
+    if(p_online) {
+      Vm = sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
+    } else {
+      Vm = p_Vm0;
+    }
+    Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
+    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,delta,dspd);
+    return true;
+  }
   return false;
 }
 

@@ -543,8 +543,8 @@ bool gridpack::dynamic_simulation::Regca1Generator::serialWrite(
       Pg = Vt*Ipout*p_mbase/p_sbase; 
       Qg = -Vt*Iqout*p_mbase/p_sbase;
 
-      sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f, %12.6f ",
-          Vt,Pg, Qg, busfreq,Pref);
+      sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f ",
+	      Vt,Pg, Qg, busfreq,Pref,Ipout,Iqout);
       if(p_hasPitchController) {
         sprintf(string + strlen(string),",%12.6f,%12.6f ", Thetapitch,omega_ref);
       }
@@ -566,9 +566,9 @@ bool gridpack::dynamic_simulation::Regca1Generator::serialWrite(
       } else {
         tag = p_gen_id[1];
       }
-      sprintf(buf,", %d_%s_V,%d_%s_Pg, %d_%s_Qg, %d_%s_freq, %d_%s_Pref",
+      sprintf(buf,", %d_%s_V,%d_%s_Pg, %d_%s_Qg, %d_%s_freq, %d_%s_Pref,%d_%s_Ipout, %d_%s_Iqout",
           p_bus_num,tag.c_str(),p_bus_num,tag.c_str(),
-          p_bus_num,tag.c_str(),p_bus_num,tag.c_str(), p_bus_num, tag.c_str());
+          p_bus_num,tag.c_str(),p_bus_num,tag.c_str(), p_bus_num, tag.c_str(),p_bus_num,tag.c_str(), p_bus_num, tag.c_str());
       if(p_hasPitchController) {
         sprintf(buf + strlen(buf),", %d_%s_Tpitch,%d_%s_Omegaref",
             p_bus_num, tag.c_str(),p_bus_num, tag.c_str());

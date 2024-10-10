@@ -468,7 +468,7 @@ void Emt::initialize()
 
 void Emt::solve()
 {
-  int maxsteps(100000);
+  int maxsteps(1000000);
   double final_time;
   p_profiler.startsolvetimer();
   p_simparams.getFinalTime(&final_time);

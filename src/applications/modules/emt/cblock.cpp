@@ -67,6 +67,13 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,double dxmin
   xout = x[0] + dt*p_dxdt[0];
   xout = std::max(xmin,std::min(xout,xmax));
   x[0] = xout;
+
+  if(x[0] < xmin) {
+    printf("Block %s initial state %lf out of min. bounds %lf\n",name,x[0],xmin);
+  } else if(x[0] > xmax) {
+    printf("Block %s initial state %lf out of max. bounds %lf\n",name,x[0],xmax);
+  }
+
 }
 
 void Cblock::updatestate(double u,double dt)
