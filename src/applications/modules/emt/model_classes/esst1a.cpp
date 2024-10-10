@@ -188,6 +188,10 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   data->getValue(EXCITER_TF, &Tf, idx);
   data->getValue(EXCITER_KLR, &Klr, idx);
   data->getValue(EXCITER_ILR, &Ilr, idx);
+  
+  // a temporary solution
+  Kc = 0.0;
+  /////////////////////
 
   //printf("Tf = %f, Klr = %f, Ilr = %f\n", Tf, Klr, Ilr); exit(1);
 
@@ -227,6 +231,7 @@ void Esst1aExc::init(gridpack::RealType* xin)
   double Vf=0.0,Vfd;
   BaseEMTGenModel *gen=getGenerator();
   double LadIfd = gen->getFieldCurrent();
+  Efd = getInitialFieldVoltage();
 
   // Field voltage (Efd0) and bus voltage (VD,VQ) are already set 
   // Need to set the initial values for all the state variables
