@@ -18,22 +18,22 @@
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
 
-#define TS_THRESHOLD 1
-#define KI_THRESHOLD 1 // Check?
+#define TS_THRESHOLD 4
+#define KI_THRESHOLD 1e-6
 
 /**
  *  Basic constructor
  */
 Esst4bExc::Esst4bExc(void)
 {
-  dx1Vm = 0;
-  dx2Vcomp = 0;
-  dx3Va = 0; 
-  dx4Vr = 0; 
-  dx1Vm_1 = 0;
-  dx2Vcomp_1 = 0;
-  dx3Va_1 = 0;
-  dx4Vr_1 = 0;
+  // dx1Vm = 0;
+  // dx2Vcomp = 0;
+  // dx3Va = 0; 
+  // dx4Vr = 0; 
+  // dx1Vm_1 = 0;
+  // dx2Vcomp_1 = 0;
+  // dx3Va_1 = 0;
+  // dx4Vr_1 = 0;
 }
 
 /**
@@ -116,52 +116,39 @@ void Esst4bExc::load(
     data, int idx)
 {
   if (!data->getValue(EXCITER_TR, &Tr, idx)) Tr = 0.0; // Tr
-  //if (!data->getValue(EXCITER_KPR, &Kpr, idx)) 
-  Kpr = 0.0; // TBD: Kpr
-  //if (!data->getValue(EXCITER_KIR, &Kir, idx)) 
-  Kir = 0.0; // TBD: Kir
+  if (!data->getValue(EXCITER_KPR, &Kpr, idx)) Kpr = 0.0; // Kpr
+  if (!data->getValue(EXCITER_KIR, &Kir, idx)) Kir = 0.0; // Kir
   if (!data->getValue(EXCITER_VRMAX, &Vrmax, idx)) Vrmax = 0.0; // Vrmax
   if (!data->getValue(EXCITER_VRMIN, &Vrmin, idx)) Vrmin = 0.0; // Vrmin
   if (!data->getValue(EXCITER_TA, &Ta, idx)) Ta = 0.0; // Ta
-  //if (!data->getValue(EXCITER_KPM, &Kpm, idx)) 
-  Kpm = 0.0; // TBD: Kpm
-  //if (!data->getValue(EXCITER_KIM, &Kim, idx)) 
-  Kim = 0.0; // TBD: Kim
-  //if (!data->getValue(EXCITER_VMMAX, &Vmmax, idx)) 
-  Vmmax = 0.0; // TBD: Vmmax
-  //if (!data->getValue(EXCITER_VMMIN, &Vmmin, idx)) 
-  Vmmin = 0.0; // TBD: Vmmin
-  //if (!data->getValue(EXCITER_KG, &Kg, idx)) 
-  Kg = 0.0; // TBD: Kg
-  //if (!data->getValue(EXCITER_KP, &Kp, idx)) 
-  Kp = 0.0; // TBD: Kp
-  //if (!data->getValue(EXCITER_KI, &KI, idx)) 
-  KI = 0.0; // TBD: KI
-  //if (!data->getValue(EXCITER_VBMAX, &Vbmax, idx)) 
-  Vbmax = 0.0; // TBD: Vbmax
-  //if (!data->getValue(EXCITER_KC, &Kc, idx)) 
-  Kc = 0.0; // TBD: Kc
-  //if (!data->getValue(EXCITER_XL, &Xl, idx)) 
-  Xl = 0.0; // TBD: Xl
-  //if (!data->getValue(EXCITER_KPANG, &Kpang, idx)) 
-  Kpang = 0.0; // TBD: Kpang
-  //if (!data->getValue(EXCITER_VGMAX, &Vgmax, idx)) 
-  Vgmax = 0.0; // TBD: Vgmax
+  if (!data->getValue(EXCITER_KPM, &Kpm, idx)) Kpm = 0.0; // Kpm
+  if (!data->getValue(EXCITER_KPM, &Kim, idx)) Kim = 0.0; // Kim
+  if (!data->getValue(EXCITER_VMMAX, &Vmmax, idx)) Vmmax = 0.0; // Vmmax
+  if (!data->getValue(EXCITER_VMMIN, &Vmmin, idx)) Vmmin = 0.0; // Vmax
+  if (!data->getValue(EXCITER_KG, &Kg, idx)) Kg = 0.0; // Kg
+  if (!data->getValue(EXCITER_KP, &Kp, idx)) Kp = 0.0; // Kp
+  if (!data->getValue(EXCITER_KI, &KI, idx)) KI = 0.0; // KI
+  if (!data->getValue(EXCITER_VBMAX, &Vbmax, idx)) Vbmax = 0.0; // Vbmax
+  if (!data->getValue(EXCITER_KC, &Kc, idx)) Kc = 0.0; // Kc
+  if (!data->getValue(EXCITER_XL, &Xl, idx)) Xl = 0.0; // Xl
+  if (!data->getValue(EXCITER_THETAP, &Thetap, idx)) Thetap = 0.0; // Thetap, yuan: deg
+  
+  /*---yuan uncomment below---*/
+  printf("Tr=%f,Kpr=%f,Kir=%f,Vrmax=%f,Vrmin=%f,Ta=%f,Kpm=%f,Kim=%f,Vmmax=%f,Vmmin=%f,Kg=%f,Kp=%f,KI=%f,Vbmax=%f,Kc=%f,Xl=%f,Thetap=%f\n",Tr,Kpr,Kir,Vrmax,Vrmin,Ta,Kpm,Kim,Vmmax,Vmmin,Kg,Kp,KI,Vbmax,Kc,Xl,Thetap);
+  /*---yuan uncomment above---*/
+  
+  /*---yuan add below---*/
+  // right now we just hard code Vuel, Voel and Vs
+  Vs = 0.0;
+  Vuel = 0.0;
+  Voel = 1000.0;
+  OptionToModifyLimitsForInitialStateLimitViolation = false;
 
-  //printf("Tr = %f, Vrmax = %f, Vrmin = %f, Ta = %f\n", Tr, Vrmax, Vrmin, Ta); exit(1); 
+  zero_TR = false;
+  zero_TA = false;
+  zero_KIM = false;
+  zero_KIR = false;
 
-  if (integrationtype != IMPLICIT) {
-    // block-based explicit implementation
-    // right now we just hard code Vuel, Voel and Vs
-    Vs = 0.0;
-    Vuel = 0.0;
-    Voel = 1000.0;
-    OptionToModifyLimitsForInitialStateLimitViolation = true;
-    zero_TR = false;
-    zero_TA = false;
-    zero_KIM = false;
-    zero_KIR = false;
-  }
 }
 
 /**
@@ -194,9 +181,9 @@ double Esst4bExc::FEX(double IN)
 {
   double result;
   if (IN <= 0.0) result = 1;
-  else if (IN <= 0.433) result = 1 - 0.577 * IN;
-  else if (IN <= 0.75) result = sqrt(0.75 - sqr(IN));
-  else if (IN < 1.0) result = 1.732 * (1 - IN);
+  else if (IN <= 0.433 && IN > 0.0) result = 1 - 0.577 * IN;
+  else if (IN < 0.75 && IN > 0.433) result = sqrt(0.75 - sqr(IN));
+  else if (IN <= 1.0 && IN >= 0.75) result = 1.732 * (1 - IN);
   else result = 0;
   return result;
 }
@@ -241,15 +228,15 @@ void Esst4bExc::init(gridpack::RealType* xin)
   if(integrationtype != IMPLICIT) {
     // Set up blocks
     // Set parameters for the first block
-    /*if (Tr < TS_THRESHOLD * ts) zero_TR = true; // how to get ts?
-    if (Ta < TS_THRESHOLD * ts) zero_TA = true;
+    if (Tr < TS_THRESHOLD * 4e-3) zero_TR = true; // how to get ts?
+    if (Ta < TS_THRESHOLD * 4e-3) zero_TA = true;
     if (Kim < KI_THRESHOLD) zero_KIM = true;
     if (Kir < KI_THRESHOLD) zero_KIR = true;
     
-    if (zero_TR) printf("Tr=%f is better at least %d times larger than timestep=%f.\n", Tr, TS_THRESHOLD, ts);
-    if (zero_TA) printf("Ta=%f is better at least %d times larger than timestep=%f.\n", Ta, TS_THRESHOLD, ts);
-    if (zero_KIM) printf("Kim=%f is less than %d times of timestep=%f, treated as zero.\n", Kim, TS_THRESHOLD, ts);
-    if (zero_KIR) printf("Kir=%f is less than %d times of timestep=%f, treated as zero.\n", Kir, TS_THRESHOLD, ts);*/
+    // if (zero_TR) printf("Tr=%f is better at least %d times larger than timestep=%f.\n", Tr, TS_THRESHOLD, ts);
+    // if (zero_TA) printf("Ta=%f is better at least %d times larger than timestep=%f.\n", Ta, TS_THRESHOLD, ts);
+    // if (zero_KIM) printf("Kim=%f is less than %d times of timestep=%f, treated as zero.\n", Kim, TS_THRESHOLD, ts);
+    // if (zero_KIR) printf("Kir=%f is less than %d times of timestep=%f, treated as zero.\n", Kir, TS_THRESHOLD, ts);
     
     // printf("print: inside esst4b model, Ir=%f, Ii=%f\n", Ir, Ii);
     
@@ -276,10 +263,12 @@ void Esst4bExc::init(gridpack::RealType* xin)
     if (!zero_TA) {
       Filter_blkA.setparams(1.0, Ta);
     }
+	/*---else {a gain=1 block}---*/
     
     if (!zero_KIM) {
       PIControl_blmM.setparams(Kpm, Kim, Vmmin, Vmmax, -10000.0, 10000.0);
     }
+	/*---else {a gain=Kpm block}---*/
     
     LVGate_blk.setparams(Voel);
     
@@ -331,9 +320,9 @@ void Esst4bExc::init(gridpack::RealType* xin)
     }
 
     if(!zero_TR) {
-      Vmeas = Filter_blkR.init_given_u(Vcomp);
+      Vmeas = Filter_blkR.init_given_u(Ec);
     } else 
-      Vmeas = Vcomp;
+      Vmeas = Ec;
     Vref = u4 + Vmeas - Vuel - Vs; 
 
   } else { // Implicit implementation
