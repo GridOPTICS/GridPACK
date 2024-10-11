@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2023-09-13 07:43:15 d3g096
+ * @date   2024-10-10 08:41:42 d3g096
  * 
  * @brief  
  * 
@@ -215,7 +215,6 @@ protected:
     try {
       ierr = TSSetTime(p_ts, t0); CHKERRXX(ierr);
       ierr = TSSetTimeStep(p_ts, deltat0); CHKERRXX(ierr);
-      ierr = TSSetPostEventIntervalStep(p_ts, deltat0); CHKERRXX(ierr);
       Vec *xvec(PETScVector(x0));
       ierr = TSSetSolution(p_ts, *xvec);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -352,8 +351,10 @@ protected:
     BOOST_ASSERT(B == *(solver->p_petsc_J));
 
     boost::scoped_ptr<VectorType> 
-      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
-      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false)));
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              x, false))),
+      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                 xdot, false)));
 
     // Call the user-specified function (object) to form the Jacobian
     (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, *(solver->p_J));
@@ -373,9 +374,12 @@ protected:
       (PETScDAESolverImplementation *)dummy;
 
     boost::scoped_ptr<VectorType> 
-      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
-      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false))),
-      ftmp(new VectorType(new PETScVectorImplementation<T, I>(F, false)));
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              x, false))),
+      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                 xdot, false))),
+      ftmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              F, false)));
 
     (solver->p_Fbuilder)(t, *xtmp, *xdottmp, *ftmp);
     return ierr;
@@ -391,8 +395,10 @@ protected:
       (PETScDAESolverImplementation *)dummy;
 
     boost::scoped_ptr<VectorType> 
-      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
-      ftmp(new VectorType(new PETScVectorImplementation<T, I>(F, false)));
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              x, false))),
+      ftmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              F, false)));
 
     (solver->p_RHSbuilder)(t, *xtmp, *ftmp);
     return ierr;
@@ -417,7 +423,8 @@ protected:
       ierr = TSGetSolution(ts,&x);CHKERRXX(ierr);
 
       boost::scoped_ptr<VectorType> 
-	xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false)));
+	xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                x, false)));
       solver->p_postStepFunc(thetime, *xtmp);
     }
     return ierr;
@@ -443,7 +450,8 @@ protected:
       ierr = TSGetSolution(ts,&x);CHKERRXX(ierr);
 
       boost::scoped_ptr<VectorType> 
-	xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false)));
+	xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                x, false)));
       solver->p_preStepFunc(thetime, thetimestep, *xtmp);
     }
     return ierr;
@@ -464,7 +472,8 @@ protected:
     
 
     boost::scoped_ptr<VectorType>
-      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+      state(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                               U, false)));
 
     // This gets a little tricky.  If PETSc is built w/ complex,
     // fvalue will be complex, and evalues, whether real or complex,
@@ -497,7 +506,8 @@ protected:
       (PETScDAESolverImplementation *)dummy;
 
     boost::scoped_ptr<VectorType>
-      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+      state(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                               U, false)));
 
     solver->p_eventManager->handle(nevents_zero, events_zero, t, *state);
     return ierr;
