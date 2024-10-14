@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2022-10-05 08:51:23 d3g096
+ * @date   2024-10-14 08:23:58 d3g096
  * 
  * @brief  
  * 
@@ -2199,8 +2199,7 @@ void initBranchUpdate(void)
     // Construct GA that can hold exchange data for all active branches
     int nprocs = GA_Pgroup_nnodes(grp);
     int me = GA_Pgroup_nodeid(grp);
-    int *totBranches = new int(nprocs);
-    int *distr = new int(nprocs);
+    std::vector<int> totBranches(nprocs), distr(nprocs);
     for (i=0; i<nprocs; i++) {
       if (me == i) {
         totBranches[i] = numBranches;
@@ -2210,7 +2209,7 @@ void initBranchUpdate(void)
     }
     char plus[2];
     strcpy(plus,"+");
-    GA_Pgroup_igop(grp,totBranches,nprocs,plus);
+    GA_Pgroup_igop(grp,&totBranches[0],nprocs,plus);
     distr[0] = 0;
     p_branchTotal = totBranches[0];
     for (i=1; i<nprocs; i++) {
@@ -2221,7 +2220,7 @@ void initBranchUpdate(void)
     int one = 1;
     p_branchXCBufType = NGA_Register_type(p_branchXCBufSize);
     GA_Set_data(p_branchGA, one, &p_branchTotal, p_branchXCBufType);
-    GA_Set_irreg_distr(p_branchGA, distr, &nprocs);
+    GA_Set_irreg_distr(p_branchGA, &distr[0], &nprocs);
     GA_Set_pgroup(p_branchGA, grp);
     GA_Allocate(p_branchGA);
     p_branchGASet = true;
@@ -2271,8 +2270,6 @@ void initBranchUpdate(void)
         icnt++;
       }
     }
-    delete totBranches;
-    delete distr;
   }
   GA_Pgroup_sync(grp);
 }
