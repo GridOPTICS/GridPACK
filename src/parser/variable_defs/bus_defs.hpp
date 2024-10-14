@@ -83,6 +83,7 @@
  * type: real float
  */
 #define BUS_VOLTAGE_ANG "BUS_VOLTAGE_ANG"
+#define BUS_VANG_CURRENT "BUS_VANG_CURRENT"
 
 /**
  * Maximum allowable bus voltage magnitude, in p. u.
