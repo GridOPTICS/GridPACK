@@ -1672,6 +1672,9 @@ void clear(void)
     delete [] p_inactiveBranchIndices;
   }
   if (p_branchSndBuf) {
+    delete [] ((char*)p_branchSndBuf);
+  }
+  if (p_branchRcvBuf) {
     delete [] ((char*)p_branchRcvBuf);
   }
   if (p_branchGASet) {
@@ -2274,7 +2277,8 @@ void initBranchUpdate(void)
     icnt = 0;
     for (i=0; i<size; i++) {
       if (getActiveBranch(i)) {
-        p_activeBranchIndices[lcnt] = new int(getGlobalBranchIndex(i));
+        p_activeBranchIndices[lcnt] = new int;
+        *(p_activeBranchIndices[lcnt]) = getGlobalBranchIndex(i);
         idx = *(p_activeBranchIndices[lcnt]);
         if (idx<0 || idx >= p_branchTotal) {
           char buf[256];
@@ -2287,7 +2291,8 @@ void initBranchUpdate(void)
         }
         lcnt++;
       } else {
-        p_inactiveBranchIndices[icnt] = new int(getGlobalBranchIndex(i));
+        p_inactiveBranchIndices[icnt] = new int;
+        *(p_inactiveBranchIndices[icnt]) = getGlobalBranchIndex(i);
         idx = *(p_inactiveBranchIndices[icnt]);
         if (idx<0 || idx >= p_branchTotal) {
           char buf[256];
