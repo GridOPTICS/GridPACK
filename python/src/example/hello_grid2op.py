@@ -4,6 +4,7 @@ import sys
 sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/")
 from grid2op_backend import GridPACKBackend
 from grid2op.PlotGrid.PlotMatplot import PlotMatplot
+from grid2op.Agent import RandomAgent
 
 import argparse
 
@@ -22,12 +23,14 @@ def parse_arguments():
     parser.add_argument(
         "--iter", 
         help="Total number of iterations to run the code.", 
-        default=10
+        default=200,
+        type=int
     )
     parser.add_argument(
-        "--print_every_steps", 
+        "--log_freq", 
         help="Number of steps between each print of the data.", 
-        default=1
+        default=1,
+        type=int
     )
 
     return parser.parse_args()
@@ -51,11 +54,12 @@ if __name__=="__main__":
         warnings.filterwarnings("ignore")
         env = grid2op.make(config_filepath,
                         grid_path=filename,
-                        backend=GridPACKBackend()
-                        )
+                        backend=GridPACKBackend(save_at=args.iter-1, log_freq=args.log_freq)
+                        ) # mention the time resolution - resolution of the environment - episode size goes - stuff from config.py file won't be used if mentioned here - episode can be updated in the config files
 
     # reset environment
     print("============ Environment Reset =============")
+    # agent = RandomAgent(env.action_space)
     obs = env.reset()
 
     # print network analytics
@@ -65,11 +69,21 @@ if __name__=="__main__":
     print("Number of lines: %d" % (obs.n_line))
     print("Number of storage units: %d" % (obs.n_storage))
 
-    # # step environment
-    # counter = 0
-    # while counter < 5:
-    #     obs, reward, done, info = env.step(env.action_space())
-    #     counter += 1
+    # step environment
+    counter = 0
+    while counter < args.iter:
+        new_load_p = obs.load_p * 1.1
+        new_load_q = obs.load_q * 0.9
+        # print(obs.load_p, obs.load_q)
+        action = env.action_space(
+            {"injection": {
+                "load_p": new_load_p,
+                "load_q": new_load_q
+                }
+            }
+        )
+        obs, reward, done, info = env.step(action)
+        counter += 1
 
     print(env.observation_space)
 
