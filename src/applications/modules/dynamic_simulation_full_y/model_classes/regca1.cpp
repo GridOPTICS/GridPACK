@@ -134,6 +134,38 @@ void gridpack::dynamic_simulation::Regca1Generator::load(
 }
 
 /**
+ * Update parameters in DataCollection object with current values from
+ * generator
+ * @param data collection object for bus that hosts generator
+ * @param index of generator on bus
+ */
+void gridpack::dynamic_simulation::Regca1Generator::updateData(
+    boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+{
+  double Pg,Qg;
+  double Iq_olim; // Current injection for over-voltage
+  
+  Lvpnt_out = Lvpnt_blk.getoutput(Vt);
+
+  Ipout = Ip*Lvpnt_out;
+
+  Iq_olim = std::max(0.0,khv*(Vt - volim));
+
+  Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
+
+  // Pg, Qg on machine MVAbase
+  Pg = Vt*Ipout*p_mbase/p_sbase; 
+  Qg = -Vt*Iqout*p_mbase/p_sbase;
+
+  if (!data->setValue(GENERATOR_PG_CURRENT, Pg, idx)) {
+    data->addValue(GENERATOR_PG_CURRENT, Qg, idx);
+  }
+  if (!data->setValue(GENERATOR_QG_CURRENT, Pg, idx)) {
+    data->addValue(GENERATOR_QG_CURRENT, Qg, idx);
+  }
+}
+
+/**
  * Initialize generator model before calculation
  * @param Vm voltage magnitude
  * @param Va voltage angle

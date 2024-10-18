@@ -128,11 +128,11 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
 void gridpack::dynamic_simulation::GenrouGenerator::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  if (!data->setValue(GENERATOR_PG_CURRENT, p_pg, idx)) {
-    data->addValue(GENERATOR_PG_CURRENT, p_pg, idx);
+  if (!data->setValue(GENERATOR_PG_CURRENT, genP*MBase/p_sbase, idx)) {
+    data->addValue(GENERATOR_PG_CURRENT, genP*MBase/p_sbase, idx);
   }
-  if (!data->setValue(GENERATOR_QG_CURRENT, p_qg, idx)) {
-    data->addValue(GENERATOR_QG_CURRENT, p_qg, idx);
+  if (!data->setValue(GENERATOR_QG_CURRENT, genQ*MBase/p_sbase, idx)) {
+    data->addValue(GENERATOR_QG_CURRENT, genQ*MBase/p_sbase, idx);
   }
   if (p_exciter.get() != NULL) {
     p_exciter->updateData(data, idx);
