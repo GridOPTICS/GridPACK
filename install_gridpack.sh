@@ -62,7 +62,7 @@ then
    -D MPI_C_COMPILER:STRING='mpicc' \                                         
    -D MPIEXEC:STRING='mpiexec' \                                                            
    -D GRIDPACK_TEST_TIMEOUT:STRING=30 \                                                     
-   -D CMAKE_INSTALL_PREFIX:PATH=${GRIDPACK_INSTALL_DIR} \             
+   -D CMAKE_INSTALL_PREFIX:PATH=${GRIDPACK_INSTALL_DIR} \
    -D CMAKE_BUILD_TYPE:STRING=Debug \
    -D BUILD_SHARED_LIBS=YES \
    -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE \

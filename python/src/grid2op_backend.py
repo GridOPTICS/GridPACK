@@ -169,7 +169,7 @@ class GridPACKBackend(Backend):
         self.can_handle_more_than_2_busbar()
 
         # select index
-        sel_index = -1
+        sel_index = 0
 
         # solve the power flow - to load the grid data
         self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, sel_index)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
