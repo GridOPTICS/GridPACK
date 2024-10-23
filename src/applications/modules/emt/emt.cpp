@@ -40,8 +40,10 @@ protected:
     //    p_sim->p_X->equate(state);
     //    p_sim->p_factory->setMode(XVECTOBUS);
     //    p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
-  
+    p_sim->updateprecon = true;
+    
     Emt::EventManager::p_handle(nevent, eventidx, t, state);
+
 
     p_sim->p_daesolver->restartstep();
 
@@ -55,6 +57,7 @@ protected:
 Emt::Emt(void)
   : p_isSetUp(0),
     reuseprecon_nsteps(1),
+    updateprecon(false),
     timestep_prev(1.0),
     p_saveoutput(false),
     fp_monitor(NULL),
@@ -66,6 +69,7 @@ Emt::Emt(gridpack::parallel::Communicator comm)
     p_isSetUp(0),
     p_saveoutput(false),
     timestep_prev(1.0),
+    updateprecon(false),
     reuseprecon_nsteps(1),
     fp_monitor(NULL),
     emt_network(new EmtNetwork(p_comm))
