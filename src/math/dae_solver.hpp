@@ -145,6 +145,19 @@ public:
     p_impl->reusepreconditioner(niter);
   }
 
+  /// Reuse jacobian
+  /**
+   *
+   * Note: PETSc provides functionality to lag the jacobian (see SNESSetLagJacobian). This is particularly useful
+   * when for large systems when we can reuse the jacobian for several steps
+   */
+  void reusejacobian(int niter)
+  {
+    p_impl->reusejacobian(niter);
+  }
+
+
+
   /**
    * gettimestep - returns the current time-step
    * @param [output] dt - current time step
@@ -230,6 +243,13 @@ protected:
   {
     p_impl->reusepreconditioner(niter);
   }
+
+  /// Reuse Jacobian
+  void p_reusejacobian(int niter)
+  {
+    p_impl->reusejacobian(niter);
+  }
+
   
   /// Solve the system (specialized)
   void p_solve(double& maxtime, int& maxsteps)

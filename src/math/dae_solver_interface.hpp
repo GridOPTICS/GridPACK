@@ -91,6 +91,12 @@ public:
     this->p_reusepreconditioner(niter);
   }
 
+  void reusejacobian(int niter)
+  {
+    this->p_reusejacobian(niter);
+  }
+
+
   /* return time step */
   double gettimestep()
   {
@@ -165,7 +171,10 @@ protected:
 
   /// Reuse preconditioner
   virtual void p_reusepreconditioner(int niter) = 0;
-  
+
+  /// Reuse jacobian
+  virtual void p_reusejacobian(int niter) = 0;
+
   /// Solve the system (specialized)
   virtual void p_solve(double& maxtime, int& maxsteps) = 0;
 

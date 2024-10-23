@@ -113,6 +113,20 @@ public:
 		   const gridpack::math::RealVector& X, const gridpack::math::RealVector& Xdot, 
 		   gridpack::math::RealVector& F)
   {
+    double this_timestep = p_daesolver->gettimestep();
+
+    /*
+    int nsteps = p_daesolver->getstepnumber();
+    if(nsteps % reuseprecon_nsteps == 0 || fabs(timestep_prev - this_timestep) > 1e-6) {
+      p_daesolver->reusepreconditioner(-2); // Update preconditioner at next step
+      p_daesolver->reusejacobian(-2); // Update Jacobian
+    } else {
+      p_daesolver->reusepreconditioner(-1); // Reuse preconditioner
+      //      p_daesolver->reusejacobian(-1); // Reuse jacobian
+    }
+    timestep_prev = this_timestep;
+    */
+    
     p_factory->setTime(time);
 
     // Push current values in Xdot vector back into network components
@@ -146,13 +160,18 @@ public:
   {
     p_factory->setTime(time);
 
+    this_timestep = timestep;
+    
     int nsteps = p_daesolver->getstepnumber();
-    if(nsteps % reuseprecon_nsteps == 0 || fabs(timestep_prev - timestep) > 1e-6) {
+    if(nsteps % reuseprecon_nsteps == 0 || fabs(timestep_prev - this_timestep) > 1e-6) {
       p_daesolver->reusepreconditioner(-2); // Update preconditioner at next step
+      //      p_daesolver->reusejacobian(-2); // Update Jacobian
     } else {
       p_daesolver->reusepreconditioner(-1); // Reuse preconditioner
+      //      p_daesolver->reusejacobian(-1); // Reuse jacobian
     }
-    timestep_prev = timestep;
+
+    updateprecon = false;
 
     // Push current values in X vector back into network components
     p_factory->setMode(XVECTOBUS);
@@ -175,6 +194,7 @@ public:
     p_factory->postStep(time);
 
     save_output(time);
+    timestep_prev = this_timestep;
   }
 
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff
@@ -267,6 +287,9 @@ public:
 
   int reuseprecon_nsteps; // Reuse preconditioner for nsteps
 
+  bool updateprecon; // if true updates preconditioner, false otherwise
+
+  double this_timestep; // Current time-step
   double timestep_prev; // previous time-step
 
   void setMonitors(gridpack::utility::Configuration::CursorPtr);

@@ -247,6 +247,20 @@ protected:
     }
   }
 
+  /// Reuse jacobian
+  void p_reusejacobian(int niter)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      SNES snes;
+      ierr = TSGetSNES(p_ts,&snes);CHKERRXX(ierr);
+      ierr = SNESSetLagJacobian(snes,niter);CHKERRXX(ierr);
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
+
   /// Get time step
   double p_gettimestep()
   {
