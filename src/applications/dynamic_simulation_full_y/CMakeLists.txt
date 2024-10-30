@@ -399,13 +399,13 @@ install(TARGETS dsf2.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("dynamic_simulation_full_y_145_bus" dsf.x input_145.xml)
+gridpack_add_run_test("dynamic_simulation_full_y_145_bus" dsf2.x input_145.xml)
 gridpack_add_run_test("dynamic_simulation_full_y_2_145_bus" dsf2.x input_145.xml)
-gridpack_add_run_test("dynamic_simulation_full_y_240_bus" dsf.x input_240bus.xml)
+gridpack_add_run_test("dynamic_simulation_full_y_240_bus" dsf2.x input_240bus.xml)
 gridpack_add_run_test("dynamic_simulation_full_y2_240_bus" dsf2.x input_240bus.xml)
-gridpack_add_run_test("dynamic_simulation_two_area" dsf.x input_twoarea.xml)
+gridpack_add_run_test("dynamic_simulation_two_area" dsf2.x input_twoarea.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area" dsf2.x input_twoarea.xml)
-gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf.x input_twoarea_renewable_mech.xml)
+gridpack_add_run_test("dynamic_simulation_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_2_two_area_renewable" dsf2.x input_twoarea_renewable_mech.xml)
 gridpack_add_run_test("dynamic_simulation_unit_gast" dsf2.x input_unit_GAST.xml)
 gridpack_add_run_test("dynamic_simulation_unit_genrou" dsf2.x input_unit_GENROU.xml)
