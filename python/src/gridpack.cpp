@@ -22,6 +22,7 @@ namespace py = pybind11;
 #include <gridpack/configuration/no_print.hpp>
 #include <gridpack/parallel/communicator.hpp>
 #include <gridpack/parallel/task_manager.hpp>
+#include <gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp>
 #include <gridpack/applications/modules/hadrec/hadrec_app_module.hpp>
 #include <gridpack/timer/coarse_timer.hpp>
 
@@ -327,16 +328,23 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   py::class_<gpds::Event>(dsm, "Event")
     .def(py::init<>())
-    .def_readwrite("start", &gpds::Event::start)
-    .def_readwrite("end", &gpds::Event::end)
-    .def_readwrite("step", &gpds::Event::step)
-    .def_readwrite("tag", &gpds::Event::tag)
     .def_readwrite("isGenerator", &gpds::Event::isGenerator)
     .def_readwrite("isBus", &gpds::Event::isBus)
-    .def_readwrite("bus_idx", &gpds::Event::bus_idx)
     .def_readwrite("isLine", &gpds::Event::isLine)
+    .def_readwrite("isBusFault", &gpds::Event::isBusFault)
+    .def_readwrite("isLineStatus", &gpds::Event::isLineStatus)
+    .def_readwrite("isGenStatus", &gpds::Event::isGenStatus)
+    .def_readwrite("start", &gpds::Event::start)
+    .def_readwrite("end", &gpds::Event::end)
+    .def_readwrite("bus_idx", &gpds::Event::bus_idx)
+    .def_readwrite("Gfault", &gpds::Event::Gfault)
+    .def_readwrite("Bfault", &gpds::Event::Bfault)
+    .def_readwrite("time", &gpds::Event::time)
+    .def_readwrite("tag", &gpds::Event::tag)
     .def_readwrite("from_idx", &gpds::Event::from_idx)
     .def_readwrite("to_idx", &gpds::Event::to_idx)
+    .def_readwrite("status", &gpds::Event::status)
+    .def_readwrite("step", &gpds::Event::step)
     ;
 
   // -------------------------------------------------------------
