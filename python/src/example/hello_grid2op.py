@@ -28,13 +28,13 @@ def parse_arguments():
     parser.add_argument(
         "--grid2op_stepsize", 
         help="Timestep size for Grid2Op (in seconds).", 
-        default=60, # 1 minute
+        default=1, # 1 minute NOTE: Update it to 60 later
         type=int
     )
     parser.add_argument(
         "--grid2op_steps", 
         help="Total number of iterations to run the code.", 
-        default=1,
+        default=5,
         type=int
     )
     parser.add_argument(
@@ -55,18 +55,22 @@ def save_data(filename_prefix):
     print("[INFO] Saving the data")
     # bus data
     res_bus = pd.concat(BUS_LOGGER, ignore_index=True)
+    res_bus["tick"] = res_bus["tick"] - res_bus["tick"].values[0]
     res_bus.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_bus.csv")
     
     # gen data
     res_gen = pd.concat(GEN_LOGGER, ignore_index=True)
+    res_gen["tick"] = res_gen["tick"] - res_gen["tick"].values[0]
     res_gen.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_gen.csv")
     
     # load data
     res_load = pd.concat(LOAD_LOGGER, ignore_index=True)
+    res_load["tick"] = res_load["tick"] - res_load["tick"].values[0]
     res_load.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_load.csv")
     
     # line data
     res_line = pd.concat(BRANCH_LOGGER, ignore_index=True)
+    res_line["tick"] = res_line["tick"] - res_line["tick"].values[0]
     res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_line.csv")
 
 if __name__=="__main__":
@@ -115,7 +119,7 @@ if __name__=="__main__":
     counter = 0
     while counter < args.grid2op_steps:
         new_load_p = obs.load_p * 1.1
-        new_load_q = obs.load_q * 0.9
+        new_load_q = obs.load_q * 1.1
         # print(obs.load_p, obs.load_q)
         action = env.action_space(
             {
@@ -128,23 +132,18 @@ if __name__=="__main__":
 
         # start time to save the data finally
         grid2op_start_time = env.time_stamp
-        print(env.time_stamp, env.backend._counter)
+        # print(env.time_stamp, env.backend._counter)
         # print(env.delta_time_seconds)
         obs, reward, done, info = env.step(action)
 
         # log data
-        # FIXME: Tick values are incorrect
         BUS_LOGGER += env.backend.bus_logger
-        # print(env.backend.bus_logger[0])
-        # print(BUS_LOGGER[0])
-        # print(len(env.backend.bus_logger))
-        # sys.exit(1)
         GEN_LOGGER += env.backend.gen_logger
         LOAD_LOGGER += env.backend.load_logger
         BRANCH_LOGGER += env.backend.branch_logger
         
         # save data
-        if counter == 0: # save at 2nd grid2op step
+        if counter == args.grid2op_steps-1: # save at 2nd grid2op step
             filename_prefix = filename.split(".")[0]
             save_data(filename_prefix)
 
