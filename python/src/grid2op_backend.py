@@ -34,7 +34,6 @@ class GridPACKBackend(Backend):
         print(f"[INFO] Grid2Op Simulation Timestep: {self._grid2op_stepsize} seconds")
 
         # NOTE: add a timestamp along with the counter - get the time from GridPACK - if possible
-        self._counter = 0
         self._log_freq = log_freq
 
     def _build_grid(self):
@@ -159,6 +158,7 @@ class GridPACKBackend(Backend):
         self._gridpack_stepsize = float(bs_data.find('timestep').text)
         print(f"[INFO] GridPACK simulation step size: {self._gridpack_stepsize} seconds")
 
+        self._counter = 0
         self._counter_time = self._counter * self._gridpack_stepsize
         
         # NOTE: Need to duble check this
@@ -264,14 +264,16 @@ class GridPACKBackend(Backend):
               grid_filename: Optional[Union[os.PathLike, str]]=None
             ) -> None:
         # TODO: Reset GridPACK simulator
-        self._counter = 0
-        self._counter_time = self._counter * self._gridpack_stepsize
+        # self._counter = 0
+        # self._counter_time = self._counter * self._gridpack_stepsize
+        pass
 
     def apply_action(self, backendAction: Union["grid2op.Action._backendAction._BackendAction", None]) -> None:
         '''
         # called for each "step", thousands of times
         # modify the topology, load, generation etc.
         '''
+        "NOTE: Grid2Op registers an event and GridPACK executes that action in the next time step. We need to check can we register an event later in the code."
         # the following few lines are highly recommended
         if backendAction is None:
             return
@@ -282,7 +284,7 @@ class GridPACKBackend(Backend):
             _,
             shunts__,
         ) = backendAction()
-        print("[GridPACK] Action executed")
+        # print("[GridPACK] Executing action")
         
         # change the active values of the loads
         load_dict = {}
@@ -305,7 +307,8 @@ class GridPACKBackend(Backend):
         # update load values
         if len(load_dict) != 0:
             load_frame = pd.DataFrame(load_dict).T
-            self._dsapp.scatterInjectionLoadNew_compensateY(
+            # print(load_frame)
+            self._dsapp.scatterInjectionLoadNew(
                 load_frame.index.values,
                 load_frame["p"].values,
                 load_frame["q"].values,
@@ -522,9 +525,6 @@ class GridPACKBackend(Backend):
             # counter
             self._counter += 1
             self._counter_time = self._counter * self._gridpack_stepsize
-
-        # print(self.bus_logger[0])
-        # print(len(self.bus_logger))
 
         return True, None    
     
