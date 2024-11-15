@@ -1,10 +1,14 @@
 import grid2op
 import warnings
-import sys
+import sys, time
+from datetime import timedelta
+import pandas as pd
+
 sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/")
 from grid2op_backend import GridPACKBackend
 from grid2op.PlotGrid.PlotMatplot import PlotMatplot
 from grid2op.Agent import RandomAgent
+from grid2op.Chronics import ChangeNothing
 
 import argparse
 
@@ -13,7 +17,8 @@ def parse_arguments():
     parser.add_argument(
         "--gridpack_config", 
         help="Configuration file to run the simulation.", 
-        default="input_9b3g.xml"
+        default="input_9bus.xml",
+        choices=["input_9bus.xml", "input_39bus_IBR.xml"]
     )
     parser.add_argument(
         "--grid2op_config", 
@@ -21,9 +26,15 @@ def parse_arguments():
         default="/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/example/test_grid2op"
     )
     parser.add_argument(
-        "--iter", 
+        "--grid2op_stepsize", 
+        help="Timestep size for Grid2Op (in seconds).", 
+        default=60, # 1 minute
+        type=int
+    )
+    parser.add_argument(
+        "--grid2op_steps", 
         help="Total number of iterations to run the code.", 
-        default=200,
+        default=1,
         type=int
     )
     parser.add_argument(
@@ -35,6 +46,29 @@ def parse_arguments():
 
     return parser.parse_args()
     
+BUS_LOGGER = []
+GEN_LOGGER = []
+LOAD_LOGGER = []
+BRANCH_LOGGER = []
+
+def save_data(filename_prefix):
+    print("[INFO] Saving the data")
+    # bus data
+    res_bus = pd.concat(BUS_LOGGER, ignore_index=True)
+    res_bus.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_bus.csv")
+    
+    # gen data
+    res_gen = pd.concat(GEN_LOGGER, ignore_index=True)
+    res_gen.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_gen.csv")
+    
+    # load data
+    res_load = pd.concat(LOAD_LOGGER, ignore_index=True)
+    res_load.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_load.csv")
+    
+    # line data
+    res_line = pd.concat(BRANCH_LOGGER, ignore_index=True)
+    res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_line.csv")
+
 if __name__=="__main__":
     # parse arguments
     args = parse_arguments()
@@ -50,18 +84,26 @@ if __name__=="__main__":
 
     # make environment
     print("============ Initializing Environment =============")
+    start_time = time.perf_counter()
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         env = grid2op.make(config_filepath,
                         grid_path=filename,
-                        backend=GridPACKBackend(save_at=args.iter-1, log_freq=args.log_freq)
-                        ) # mention the time resolution - resolution of the environment - episode size goes - stuff from config.py file won't be used if mentioned here - episode can be updated in the config files
+                        backend=GridPACKBackend(
+                            log_freq=args.log_freq,
+                            grid2op_stepsize=args.grid2op_stepsize
+                        ),
+                        data_feeding_kwargs={
+                            "time_interval": timedelta(
+                                seconds=args.grid2op_stepsize
+                            )}
+                    ) # mention the time resolution - resolution of the environment - episode size goes - stuff from config.py file won't be used if mentioned here - episode can be updated in the config files
 
     # reset environment
     print("============ Environment Reset =============")
     # agent = RandomAgent(env.action_space)
     obs = env.reset()
-
+        
     # print network analytics
     print("Number of buses:  %d" % (obs.n_sub))
     print("Number of generators: %d" % (obs.n_gen))
@@ -71,21 +113,46 @@ if __name__=="__main__":
 
     # step environment
     counter = 0
-    while counter < args.iter:
+    while counter < args.grid2op_steps:
         new_load_p = obs.load_p * 1.1
         new_load_q = obs.load_q * 0.9
         # print(obs.load_p, obs.load_q)
         action = env.action_space(
-            {"injection": {
-                "load_p": new_load_p,
-                "load_q": new_load_q
+            {
+                "injection": {
+                    "load_p": new_load_p,
+                    "load_q": new_load_q
                 }
             }
         )
+
+        # start time to save the data finally
+        grid2op_start_time = env.time_stamp
+        print(env.time_stamp, env.backend._counter)
+        # print(env.delta_time_seconds)
         obs, reward, done, info = env.step(action)
+
+        # log data
+        # FIXME: Tick values are incorrect
+        BUS_LOGGER += env.backend.bus_logger
+        # print(env.backend.bus_logger[0])
+        # print(BUS_LOGGER[0])
+        # print(len(env.backend.bus_logger))
+        # sys.exit(1)
+        GEN_LOGGER += env.backend.gen_logger
+        LOAD_LOGGER += env.backend.load_logger
+        BRANCH_LOGGER += env.backend.branch_logger
+        
+        # save data
+        if counter == 0: # save at 2nd grid2op step
+            filename_prefix = filename.split(".")[0]
+            save_data(filename_prefix)
+
+        # update counter
         counter += 1
 
-    print(env.observation_space)
+    # print(env.observation_space)
+    print(f"[INFO] Runtime: {time.perf_counter()-start_time} seconds")
 
     # plot_helper = PlotMatplot(env.observation_space)
     # fig = plot_helper.plot_layout()
