@@ -55,21 +55,25 @@ def save_data(filename_prefix):
     print("[INFO] Saving the data")
     # bus data
     res_bus = pd.concat(BUS_LOGGER, ignore_index=True)
+    # adjusting for counter increase during warm up calls
     res_bus["tick"] = res_bus["tick"] - res_bus["tick"].values[0]
     res_bus.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_bus.csv")
     
     # gen data
     res_gen = pd.concat(GEN_LOGGER, ignore_index=True)
+    # adjusting for counter increase during warm up calls
     res_gen["tick"] = res_gen["tick"] - res_gen["tick"].values[0]
     res_gen.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_gen.csv")
     
     # load data
     res_load = pd.concat(LOAD_LOGGER, ignore_index=True)
+    # adjusting for counter increase during warm up calls
     res_load["tick"] = res_load["tick"] - res_load["tick"].values[0]
     res_load.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_load.csv")
     
     # line data
     res_line = pd.concat(BRANCH_LOGGER, ignore_index=True)
+    # adjusting for counter increase during warm up calls
     res_line["tick"] = res_line["tick"] - res_line["tick"].values[0]
     res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_line.csv")
 
@@ -129,6 +133,7 @@ if __name__=="__main__":
                 }
             }
         )
+        # action = env.action_space({})
 
         # start time to save the data finally
         grid2op_start_time = env.time_stamp
