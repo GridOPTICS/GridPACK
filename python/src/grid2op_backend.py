@@ -16,7 +16,7 @@ class Grid:
         pass
 
 class GridPACKBackend(Backend):
-    def __init__(self, save_at=100, log_freq=1) -> None:
+    def __init__(self, grid2op_stepsize, log_freq=1) -> None:
         # Run Backend init
         super().__init__(can_be_copied=False)
 
@@ -30,19 +30,14 @@ class GridPACKBackend(Backend):
 
         # Create hadrec module
         self._dsapp = gridpack.dynamic_simulation.DSFullApp()
+        self._grid2op_stepsize = grid2op_stepsize
+        print(f"[INFO] Grid2Op Simulation Timestep: {self._grid2op_stepsize} seconds")
 
         # NOTE: add a timestamp along with the counter - get the time from GridPACK - if possible
         self._counter = 0
         self._log_freq = log_freq
-        self._save_at = save_at
-        
-        # output for plotting
-        self._out_bus_list = []
-        self._out_gen_list = []
-        self._out_load_list = []
-        self._out_branch_list = []
 
-    def build_grid(self):
+    def _build_grid(self):
         grid = Grid()
 
         bus_list = []
@@ -161,11 +156,13 @@ class GridPACKBackend(Backend):
             data = f.read()
         bs_data = BeautifulSoup(data, "lxml")
         # timestep
-        self._timestep = float(bs_data.find('timestep').text)
-        self._counter_time = self._counter * self._timestep
+        self._gridpack_stepsize = float(bs_data.find('timestep').text)
+        print(f"[INFO] GridPACK simulation step size: {self._gridpack_stepsize} seconds")
+
+        self._counter_time = self._counter * self._gridpack_stepsize
         
-        # need to set
-        self.can_handle_more_than_2_busbar()
+        # NOTE: Need to duble check this
+        self.cannot_handle_more_than_2_busbar()
 
         # select index
         sel_index = -1
@@ -178,7 +175,7 @@ class GridPACKBackend(Backend):
         self._dsapp.setGeneratorWatch();
         
         # Building grid object from hadapp
-        self._grid = self.build_grid()
+        self._grid = self._build_grid()
         
         # then fill the number and location of loads
         self.n_load = self._grid.load.shape[0]
@@ -266,7 +263,9 @@ class GridPACKBackend(Backend):
               path: Union[os.PathLike, str], 
               grid_filename: Optional[Union[os.PathLike, str]]=None
             ) -> None:
-        self._counter = -1
+        # TODO: Reset GridPACK simulator
+        self._counter = 0
+        self._counter_time = self._counter * self._gridpack_stepsize
 
     def apply_action(self, backendAction: Union["grid2op.Action._backendAction._BackendAction", None]) -> None:
         '''
@@ -283,6 +282,7 @@ class GridPACKBackend(Backend):
             _,
             shunts__,
         ) = backendAction()
+        print("[GridPACK] Action executed")
         
         # change the active values of the loads
         load_dict = {}
@@ -302,18 +302,14 @@ class GridPACKBackend(Backend):
                 load_dict[bus]["q"] = new_q / case_sbase
             # self._grid.load["q_mvar"].iloc[load_id] = new_q
 
-        # print(load_dict)
         # update load values
         if len(load_dict) != 0:
             load_frame = pd.DataFrame(load_dict).T
-            # print(load_frame)
-            # print(self._grid.bus)
-            # print(load_frame.index.values, load_frame["p"].values, load_frame["q"].values)
-            # self._dsapp.scatterInjectionLoadNew_compensateY(
-            #     load_frame.index.values,
-            #     load_frame["p"].values,
-            #     load_frame["q"].values,
-            # )
+            self._dsapp.scatterInjectionLoadNew_compensateY(
+                load_frame.index.values,
+                load_frame["p"].values,
+                load_frame["q"].values,
+            )
         
         # change the active value of generators
         for gen_id, new_p in prod_p:
@@ -392,15 +388,14 @@ class GridPACKBackend(Backend):
             # Dynamic simulation values are in pu, need to convert them MW and MVar
             CASE_SBASE = self._dsapp.getBusInfoReal(bus, "CASE_SBASE")
             BUS_BASEKV = self._dsapp.getBusInfoReal(bus, "BUS_BASEKV")
-            # print(BUS_BASEKV)
-
+            
             # BUS_VMAG_CURRENT - latest value
             bus_data.append({
                 "tick": self._counter_time,
                 "vn_kv": self._dsapp.getBusInfoReal(bus, 'BUS_VMAG_CURRENT') * BUS_BASEKV,
                 "vn_kv_pu": self._dsapp.getBusInfoReal(bus, 'BUS_VMAG_CURRENT')
             })
-
+            
             # bus list
             for g in range(self._dsapp.numGenerators(bus)):
                 # gen data
@@ -420,11 +415,7 @@ class GridPACKBackend(Backend):
             
         self._grid.res_bus = pd.DataFrame(bus_data)
         self._grid.res_load = pd.DataFrame(load_data)
-        self._grid.res_gen = pd.DataFrame(gen_data) 
-
-        # print(self._grid.load, self._grid.res_load)
-        # print(self._grid.bus, self._grid.res_bus)
-        # sys.exit(1)
+        self._grid.res_gen = pd.DataFrame(gen_data)
     
     def _update_line_transformer_data(self):
         # line level data - lines and branches could be different. The two end points can have multiple lines but only one branch. 
@@ -484,8 +475,6 @@ class GridPACKBackend(Backend):
         
         # line data
         self._grid.res_line = pd.DataFrame(line_data)
-        # print(self._grid.line, self._grid.res_line)
-        # sys.exit(1)
         
         # transformer data
         self._grid.res_trafo = self._random_data_generator(self._grid.trafo.shape[0], columns=self._grid.res_trafo.columns)
@@ -500,40 +489,19 @@ class GridPACKBackend(Backend):
         # update line and transformer data
         self._update_line_transformer_data()
 
-        # append to out list
-        if ((self._counter-1) % self._log_freq) == 0: 
-            self._out_bus_list.append(pd.concat([self._grid.bus[["id"]], self._grid.res_bus], axis=1))
-            self._out_gen_list.append(pd.concat([self._grid.gen[["name", "bus"]], self._grid.res_gen], axis=1))
-            self._out_load_list.append(pd.concat([self._grid.load[["name", "bus"]], self._grid.res_load], axis=1))
-            self._out_branch_list.append(self._grid.res_line)
-        
-        # save data
-        if self._counter == self._save_at: 
-            print("Saving the data")
-            # bus data
-            res_bus = pd.concat(self._out_bus_list, ignore_index=True)
-            # print(res_bus.head())
-            res_bus.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{os.path.basename(self.full_path).split('.')[0]}_res_bus.csv")
-            
-            # gen data
-            res_gen = pd.concat(self._out_gen_list, ignore_index=True)
-            # print(res_gen.head())
-            res_gen.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{os.path.basename(self.full_path).split('.')[0]}_res_gen.csv")
-            
-            # load data
-            res_load = pd.concat(self._out_load_list, ignore_index=True)
-            # print(res_load.head())
-            res_load.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{os.path.basename(self.full_path).split('.')[0]}_res_load.csv")
-            
-            # line data
-            res_line = pd.concat(self._out_branch_list, ignore_index=True)
-            # print(res_line.head())
-            res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{os.path.basename(self.full_path).split('.')[0]}_res_line.csv")
+    def _reset_data_collectors(self):
+        # output for plotting
+        self.bus_logger = []
+        self.gen_logger = []
+        self.load_logger = []
+        self.branch_logger = []
 
-        # counter
-        self._counter += 1
-        self._counter_time = self._counter * self._timestep
-        # print(f"Counter value: {self._counter}")
+    def _log_data(self):
+        # append to out list
+        self.bus_logger.append(pd.concat([self._grid.bus[["id"]], self._grid.res_bus], axis=1))
+        self.gen_logger.append(pd.concat([self._grid.gen[["name", "bus"]], self._grid.res_gen], axis=1))
+        self.load_logger.append(pd.concat([self._grid.load[["name", "bus"]], self._grid.res_load], axis=1))
+        self.branch_logger.append(self._grid.res_line)
     
     def runpf(self, is_dc : bool=False):
         '''
@@ -541,12 +509,31 @@ class GridPACKBackend(Backend):
         # run the solver
         '''
         
-        # need to run a loop to match Grid2Op time scale
-        # execute one simulation time step	
-        self._dsapp.executeOneSimuStep()  
+        # Move GridPACK simulation by n_steps 	
+        n_steps = int(self._grid2op_stepsize / self._gridpack_stepsize)
+        assert n_steps > 0, f"[ERROR] Grid2Op timestep ({self._grid2op_stepsize} seconds) cannot be smaller that GridPACK timestep ({self._gridpack_stepsize} seconds)."
 
-        # update data in result dataframes
-        self._update_data()
+        # reset data collector object
+        self._reset_data_collectors()
+
+        # run GridPACK
+        for i in range(n_steps):
+            # run GridPACK simulation by one time step
+            self._dsapp.executeOneSimuStep()  
+
+            # update data in result dataframes
+            self._update_data()
+
+            # log data at log frequency
+            if ((self._counter-1) % self._log_freq) == 0:
+                self._log_data()
+
+            # counter
+            self._counter += 1
+            self._counter_time = self._counter * self._gridpack_stepsize
+
+        # print(self.bus_logger[0])
+        # print(len(self.bus_logger))
 
         return True, None    
     
