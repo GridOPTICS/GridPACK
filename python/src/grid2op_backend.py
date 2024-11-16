@@ -292,7 +292,7 @@ class GridPACKBackend(Backend):
         # update load values
         if len(load_dict) != 0:
             load_frame = pd.DataFrame(load_dict).T
-            # print(load_frame)
+            print(load_frame)
             self._dsapp.scatterInjectionLoadNew_compensateY(
                 load_frame.index.values,
                 load_frame["p"].values,
