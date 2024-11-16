@@ -53,7 +53,7 @@
   </Powerflow>
   <Dynamic_simulation>
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
-    <generatorParameters> case9_GENROU.dyr </generatorParameters>
+    <generatorParameters> case9.dyr </generatorParameters>
     <simulationTime>5.0</simulationTime>
     <timeStep>0.005</timeStep>
     <Events>
