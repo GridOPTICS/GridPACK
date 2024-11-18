@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2023-11-30 09:42:32 d3g096
+# Last Change: 2024-11-18 13:29:01 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -49,11 +49,23 @@ add_executable(emt.x
 
 target_link_libraries(emt.x ${target_libraries})
 
-add_custom_target(emt.x.input
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/emt/input_2bus.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_2bus.xml"
+)
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/input/emt/input_2bus.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input_2bus.xml
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/emt/input_9bus.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_9bus.xml"
+)
+
+gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc"
+  "${CMAKE_CURRENT_BINARY_DIR}/.petscrc"
+)
+
+
+add_custom_target(emt.x.input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/case2mod.raw
@@ -64,10 +76,6 @@ add_custom_target(emt.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/input/emt/input_9bus.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/raw/case9.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
@@ -85,22 +93,21 @@ add_custom_target(emt.x.input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
+  ${CMAKE_CURRENT_BINARY_DIR}/input_2bus.xml
   ${GRIDPACK_DATA_DIR}/input/emt/input_2bus.xml
   ${GRIDPACK_DATA_DIR}/raw/case2mod.raw	
   ${GRIDPACK_DATA_DIR}/dyr/case2.dyr
-  ${GRIDPACK_DATA_DIR}/input/emt/input_9bus.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_9bus.xml
   ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${GRIDPACK_DATA_DIR}/input/emt/input_9bus.xml
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
   ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/.petscrc
 )
 
 add_dependencies(emt.x emt.x.input)
