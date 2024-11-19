@@ -12,7 +12,7 @@
 Genrou::Genrou(void)
 {
   nxgen   = 12; // Number of variables for this model
-  flux_speed_sensitivity = 1;
+  flux_speed_sensitivity = 0;
 }
 
 void Genrou::getnvar(int *nvar)
@@ -63,7 +63,7 @@ void Genrou::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
 
   L = Xdpp/OMEGA_S;
-  
+
 }
 
 /**
@@ -112,7 +112,7 @@ void Genrou::init(gridpack::RealType* xin)
   // angle theta
   E1 = V + I*Z1;
   delta = arg(E1);
-  // theeta is behind delta by 90 degrees
+  // theta is behind delta by 90 degrees
   double theta = delta - PI/2.0;
 
   // Generator internal voltage on network reference frame
@@ -148,17 +148,6 @@ void Genrou::init(gridpack::RealType* xin)
 
   TM = psid*Iq - psiq*Id;
 
-  double tempd1,tempd2,tempq1,tempq2;
-  tempd1 = (Xdpp - Xl)/(Xdp - Xl);
-  tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
-  tempq1 = (Xdpp - Xl)/(Xqp - Xl);
-  tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
-
-  double Ed, Eq;
-
-  Eq = tempd1*Eqp + tempd2*psi1d;
-  Ed = -tempq1*Edp + tempq2*psi2q;
-
   double param, LadIfd;
   double dpsi1ddt;
 
@@ -185,9 +174,9 @@ void Genrou::init(gridpack::RealType* xin)
     x[10] = iabc[1]*mbase/sbase;
     x[11] = iabc[2]*mbase/sbase;
   } else {
-    x[0] = iabc[0];
-    x[1] = iabc[1];
-    x[2] = iabc[2];
+    x[0] = psid;
+    x[1] = psiq;
+    x[2] = psi0;
     x[3] = iabc[0]*mbase/sbase;
     x[4] = iabc[1]*mbase/sbase;
     x[5] = iabc[2]*mbase/sbase;
@@ -253,9 +242,12 @@ void Genrou::setValues(gridpack::RealType *values)
       iabc[1] = x[4];
       iabc[2] = x[5];
     } else if(p_mode == XDOTVECTOBUS) {
-      diabc[0] = x[0];
-      diabc[1] = x[1];
-      diabc[2] = x[2];
+      dpsid  = x[0];
+      dpsiq  = x[1];
+      dpsi0  = x[2];
+      diabc[0] = x[3];
+      diabc[1] = x[4];
+      diabc[2] = x[5];
     }
   } else {
     if(p_mode == XVECTOBUS) {
@@ -358,7 +350,7 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
       f[5] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop - dEdp;
       f[6] = dpsi2qdt/Tqopp - dpsi2q;
       f[7] = dw*OMEGA_S - ddelta;
-      f[8] = 1 / (2 *H) * ((TM - D*dw) - (psid*Iq - psiq*Id)) - ddw;
+      f[8] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)) - ddw;
       f[9] = igen[0]*mbase/sbase - iabc[0];
       f[10] = igen[1]*mbase/sbase - iabc[1];
       f[11] = igen[2]*mbase/sbase - iabc[2];
@@ -888,24 +880,23 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
     rows[ctr+5] = dw_idx; cols[ctr+5] = psi2q_idx;
     values[ctr+5] = Minv*-(psid*dIq_dpsi2q);
     
+    int TM_idx;
+    if(hasGovernor()) {
+      TM = getGovernor()->getMechanicalPower(&TM_idx);
+    }
+    
     rows[ctr+6] = dw_idx; cols[ctr+6] = dw_idx;
-    //    values[ctr+6] = Minv*(-D*(1/(1+dw) - (TM - D*dw)/((1+dw)*(1+dw)))) -shift;
-    values[ctr+6] = Minv*(-D) - shift;
+    values[ctr+6] = Minv*(-D*(1/(1+dw) - (TM - D*dw)/((1+dw)*(1+dw)))) -shift;
     
     ctr += 7;
     
     if(hasGovernor()) {
-      int TM_idx;
-      
-      TM = getGovernor()->getMechanicalPower(&TM_idx);
-
       // Partial derivatives w.r.t Governor
       if(TM_idx >= 0) {
 	// >=0 indiciates governor is using implicit method
 	// so we also need to set the derivative
 	rows[ctr] = dw_idx; cols[ctr] = TM_idx;
-	//	values[ctr] = Minv*(1/(1+dw));
-	values[ctr] = Minv;
+	values[ctr] = Minv*(1/(1+dw));
 	ctr += 1;
       }
     }
@@ -1093,7 +1084,7 @@ void Genrou::preStep(double time ,double timestep)
     TM = getGovernor()->getMechanicalPower();
   }
   
-  f[5] = 1 / (2 *H) * ((TM - D*dw) - (psid*Iq - psiq*Id)); 
+  f[5] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)); 
 
   for(int i=0; i < 6; i++) {
     x[i] += timestep*f[i]; // Forward Euler update
