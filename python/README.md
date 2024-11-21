@@ -53,9 +53,14 @@ RHEL_OPENMPI_HACK=yes
 export RHEL_OPENMPI_HACK
 ```
 
-This seems to be necessary on constance.
+This seems to be necessary on constance. 
+
+It is *not* necessary with MPICH or apparently OpenMPI on other Linux
+distributions.  
 
 ### Build
+
+*This is deprecated, but may still work with older Pythons.*
 
 In the top directory (where `setup.py` is),
 ```
@@ -63,6 +68,9 @@ python setup.py build
 ```
 
 ### Test
+
+*This is deprecated, but may still work with older Pythons.*
+
 Again, in the top directory,
 ```
 python setup.py test
@@ -83,6 +91,35 @@ OK
 
 ## Installation 
 
+With modern versions of Python and setuptools, it's best to use `pip`
+to install the module:
+```
+setenv GRIDPACK_DIR $prefix
+cd .../GridPACK/python
+pip install --no-deps --upgrade --prefix=$GRIDPACK_DIR .
+```
+This will install the Python module in the same place as the rest of
+GridPACK (`$GRIDPACK_DIR`).  To use the module, `PYTHONPATH` must be
+set to the site packages directory under `$GRIDPACK_DIR`. The path
+will depend on the Python version used.  For example, 
+```
+setenv PYTHONPATH $GRIDPACK_DIR/lib/python3.12/site-packages/
+```
+or
+```
+export PYTHONPATH=$GRIDPACK_DIR/lib/python3.12/site-packages
+```
+Alternatively, a Python virtual environment can be used.  
+
+An easy check to see if the module works is
+```
+python -c 'import gridpack'
+```
+
+*The below deprecated, but may still work with older Python
+installations. If this is used with newer Python versions, the module
+will not be installed correctly and be unusable.  *
+
 In order to use the wrapper it needs to be installed in a way Python
 can use it.  However, you shouldn't (and probably cannot) install the
 module in the system python library.  So, choose a place to install it. I would
@@ -101,14 +138,34 @@ This seems to be the way on Linux systems.
 This installs the Python module and a Python version of the HADREC
 application, `${GRIDPACK_DIR}/bin/hadrec.py`.
 
-## Run Example
+## Run Examples
 
 Once installed, with `PYTHONPATH` set correctly, the Python version of
-the HADREC application can be run
+several GridPACK applications can be run.  In
+`.../python/src/example` are a number of custom Python scripts that
+can be run to insure the viability of the GridPACK Python
+interface:
+```
+cd src/example
+python 39bus_test_example.py
+python 39bus_test_example_dsf.py
+python 39bus_scatterload_steptest_new_itr.py
+mpiexec -np 2 python 39bus_scatterload_steptest_new_itr.py
+python 39bus_scatterload_steptest_new_itr_dsf.py
+mpiexec -np 2 python 39bus_scatterload_steptest_new_itr_dsf.py
+python 39bus_scatterload_steptest_new_itr_compensateY.py
+python 39bus_test_pfdata.py
+```
+Dynamic simulation examples can also be run.
+`$GRIDPACK_DIR/bin/dsf2.py` behaves identically to
+`$GRIDPACK_DIR/bin/dsf2.x` and can run any of the example simulations
+in `.../src/build/applications/dynamic_simulation_full_y`, for example
 
 ```
-cd src/tests
-python ${GRIDPACK_DIR}/bin/hadrec.py input_tamu500_step005.xml
+cd ../src/build/applications/dynamic_simulation_full_y
+$GRIDPACK_DIR/bin/dsf2.py input_9b3g.xml
+$GRIDPACK_DIR/bin/dsf2.py input_240bus.xml
+mpiexec -np 4 $GRIDPACK_DIR/bin/dsf2.py input_240bus.xml
 ```
 
 ## Running on Constance
