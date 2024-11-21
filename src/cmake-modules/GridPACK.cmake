@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2023-12-13 07:00:00 d3g096
+# Last Change: 2024-11-21 07:59:56 d3g096
 # -------------------------------------------------------------
 
 
@@ -99,6 +99,8 @@ function(gridpack_add_parallel_unit_test test_name test_target)
       PASS_REGULAR_EXPRESSION "No errors detected"
       FAIL_REGULAR_EXPRESSION "failure detected"
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
+      # MPIEXEC will not look for executables in the current directory sometimes
+      ENVIRONMENT "PATH=./:%PATH%"
       )
     set_tests_ldpath("${the_test_name}")
   else() 
