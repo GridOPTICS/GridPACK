@@ -104,51 +104,39 @@ if [ $host == "briareus" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
         $common_flags ..
 
-elif [ $host == "we32673" ]; then
+elif [ $host == "WE39945" ]; then
 
-    # Mac using CLang 14.0 compilers and MPICH via MacPorts
+    # Macbook Pro using CLang 16.0 compilers and MPICH via MacPorts
     # The following MacPorts packages are installed:
-    #   clang-14 @14.0.6_0+analyzer+libstdcxx
-    #   mpich-clang14 @4.0.2_0+gcc12
-    #   boost176 @1.76.0_3+clang14+mpich+no_single+no_static+python310
+    #   clang-16 @16.0.6_6+analyzer
+    #   mpich-clang16 @4.2.3_0+gcc14
     # Global Arrays 5.7 built by hand
     # PETSc 3.8.4 w/ ParMETIS, SuperLU, etc., built by hand
+    # Boost 1.81 w/ MPI build by hand
     # Need to make sure the compiler set and MPI are selected, i.e.
+    #   sudo port select --set mpi mpich-clang16-fortran
     #   sudo port select clang mp-clang-6.0
-    #   sudo port select mpi mpich-clang60-fortran
-    # Cannot use PETSc < 3.8.0
+    # Cannot use PETSc < 3.20.0
 
     CC=/opt/local/bin/clang
     export CC
     CXX=/opt/local/bin/clang++
     export CC CXX 
 
-    prefix="/Users/d3g096/Projects/GridPACK"
-    pdir="$prefix/petsc.gitlab"
+    prefix="$HOME/Projects/GridPACK/install"
 
-    if [ "$shared"x = "ON"x ]; then
-        parch="darwin-mpich-clang-real-opt-3.16"
-        parch="darwin-mpich-clang-complex-opt-3.16"
-    else
-        parch="darwin-mpich-clang-complex-opt-3.16-static"
-    fi
-    
     cmake $options \
         --graphviz=GridPACK.dot \
-        -D GA_DIR:STRING="$prefix/gridpack-install" \
-        -D BOOST_ROOT:STRING="/opt/local/libexec/boost/1.76" \
+        -D GA_DIR:STRING="$prefix" \
+        -D BOOST_ROOT:STRING="$prefix" \
         -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
-        -D PETSC_DIR:PATH="$pdir" \
-        -D PETSC_ARCH:STRING="$parch" \
+        -D PETSC_DIR:PATH="$prefix" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
-        -D USE_CPLEX:BOOL=OFF \
-        -D USE_GLPK:BOOL=ON \
-        -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-install" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=120 \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
         $common_flags ..
 
 elif [ $host == "constance" ]; then
