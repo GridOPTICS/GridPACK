@@ -10,7 +10,6 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2024-11-21 07:59:56 d3g096
 # -------------------------------------------------------------
 
 
@@ -123,6 +122,8 @@ function(gridpack_add_parallel_run_test test_name test_target test_input)
     set_tests_properties("${the_test_name}"
       PROPERTIES 
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
+      # MPIEXEC will not look for executables in the current directory sometimes
+      ENVIRONMENT "PATH=./:%PATH%"
       )
     set_tests_ldpath("${the_test_name}")
   else()
