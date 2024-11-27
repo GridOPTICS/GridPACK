@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2020-05-22 09:41:25 d3g096
+# Last Change: 2024-11-27 08:43:27 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -100,7 +100,7 @@ if (NOT USE_PROGRESS_RANKS)
 endif()
 
 add_test(greetings_parallel 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} greetings ${MPIEXEC_POSTFLAGS})
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ./greetings ${MPIEXEC_POSTFLAGS})
 set_tests_properties(greetings_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"

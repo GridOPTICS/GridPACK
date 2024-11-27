@@ -1,3 +1,6 @@
+
+set -xe
+
 # This script installs all GridPACK dependencies.The dependencies are installed in external-dependencies directory.
 
 # This script should be run from the top-level GridPACK directory.
@@ -6,6 +9,7 @@
 install_boost=true
 install_ga=true
 install_petsc=true
+install_shared=true
 
 echo $(date)
 
@@ -38,30 +42,39 @@ cd ${GP_EXT_DEPS}
 if ${install_boost}
 then
 
+  boost_version="1.81.0"
+  boost_us_version=`echo $boost_version | sed -e 's/\./_/g'`
+
+  if [ "$install_shared" == "true" ]; then
+      boostshared="shared"
+  else
+      boostshared="static"
+  fi
+
   rm -rf boost*
     
   # Download and install Boost
-  echo "Downloading Boost-1.81.0"
+  echo "Downloading Boost-$boost_version"
 
-  # Download Boost
-  wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz
+    # Download Boost
+  wget https://boostorg.jfrog.io/artifactory/main/release/${boost_version}/source/boost_${boost_us_version}.tar.gz
 
   # Untar
-  tar -xf boost_1_81_0.tar.gz
+  tar -xf boost_${boost_us_version}.tar.gz
 
-  cd boost_1_81_0
+  cd boost_${boost_us_version}
 
   # Install boost
-  echo "Building Boost-1.81.0"
+  echo "Building Boost-${boost_version}"
 
   ./bootstrap.sh --prefix=install_for_gridpack --with-libraries=mpi,serialization,random,filesystem,system
 
-  echo 'using mpi ;' >> project-config.jam
+  echo 'using mpi : mpicxx ; ' >> project-config.jam
+  
+  ./b2 -a -d+2 link="$boostshared" stage 
 
-  ./b2 -a -d+2 link=static stage
-
-  echo "Installing Boost-1.78.0"
-  ./b2 -a -d+2 link=static install
+  echo "Installing Boost-$boost_version"
+  ./b2 -a -d+2 link="$boostshared" install
 
   echo "Building and Installing Boost libraries complete"
 fi
@@ -71,66 +84,87 @@ then
   # Download, build, and install GA
   cd ${GP_EXT_DEPS}
 
-  rm -rf ga*
+  if [ "$install_shared" == "true" ]; then
+      gashopts="--enable-shared=yes --enable-static=no"
+  else
+      gashopts="--enable-shared=no --enable-static=yes"
+  fi
 
-  echo "Downloading GA-5.8"
+  gaversion="5.8.2"
+  echo "Downloading GA-$gaversion"
 
-  wget https://github.com/GlobalArrays/ga/releases/download/v5.8/ga-5.8.tar.gz
+  wget "https://github.com/GlobalArrays/ga/releases/download/v${gaversion}/ga-${gaversion}.tar.gz"
 
-  tar -xf ga-5.8.tar.gz
+  tar -xf "ga-${gaversion}.tar.gz"
 
-  cd ga-5.8
+  cd ga-${gaversion}
 
   # Build GA
-  echo "Building GA-5.8"
-  ./configure --with-mpi-ts --disable-f77 --without-blas --enable-cxx --enable-i4 --prefix=${PWD}/install_for_gridpack
+  echo "Building GA-${gaversion}"
+  ./configure --with-mpi-ts --disable-f77 \
+              --without-blas --without-lapack --without-scalapack \
+              --enable-cxx --enable-i4 \
+              --prefix=${PWD}/install_for_gridpack \
+              CFLAGS=-Wno-implicit-function-declaration \
+              $gashopts
   
   # Install GA
-  echo "Installing GA-5.8"
+  echo "Installing GA-${gaversion}"
   make -j 10 install
   
-  echo "GA-5.8 installation complete"
+  echo "GA-${gaversion} installation complete"
 fi
 
 if ${install_petsc}
 then
+
+  if [ "$install_shared" == "true" ]; then
+      petscopts="--with-shared-libraries=1"
+  else
+      petscopts="--with-shared-libraries=0"
+  fi
+
+  # petsc_version="3.21.4"
+  petsc_version="3.20.6"
     
-  # Install PETSc 3.20.1
+  # Install PETSc 
   cd ${GP_EXT_DEPS}
 
   rm -rf petsc*
   
   # Download
-  echo "Downloading PETSc"
+  echo "Downloading PETSc $petsc_version"
 
   git clone https://gitlab.com/petsc/petsc.git
     
   cd petsc
 
-  git checkout tags/v3.20.1 -b v3.20.1
+  # git checkout tags/v3.16.4 -b v3.16.4
+  git checkout "tags/v$petsc_version" -b "v$petsc_version"
 
   export PETSC_DIR=${PWD}
   export PETSC_ARCH=build-dir
+  rm -rf $PETSC_ARCH
 
   # Install PETSc
-  echo "Installing PETSc 3.20.1"
+  echo "Installing PETSc $petsc_version"
     
-  ./configure --download-superlu_dist --download-metis --download-parmetis --with-debugging=0 --prefix=${PWD}/install_for_gridpack
+  ./configure --with-gnu-compilers=0 --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake=0 --prefix=${PWD}/install_for_gridpack --scalar-type=complex  --download-sowing  --download-f2cblaslapack $petscopts
 
   # Build PETSc
-  echo "Building PETSc 3.20.1"
+  echo "Building PETSc $petsc_version"
 
   make 
 
   # Install PETSc
-  echo "Installing PETSc 3.20.1"
+  echo "Installing PETSc $petsc_version"
 
   make install
   make check  
 fi  
 
 # update LD_LIBRARY_PATH so that boost,ga, and petsc are on it
-export LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost_1_81_0/install_for_gridpack/lib:${GP_EXT_DEPS}/ga-5.8/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost_${boost_us_version}/install_for_gridpack/lib:${GP_EXT_DEPS}/${gaversion}/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
 
 cd ${GRIDPACK_ROOT_DIR}
 
