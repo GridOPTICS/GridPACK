@@ -105,12 +105,17 @@ then
 
     rm -rf build dist gridpack_hadrec.egg-info/
     
-    pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
+    ${python_exe} pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
 
+    # construct the installed package path
+
+    pyvnum=`${python_exe} -V | & sed -e 's/Python  *\([23]\)\.\([0-9][0-9]*\)\..*/\1.\2/' `
+    pydir="${GRIDPACK_DIR}/lib/python${pvnum}/site-packages"
+    
     if [ -z "$PYTHONPATH" ]; then
-        PYTHONPATH="${GRIDPACK_DIR}/lib/python:${PYTHONPATH}"
+        PYTHONPATH="${pydir}:${PYTHONPATH}"
     else
-        PYTHONPATH="${GRIDPACK_DIR}/lib/python"
+        PYTHONPATH="${$pydir}"
     fi
     export PYTHONPATH
     
