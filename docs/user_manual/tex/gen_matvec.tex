@@ -121,6 +121,8 @@ virtual int matrixNumValues(void) const
 
 virtual void matrixGetValues(ComplexType *values,
                              int *rows, int *cols)
+virtual void matrixGetValues(double *values,
+                             int *rows, int *cols)
 \end{Verbatim}
 }
 
@@ -188,10 +190,11 @@ returns the number of vector elements contributed by a component and the functio
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual void vectorGetElementValues(ComplexType *values, int *idx)
+virtual void vectorGetElementValues(double *values, int *idx)
 \end{Verbatim}
 }
 
-returns a list of the values along with their global indices. For real vectors, replace the \texttt{\textbf{ComplexType}} array with an array of type \texttt{\textbf{double}}. Again, the index value can be obtained by first calling the \texttt{\textbf{vectorGetElementIndices}} function and using this to obtain the correct index for each element.
+returns a list of the values along with their global indices. For real vectors, the \texttt{\textbf{ComplexType}} array is replaced an array of type \texttt{\textbf{double}}. Again, the index value can be obtained by first calling the \texttt{\textbf{vectorGetElementIndices}} function and using this to obtain the correct index for each element.
 
 The vector interface includes one additional function that does not have a counterpart in the matrix interface. This is the function
 
@@ -199,6 +202,7 @@ The vector interface includes one additional function that does not have a count
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual void vectorSetElementValues(ComplexType *values)
+virtual void vectorSetElementValues(double *values)
 \end{Verbatim}
 }
 
@@ -219,18 +223,25 @@ and the methods
 \color{red}
 \begin{Verbatim}[fontseries=b]
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
+boost::shared_ptr<gridpack::math::RealMatrix> mapToRealMatrix(void)
 
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+void mapToRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> matrix)
 
 void mapToMatrix(gridpack::math::Matrix &matrix)
+void mapToRealMatrix(gridpack::math::RealMatrix &matrix)
 
 void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+void overwriteRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> matrix)
 
 void overwriteMatrix(gridpack::math::Matrix &matrix)
+void overwriteRealMatrix(gridpack::math::RealMatrix &matrix)
 
 void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+void incrementRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> matrix)
 
 void incrementMatrix(gridpack::math::Matrix &matrix)
+void incrementRealMatrix(gridpack::math::RealMatrix &matrix)
 \end{Verbatim}
 }
 
@@ -249,19 +260,28 @@ and supports the methods
 \color{red}
 \begin{Verbatim}[fontseries=b]
 boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
+boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
 
 void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
+void mapToRealVector(boost::shared_ptr<gridpack::math::RealVector> &vector)
 
 void mapToVector(gridpack::math::Vector &vector)
+void mapToRealVector(gridpack::math::RealVector &vector)
 \end{Verbatim}
 }
 
-These functions have the same interpretations as the analogous functions in the \texttt{\textbf{BusVectorMap }}class. A new function is
+These functions have the same interpretations as the analogous functions in the \texttt{\textbf{BusVectorMap }}class.
+
+This interface also hosts a new function
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
 mapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
+mapToNetwork(boost::shared_ptr<gridpack::math::RealVector> &vector)
+
+mapToNetwork(const gridpack::math::Vector &vector)
+mapToNetwork(const gridpack::math::RealVector> &vector)
 \end{Verbatim}
 }
 

@@ -33,9 +33,10 @@ depends on the runtime used to build GA and should only be set to `TRUE`
 if GA was configured using the `--with-mpi-pr` option.
 
 We have used two different configurations of GA to build and run GridPACK.
-For any system with a working version of MPI, you can
-use the MPI two-sided runtime or the progress ranks runtime with GA. Use the
-`--with-mpi-ts` or `--with-mpi-pr` options when configuring GA.
+For any system with a working version of MPI, you can build GA with the MPI
+two-sided runtime or the progress ranks runtime with GA. These can be accessed
+by configuring GA with the `--with-mpi-ts` or `--with-mpi-pr` options,
+respectively.
 The two-sided runtime is the simplest runtime and is suitable for workstations
 with a limited number of cores. This runtime provides reasonable performance on
 a small number of cores but slows down considerably at larger core counts(our
@@ -84,8 +85,7 @@ for a single dynamic simulation calculation using a 12,000 bus WECC network data
 set.
 
 Global Arrays is a relatively straightforward build if MPI is available on your
-system. To configure GA with the basic two-sided runtime (suitable for
-workstations with a limited number of cores) use the configuration line
+system. To configure GA with the basic two-sided runtime use the configuration line
 
 ```
 ../configure --enable-i4 --enable-cxx --without-blas --disable-f77 \
@@ -96,11 +96,8 @@ workstations with a limited number of cores) use the configuration line
 This configuration line assumes that the build directory is located directly
 below the top level GA directory. If you want to build someplace else, the `../`
 before `configure` needs to be replaced with the path to `configure`.
-The two-sided build will work with almost any version of MPI and is easy to use
-but is
-slow for more than a few processors. For higher performance, particularly on
-clusters with a high performance network, the progress ranks runtime is
-preferable. To configure GA with this runtime, use the configure command
+To configure with the higher performing progress ranks runtime,
+configure GA with the command
 
 ```
 ../configure --enable-i4 --enable-cxx --with-mpi-pr --without-blas --disable-f77
