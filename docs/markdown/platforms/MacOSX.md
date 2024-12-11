@@ -44,6 +44,7 @@ Install the CLang 16.0 compiler set and mpich MPI implementation.
     sudo port install mpich mpich-clang16
     sudo port select --set clang mp-clang-16
     sudo port select --set mpi mpich-clang16-fortran
+    sudo port select gcc mp-gcc14
 
 The latter commands make the installed compilers, and MPI wrappers the
 default. That way the compiler commands, `clang` and `clang++`, and MPI
@@ -61,8 +62,34 @@ Install CMake and other necessities:
     sudo port install cmake
     sudo port install pkgconfig
 
-Build Prerequisites from Source
-===============================
+
+Build GridPACK with Included Scripts
+====================================
+
+The `install_gridpack_deps.sh` and `install_gridpack.sh` scripts
+included in the GridPACK repository can usually simplify the GridPACK
+build process.  On this example system, using the MacPorts packages as
+described above, GridPACK was successfully built using those scripts
+as follows (must be executed within a `bash` shell:
+
+    bash
+    git clone https://github.com/GridOPTICS/GridPACK.git
+    cd GridPACK/
+    export LD_LIBRARY_PATH=/opt/local/lib/gcc14
+    source install_gridpack_deps.sh
+    export CC=/opt/local/bin/clang
+    export CXX=/opt/local/bin/clang++
+    source install_gridpack.sh
+    cd src/build
+    ctest
+    cd applications/dynamic_simulation_full_y
+    ../../../install/bin/dsf2.py input_9b3g.xml
+
+Build from Source
+=================
+
+Prerequisites
+-------------
 
 [PETSc](http://www.mcs.anl.gov/petsc/) and [Global
 Arrays](http://www.emsl.pnl.gov/docs/global/) need to be built from
@@ -80,8 +107,7 @@ variants, will install and is usable to GridPACK. However, PETSc 3.22
 could not be built with SuperLU or Suitesparse. This tends to break some
 solver unit tests. So, build from source.
 
-Global Arrays
--------------
+### Global Arrays ###
 
 GA version 5.8.2 source code was downloaded from the [Github
 site](https://github.com/GlobalArrays/ga/releases/download/v5.8.2/ga-5.8.2.tar.gz).
@@ -106,8 +132,7 @@ GA was configured and built as follows
     make -k check
     make install
 
-Boost
------
+### Boost ###
 
 Boost version 1.81.0 was downloaded from
 [here](https://archives.boost.io/release/1.81.0/source/).
@@ -122,8 +147,7 @@ than a full path.
     ./b2 -a -d+2 toolset=clang link=shared stage
     ./b2 -a -d+2 toolset=clang link=shared install
 
-PETSc
------
+### PETSc ###
 
 On modern Mac OS X, only PETSc version 3.20.1 and later can be used.
 Older versions will not build. This has been noted by others.
@@ -165,7 +189,7 @@ Older versions will not build. This has been noted by others.
         PETSC_ARCH=mpich-clang-real-shared install
 
 Building GridPACK
-=================
+-----------------
 
 CMake will work very hard to choose the wrong compiler. Make sure it
 uses the correct compiler by setting environment variables.
@@ -198,7 +222,7 @@ Configure, build, and test GridPACK with
     make install
 
 GridPACK Python Interface
-=========================
+-------------------------
 
 An additional MacPorts package is needed for the Python interface
 
