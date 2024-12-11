@@ -90,17 +90,17 @@ then
       gashopts="--enable-shared=no --enable-static=yes"
   fi
 
-  gaversion="5.8.2"
-  echo "Downloading GA-$gaversion"
+  ga_version="5.8.2"
+  echo "Downloading GA-$ga_version"
 
-  wget "https://github.com/GlobalArrays/ga/releases/download/v${gaversion}/ga-${gaversion}.tar.gz"
+  wget "https://github.com/GlobalArrays/ga/releases/download/v${ga_version}/ga-${ga_version}.tar.gz"
 
-  tar -xf "ga-${gaversion}.tar.gz"
+  tar -xf "ga-${ga_version}.tar.gz"
 
-  cd ga-${gaversion}
+  cd ga-${ga_version}
 
   # Build GA
-  echo "Building GA-${gaversion}"
+  echo "Building GA-${ga_version}"
   ./configure --with-mpi-ts --disable-f77 \
               --without-blas --without-lapack --without-scalapack \
               --enable-cxx --enable-i4 \
@@ -109,10 +109,10 @@ then
               $gashopts
   
   # Install GA
-  echo "Installing GA-${gaversion}"
+  echo "Installing GA-${ga_version}"
   make -j 10 install
   
-  echo "GA-${gaversion} installation complete"
+  echo "GA-${ga_version} installation complete"
 fi
 
 if ${install_petsc}
@@ -149,7 +149,7 @@ then
   # Install PETSc
   echo "Installing PETSc $petsc_version"
     
-  ./configure --with-gnu-compilers=0 --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake=0 --prefix=${PWD}/install_for_gridpack --scalar-type=complex  --download-sowing  --download-f2cblaslapack $petscopts
+  ./configure --with-fortran-bindings=0 --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake=0 --prefix=${PWD}/install_for_gridpack --scalar-type=complex  --download-scalapack --download-mumps --with-sowing=0 --download-f2cblaslapack $petscopts
 
   # Build PETSc
   echo "Building PETSc $petsc_version"
@@ -164,7 +164,10 @@ then
 fi  
 
 # update LD_LIBRARY_PATH so that boost,ga, and petsc are on it
-export LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost_${boost_us_version}/install_for_gridpack/lib:${GP_EXT_DEPS}/${gaversion}/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${GP_EXT_DEPS}/boost_${boost_us_version}/install_for_gridpack/lib:${GP_EXT_DEPS}/${ga_version}/install_for_gridpack/lib:${GP_EXT_DEPS}/petsc/install_for_gridpack/lib:${LD_LIBRARY_PATH}
+
+# For Mac OS X
+export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
 cd ${GRIDPACK_ROOT_DIR}
 

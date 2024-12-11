@@ -9,6 +9,10 @@ install_gridpack=true
 install_gridpack_shared=false
 install_gridpack_python=true
 
+# These must match install_gridpack_deps.sh
+boost_version="1.81.0"
+ga_version="5.8.2"
+
 if [ "$install_gridpack_python" == "true" ]; then
     install_gridpack_shared=true
     # Set your python executable here
@@ -32,13 +36,11 @@ then
      export GP_EXT_DEPS=${GRIDPACK_ROOT_DIR}/external-dependencies
 fi
 
-boost_version="1.81.0"
 boost_us_version=`echo $boost_version | sed -e 's/\./_/g'`
 boost_dir="${GP_EXT_DEPS}/boost_${boost_us_version}/install_for_gridpack"
 
 petsc_dir="${GP_EXT_DEPS}/petsc/install_for_gridpack"
 
-ga_version="5.8.2"
 ga_dir="${GP_EXT_DEPS}/ga-${ga_version}/install_for_gridpack"
 
 cd ${GRIDPACK_ROOT_DIR}
@@ -120,7 +122,7 @@ then
     export PYTHONPATH
 
     # A quick check to see if the Python module is available
-    ${python_exe} -c 'import gridpack
+    ${python_exe} -c 'import gridpack'
     
 fi
 
