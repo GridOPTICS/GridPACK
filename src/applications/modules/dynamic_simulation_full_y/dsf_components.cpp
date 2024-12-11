@@ -2283,24 +2283,23 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
 {
   if (p_ngen == 0 && p_ndyn_load == 0 && p_npowerflow_load == 0) return false;
   int i;
-  char buf[128];
   char *ptr = string;
   int idx = getOriginalIndex();
-  buf[0] = '\0';
   if (signal == NULL) {
     return false;
   } else if (!strcmp(signal,"watch_header") ||
       !strcmp(signal,"watch")) {
+    char buf[256];
+    buf[0] = '\0';
     if (p_ngen == 0) return false;
     int len = 0;
     bool ok;
     for (i=0; i<p_ngen; i++) {
       if(!p_generators.size()) continue;
       if (p_generators[i]->getWatch()) {
-	char buf[128];
-        ///printf("(DSFull::serialWrite) Got to 1\n");
-        ok = p_generators[i]->serialWrite(buf,128,signal);
-        ///printf("(DSFull::serialWrite) Got to 2\n");
+        ///printf("(DSFullBus::serialWrite) Got to 1\n");
+        ok = p_generators[i]->serialWrite(buf,256,signal);
+        ///printf("(DSFullBus::serialWrite) Got to 2\n");
         if (ok) {
           int slen = strlen(buf);
           if (len+slen < bufsize) sprintf(ptr,"%s",buf);
@@ -2312,16 +2311,17 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
     if (len > 0) return true;
   } else if (!strcmp(signal,"load_watch_header") ||
       !strcmp(signal,"load_watch")) {
+    char buf[256];
+    buf[0] = '\0';
     if (p_ndyn_load == 0) return false;
     int i;
-    char buf[128];
     char *ptr = string;
     int len = 0;
     bool ok;
     for (i=0; i<p_ndyn_load; i++) {
       if (p_loadmodels[i]->getWatch()) {
         ///printf("(DSFull::serialWrite) Got to 1\n");
-        ok = p_loadmodels[i]->serialWrite(buf,128,signal);
+        ok = p_loadmodels[i]->serialWrite(buf,256,signal);
         ///printf("(DSFull::serialWrite) Got to 2\n");
         if (ok) {
           int slen = strlen(buf);
@@ -2334,7 +2334,7 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
     if (len > 0) return true;
   } else if (!strcmp(signal,"src_gen")) {
     if (p_source) {
-      char sbuf[128];
+      char sbuf[256];
       char *cptr = string;
       int i, len, slen = 0;
       std::string status; 
@@ -2365,7 +2365,7 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
     }
   } else if (!strcmp(signal,"sink_load")) {
     if (p_sink) {
-      char sbuf[128];
+      char sbuf[256];
       char *cptr = string;
       int i, len, slen = 0;
       std::string status;
@@ -2395,14 +2395,15 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
       return false;
     }
   } else if (strlen(signal) > 0) {
+    char buf[256];
+    buf[0] = '\0';
     int i;
-    char buf[128];
     int len = 0;
     bool ok = true;
   //  printf("Writing for %d generators\n",p_ngen);
     for (i=0; i<p_ngen; i++) {
       if(!p_gstatus[i] || !p_generators.size()) continue;
-      if (p_generators[i]->serialWrite(buf,128,signal)) {
+      if (p_generators[i]->serialWrite(buf,256,signal)) {
         int slen = strlen(buf);
         if (len+slen < bufsize) sprintf(ptr,"%s",buf);
         len += slen;

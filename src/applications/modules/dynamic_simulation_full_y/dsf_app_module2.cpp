@@ -401,7 +401,7 @@ void gridpack::dynamic_simulation::DSFullApp::setGenStatus(int bus_idx, std::str
 **/
 void gridpack::dynamic_simulation::DSFullApp::run(double tend)
 {
-  while(fabs(tend - p_current_time) > 1e-6) {
+  while(tend - p_current_time > 1e-6) {
 
     // Process events
     handleEvents();
