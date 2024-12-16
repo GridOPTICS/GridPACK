@@ -13,7 +13,7 @@
 
 
 # 
-cmake_minimum_required (VERSION 3.5.0)
+cmake_minimum_required (VERSION 3.22)
 
 project (GridPACK)
 
