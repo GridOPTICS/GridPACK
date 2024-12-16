@@ -224,6 +224,14 @@ elif [ $host == "tlaloc" ]; then
     #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
     #      -D PETSC_ARCH:STRING="ubuntu-complex-shared-mumps" \
 
+    # Custom built 3.20, complex:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.20.6" \
+    #      -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
+
+    # Custom built 3.20, real:
+    #      -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.20.6" \
+    #      -D PETSC_ARCH:STRING="ubuntu-real-shared" \
+    
     if [ -z "$GRIDPACK_DIR" ]; then
         prefix="$HOME/Projects/ExaLearn/gridpack-install"
     else
@@ -233,8 +241,8 @@ elif [ $host == "tlaloc" ]; then
     prefix="$HOME/Projects/GridPACK-Wind/gridpack-install"
     cmake -Wdev --debug-trycompile \
         --graphviz=GridPACK.dot \
-          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.19.4" \
-          -D PETSC_ARCH:STRING="ubuntu-complex-shared" \
+          -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.20.6" \
+          -D PETSC_ARCH:STRING="ubuntu-real-shared" \
           -D BOOST_ROOT:PATH="/usr" \
           -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
           -D PARMETIS_DIR:PATH="/usr" \
