@@ -13,7 +13,7 @@ install_gridpack_python=true
 boost_version="1.81.0"
 ga_version="5.8.2"
 
-if [ "$install_gridpack_python" == "true" ]; then
+if "$install_gridpack_python"; then
     install_gridpack_shared=true
     # Set your python executable here
     python_exe=`which python`
@@ -79,6 +79,7 @@ then
    -D MPI_CXX_COMPILER:STRING='mpicxx' 
    -D MPI_C_COMPILER:STRING='mpicc' 
    -D MPIEXEC:STRING='mpiexec' 
+   -D MPIEXEC_MAX_NUMPROCS:STRING=2
    -D GRIDPACK_TEST_TIMEOUT:STRING=120 
    -D CMAKE_INSTALL_PREFIX:PATH=${GRIDPACK_INSTALL_DIR} 
    -D CMAKE_BUILD_TYPE:STRING=Debug 
@@ -109,10 +110,12 @@ then
     
     ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
 
-    # construct the installed package path
+    # Construct the installed package path and check it. The actual
+    # path with in the prefix seems to be kind of random, so
+    # add a couple of options to PYTHONPATH
 
     pyvnum=`${python_exe} -V | sed -e 's/Python  *\([23]\)\.\([0-9][0-9]*\)\..*/\1.\2/' `
-    pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages"
+    pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages:${GRIDPACK_DIR}/local/lib/python${pyvnum}/dist-packages"
     
     if [ -z "$PYTHONPATH" ]; then
         PYTHONPATH="${pydir}:${PYTHONPATH}"

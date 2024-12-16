@@ -45,7 +45,7 @@ then
   boost_version="1.81.0"
   boost_us_version=`echo $boost_version | sed -e 's/\./_/g'`
 
-  if [ "$install_shared" == "true" ]; then
+  if "$install_shared"; then
       boostshared="shared"
   else
       boostshared="static"
@@ -84,7 +84,7 @@ then
   # Download, build, and install GA
   cd ${GP_EXT_DEPS}
 
-  if [ "$install_shared" == "true" ]; then
+  if "$install_shared"; then
       gashopts="--enable-shared=yes --enable-static=no"
   else
       gashopts="--enable-shared=no --enable-static=yes"
@@ -118,7 +118,7 @@ fi
 if ${install_petsc}
 then
 
-  if [ "$install_shared" == "true" ]; then
+  if "$install_shared"; then
       petscopts="--with-shared-libraries=1"
   else
       petscopts="--with-shared-libraries=0"
@@ -126,6 +126,7 @@ then
 
   # petsc_version="3.21.4"
   petsc_version="3.20.6"
+  # petsc_version="3.19.4"
     
   # Install PETSc 
   cd ${GP_EXT_DEPS}
@@ -149,7 +150,20 @@ then
   # Install PETSc
   echo "Installing PETSc $petsc_version"
     
-  ./configure --with-fortran-bindings=0 --download-superlu_dist --download-metis --download-parmetis --download-suitesparse --download-f2cblaslapack --download-cmake=0 --prefix=${PWD}/install_for_gridpack --scalar-type=complex  --download-scalapack --download-mumps --with-sowing=0 --download-f2cblaslapack $petscopts
+  ./configure \
+      --prefix=${PWD}/install_for_gridpack \
+      --scalar-type=complex  \
+      --with-fortran-bindings=0 \
+      --download-superlu_dist \
+      --download-metis \
+      --download-parmetis \
+      --download-suitesparse \
+      --download-f2cblaslapack \
+      --download-scalapack \
+      --download-mumps \
+      --download-cmake=0 \
+      --with-sowing=0 \
+      $petscopts
 
   # Build PETSc
   echo "Building PETSc $petsc_version"
