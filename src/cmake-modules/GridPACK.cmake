@@ -99,7 +99,7 @@ function(gridpack_add_parallel_unit_test test_name test_target)
       FAIL_REGULAR_EXPRESSION "failure detected"
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
       # MPIEXEC will not look for executables in the current directory sometimes
-      ENVIRONMENT "PATH=./:%PATH%"
+      ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:./"
       )
     set_tests_ldpath("${the_test_name}")
   else() 
@@ -123,7 +123,7 @@ function(gridpack_add_parallel_run_test test_name test_target test_input)
       PROPERTIES 
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
       # MPIEXEC will not look for executables in the current directory sometimes
-      ENVIRONMENT "PATH=./:%PATH%"
+      ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:./"
       )
     set_tests_ldpath("${the_test_name}")
   else()
