@@ -1,16 +1,18 @@
-import grid2op
 import warnings
 import sys, time
+import argparse
+
 from datetime import timedelta
 import pandas as pd
 
-sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/")
-from grid2op_backend import GridPACKBackend
+sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/install_local/grid2op")
+import grid2op
 from grid2op.PlotGrid.PlotMatplot import PlotMatplot
-from grid2op.Agent import RandomAgent
+from grid2op.Agent import BaseAgent, RandomAgent
 from grid2op.Chronics import ChangeNothing
 
-import argparse
+sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/")
+from grid2op_backend import GridPACKBackend
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -18,7 +20,7 @@ def parse_arguments():
         "--gridpack_config", 
         help="Configuration file to run the simulation.", 
         default="input_9bus.xml",
-        choices=["input_9bus.xml", "input_39bus_IBR.xml"]
+        choices=["input_9bus.xml", "input_39bus_IBR.xml", "input_240bus.xml"]
     )
     parser.add_argument(
         "--grid2op_config", 
@@ -77,6 +79,37 @@ def save_data(filename_prefix):
     res_line["tick"] = res_line["tick"] - res_line["tick"].values[0]
     res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_line.csv")
 
+
+class LoadSheddingAgent(BaseAgent):
+    def __init__(self, action_space):
+        # define here the constructor of your agent
+        # here we say our agent needs "something_else" and "and_another_something"
+        # to be built just to demonstrate it does not cause any problem to extend the
+        # construction of the base class BaseAgent that only takes "action_space" as a constructor
+        BaseAgent.__init__(self, action_space)
+        self.do_nothing = self.action_space({})
+
+    def act(self, obs, reward, done=False):
+        if obs.current_step == 2:
+            new_load_p = obs.load_p * 1.1
+            new_load_q = obs.load_q * 1.1
+            
+            # this is the only method you need to implement
+            # it takes an observation obs (and a reward and a flag)
+            # and should return a valid action
+            dictionary_describing_the_action = {
+                    "injection": {
+                        "load_p": new_load_p,
+                        "load_q": new_load_q
+                    }
+                }  # this can be anything you want that grid2op understands
+            
+            my_action = self.action_space(dictionary_describing_the_action)
+        else:
+            my_action = self.do_nothing
+        return my_action
+    
+
 if __name__=="__main__":
     # parse arguments
     args = parse_arguments()
@@ -102,15 +135,21 @@ if __name__=="__main__":
                             grid2op_stepsize=args.grid2op_stepsize
                         ),
                         data_feeding_kwargs={
+                            # start datatime goes here
+                            # for frequency - a pull request from Grid2Op
                             "time_interval": timedelta(
                                 seconds=args.grid2op_stepsize
                             )}
                     ) # mention the time resolution - resolution of the environment - episode size goes - stuff from config.py file won't be used if mentioned here - episode can be updated in the config files
+        # z-environment is passed to the backend - this will be available in the next version.
 
     # reset environment
     print("============ Environment Reset =============")
-    # agent = RandomAgent(env.action_space)
     obs = env.reset()
+    reward = env.reward_range[0]
+    done = False
+
+    my_agent = LoadSheddingAgent(env.action_space)
         
     # print network analytics
     print("Number of buses:  %d" % (obs.n_sub))
@@ -118,28 +157,19 @@ if __name__=="__main__":
     print("Number of loads: %d" % (obs.n_load))
     print("Number of lines: %d" % (obs.n_line))
     print("Number of storage units: %d" % (obs.n_storage))
+    # print(obs.nb_substation)
 
     # step environment
     counter = 0
     while counter < args.grid2op_steps:
-        new_load_p = obs.load_p * 1.1
-        new_load_q = obs.load_q * 1.1
-        # print(obs.load_p, obs.load_q)
-        action = env.action_space(
-            {
-                "injection": {
-                    "load_p": new_load_p,
-                    "load_q": new_load_q
-                }
-            }
-        )
-        # action = env.action_space({})
-
         # start time to save the data finally
         grid2op_start_time = env.time_stamp
+        # need to mention grid2op start time - probably in chronics. start_datetime
         # print(env.time_stamp, env.backend._counter)
         # print(env.delta_time_seconds)
+        action = my_agent.act(obs, reward, done)
         obs, reward, done, info = env.step(action)
+        print(f"Reward: {reward}, Done: {done}")
 
         # log data
         BUS_LOGGER += env.backend.bus_logger
