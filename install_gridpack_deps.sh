@@ -186,3 +186,5 @@ export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 cd ${GRIDPACK_ROOT_DIR}
 
 echo "Completed installing GridPACK dependencies in ${GP_EXT_DEPS}"
+
+set +x

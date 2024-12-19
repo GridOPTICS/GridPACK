@@ -132,3 +132,5 @@ fi
 cd ${GRIDPACK_ROOT_DIR}
 
 echo "Completed GridPACK installation"
+
+set +x
