@@ -1194,6 +1194,9 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       p_gload.push_back(pl/(p_voltage*p_voltage));
       p_bload.push_back(-ql/(p_voltage*p_voltage));
 
+      p_gload.push_back(pl/(p_voltage*p_voltage));
+      p_bload.push_back(-ql/(p_voltage*p_voltage));
+
       if (bdebug_load_model) printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
       std::string model;
 
