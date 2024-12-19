@@ -1,5 +1,5 @@
 
-set -xe
+set -x
 
 # This script installs all GridPACK dependencies.The dependencies are installed in external-dependencies directory.
 

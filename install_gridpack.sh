@@ -1,6 +1,6 @@
 # This script installs GridPACK and python wrappter.GridPACK is built in src/build directory and installed in src/install directory.
 
-set -xe
+set -x
 
 # This script should be run from the top-level GridPACK directory.
 
