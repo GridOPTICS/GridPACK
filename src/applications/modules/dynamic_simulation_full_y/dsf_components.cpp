@@ -1191,6 +1191,9 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 	p_powerflowload_status.push_back(istat);
       }
 
+      p_gload.push_back(pl/(p_voltage*p_voltage));
+      p_bload.push_back(-ql/(p_voltage*p_voltage));
+
       if (bdebug_load_model) printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
       std::string model;
 
@@ -1321,11 +1324,18 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
       p_loadmodels[lcnt]->updateData(data, i);
       lcnt++;
     } else {
-      if (!data->setValue(LOAD_PL_CURRENT, p_powerflowload_p[i], i)) {
-        data->addValue(LOAD_PL_CURRENT, p_powerflowload_p[i], i);
+      double pl_current,ql_current;
+      pl_current = rV*rV*p_gload[i];
+      ql_current = -rV*rV*p_bload[i];
+      if(p_bscatterinjload_flag_compensateY) {
+	pl_current -= p_scatterinjload_p;
+	ql_current -= p_scatterinjload_q;
       }
-      if (!data->setValue(LOAD_QL_CURRENT, p_powerflowload_q[i], i)) {
-        data->addValue(LOAD_QL_CURRENT, p_powerflowload_q[i], i);
+      if (!data->setValue(LOAD_PL_CURRENT, pl_current, i)) {
+        data->addValue(LOAD_PL_CURRENT, pl_current, i);
+      }
+      if (!data->setValue(LOAD_QL_CURRENT, ql_current, i)) {
+        data->addValue(LOAD_QL_CURRENT, ql_current, i);
       }
     }
   }

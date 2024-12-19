@@ -767,6 +767,7 @@ class DSFullBus
     std::vector<double> p_mva, p_r, p_dstr, p_dtr, p_gpmin, p_gpmax;
     int p_ngen, p_negngen, p_ngen_nodynmodel;
     int p_ndyn_load, p_npowerflow_load;
+    std::vector<double> p_gload, p_bload; // load impedance
     int p_type;
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
