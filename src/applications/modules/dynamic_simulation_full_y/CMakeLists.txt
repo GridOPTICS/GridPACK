@@ -14,6 +14,11 @@
 # Last Change: 2022-11-07 Shrirang Abhyankar - added sexs, gast, and hygov models
 # -------------------------------------------------------------
 
+#if(ENABLE_EPRI_IBR_MODEL)
+   set(target_libraries
+      ${EPRI_IBR_LIBRARY}
+   )
+#endif()
 
 set(target_libraries
     gridpack_dsmatrix_components
@@ -116,6 +121,15 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/wttqa1.cpp
 )
 
+#if(ENABLE_EPRI_IBR_MODEL)
+  set(target_source
+     ${target_source}
+     model_classes/epria1.cpp
+     )
+
+  include_directories(AFTER ${EPRI_IBR_INCLUDE_DIR})
+#endif(ENABLE_EPRI_IBR_MODEL)
+
 gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
 
 target_link_libraries(gridpack_dynamic_simulation_full_y_module
@@ -194,7 +208,14 @@ install(FILES
   model_classes/wtpta1.hpp
   model_classes/wttqa1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
-) 	      
+)
+
+#if(ENABLE_EPRI_IBR_MODEL)
+  install(FILES
+    model_classes/epria1.hpp
+    DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
+  )
+#endif(ENABLE_EPRI_IBR_MODEL)
 
 install(TARGETS 
   gridpack_dynamic_simulation_full_y_module
