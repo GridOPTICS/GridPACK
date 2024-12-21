@@ -963,7 +963,11 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
-	if (model == "REGCA1" || model == "REGCB1" || model == "REGCC1" || model == "GDFORM"){
+	if (model == "REGCA1" || model == "REGCB1" || model == "REGCC1" || model == "GDFORM"
+#ifdef ENABLE_EPRI_IBR_MODEL
+	    || model == "EPRIA1"
+#endif
+	  ) {
 	  bcomputefreq = true;
 	}
         has_ex = false;
