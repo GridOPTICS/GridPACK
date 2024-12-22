@@ -20,6 +20,9 @@
 #include <model_classes/gencls.hpp>
 #include <model_classes/gencvs.hpp>
 #include <model_classes/genrou.hpp>
+#ifdef ENABLE_EPRI_IBR_MODEL
+ #include <model_classes/epria1.hpp>
+#endif
 #include <model_classes/constantimpedance.hpp>
 #include <model_classes/exdc1.hpp>
 #include <model_classes/ieeet1.hpp>
@@ -700,6 +703,12 @@ void EmtBus::load(const
 	Gdform *gdform;
 	gdform = new Gdform;
 	p_gen[i] = gdform;
+      } else if(type == "EPRIA1") {
+#ifdef ENABLE_EPRI_IBR_MODEL
+	Epria1 *epria1;
+	epria1 = new Epria1;
+	p_gen[i] = epria1;
+#endif	
       } else {
 	// Assume a constant internal voltage source model
 	Gencvs *gencvs;
