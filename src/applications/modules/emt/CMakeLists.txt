@@ -8,7 +8,15 @@
 # -------------------------------------------------------------
 # file: CMakeLists.txt
 # -------------------------------------------------------------
+
+if(ENABLE_EPRI_IBR_MODEL)
+   set(target_libraries
+      ${EPRI_IBR_LIBRARY}
+   )
+endif()
+
 set(target_libraries
+    ${target_libraries}	
     gridpack_ymatrix_components
     gridpack_components
     gridpack_partition
@@ -32,7 +40,7 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-add_library(gridpack_emt_module
+set(target_source
   emt.cpp
   emtfactory.cpp
   emtnetwork.cpp
@@ -66,7 +74,22 @@ add_library(gridpack_emt_module
 
 )
 
+if(ENABLE_EPRI_IBR_MODEL)
+  set(target_source
+     ${target_source}
+     model_classes/epria1.cpp
+     )
+
+  include_directories(AFTER ${EPRI_IBR_INCLUDE_DIR})
+endif(ENABLE_EPRI_IBR_MODEL)
+
+add_library(gridpack_emt_module
+   ${target_source}
+)
+
+
 target_link_libraries(gridpack_emt_module
+  ${target_libraries}
   gridpack_ymatrix_components
   gridpack_partition
 )
@@ -123,6 +146,13 @@ install(FILES
   model_classes/transformer.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes
 )
+
+if(ENABLE_EPRI_IBR_MODEL)
+  install(FILES
+    model_classes/epria1.hpp
+    DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
+  )
+endif(ENABLE_EPRI_IBR_MODEL)
 
 install(TARGETS 
   gridpack_emt_module
