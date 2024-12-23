@@ -152,7 +152,7 @@ then
     
   ./configure \
       --prefix=${PWD}/install_for_gridpack \
-      --scalar-type=complex  \
+      --scalar-type=real  \
       --with-fortran-bindings=0 \
       --download-superlu_dist \
       --download-metis \
