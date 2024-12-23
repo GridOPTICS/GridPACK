@@ -34,7 +34,7 @@ throw_petsc_exception(int line, const char *file, int ierr)
 {
   std::ostringstream msg;
   const char *buf;
-  PetscErrorMessage(ierr, &buf, PETSC_NULL);
+  PetscErrorMessage(ierr, &buf, PETSC_NULLPTR);
   msg << file << ": " << line << ": "
       << "PETSc Error (" << ierr << "): " << buf;
   throw PETSC_EXCEPTION_TYPE(msg.str());
@@ -53,7 +53,7 @@ PETScException::PETScException(const PetscErrorCode ierr)
   std::ostringstream msg;
   msg << "PETSc error (" << petsc_err_ << ")";
   const char *buf;
-  PetscErrorMessage(petsc_err_, &buf, PETSC_NULL);
+  PetscErrorMessage(petsc_err_, &buf, PETSC_NULLPTR);
   msg << ": " << buf;
   message_ = msg.str();
 }          

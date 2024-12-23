@@ -166,10 +166,10 @@ PetscMatrixWrapper::p_set_dense_matrix(void)
     parallel::Communicator comm(getCommunicator(p_matrix));
     if (comm.size() == 1) {
       ierr = MatSetType(p_matrix, MATSEQDENSE); CHKERRXX(ierr);
-      ierr = MatSeqDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
+      ierr = MatSeqDenseSetPreallocation(p_matrix, PETSC_NULLPTR); CHKERRXX(ierr);
     } else {
       ierr = MatSetType(p_matrix, MATDENSE); CHKERRXX(ierr);
-      ierr = MatMPIDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
+      ierr = MatMPIDenseSetPreallocation(p_matrix, PETSC_NULLPTR); CHKERRXX(ierr);
     }
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -211,14 +211,14 @@ PetscMatrixWrapper::p_set_sparse_matrix(const PetscInt& max_nz_per_row)
       ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
       ierr = MatSeqAIJSetPreallocation(p_matrix, 
                                        diagonal_non_zero_guess + offdiagonal_non_zero_guess,
-                                       PETSC_NULL); CHKERRXX(ierr);
+                                       PETSC_NULLPTR); CHKERRXX(ierr);
     } else {
       ierr = MatSetType(p_matrix, MATMPIAIJ); CHKERRXX(ierr);
       ierr = MatMPIAIJSetPreallocation(p_matrix, 
                                        diagonal_non_zero_guess,
-                                       PETSC_NULL,
+                                       PETSC_NULLPTR,
                                        offdiagonal_non_zero_guess, 
-                                       PETSC_NULL); CHKERRXX(ierr);
+                                       PETSC_NULLPTR); CHKERRXX(ierr);
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
     ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
@@ -291,7 +291,7 @@ PetscMatrixWrapper::rows(void) const
   PetscInt result(0);
   try {
     PetscInt rows;
-    ierr = MatGetSize(p_matrix, &rows, PETSC_NULL); CHKERRXX(ierr);
+    ierr = MatGetSize(p_matrix, &rows, PETSC_NULLPTR); CHKERRXX(ierr);
     result = rows;
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -309,7 +309,7 @@ PetscMatrixWrapper::localRows(void) const
   PetscInt result(0);
   try {
     PetscInt rows;
-    ierr = MatGetLocalSize(p_matrix, &rows, PETSC_NULL); CHKERRXX(ierr);
+    ierr = MatGetLocalSize(p_matrix, &rows, PETSC_NULLPTR); CHKERRXX(ierr);
     result = rows;
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -327,7 +327,7 @@ PetscMatrixWrapper::cols(void) const
   PetscInt result(0);
   try {
     PetscInt cols;
-    ierr = MatGetSize(p_matrix, PETSC_NULL, &cols); CHKERRXX(ierr);
+    ierr = MatGetSize(p_matrix, PETSC_NULLPTR, &cols); CHKERRXX(ierr);
     result = cols;
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -345,7 +345,7 @@ PetscMatrixWrapper::localCols(void) const
   PetscInt result(0);
   try {
     PetscInt cols;
-    ierr = MatGetLocalSize(p_matrix, PETSC_NULL, &cols); CHKERRXX(ierr);
+    ierr = MatGetLocalSize(p_matrix, PETSC_NULLPTR, &cols); CHKERRXX(ierr);
     result = cols;
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
