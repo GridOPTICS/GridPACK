@@ -92,8 +92,8 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
  */
 void Lumpedline::setup()
 {
-  fbus->addLumpedLineCshunt(p_C,0.5);
-  tbus->addLumpedLineCshunt(p_C,0.5);
+  fbus->addCshunt(p_C,0.5);
+  tbus->addCshunt(p_C,0.5);
 }
 
 /**

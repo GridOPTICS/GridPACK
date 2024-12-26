@@ -146,8 +146,8 @@ class Epria1: public BaseEMTGenModel
     double VD, VQ; // Dq axis voltages
 
     // Internal constants
-    double p_Pm;  // Mechanical power input
-    double p_Ep;  // Internal emf
+    double Ed,Eq;  // Internal emf
+    double phi_PLL;
 
     // Some temporary arrays
   double p_vdq0[3]; // voltage in dq0 reference frame

@@ -288,15 +288,14 @@ public:
   void resetEventFlags(void);
 
   /**
-    AddLumpedLineCshunt - Add capacitive shunt of lumped line model
-                         at this bus
+    AddCshunt - Add capacitive shunt at this bus
     @param [input] Cshunt - the capacitive shunt matrix 3 X 3
     @param [input] frac   - the fraction of capacitive shunt that should
                             be added
     Note: The capacitive shunt added to the bus equals frac*Cshunt
   **/
      
-  void addLumpedLineCshunt(double Cshunt[3][3], double frac)
+  void addCshunt(double Cshunt[3][3], double frac)
   {
     int i,j;
     for(i=0; i < 3; i++) {
