@@ -19,12 +19,14 @@
 #include <gridpack/applications/modules/emt/constants.hpp>
 #include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
 #include <gridpack/math/matrix.hpp>
+#include <gridpack/applications/modules/emt/emtnetwork.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_exc_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_plant_model.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
 
+class EmtBus; // Forward declaratin for EmtBus
 class BaseEMTExcModel; // Forward declaration for BaseEMTExcModel
 class BaseEMTGovModel; // Forward declaration for BaseEMTGovModel
 class BaseEMTPlantControllerModel; // Forward declaration for BaseEMTPlantControllerModel
@@ -360,6 +362,14 @@ public:
    * @param [in] triptime - trip time
    */
   void setTripTime(double triptime) {p_triptime = triptime; }
+
+  
+  /**
+   * Set the from bus associated with this generator
+   * @param [in] inbus - bus
+   */
+  void setBus(EmtBus *inbus) {bus = inbus;}
+
   
  protected:
   double        pg; /**< Generator active power output */
@@ -401,6 +411,8 @@ public:
 
   std::vector<int>   p_rowidx; // global index for rows
   std::vector<int>   p_colidx; // global index for columns
+
+  EmtBus *bus; // bus on which this generator is located
 };
 
 // -------------------------------------------------------------

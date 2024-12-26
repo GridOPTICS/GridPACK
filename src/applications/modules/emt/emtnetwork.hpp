@@ -181,6 +181,14 @@ public:
   void getVoltages(double*,double*,double*) const;
 
   /**
+   * Get the phase voltage derivatives
+   * @param double va - phase a voltage derivative
+   * @param double vb - phase b voltage derivative
+   * @param double vc - phase c voltage derivative
+   */
+  void getVoltageDerivatives(double*,double*,double*) const;
+
+  /**
    * Get the global location for the voltage for this bus in the solution vector
    * @param startgloballoc - global location for the first voltage variable for the bus 
    *

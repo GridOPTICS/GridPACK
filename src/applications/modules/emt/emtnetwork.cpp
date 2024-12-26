@@ -313,6 +313,19 @@ void EmtBus::getVoltages(double *va,double *vb,double *vc) const
 }
 
 /**
+ * Get voltage derivatives dva, dvb, dvc 
+ * @param double dva - phase a voltage derivative (dva_dt)
+ * @param double dvb - phase b voltage derivative (dvb_dt)
+ * @param double dvc - phase c voltage derivative (dvc_dt)
+ */
+void EmtBus::getVoltageDerivatives(double *dva,double *dvb,double *dvc) const
+{
+  *dva = p_dvdt[0];
+  *dvb = p_dvdt[1];
+  *dvc = p_dvdt[2];
+}
+
+/**
    * Get the global location for the voltage for this bus in the solution vector
    * @param startgloballoc - global location for the first voltage variable for the bus 
    *
@@ -444,6 +457,10 @@ void EmtBus::setup()
     p_neqsplant[i] = 0;
 
     if(!p_gen[i]->getStatus()) continue;
+
+    EmtBus *bus = dynamic_cast<EmtBus*>(this);
+
+    p_gen[i]->setBus(bus);
 
     // Set number of equations for this generator
     p_gen[i]->getnvar(&p_neqsgen[i]);
