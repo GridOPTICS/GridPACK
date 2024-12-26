@@ -153,9 +153,10 @@ class Epria1: public BaseEMTGenModel
   double p_vdq0[3]; // voltage in dq0 reference frame
   double p_idq0[3]; // current in dq0 reference frame
   double p_vabc[3]; // voltage in abc reference frame
+  double p_eabc[3]; // Internal voltage output by model
     // Generator variables and their derivatives
-  double p_delta,p_dw, p_iabc[3];
-  double p_deltadot,p_dwdot,p_idot[3];
+  double p_iabc[3],p_iLabc[3];
+  double p_iLdot[3];
 
   IEEE_Cigre_DLLInterface_Instance model;
   

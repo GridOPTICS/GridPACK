@@ -4,12 +4,12 @@
 
 Epria1::Epria1(void)
 {
-  nxgen   = 0; // Number of variables for this model when integration type is implicit or implicit-explicit
+  nxgen   = 6; // Number of variables for this model when integration type is implicit or implicit-explicit
 }
 
 void Epria1::getnvar(int *nvar)
 {
-  if(integrationtype == EXPLICIT) nxgen = 0;
+  if(integrationtype == EXPLICIT) nxgen = 6;
   *nvar = nxgen;
 }
 
@@ -59,6 +59,8 @@ void Epria1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   model.ExternalOutputs = (void*)&modeloutputs;
   model.DoubleStates    = (double*)modelstates;
 
+  p_Rs = modelparams.Rchoke;
+  p_L  = modelparams.Lchoke/OMEGA_S;
 }
 
 /**
@@ -71,6 +73,8 @@ void Epria1::init(gridpack::RealType* xin)
   double Pg, Qg;  // Generator real and reactive power
   double dw=0.0;  // Initial machine speed deviation
   gridpack::RealType *x = xin+offsetb; // generator array starts from this location
+  double Rdamp = modelparams.Rdamp;
+  double Cfilt = modelparams.Cfilt;
 
   Pg = pg/mbase;
   Qg = qg/mbase;
@@ -80,8 +84,11 @@ void Epria1::init(gridpack::RealType* xin)
 
   gridpack::ComplexType V = gridpack::ComplexType(VD,VQ);
   gridpack::ComplexType S = gridpack::ComplexType(Pg,Qg);
-  gridpack::ComplexType I;
+  gridpack::ComplexType I,I_RC,IL,IC;
   gridpack::ComplexType E;
+  gridpack::ComplexType j = gridpack::ComplexType(0.0,-1.0);
+
+  modelstates[2] = p_Va0;
 
   modelinputs.Va = p_va;
   modelinputs.Vb = p_vb;
@@ -92,11 +99,25 @@ void Epria1::init(gridpack::RealType* xin)
 
   modelinputs.Vref = abs(V);
 
+  // Total current
   I = conj(S/V);
-  E = V + I*Zsource;
 
+  // Current through RC filter
+  I_RC = V/Rdamp - j*(V*Cfilt);
+
+  IC = j*(V*Cfilt);
+  IL = I - V/Rdamp + IC;
+  
+  E = V + IL*Zsource;
+
+  double Im, Ia;
+  double ILm,ILa;
+  double ICm,ICang;
+  double ia,ib,ic;
+  double iLa,iLb,iLc;
+  double iCa,iCb,iCc;
+  double iRa,iRb,iRc;
   double ea,eb,ec;
-
   double Em,Ea;
 
   Em = abs(E);
@@ -106,9 +127,74 @@ void Epria1::init(gridpack::RealType* xin)
   eb = Em*sin(Ea - 2*PI/3.0);
   ec = Em*sin(Ea + 2*PI/3.0);
 
+  Im = abs(I);
+  Ia = arg(I);
+  ILm = abs(IL);
+  ILa = arg(IL);
+  ICm   = abs(IC);
+  ICang = arg(IC);
+
+  ia = Im*sin(Ia);
+  ib = Im*sin(Ia - 2*PI/3.0);
+  ic = Im*sin(Ia + 2*PI/3.0);
+
+  iLa = ILm*sin(ILa);
+  iLb = ILm*sin(ILa - 2*PI/3.0);
+  iLc = ILm*sin(ILa + 2*PI/3.0);
+
+  iCa = ICm*sin(ICang);
+  iCb = ICm*sin(ICang - 2*PI/3.0);
+  iCc = ICm*sin(ICang + 2*PI/3.0);
+
+  iRa = p_va/Rdamp;
+  iRb = p_vb/Rdamp;
+  iRc = p_vc/Rdamp;
+
+  p_vabc[0] = p_va;
+  p_vabc[1] = p_vb;
+  p_vabc[2] = p_vc;
+
+  p_iabc[0] = ia;
+  p_iabc[1] = ib;
+  p_iabc[2] = ic;
+
+  abc2dq0(p_vabc,p_time,p_Va0,p_vdq0);
+  abc2dq0(p_iabc,p_time,p_Va0,p_idq0);
+
+  // Idref and Iqref
+  double iLdq0ref[3],iL[3];
+
+  iL[0] = iLa;
+  iL[1] = iLb;
+  iL[2] = iLc;
+
+  abc2dq0(iL,p_time,p_Va0,iLdq0ref);
+
+  // Idref and Iqref
+  modeloutputs.Idrefout = iLdq0ref[0];
+  modeloutputs.Iqrefout = iLdq0ref[1];
+
+  x[0] = ia;
+  x[1] = ib;
+  x[2] = ic;
+  x[3] = iLa;
+  x[4] = iLb;
+  x[5] = iLc;
+
   modeloutputs.Ea = ea;
   modeloutputs.Eb = eb;
   modeloutputs.Ec = ec;
+
+  modeloutputs.Pout = Pg;
+  modeloutputs.Qout = Qg;
+
+  modelinputs.Ia = ia;
+  modelinputs.Ib = ib;
+  modelinputs.Ic = ic;
+
+  modelinputs.IaL1 = iLa;
+  modelinputs.IbL1 = iLb;
+  modelinputs.IcL1 = iLc;
 
   int ok = Model_Initialize(&model);
 
@@ -149,18 +235,13 @@ void Epria1::setValues(gridpack::RealType *values)
     p_iabc[0]  = x[0];
     p_iabc[1]  = x[1];
     p_iabc[2]  = x[2];
-    if(integrationtype != EXPLICIT) {
-      p_delta    = x[3];
-      p_dw       = x[4];
-    }
+    p_iLabc[0] = x[3];
+    p_iLabc[1] = x[4];
+    p_iLabc[2] = x[5];
   } else if(p_mode == XDOTVECTOBUS) {
-    p_idot[0]  = x[0];
-    p_idot[1]  = x[1];
-    p_idot[2]  = x[2];
-    if(integrationtype != EXPLICIT) {
-      p_deltadot = x[3];
-      p_dwdot    = x[4];
-    }
+    p_iLdot[0]  = x[3];
+    p_iLdot[1]  = x[4];
+    p_iLdot[2]  = x[5];
   } 
 }
 
@@ -172,23 +253,28 @@ void Epria1::preStep(double time ,double timestep)
   if(integrationtype != EXPLICIT) {
     return;
   }
-  double Pe;
-  double ddelta_dt,ddw_dt;
 
   p_vabc[0] = p_va;
   p_vabc[1] = p_vb;
   p_vabc[2] = p_vc;
 
-  abc2dq0(p_vabc,p_time,p_delta,p_vdq0);
-  abc2dq0(p_iabc,p_time,p_delta,p_idq0);
+  abc2dq0(p_vabc,time,p_Va0,p_vdq0);
+  abc2dq0(p_iabc,time,p_Va0,p_idq0);
 
-  Pe = p_vdq0[0]*p_idq0[0] + p_vdq0[1]*p_idq0[1] + p_vdq0[2]*p_idq0[2];
-    
-  ddelta_dt = p_dw/OMEGA_S;
-  ddw_dt    = (p_Pm - Pe - p_D*p_dw)/(2*p_H);
+  modelinputs.Va = p_va;
+  modelinputs.Vb = p_vb;
+  modelinputs.Vc = p_vc;
+  
+  modelinputs.Ia = p_iabc[0];
+  modelinputs.Ib = p_iabc[1];
+  modelinputs.Ic = p_iabc[2];
 
-  p_delta = p_delta + timestep*ddelta_dt;
-  p_dw    = p_dw    + timestep*ddw_dt;
+  modelinputs.Time     = time;
+  modelinputs.Timestep = timestep;
+
+  int ok = Model_Outputs(&model);
+
+  // Get outputs from the model
 
 }
 
@@ -212,38 +298,30 @@ void Epria1::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-    double Pe;
     double e[3];
 
-    e[0] = p_Ep*sin(OMEGA_S*p_time + p_delta);
-    e[1] = p_Ep*sin(OMEGA_S*p_time + p_delta - TWOPI_OVER_THREE);
-    e[2] = p_Ep*sin(OMEGA_S*p_time + p_delta + TWOPI_OVER_THREE);
+    e[0] = p_eabc[0];
+    e[1] = p_eabc[1];
+    e[2] = p_eabc[2];
 
     p_vabc[0] = p_va;
     p_vabc[1] = p_vb;
     p_vabc[2] = p_vc;
 
-    abc2dq0(p_vabc,p_time,p_delta,p_vdq0);
-    abc2dq0(p_iabc,p_time,p_delta,p_idq0);
+    double dvdt[3];
+    double Rdamp = modelparams.Rdamp;
+    double Cfilt = modelparams.Cfilt/OMEGA_S;
 
-    Pe = p_vdq0[0]*p_idq0[0] + p_vdq0[1]*p_idq0[1] + p_vdq0[2]*p_idq0[2];
+    bus->getVoltageDerivatives(&dvdt[0],&dvdt[1],&dvdt[2]);
+
+    f[0] = p_iLabc[0] + p_va/Rdamp - Cfilt*dvdt[0] - p_iabc[0];
+    f[1] = p_iLabc[1] + p_vb/Rdamp - Cfilt*dvdt[1] - p_iabc[1];
+    f[2] = p_iLabc[2] + p_vc/Rdamp - Cfilt*dvdt[2] - p_iabc[2];
     
-    // Generator equations
-    if(abs(p_L) > 1e-6) {
-      // f = di_dt - idot => L^-1*(e - R*i - v) - idot
-      f[0] = (e[0] - p_Rs*p_iabc[0] - p_va)/p_L - p_idot[0];
-      f[1] = (e[1] - p_Rs*p_iabc[1] - p_vb)/p_L - p_idot[1];
-      f[2] = (e[2] - p_Rs*p_iabc[2] - p_vc)/p_L - p_idot[2];
-    } else {
-      f[0] = (e[0] - p_Rs*p_iabc[0] - p_va);
-      f[1] = (e[1] - p_Rs*p_iabc[1] - p_vb);
-      f[2] = (e[2] - p_Rs*p_iabc[2] - p_vc);
-    }
+    f[3] = (e[0] - p_Rs*p_iLabc[0] - p_va)/p_L - p_iLdot[0];
+    f[4] = (e[1] - p_Rs*p_iLabc[1] - p_vb)/p_L - p_iLdot[1];
+    f[5] = (e[2] - p_Rs*p_iLabc[2] - p_vc)/p_L - p_iLdot[2];
 
-    if(integrationtype != EXPLICIT) {
-      f[3] = p_dw/OMEGA_S - p_deltadot;
-      f[4]    = (p_Pm - Pe - p_D*p_dw)/(2*p_H) - p_dwdot;
-    }
   }
 
 }
@@ -275,24 +353,15 @@ void Epria1::getCurrentGlobalLocation(int *i_gloc)
  * Get number of matrix values contributed by generator
  * @return number of matrix values
 
- Non-zero pattern of the Jacobian (x denotes non-zero value)
-
-          ia   ib   ic    delta    omega    va    vb    vc
- eq. 1 |   x                x                x
- eq. 2 |        x           x                      x
- eq. 3 |             x      x                            x
- eq. 4 |                    x       x    
- eq. 5 |   x    x    x      x       x        x     x     x
-
- Number of non-zero values = 19
+ Number of non-zero values = 15
  */
 int Epria1::matrixNumValues()
 {
   int numVals;
   if(integrationtype == IMPLICIT) {
-    numVals = 19;
+    numVals = 15;
   } else {
-    numVals = 6;
+    numVals = 15;
   }
   return numVals;
 }
@@ -311,218 +380,88 @@ void Epria1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   int ib_idx = p_gloc+1;
   int ic_idx = p_gloc+2;
 
-  int delta_idx = p_gloc+3;
-  int dw_idx = p_gloc+4;
+  int iLa_idx = p_gloc+3;
+  int iLb_idx = p_gloc+4;
+  int iLc_idx = p_gloc+5;
 
   int va_idx = p_glocvoltage;
   int vb_idx = p_glocvoltage+1;
   int vc_idx = p_glocvoltage+2;
 
-  // partial derivatives w.r.t. f[0]-f[2]
-  if(abs(p_L) > 1e-6) {
-    // f[0] partial derivative w.r.t. delta
-    if(integrationtype == IMPLICIT) {
-      rows[ctr]   = ia_idx;
-      cols[ctr]   = delta_idx;
-      values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta)/p_L;
+  double Rdamp = modelparams.Rdamp;
+  double Cfilt = modelparams.Cfilt/OMEGA_S;
 
-      ctr += 1;
-    }
-    rows[ctr]   = ia_idx;
-    cols[ctr]   = ia_idx;
-    values[ctr] = -p_Rs/p_L - shift;
+  rows[ctr]   = ia_idx;
+  cols[ctr]   = iLa_idx;
+  values[ctr]   = 1.0;
 
-    rows[ctr+1]   = ia_idx;
-    cols[ctr+1]   = va_idx;
-    values[ctr+1] = -1.0/p_L;
+  rows[ctr+1]   = ia_idx;
+  cols[ctr+1]   = va_idx;
+  values[ctr+1]   = 1/Rdamp - Cfilt*shift;
 
-    ctr += 2;
+  rows[ctr+2]   = ia_idx;
+  cols[ctr+2]   = ia_idx;
+  values[ctr+2]   = -1.0;
 
-    if(integrationtype == IMPLICIT) {
-      // f[1] partial derivative w.r.t. delta
-      rows[ctr]   = ib_idx;
-      cols[ctr]   = delta_idx;
-      values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta - TWOPI_OVER_THREE)/p_L;
+  ctr += 3;
 
-      ctr += 1;
-    }
-    
-    rows[ctr]   = ib_idx;
-    cols[ctr]   = ib_idx;
-    values[ctr] = -p_Rs/p_L - shift;
+  rows[ctr]   = ib_idx;
+  cols[ctr]   = iLb_idx;
+  values[ctr]   = 1.0;
 
-    rows[ctr+1]   = ib_idx;
-    cols[ctr+1]   = vb_idx;
-    values[ctr+1] = -1.0/p_L;
+  rows[ctr+1]   = ib_idx;
+  cols[ctr+1]   = vb_idx;
+  values[ctr+1]   = 1/Rdamp - Cfilt*shift;
 
-    ctr += 2;
+  rows[ctr+2]   = ib_idx;
+  cols[ctr+2]   = ib_idx;
+  values[ctr+2]   = -1.0;
 
-    // f[2] partial derivative w.r.t. delta
-    if(integrationtype == IMPLICIT) {
-      rows[ctr]   = ic_idx;
-      cols[ctr]   = delta_idx;
-      values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta + TWOPI_OVER_THREE)/p_L;
+  ctr += 3;
 
-      ctr += 1;
-    }
-    
-    rows[ctr]   = ic_idx;
-    cols[ctr]   = ic_idx;
-    values[ctr] = -p_Rs/p_L - shift;
+  rows[ctr]   = ic_idx;
+  cols[ctr]   = iLc_idx;
+  values[ctr]   = 1.0;
 
-    rows[ctr+1]   = ic_idx;
-    cols[ctr+1]   = vc_idx;
-    values[ctr+1] = -1.0/p_L;
+  rows[ctr+1]   = ic_idx;
+  cols[ctr+1]   = vc_idx;
+  values[ctr+1]   = 1/Rdamp - Cfilt*shift;
 
-    ctr += 2;
-  } else {
-    if(integrationtype == IMPLICIT) {
-      // f[0] partial derivative w.r.t. delta
-      rows[ctr]   = ia_idx;
-      cols[ctr]   = delta_idx;
-      values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta);
-      ctr += 1;
-    }
+  rows[ctr+2]   = ic_idx;
+  cols[ctr+2]   = ic_idx;
+  values[ctr+2]   = -1.0;
 
-    rows[ctr]   = ia_idx;
-    cols[ctr]   = ia_idx;
-    values[ctr] = -p_Rs;
-
-    rows[ctr+1]   = ia_idx;
-    cols[ctr+1]   = va_idx;
-    values[ctr+1] = -1.0;
-
-    ctr += 2;
-
-    if(integrationtype == IMPLICIT) {
-      // f[1] partial derivative w.r.t. delta
-      rows[ctr]   = ib_idx;
-      cols[ctr]   = delta_idx;
-      values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta - TWOPI_OVER_THREE);
-      ctr += 1;
-    }
-
-    rows[ctr]   = ib_idx;
-    cols[ctr]   = ib_idx;
-    values[ctr] = -p_Rs;
-
-    rows[ctr+1]   = ib_idx;
-    cols[ctr+1]   = vb_idx;
-    values[ctr+1] = -1.0;
-
-    ctr += 2;
-
-    if(integrationtype == IMPLICIT) {
-      // f[2] partial derivative w.r.t. delta
-      rows[ctr]   = ic_idx;
-      cols[ctr]   = delta_idx;
-      values[ctr] = p_Ep*cos(OMEGA_S*p_time + p_delta + TWOPI_OVER_THREE);
-      ctr += 1;
-    }
-    
-    rows[ctr]   = ic_idx;
-    cols[ctr]   = ic_idx;
-    values[ctr] = -p_Rs;
-
-    rows[ctr+1]   = ic_idx;
-    cols[ctr+1]   = vc_idx;
-    values[ctr+1] = -1.0;
-
-    ctr += 2;
-  }
-
-  if(integrationtype == IMPLICIT) {
-    // partial derivatives w.r.t f[3]
-    rows[ctr]   = delta_idx;
-    cols[ctr]   = delta_idx;
-    values[ctr] = -shift;
-    
-    rows[ctr+1]   = delta_idx;
-    cols[ctr+1]   = dw_idx;
-    values[ctr+1] = 1/OMEGA_S;
-    
-    ctr += 2;
-    
-    // partial derivatives w.r.t. f[4]
-    // df[1]_ddw
-    rows[ctr]   = dw_idx;
-    cols[ctr]   = dw_idx;
-    values[ctr] = -p_D/(2*p_H) - shift;
-    ctr++;
-    
-    // f[4] = -1/(2*H)*Pe = -1/(2*H)*vdq0^T*idq0
-    // df[4]_ddelta = -1/(2*H)*[vdq0^T*didq0_ddelta + (dvdq0_ddelta)^T*idq0]
-    //              = -1/(2*H)*[vdq0^T*dTdq0_ddelta*iabc + (dTdq0_ddelta*vabc)^T*idq0]
-    double Tdq0[3][3],dTdq0_ddelta[3][3];
-    double omegat = OMEGA_S*p_time + p_delta;
-    double omegat_minus = omegat - 2.0*PI/3.0;
-    double omegat_plus = omegat + 2.0*PI/3.0;
-    
-    Tdq0[0][0] = TWO_OVER_THREE*sin(omegat); Tdq0[0][1] = TWO_OVER_THREE*sin(omegat_minus); Tdq0[0][2] = TWO_OVER_THREE*sin(omegat_plus);
-    Tdq0[1][0] = TWO_OVER_THREE*cos(omegat); Tdq0[1][1] = TWO_OVER_THREE*cos(omegat_minus); Tdq0[1][2] = TWO_OVER_THREE*cos(omegat_plus);
-    Tdq0[2][0] = Tdq0[2][1] = Tdq0[2][2] = TWO_OVER_THREE*0.5;
-    
-    dTdq0_ddelta[0][0] = TWO_OVER_THREE*cos(omegat); dTdq0_ddelta[0][1] = TWO_OVER_THREE*cos(omegat_minus); dTdq0_ddelta[0][2] = TWO_OVER_THREE*cos(omegat_plus);
-    dTdq0_ddelta[1][0] = TWO_OVER_THREE*-sin(omegat); dTdq0_ddelta[1][1] = TWO_OVER_THREE*-sin(omegat_minus); dTdq0_ddelta[1][2] = TWO_OVER_THREE*-sin(omegat_plus);
-    Tdq0[2][0] = Tdq0[2][1] = Tdq0[2][2] = 0.0;
-    
-    double dvdq0_ddelta[3];
-    double didq0_ddelta[3];
-    double dPe_ddelta1,dPe_ddelta2;
-    
-    matvecmult3x3(dTdq0_ddelta,p_vabc,dvdq0_ddelta);
-    matvecmult3x3(dTdq0_ddelta,p_iabc,didq0_ddelta);
-    
-    vecdot3(p_vdq0,didq0_ddelta,&dPe_ddelta1);
-    vecdot3(p_idq0,dvdq0_ddelta,&dPe_ddelta2);
-    
-    rows[ctr] = dw_idx;
-    cols[ctr] = delta_idx;
-    values[ctr] = -1.0/(2*p_H)*(dPe_ddelta1 + dPe_ddelta2);
-    
-    ctr++;
-    
-    // df[1]_dvabc = -1/(2*H)*[(dvdq0_dvabc)^T*idq0]
-    //             = -1/(2*H)*[d(vabc^T*Tdq0^T)*idq0]
-    //              = -1/(2*H)*[Tdq0^T*idq0]
-    double df4_dvabc[3];
-    
-    scaledmattransposevecmult3x3(Tdq0,p_idq0,df4_dvabc,-1.0/(2*p_H));
-    
-    rows[ctr]   = dw_idx;
-    cols[ctr]   = va_idx;
-    values[ctr] = df4_dvabc[0];
-    
-    rows[ctr+1]   = dw_idx;
-    cols[ctr+1]   = vb_idx;
-    values[ctr+1] = df4_dvabc[1];
-    
-    rows[ctr+2]   = dw_idx;
-    cols[ctr+2]   = vc_idx;
-    values[ctr+2] = df4_dvabc[2];
-    
-    ctr += 3;
-    
-    // df[1]_diabc = -1/(2*H)*[vdq0^T*Tdq0]
-    //              = -1/(2*H)*[vdq0^T*Tdq0]]
-    double df4_diabc[3];
-    
-    scaledvec3multmat3x3(p_vdq0,Tdq0,df4_diabc,-1.0/(2*p_H));
-    
-    rows[ctr]   = dw_idx;
-    cols[ctr]   = ia_idx;
-    values[ctr] = df4_diabc[0];
-    
-    rows[ctr+1]   = dw_idx;
-    cols[ctr+1]   = ib_idx;
-    values[ctr+1] = df4_diabc[1];
-    
-    rows[ctr+2]   = dw_idx;
-    cols[ctr+2]   = ic_idx;
-    values[ctr+2] = df4_diabc[2];
-    
-    ctr += 3;
-  }
+  ctr += 3;
   
+  rows[ctr]   = iLa_idx;
+  cols[ctr]   = iLa_idx;
+  values[ctr] = -p_Rs/p_L - shift;
+
+  rows[ctr+1]   = iLa_idx;
+  cols[ctr+1]   = va_idx;
+  values[ctr+1] = -1.0/p_L;
+
+  ctr += 2;
+
+  rows[ctr]   = iLb_idx;
+  cols[ctr]   = iLb_idx;
+  values[ctr] = -p_Rs/p_L - shift;
+
+  rows[ctr+1]   = iLb_idx;
+  cols[ctr+1]   = vb_idx;
+  values[ctr+1] = -1.0/p_L;
+
+  ctr += 2;
+
+  rows[ctr]   = iLc_idx;
+  cols[ctr]   = iLc_idx;
+  values[ctr] = -p_Rs/p_L - shift;
+
+  rows[ctr+1]   = iLc_idx;
+  cols[ctr+1]   = vc_idx;
+  values[ctr+1] = -1.0/p_L;
+
+  ctr += 2;
+
   *nvals = ctr;
 }
