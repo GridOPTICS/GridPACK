@@ -119,13 +119,14 @@ void Epria1::init(gridpack::RealType* xin)
   double iRa,iRb,iRc;
   double ea,eb,ec;
   double Em,Ea;
+  double e[3];
 
   Em = abs(E);
   Ea = arg(E);
 
-  ea = Em*sin(Ea);
-  eb = Em*sin(Ea - 2*PI/3.0);
-  ec = Em*sin(Ea + 2*PI/3.0);
+  ea = e[0] = Em*sin(Ea);
+  eb = e[1] = Em*sin(Ea - 2*PI/3.0);
+  ec = e[2] = Em*sin(Ea + 2*PI/3.0);
 
   Im = abs(I);
   Ia = arg(I);
@@ -161,6 +162,12 @@ void Epria1::init(gridpack::RealType* xin)
   abc2dq0(p_vabc,p_time,p_Va0,p_vdq0);
   abc2dq0(p_iabc,p_time,p_Va0,p_idq0);
 
+  double Edq0[3];
+
+  abc2dq0(e,p_time,p_Va0,Edq0);
+  Ed = Edq0[0];
+  Eq = Edq0[1];
+  
   // Idref and Iqref
   double iLdq0ref[3],iL[3];
 
@@ -171,15 +178,15 @@ void Epria1::init(gridpack::RealType* xin)
   abc2dq0(iL,p_time,p_Va0,iLdq0ref);
 
   // Idref and Iqref
-  modeloutputs.Idrefout = iLdq0ref[0];
-  modeloutputs.Iqrefout = iLdq0ref[1];
+  modeloutputs.Idrefout = p_idq0[0];
+  modeloutputs.Iqrefout = p_idq0[1];
 
-  x[0] = ia;
-  x[1] = ib;
-  x[2] = ic;
-  x[3] = iLa;
-  x[4] = iLb;
-  x[5] = iLc;
+  x[0] = p_iabc[0] = ia;
+  x[1] = p_iabc[1] = ib;
+  x[2] = p_iabc[2] = ic;
+  x[3] = p_iLabc[0] = iLa;
+  x[4] = p_iLabc[1] = iLb;
+  x[5] = p_iLabc[2] = iLc;
 
   modeloutputs.Ea = ea;
   modeloutputs.Eb = eb;
@@ -195,6 +202,10 @@ void Epria1::init(gridpack::RealType* xin)
   modelinputs.IaL1 = iLa;
   modelinputs.IbL1 = iLb;
   modelinputs.IcL1 = iLc;
+
+  double Cshunt[3][3];
+  Cshunt[0][0] = Cshunt[1][1] = Cshunt[2][2] = Cfilt/OMEGA_S;
+  bus->addCshunt(Cshunt,1.0);
 
   int ok = Model_Initialize(&model);
 
@@ -269,12 +280,19 @@ void Epria1::preStep(double time ,double timestep)
   modelinputs.Ib = p_iabc[1];
   modelinputs.Ic = p_iabc[2];
 
+  modelinputs.IaL1 = p_iLabc[0];
+  modelinputs.IbL1 = p_iLabc[1];
+  modelinputs.IcL1 = p_iLabc[2];
+
   modelinputs.Time     = time;
   modelinputs.Timestep = timestep;
 
   int ok = Model_Outputs(&model);
 
   // Get outputs from the model
+  Ed = modeloutputs.Ed;
+  Eq = modeloutputs.Eq;
+  phi_PLL = modeloutputs.phi_PLL;
 
 }
 
@@ -299,10 +317,12 @@ void Epria1::vectorGetValues(gridpack::RealType *values)
 
   if(p_mode == RESIDUAL_EVAL) {
     double e[3];
-
-    e[0] = p_eabc[0];
-    e[1] = p_eabc[1];
-    e[2] = p_eabc[2];
+    double Edq0[3];
+    Edq0[0] = Ed;
+    Edq0[1] = Eq;
+    Edq0[2] = 0.0;
+    
+    dq02abc(Edq0,p_time,phi_PLL,e);
 
     p_vabc[0] = p_va;
     p_vabc[1] = p_vb;
