@@ -171,6 +171,8 @@ class Epria1: public BaseEMTGenModel
 
   gridpack::ComplexType Zsource;
 
+  bool zero_Rdamp;
+
 };
 
 #endif

@@ -51,6 +51,10 @@ void Epria1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if(!data->getValue(EPRIA1_PARAM18, &modelparams.Cfilt, idx)) modelparams.Cfilt = 0.0;
   if(!data->getValue(EPRIA1_PARAM19, &modelparams.Rdamp, idx)) modelparams.Rdamp = 0.0;
 
+  zero_Rdamp = false;
+  if(modelparams.Rdamp < 1e-6) zero_Rdamp = true;
+  
+
   // Overwrite Zsource with values from the model
   Zsource = gridpack::ComplexType(modelparams.Rchoke,modelparams.Lchoke);
   
@@ -58,6 +62,8 @@ void Epria1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   model.ExternalInputs  = (void*)&modelinputs;
   model.ExternalOutputs = (void*)&modeloutputs;
   model.DoubleStates    = (double*)modelstates;
+
+  int ok = Model_CheckParameters(&model);
 
   p_Rs = modelparams.Rchoke;
   p_L  = modelparams.Lchoke/OMEGA_S;
@@ -86,7 +92,7 @@ void Epria1::init(gridpack::RealType* xin)
   gridpack::ComplexType S = gridpack::ComplexType(Pg,Qg);
   gridpack::ComplexType I,I_RC,IL,IC;
   gridpack::ComplexType E;
-  gridpack::ComplexType j = gridpack::ComplexType(0.0,-1.0);
+  gridpack::ComplexType j = gridpack::ComplexType(0.0,1.0);
 
   modelstates[2] = p_Va0;
 
@@ -103,10 +109,10 @@ void Epria1::init(gridpack::RealType* xin)
   I = conj(S/V);
 
   // Current through RC filter
-  I_RC = V/Rdamp - j*(V*Cfilt);
+  I_RC = (zero_Rdamp?0.0:V/Rdamp) - j*(V*Cfilt);
 
   IC = j*(V*Cfilt);
-  IL = I - V/Rdamp + IC;
+  IL = I - (zero_Rdamp?0.0:V/Rdamp) + IC;
   
   E = V + IL*Zsource;
 
@@ -147,20 +153,21 @@ void Epria1::init(gridpack::RealType* xin)
   iCb = ICm*sin(ICang - 2*PI/3.0);
   iCc = ICm*sin(ICang + 2*PI/3.0);
 
-  iRa = p_va/Rdamp;
-  iRb = p_vb/Rdamp;
-  iRc = p_vc/Rdamp;
+  iRa = (zero_Rdamp?0.0:p_va/Rdamp);
+  iRb = (zero_Rdamp?0.0:p_vb/Rdamp);
+  iRc = (zero_Rdamp?0.0:p_vc/Rdamp);
 
   p_vabc[0] = p_va;
   p_vabc[1] = p_vb;
   p_vabc[2] = p_vc;
 
-  p_iabc[0] = ia;
-  p_iabc[1] = ib;
-  p_iabc[2] = ic;
+  double i[3];
+  i[0] = ia;
+  i[1] = ib;
+  i[2] = ic;
 
   abc2dq0(p_vabc,p_time,p_Va0,p_vdq0);
-  abc2dq0(p_iabc,p_time,p_Va0,p_idq0);
+  abc2dq0(i,p_time,p_Va0,p_idq0);
 
   double Edq0[3];
 
@@ -181,9 +188,9 @@ void Epria1::init(gridpack::RealType* xin)
   modeloutputs.Idrefout = p_idq0[0];
   modeloutputs.Iqrefout = p_idq0[1];
 
-  x[0] = p_iabc[0] = ia;
-  x[1] = p_iabc[1] = ib;
-  x[2] = p_iabc[2] = ic;
+  x[0] = p_iabc[0] = ia*mbase/sbase;
+  x[1] = p_iabc[1] = ib*mbase/sbase;
+  x[2] = p_iabc[2] = ic*mbase/sbase;
   x[3] = p_iLabc[0] = iLa;
   x[4] = p_iLabc[1] = iLb;
   x[5] = p_iLabc[2] = iLc;
@@ -221,6 +228,24 @@ void Epria1::init(gridpack::RealType* xin)
  */
 bool Epria1::serialWrite(char *string, const int bufsize,const char *signal)
 {
+  if(!strcmp(signal,"header")) {
+    /* Print output header */
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
+    return true;
+  } else if(!strcmp(signal,"monitor")) {
+    /* Print output */
+      double Vm, Pgen,dspd=0.0,vdq0[3],idq0[3];
+      abc2dq0(p_vabc,p_time,phi_PLL,vdq0);
+      abc2dq0(p_iabc,p_time,phi_PLL,idq0);
+    if(p_online) {
+      Vm = sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
+    } else {
+      Vm = p_Vm0;
+    }
+    Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1]);
+    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,phi_PLL,modeloutputs.Freqpll-60.0);
+    return true;
+  }
   return false;
 }
 
@@ -269,16 +294,20 @@ void Epria1::preStep(double time ,double timestep)
   p_vabc[1] = p_vb;
   p_vabc[2] = p_vc;
 
+  double i[3];
+  i[0] = p_iabc[0]*sbase/mbase;
+  i[1] = p_iabc[1]*sbase/mbase;
+  i[2] = p_iabc[2]*sbase/mbase;
   abc2dq0(p_vabc,time,p_Va0,p_vdq0);
-  abc2dq0(p_iabc,time,p_Va0,p_idq0);
+  abc2dq0(i,time,p_Va0,p_idq0);
 
   modelinputs.Va = p_va;
   modelinputs.Vb = p_vb;
   modelinputs.Vc = p_vc;
   
-  modelinputs.Ia = p_iabc[0];
-  modelinputs.Ib = p_iabc[1];
-  modelinputs.Ic = p_iabc[2];
+  modelinputs.Ia = p_iabc[0]*sbase/mbase;
+  modelinputs.Ib = p_iabc[1]*sbase/mbase;
+  modelinputs.Ic = p_iabc[2]*sbase/mbase;
 
   modelinputs.IaL1 = p_iLabc[0];
   modelinputs.IbL1 = p_iLabc[1];
@@ -321,6 +350,8 @@ void Epria1::vectorGetValues(gridpack::RealType *values)
     Edq0[0] = Ed;
     Edq0[1] = Eq;
     Edq0[2] = 0.0;
+
+    printf("Time = %lf, Ed = %lf, Eq = %lf, phi = %lf\n",p_time,Ed,Eq,phi_PLL);
     
     dq02abc(Edq0,p_time,phi_PLL,e);
 
@@ -334,9 +365,9 @@ void Epria1::vectorGetValues(gridpack::RealType *values)
 
     bus->getVoltageDerivatives(&dvdt[0],&dvdt[1],&dvdt[2]);
 
-    f[0] = p_iLabc[0] + p_va/Rdamp - Cfilt*dvdt[0] - p_iabc[0];
-    f[1] = p_iLabc[1] + p_vb/Rdamp - Cfilt*dvdt[1] - p_iabc[1];
-    f[2] = p_iLabc[2] + p_vc/Rdamp - Cfilt*dvdt[2] - p_iabc[2];
+    f[0] = (p_iLabc[0] + (zero_Rdamp?0.0:p_va/Rdamp) - Cfilt*dvdt[0])*mbase/sbase - p_iabc[0];
+    f[1] = (p_iLabc[1] + (zero_Rdamp?0.0:p_vb/Rdamp) - Cfilt*dvdt[1])*mbase/sbase - p_iabc[1];
+    f[2] = (p_iLabc[2] + (zero_Rdamp?0.0:p_vc/Rdamp) - Cfilt*dvdt[2])*mbase/sbase - p_iabc[2];
     
     f[3] = (e[0] - p_Rs*p_iLabc[0] - p_va)/p_L - p_iLdot[0];
     f[4] = (e[1] - p_Rs*p_iLabc[1] - p_vb)/p_L - p_iLdot[1];
@@ -413,11 +444,11 @@ void Epria1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 
   rows[ctr]   = ia_idx;
   cols[ctr]   = iLa_idx;
-  values[ctr]   = 1.0;
+  values[ctr]   = 1.0*mbase/sbase;
 
   rows[ctr+1]   = ia_idx;
   cols[ctr+1]   = va_idx;
-  values[ctr+1]   = 1/Rdamp - Cfilt*shift;
+  values[ctr+1]   = ((zero_Rdamp?0.0:1/Rdamp) - Cfilt*shift)*mbase/sbase;
 
   rows[ctr+2]   = ia_idx;
   cols[ctr+2]   = ia_idx;
@@ -427,11 +458,11 @@ void Epria1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 
   rows[ctr]   = ib_idx;
   cols[ctr]   = iLb_idx;
-  values[ctr]   = 1.0;
+  values[ctr]   = 1.0*mbase/sbase;
 
   rows[ctr+1]   = ib_idx;
   cols[ctr+1]   = vb_idx;
-  values[ctr+1]   = 1/Rdamp - Cfilt*shift;
+  values[ctr+1]   = ((zero_Rdamp?0.0:1/Rdamp) - Cfilt*shift)*mbase/sbase;
 
   rows[ctr+2]   = ib_idx;
   cols[ctr+2]   = ib_idx;
@@ -441,11 +472,11 @@ void Epria1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
 
   rows[ctr]   = ic_idx;
   cols[ctr]   = iLc_idx;
-  values[ctr]   = 1.0;
+  values[ctr]   = 1.0*mbase/sbase;
 
   rows[ctr+1]   = ic_idx;
   cols[ctr+1]   = vc_idx;
-  values[ctr+1]   = 1/Rdamp - Cfilt*shift;
+  values[ctr+1]   = ((zero_Rdamp?0.0:1/Rdamp) - Cfilt*shift)*mbase/sbase;
 
   rows[ctr+2]   = ic_idx;
   cols[ctr+2]   = ic_idx;
