@@ -184,9 +184,10 @@ void Epria1::init(gridpack::RealType* xin)
 
   abc2dq0(iL,p_time,p_Va0,iLdq0ref);
 
-  // Idref and Iqref
+  // Expected outputs at t = 0
   modeloutputs.Idrefout = p_idq0[0];
   modeloutputs.Iqrefout = p_idq0[1];
+  modeloutputs.Freqpll = 60.0;
 
   x[0] = p_iabc[0] = ia*mbase/sbase;
   x[1] = p_iabc[1] = ib*mbase/sbase;

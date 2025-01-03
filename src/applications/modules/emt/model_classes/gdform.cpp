@@ -101,7 +101,7 @@ void Gdform::init(gridpack::RealType* xin)
   Qmax_PI_blk.setparams(kpqmax,kiqmax,-1000.0,0.0,-1000.0,0.0);
   Qmin_PI_blk.setparams(kpqmax,kiqmax,0.0,1000.0,0.0,1000.0);
 
-  Delta_blk.setparams(1.0);
+  Delta_blk.setparams(OMEGA_S);
 
   Pg = pg/mbase;
   Qg = qg/mbase;
@@ -301,6 +301,8 @@ void Gdform::preStep(double time ,double timestep)
   omega = OMEGA_S + domega;
 
   delta = Delta_blk.getoutput(domega,timestep,true);
+
+  printf("Time = %lf, Edroop = %lf, domega = %lf, delta = %lf, Pinv = %lf, Qinv = %lf\n",p_time,Edroop,domega,delta,Pinv,Qinv);
 
 }
 

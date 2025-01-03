@@ -274,6 +274,9 @@ gridpack::ComplexType gridpack::dynamic_simulation::Regca1Generator::INorton()
 
   Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
+  printf("Vt = %lf, Ipout = %lf, Iqout = %lf\n",Vt_filter, Ipcmd,Iqcmd);
+
+
   transform(Ipout,Iqout,theta,&Irout,&Iiout);
 
   // Scaled to system MVAbase

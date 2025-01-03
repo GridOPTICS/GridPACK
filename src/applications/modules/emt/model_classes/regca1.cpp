@@ -29,7 +29,8 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 
   // load parameters for the model type
   data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
-  L = imag(Zsource)/OMEGA_S;
+  p_Rs = real(Zsource); 
+  p_L  = imag(Zsource)/OMEGA_S;
 
   if (!data->getValue(GENERATOR_REGC_LVPLSW , &lvplsw, idx)) lvplsw = 0; 
   if (!data->getValue(GENERATOR_REGC_TG  ,    &tg, idx))     tg = 0.02; 
@@ -92,12 +93,14 @@ void Regca1::init(gridpack::RealType* xin)
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  omega_Pll_block.setparams(0.001,0.005);
+  omega_Pll_block.setparams(0.1,0.5);
 
   // Integrator block
-  angle_block.setparams(1.0);
+  angle_block.setparams(OMEGA_S);
 
-
+  // Current control blocks
+  Iperr_PI_blk.setparams(0,0.05);
+  Iqerr_PI_blk.setparams(0,0.05);
 
   Pg = pg/mbase;
   Qg = qg/mbase;
@@ -113,6 +116,11 @@ void Regca1::init(gridpack::RealType* xin)
   I = conj(S/V);
   double Im = abs(I);
   double Ia = arg(I);
+
+  // Internal voltage
+  E = V + I*Zsource;
+  Ed = real(E);
+  Eq = imag(E);
 
   double ia,ib,ic;
   ia = Im*sin(OMEGA_S*p_time + Ia);
@@ -149,6 +157,9 @@ void Regca1::init(gridpack::RealType* xin)
   Iqcmd = Iq_blk.init_given_y(Iq);
   Vt_filter = Vt_filter_blk.init_given_u(p_Vm0);
 
+  Iperr_PI_blk.init_given_y(Ed);
+  Iqerr_PI_blk.init_given_y(Eq);
+  
   x[0] = ia;
   x[1] = ib;
   x[2] = ic;
@@ -238,7 +249,7 @@ void Regca1::preStep(double time ,double timestep)
   ang = arg(Vdq);
   domega = omega_Pll_block.getoutput(ang, timestep, true);
   //  omega  = OMEGA_S*(1 + domega);
-  delta  = angle_block.getoutput(OMEGA_S*domega, timestep, true);
+  delta  = angle_block.getoutput(domega, timestep, true);
 
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
 
@@ -263,6 +274,15 @@ void Regca1::preStep(double time ,double timestep)
   Iq_olim = std::max(0.0,khv*(Vt - volim));
 
   Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
+
+  Ed = Iperr_PI_blk.getoutput(Ipref - Ipout);
+  Eq = Iqerr_PI_blk.getoutput(Iqref - Iqout);
+  E  = gridpack::ComplexType(Ed,Eq);
+  Eabs = abs(E);
+  Eangle = arg(E);
+
+  printf("Time = %lf, Vt = %lf, Ipout = %lf, Iqout = %lf, domega = %lf, delta = %lf\n",p_time,Vt_filter, Ipcmd,Iqcmd,domega,delta);
+
 }
 
 /**
@@ -285,16 +305,23 @@ void Regca1::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-    double Ipq0[3], igen[3];
-    Ipq0[0] = Ip;
-    Ipq0[1] = Iq;
-    Ipq0[2] = 0.0;
+    double e[3];
 
-    dq02abc(Ipq0,p_time, delta, igen);
+    e[0] = Eabs*sin(OMEGA_S*p_time + Eangle);
+    e[1] = Eabs*sin(OMEGA_S*p_time + Eangle - TWOPI_OVER_THREE);
+    e[2] = Eabs*sin(OMEGA_S*p_time + Eangle + TWOPI_OVER_THREE);
 
-    f[0] = igen[0] - iabc[0];
-    f[1] = igen[1] - iabc[1];
-    f[2] = igen[2] - iabc[2];
+    // Generator equations
+    if(abs(p_L) > 1e-6) {
+      // f = di_dt - idot => L^-1*(e - R*i - v) - idot
+      f[0] = (e[0] - p_Rs*iabc[0] - p_va)/p_L - diabc[0];
+      f[1] = (e[1] - p_Rs*iabc[1] - p_vb)/p_L - diabc[1];
+      f[2] = (e[2] - p_Rs*iabc[2] - p_vc)/p_L - diabc[2];
+    } else {
+      f[0] = (e[0] - p_Rs*iabc[0] - p_va);
+      f[1] = (e[1] - p_Rs*iabc[1] - p_vb);
+      f[2] = (e[2] - p_Rs*iabc[2] - p_vc);
+    }
     
     f[3] = iabc[0]*mbase/sbase - iout[0];
     f[4] = iabc[1]*mbase/sbase - iout[1];
@@ -403,7 +430,7 @@ int Regca1::matrixNumValues()
 {
   int numVals;
 
-  numVals = 9;
+  numVals = 12;
 
   return numVals;
 }
@@ -418,20 +445,76 @@ int Regca1::matrixNumValues()
 void Regca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
+  int ia_idx = p_gloc;
+  int ib_idx = p_gloc+1;
+  int ic_idx = p_gloc+2;
+  int va_idx = p_glocvoltage;
+  int vb_idx = p_glocvoltage+1;
+  int vc_idx = p_glocvoltage+2;
 
-  rows[ctr] = p_gloc;
-  cols[ctr] = p_gloc;
-  values[ctr] = -1.0;
+  // partial derivatives w.r.t. f[0]-f[2]
+  if(abs(p_L) > 1e-6) {
+    rows[ctr]   = ia_idx;
+    cols[ctr]   = ia_idx;
+    values[ctr] = -p_Rs/p_L - shift;
 
-  rows[ctr+1] = p_gloc+1;
-  cols[ctr+1] = p_gloc+1;
-  values[ctr+1] = -1.0;
+    rows[ctr+1]   = ia_idx;
+    cols[ctr+1]   = va_idx;
+    values[ctr+1] = -1.0/p_L;
 
-  rows[ctr+2] = p_gloc+2;
-  cols[ctr+2] = p_gloc+2;
-  values[ctr+2] = -1.0;
+    ctr += 2;
 
-  ctr += 3;
+    rows[ctr]   = ib_idx;
+    cols[ctr]   = ib_idx;
+    values[ctr] = -p_Rs/p_L - shift;
+
+    rows[ctr+1]   = ib_idx;
+    cols[ctr+1]   = vb_idx;
+    values[ctr+1] = -1.0/p_L;
+
+    ctr += 2;
+
+    rows[ctr]   = ic_idx;
+    cols[ctr]   = ic_idx;
+    values[ctr] = -p_Rs/p_L - shift;
+
+    rows[ctr+1]   = ic_idx;
+    cols[ctr+1]   = vc_idx;
+    values[ctr+1] = -1.0/p_L;
+
+    ctr += 2;
+  } else {
+
+    rows[ctr]   = ia_idx;
+    cols[ctr]   = ia_idx;
+    values[ctr] = -p_Rs;
+
+    rows[ctr+1]   = ia_idx;
+    cols[ctr+1]   = va_idx;
+    values[ctr+1] = -1.0;
+
+    ctr += 2;
+
+    rows[ctr]   = ib_idx;
+    cols[ctr]   = ib_idx;
+    values[ctr] = -p_Rs;
+
+    rows[ctr+1]   = ib_idx;
+    cols[ctr+1]   = vb_idx;
+    values[ctr+1] = -1.0;
+
+    ctr += 2;
+
+    rows[ctr]   = ic_idx;
+    cols[ctr]   = ic_idx;
+    values[ctr] = -p_Rs;
+
+    rows[ctr+1]   = ic_idx;
+    cols[ctr+1]   = vc_idx;
+    values[ctr+1] = -1.0;
+
+    ctr += 2;
+  }
 
   rows[ctr] = p_gloc + 3;
   cols[ctr] = p_gloc;
