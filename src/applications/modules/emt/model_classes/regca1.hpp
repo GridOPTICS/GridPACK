@@ -249,11 +249,17 @@ class Regca1 : public BaseEMTGenModel
   
   double  Ipout,Iqout; // inverter current output in inverter reference frame
   double  Irout, Iiout; // inverter current output in network reference frame
-  
+
+    double Ipref,Iqref;
+    PIControl Iperr_PI_blk;
+    PIControl Iqerr_PI_blk;
+    double    Ed, Eq;
+    double    Eabs, Eangle;
+
     double Ipcmd, Iqcmd, busfreq;  // busfreq is perunit, 1.0
 
   gridpack::ComplexType Zsource, E;
-  double L;
+  double p_Rs,p_L;
   
   //    boost::shared_ptr<BaseExciterModel> p_exciter;
   //    boost::shared_ptr<BasePlantControllerModel> p_plant;
@@ -264,13 +270,10 @@ class Regca1 : public BaseEMTGenModel
   //  boost::shared_ptr<BaseMechanicalModel> p_drivetrainmodel;
 
   //  boost::shared_ptr<BaseMechanicalModel> p_aerodynamicmodel;
-    
-  
+   
   double Vt, VR, VI;
 
   double iabc[3], diabc[3], iout[3];
-
-  double Ipref, Iqref; // Ip and Iq references
 
   // voltages and currents
   double vabc[3], vdq0[3], idq0[3], eabc[3];
