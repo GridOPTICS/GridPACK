@@ -95,6 +95,8 @@ any of their employees, makes any warranty, express or implied, or assumes any l
 or responsibility for the accuracy, completeness or usefulness of any data, apparatus,
 product or process disclosed, or represents that its use would not infringe privately owned
 rights.
+</p><!--l. 38--><p class="noindent" ><a 
+ id="topDoc"></a>
                                                                                              
                                                                                              
 </p>
@@ -218,8 +220,10 @@ build an application from the ground up. The “Contingency Analysis” section 
 some information on how to build applications that are based on the existing GridPACK
 application modules. Users that are interested in modifying the core functionality in
 GridPACK can look at the Doxygen documentation online under the “GridPACK API
-Documentation” link on www.gridpack.org, in addition to the documentation presented
-below.
+Documentation” link on www.gridpack.org, in addition to the documentation presented below.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
                                                                                              
@@ -327,9 +331,11 @@ support multiple applications.
       Fortunately, much of this work can be automated and developers can focus more on
       developing code to evaluate individual matrix elements without worrying about where
       to locate them in the matrix. This can simplify coding considerably.</p></li></ol>
-<!--l. 26--><p class="noindent" >The elements described above have all been incorporated into GridPACK modules. More
-details about these modules and their interactions are provided in the remainder of this
-document.
+<!--l. 26--><p class="noindent" >The elements described above have all been incorporated into GridPACK modules. More details
+about these modules and their interactions are provided in the remainder of this document.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -682,7 +688,9 @@ the parallel job. Consult your local system documentation for details. Applicati
 additional arguments that are processed inside the application itself. Most GridPACK applications
 will take an argument representing the input file for the application. In this example, the input file
 is <span 
-class="pcrb7t-x-x-120">input.xml</span>.
+class="pcrb7t-x-x-120">input.xml</span>. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -962,9 +970,12 @@ build of the executable.
 class="pcrb7t-x-x-120">CMakeLists.txt </span>can be found in the <span 
 class="pcrb7t-x-x-120">src </span>directory under
 <span 
-class="pcrb7t-x-x-120">CMakeLists.template.txt</span>. Users should copy this file to their application directory, modify the
-name to <span 
+class="pcrb7t-x-x-120">CMakeLists.template.txt</span>. Users should copy this file to their application directory,
+modify the name to <span 
 class="pcrb7t-x-x-120">CMakeLists.txt </span>and add their own source files and test input.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -1070,21 +1081,23 @@ class="pcrb7t-x-x-120"> #include</span><span
 class="pcrb7t-x-x-120"> "gridpack/include/gridpack.hpp"</span></pre>
 <!--l. 76--><p class="noindent" >at the top of the application .hpp and/or .cpp files. This file contains definitions of all the GridPACK
 modules and their associated functions.
-</p><!--l. 78--><p class="noindent" >Matrices and vectors in GridPACK were originally complex but now either complex or real
-matrices can be created using the library. Inside the GridPACK implementation, the
-underlying distributed matrices are either complex or real, but the framework adds a
-layer that supports both types of objects, even if the underlying math library does not.
-However, computations on complex matrices will perform better if the underlying math
-library is configured to use complex matrices directly. This should be kept in mind when
-choosing the math library to build GridPACK on. The underlying PETSc library can be
-configured to support either real or complex matrices, but not both at the same time.
-Complex numbers are represented in GridPACK as having type <span 
-class="pcrb7t-x-x-120">ComplexType</span>. The real and
-imaginary parts of a complex number <span 
+</p><!--l. 78--><p class="noindent" >Matrices and vectors in GridPACK were originally complex but now either complex or real matrices
+can be created using the library. Inside the GridPACK implementation, the underlying distributed
+matrices are either complex or real, but the framework adds a layer that supports both
+types of objects, even if the underlying math library does not. However, computations on
+complex matrices will perform better if the underlying math library is configured to
+use complex matrices directly. This should be kept in mind when choosing the math
+library to build GridPACK on. The underlying PETSc library can be configured to support
+either real or complex matrices, but not both at the same time. Complex numbers are
+represented in GridPACK as having type <span 
+class="pcrb7t-x-x-120">ComplexType</span>. The real and imaginary parts
+of a complex number <span 
 class="pcrb7t-x-x-120">x </span>can be obtained using the functions <span 
-class="pcrb7t-x-x-120">real(x) </span>and
-<span 
+class="pcrb7t-x-x-120">real(x) </span>and <span 
 class="pcrb7t-x-x-120">imag(x)</span>.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p><!--l. 1--><p class="noindent" >
@@ -1505,11 +1518,13 @@ process.
 class="pcrb7t-x-x-120">BaseNetwork </span>methods described in this section are only a subset of the total functionality
 available but they represent most of the methods that a typical developer would use. The remaining
 functions are primarily used to implement other parts of the GridPACK framework but are
-generally not required by people writing applications. More information on how the
-functions described above are used in practice can be found in the section on GridPACK
-factories.
                                                                                              
                                                                                              
+generally not required by people writing applications. More information on how the functions
+described above are used in practice can be found in the section on GridPACK factories.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
 <h3 class="sectionHead"><span class="titlemark">4.3    </span> <a 
  id="x1-80004.3"></a>Math Module</h3>
@@ -1559,6 +1574,8 @@ class="pcrb7t-x-x-120">gridpack::math </span>namespace and is described below. L
 class="pcrb7t-x-x-120">BaseNetwork </span>class, there are a lot of functions in <span 
 class="pcrb7t-x-x-120">Matrix </span>and <span 
 class="pcrb7t-x-x-120">Vector </span>that do not need
+                                                                                             
+                                                                                             
 to be used by users. Most of the functions related to matrix/vector instantiation and
 creation are used inside the mapper classes described in section <a 
 href="#x1-170004.7">4.7<!--tex4ht:ref: mapper --></a>, which eliminates the
@@ -1566,8 +1583,6 @@ need for users to deal with them directly. However, users may be interested in c
 functions not covered by existing library methods and in this case access to these functions is
 useful.
 </p><!--l. 24--><p class="noindent" >An additional note on the math module class names is in order. Originally, GridPACK only
-                                                                                             
-                                                                                             
 supported complex objects and used the names <span 
 class="pcrb7t-x-x-120">Vector</span>, <span 
 class="pcrb7t-x-x-120">Matrix</span>, etc. More recently, the capability
@@ -1675,14 +1690,14 @@ class="pcrb7t-x-x-120">cols</span>
 parameter is equal to N.
 </p><!--l. 44--><p class="noindent" >The matrix destructor is
 </p><!--l. 48--><p class="noindent" >
+                                                                                             
+                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb22"><a 
  id="x1-9010r1"></a><span 
 class="pcrb7t-x-x-120">˜Matrix()</span></pre>
 <!--l. 53--><p class="noindent" >Once a matrix has been created some inquiry functions can be used to probe the matrix size and
 distribution. The following functions return information about the matrix.
-                                                                                             
-                                                                                             
 </p><!--l. 57--><p class="noindent" >
 </p>
 <pre class="fancyvrb" id="fancyvrb23"><a 
@@ -1889,14 +1904,14 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> const</span><span 
 class="pcrb7t-x-x-120"> ComplexType</span><span 
 class="pcrb7t-x-x-120"> *x)</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 98--><p class="noindent" >These differ from the set element functions only in that instead of overwriting the new values into
 the matrix, these functions will add the new values to whatever is already there. If no value is
 present in the matrix at that location the function inserts it.
 </p><!--l. 100--><p class="noindent" >In addition to setting or adding new elements, it is possible to retrieve matrix values using the
 functions
 </p><!--l. 104--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb26"><a 
  id="x1-9046r1"></a><span 
@@ -2018,6 +2033,8 @@ class="pcrb7t-x-x-120"> save(const</span><span
 class="pcrb7t-x-x-120"> char</span><span 
 class="pcrb7t-x-x-120"> *filename)</span><span 
 class="pcrb7t-x-x-120"> const</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 154--><p class="noindent" >The first function will write the contents of the matrix to standard output if no filename is specified,
 otherwise it writes to the specified file, the second function will write a file in MatLAB format.
 These functions can be used for debugging or to create matrices that can be fed into other
@@ -2027,8 +2044,6 @@ after the <span
 class="pcrb7t-x-x-120">ready </span>call has been made by the matrix, but some operations can be used to actually build
 a matrix. These functions are listed below.
 </p><!--l. 160--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb30"><a 
  id="x1-9066r1"></a><span 
@@ -2084,6 +2099,8 @@ class="pcrb7t-x-x-120">A </span>to the calling matrix. The two matrices must hav
 columns, but otherwise there are no restrictions on the data layout or the number and location of
 the non-zero entries.
 </p><!--l. 207--><p class="noindent" >
+                                                                                             
+                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb35"><a 
  id="x1-9076r1"></a><span 
@@ -2092,8 +2109,6 @@ class="pcrb7t-x-x-120"> identity()</span></pre>
 <!--l. 212--><p class="noindent" >Create an identity matrix. This function assumes that the calling matrix has been created but no
 matrix elements have been assigned to it.
 </p><!--l. 216--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb36"><a 
  id="x1-9078r1"></a><span 
@@ -2146,6 +2161,8 @@ class="pcrb7t-x-x-120"> Matrix</span><span
 class="pcrb7t-x-x-120"> &amp;A)</span></pre>
 <!--l. 258--><p class="noindent" >Take the transpose of matrix <span 
 class="pcrb7t-x-x-120">A</span>.
+                                                                                             
+                                                                                             
 </p><!--l. 260--><p class="noindent" >
 </p>
 <h4 class="subsectionHead"><span class="titlemark">4.3.2    </span> <a 
@@ -2157,8 +2174,6 @@ class="pcrb7t-x-x-120">RealVector </span>class so only the <span
 class="pcrb7t-x-x-120">Vector </span>operations are described here. The
 vector constructor is
 </p><!--l. 266--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb41"><a 
  id="x1-10002r1"></a><span 
@@ -2372,6 +2387,8 @@ class="pcrb7t-x-x-120"> save(const</span><span
 class="pcrb7t-x-x-120"> char</span><span 
 class="pcrb7t-x-x-120"> *filename)</span><span 
 class="pcrb7t-x-x-120"> const</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 325--><p class="noindent" >also have similar behaviors to their matrix counterparts.
 </p><!--l. 327--><p class="noindent" >Additional operations that can be performed on the entire vector include
 </p><!--l. 331--><p class="noindent" >
@@ -2462,8 +2479,6 @@ class="pcrb7t-x-x-120">void</span><span
 class="pcrb7t-x-x-120"> elementDivide(const</span><span 
 class="pcrb7t-x-x-120"> Vector&amp;</span><span 
 class="pcrb7t-x-x-120"> x)</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 356--><p class="noindent" >The <span 
 class="pcrb7t-x-x-120">zero </span>function sets all vector elements to zero, the <span 
 class="pcrb7t-x-x-120">equate </span>function copies all values of the vector <span 
@@ -2572,6 +2587,8 @@ class="pcrb7t-x-x-120">LinearSolver </span>class contains a constructor
 class="pcrb7t-x-x-120">LinearSolver(const</span><span 
 class="pcrb7t-x-x-120"> Matrix</span><span 
 class="pcrb7t-x-x-120"> &amp;A)</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 390--><p class="noindent" >that creates an instance of the solver. The matrix <span 
 class="pcrb7t-x-x-120">A </span>defines the set of linear equations <span 
 class="pcrb7t-x-x-120">Ax=b </span>that
@@ -2586,8 +2603,6 @@ is
 class="pcrb7t-x-x-120">RealLinearSolver(const</span><span 
 class="pcrb7t-x-x-120"> RealMatrix</span><span 
 class="pcrb7t-x-x-120"> &amp;A)</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 399--><p class="noindent" >The properties of the solver can be modified by calling the function
 </p><!--l. 403--><p class="noindent" >
 </p>
@@ -2681,6 +2696,8 @@ class="pcrb7t-x-x-120">&lt;InitialGuessZero&gt;true&lt;/InitialGuessZero&gt;</sp
 <a 
  id="x1-11030r3"></a><span 
 class="pcrb7t-x-x-120">&lt;SerialMatrixConstant&gt;true&lt;/SerialMatrixConstant&gt;</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 439--><p class="noindent" >in the LinearSolver block. The first option can be used to replicate the linear solver across all
 processors in the system and then distribute the answer to processors. The second option
 eliminates the need for obtaining an initial guess for the solution from all processors
@@ -2691,8 +2708,6 @@ gains.
 </p><!--l. 441--><p class="noindent" >After configuring the solver, it can be used to solve the set of linear equations by calling the
 method
 </p><!--l. 445--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb52"><a 
  id="x1-11032r1"></a><span 
@@ -2758,6 +2773,8 @@ class="pcrb7t-x-x-120"> &amp;newRHS)</span></pre>
 type <span 
 class="pcrb7t-x-x-120">JacobianBuilder </span>and <span 
 class="pcrb7t-x-x-120">FunctionBuilder </span>and passed to the constructor of the non-linear
+                                                                                             
+                                                                                             
 solver. There are a number of ways to do this. In the following discussion, we will adopt the method
 used in the non-linear solver version of the power flow code that is distributed with
 GridPACK.
@@ -2924,8 +2941,6 @@ class="pcrb7t-x-x-120"> }</span>
 <a 
  id="x1-12044r20"></a><span 
 class="pcrb7t-x-x-120">}</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 502--><p class="noindent" >The important functions for this discussion are the overloaded <span 
 class="pcrb7t-x-x-120">operator() </span>functions. In the
 application code, this helper struct can be initialized and used to create two functions of type
@@ -3032,6 +3047,8 @@ to invoke the solver is just
  id="x1-12068r1"></a><span 
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> solver-&gt;solver(*helper.X);</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 540--><p class="noindent" >Additional calls are likely to be added to these to allow user-specified parameters from
 the input deck to be sent to the solver. In the case of the <span 
 class="pcrb7t-x-x-120">NonlinearSolver</span>, these can
@@ -3040,8 +3057,6 @@ non-linear solvers can be found by looking at the powerflow module in the GridPA
 code.
 </p><!--l. 543--><p class="noindent" >
 </p>
-                                                                                             
-                                                                                             
 <h4 class="subsectionHead"><span class="titlemark">4.3.5    </span> <a 
  id="x1-130004.3.5"></a>Differential Algebraic Equation Solvers</h4>
 <!--l. 546--><p class="noindent" >The <span 
@@ -3180,6 +3195,8 @@ class="pcrb7t-x-x-120"> double&amp;</span><span
 class="pcrb7t-x-x-120"> shift,</span><span 
 class="pcrb7t-x-x-120"> DAESolver::MatrixType&amp;</span><span 
 class="pcrb7t-x-x-120"> J)</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 588--><p class="noindent" >where the vectors <span 
 class="pcrb7t-x-x-120">x </span>and <span 
 class="pcrb7t-x-x-120">xdot </span>are the system variable state and its time derivative at
@@ -3229,8 +3246,6 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> DAESolver::VectorType&amp;</span><span 
 class="pcrb7t-x-x-120"> F)</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 605--><p class="noindent" >It’s usually best to create a functor class or struct with appropriate methods and the necessary data
 for these helpers. For example,
 </p><!--l. 610--><p class="noindent" >
@@ -3588,6 +3603,8 @@ class="pcrb7t-x-x-120">x0 </span>vector passed to
 class="pcrb7t-x-x-120">initialize()</span>. A subsequent call to <span 
 class="pcrb7t-x-x-120">solve </span>will continue where the previous call left
 off.
+                                                                                             
+                                                                                             
 </p><!--l. 669--><p class="noindent" >In addition to the Jacobian and function builder helper functions, the <span 
 class="pcrb7t-x-x-120">DAESolver </span>accepts functions
 executed before and after each time step that can be used to manipulate, or just report, <span 
@@ -3689,8 +3706,6 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> solver.postStep(sfunc);</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 694--><p class="noindent" >The evolution of a <span 
 class="pcrb7t-x-x-120">DAESolver </span>time integration can be manipulated with the use of events. Events
 can be used to modify the value of one or more time integration variables when a variable value
@@ -3743,6 +3758,8 @@ class="pcrb7t-x-x-120"> double&amp;</span><span
 class="pcrb7t-x-x-120"> t,</span><span 
 class="pcrb7t-x-x-120"> T</span><span 
 class="pcrb7t-x-x-120"> *state)</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 721--><p class="noindent" >which is used to modify the time integration state vector.
 </p><!--l. 723--><p class="noindent" >An arbitrary number of events can be managed using a <span 
 class="pcrb7t-x-x-120">DAESolver::EventManager </span>instance. In
@@ -3827,8 +3844,6 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> DAESolver::EventManagerPtr</span><span 
 class="pcrb7t-x-x-120"> eman);</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 739--><p class="noindent" ><span 
 class="pcrb7t-x-x-120">DAESolver </span>can be configured from input. There is one option, <span 
 class="pcrb7t-x-x-120">Adaptive</span>, which, if true,
@@ -3894,7 +3909,9 @@ class="pcrb7t-x-x-120"> &lt;/PETScOptions&gt;</span>
  id="x1-13112r9"></a><span 
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> &lt;/DAESolver&gt;</span></pre>
-<!--l. 1--><p class="noindent" >
+<!--l. 758--><p class="noindent" ><a 
+href="#topDoc">Top</a>
+</p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">4.4    </span> <a 
  id="x1-140004.4"></a>Network Components</h3>
@@ -4675,10 +4692,12 @@ class="pcrb7t-x-x-120"> const</span></pre>
 <!--l. 298--><p class="noindent" >These functions get the original index of “from” and “to” buses. Similar to the functions in the
 <span 
 class="pcrb7t-x-x-120">BaseBusComponent </span>class, the functions in the <span 
-class="pcrb7t-x-x-120">BaseBranchComponent </span>class will not
-work correctly until the <span 
-class="pcrb7t-x-x-120">setComponents </span>method has been called in the base factory
-class.
+class="pcrb7t-x-x-120">BaseBranchComponent </span>class will not work
+correctly until the <span 
+class="pcrb7t-x-x-120">setComponents </span>method has been called in the base factory class.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
 <h3 class="sectionHead"><span class="titlemark">4.5    </span> <a 
  id="x1-150004.5"></a>Data Interface</h3>
@@ -4721,9 +4740,9 @@ there is only a single instance of the key-value pair, the second assumes there 
 This second case can occur, for example, if there are multiple generators on a bus. Generators are
 characterized by a collection of parameters and each generator has its own set of parameters.
 The generator parameters can be indexed so that they can be matched with a specific
+                                                                                             
+                                                                                             
 generator.
-                                                                                             
-                                                                                             
 </p><!--l. 30--><p class="noindent" >When a network is created by parsing an external configuration file, for example a PSS/E format
 .raw file, the network topology and component objects are created and distributed over processors.
 All network components are in an initial state that is determined by the constructor for that object.
@@ -5474,12 +5493,15 @@ class="pcrb7t-x-x-120"> value,</span><span
 class="pcrb7t-x-x-120"> const</span><span 
 class="pcrb7t-x-x-120"> int</span><span 
 class="pcrb7t-x-x-120"> idx)</span></pre>
+<!--l. 247--><p class="noindent" ><a 
+href="#topDoc">Top</a>
+</p>
+                                                                                             
+                                                                                             
 <h3 class="sectionHead"><span class="titlemark">4.6    </span> <a 
  id="x1-160004.6"></a>Factories</h3>
 <!--l. 3--><p class="noindent" >The network component factory is an application-dependent piece of software that is designed to
 manage interactions between the network and the network component objects. Most
-                                                                                             
-                                                                                             
 operations in the factory run over all buses and all branches and invoke some operation
 on each component. An example is the “<span 
 class="pcrb7t-x-x-120">load</span>” operation. After the network is read in
@@ -5543,13 +5565,13 @@ programming substantially.
 </p><!--l. 31--><p class="noindent" >The <span 
 class="pcrb7t-x-x-120">setExchange </span>function allocates buffers and sets up pointers in the components so that
 exchange of data between buses and branches can occur and ghost buses and branches
+                                                                                             
+                                                                                             
 can receive updated values of the exchanged parameters. This function loops over the
 <span 
 class="pcrb7t-x-x-120">getXCBusSize </span>and <span 
 class="pcrb7t-x-x-120">setXCBuf </span>commands defined in the network component classes and
 guarantees that buffers are properly allocated and exposed to the network components. If the
-                                                                                             
-                                                                                             
 application does not use exchanges, then this operation is unecessary and need not be
 called.
 </p><!--l. 40--><p class="noindent" >Two other functions are defined in the <span 
@@ -5624,20 +5646,22 @@ class="pcrb7t-x-x-120">checkTrueSomewhere </span>function returns true if <span
 class="pcrb7t-x-x-120">flag </span>is true on at least
 one processor. This function can be used to check if a condition is true anywhere in the
 system.
+                                                                                             
+                                                                                             
 </p><!--l. 88--><p class="noindent" >In the context of debugging, it is occasionally useful to dump the contents of the <span 
 class="pcrb7t-x-x-120">DataCollection</span>
 objects associated with the network components. The factory command
 </p><!--l. 94--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb103"><a 
  id="x1-16026r1"></a><span 
 class="pcrb7t-x-x-120">void</span><span 
 class="pcrb7t-x-x-120"> dumpData()</span></pre>
 <!--l. 99--><p class="noindent" >will list the contents of each data collection object in the network to standard out. This output can
-be large for large networks so the use of this function should be restricted to smaller
-networks.
+be large for large networks so the use of this function should be restricted to smaller networks.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">4.7    </span> <a 
@@ -5674,6 +5698,8 @@ Figure <a
 href="#x1-170017">4.7<!--tex4ht:ref: fig:mapper --></a>(a) shows a hypothetical network. The contributions from each network component are
 shown in Figure <a 
 href="#x1-170017">4.7<!--tex4ht:ref: fig:mapper --></a>(b). Note that some buses and branches do not contribute to the
+                                                                                             
+                                                                                             
 matrix. This could occur in real systems because the transmission line corresponding to
 the branch has failed or because a bus represents the reference bus. In addition, it is
 possible that buses and branches can contribute different size blocks to the matrix. The
@@ -5682,8 +5708,6 @@ locations is shown in Figure <a
 href="#x1-170017">4.7<!--tex4ht:ref: fig:mapper --></a>(c). This is followed by elimination of gaps in the matrix in
 Figure <a 
 href="#x1-170017">4.7<!--tex4ht:ref: fig:mapper --></a>(d).
-                                                                                             
-                                                                                             
 </p>
 <figure class="figure"> 
 
@@ -5932,7 +5956,9 @@ class="pcrb7t-x-x-120"> &amp;vector)</span></pre>
 <!--l. 171--><p class="noindent" >This function will copy values from the vector into the bus using the <span 
 class="pcrb7t-x-x-120">setValues </span>function in the
 <span 
-class="pcrb7t-x-x-120">MatVecInterface</span>.
+class="pcrb7t-x-x-120">MatVecInterface</span>. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -6056,8 +6082,10 @@ will eventually store the branch resistance parameter in the <span
 class="pcrb7t-x-x-120">DataCollection </span>object
 using this common name. Applications can then switch easily between different network
 configuration file formats by simply exchanging parsers, which will all store corresponding
-parameters using a common naming convention that can used within the code to access
-data.
+parameters using a common naming convention that can used within the code to access data.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">4.9    </span> <a 
@@ -6971,9 +6999,11 @@ on each bus. This information can then be stored in a vector that can be saved t
 <span 
 class="pcrb7t-x-x-120">GlobalStore </span>or <span 
 class="pcrb7t-x-x-120">StatBlock </span>data structures described described in sections <a 
-href="#x1-310006.9">6.9<!--tex4ht:ref: global_store --></a> and
-<a 
+href="#x1-310006.9">6.9<!--tex4ht:ref: global_store --></a> and <a 
 href="#x1-340006.12">6.12<!--tex4ht:ref: analysis --></a>.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
 <h3 class="sectionHead"><span class="titlemark">4.10    </span> <a 
  id="x1-200004.10"></a>Configuration Module </h3>
@@ -7402,7 +7432,9 @@ class="pcrb7t-x-x-120">}</span></pre>
 class="pcrb7t-x-x-120">Faults </span>and if two types of blocks where listed within the <span 
 class="pcrb7t-x-x-120">Faults </span>block, the <span 
 class="pcrb7t-x-x-120">children </span>method
-would pick up both of them.
+would pick up both of them. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -10288,14 +10320,16 @@ class="pcrb7t-x-x-120"> Magnitude' n");</span>
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> busIO.write();</span></pre>
 <!--l. 673--><p class="noindent" >The first three lines guarantee that current values of the solution vector are available on all buses.
-The final five lines create a serial bus IO object that assumes that no line of output will exceed
-more than 128 characters, write out the header for the output data and then write a
-listing of data from all buses. The data from each bus is generated by the <span 
-class="pcrb7t-x-x-120">serialWrite</span>
-method defined in the <span 
-class="pcrb7t-x-x-120">PFBus </span>class. A similar set of calls can be used to write out data from
-the branches. This completes the execute method and the overview of the power flow
-application.
+The final five lines create a serial bus IO object that assumes that no line of output will exceed more
+than 128 characters, write out the header for the output data and then write a listing of data from
+all buses. The data from each bus is generated by the <span 
+class="pcrb7t-x-x-120">serialWrite </span>method defined in
+the <span 
+class="pcrb7t-x-x-120">PFBus </span>class. A similar set of calls can be used to write out data from the branches.
+This completes the execute method and the overview of the power flow application.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -10332,7 +10366,9 @@ class="pcrb7t-x-x-120">MatVecInterface </span>described above can only be used f
   class="enumerate" id="x1-22010x5">
       <!--l. 13--><p class="noindent" >A hashed data distribution capability that can be used to direct network data to the
       processors that own the corresponding network components</p></li></ol>
-<!--l. 16--><p class="noindent" >This functionality is described in more detail in the following sections.
+<!--l. 16--><p class="noindent" >This functionality is described in more detail in the following sections. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
                                                                                              
                                                                                              
@@ -10697,13 +10733,15 @@ programming situations to guarantee a consistent state across all processors. In
 should be relatively little need for this call in GridPACK. See, however, the comment below at the
 end of the section <a 
 href="#x1-310006.9">6.9<!--tex4ht:ref: global_store --></a> on <span 
-class="pcrb7t-x-x-120">GlobalStore</span>.
+class="pcrb7t-x-x-120">GlobalStore</span>. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
+                                                                                             
+                                                                                             
 <h3 class="sectionHead"><span class="titlemark">6.2    </span> <a 
  id="x1-240006.2"></a>Environment</h3>
 <!--l. 3--><p class="noindent" >GridPACK applications need to initialize several libraries in order to execute properly. These can be
-                                                                                             
-                                                                                             
 initialized explicitly by the user in their application but they can also be initialized by
 creating a single <span 
 class="pcrb7t-x-x-120">Environment </span>object at the start of the code. This module uses just
@@ -10800,11 +10838,13 @@ class="pcrb7t-x-x-120">}</span></pre>
 class="pcrb7t-x-x-120">Environment </span>destructor is called. This is important since otherwise the destructors for some
 objects in the application may be called after the Global Array or MPI environments have been shut
 down and if they rely on calls in the Global Array or MPI libraries, the application will not exit
-cleanly.
+cleanly. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
+                                                                                             
+                                                                                             
 </p><!--l. 1--><p class="noindent" >
 </p>
-                                                                                             
-                                                                                             
 <h3 class="sectionHead"><span class="titlemark">6.3    </span> <a 
  id="x1-250006.3"></a>Task Manager</h3>
 <!--l. 3--><p class="noindent" >The task manager functionality is designed to parcel out tasks on a first come, first serve basis to
@@ -10977,19 +11017,21 @@ data structures that contain the input data necessary to execute the task. The s
 <span 
 class="pcrb7t-x-x-120">task</span><span 
 class="pcrb7t-x-x-120">_data </span>corresponds to the value of <span 
-class="pcrb7t-x-x-120">ntasks</span>. When the task manager runs out of
-tasks, the loop terminates. Note that this structure does not guarantee that tasks are
-mapped to processors in any fixed order. There is no guarantee that task 0 is executed on
-process 0 or that some process will execute a given number of tasks. If one task takes
-significantly longer than other tasks then it is likely that other processors will pick up
-work from the processors executing the longer task. This balances the workload if each
-process is involved in multiple tasks. Once the workload drops to 1 task per process, this
-advantage is lost. There is also no guarantee that if the calculation is repeated, that the same
-processes will end up executing the same tasks. However, the final results should be the
-same.
+class="pcrb7t-x-x-120">ntasks</span>. When the task manager runs out of tasks, the
+loop terminates. Note that this structure does not guarantee that tasks are mapped to
+processors in any fixed order. There is no guarantee that task 0 is executed on process 0 or
+that some process will execute a given number of tasks. If one task takes significantly
+longer than other tasks then it is likely that other processors will pick up work from the
+processors executing the longer task. This balances the workload if each process is involved in
+multiple tasks. Once the workload drops to 1 task per process, this advantage is lost.
+There is also no guarantee that if the calculation is repeated, that the same processes
+will end up executing the same tasks. However, the final results should be the same.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
+                                                                                             
+                                                                                             
 </p><!--l. 1--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <h3 class="sectionHead"><span class="titlemark">6.4    </span> <a 
  id="x1-260006.4"></a>Timers</h3>
@@ -11756,6 +11798,9 @@ class="pcrb7t-x-x-120"> dump(boost::shared_ptr&lt;ofstream&gt;</span><span
 class="pcrb7t-x-x-120"> stream)</span><span 
 class="pcrb7t-x-x-120"> const</span></pre>
 <!--l. 141--><p class="noindent" >This function requires a stream pointer that signifies which file the data is written to.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">6.5    </span> <a 
@@ -11768,9 +11813,9 @@ contingency that fails because the solver did not converge can be marked as a fa
 the code can proceed to the next contingency. This allows the code to evaluate all contingencies
 even if some do not converge. A solver exception can be handled using the following
 construct
+                                                                                             
+                                                                                             
 </p><!--l. 7--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb189"><a 
  id="x1-27002r1"></a><span 
@@ -11957,12 +12002,14 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> </span><span 
 class="pcrb7t-x-x-120"> }</span></pre>
-<!--l. 1--><p class="noindent" >
+<!--l. 64--><p class="noindent" ><a 
+href="#topDoc">Top</a>
+                                                                                             
+                                                                                             
+</p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">6.6    </span> <a 
  id="x1-280006.6"></a>Hash Distribution Module</h3>
-                                                                                             
-                                                                                             
 <!--l. 3--><p class="noindent" >The hash distribution functionality provides a simple mechanism for quickly distributing data
 associated with individual buses and branches to the processors that own those buses and branches.
 This situation can come up in several contexts, particularly when network data is distributed across
@@ -12061,14 +12108,14 @@ class="pcrb7t-x-x-120">keys</span>” holds the original indices of the buses th
 class="pcrb7t-x-x-120">values</span>” is supposed to map to. The <span 
 class="pcrb7t-x-x-120">keys </span>and <span 
 class="pcrb7t-x-x-120">values </span>vectors should be the same length and
+                                                                                             
+                                                                                             
 the data in the <span 
 class="pcrb7t-x-x-120">values </span>array at index <span 
 class="jkpmit7t-x-x-120">n </span>should be mapped to the bus indicated by the
 original index stored at the same location in the <span 
 class="pcrb7t-x-x-120">keys </span>array. This function is collective and
 must be called on all processors. The amount of data on each processor does not need
-                                                                                             
-                                                                                             
 to be the same and some processors, or even most of them, can have no data (it is still
 necessary to call the <span 
 class="pcrb7t-x-x-120">distributeBusValues </span>function across all processors even if some
@@ -12276,11 +12323,13 @@ class="pcrb7t-x-x-120"> nvals)</span></pre>
 <!--l. 66--><p class="noindent" >Instead of moving a single value struct for each bus or branch, these functions move a vector of
 structs. Each struct must be the same size and contain <span 
 class="pcrb7t-x-x-120">nvals </span>elements. These functions are useful
-for assigning a time series of data to buses and branches.
+for assigning a time series of data to buses and branches. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
+                                                                                             
+                                                                                             
 </p><!--l. 1--><p class="noindent" >
 </p>
-                                                                                             
-                                                                                             
 <h3 class="sectionHead"><span class="titlemark">6.7    </span> <a 
  id="x1-290006.7"></a>String Utilities</h3>
 <!--l. 3--><p class="noindent" >At some point, users may want to develop their own parsers for reading in information in external
@@ -12337,6 +12386,8 @@ containing the two characters C1. A single character string will return a two ch
 blank as the second character.
 </p><!--l. 42--><p class="noindent" >The function
 </p><!--l. 46--><p class="noindent" >
+                                                                                             
+                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb202"><a 
  id="x1-29012r1"></a><span 
@@ -12344,8 +12395,6 @@ class="pcrb7t-x-x-120">std::</span><span
 class="pcrb7t-x-x-120"> string</span><span 
 class="pcrb7t-x-x-120"> trimQuotes(std::string</span><span 
 class="pcrb7t-x-x-120"> &amp;string)</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 51--><p class="noindent" >can be used to remove either single or double quotation marks from around a string and remove any
 remaining white space at the beginning and end of the string.
 </p><!--l. 53--><p class="noindent" >Tokenizers can be used to break up a long string into individual elements. This is useful for comma
@@ -12423,6 +12472,8 @@ class="pcrb7t-x-x-120"> 0.00056,</span><span
 class="pcrb7t-x-x-120"> 1.02</span></pre>
 <!--l. 110--><p class="noindent" >would be broken up into a vector containing the strings
 </p><!--l. 114--><p class="noindent" >
+                                                                                             
+                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb208"><a 
  id="x1-29040r1"></a><span 
@@ -12448,8 +12499,6 @@ class="pcrb7t-x-x-120"> 0.00056</span>
 <a 
  id="x1-29056r9"></a><span 
 class="pcrb7t-x-x-120"> 1.02</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 126--><p class="noindent" >if <span 
 class="pcrb7t-x-x-120">sep </span>is set to “,”. Note the presence of the leading white space in the last four tokens.
 This may need to be removed using the <span 
@@ -12497,12 +12546,12 @@ only requirement is that each bus has a unique index. When using one of the Grid
 parsers to read in an external configuration file, GridPACK internally assigns a second
 index, called the global index, that starts at 0 and forms a continuous sequence that
 runs up to N-1, where N is the number of unique buses in the network. Information
+                                                                                             
+                                                                                             
 written out by the serial IO modules, for example, will be ordered based on the global
 index. To add a bus to the network and to get all other module functions to work, the user
 must assign both these indices to the bus. The function to add a new bus to the network
 is
-                                                                                             
-                                                                                             
 </p><!--l. 9--><p class="noindent" >
 </p>
 <pre class="fancyvrb" id="fancyvrb210"><a 
@@ -12558,14 +12607,14 @@ class="pcrb7t-x-x-120"> setActiveBus(int</span><span
 class="pcrb7t-x-x-120"> ldx,</span><span 
 class="pcrb7t-x-x-120"> bool</span><span 
 class="pcrb7t-x-x-120"> flag);</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 45--><p class="noindent" >The index <span 
 class="pcrb7t-x-x-120">ldx </span>is a local index, <span 
 class="pcrb7t-x-x-120">flag </span>is the status of the bus (true for local buses, false for ghost
 buses) and the function returns false if the local bus index does not correspond to a bus on the
 process. The status of a bus as a reference bus can be set using the function
 </p><!--l. 50--><p class="noindent" >
-                                                                                             
-                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb214"><a 
  id="x1-30010r1"></a><span 
@@ -12623,6 +12672,8 @@ class="pcrb7t-x-x-120">ldx </span>is the local index of the branch. Once a point
 parameters can be added to it or modified as described earlier. The active status of the branch can be
 set with
 </p><!--l. 89--><p class="noindent" >
+                                                                                             
+                                                                                             
 </p>
 <pre class="fancyvrb" id="fancyvrb218"><a 
  id="x1-30018r1"></a><span 
@@ -12631,15 +12682,15 @@ class="pcrb7t-x-x-120"> setActiveBranch(int</span><span
 class="pcrb7t-x-x-120"> ldx,</span><span 
 class="pcrb7t-x-x-120"> bool</span><span 
 class="pcrb7t-x-x-120"> flag);</span></pre>
-                                                                                             
-                                                                                             
 <!--l. 94--><p class="noindent" >The arguments <span 
 class="pcrb7t-x-x-120">ldx </span>and <span 
 class="pcrb7t-x-x-120">flag </span>are the local branch index and the branch status and the function
 returns false if the local index is not in the range of branches on the processor.
 </p><!--l. 96--><p class="noindent" >These functions are all that is needed to create a network from scratch or to write a parser for a new
 network configuration file format. These are currently used in the PSS/E parser classes to
-implement the network setup functionality.
+implement the network setup functionality. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">6.9    </span> <a 
@@ -12693,12 +12744,12 @@ class="pcrb7t-x-x-120"> idx,</span><span
 class="pcrb7t-x-x-120"> const</span><span 
 class="pcrb7t-x-x-120"> std::vector&lt;data_type&gt;</span><span 
 class="pcrb7t-x-x-120"> &amp;vec)</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 25--><p class="noindent" >This command assumes that the user has some way of uniquely identifying each contributed vector
 by an index <span 
 class="pcrb7t-x-x-120">idx</span>. The indices do not have to be complete, i.e. not all indices in some interval
 [0,…,N-1] need to be added to the storage object, although large gaps between contributed indices
-                                                                                             
-                                                                                             
 are potentially wasteful. The length of the vectors can differ for different indices and there are also
 no restrictions on which processor contributes which index, so contributions can be made in any
 order from any processor. The only restriction on indices is that they are not used more than once,
@@ -12767,7 +12818,9 @@ class="pcrb7t-x-x-120">Communicator::sync </span>on the communicator that was us
 the <span 
 class="pcrb7t-x-x-120">GlobalStore </span>object. This should be done after completing all <span 
 class="pcrb7t-x-x-120">getVector </span>calls but before
-making calls to other parallel functions.
+making calls to other parallel functions. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
 <h3 class="sectionHead"><span class="titlemark">6.10    </span> <a 
  id="x1-320006.10"></a>Global Vector</h3>
@@ -12915,7 +12968,9 @@ class="pcrb7t-x-x-120">Communicator::sync </span>on the communicator that was us
 the <span 
 class="pcrb7t-x-x-120">GlobalVector </span>object. This should be done after completing all <span 
 class="pcrb7t-x-x-120">getData </span>calls but before
-making calls to other parallel functions.
+making calls to other parallel functions. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">6.11    </span> <a 
@@ -12993,9 +13048,9 @@ and not some device on the bus, then the tags can be ignored but some arbitrary 
 two-character string still needs to be included in the file for the second column. The scenarios
 themselves can represent different times, different parameter sets, different loads etc.
 The properties are assumed to be double precision values. Integer values can be used as
+                                                                                             
+                                                                                             
 properties by storing them as double precision values and then casting them back to
-                                                                                             
-                                                                                             
 integers inside the application. Not all buses need to be included in the table and in many
 cases, where a device is not present on a bus, it is undesirable to require that each bus be
 represented.
@@ -13085,6 +13140,8 @@ class="pcrb7t-x-x-120"> values[i]);</span>
 <a 
  id="x1-33032r5"></a><span 
 class="pcrb7t-x-x-120">}</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 70--><p class="noindent" >where <span 
 class="pcrb7t-x-x-120">setProperty </span>is a user-defined function in the <span 
 class="pcrb7t-x-x-120">MyBus </span>class that does something useful with
@@ -13093,8 +13150,6 @@ class="pcrb7t-x-x-120">getLocalIndices</span>, <span
 class="pcrb7t-x-x-120">getTags </span>and <span 
 class="pcrb7t-x-x-120">getValues </span>functions
 have already been called outside the loop.
-                                                                                             
-                                                                                             
 </p><!--l. 75--><p class="noindent" >The number of columns of properties can be accessed using the function
 </p><!--l. 79--><p class="noindent" >
 </p>
@@ -13102,7 +13157,9 @@ have already been called outside the loop.
  id="x1-33034r1"></a><span 
 class="pcrb7t-x-x-120">int</span><span 
 class="pcrb7t-x-x-120"> getNumColumns()</span></pre>
-<!--l. 1--><p class="noindent" >
+<!--l. 83--><p class="noindent" ><a 
+href="#topDoc">Top</a>
+</p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">6.12    </span> <a 
  id="x1-340006.12"></a>Analysis</h3>
@@ -14430,7 +14487,9 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> pgen_stats.writeMinAndMax("pgen_min_max.txt",1,true);</span></pre>
 <!--l. 293--><p class="noindent" >The first line generates a file containing the average value and standard deviations across all
 successful calculations and the second line generates a file with the minimum and maximum values
-across all successful calculations.
+across all successful calculations. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -15331,7 +15390,9 @@ class="pcrb7t-x-x-120">mapToNetwork(const</span><span
 class="pcrb7t-x-x-120"> gridpack::math::RealVector&gt;</span><span 
 class="pcrb7t-x-x-120"> &amp;vector)</span></pre>
 <!--l. 288--><p class="noindent" >which can be used to push data from a vector back into the network components (both buses and
-branches).
+branches). <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p><!--l. 1--><p class="noindent" >
@@ -15390,7 +15451,9 @@ class="pcrb7t-x-x-120">void</span><span
 class="pcrb7t-x-x-120"> slabGetRowIndices(int</span><span 
 class="pcrb7t-x-x-120"> *idx)</span></pre>
 <!--l. 35--><p class="noindent" >which is similar to the <span 
-class="pcrb7t-x-x-120">vectorGetElementIndices </span>function.
+class="pcrb7t-x-x-120">vectorGetElementIndices </span>function. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -15406,16 +15469,19 @@ provided so that once a network has been read in and partitioned, it is not nece
 repeat this process when a new calculation is started based on the results of a previous
 simulation.
 </p><!--l. 5--><p class="noindent" >Currently, three applications are available as modules within GridPACK. They include power flow,
-state estimation, and dynamic simulation using the full Y-matrix. Each of these modules can be used
-to create a short, standalone application, but the goal is to enable users to combine modules
-together in more complicated work flows. These modules can also be used as a starting point for
-users to create their own applications by modifying the existing code in the modules to create new
-functionality. Each of the modules is described in more detail below. Example codes that use the
-modules to implement applications can be found in the <span 
-class="pcrb7t-x-x-120">src/application </span>directory. These
-include powerflow, state estimation, contingency analysis and dynamic simulation. These
-directories also contain sample input networks and input files. Options for different solvers can be
-found in these files.
+state estimation, and dynamic simulation using the full Y-matrix. Each of these modules
+can be used to create a short, standalone application, but the goal is to enable users to
+combine modules together in more complicated work flows. These modules can also be used
+as a starting point for users to create their own applications by modifying the existing
+code in the modules to create new functionality. Each of the modules is described in
+more detail below. Example codes that use the modules to implement applications can be
+found in the <span 
+class="pcrb7t-x-x-120">src/application </span>directory. These include powerflow, state estimation,
+contingency analysis and dynamic simulation. These directories also contain sample
+input networks and input files. Options for different solvers can be found in these files.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
 <h3 class="sectionHead"><span class="titlemark">8.1    </span> <a 
  id="x1-390008.1"></a>Power Flow</h3>
@@ -15450,13 +15516,13 @@ class="pcrb7t-x-x-120">Configuation </span>object should already be pointing to 
 class="pcrb7t-x-x-120">Powerflow</span>
 block. This block contains a <span 
 class="pcrb7t-x-x-120">networkConfiguration </span>field that has the name of the PSS/E format
+                                                                                             
+                                                                                             
 file containing the network information. The network configuration file is read directly from the
 input deck by the <span 
 class="pcrb7t-x-x-120">readNetwork </span>method. The <span 
 class="pcrb7t-x-x-120">PFNetwork </span>is defined in the the <span 
 class="pcrb7t-x-x-120">gridpack.hpp</span>
-                                                                                             
-                                                                                             
 header file. The configuration module is usually opened in the main calling program and a pointer
 to the file can be passed through to power flow module. The <span 
 class="pcrb7t-x-x-120">readNetwork </span>routine also partitions
@@ -15839,8 +15905,11 @@ calling the function
  id="x1-39092r1"></a><span 
 class="pcrb7t-x-x-120">void</span><span 
 class="pcrb7t-x-x-120"> resetVoltages()</span></pre>
-<!--l. 192--><p class="noindent" >Again, this may be useful in contingency calculations where multiple calculations are run on the
-same network and it is desirable that they all start with the same initial condition.
+<!--l. 192--><p class="noindent" >Again, this may be useful in contingency calculations where multiple calculations are run on
+the same network and it is desirable that they all start with the same initial condition.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p><!--l. 1--><p class="noindent" >
@@ -16328,7 +16397,9 @@ class="pcrb7t-x-x-120">GENERATOR</span><span
 class="pcrb7t-x-x-120">_SE</span><span 
 class="pcrb7t-x-x-120">_QGEN[i]</span>, where <span 
 class="pcrb7t-x-x-120">i </span>runs over the set of generators
-on the bus.
+on the bus. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">8.3    </span> <a 
@@ -16977,11 +17048,13 @@ class="pcrb7t-x-x-120">getTimeSeriesMap </span>has length four. The value in the
 element in the time series vector points to the location of the bus index and generator tag
 for that time series variable in the lists returned by <span 
 class="pcrb7t-x-x-120">getListWatchedGenerators</span>.
-This still leaves it up to the user to identify the actual variable being watched within
-the generator. In this example there are four variables that are watched but only two
-generators. Currently, the generator watch capability only watches the rotor speed and rotor
-angle of each generator. The first time series is the speed and the second time series is the
-angle.
+This still leaves it up to the user to identify the actual variable being watched within the
+generator. In this example there are four variables that are watched but only two generators.
+Currently, the generator watch capability only watches the rotor speed and rotor angle of
+each generator. The first time series is the speed and the second time series is the angle.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">8.4    </span> <a 
@@ -17047,9 +17120,9 @@ class="pcrb7t-x-x-120">Bus-xxx</span>, where <span
 class="pcrb7t-x-x-120">xxx </span>is an integer representing the bus ID. The remaining rows
 contain the time of the measurement and the value for the measurement on each of the
 buses.
+                                                                                             
+                                                                                             
 </p><!--l. 20--><p class="noindent" >The input file for the Kalman filter module used both for a dynamic simulation as well as input that
-                                                                                             
-                                                                                             
 is unique to the Kalman filter module. The dynamic simulation parameters that are used
 include
 </p><!--l. 24--><p class="noindent" >
@@ -17461,7 +17534,9 @@ class="pcrb7t-x-x-120"> solve()</span></pre>
 <!--l. 127--><p class="noindent" >The values of the rotor speed and rotor angle for all generators will be written to the files
 <span 
 class="pcrb7t-x-x-120">omega.dat </span>and <span 
-class="pcrb7t-x-x-120">delta.dat </span>after this simulation is run.
+class="pcrb7t-x-x-120">delta.dat </span>after this simulation is run. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -17492,10 +17567,12 @@ models can be found in the modules and components directories under applications
 Athough these examples represent more complicated bus and branch models, they contain
 many of the same characteristics that can be found in the hello world and resistor grid
 programs.
-</p><!--l. 18--><p class="noindent" >The simplified contingency analysis example illustrates a great many of the advanced
-features of GridPACK in a fairly short code. These features include creating your own
-parser, using subcommunicators and the task manager, using modules and controlling
-output.
+</p><!--l. 18--><p class="noindent" >The simplified contingency analysis example illustrates a great many of the advanced features
+of GridPACK in a fairly short code. These features include creating your own parser,
+using subcommunicators and the task manager, using modules and controlling output.
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
 <h3 class="sectionHead"><span class="titlemark">9.1    </span> <a 
  id="x1-440009.1"></a>“Hello World”</h3>
@@ -17516,11 +17593,11 @@ for the bus and branch classes of our “Hello world” application. The bus and
 classes for this application are called <span 
 class="pcrb7t-x-x-120">HWBus </span>and <span 
 class="pcrb7t-x-x-120">HWBranch </span>and have the header file
+                                                                                             
+                                                                                             
 <span 
 class="pcrb7t-x-x-120">hw</span><span 
 class="pcrb7t-x-x-120">_components.hpp</span>
-                                                                                             
-                                                                                             
 </p><!--l. 14--><p class="noindent" >
 </p>
 <pre class="fancyvrb" id="fancyvrb319"><a 
@@ -18084,11 +18161,11 @@ function is recursive, so including the base class is enough to guarantee that a
 that are also included in the serialization.
 </p><!--l. 110--><p class="noindent" >The declaration for <span 
 class="pcrb7t-x-x-120">HWBranch </span>is very similar. The only major difference is that there are
+                                                                                             
+                                                                                             
 two private variables representing the buses at either end of the branch and these must
 both be included in the <span 
 class="pcrb7t-x-x-120">serialize </span>function. The bottom of the file contains a typedef
-                                                                                             
-                                                                                             
 declaration for a network using HWBus and HWBranch for it bus and branch classes.
 This is a convenience and makes it easier to define other functions and classes in the
 application.
@@ -18301,10 +18378,10 @@ string does not exceed an internal buffer size and <span
 class="pcrb7t-x-x-120">signal </span>can by used to produce different
 outputs depending on what the actual contents of signal are. For the <span 
 class="pcrb7t-x-x-120">serialWrite</span>
+                                                                                             
+                                                                                             
 implementations described for this application, guaranteeing that the strings fit inside the buffer is
 straightforward, since all strings are the same size. For real applications, this may not be the
-                                                                                             
-                                                                                             
 case. For example, when printing out generator properties, the strings from buses can
 vary in size because the number of generators on a bus can vary. The implementations
 of the analogous functions in <span 
@@ -18649,14 +18726,14 @@ including the <span
 class="pcrb7t-x-x-120">gridpack.hpp </span>header, this file also includes <span 
 class="pcrb7t-x-x-120">hw</span><span 
 class="pcrb7t-x-x-120">_components.hpp</span>, so it has the
+                                                                                             
+                                                                                             
 definitions of <span 
 class="pcrb7t-x-x-120">HWNetwork</span>. The <span 
 class="pcrb7t-x-x-120">HWFactory </span>constructor is used to initialize the underlying
 <span 
 class="pcrb7t-x-x-120">BaseFactory </span>object with the network that is passed in through the argument list. That is the only
 functionality that is defined in this class.
-                                                                                             
-                                                                                             
 </p><!--l. 248--><p class="noindent" >The application class that is built on top of the component and factory classes consists of the
 class
 </p><!--l. 252--><p class="noindent" >
@@ -18974,12 +19051,12 @@ class="pcrb7t-x-x-120">SerialBusIO </span>and <span
 class="pcrb7t-x-x-120">SerialBranchIO </span>objects that
 are used to print out the messages from individual bus and branch objects. The <span 
 class="pcrb7t-x-x-120">busIO</span>
+                                                                                             
+                                                                                             
 object is used to print out a header (“Message from buses”) and then a message from each
 bus identifying itself by the bus ID defined in the PSS/E file. Similarly, the <span 
 class="pcrb7t-x-x-120">branchIO</span>
 obect writes out a header and then a message from each branch identifying itself by
-                                                                                             
-                                                                                             
 the IDs of the buses at either end. The final part of the “Hello world” application is the
 main calling program, located in the file hw_main.cpp. This program consists of the
 lines
@@ -19193,7 +19270,9 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> :</span></pre>
 <!--l. 370--><p class="noindent" >Note that this output would be the same, regardless of the number of processors that are used to run
 the code. This is in spite of the fact that the distribution of buses and branches may be different for
-different numbers of processors.
+different numbers of processors. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p><!--l. 1--><p class="noindent" >
 </p>
 <h3 class="sectionHead"><span class="titlemark">9.2    </span> <a 
@@ -22132,7 +22211,9 @@ number of processors being used in the calculation. This information is useful i
 the performance characteristics of different calculations. Some information from the solvers is
 usually printed after this. At the end of the calculation, the values of the voltages on the buses are
 printed out and then the current on each of the branches. The buses with externally applied
-voltages are identified with keywork ”lead”.
+voltages are identified with keywork ”lead”. <br 
+class="newline" /><a 
+href="#topDoc">Top</a>
                                                                                              
                                                                                              
 </p>
@@ -23038,11 +23119,11 @@ class="pcrb7t-x-x-120">contingencyName</span>
 field, so these values are obtained using the <span 
 class="pcrb7t-x-x-120">get </span>function from the <span 
 class="pcrb7t-x-x-120">Configuration</span>
+                                                                                             
+                                                                                             
 module. The type can be either “<span 
 class="pcrb7t-x-x-120">Line</span>” or “<span 
 class="pcrb7t-x-x-120">Generator</span>”. Based on the type, the function
-                                                                                             
-                                                                                             
 bifurcates into two branches. The “<span 
 class="pcrb7t-x-x-120">Line</span>” branch looks for the strings corresponding to
 <span 
@@ -23236,9 +23317,9 @@ name “<span
 class="pcrb7t-x-x-120">Total Application</span>”. It also returns a handle to this category. The <span 
 class="pcrb7t-x-x-120">start</span>
 call begins the timer. The timer can be started and stopped multiple times for the same
+                                                                                             
+                                                                                             
 category.
-                                                                                             
-                                                                                             
 </p><!--l. 196--><p class="noindent" >The next few lines are used to parse the input file and determine the size of the communicators that
 should be used to run individual tasks.
 </p><!--l. 200--><p class="noindent" >
@@ -23542,12 +23623,12 @@ class="pcrb7t-x-x-120">Powerflow</span>. The parameters describing
 the contingency calculation and the location of the contingencies are located in the first block and
 the power flow parameters are located in the second block. The <span 
 class="pcrb7t-x-x-120">readNetwork </span>function will read in
+                                                                                             
+                                                                                             
 the network configuration file and partition the network. The <span 
 class="pcrb7t-x-x-120">initialize </span>function is used to
 initialize the network components from the <span 
 class="pcrb7t-x-x-120">DataCollection </span>objects and assign exchange buffers.
-                                                                                             
-                                                                                             
 The call to <span 
 class="pcrb7t-x-x-120">solve </span>is used to obtain a power solution to the base problem with no contingencies.
 Since all tasks have the same data at this point, the network solution is duplicated across
@@ -23966,13 +24047,13 @@ class="pcrb7t-x-x-120"> %d</span><span
 class="pcrb7t-x-x-120"> on</span><span 
 class="pcrb7t-x-x-120"> process</span><span 
 class="pcrb7t-x-x-120"> %d' n",task_id,world.rank());</span></pre>
+                                                                                             
+                                                                                             
 <!--l. 368--><p class="noindent" >The call to <span 
 class="pcrb7t-x-x-120">nextTask </span>takes the task communicator as one of its arguments so the value of
 <span 
 class="pcrb7t-x-x-120">task</span><span 
 class="pcrb7t-x-x-120">_id </span>that is returned is the same for all processors on the task communicator. This
-                                                                                             
-                                                                                             
 guarantees that each of the processors in this copy of the power flow applicatin is working
 on the same contingency. If the <span 
 class="pcrb7t-x-x-120">nextTask </span>function returns false, the tasks have been
@@ -24431,16 +24512,19 @@ class="pcrb7t-x-x-120"> </span><span
 class="pcrb7t-x-x-120"> }</span></pre>
                                                                                              
                                                                                              
-<!--l. 451--><p class="noindent" >are used to print out a list of how many tasks were evaluated on each processor and to stop the
-timing of the “<span 
+<!--l. 451--><p class="noindent" >are used to print out a list of how many tasks were evaluated on each processor and to
+stop the timing of the “<span 
 class="pcrb7t-x-x-120">Total Application</span>” category. The timer <span 
-class="pcrb7t-x-x-120">dump </span>method will print statistics on the
-amount of time spent in the total application as well as reporting timings inside the power flow
-application. The check on the <span 
-class="pcrb7t-x-x-120">dump </span>call is to verify that all processors have participated in at least
-one power flow calculation. If this condition is not met, then the timing statistics will not be valid
-(note that if this condition is not fulfilled, then it indicates that too many processors were requested
-for the calculation).
+class="pcrb7t-x-x-120">dump </span>method will
+print statistics on the amount of time spent in the total application as well as reporting
+timings inside the power flow application. The check on the <span 
+class="pcrb7t-x-x-120">dump </span>call is to verify that all
+processors have participated in at least one power flow calculation. If this condition is
+not met, then the timing statistics will not be valid (note that if this condition is not
+fulfilled, then it indicates that too many processors were requested for the calculation).
+<br 
+class="newline" /><a 
+href="#topDoc">Top</a>
 </p>
  
 </body> 
