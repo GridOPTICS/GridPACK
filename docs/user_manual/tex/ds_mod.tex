@@ -255,5 +255,51 @@ std::vector<int> getTimeSeriesMap()
 }
 
 This function returns a map between the elements in the list of time series returned by \texttt{\textbf{getGeneratorTimeSeries}} and the generators that those time series correspond to. For example suppose the time series list has four elements in it that happen to correspond to two generators on processor. There are a total of six monitored generators in the system. The vectors returned by \texttt{\textbf{getListWatchedGenerators}} have length six, the vector returned by \texttt{\textbf{getTimeSeriesMap}} has length four. The value in the map vector for the corresponding element in the time series vector points to the location of the bus index and generator tag for that time series variable in the lists returned by \texttt{\textbf{getListWatchedGenerators}}. This still leaves it up to the user to identify the actual variable being watched within the generator. In this example there are four variables that are watched but only two generators. Currently, the generator watch capability only watches the rotor speed and rotor angle of each generator. The first time series is the speed and the second time series is the angle.
+
+Recently, a new function was added to the dynamic simulation application module
+that allows users to update the data collection objects for all branches an
+buses in the system with current values from the simulation. A call to the
+function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void updateData()
+\end{Verbatim}
+}
+
+will take the current values of internal variables and copy them to values in
+each network component's data collection object. These values can then be
+accessed by querying the appropriate data collection object. Variables in the
+dictionary header files that are updated by the \texttt{\textbf{updateData}}
+function have \texttt{\textbf{\_CURRENT}} appended to their names. At present,
+the following variables are updated by \texttt{\textbf{updateData}}
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+BRANCH_FROM_P_CURRENT
+BRANCH_FROM_Q_CURRENT
+BRANCH_TO_P_CURRENT
+BRANCH_TO_Q_CURRENT
+BRANCH_IRFLOW_CURRENT
+BRANCH_IIFLOW_CURRENT
+BUS_VMAG_CURRENT
+GENERATOR_PG_CURRENT
+GENERATOR_QG_CURRENT
+GENERATOR_VS_CURRENT
+GENERATOR_NOM_POWER_CURRENT
+LOAD_PL_CURRENT
+LOAD_QL_CURRENT
+\end{Verbatim}
+}
+
+Other values can be added as needed. Each of the network components, bus and
+branch, have an \texttt{\textbf{updateData}} method that is called by the
+\texttt{\textbf{updateData}} method in the \texttt{\textbf{DSFullApp}} class. This
+also extends to the base model classes, which all have default implementations
+that do not do anything. Individual models can overwrite the default
+implementations to add data to the data collection objects when the update
+function is called.
 \newline
 \hyperlink{topDoc}{\color{blue}{Top}}
