@@ -50,7 +50,7 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_isolated = false;
   p_busvolfreq = 60.0; //renke add
   pbusvolfreq_old = 60.0; //renke add
-  bcomputefreq = false;  //renke add
+  bcomputefreq = true;  // renke false - shri true
   p_loadimpedancer = 0.0;
   p_loadimpedancei = 0.0;
   p_scatterinjload_p = 0.0;
@@ -1335,6 +1335,14 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
         data->addValue(LOAD_QL_CURRENT, ql_current, i);
       }
     }
+  }
+
+  double dbusvoltfreq;
+  dbusvoltfreq = getBusVolFrequency();
+
+  // Compute frequency and add it to the data collection object
+  if(!data->setValue(BUS_FREQUENCY,dbusvoltfreq, i)) {
+    data->addValue(BUS_FREQUENCY, dbusvoltfreq, i);
   }
 }
 

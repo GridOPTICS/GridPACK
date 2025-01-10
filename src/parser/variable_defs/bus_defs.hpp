@@ -85,6 +85,13 @@
 #define BUS_VOLTAGE_ANG "BUS_VOLTAGE_ANG"
 
 /**
+ * Bus voltage frequency at current time
+ * type: real float
+ */
+#define BUS_FREQUENCY "BUS_FREQUENCY"
+
+
+/**
  * Maximum allowable bus voltage magnitude, in p. u.
  * type: real float
  */
