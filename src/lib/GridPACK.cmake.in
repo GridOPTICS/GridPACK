@@ -221,7 +221,7 @@ function(gridpack_setup)
   endif()
 
   list(APPEND gp_include 
-    @Boost_INCLUDE_DIR@
+    @Boost_INCLUDE_DIRS@
     @MPI_INCLUDE_PATH@
   )
 

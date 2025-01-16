@@ -69,12 +69,7 @@ then
   rm -rf CMake*
 
   cmake_args="-D GA_DIR:STRING=${ga_dir}
-   -D BOOST_ROOT:STRING=$boost_dir 
-   -D Boost_DIR:STRING=$boost_dir 
-   -D Boost_LIBRARIES:STRING=${boost_dir}/lib 
-   -D Boost_INCLUDE_DIRS:STRING=${boost_dir}/include 
-   -D Boost_NO_BOOST_CMAKE:BOOL=TRUE 
-   -D Boost_NO_SYSTEM_PATHS:BOOL=TRUE 
+   -D Boost_ROOT:STRING=$boost_dir
    -D PETSC_DIR:PATH=${petsc_dir} 
    -D MPI_CXX_COMPILER:STRING='mpicxx' 
    -D MPI_C_COMPILER:STRING='mpicc' 
