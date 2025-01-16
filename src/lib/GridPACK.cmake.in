@@ -226,7 +226,7 @@ function(gridpack_setup)
   )
 
   list(APPEND gp_libs
-    @Boost_LIBRARIES@
+    @Boost_Real_LIBRARIES@
     @MPI_CXX_LIBRARIES@
   )
 

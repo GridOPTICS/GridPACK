@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2019-10-29 13:19:21 d3g096
+# Last Change: 2025-01-16 06:55:54 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -114,6 +114,15 @@ if (GOSS_DIR)
   set(GRIDPACK_GOSS_LIBRARIES ${GOSS_LIBRARY})
   set(GRIDPACK_APR_LIBRARIES ${APR_LIBRARY})
 endif ()
+
+# Boost libaries are IMPORTed, so we need to find the actual library
+# locations for the configuration file
+set(Boost_Real_LIBRARIES "")
+foreach(l ${Boost_LIBRARIES})
+  get_target_property(_location ${l} LOCATION)
+  get_filename_component(_realpath ${_location} REALPATH)
+  list(APPEND Boost_Real_LIBRARIES ${_realpath})
+endforeach()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GridPACK.cmake.in 
   ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake @ONLY)
