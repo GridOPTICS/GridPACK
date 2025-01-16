@@ -252,8 +252,7 @@ elif [ $host == "tlaloc" ]; then
         --graphviz=GridPACK.dot \
           -D PETSC_DIR:STRING="/home/d3g096/Projects/GridPakLDRD/petsc-3.21.6" \
           -D PETSC_ARCH:STRING="ubuntu-real-shared-debug" \
-          -D BOOST_ROOT:PATH="/usr" \
-          -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
+          -D Boost_ROOT:PATH="/usr" \
           -D PARMETIS_DIR:PATH="/usr" \
           -D MPI_CXX_COMPILER:STRING="mpicxx" \
           -D MPI_C_COMPILER:STRING="mpicc" \
