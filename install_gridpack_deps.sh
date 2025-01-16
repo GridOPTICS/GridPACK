@@ -56,8 +56,10 @@ then
   # Download and install Boost
   echo "Downloading Boost-$boost_version"
 
-    # Download Boost
-  wget https://boostorg.jfrog.io/artifactory/main/release/${boost_version}/source/boost_${boost_us_version}.tar.gz
+  # Download Boost
+  # wget https://boostorg.jfrog.io/artifactory/main/release/${boost_version}/source/boost_${boost_us_version}.tar.gz
+
+  wget "https://pilotfiber.dl.sourceforge.net/project/boost/boost/${boost_version}/boost_${boost_us_version}.tar.gz"
 
   # Untar
   tar -xf boost_${boost_us_version}.tar.gz
