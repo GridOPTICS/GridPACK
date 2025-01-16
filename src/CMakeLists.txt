@@ -247,10 +247,15 @@ endif()
 
 option(BOOST_BUILD_PYTHON "Include Boost::Python in the Boost build" OFF)
 
+# Use the old way to find Boost
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 # These are the Boost libraries required here
   
 set(BOOST_BUILD_LIBS "")
-list(APPEND BOOST_BUILD_LIBS mpi serialization random filesystem system)
+list(APPEND BOOST_BUILD_LIBS mpi serialization random system)
 
 if(BUILD_BOOST)
 
@@ -265,9 +270,9 @@ if(BUILD_BOOST)
   list(APPEND GRIDPACK_TEST_LDPATH ${Boost_LIBRARY_DIR_DEBUG} ${Boost_LIBRARY_DIR_RELEASE} )
 else(BUILD_BOOST)
   message(STATUS "Checking Boost ...")
-  find_package(Boost 1.53
+  find_package(Boost 1.70
     COMPONENTS ${BOOST_BUILD_LIBS}
-    REQUIRED
+    REQUIRED CONFIG
     )
 endif(BUILD_BOOST)
 message(STATUS "Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")

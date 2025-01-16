@@ -118,9 +118,9 @@ elif [ $host == "WE39945" ]; then
     #   sudo port select clang mp-clang-6.0
     # Cannot use PETSc < 3.20.0
 
-    CC=/opt/local/bin/clang
+    CC=gcc
     export CC
-    CXX=/opt/local/bin/clang++
+    CXX=g++
     export CC CXX 
 
     prefix="$HOME/Projects/GridPACK/install"
@@ -128,9 +128,10 @@ elif [ $host == "WE39945" ]; then
     cmake $options \
         --graphviz=GridPACK.dot \
         -D GA_DIR:STRING="$prefix" \
-        -D BOOST_ROOT:STRING="$prefix" \
+        -D Boost_ROOT:STRING="$prefix" \
         -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
-        -D PETSC_DIR:PATH="$prefix" \
+        -D PETSC_DIR:PATH="/Users/d3g096/Projects/GridPACK/src/petsc-3.20.6" \
+        -D PETSC_ARCH:STRING="mpich-clang-real-shared" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
