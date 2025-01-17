@@ -31,7 +31,7 @@ resistor grid programs.
 The simplified contingency analysis example illustrates a great many of
 the advanced features of GridPACK in a fairly short code. These features
 include creating your own parser, using subcommunicators and the task
-manager, using modules and controlling output. ` <#topDoc>`__
+manager, using modules and controlling output.
 
 .. _hello_world:
 
@@ -195,13 +195,13 @@ and are given by
 ::
 
    gridpack::hello_world::HWBus::HWBus()}}}
-       {
-         p_original_idx = 0;
-       }
+   {
+     p_original_idx = 0;
+   }
 
-       gridpack::hello_world::HWBus::~HWBus()
-       {
-       }
+   gridpack::hello_world::HWBus::~HWBus()
+   {
+   }
 
 The ``load`` function is more interesting and is designed to
 transfer data that was read in from the network configuration file to
@@ -214,9 +214,9 @@ is
 
    void gridpack::hello_world::HWBus::load(const
             boost::shared_ptr<gridpack::component::DataCollection> &data)
-       {
-          data->getValue(BUS_NUMBER,&p_original_idx);}}}
-       }
+   {
+      data->getValue(BUS_NUMBER,&p_original_idx);}}}
+   }
 
 All the parameters associated with the bus that came from the network
 configuration file are stored in the ``data DataCollection`` object,
@@ -233,10 +233,10 @@ bus reports back the bus index using the function
 
    bool gridpack::hello_world::HWBus::serialWrite(char *string,
                 const int bufsize, const char *signal)
-        {
-          sprintf(string,"Hello world from bus %d\n",p_original_idx);
-          return true;
-        }
+   {
+      sprintf(string,"Hello world from bus %d\n",p_original_idx);
+      return true;
+   }
 
 For this case, both the incoming variables ``bufsize`` and
 ``signal`` are ignored since “Hello world” only has one type of
@@ -256,14 +256,14 @@ a bus can vary. The implementations of the analogous functions in
 ::
 
    gridpack::hello_world::HWBranch::HWBranch(void)}}}
-       {
-         p_original_idx1 = 0;
-         p_original_idx2 = 0;
-       }
+   {
+     p_original_idx1 = 0;
+     p_original_idx2 = 0;
+   }
 
-       gridpack::hello_world::HWBranch::~HWBranch(void)
-       {
-       }
+   gridpack::hello_world::HWBranch::~HWBranch(void)
+   {
+   }
 
 The ``load`` function is given by
 
@@ -271,10 +271,10 @@ The ``load`` function is given by
 
    void gridpack::hello_world::HWBranch::load(
            const boost::shared_ptr<gridpack::component::DataCollection> &data)
-       {
-         data->getValue(BRANCH_FROMBUS,&p_original_idx1);
-         data->getValue(BRANCH_TOBUS,&p_original_idx2);
-       }
+   {
+     data->getValue(BRANCH_FROMBUS,&p_original_idx1);
+     data->getValue(BRANCH_TOBUS,&p_original_idx2);
+   }
 
 This is similar to the implementation of the load function for
 ``HWBus``, except that the internal data members are mapped to the
@@ -285,12 +285,12 @@ of the data collection object. The serialWrite function is
 
    bool gridpack::hello_world::HWBranch::serialWrite(char *string,
             const int bufsize, const char *signal)
-        {
-          sprintf(string,
-              "Hello world from the branch connecting bus %d to bus %d\n",
-              p_original_idx1, p_original_idx2);
-          return true;
-        }
+   {
+     sprintf(string,
+         "Hello world from the branch connecting bus %d to bus %d\n",
+         p_original_idx1, p_original_idx2);
+     return true;
+   }
 
 Every branch prints out a string describing the branch in terms of the
 bus IDs at each end of the branch. Again, the incoming bufsize and
@@ -347,23 +347,23 @@ classes consists of the class
 ::
 
    #ifndef _hw_app_h_
-       #define _hw_app_h_
+   #define _hw_app_h_
 
-       namespace gridpack {
-       namespace hello_world {
+   namespace gridpack {
+   namespace hello_world {
 
-       class HWApp
-       {
-         public:
+   class HWApp
+   {
+     public:
 
-           HWApp(void);
-           ~HWApp(void);
-           void execute(int argc, char** argv);
+       HWApp(void);
+       ~HWApp(void);
+       void execute(int argc, char** argv);
 
-       };
-       } // hello_world
-       } // gridpack
-       #endif
+   };
+   } // hello_world
+   } // gridpack
+   #endif
 
 This class is declared in ``hw_app.hpp``. Apart from the constructor
 and destructor, there is only the function execute, which is used to
@@ -499,7 +499,7 @@ output looks like
 Note that this output would be the same, regardless of the number of
 processors that are used to run the code. This is in spite of the fact
 that the distribution of buses and branches may be different for
-different numbers of processors. ` <#topDoc>`__
+different numbers of processors.
 
 Resistor Grid Application
 -------------------------
@@ -512,10 +512,10 @@ are chosen to be set at fixed potentials, these then drive currents
 through the rest of the network resulting in different currents on the
 individual branches and different voltages on the different buses
 (nodes). The system is illustrated schematically in
-Figure `9.1 <#fig:resistor>`__.
+Figure 13.
 
 .. figure:: figures/Resistor.png
-   name: fig:resistor
+   :name: fig:resistor
    :width: 5in
 
    A schematic diagram of a simple resistor grid network. The buses
@@ -1229,7 +1229,7 @@ output is written to standard out using the ``header`` method and
 then bus voltages are written by calling ``write``. Similarly,
 output from the branches can be written by creating an instance of
 ``SerialBranchIO``, writing a header using the
-``header``\ ````\ method and then calling ``write``. Since only
+``header`` method and then calling ``write``. Since only
 one type of output comes from the branches and buses, no character
 string is passed in as an argument to the ``write`` functions. The
 ``execute`` function has now completed all tasks associated with
@@ -1297,7 +1297,6 @@ information from the solvers is usually printed after this. At the end
 of the calculation, the values of the voltages on the buses are printed
 out and then the current on each of the branches. The buses with
 externally applied voltages are identified with keywork ”lead”.
-` <#topDoc>`__
 
 Contingency Analysis
 --------------------
@@ -1331,7 +1330,7 @@ the calling program before calling this function. The function itself is
 
 ::
 
-   std::vector<gridpack::powerflow::Contingency> ret;
+     std::vector<gridpack::powerflow::Contingency> ret;
      int size = contingencies.size();
      int i, idx;
      gridpack::utility::StringUtils utils;
@@ -1439,7 +1438,7 @@ in the ``contingencies`` list. All contingencies should contain the
 ``contingencyType`` and ``contingencyName`` field, so these
 values are obtained using the ``get`` function from the
 ``Configuration`` module. The type can be either “``Line``” or
-“``Generator``”. Based on the type, the function bifurcates into two
+``Generator``. Based on the type, the function bifurcates into two
 branches. The “``Line``” branch looks for the strings corresponding
 to ``contingencyLineBuses`` and ``contingencyLineNames`` and
 assigns these to the string variables ``buses`` and ``names``.
@@ -1463,7 +1462,7 @@ data stored in the variables ``ca_type``, ``ca_name``,
 ``bus_ids`` and ``line_names``, this contingency is added to the
 return variable ``ret``.
 
-The “``Generator``” branch is similar to the “Line” branch. The
+The ``Generator`` branch is similar to the “Line” branch. The
 strings in the ``contingencyBuses`` and
 ``contingencyGenerators`` fields are copied into the string
 variables ``buses`` and ``gens``. These are then converted into
@@ -1515,7 +1514,7 @@ have access to its contents. This section also creates a timing category
 for the calculation and starts the timer. The call to
 ``CoarseTime::instance`` returns the timer object and the
 ``createCategory`` call creates a timer category with the name
-“``Total Application``”. It also returns a handle to this category.
+``Total Application``. It also returns a handle to this category.
 The ``start`` call begins the timer. The timer can be started and
 stopped multiple times for the same category.
 
@@ -1525,19 +1524,19 @@ size of the communicators that should be used to run individual tasks.
 ::
 
    gridpack::utility::Configuration::CursorPtr cursor;
-     cursor = config->getCursor("Configuration.Contingency_analysis");
-     int grp_size;
-     double Vmin, Vmax;
-     if (!cursor->get("groupSize",&grp_size)) {
-       grp_size = 1;
-     }
-     if (!cursor->get("minVoltage",&Vmin)) {
-       Vmin = 0.9;
-     }
-     if (!cursor->get("maxVoltage",&Vmax)) {
-       Vmax = 1.1;
-     }
-     gridpack::parallel::Communicator task_comm = world.divide(grp_size);
+   cursor = config->getCursor("Configuration.Contingency_analysis");
+   int grp_size;
+   double Vmin, Vmax;
+   if (!cursor->get("groupSize",&grp_size)) {
+     grp_size = 1;
+   }
+   if (!cursor->get("minVoltage",&Vmin)) {
+     Vmin = 0.9;
+   }
+   if (!cursor->get("maxVoltage",&Vmax)) {
+     Vmax = 1.1;
+   }
+   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
 A ``CursorPtr`` is defined and set to point to the contents of the
 ``Contingency_analysis`` block in the input file using the
@@ -1562,11 +1561,11 @@ communicator and initializes it.
 
    boost::shared_ptr<gridpack::powerflow::PFNetwork>
        pf_network(new gridpack::powerflow::PFNetwork(task_comm));
-     gridpack::powerflow::PFAppModule pf_app;
-     pf_app.readNetwork(pf_network,config);
-     pf_app.initialize();
-     pf_app.solve();
-     pf_app.ignoreVoltageViolations(Vmin,Vmax);
+   gridpack::powerflow::PFAppModule pf_app;
+   pf_app.readNetwork(pf_network,config);
+   pf_app.initialize();
+   pf_app.solve();
+   pf_app.ignoreVoltageViolations(Vmin,Vmax);
 
 The first line creates a power flow network on the task communicator.
 The second line creates a power flow application. The
@@ -1627,7 +1626,7 @@ list of contingency data structs.
 
 ::
 
-   std::string contingencyfile;
+     std::string contingencyfile;
      if (!cursor->get("contingencyList",&contingencyfile)) {
        contingencyfile = "contingencies.xml";
      }
@@ -1683,8 +1682,8 @@ equal to the number of contingencies.
 ::
 
    gridpack::parallel::TaskManager taskmgr(world);
-     int ntasks = events.size();
-     taskmgr.set(ntasks);
+   int ntasks = events.size();
+   taskmgr.set(ntasks);
 
 The task loop is created by defining a ``task_id`` variable and a
 character string buffer that is used inside the loop to create messages.
@@ -1693,9 +1692,10 @@ The task manager then begins iterating over different tasks.
 ::
 
    int task_id;
-     char sbuf[128];
-     while (taskmgr.nextTask(task_comm, &task_id)) {
-       printf("Executing task %d on process %d\n",task_id,world.rank());
+   char sbuf[128];
+   while (taskmgr.nextTask(task_comm, &task_id)) {
+     printf("Executing task %d on process %d\n",task_id,world.rank());
+                       :
 
 The call to ``nextTask`` takes the task communicator as one of its
 arguments so the value of ``task_id`` that is returned is the same
@@ -1714,27 +1714,27 @@ later to examine individual tasks.
 ::
 
    sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
-       pf_app.open(sbuf);
-       sprintf(sbuf,"\nRunning task on %d processes\n",task_comm.size());
-       pf_app.writeHeader(sbuf);
-       if (events[task_id].p_type == Branch) {
-         int nlines = events[task_id].p_from.size();
-         int j;
-         for (j=0; j<nlines; j++) {
-           sprintf(sbuf," Line: (from) %d (to) %d (line) \'%s\'\n",
-               events[task_id].p_from[j],events[task_id].p_to[j],
-               events[task_id].p_ckt[j].c_str());
-         }
-       } else if (events[task_id].p_type == Generator) {
-         int nbus = events[task_id].p_busid.size();
-         int j;
-         for (j=0; j<nbus; j++) {
-           sprintf(sbuf," Generator: (bus) %d (generator ID) \'\%s\'\n",
-           events[task_id].p_busid[j],
-           events[task_id].p_genid[j].c_str());
-         }
-       }
-       pf_app.writeHeader(sbuf);
+   pf_app.open(sbuf);
+   sprintf(sbuf,"\nRunning task on %d processes\n",task_comm.size());
+   pf_app.writeHeader(sbuf);
+   if (events[task_id].p_type == Branch) {
+     int nlines = events[task_id].p_from.size();
+     int j;
+     for (j=0; j<nlines; j++) {
+       sprintf(sbuf," Line: (from) %d (to) %d (line) \'%s\'\n",
+           events[task_id].p_from[j],events[task_id].p_to[j],
+           events[task_id].p_ckt[j].c_str());
+     }
+   } else if (events[task_id].p_type == Generator) {
+     int nbus = events[task_id].p_busid.size();
+     int j;
+     for (j=0; j<nbus; j++) {
+       sprintf(sbuf," Generator: (bus) %d (generator ID) \'\%s\'\n",
+       events[task_id].p_busid[j],
+       events[task_id].p_genid[j].c_str());
+     }
+   }
+   pf_app.writeHeader(sbuf);
 
 The first line is used to create a name for the output file using the
 contingency name. The output from the power flow calculation is then
@@ -1750,23 +1750,23 @@ equations.
 ::
 
    pf_app.resetVoltages();
-       pf_app.setContingency(events[task_id]);
-       if (pf_app.solve()) {
-         pf_app.write();
-         bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
-         ok = ok && pf_app.checkLineOverloadViolations();
-         if (ok) {
-           sprintf(sbuf,"\nNo violation for contingency %s\n",
-               events[task_id].p_name.c_str());
-         } else {
-           sprintf(sbuf,"\nViolation for contingency %s\n",
-               events[task_id].p_name.c_str());
-         }
-         pf_app.print(sbuf);
-       }
-       pf_app.unSetContingency(events[task_id]);
-       pf_app.close();
+   pf_app.setContingency(events[task_id]);
+   if (pf_app.solve()) {
+     pf_app.write();
+     bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
+     ok = ok && pf_app.checkLineOverloadViolations();
+     if (ok) {
+       sprintf(sbuf,"\nNo violation for contingency %s\n",
+           events[task_id].p_name.c_str());
+     } else {
+       sprintf(sbuf,"\nViolation for contingency %s\n",
+           events[task_id].p_name.c_str());
      }
+     pf_app.print(sbuf);
+   }
+   pf_app.unSetContingency(events[task_id]);
+   pf_app.close();
+ }
 
 Before doing the calculation, all voltages are returned to the original
 values defined in the network configuration file using
@@ -1790,10 +1790,10 @@ remaining lines of code
 ::
 
    taskmgr.printStats();
-     timer->stop(t_total);
-     if (events.size()*grp_size >= world.size()) {
-       timer->dump();
-     }
+   timer->stop(t_total);
+   if (events.size()*grp_size >= world.size()) {
+     timer->dump();
+   }
 
 are used to print out a list of how many tasks were evaluated on each
 processor and to stop the timing of the “``Total Application``”
@@ -1804,26 +1804,4 @@ call is to verify that all processors have participated in at least one
 power flow calculation. If this condition is not met, then the timing
 statistics will not be valid (note that if this condition is not
 fulfilled, then it indicates that too many processors were requested for
-the calculation). ` <#topDoc>`__
-
-.. |image1| image:: figures/PartitionFull.png
-   :width: 4in
-.. |image2| image:: figures/Partition0.png
-   :width: 4in
-.. |image3| image:: figures/Partition1.png
-   :width: 4in
-.. |image| image:: figures/Mapper-a.png
-   :width: 6.5in
-   :height: 2.3in
-.. |image4| image:: figures/Mapper-b.png
-   :width: 6.5in
-   :height: 2.3in
-.. |image5| image:: figures/Mapper-c.png
-   :width: 6.5in
-   :height: 1.8in
-.. |image6| image:: figures/Mapper-d.png
-   :width: 6.5in
-   :height: 1.8in
-.. |image7| image:: figures/20pix-white-square.png
-   :width: 0.5in
-   :height: 0.5in
+the calculation).

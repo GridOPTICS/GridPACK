@@ -25,7 +25,7 @@ Example codes that use the modules to implement applications can be
 found in the ``src/application`` directory. These include powerflow,
 state estimation, contingency analysis and dynamic simulation. These
 directories also contain sample input networks and input files. Options
-for different solvers can be found in these files. ` <#topDoc>`__
+for different solvers can be found in these files.
 
 Power Flow
 ----------
@@ -50,7 +50,7 @@ file containing a ``Powerflow`` block. This block contains a
 ``networkConfiguration`` field that has the name of the PSS/E format
 file containing the network information. The network configuration file
 is read directly from the input deck by the
-``readNetwork``\ ````\ method. The ``PFNetwork`` is defined in
+``readNetwork`` method. The ``PFNetwork`` is defined in
 the the ``gridpack.hpp`` header file. The configuration module is
 usually opened in the main calling program and a pointer to the file can
 be passed through to power flow module. The ``readNetwork`` routine
@@ -94,11 +94,11 @@ The first command writes out the real and imaginary parts of the complex
 power for the branches and the voltage magnitude and phase angle for the
 buses. The second command only writes out bus properties. If no argument
 is given, the command writes out the voltage magnitude and phase angle
-for every bus. For buses, the argument “``pq``” writes out the real
-and imaginary parts of the complex voltage and “``record``” writes
+for every bus. For buses, the argument ``pq`` writes out the real
+and imaginary parts of the complex voltage and ``record`` writes
 out the type of bus, the total active and reactive constant power loads,
 and the total active and reactive generator power outputs. For branches,
-“``flow``” writes out the real and imaginary parts of the complex
+``flow`` writes out the real and imaginary parts of the complex
 power and “``record``” writes out the values of the resistance,
 reactance, charging and A, B, C ratings for each line element.
 
@@ -272,7 +272,7 @@ function
 
 Again, this may be useful in contingency calculations where multiple
 calculations are run on the same network and it is desirable that they
-all start with the same initial condition. ` <#topDoc>`__
+all start with the same initial condition.
 
 State Estimation Module
 -----------------------
@@ -286,7 +286,7 @@ consisting of measurements. This file has the format
 
 ::
 
-   <Measurements>
+       <Measurements>
          <Measurement>
            <Type>VM</Type>
            <Bus>1</Bus>
@@ -415,7 +415,7 @@ method. The voltage magnitude and phase angle are stored as the
 variables ``BUS_SE_VMAG`` and ``BUS_SE_VANG`` and the generator
 parameters are stored as the indexed variables
 ``GENERATOR_SE_PGEN[i]`` and ``GENERATOR_SE_QGEN[i]``, where
-``i`` runs over the set of generators on the bus. ` <#topDoc>`__
+``i`` runs over the set of generators on the bus.
 
 Dynamic Simulation Module using Full Y-Matrix
 ---------------------------------------------
@@ -430,39 +430,39 @@ currently available include Generators:
 ::
 
    GENCLS
-     GENSAL
-     GENROU
+   GENSAL
+   GENROU
 
 Exciters:
 
 ::
 
    EXDC1
-     ESST1A
+   ESST1A
 
 Governors:
 
 ::
 
    WSIEG1
-     WSHYGP
+   WSHYGP
 
 Relays:
 
 ::
 
    LVSHBL
-     FRQTPAT
-     DISTR1
+   FRQTPAT
+   DISTR1
 
 Dynamic Loads:
 
 ::
 
    ACMTBLU1
-     IEEL
-     MOTORW
-     CIM6BL
+   IEEL
+   MOTORW
+   CIM6BL
 
 The full Y-matrix implementation of dynamic simulation is represented by
 the ``DSFullApp`` class and the ``DSFullNetwork``, both of which
@@ -517,7 +517,7 @@ are described in the ``Event``\ s block. The code currently only
 handles faults on branches. Inside the ``Events`` block are
 individual faults, described by a ``faultEvent`` block. Multiple
 ``faultEvent`` blocks can be contained within the
-``Events``\ ````\ block. As will be described below, it is possible
+``Events`` block. As will be described below, it is possible
 for the faults to be listed in a separate file. This can be convenient
 for describing a task-based calculation that may contain a lot of
 faults. The parameters describing the fault include the time (in
@@ -753,7 +753,7 @@ and branch, have an ``updateData`` method that is called by the
 extends to the base model classes, which all have default
 implementations that do not do anything. Individual models can overwrite
 the default implementations to add data to the data collection objects
-when the update function is called. ` <#topDoc>`__
+when the update function is called.
 
 Kalman Filter
 -------------
@@ -799,7 +799,7 @@ The dynamic simulation parameters that are used include
 
 ::
 
-   <Dynamic_simulation>
+     <Dynamic_simulation>
        <simulationTime>3</simulationTime>
        <timeStep>0.01</timeStep>
        <!-- = 1 Fault Event is known; 
@@ -829,7 +829,7 @@ The Kalman filter block consists of the fields
 
 ::
 
-   <Kalman_filter<
+     <Kalman_filter<
        <KalmanAngData>IEEE14_Kalman_input_ang.csv</KalmanAngData>
        <KalmanMagData>IEEE14_Kalman_input_mag.csv</KalmanMagData>
        <generatorParameters>IEEE14_classicGen.dyr</generatorParameters>
@@ -912,4 +912,4 @@ run and output generated using
 
 The values of the rotor speed and rotor angle for all generators will be
 written to the files ``omega.dat`` and ``delta.dat`` after this
-simulation is run. ` <#topDoc>`__
+simulation is run.

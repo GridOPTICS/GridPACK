@@ -7,10 +7,9 @@ branch components, the mappers and the math module. The math module is
 relatively self-contained and can be used as a conventional library, but
 the other three are tightly coupled and need to be used together to do
 anything useful. A schematic that illustrates the relationship between
-these components is shown in Figure `4.1 <#fig:relationship>`__.
+these components is shown in Figure 1.
 
 .. figure:: figures/Relationship-Grid-components.png
-   name: fig:relationship
    :width: 6in
    :height: 3.81in
 
@@ -40,10 +39,9 @@ new or improved implementations of specific functionality without
 requiring application developers to rewrite their codes. This can
 significantly reduce the cost of introducing new technology into the
 framework. The software layers in the GridPACK framework are shown
-schematically in Figure `4.2 <#fig:framework>`__.
+schematically in Figure 2.
 
 .. figure:: figures/Grid-framework-schematic.png
-   name: fig:framework
    :width: 6in
    :height: 4.05in
 
@@ -96,7 +94,7 @@ underlying PETSc library can be configured to support either real or
 complex matrices, but not both at the same time. Complex numbers are
 represented in GridPACK as having type ``ComplexType``. The real and
 imaginary parts of a complex number ``x`` can be obtained using the
-functions ``real(x)`` and ``imag(x)``. ` <#topDoc>`__
+functions ``real(x)`` and ``imag(x)``.
 
 Network Module
 --------------
@@ -135,7 +133,7 @@ major functions:
    processors (a major source of computational inefficiency in HPC
    programs) is minimized.
 
-A network is illustrated schematically in Figure `4.3 <#fig:network>`__.
+A network is illustrated schematically in Figure 3.
 Each bus and branch has an associated bus or branch object. The buses
 and branches are derived from base classes that specify certain
 functions that must be implemented by the application developer so that
@@ -144,7 +142,6 @@ application can have functionality outside the base class that is unique
 to the particular application.
 
 .. figure:: figures/Grid-network.png
-   name: fig:network
    :width: 5.52in
 
    Schematic representation of a GridPACK network. The squares are
@@ -175,31 +172,40 @@ than accessing data from one remote bus or branch at a time.
 
 The use of the partitioner to distribute the network between different
 processors and create ghost nodes and branches is illustrated in
-Figure `4.4 <#fig:partition>`__. Figure `4.4 <#fig:partition>`__\ (a)
+Figure 4. Figure 4(a)
 shows a connected network that has been partitioned between two
 processors such that each processor owns roughly equally sized connected
-pieces. Figure `4.4 <#fig:partition>`__\ (b) and
-Figure `4.4 <#fig:partition>`__\ (c) show the pieces of the network on
+pieces. Figure 4(b) and
+Figure 4(c) show the pieces of the network on
 each processor after the ghost buses and branches have been added. Note
 that the ghost buses and branches represent connections that are split
-by the partition in Figure `4.4 <#fig:partition>`__\ (a).
+by the partition in Figure 4(a).
 
-.. container:: float
-   :name: fig:partition
+.. figure:: figures/PartitionFull.png
+   :width: 4in
+   :align: center
 
-   |image1|
-   |image2|
-   |image3|
+.. figure:: figures/Partition0.png
+   :width: 4in
+   :align: center
+
+.. figure:: figures/Partition1.png
+   :width: 4in
+   :align: center
+
+   (a) simple network, (b) partition of network on processor 0,
+   and (c) partition of network on processor 1. Open circles indicate
+   ghost buses and dotted lines indicate ghost branches.
 
 Networks can be created using the templated base class
-``BaseNetwork``\ :math:`\boldsymbol{\mathrm{<}}`\ ``class Bus, class Branch``\ :math:`\boldsymbol{\mathrm{>}}`**,
+``BaseNetwork<class Bus, class Branch>``,
 where ``Bus`` and ``Branch`` are application-specific classes
 describing the properties of buses and branches in the network. The
 ``BaseNetwork`` class is defined within the
 ``gridpack::network`` namespace. In addition to the ``Bus`` and
 ``Branch`` classes, each bus and branch has an associated
 ``DataCollection`` object, which is described in more detail in the
-data interface section `4.5 <#data_interface>`__. The
+data `interface section <#data_interface>`__. The
 ``DataCollection`` object is a collection of key-value pairs that
 acts as an intermediary between data that is read in from external
 configuration files and the bus and branch classes that define the
@@ -320,8 +326,8 @@ these objects
 
 The first two methods can be used to get Boost shared pointers to
 individual bus or branch objects indexed by local indices ``idx``.
-The second two functions return pointers to the
-``DataCollection``\ ````\ objects associated with each bus or
+The last two functions return pointers to the
+``DataCollection`` objects associated with each bus or
 branch. These ``DataCollection`` objects can be used to initialize
 the bus and branch objects at the start of a calculation but they are
 also useful when converting a network of one type to a network of
@@ -336,7 +342,7 @@ is directed at certain network components
    std::vector<int> getLocalBranchIndices(int idx1, int idx2)
 
 These functions return a list of local indices that correspond to either
-the original bus index ``idx``\ ````\ for a bus, or the pair of
+the original bus index ``idx`` for a bus, or the pair of
 indices ``idx1``, ``idx2`` for a branch. The reason that a list
 is returned instead of a single index is that in the case of ghost buses
 and branches, more than one copy of a network component may exist on a
@@ -435,7 +441,7 @@ the methods that a typical developer would use. The remaining functions
 are primarily used to implement other parts of the GridPACK framework
 but are generally not required by people writing applications. More
 information on how the functions described above are used in practice
-can be found in the section on GridPACK factories. ` <#topDoc>`__
+can be found in the section on GridPACK factories.
 
 Math Module
 -----------
@@ -1097,8 +1103,8 @@ algebraic equations (DAE) of the form
 
 .. math::
 
-   \mathbf{F} \left( t, \mathbf{u}, \mathbf{\dot{u}} \right) ~=~ 0, ~~ \mathbf{u} \left( t_{0} ~ = ~ \mathbf{u}_{0}
-     \right)
+   \mathbf{F} \left( t, \mathbf{u}, \mathbf{\dot{u}} \right) ~=~ 0,
+   ~~ \mathbf{u} \left( t_{0} ~ = ~ \mathbf{u}_{0} \right)
 
 It can also be used to solve systems of ordinary differential equations
 (ODE). As with other GridPACK math classes, ``DAESolver`` has real
@@ -1216,14 +1222,11 @@ more time integration variables when a variable value changes sign.
 Three kinds of events can be created, based on how a variable changes
 sign:
 
-``CrossZeroNegative``
-   variable value changes from positive to negative
+``CrossZeroNegative``: variable value changes from positive to negative
 
-``CrossZeroPositive``
-   variable value changes from negative to positive
+``CrossZeroPositive``: variable value changes from negative to positive
 
-``CrossZeroEither``
-   variable changes sign in either direction
+``CrossZeroEither``: variable changes sign in either direction
 
 Events are described using subclasses of ``DAESolver::Event``, which
 should override
@@ -1272,8 +1275,6 @@ optional prefix. Some example configuration language might look like
      </PETScOptions>
    </DAESolver>
 
-` <#topDoc>`__
-
 .. _network_components:
 
 Network Components
@@ -1293,10 +1294,9 @@ enables the framework to generate matrices and vectors from the network
 in a straightforward way. In addition, buses inherit from a base bus
 interface and branches inherit from a base branch interface. The
 relationship between these interfaces is shown in
-Figure `4.5 <#fig:components>`__.
+Figure 5.
 
 .. figure:: figures/Component-hierarchy.png
-   name: fig:components
    :width: 6in
    :height: 3.58in
 
@@ -1728,7 +1728,6 @@ These functions get the original index of “from” and “to” buses. Similar
 to the functions in the ``BaseBusComponent`` class, the functions in
 the ``BaseBranchComponent`` class will not work correctly until the
 ``setComponents`` method has been called in the base factory class.
-` <#topDoc>`__
 
 .. _data_interface:
 
@@ -1780,12 +1779,11 @@ how to initialize it. Along with the component object, a
 ``DataCollection`` object is also created. The
 ``DataCollection``\ ````\ object stores all the parameters from the
 network configuration file using a key-value scheme. The situation is
-illustrated schematically in Figure `4.6 <#fig:data-schematic>`__.
+illustrated schematically in Figure 6.
 
 .. figure:: figures/Network-objects.png
-   name: fig:data-schematic
+   :name: fig:data-schematic
    :width: 6in
-   :height: 4.24in
 
    Schematic diagram representing relationship between the
    **DataCollection** objects (green) and the network components
@@ -1816,7 +1814,7 @@ functions
    bool getValue(const char *name, ComplexType *value)
 
 These functions return true if a variable of the correct type is stored
-in the ``DataCollection`` object with the key “``name``”,
+in the ``DataCollection`` object with the key ``name``,
 otherwise it returns false. For example, there is only one parameter
 ``BUS_VOLTAGE_MAG`` for each bus, so this value can be obtained
 using the ``double`` variant of ``getValue``. All
@@ -2024,7 +2022,6 @@ Existing values can be overwritten with the functions
    bool setValue(const char *name, double value, const int idx)
    bool setValue(const char *name, ComplexType value, const int idx)
 
-` <#topDoc>`__
 
 .. _factory:
 
@@ -2148,7 +2145,7 @@ network components. The factory command
 
 will list the contents of each data collection object in the network to
 standard out. This output can be large for large networks so the use of
-this function should be restricted to smaller networks. ` <#topDoc>`__
+this function should be restricted to smaller networks.
 
 .. _mapper:
 
@@ -2186,23 +2183,42 @@ size of the matrix block that is contributed by the component and the
 second is the values in that block. Using this information, the mapper
 can calculate the dimensions of the matrix and where individual elements
 in the matrix are located. The construction of a matrix by the mapper is
-illustrated in Figure `4.7 <#fig:mapper>`__ for a small network.
-Figure `4.7 <#fig:mapper>`__\ (a) shows a hypothetical network. The
+illustrated in Figure 7 for a small network.
+Figure 7(a) shows a hypothetical network. The
 contributions from each network component are shown in
-Figure `4.7 <#fig:mapper>`__\ (b). Note that some buses and branches do
+Figure 7(b). Note that some buses and branches do
 not contribute to the matrix. This could occur in real systems because
 the transmission line corresponding to the branch has failed or because
 a bus represents the reference bus. In addition, it is possible that
 buses and branches can contribute different size blocks to the matrix.
 The mapping of the individual contributions from the network in Figure
 7(b) to initial matrix locations is shown in
-Figure `4.7 <#fig:mapper>`__\ (c). This is followed by elimination of
-gaps in the matrix in Figure `4.7 <#fig:mapper>`__\ (d).
+Figure 7(c). This is followed by elimination of
+gaps in the matrix in Figure 7(d).
 
-.. container:: float
-   :name: fig:mapper
+.. figure:: figures/Mapper-a.png
+   :width: 4in
+   :align: center
 
-   |image| |image4| |image5| |image6|
+.. figure:: figures/Mapper-b.png
+   :width: 4in
+   :align: center
+
+.. figure:: figures/Mapper-c.png
+   :width: 4in
+   :align: center
+
+.. figure:: figures/Mapper-d.png
+   :width: 4in
+   :align: center
+
+   A schematic diagram of the matrix map function. The bus numbers in (a)
+   and (b) map to approximate row and column locations in (c). (a) a small
+   network (b) matrix blocks associated with branches and buses. Note that
+   not all blocks are the same size and not all buses and branches
+   contribute (c) initial construction of matrix based on network indices
+   (d) final matrix after eliminating gaps.
+
 
 The most complex part of generating matrices and vectors is implementing
 the functions in the ``MatVecInterface.`` Once this has been done,
@@ -2329,7 +2345,6 @@ function
 
 This function will copy values from the vector into the bus using the
 ``setValues`` function in the ``MatVecInterface``.
-` <#topDoc>`__
 
 .. _parsers:
 
@@ -2418,7 +2433,7 @@ parsers will eventually store the branch resistance parameter in the
 then switch easily between different network configuration file formats
 by simply exchanging parsers, which will all store corresponding
 parameters using a common naming convention that can used within the
-code to access data. ` <#topDoc>`__
+code to access data.
 
 Serial IO Module
 ----------------
@@ -2431,14 +2446,9 @@ information to a single string. This information usually consists of bus
 or branch identifiers plus some parameters that are desired in the
 output. The serial IO module then gathers this information, moves it to
 the head node, and writes it out in a consistent order. An example of
-this type of output is shown in Figure `4.8 <#fig:serial_out>`__.
+this type of output is shown in below.
 
-.. container:: float
-   :name: fig:serial_out
-
-   |image7|
-
-   ::
+::
 
       Bus Voltages and Phase Angles
 
@@ -2517,7 +2527,7 @@ angle for a generator. These two outputs could be distinguished from
 each other in the ``serialWrite`` function using the ``signal``
 variable.
 
-To generate the output in Figure `4.8 <#fig:serial_out>`__, the
+To generate the output shown above, the
 following calls are used
 
 ::
@@ -2669,7 +2679,6 @@ parsed to get the voltage magnitude and phase angle on each bus. This
 information can then be stored in a vector that can be saved to the
 ``GlobalStore`` or ``StatBlock`` data structures described
 described in sections `6.9 <#global_store>`__ and `6.12 <#analysis>`__.
-` <#topDoc>`__
 
 .. _configuration:
 
@@ -2827,4 +2836,4 @@ data elements in ``faults`` can be accessed using the following loop
 Note that this method does not have any way of distinguishing between
 different blocks below ``Faults`` and if two types of blocks where
 listed within the ``Faults`` block, the ``children`` method
-would pick up both of them. ` <#topDoc>`__
+would pick up both of them.

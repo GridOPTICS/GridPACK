@@ -358,7 +358,7 @@ This interface also hosts a new function
    mapToNetwork(const gridpack::math::RealVector> &vector)
 
 which can be used to push data from a vector back into the network
-components (both buses and branches). ` <#topDoc>`__
+components (both buses and branches).
 
 Generalized Slab Mapper
 -----------------------
@@ -408,4 +408,3 @@ retrieved by the function
    void slabGetRowIndices(int *idx)
 
 which is similar to the ``vectorGetElementIndices`` function.
-` <#topDoc>`__

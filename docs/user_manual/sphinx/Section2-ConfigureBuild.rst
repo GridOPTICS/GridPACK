@@ -185,4 +185,4 @@ documentation for details. Applications may also have additional
 arguments that are processed inside the application itself. Most
 GridPACK applications will take an argument representing the input file
 for the application. In this example, the input file is
-``input.xml``. ` <#topDoc>`__
+``input.xml``.

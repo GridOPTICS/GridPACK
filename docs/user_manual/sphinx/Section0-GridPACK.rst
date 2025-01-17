@@ -69,12 +69,6 @@ the accuracy, completeness or usefulness of any data, apparatus, product
 or process disclosed, or represents that its use would not infringe
 privately owned rights.
 
-..
-   container::
-      :name: topDoc
-
-
-
 **How to read this document**
 
 Depending on how you are planning on using
@@ -93,4 +87,4 @@ on how to build applications that are based on the existing GridPACK
 application modules. Users that are interested in modifying the core
 functionality in GridPACK can look at the Doxygen documentation online
 under the “GridPACK API Documentation” link on www.gridpack.org, in
-addition to the documentation presented below. ` <#topDoc>`__
+addition to the documentation presented below.

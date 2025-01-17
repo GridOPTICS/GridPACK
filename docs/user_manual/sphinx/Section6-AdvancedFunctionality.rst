@@ -27,7 +27,7 @@ the GridPACK framework include
    components
 
 This functionality is described in more detail in the following
-sections. ` <#topDoc>`__
+sections.
 
 .. _communicator:
 
@@ -62,12 +62,12 @@ The use of communicators to create multiple concurrent parallel tasks
 within an application is usually straightforward to implement but it is
 frequently much more confusing to understand. A diagram of a set of 16
 processes that are divided into 4 groups each containing 4 processes is
-shown schematically in Figure `6.1 <#fig:communicator>`__. In this
+shown schematically in Figure 9. In this
 example, each subgroup could potentially execute a separate parallel
 task within the larger parallel calculation.
 
 .. figure:: figures/Communicator.png
-   name: fig:communicator
+   :name: fig:communicator
    :width: 6.32in
    :height: 3.82in
 
@@ -195,9 +195,9 @@ calling communicator contains 10 processes and ``nsize`` is set to
 contain 4 processors and one containing 2 processors.
 
 An example of how communicators can be used to create multiple levels of
-parallelism is illustrated in Figure 11. The example has 8 tasks that
+parallelism is illustrated in Figure 10. The example has 8 tasks that
 can be evaluated independently. The first row in
-Figure `6.2 <#fig:multi-level>`__ shows four processors. Two of the 8
+Figure 10 shows four processors. Two of the 8
 tasks are run on each processor so if each task has been parallelized
 then it needs to run on a communicator with only 1 processor in it. The
 second row shows the same calculation running on 8 processors. In this
@@ -212,7 +212,7 @@ parallel on two processors. This gives additional speed-up over what can
 be achieved by simply distributing tasks to separate processors.
 
 .. figure:: figures/Mult-parallel.png
-   name: fig:multi-level
+   :name: fig:multi-level
    :width: 5.52in
    :height: 2.95in
 
@@ -278,7 +278,7 @@ communicator have reached the call. This is used in some parallel
 programming situations to guarantee a consistent state across all
 processors. In general, there should be relatively little need for this
 call in GridPACK. See, however, the comment below at the end of the
-section `6.9 <#global_store>`__ on ``GlobalStore``. ` <#topDoc>`__
+section `6.9 <#global_store>`__ on ``GlobalStore``.
 
 Environment
 -----------
@@ -334,7 +334,7 @@ destroy first before the ``Environment`` destructor is called. This
 is important since otherwise the destructors for some objects in the
 application may be called after the Global Array or MPI environments
 have been shut down and if they rely on calls in the Global Array or MPI
-libraries, the application will not exit cleanly. ` <#topDoc>`__
+libraries, the application will not exit cleanly.
 
 Task Manager
 ------------
@@ -450,7 +450,6 @@ process is involved in multiple tasks. Once the workload drops to 1 task
 per process, this advantage is lost. There is also no guarantee that if
 the calculation is repeated, that the same processes will end up
 executing the same tasks. However, the final results should be the same.
-` <#topDoc>`__
 
 Timers
 ------
@@ -616,7 +615,7 @@ modified to
    void dump(boost::shared_ptr<ofstream> stream) const
 
 This function requires a stream pointer that signifies which file the
-data is written to. ` <#topDoc>`__
+data is written to.
 
 Exceptions
 ----------
@@ -685,7 +684,6 @@ by catching the exception and calling ``what``
          // After printing error take some action
        }
 
-` <#topDoc>`__
 
 Hash Distribution Module
 ------------------------
@@ -794,7 +792,7 @@ and
 Instead of moving a single value struct for each bus or branch, these
 functions move a vector of structs. Each struct must be the same size
 and contain ``nvals`` elements. These functions are useful for
-assigning a time series of data to buses and branches. ` <#topDoc>`__
+assigning a time series of data to buses and branches.
 
 .. _string_utils:
 
@@ -1073,7 +1071,7 @@ is not in the range of branches on the processor.
 These functions are all that is needed to create a network from scratch
 or to write a parser for a new network configuration file format. These
 are currently used in the PSS/E parser classes to implement the network
-setup functionality. ` <#topDoc>`__
+setup functionality.
 
 .. _global_store:
 
@@ -1126,10 +1124,10 @@ are not used more than once, i.e. ``addVector`` is not call more
 than once on any processor for a given index. This behavior maps fairly
 well to contingency calculations where the index represents the index of
 a particular contingency. The data layout in the GlobalStore object is
-illustrated schematically in Figure `6.3 <#fig:global-store>`__.
+illustrated schematically in Figure 11.
 
 .. figure:: figures/Global-store.png
-   name: fig:global-store
+   :name: fig:global-store
    :width: 6.5in
    :height: 3.72in
 
@@ -1170,7 +1168,7 @@ it is usually possible to prevent the hang by calling
 ``Communicator::sync`` on the communicator that was used to define
 the ``GlobalStore`` object. This should be done after completing all
 ``getVector`` calls but before making calls to other parallel
-functions. ` <#topDoc>`__
+functions.
 
 .. _global_vector:
 
@@ -1266,7 +1264,7 @@ usually possible to prevent the hang by calling
 ``Communicator::sync`` on the communicator that was used to define
 the ``GlobalVector`` object. This should be done after completing
 all ``getData`` calls but before making calls to other parallel
-functions. ` <#topDoc>`__
+functions.
 
 Bus Tables
 ----------
@@ -1362,7 +1360,6 @@ The number of columns of properties can be accessed using the function
 
    int getNumColumns()
 
-` <#topDoc>`__
 
 Analysis
 --------
@@ -1388,14 +1385,14 @@ character ID that identifies the device within the bus or branch.
 For *N* contingencies, the contingency index runs between 0 and *N*,
 with 0 representing a base case in which no contingency is present. A
 schematic figure of the data layout is shown in
-Figure `6.4 <#fig:analysis>`__.
+Figure 12.
 
 .. figure:: figures/Analysis.png
-   name: fig:analysis
+   :name: fig:analysis
    :width: 4.81in
    :height: 3.65in
 
-   Schematic diagram of **StatBlock** data layout. The entire array can
+   Schematic diagram of ``StatBlock`` data layout. The entire array can
    be distributed over multiple processors. Data for an entire
    contingency is added in a single operation.
 
@@ -1664,7 +1661,7 @@ strings. The code for doing this is
 
 ::
 
-   int nsize = gen_strings.size();
+       int nsize = gen_strings.size();
        std::vector<int> ids;
        std::vector<std::string> gen_tags;
        std::vector<double> pgen;
@@ -1744,7 +1741,7 @@ evaluated using
 
 ::
 
-   int ngen = pgen.size();
+       int ngen = pgen.size();
        world.max(&ngen,1);
 
 where ``world`` is a communicator on the world group. The vector
@@ -1764,7 +1761,7 @@ information can be added using the following code
 
 ::
 
-   if (world.rank() == 0) {
+       if (world.rank() == 0) {
          pgen_stats.addRowLabels(ids,gen_tags);
          pgen_stats.addColumnValues(0,pgen,mask);
        }
@@ -1776,8 +1773,8 @@ added to the ``StatBlock`` array with the code
 ::
 
    if (task_comm.rank() == 0) {
-         pgen_stats.addColumnValues(task_id+1,pgen,mask);
-        }
+     pgen_stats.addColumnValues(task_id+1,pgen,mask);
+   }
 
 The labels only need to be added to ``pgen_stats`` once, so they are
 not included in the conditional. The conditional itself is for rank 0 on
@@ -1790,9 +1787,9 @@ be written out using the commands
 ::
 
    pgen_stats.writeMeanAndRMS("pgen.txt",1,true);
-       pgen_stats.writeMinAndMax("pgen_min_max.txt",1,true);
+   pgen_stats.writeMinAndMax("pgen_min_max.txt",1,true);
 
 The first line generates a file containing the average value and
 standard deviations across all successful calculations and the second
 line generates a file with the minimum and maximum values across all
-successful calculations. ` <#topDoc>`__
+successful calculations.

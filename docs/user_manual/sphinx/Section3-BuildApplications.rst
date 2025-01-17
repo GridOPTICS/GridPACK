@@ -18,14 +18,14 @@ CMakeLists.txt file is
 
 ::
 
-   1 cmake_minimum_required(VERSION 3.5.0)
+    1 cmake_minimum_required(VERSION 3.5.0)
     2
     3 if (NOT GRIDPACK_DIR)
     4   set(GRIDPACK_DIR /HOME/gridpack-install
     5       CACHE PATH "GridPACK installation directory")
     6 endif()
     7
-    8 include("\${GRIDPACK_DIR}/lib/GridPACK.cmake")
+    8 include("${GRIDPACK_DIR}/lib/GridPACK.cmake")
     9
    10 project(MyProject)
    11
@@ -33,9 +33,9 @@ CMakeLists.txt file is
    13
    14 gridpack_setup()
    15
-   16 add_definitions(\${GRIDPACK_DEFINITIONS})
-   17 include_directories(BEFORE \${CMAKE_CURRENT_SOURCE_DIR})
-   18 include_directories(BEFORE \${GRIDPACK_INCLUDE_DIRS})
+   16 add_definitions(${GRIDPACK_DEFINITIONS})
+   17 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+   18 include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
    19
    20 add_executable(myapp.x
    21   myapp_main.cpp
@@ -43,21 +43,21 @@ CMakeLists.txt file is
    23   myapp_file1.cpp
    24   myapp_file2.cpp
    25 )
-   26 target_link_libraries(myapp.x \${GRIDPACK_LIBS})
+   26 target_link_libraries(myapp.x ${GRIDPACK_LIBS})
    27 
    28 add_custom_target(myapp.input
    29 
-   30   COMMAND \${CMAKE_COMMAND} -E copy 
-   31   \${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-   32   \${CMAKE_CURRENT_BINARY_DIR}
+   30   COMMAND ${CMAKE_COMMAND} -E copy 
+   31   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+   32   ${CMAKE_CURRENT_BINARY_DIR}
    33 
-   34   COMMAND \${CMAKE_COMMAND} -E copy 
-   35   \${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
-   36   \${CMAKE_CURRENT_BINARY_DIR}
+   34   COMMAND ${CMAKE_COMMAND} -E copy 
+   35   ${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
+   36   ${CMAKE_CURRENT_BINARY_DIR}
    37 
    38   DEPENDS 
-   39   \${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-   40   \${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
+   39   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+   40   ${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
    41 )
    42 add_dependencies(myapp.x myapp.input)
 
@@ -65,7 +65,7 @@ Lines 1-6 check to see if the CMake installation is recent enough and
 also make sure that the ``GRIDPACK_DIR`` variable has been defined
 in the configuration step. If it hasn’t, then the CMake will try and use
 a default value and look for a build
-in\ ````\ ``$HOME/gridpack-install``. However, this is unlikely to
+in ``$HOME/gridpack-install``. However, this is unlikely to
 be successful, so it is better to define ``GRIDPACK_DIR`` when
 configuring your application. Line 8 picks up a file that is used by the
 application build to link to libraries and header files in the GridPACK
@@ -105,4 +105,3 @@ A template file for ``CMakeLists.txt`` can be found in the
 ``src`` directory under ``CMakeLists.template.txt``. Users
 should copy this file to their application directory, modify the name to
 ``CMakeLists.txt`` and add their own source files and test input.
-` <#topDoc>`__
