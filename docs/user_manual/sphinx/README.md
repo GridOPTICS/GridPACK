@@ -24,7 +24,12 @@ python3 -m pip install
 If you are using a virtual environment, you can do a pip
 install in the environment. Otherwise, you may need to add a file
 `.config/pip/pip.conf` in your home directory to enable pip to install
-additional packages.
+additional packages. Inside this file, add the lines
+
+```
+[global]
+break-system-packages = true
+```
 
 Once sphinx is installed, cd into the docs/user_manual/sphinx directory and type
 
