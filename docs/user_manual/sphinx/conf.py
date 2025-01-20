@@ -80,7 +80,7 @@ pygments_style = 'sphinx'
 # Should figures be numbered?
 numfig = True
 math_numfig = True
-math_number_all = True
+math_number_all = False
 numfig_secnum_depth = 2
 # math_eqref_format = "Eq.{number}"
 
