@@ -281,7 +281,7 @@ void Regca1::preStep(double time ,double timestep)
   Eabs = abs(E);
   Eangle = arg(E);
 
-  printf("Time = %lf, Vt = %lf, Ipout = %lf, Iqout = %lf, domega = %lf, delta = %lf\n",p_time,Vt_filter, Ipcmd,Iqcmd,domega,delta);
+  //  printf("Time = %lf, Vt = %lf, Ipout = %lf, Iqout = %lf, domega = %lf, delta = %lf\n",p_time,Vt_filter, Ipcmd,Iqcmd,domega,delta);
 
 }
 

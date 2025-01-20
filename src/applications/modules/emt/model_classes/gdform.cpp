@@ -302,7 +302,7 @@ void Gdform::preStep(double time ,double timestep)
 
   delta = Delta_blk.getoutput(domega,timestep,true);
 
-  printf("Time = %lf, Edroop = %lf, domega = %lf, delta = %lf, Pinv = %lf, Qinv = %lf\n",p_time,Edroop,domega,delta,Pinv,Qinv);
+  //  printf("Time = %lf, Edroop = %lf, domega = %lf, delta = %lf, Pinv = %lf, Qinv = %lf\n",p_time,Edroop,domega,delta,Pinv,Qinv);
 
 }
 
