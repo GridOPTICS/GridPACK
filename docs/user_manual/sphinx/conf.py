@@ -43,7 +43,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
-    'sphinx.ext.subfigure'
+    'sphinx_subfigure'
 ]
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
