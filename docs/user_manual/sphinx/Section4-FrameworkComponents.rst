@@ -1777,7 +1777,7 @@ for that object. This is usually very simple, since at the moment when
 the object is created, there is very little information available about
 how to initialize it. Along with the component object, a
 ``DataCollection`` object is also created. The
-``DataCollection``\ ````\ object stores all the parameters from the
+``DataCollection`` object stores all the parameters from the
 network configuration file using a key-value scheme. The situation is
 illustrated schematically in Figure 6.
 
@@ -2755,7 +2755,7 @@ value of the input file corresponding to the XML field
        c->get("Configuration.PowerFlow.networkConfiguration",  
        "IEEE.raw");
 
-The first argument has type\ ````\ ``Configuration::KeyType`` which
+The first argument has type ``Configuration::KeyType`` which
 is a ``typedef`` of ``std::string``. Values are selected by
 hierarchically named “keys” using “.” as a separator. In the example
 input file, “PowerFlow” is a block under “Configuration” and

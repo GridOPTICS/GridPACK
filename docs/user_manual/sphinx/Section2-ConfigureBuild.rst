@@ -18,6 +18,74 @@ CMake from this directory, the “``..``” at the end of the
 absolute path to the ``src`` directory instead of “``..``” and
 this would work no matter where you locate the build directory.
 
+Build Scripts
+-------------
+
+Most of the documentation for building GridPACK describes how to build
+individual libraries used by GridPACK and how to link these to the GridPACK
+executables. See the section on Manual Builds below. Recently, we have
+provided scripts that automate much of this process. These scripts work on many
+platforms but are not guaranteed to work all the time. In the event of a failure
+you will either have to see if you can get the scripts working by fixing
+whatever bugs you may encounter or by reverting to doing a manual build as
+decribed below.
+
+The two scripts used to build GridPACK are located in the top level directory
+and are called ``install_gridpack_deps.sh`` and ``install_gridpack_deps.sh``.
+These scripts can be run by simply typing
+
+::
+
+   install_gridpack_deps.sh
+
+and
+
+::
+
+   install_gridpack.sh
+
+in the top level directory.
+The first script will download and build all the libraries that GridPACK depends
+on. These include Boost, PETSc and Global Arrays (GA). This does not include
+MPI. Most HPC clusters will have MPI already installed but for laptops and
+workstations, you may need to build or install these libraries yourself. If the
+``install_gridpack_deps.sh`` script is used to install the external
+dependencies, the libraries will be located in a directory call
+``external-dependencies`` that is located under the top level GridPACK
+directory. Note that this script may take around an hour to run, depending on
+the system.
+
+Once the external dependences have been built, the
+GridPACK framework and its associated applications are built by running the
+``install_gridpack.sh`` script. If you want to include the python interface,
+then will need to edit the top of this script and set both the
+``install_gridpack_shared`` and ``install_gridpack_python1`` variables to true.
+Once this script has been run, two directories shou appear under the
+``GRIDPACK/src`` directory. The first is ``build``, which will contain all the
+application executables in GridPACK and the second is ``install``. The install
+directory is chiefly of interest for users that are interested in developing
+their own applications and contains the libraries and header files for
+individual framework components. These can be used to compile and link new
+GridPACK-based applications.
+
+These scripts build the Global Arrays library with the two-sided runtime. This
+is straightforward to use but is low performing on large numbers of processors.
+Better performance can be achieved with the progress ranks runtime. To build
+with this runtime, edit the ``install_gridpack_deps.sh`` file and replace the
+string ``--with-mpi-ts`` with ``-with-mpi-pr`` in the section on building GA. In
+addition, you will need to add the line
+
+::
+
+   -D USE_PROGRESS_RANKS:BOOL=TRUE
+
+to the list of ``cmake_args`` in ``install_gridpack.sh``. For additional
+information on running applications with this runtime, see the information on
+using progress ranks in the section below.
+
+Manual Builds
+-------------
+
 Building GridPACK requires several external libraries that must be built
 prior trying to configure and build GridPACK itself. On some systems,
 these libraries may already be available but in many cases, users will

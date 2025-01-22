@@ -23,7 +23,7 @@ See the PDF [User manual](docs/user_manual/GridPACK.pdf) for a deep dive on Grid
 - Quick Guide (To do)
 
 ## Documentation
-- [User manual](docs/user_manual/GridPACK.pdf)
+- [User manual](https://gridpack.readthedocs.io/en/latest/index.html)
 - [Tutorials](docs/markdown/TUTORIALS.md)
 - [FAQS](docs/markdown/FAQS.md)
 - [License](docs/markdown/LICENSE.md)
