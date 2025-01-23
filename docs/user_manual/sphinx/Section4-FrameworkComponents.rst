@@ -11,7 +11,6 @@ these components is shown in Figure 1.
 
 .. figure:: figures/Relationship-Grid-components.png
    :width: 6in
-   :height: 3.81in
 
    Relationship between major GridPACK components.
 
@@ -43,7 +42,6 @@ schematically in Figure 2.
 
 .. figure:: figures/Grid-framework-schematic.png
    :width: 6in
-   :height: 4.05in
 
    A schematic diagram of the GridPACK framework software data stack.
    Green represents components supplied by the framework and blue
@@ -1298,7 +1296,6 @@ Figure 5.
 
 .. figure:: figures/Component-hierarchy.png
    :width: 6in
-   :height: 3.58in
 
    Schematic diagram showing the interface hierarchy for network
    components.
