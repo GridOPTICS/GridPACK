@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-07-24 10:32:00 d3g096
+ * @date   2024-10-10 08:41:06 d3g096
  * 
  * @brief  
  * 
@@ -75,6 +75,13 @@ public:
   /// Construct from an existing PETSc vector
   PETScVectorImplementation(Vec& pvec, const bool& copyvec = true)
     : VectorImplementation<T>(PetscVectorWrapper::getCommunicator(pvec)), 
+      p_vwrap(pvec, copyvec)
+  { }
+
+  /// Construct from an existing PETSc vector and matching Communicator
+  PETScVectorImplementation(const parallel::Communicator& comm,
+                            Vec& pvec, const bool& copyvec = true)
+    : VectorImplementation<T>(comm), 
       p_vwrap(pvec, copyvec)
   { }
 

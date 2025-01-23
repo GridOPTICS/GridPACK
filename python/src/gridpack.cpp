@@ -10,6 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
+// Last Change: 2023-11-30 13:57:21 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -24,6 +25,7 @@ namespace py = pybind11;
 #include <gridpack/parallel/task_manager.hpp>
 #include <gridpack/applications/modules/hadrec/hadrec_app_module.hpp>
 #include <gridpack/timer/coarse_timer.hpp>
+#include "gridpack/applications/modules/emt/emt.hpp"
 
 namespace gp = gridpack;
 namespace gpu = gridpack::utility;
@@ -1254,6 +1256,31 @@ PYBIND11_MODULE(gridpack, gpm) {
 
     
     ;
-  
+
+
+  // -------------------------------------------------------------
+  // Emt module
+  // -------------------------------------------------------------
+  py::module emtm =
+    gpm.def_submodule("emt", "GridPACK EMT Application module");
+
+  py::class_<Emt> emtapp(emtm, "EMT");
+  emtapp
+    .def(py::init<>())
+    .def(py::init<gpp::Communicator&>())
+    .def("rank", &Emt::rank)
+    .def("size", &Emt::size)
+    .def("setup", &Emt::setup)
+    .def("initialize", &Emt::initialize)
+    .def("solve", &Emt::solve)
+    .def("readnetworkdatafromconfig", &Emt::readnetworkdatafromconfig)
+    .def("solvepowerflow", &Emt::solvepowerflow)
+    .def("setconfigurationfile",
+         [](Emt& self, const std::string& s) {
+           self.setconfigurationfile(s.c_str());
+         })
+    ;
+
+
 
 }

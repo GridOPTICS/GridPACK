@@ -46,7 +46,9 @@ public:
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::PreStepFunction PreStepFunction;
+  typedef typename DAESolverInterface<T, I>::PostStepFunction PostStepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
   typedef typename DAESolverInterface<T, I>::Event Event;
   typedef typename DAESolverInterface<T, I>::EventPtr EventPtr;
@@ -76,6 +78,15 @@ public:
              JacobianBuilder& jbuilder,
              FunctionBuilder& fbuilder,
              EventManagerPtr eman);
+
+  DAESolverT(const parallel::Communicator& comm, 
+             const int local_size,
+	     MatrixType* J,
+             JacobianBuilder& jbuilder,
+             FunctionBuilder& fbuilder,
+	     RHSFunctionBuilder& rbuilder,
+             EventManagerPtr eman);
+
 
   /// Constructor used if no events are necessary
   /** 
@@ -112,6 +123,59 @@ public:
   {
     p_impl->initialize(t0, deltat0, x0);
   }
+
+  /// Restart step
+  /**
+   *
+   * Note: PETSc provides functionality to restart a step (see TSRestartStep). This is particularly needed when the step needs to be restarted after a discontinuity.
+   */
+  void restartstep()
+  {
+    p_impl->restartstep();
+  }
+
+  /// Reuse preconditioner
+  /**
+   *
+   * Note: PETSc provides functionality to lag the preconditioner (see SNESSetLagPreconditioner). This is particularly useful
+   * when for large systems when we can reuse the preconditioner for several steps
+   */
+  void reusepreconditioner(int niter)
+  {
+    p_impl->reusepreconditioner(niter);
+  }
+
+  /// Reuse jacobian
+  /**
+   *
+   * Note: PETSc provides functionality to lag the jacobian (see SNESSetLagJacobian). This is particularly useful
+   * when for large systems when we can reuse the jacobian for several steps
+   */
+  void reusejacobian(int niter)
+  {
+    p_impl->reusejacobian(niter);
+  }
+
+
+
+  /**
+   * gettimestep - returns the current time-step
+   * @param [output] dt - current time step
+   **/
+  double gettimestep()
+  {
+    return p_impl->gettimestep();
+  }
+
+  /**
+   * getstepnumber - returns the number of time steps completed
+   * @param [output] nsteps - number of timesteps
+   **/
+  int getstepnumber()
+  {
+    return p_impl->getstepnumber();
+  }
+
 
   /// Solve the system to when @c end_time or @c maxsteps is exceeded
   /** 
@@ -154,8 +218,39 @@ protected:
   {
     p_impl->initialize(t0, deltat0, x0);
   }
-                       
 
+  /// Restart step
+  void p_restartstep()
+  {
+    p_impl->restartstep();
+  }
+                       
+  /// Get time step
+  double p_gettimestep()
+  {
+    return p_impl->gettimestep();
+  }
+
+  /// Get number of steps
+  int p_getstepnumber()
+  {
+    return p_impl->getstepnumber();
+  }
+
+
+  /// Reuse preconditioner
+  void p_reusepreconditioner(int niter)
+  {
+    p_impl->reusepreconditioner(niter);
+  }
+
+  /// Reuse Jacobian
+  void p_reusejacobian(int niter)
+  {
+    p_impl->reusejacobian(niter);
+  }
+
+  
   /// Solve the system (specialized)
   void p_solve(double& maxtime, int& maxsteps)
   {
@@ -163,13 +258,13 @@ protected:
   }
 
   /// Set a function to call before each time step (specialized)
-  void p_preStep(StepFunction& f)
+  void p_preStep(PreStepFunction& f)
   {
     p_impl->preStep(f);
   }
 
   /// Set a function to call after each time step (specialized)
-  void p_postStep(StepFunction& f)
+  void p_postStep(PostStepFunction& f)
   {
     p_impl->postStep(f);
   }

@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2024-04-18 14:00:57 d3g096
+ * @date   2024-10-14 08:23:58 d3g096
  * 
  * @brief  
  * 
@@ -1672,6 +1672,9 @@ void clear(void)
     delete [] p_inactiveBranchIndices;
   }
   if (p_branchSndBuf) {
+    delete [] ((char*)p_branchSndBuf);
+  }
+  if (p_branchRcvBuf) {
     delete [] ((char*)p_branchRcvBuf);
   }
   if (p_branchGASet) {
@@ -2230,8 +2233,7 @@ void initBranchUpdate(void)
     // Construct GA that can hold exchange data for all active branches
     int nprocs = GA_Pgroup_nnodes(grp);
     int me = GA_Pgroup_nodeid(grp);
-    int *totBranches = new int(nprocs);
-    int *distr = new int(nprocs);
+    std::vector<int> totBranches(nprocs), distr(nprocs);
     for (i=0; i<nprocs; i++) {
       if (me == i) {
         totBranches[i] = numBranches;
@@ -2241,7 +2243,7 @@ void initBranchUpdate(void)
     }
     char plus[2];
     strcpy(plus,"+");
-    GA_Pgroup_igop(grp,totBranches,nprocs,plus);
+    GA_Pgroup_igop(grp,&totBranches[0],nprocs,plus);
     distr[0] = 0;
     p_branchTotal = totBranches[0];
     for (i=1; i<nprocs; i++) {
@@ -2252,7 +2254,7 @@ void initBranchUpdate(void)
     int one = 1;
     p_branchXCBufType = NGA_Register_type(p_branchXCBufSize);
     GA_Set_data(p_branchGA, one, &p_branchTotal, p_branchXCBufType);
-    GA_Set_irreg_distr(p_branchGA, distr, &nprocs);
+    GA_Set_irreg_distr(p_branchGA, &distr[0], &nprocs);
     GA_Set_pgroup(p_branchGA, grp);
     GA_Allocate(p_branchGA);
     p_branchGASet = true;
@@ -2275,7 +2277,8 @@ void initBranchUpdate(void)
     icnt = 0;
     for (i=0; i<size; i++) {
       if (getActiveBranch(i)) {
-        p_activeBranchIndices[lcnt] = new int(getGlobalBranchIndex(i));
+        p_activeBranchIndices[lcnt] = new int;
+        *(p_activeBranchIndices[lcnt]) = getGlobalBranchIndex(i);
         idx = *(p_activeBranchIndices[lcnt]);
         if (idx<0 || idx >= p_branchTotal) {
           char buf[256];
@@ -2288,7 +2291,8 @@ void initBranchUpdate(void)
         }
         lcnt++;
       } else {
-        p_inactiveBranchIndices[icnt] = new int(getGlobalBranchIndex(i));
+        p_inactiveBranchIndices[icnt] = new int;
+        *(p_inactiveBranchIndices[icnt]) = getGlobalBranchIndex(i);
         idx = *(p_inactiveBranchIndices[icnt]);
         if (idx<0 || idx >= p_branchTotal) {
           char buf[256];
@@ -2302,8 +2306,6 @@ void initBranchUpdate(void)
         icnt++;
       }
     }
-    delete totBranches;
-    delete distr;
   }
   GA_Pgroup_sync(grp);
 }
