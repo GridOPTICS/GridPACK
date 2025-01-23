@@ -49,64 +49,50 @@ add_executable(emt.x
 
 target_link_libraries(emt.x ${target_libraries})
 
-gridpack_set_lu_solver(
-  "${GRIDPACK_DATA_DIR}/input/emt/input_2bus.xml"
-  "${CMAKE_CURRENT_BINARY_DIR}/input_2bus.xml"
-)
-
-gridpack_set_lu_solver(
-  "${GRIDPACK_DATA_DIR}/input/emt/input_9bus.xml"
-  "${CMAKE_CURRENT_BINARY_DIR}/input_9bus.xml"
-)
-
-gridpack_set_lu_solver(
-  "${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc"
-  "${CMAKE_CURRENT_BINARY_DIR}/.petscrc"
-)
-
-
 add_custom_target(emt.x.input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/case2mod.raw
+  ${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/case2.dyr
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/input_9bus2.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/case9_PSCAD.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/case9_GAST.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/input_39bus.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/IEEE39bus.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/IEEE39bus.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
+
 
   DEPENDS
-  ${CMAKE_CURRENT_BINARY_DIR}/input_2bus.xml
-  ${GRIDPACK_DATA_DIR}/input/emt/input_2bus.xml
-  ${GRIDPACK_DATA_DIR}/raw/case2mod.raw	
-  ${GRIDPACK_DATA_DIR}/dyr/case2.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_9bus.xml
-  ${GRIDPACK_DATA_DIR}/raw/case9.raw
-  ${GRIDPACK_DATA_DIR}/input/emt/input_9bus.xml
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_9bus2.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_39bus.xml
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/input_9bus2.xml
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/input_39bus.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/case9_PSCAD.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE39bus.raw
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/case9_PSCAD.raw
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/IEEE39bus.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/case9_GAST.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE39bus.dyr
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/case9_GAST.dyr
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/IEEE39bus.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/.petscrc
 )
 
@@ -114,15 +100,18 @@ add_dependencies(emt.x emt.x.input)
 
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input_2bus.xml
-  ${GRIDPACK_DATA_DIR}/raw/case2mod.raw
-  ${GRIDPACK_DATA_DIR}/dyr/case2.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_9bus.xml
-  ${GRIDPACK_DATA_DIR}/raw/case9.raw
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENCLS.dyr
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU.dyr
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1.dyr
-  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_EXDC1_WSIEG1.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_9bus2.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_39bus.xml
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/input_9bus2.xml
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/input_39bus.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/case9_PSCAD.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE39bus.raw
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/case9_PSCAD.raw
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/IEEE39bus.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/case9_GAST.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE39bus.dyr
+  ${GRIDPACK_DATA_DIR}/emt/9-bus/case9_GAST.dyr
+  ${GRIDPACK_DATA_DIR}/emt/39-bus/IEEE39bus.dyr
   ${GRIDPACK_DATA_DIR}/petscoptions/emt/.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/emt_app.cpp
   DESTINATION share/gridpack/example/emt
@@ -133,5 +122,5 @@ install(TARGETS emt.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("EMT" emt.x input_2bus.xml)
+gridpack_add_run_test("EMT" emt.x input_9bus2.xml)
 
