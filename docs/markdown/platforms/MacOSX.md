@@ -149,7 +149,7 @@ than a full path.
 
 ### PETSc ###
 
-On modern Mac OS X, only PETSc version 3.20.1 and later can be used.
+On modern Mac OS X, only PETSc version 3.20.1 can be used.
 Older versions will not build. This has been noted by others.
 
     wget https://web.cels.anl.gov/projects/petsc/download/release-snapshots/petsc-3.20.6.tar.gz
@@ -204,8 +204,7 @@ Configure, build, and test GridPACK with
         -D BUILD_GA:BOOL=NO \
         -D CMAKE_BUILD_TYPE:STRING=Release \
         -D GA_DIR:PATH=$prefix \
-        -D BOOST_ROOT:STRING=$prefix \
-        -D Boost_NO_BOOST_CMAKE:BOOL=TRUE \
+        -D Boost_ROOT:STRING=$prefix \
         -D PETSC_DIR:PATH=$prefix \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
