@@ -17,13 +17,9 @@ endif()
 
 set(target_libraries
     ${target_libraries}	
+    gridpack_powerflow_module
     gridpack_ymatrix_components
-    gridpack_components
     gridpack_partition
-    gridpack_parallel
-    gridpack_math
-    gridpack_configuration
-    gridpack_timer
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
