@@ -112,12 +112,6 @@ add_custom_target(emt.x.input
 
 add_dependencies(emt.x emt.x.input)
 
-# -------------------------------------------------------------
-# install as an example
-# -------------------------------------------------------------
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
-
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input_2bus.xml
