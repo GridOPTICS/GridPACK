@@ -51,7 +51,8 @@ def parse_arguments():
 BUS_LOGGER = []
 GEN_LOGGER = []
 LOAD_LOGGER = []
-BRANCH_LOGGER = []
+LINE_LOGGER = []
+TRAFO_LOGGER = []
 
 def save_data(filename_prefix):
     print("[INFO] Saving the data")
@@ -74,10 +75,16 @@ def save_data(filename_prefix):
     res_load.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_load.csv")
     
     # line data
-    res_line = pd.concat(BRANCH_LOGGER, ignore_index=True)
+    res_line = pd.concat(LINE_LOGGER, ignore_index=True)
     # adjusting for counter increase during warm up calls
     res_line["tick"] = res_line["tick"] - res_line["tick"].values[0]
     res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_line.csv")
+
+    # trafo data
+    res_trafo = pd.concat(TRAFO_LOGGER, ignore_index=True)
+    # adjusting for counter increase during warm up calls
+    res_trafo["tick"] = res_trafo["tick"] - res_trafo["tick"].values[0]
+    res_trafo.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_trafo.csv")
 
 
 class LoadSheddingAgent(BaseAgent):
@@ -175,7 +182,8 @@ if __name__=="__main__":
         BUS_LOGGER += env.backend.bus_logger
         GEN_LOGGER += env.backend.gen_logger
         LOAD_LOGGER += env.backend.load_logger
-        BRANCH_LOGGER += env.backend.branch_logger
+        LINE_LOGGER += env.backend.line_logger
+        TRAFO_LOGGER += env.backend.trafo_logger
         
         # save data
         if counter == args.grid2op_steps-1: # save at 2nd grid2op step

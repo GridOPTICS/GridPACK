@@ -1341,8 +1341,8 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
   dbusvoltfreq = getBusVolFrequency();
 
   // Compute frequency and add it to the data collection object
-  if(!data->setValue(BUS_FREQUENCY,dbusvoltfreq, i)) {
-    data->addValue(BUS_FREQUENCY, dbusvoltfreq, i);
+  if(!data->setValue(BUS_FREQUENCY,dbusvoltfreq)) {
+    data->addValue(BUS_FREQUENCY, dbusvoltfreq);
   }
 }
 
