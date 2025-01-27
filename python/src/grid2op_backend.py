@@ -36,105 +36,218 @@ class GridPACKBackend(Backend):
         # NOTE: add a timestamp along with the counter - get the time from GridPACK - if possible
         self._log_freq = log_freq
 
-    def _build_grid(self):
-        grid = Grid()
-
-        bus_list = []
-        gen_list = []
-        load_list = []
-        branch_list = []
-
-        # then fill the "n_sub" and "sub_info"
-        self.n_sub = self._dsapp.totalBuses()
-
+    def _read_bus_gen_load_data(self):
+        # load and generator data
+        # NOTE: Generator and Load values change only when there are dynamic load/generators. If they are not dynamic, the code currently returns the previous value. 
+        bus_data = []
+        gen_data = []
+        load_data = []
         for bus in range(self.n_sub):
+            # Dynamic simulation values are in pu, need to convert them MW and MVar
             CASE_SBASE = self._dsapp.getBusInfoReal(bus, "CASE_SBASE")
             BUS_BASEKV = self._dsapp.getBusInfoReal(bus, "BUS_BASEKV")
 
             # bus list
-            vm_pu = self._dsapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG") # in p.u.
-            vn_kv = vm_pu * BUS_BASEKV # in kV
+            vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VMAG_CURRENT") # in p.u.
+            vn_kv = vn_pu * BUS_BASEKV # in kV
 
-            bus_list.append({
+            # BUS_VMAG_CURRENT - latest value
+            bus_data.append({
                 "name": self._dsapp.getBusInfoString(bus, "BUS_NAME"),
                 "id": self._dsapp.getBusInfoInt(bus, "BUS_NUMBER"),
+                "tick": self._counter_time,
+                "vn_pu": vn_pu,
                 "vn_kv": vn_kv,
+                "frequency": self._dsapp.getBusInfoReal(bus, "BUS_FREQUENCY"),
                 "type": self._dsapp.getBusInfoInt(bus, "BUS_TYPE")
             })
+            
+            # bus list
             for g in range(self._dsapp.numGenerators(bus)):
-                # generator list
-                gen_list.append({
+                # gen data
+                gen_data.append({
+                    "tick": self._counter_time,
                     "name": self._dsapp.getBusInfoString(bus, "GENERATOR_ID", g),
                     "bus": bus,
-                    "p_mw": self._dsapp.getBusInfoReal(bus, "GENERATOR_PG", g) * CASE_SBASE,
-                    "q_mvar": self._dsapp.getBusInfoReal(bus, "GENERATOR_QG", g) * CASE_SBASE,
+                    "p_mw": self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g) * CASE_SBASE,
+                    "q_mvar": self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g) * CASE_SBASE,
                     "vn_kv": vn_kv,
                     "min_q_mvar": self._dsapp.getBusInfoReal(bus, "GENERATOR_QMIN", g),
                     "max_q_mvar": self._dsapp.getBusInfoReal(bus, "GENERATOR_QMAX", g),
-                    "in_service": self._dsapp.getBusInfoBool(bus, "GENERATOR_STAT", g)
+                    "in_service": self._dsapp.getBusInfoInt(bus, "GENERATOR_STAT", g)
                 })
             for l in range(self._dsapp.numLoads(bus)):
                 # load list
-                load_list.append({
+                load_data.append({
+                    "tick": self._counter_time,
                     "name": self._dsapp.getBusInfoString(bus, "LOAD_ID", l),
                     "bus": bus,
-                    "p_mw": self._dsapp.getBusInfoReal(bus, "LOAD_PL", l),
-                    "q_mvar": self._dsapp.getBusInfoReal(bus, "LOAD_QL", l),
-                    "scaling": self._dsapp.getBusInfoInt(bus, "LOAD_SCALE", l), 
-                    "in_service": self._dsapp.getBusInfoBool(bus, "LOAD_STATUS", l)
+                    "p_mw": self._dsapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l),
+                    "q_mvar": self._dsapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l),
+                    "scaling": self._dsapp.getBusInfoReal(bus, "LOAD_SCALE", l), 
+                    "in_service": self._dsapp.getBusInfoInt(bus, "LOAD_STATUS", l)
                 })
+
+        return bus_data, gen_data, load_data
+
+    def _read_line_data(self, branch, elem_num, branch_info):
+        data_dict = {}
         
-        # branch frame
+        # record
+        data_dict["from_bus"] = branch_info["from_bus"]
+        data_dict["to_bus"] = branch_info["to_bus"]
+        
+        # voltages
+        data_dict["vn_from_kv"] = branch_info["vn_from_kv"]
+        data_dict["vn_to_kv"] = branch_info["vn_to_kv"]
+            
+        # p-values
+        data_dict["p_from_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num) * branch_info["f_case_sbase"]
+        data_dict["p_to_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', elem_num) * branch_info["t_case_sbase"]
+
+        # q-values
+        data_dict["q_from_mvar"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT', elem_num) * branch_info["f_case_sbase"]
+        data_dict["q_to_mvar"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT', elem_num) * branch_info["t_case_sbase"]
+
+        # current values
+        data_dict["i_from_ka"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num) * branch_info["f_case_sbase"]
+        data_dict["i_to_ka"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num) * branch_info["t_case_sbase"] # output in amps
+
+        data_dict["length_km"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_LENGTH", elem_num) 
+        data_dict["r_ohm_per_km"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_SEQ_RLINZ", elem_num)
+        data_dict["x_ohm_per_km"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_SEQ_XLINZ", elem_num)
+        data_dict["max_i_ka"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_RATING_A", elem_num) # - each branch - line connects two points and there could be multiple branches
+            
+        
+        return data_dict
+        
+    def _read_transformer_data(self, branch, elem_num, branch_info):
+        data_dict = {}
+        
+        # record
+        data_dict["hv_bus"] = branch_info["from_bus"]
+        data_dict["lv_bus"] = branch_info["to_bus"]
+
+        # voltages
+        data_dict["vn_hv_kv"] = branch_info["vn_from_kv"]
+        data_dict["vn_lv_kv"] = branch_info["vn_to_kv"]
+            
+        # p-values
+        data_dict["p_hv_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num) * branch_info["f_case_sbase"]
+        data_dict["p_lv_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', elem_num) * branch_info["t_case_sbase"]
+
+        # q-values
+        data_dict["q_hv_mvar"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT', elem_num) * branch_info["f_case_sbase"]
+        data_dict["q_lv_mvar"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT', elem_num) * branch_info["t_case_sbase"]
+
+        # current values
+        data_dict["i_hv_ka"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num) * branch_info["f_case_sbase"]
+        data_dict["i_lv_ka"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num) * branch_info["t_case_sbase"] # output in amps
+        
+        return data_dict
+        
+    def _read_line_transformer_data(self):
+        # objects for data collection
+        line_data = []
+        transformer_data = []
+        
+        # line level data - lines and branches could be different. The two end points can have multiple lines but only one branch. 
         nbranch = self._dsapp.totalBranches()
+        
+        # iterate over each branch
         for branch in range(0, nbranch):
-            # branch end points
+            # branch information
+            branch_info = {}
+            branch_info["name"] = self._dsapp.getBranchInfoString(branch, "BRANCH_NAME")
+
+            # end points
             (f, t) = self._dsapp.getBranchEndpoints(branch)
+            branch_info["from_bus"] = self.BUS_DICT[f]
+            branch_info["to_bus"] = self.BUS_DICT[t]
+
+            # from and to bus kv
+            branch_info["f_buskv"] = self._dsapp.getBusInfoReal(
+                branch_info["from_bus"], "BUS_BASEKV")
+            branch_info["t_buskv"] = self._dsapp.getBusInfoReal(
+                branch_info["to_bus"], "BUS_BASEKV")
+            
+            # from and to bus case sbase
+            branch_info["f_case_sbase"] = self._dsapp.getBusInfoReal(
+                branch_info["from_bus"], "CASE_SBASE")
+            branch_info["t_case_sbase"] = self._dsapp.getBusInfoReal(
+                branch_info["to_bus"], "CASE_SBASE")
+            
+            # from and to voltage
+            branch_info["vn_from_kv"] = self._dsapp.getBusInfoReal(
+                branch_info["from_bus"], 'BUS_VMAG_CURRENT') * branch_info["f_buskv"]
+            branch_info["vn_to_kv"] = self._dsapp.getBusInfoReal(
+                branch_info["to_bus"], 'BUS_VMAG_CURRENT') * branch_info["t_buskv"]
 
             # number of lines
             n_elements = self._dsapp.getBranchInfoInt(branch, 'BRANCH_NUM_ELEMENTS')
+
             # iterate over each line
             for elem_num in range(n_elements):
-                # append data to branch list
-                branch_list.append({
-                        "name": self._dsapp.getBranchInfoString(branch, "BRANCH_NAME"), 
-                        "line_num": elem_num,
-                        "from_bus": f,
-                        "to_bus": t,
-                        "length_km": self._dsapp.getBranchInfoReal(branch, "BRANCH_LENGTH"), 
-                        "r_ohm_per_km": self._dsapp.getBranchInfoReal(branch, "BRANCH_SEQ_RLINZ"),
-                        "x_ohm_per_km": self._dsapp.getBranchInfoReal(branch, "BRANCH_SEQ_XLINZ"),
-                        "max_i_ka": 0.0, # BRANCH_RATING_A - each branch - line connects two points and there could be multiple branches
-                        # FIXME: Need in service value
-                        "in_service": True # self._dsapp.getBranchInfoBool(branch, "BRANCH_STATUS")
-                    })
+                # check if line or transformer
+                is_transformer = self._dsapp.getBranchInfoReal(branch, "BRANCH_TAP", elem_num)
 
+                if is_transformer == 1: # if transformer
+                    data_dict = self._read_transformer_data(branch, elem_num, branch_info)
+                else:
+                    data_dict = self._read_line_data(branch, elem_num, branch_info)
+                
+                # common data
+                data_dict["tick"] = self._counter_time
+                data_dict["branch_num"] = branch
+                data_dict["line_num"] = elem_num
+                data_dict["name"] = branch_info["name"]
+                data_dict["in_service"] = self._dsapp.getBranchInfoInt(branch, "BRANCH_STATUS", elem_num)
+
+                # append dict to list
+                if is_transformer == 1: # if transformer
+                    transformer_data.append(data_dict)
+                else:
+                    line_data.append(data_dict)
+                
+        return line_data, transformer_data
+    
+    def _build_grid(self):
+        # create grid object and update data
+        grid = Grid()
+        self._dsapp.updateData()   
+
+        # then fill the "n_sub" and "sub_info"
+        self.n_sub = self._dsapp.totalBuses()
+
+        # read bus, load, and gen data
+        bus_data, gen_data, load_data = self._read_bus_gen_load_data()
         # convert to dataframes
         # bus and its results
-        grid.bus = pd.DataFrame(bus_list)
-        grid.res_bus = pd.DataFrame(index=grid.bus.index, columns=["vn_kv"])
-        # print(grid.bus)
+        grid.bus = pd.DataFrame(bus_data)
+        grid.res_bus = pd.DataFrame(index=grid.bus.index, columns=grid.bus.columns)
         
         # gen and its results
-        grid.gen = pd.DataFrame(gen_list)
-        grid.res_gen = pd.DataFrame(index=grid.gen.index, columns=["p_mw", "q_mvar", "vn_kv"])
-        # print(grid.gen)
+        grid.gen = pd.DataFrame(gen_data)
+        grid.res_gen = pd.DataFrame(index=grid.gen.index, columns=grid.gen.columns)
         
         # load and its results
-        grid.load = pd.DataFrame(load_list)
-        grid.res_load = pd.DataFrame(index=grid.load.index, columns=["p_mw", "q_mvar"])
-        print(grid.load)
+        grid.load = pd.DataFrame(load_data)
+        grid.res_load = pd.DataFrame(index=grid.load.index, columns=grid.load.columns)
         
+        # create bus dict for translation
+        self.BUS_DICT = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
+
+        # read line and transformer data
+        line_data, transformer_data = self._read_line_transformer_data()
+
         # line and its results
         # NOTE: bus dict is needed to translate actual bus number to dataframe index. The from_bus and to_bus columns in grid.line needs to be replaced with this new index to be consistent across the code. 
-        self.BUS_DICT = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
-        grid.line = pd.DataFrame(branch_list)
-        grid.line.from_bus = [self.BUS_DICT[b] for b in grid.line.from_bus]
-        grid.line.to_bus = [self.BUS_DICT[b] for b in grid.line.to_bus]
-        grid.res_line = pd.DataFrame(index=grid.line.index, columns=["p_from_mw", "p_to_mw", "q_from_mvar", "q_to_mvar", "vn_from_kv", "vn_to_kv", "i_from_ka", "i_to_ka"])
+        grid.line = pd.DataFrame(line_data)
+        grid.res_line = pd.DataFrame(index=grid.line.index, columns=grid.line.columns)
         
         # transformers and its results - variabe called BRANCH_TAP in the line - non-zero tap implies transformer
-        grid.trafo = pd.DataFrame(columns=["name", "from_bus", "to_bus", "hv_bus", "lv_bus", "in_service"])
-        grid.res_trafo = pd.DataFrame(index=grid.trafo.index, columns=["p_hv_mw", "p_lv_mw", "q_hv_mvar", "q_lv_mvar", "vn_hv_kv", "vn_lv_kv", "i_hv_ka", "i_lv_ka"])
+        grid.trafo = pd.DataFrame(transformer_data)
+        grid.res_trafo = pd.DataFrame(index=grid.trafo.index, columns=grid.trafo.columns)
         
         # return
         return grid
@@ -144,7 +257,7 @@ class GridPACKBackend(Backend):
                   filename : Optional[Union[os.PathLike, str]]=None
         ) -> None:
         '''
-        # called once
+        # called once   
         This step is called only ONCE, when the grid2op environment is created. In this step, you read a grid file (in the format that you want) and the backend should inform grid2op about the "objects" on this powergrid and their location.
         '''
         # first load the grid from the file
@@ -314,8 +427,6 @@ class GridPACKBackend(Backend):
         # update load values
         if len(load_dict) != 0:
             load_frame = pd.DataFrame(load_dict).T
-            print(self._grid.bus)
-            print(load_frame)
             self._dsapp.scatterInjectionLoadNew_compensateY(
                 load_frame.index.values,
                 load_frame["p"].values,
@@ -382,118 +493,24 @@ class GridPACKBackend(Backend):
         #         # element was connected
         #         dt.iloc[line_id_db]["in_service"] = True
 
-    def _random_data_generator(self, n_rows, columns):
-        if n_rows > 0:
-            new_data = np.random.rand(n_rows, len(columns))
-            return pd.DataFrame(new_data, columns=columns, dtype="float32")
-        else:
-            return pd.DataFrame(columns=columns)
-
     def _update_bus_gen_load_data(self):
-        # load and generator data
-        # NOTE: Generator and Load values change only when there are dynamic load/generators. If they are not dynamic, the code currently returns the previous value. 
-        bus_data = []
-        gen_data = []
-        load_data = []
-        for bus in range(self.n_sub):
-            # Dynamic simulation values are in pu, need to convert them MW and MVar
-            CASE_SBASE = self._dsapp.getBusInfoReal(bus, "CASE_SBASE")
-            BUS_BASEKV = self._dsapp.getBusInfoReal(bus, "BUS_BASEKV")
-            
-            # BUS_VMAG_CURRENT - latest value
-            bus_data.append({
-                "tick": self._counter_time,
-                "vn_kv": self._dsapp.getBusInfoReal(bus, 'BUS_VMAG_CURRENT') * BUS_BASEKV,
-                "vn_kv_pu": self._dsapp.getBusInfoReal(bus, 'BUS_VMAG_CURRENT')
-            })
-            
-            # bus list
-            for g in range(self._dsapp.numGenerators(bus)):
-                # gen data
-                gen_data.append({
-                    "tick": self._counter_time,
-                    "p_mw": self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g) * CASE_SBASE,
-                    "q_mvar": self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g) * CASE_SBASE,
-                    "vn_kv": self._dsapp.getBusInfoReal(bus, 'BUS_VMAG_CURRENT') * BUS_BASEKV
-                })
-            for l in range(self._dsapp.numLoads(bus)):
-                # load list
-                load_data.append({
-                    "tick": self._counter_time,
-                    "p_mw": self._dsapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l),
-                    "q_mvar": self._dsapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l)
-                })
-            
+        # read data
+        bus_data, gen_data, load_data = self._read_bus_gen_load_data()
+
+        # update the dataframe
         self._grid.res_bus = pd.DataFrame(bus_data)
-        self._grid.res_load = pd.DataFrame(load_data)
         self._grid.res_gen = pd.DataFrame(gen_data)
-    
+        self._grid.res_load = pd.DataFrame(load_data)
+        
     def _update_line_transformer_data(self):
-        # line level data - lines and branches could be different. The two end points can have multiple lines but only one branch. 
-        nbranch = self._dsapp.totalBranches()
-        line_data = []
-        # iterate over each branch
-        for branch in range(0, nbranch):
-            # end points
-            (f, t) = self._dsapp.getBranchEndpoints(branch)
-            from_bus = self.BUS_DICT[f]
-            to_bus = self.BUS_DICT[t]
-
-            # from and to bus kv
-            f_buskv = self._dsapp.getBusInfoReal(from_bus, "BUS_BASEKV")
-            t_buskv = self._dsapp.getBusInfoReal(to_bus, "BUS_BASEKV")
-            
-            # from and to bus case sbase
-            f_case_sbase = self._dsapp.getBusInfoReal(from_bus, "CASE_SBASE")
-            t_case_sbase = self._dsapp.getBusInfoReal(to_bus, "CASE_SBASE")
-            
-            # from and to voltage
-            vn_from_kv = self._dsapp.getBusInfoReal(from_bus, 'BUS_VMAG_CURRENT') * f_buskv
-            vn_to_kv = self._dsapp.getBusInfoReal(to_bus, 'BUS_VMAG_CURRENT') * t_buskv
-
-            # number of lines
-            n_elements = self._dsapp.getBranchInfoInt(branch, 'BRANCH_NUM_ELEMENTS')
-            # iterate over each line
-            for elem_num in range(n_elements):
-                # empty object
-                line_dict = dict()
-                line_dict["tick"] = self._counter_time
-                line_dict["branch_num"] = branch
-                line_dict["line_num"] = elem_num
-
-                # end points
-                (f, t) = self._hadapp.getBranchEndpoints(branch)
-                line_dict["from_bus"] = f
-                line_dict["to_bus"] = t
-                
-                # from voltage
-                from_bus = self._grid.bus.index[self._grid.bus['id'] == f].values[0]
-                line_dict["vm_from_pu"] = self._hadapp.getBusInfoReal(from_bus, 'BUS_VOLTAGE_MAG') # * Bus_basekV
-                
-                # to voltage
-                to_bus = self._grid.bus.index[self._grid.bus['id'] == t].values[0]
-                line_dict["vm_to_pu"] = self._hadapp.getBusInfoReal(to_bus, 'BUS_VOLTAGE_MAG') # * Bus_basekV
-
-                # p-values
-                line_dict["p_from_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num) * f_case_sbase
-                line_dict["p_to_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', elem_num) * t_case_sbase
-
-                # q-values
-                line_dict["q_from_mvar"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT', elem_num) * f_case_sbase
-                line_dict["q_to_mvar"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT', elem_num) * t_case_sbase
-
-                # current values
-                line_dict["i_from_ka"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num)
-                line_dict["i_to_ka"] = self._hadapp.getBranchInfoReal(branch, 'BRANCH_IRFLOW_CURRENT', elem_num)
-
-                # append dict to list
-                line_data.append(line_dict)
+        # read data
+        line_data, trafo_data = self._read_line_transformer_data()
         
         # line data
         self._grid.res_line = pd.DataFrame(line_data)
         
         # transformer data
-        self._grid.res_trafo = self._random_data_generator(self._grid.trafo.shape[0], columns=self._grid.res_trafo.columns)
+        self._grid.res_trafo = pd.DataFrame(trafo_data)
     
     def _update_data(self):
         # to get current data from dynamic simulation to data collection object
@@ -504,6 +521,22 @@ class GridPACKBackend(Backend):
 
         # update line and transformer data
         self._update_line_transformer_data()
+
+    def _reset_data_collectors(self):
+        # output for plotting
+        self.bus_logger = []
+        self.gen_logger = []
+        self.load_logger = []
+        self.line_logger = []
+        self.trafo_logger = []
+
+    def _log_data(self):
+        # append to out list
+        self.bus_logger.append(pd.concat([self._grid.bus[["id"]], self._grid.res_bus], axis=1))
+        self.gen_logger.append(pd.concat([self._grid.gen[["name", "bus"]], self._grid.res_gen], axis=1))
+        self.load_logger.append(pd.concat([self._grid.load[["name", "bus"]], self._grid.res_load], axis=1))
+        self.line_logger.append(self._grid.res_line)
+        self.trafo_logger.append(self._grid.res_trafo)
     
     def runpf(self, is_dc : bool=False):
         '''
