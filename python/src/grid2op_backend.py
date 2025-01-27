@@ -116,8 +116,7 @@ class GridPACKBackend(Backend):
         data_dict["length_km"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_LENGTH", elem_num) 
         data_dict["r_ohm_per_km"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_SEQ_RLINZ", elem_num)
         data_dict["x_ohm_per_km"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_SEQ_XLINZ", elem_num)
-        data_dict["max_i_ka"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_RATING_A", elem_num) # - each branch - line connects two points and there could be multiple branches
-            
+        # data_dict["max_i_ka"] = 
         
         return data_dict
         
@@ -202,6 +201,7 @@ class GridPACKBackend(Backend):
                 data_dict["line_num"] = elem_num
                 data_dict["name"] = branch_info["name"]
                 data_dict["in_service"] = self._dsapp.getBranchInfoInt(branch, "BRANCH_STATUS", elem_num)
+                data_dict["thermal_limit_a"] = self._dsapp.getBranchInfoReal(branch, "BRANCH_RATING_A", elem_num) # - each branch - line connects two points and there could be multiple branches
 
                 # append dict to list
                 if is_transformer == 1: # if transformer
@@ -511,7 +511,7 @@ class GridPACKBackend(Backend):
         
         # transformer data
         self._grid.res_trafo = pd.DataFrame(trafo_data)
-    
+        
     def _update_data(self):
         # to get current data from dynamic simulation to data collection object
         self._dsapp.updateData()
