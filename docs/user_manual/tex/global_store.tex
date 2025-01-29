@@ -38,7 +38,7 @@ Figure~\ref{fig:global-store}.
 
 \begin{figure}
   \centering
-    \includegraphics*[width=6.5in, height=3.72in, keepaspectratio=true]{figures/Global-store}
+    \includegraphics*[width=6.5in, height=3.72in, keepaspectratio=true]{figures/Global-store.png}
   \caption{Schematic diagram of data storage in a GlobalStore object. Vectors can have any length and some indices can be missing data.}
   \label{fig:global-store}
 \end{figure}
@@ -70,3 +70,5 @@ void getVector(const int idx, std::vector<data_type> &vec)
 This function retrieves the data corresponding to index \texttt{\textbf{idx}} from global storage and stores it in a local vector. The \texttt{\textbf{getVector}} function can be called an arbitrary number of times after the data has been uploaded. If no data is found, the return vector will have length zero.
 
 One note about using the \texttt{\textbf{getVector}} function is worth mentioning. The implementation of the \texttt{\textbf{GlobalStore}} class uses some Global Array calls that can potentially interfere with MPI calls in a subsequent function call, resulting in the code hanging. If this occurs, it is usually possible to prevent the hang by calling \texttt{\textbf{Communicator::sync}} on the communicator that was used to define the \texttt{\textbf{GlobalStore}} object. This should be done after completing all \texttt{\textbf{getVector}} calls but before making calls to other parallel functions.
+\newline
+\hyperlink{topDoc}{\color{blue}{Top}}

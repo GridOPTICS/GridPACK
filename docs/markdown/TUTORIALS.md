@@ -1,8 +1,8 @@
 ## Tutorials
 These links point to some GridPACK tutorials that have been used in the past.
 Some of this material may be out of data, so when in doubt, refer to the
-[GridPACK User Manual](../user_manual/GridPACK.pdf). We recommend downloading
-these files to your workstation before viewing them. The links are all to PDFs
+[GridPACK User Manual](https://gridpack.readthedocs.io/en/latest/index.html).
+The links are all to PDFs
 of the tutorials, but you can also access the original Power Point presentations
 from the `$GRIDPACK/docs/tutorial` folder in the Github repository.
 

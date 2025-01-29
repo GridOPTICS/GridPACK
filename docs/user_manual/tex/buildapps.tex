@@ -7,7 +7,7 @@ For applications developed outside the GridPACK distribution, the build process 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
- 1 cmake_minimum_required(VERSION 2.6.4)
+ 1 cmake_minimum_required(VERSION 3.5.0)
  2
  3 if (NOT GRIDPACK_DIR)
  4   set(GRIDPACK_DIR /HOME/gridpack-install
@@ -59,3 +59,5 @@ Lines 20-25 define the name of the executable and all the source code files that
 The remaining lines 28-42 are optional and can be used to automatically copy files from the application source file directory to the build directory. These could include example input files or external configuration files that are called by the code to set internal parameters. The \texttt{\textbf{add\_custom\_target}} command on line 28 defines a list of files and what should be done with them. In this example, the two files \texttt{\textbf{input.xml}} and \texttt{\textbf{myapp\_test.raw}} are the files to be copied. The \texttt{\textbf{COMMAND}} line specifies the action (copy) and the next two lines specify the location of the file to be copied and its destination. The \texttt{\textbf{DEPENDS}} keyword (line 38) indicates that any time the \texttt{\textbf{input.xml}} or \texttt{\textbf{myapp\_test.raw}} files are modified, they should be recopied to the build directory if make is invoked and the \texttt{\textbf{add\_dependencies}} command (line 42) binds the custom target to the build of the executable.
 
 A template file for \texttt{\textbf{CMakeLists.txt}} can be found in the \texttt{\textbf{src}} directory under \texttt{\textbf{CMakeLists.template.txt}}. Users should copy this file to their application directory, modify the name to \texttt{\textbf{CMakeLists.txt}} and add their own source files and test input.
+\newline
+\hyperlink{topDoc}{\color{blue}{Top}}
