@@ -10,7 +10,6 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-06-12 09:12:12 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -27,7 +26,6 @@
 #ifndef _complex_operators_hpp_
 #define _complex_operators_hpp_
 
-#include <functional>
 #include <algorithm>
 
 #include <boost/static_assert.hpp>
@@ -70,7 +68,7 @@ equate<RealType, ComplexType>(const ComplexType& f)
 // base_unary_function
 // -------------------------------------------------------------
 template <typename T>
-struct base_unary_function : public std::unary_function<T, T>
+struct base_unary_function
 {
   virtual T operator() (const T& t) const = 0;
 };
@@ -303,7 +301,7 @@ imaginary_value<ComplexType>::operator() (const ComplexType& x) const
 // base_accumulator_function
 // -------------------------------------------------------------
 template <typename T, typename ResultType>
-struct base_accumulator_function : public std::unary_function<T, void>
+struct base_accumulator_function
 {
   ResultType accum;
   virtual void operator() (const T& t) = 0;
@@ -312,7 +310,7 @@ struct base_accumulator_function : public std::unary_function<T, void>
     return accum;
   }
   base_accumulator_function(void) 
-    : std::unary_function<T, void>(), accum(0.0)
+    : accum(0.0)
   {}
 };
 
@@ -432,7 +430,7 @@ infinity_norm<ComplexType>::operator() (const ComplexType& x)
 // binary_operation
 // -------------------------------------------------------------
 template <typename T> 
-struct base_binary_function : public std::binary_function<T, T, T>
+struct base_binary_function
 {
   virtual T operator() (const T& x1, const T& x2) const = 0;
 };

@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2024-10-10 08:41:42 d3g096
+ * @date   2025-01-23 07:52:50 d3g096
  * 
  * @brief  
  * 
@@ -295,7 +295,7 @@ protected:
       ierr = TSSetMaxSteps(p_ts, maxsteps); CHKERRXX(ierr);
       ierr = TSSetMaxTime(p_ts, maxtime); CHKERRXX(ierr);
       ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr); 
-      ierr = TSSolve(p_ts, PETSC_NULL);
+      ierr = TSSolve(p_ts, PETSC_NULLPTR);
       // std::cout << this->processor_rank() << ": "
       //           << "DAESolver::solve() returned " << ierr 
       //           << std::endl;
@@ -473,7 +473,11 @@ protected:
 
   /// Routine called every step if an event manager is specified
   static PetscErrorCode
+#if PETSC_VERSION_GE(3,21,0)
+  EventHandler(TS ts, PetscReal t, Vec U, PetscReal fvalue[], void* ctx)
+#else
   EventHandler(TS ts, PetscReal t, Vec U, PetscScalar fvalue[], void* ctx)
+#endif
   {
     PetscErrorCode ierr(0);
     void *dummy;
@@ -489,16 +493,23 @@ protected:
       state(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
                                                                U, false)));
 
-    // This gets a little tricky.  If PETSc is built w/ complex,
-    // fvalue will be complex, and evalues, whether real or complex,
-    // can be assigned directly.  If T is complex and PetscScalar is
-    // real, then equate<> will return the real part of T.  This is
-    // what PETSc does internally to check a complex event value. So,
-    // this *should* work for PETSc.
+    
+    // This gets a little tricky.  Before 3.21.0, if PETSc is built w/
+    // complex, fvalue will be complex, and evalues, whether real or
+    // complex, can be assigned directly.  If T is complex and
+    // PetscScalar is real, then equate<> will return the real part of
+    // T.  This is what PETSc does internally to check a complex event
+    // value. So, this *should* work for PETSc.  With 3.21.0 and
+    // later, fvalues is PetscReal.  Perhaps in the future, evalues
+    // should just be double?
 
     const T *evalues = solver->p_eventManager->values(t, *state);
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
+#if PETSC_VERSION_GE(3,21,0)
+      fvalue[i] = equate<PetscReal, T>(evalues[i]);
+#else
       fvalue[i] = equate<PetscScalar, T>(evalues[i]);
+#endif
     }
 
     ierr = VecAssemblyBegin(U);

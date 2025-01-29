@@ -7,7 +7,7 @@
 /**
  * @file   partition_test.cpp
  * @author William A. Perkins
- * @date   2014-12-09 10:01:37 d3g096
+ * @date   2024-08-20 06:49:16 d3g096
  * 
  * @brief  Unit test suite for various partition classes.
  * 
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE( adjacency )
   
   using gridpack::network::AdjacencyList;
 
-  std::auto_ptr<AdjacencyList> 
+  std::unique_ptr<AdjacencyList> 
     adlist(simple_adjacency_list(world, global_nodes));
 
   for (int p = 0; p < world.size(); ++p) {
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE( random_partition )
   
   using gridpack::network::GraphPartitioner;
 
-  std::auto_ptr<GraphPartitioner> 
+  std::unique_ptr<GraphPartitioner> 
     partitioner(simple_graph_partitioner(world, global_nodes));
 
   partitioner->partition();
