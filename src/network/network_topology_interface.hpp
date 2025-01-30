@@ -80,46 +80,6 @@ public:
    **/
   virtual void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const = 0;
 
-  /// Get the branch indexes connected to a bus 
-  /**
-   * @e collective
-   *
-   * @param idx original bus index
-   *
-   * @result vector of original branch indexes
-   **/
-  virtual std::vector<int> getConnectedBranches(int oidx) const = 0;
-
-  /// Get the bus indexes connected to a branch
-  /**
-   * @e collective
-   *
-   * @param idx original branch index
-   * @param fbus pointer to location to put from-bus (original) index
-   * @param tbus pointer to location to put to-bus (original) index
-   **/
-  virtual void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const = 0;
-
-  /// Get the branch indexes connected to a bus 
-  /**
-   * @e collective
-   *
-   * @param idx original bus index
-   *
-   * @result vector of original branch indexes
-   **/
-  virtual std::vector<int> getConnectedBranches(int oidx) const = 0;
-
-  /// Get the bus indexes connected to a branch
-  /**
-   * @e collective
-   *
-   * @param idx original branch index
-   * @param fbus pointer to location to put from-bus (original) index
-   * @param tbus pointer to location to put to-bus (original) index
-   **/
-  virtual void getBranchEndpoints(const int& idx, int *fbus, int *tbus) const = 0;
-
 };
 
 } // namespace gridpack
