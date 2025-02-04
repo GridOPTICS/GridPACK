@@ -92,7 +92,7 @@ then
       gashopts="--enable-shared=no --enable-static=yes"
   fi
 
-  ga_version="5.8.2"
+  ga_version="5.9"
   echo "Downloading GA-$ga_version"
 
   wget "https://github.com/GlobalArrays/ga/releases/download/v${ga_version}/ga-${ga_version}.tar.gz"
@@ -187,6 +187,27 @@ export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 
 cd ${GRIDPACK_ROOT_DIR}
 
+# Write important variables to a script file that can be used to
+# restore this environment later
+
+envbash="${GRIDPACK_ROOT_DIR}/gridpack_env.sh"
+envcsh="${GRIDPACK_ROOT_DIR}/gridpack_env.csh"
+savevars="\
+    GRIDPACK_ROOT_DIR \
+    GP_EXT_DEPS \
+    LD_LIBRARY_PATH \
+    DYLD_LIBRARY_PATH \
+"
+
+echo "# GridPACK dependency environment variables" > "$envbash"
+echo "# GridPACK dependency environment variables" > "$envcsh"
+
+for var in $savevars; do
+    echo "export $var=${!var}" >> "$envbash"
+    echo "setenv $var ${!var}" >> "$envcsh"
+done
+
 echo "Completed installing GridPACK dependencies in ${GP_EXT_DEPS}"
+echo "Restore environment with \". $envbash\" or \"source $envcsh\""
 
 set +x
