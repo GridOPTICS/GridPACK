@@ -1,7 +1,7 @@
 # GridPACK Python Wrapper
 
 This provides Python wrappers to a limited set of the
-[GridPACK](https://www.gridpack.org) library.  The HADREC application
+[GridPACK](https://github.com/GridOPTICS/GridPACK) library.  The HADREC application
 is the main capability currently exposed.
 
 ## Requirements

@@ -183,7 +183,7 @@ install using
 
 ## GridPACK
 
-[Obtain the GridPACK release or development code](https://www.gridpack.org/wiki/index.php/Download_GridPACK)
+[Obtain the GridPACK release or development code](https://github.com/GridOPTICS/GridPACK)
 and put it in a convenient directory, like `$HOME/gridpack/src`. 
 
 Then, change into the top-most GridPACK source directory, make a build directory

@@ -86,5 +86,5 @@ ground up. The “Contingency Analysis” section provides some information
 on how to build applications that are based on the existing GridPACK
 application modules. Users that are interested in modifying the core
 functionality in GridPACK can look at the Doxygen documentation online
-under the “GridPACK API Documentation” link on www.gridpack.org, in
+under the “GridPACK API Documentation” link on https://github.com/GridOPTICS/GridPACK, in
 addition to the documentation presented below.
