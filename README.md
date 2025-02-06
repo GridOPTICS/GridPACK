@@ -71,7 +71,7 @@ Copyright &copy; 2013, Battelle Memorial Institute.
 
 GridPACK<sup>TM</sup> is a free software distributed under a BSD 2-clause license. You may reuse, modify, and redistribute the software. 
 
-See the [license](src/LICENSE.md) file for details.
+See the [license](docs/markdown/LICENSE.md) file for details.
 
 
 ## Disclaimer
