@@ -5,12 +5,7 @@ set -x
 # This script should be run from the top-level GridPACK directory.
 
 # Flag for install GridPACK and GridPACK python wrapper
-<<<<<<< HEAD
 install_gridpack=false
-=======
-install_gridpack=true
-install_gridpack_shared=false
->>>>>>> eeeee6638b9f2307a05cd4d3dd61d1e44fe60431
 install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
@@ -116,11 +111,6 @@ then
     pyvnum=`${python_exe} -V | sed -e 's/Python  *\([23]\)\.\([0-9][0-9]*\)\..*/\1.\2/' `
     pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages:${GRIDPACK_DIR}/local/lib/python${pyvnum}/dist-packages"
     
-<<<<<<< HEAD
-    # PYTHONPATH="${GRIDPACK_DIR}/lib/python:${PYTHONPATH}"
-    # export PYTHONPATH
-    ${python_exe} setup.py install # --home="$GRIDPACK_DIR"
-=======
     if [ -z "$PYTHONPATH" ]; then
         PYTHONPATH="${pydir}:${PYTHONPATH}"
     else
@@ -130,7 +120,6 @@ then
 
     # A quick check to see if the Python module is available
     ${python_exe} -c 'import gridpack'
->>>>>>> eeeee6638b9f2307a05cd4d3dd61d1e44fe60431
     
 fi
 
