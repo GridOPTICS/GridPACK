@@ -24,13 +24,12 @@ More general information on configuring the GridPACK build can be found in the
 sections below and additional information on libraries used by GridPACK can be
 found [here](REQUIRED_SOFTWARE.md).
 
-* [Ubuntu Linux 16.04](DUMMY.md)
 * [Ubuntu Linux 18.04](DUMMY.md)
 * [Debian Linux](DUMMY.md)
 * [CentOS or RHEL 7](DUMMY.md)
 * [CentOS or RHEL 6](DUMMY.md)
 * [PNNL RC Cluster (Linux cluster with Infiniband)](platforms/RC_CLUSTER.md)
-* [Mac OS X (High Sierra) with MacPorts](DUMMY.md)
+* [Mac OS X Sonoma with MacPorts](platforms/MacOSX.md)
 
 If you run into problems, feel free to contact us for further help. You can also
 look at our [troubleshooting page](DUMMY.md).

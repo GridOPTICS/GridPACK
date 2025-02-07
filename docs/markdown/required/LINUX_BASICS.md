@@ -79,8 +79,7 @@ include them in your configure script!
 
 For most systems, it is possible to install CMake using modules or an
 installation capability such as `yum`.  In the case that this is not possible
-or your version is too old, you can build it using the
-commands below.
+or your version is too old, you can build it using the commands below.
 
 You will need
 to start by downloading the CMake tar file (e.g. cmake-3.24.3.tar.gz) from the
@@ -154,7 +153,7 @@ build the libraries.
 
 The most direct way to download tar files on a Linux machine is to use a web
 browser such as Firefox to download files to a local download directory. These
-can then be moved to another location such are your GridPACK software directory.
+can then be moved to another location such as your GridPACK software directory.
 
 If, for some reason, you do not have a web browser on your machine, you can use
 the `wget` command. This has the form

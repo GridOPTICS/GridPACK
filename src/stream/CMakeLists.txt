@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:18:01 d3g096
+# Last Change: 2024-08-20 07:43:59 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_stream
@@ -18,17 +18,9 @@ add_library(gridpack_stream
 )
 
 gridpack_set_library_version(gridpack_stream)
-add_dependencies(gridpack_stream external_build)
-
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_stream)
-endif()
 
 set(target_libraries
-    gridpack_stream
-    ${GA_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
+  gridpack_stream
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -51,9 +51,9 @@ Boost configuration in GridPACK should report the results
 ```
 
 If you need to build Boost yourself, refer to the documentation on building
-GridPACK on individual platforms for additional details on build Boost. If an
-attempt to configure and build Boost fails, it usually is a good idea to fix the
-build script and then remove the existing Boost directory and create a new one
+GridPACK on individual platforms for additional details. If an attempt to
+configure and build Boost fails, it usually is a good idea to fix the build
+script and then remove the existing Boost directory. Create a new Boost directory
 by untarring the Boost tarball. Attempts to resume a failed Boost build after
 fixing the build script are usually unsuccessful.
 
@@ -96,17 +96,7 @@ replace the first line in the above script with
 
 Make sure you include the spaces around ":" and before ";".
 
-Boost has a tendency to use cutting-edge features of the C++ compiler so it is a
-good idea to use a compiler version that was released at the same time as the
-Boost version you are working with. If you are having problems, you may have
-better luck moving to an earlier version of Boost. If the Boost build fails, you
-should delete the entire boost directory and start from scratch after making
-corrections to your build script. Restarting a failed Boost build does not
-appear to work in most instances.
-
-If you want to use Intel compilers modify the `--with-toolset=gcc` line to
-`--with-toolset=intel-linux`. For shared library builds, modify the two link lines
-to
+To build Boost as a shared library, modify the two link lines to
 
 ```
     ./b2 -a -d+2 link=shared stage

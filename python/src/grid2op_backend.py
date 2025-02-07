@@ -485,6 +485,8 @@ class GridPACKBackend(Backend):
         self._grid.res_bus = pd.DataFrame(bus_data)
         self._grid.res_gen = pd.DataFrame(gen_data)
         self._grid.res_load = pd.DataFrame(load_data)
+
+        print(self._grid.res_bus, self._grid.res_gen, self._grid.res_load)
         
     def _update_line_transformer_data(self):
         # read data

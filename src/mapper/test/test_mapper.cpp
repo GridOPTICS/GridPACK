@@ -138,7 +138,7 @@ class TestBus
     return nghbrs.size()+1;
   }
 
-  void matrixGetValues(gridpack::ComplexType *values, int *rows, int *cols) {
+  void matrixGetValues(int *nvals,gridpack::ComplexType *values, int *rows, int *cols) {
     int i, im, jm, nsize, idx, jdx1, jdx2;
     std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > nghbrs;
     getNeighborBranches(nghbrs);
@@ -159,6 +159,7 @@ class TestBus
         values[i] = static_cast<gridpack::ComplexType>(idx + jdx1);
       }
     }
+    *nvals = nsize + 1;
     values[nsize] = idx;
     rows[nsize] = im;
     jm = matrixGetColIndex(0);
@@ -358,7 +359,7 @@ class TestBranch
     return 2;
   }
 
-  void matrixGetValues(gridpack::ComplexType *values, int *rows, int *cols) {
+  void matrixGetValues(int *nvals,gridpack::ComplexType *values, int *rows, int *cols) {
     boost::shared_ptr<gridpack::component::BaseComponent> bus;
     int im, jm, idx, jdx1, jdx2;
     im = matrixGetRowIndex(0);
@@ -374,6 +375,8 @@ class TestBranch
       (dynamic_cast<gridpack::component::BaseBusComponent*>(bus.get())->getGlobalIndex());
     rows[1] = im;
     cols[1] = jm;
+
+    *nvals = 2;
   }
 
   int vectorNumElements() const

@@ -127,7 +127,7 @@ protected:
       // set the 
       ierr = SNESSetOptionsPrefix(p_snes, option_prefix.c_str()); CHKERRXX(ierr);
 
-      ierr = SNESMonitorSet(p_snes, MonitorNorms, PETSC_NULL, PETSC_NULL); CHKERRXX(ierr);
+      ierr = SNESMonitorSet(p_snes, MonitorNorms, PETSC_NULLPTR, PETSC_NULLPTR); CHKERRXX(ierr);
 
       ierr = SNESSetTolerances(p_snes, 
                                this->p_functionTolerance, 

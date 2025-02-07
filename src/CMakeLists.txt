@@ -13,7 +13,7 @@
 
 
 # 
-cmake_minimum_required (VERSION 3.5.0)
+cmake_minimum_required (VERSION 3.22)
 
 project (GridPACK)
 
@@ -202,6 +202,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     -Wno-unused-variable
     -Wno-unused-but-set-variable
     -Wno-maybe-uninitialized
+    -Wall
     )
 endif()
 
@@ -211,6 +212,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     -Wno-c++11-extensions
     -Wno-c++11-compat-deprecated-writable-strings
     -Wno-format-security
+    -Wall
     -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
     )
 endif()
@@ -245,10 +247,15 @@ endif()
 
 option(BOOST_BUILD_PYTHON "Include Boost::Python in the Boost build" OFF)
 
+# Use the old way to find Boost
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 # These are the Boost libraries required here
   
 set(BOOST_BUILD_LIBS "")
-list(APPEND BOOST_BUILD_LIBS mpi serialization random filesystem system)
+list(APPEND BOOST_BUILD_LIBS mpi serialization random system)
 
 if(BUILD_BOOST)
 
@@ -263,9 +270,9 @@ if(BUILD_BOOST)
   list(APPEND GRIDPACK_TEST_LDPATH ${Boost_LIBRARY_DIR_DEBUG} ${Boost_LIBRARY_DIR_RELEASE} )
 else(BUILD_BOOST)
   message(STATUS "Checking Boost ...")
-  find_package(Boost 1.53
+  find_package(Boost 1.70
     COMPONENTS ${BOOST_BUILD_LIBS}
-    REQUIRED
+    REQUIRED CONFIG
     )
 endif(BUILD_BOOST)
 message(STATUS "Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
@@ -433,6 +440,44 @@ if(DOXYGEN_FOUND)
       )
 endif(DOXYGEN_FOUND)
 
+# ---------------------------------
+# EPRI IBR MODEL
+# ---------------------------------
+if(ENABLE_EPRI_IBR_MODEL)
+  # find EPRI_IBR_MODEL library
+  find_library(
+    EPRI_IBR_LIBRARY
+    NAMES epri1a
+    PATHS ${EPRI_IBR_DIR}
+          $ENV{EPRI_IBR_DIR}
+	  ENV
+	  LD_LIBRARY_PATH
+	  ENV
+	  DYLD_LIBRARY_PATH
+    PATH_SUFFIXES lib
+  )
+  if(EPRI_IBR_LIBRARY)
+    get_filename_component(EPRI_IBR_LIBRARY_DIR ${EPRI_IBR_LIBRARY} DIRECTORY)
+  endif()
+
+  find_path(
+    EPRI_IBR_INCLUDE_DIR
+    NAMES GFLIBR.h
+    PATHS ${EPRI_IBR_DIR} $ENV{EPRI_IBR_DIR}
+    PATH_SUFFIXES . include
+  )
+  if(EPRI_IBR_LIBRARY AND EPRI_IBR_INCLUDE_DIR)
+    message(STATUS "Found EPRI IBR Model library: ${EPRI_IBR_LIBRARY}")
+    message(STATUS "Found EPRI IBR Model include directory: ${EPRI_IBR_INCLUDE_DIR}")
+
+    add_definitions(-DENABLE_EPRI_IBR_MODEL=1)
+  else()
+    message(FATAL_ERROR "Did not find EPRI model. Please provide correct installation path -DEPRI_IBR_DIR=<path_to_library>")
+  endif()
+  
+  set(CMAKE_INSTALL_RPATH ${EPRI_IBR_LIBRARY_DIR} ${PETSC_DIR/lib} ${CMAKE_INSTALL_RPATH})
+endif(ENABLE_EPRI_IBR_MODEL)
+
 # -------------------------------------------------------------
 # Options for all Programs/Libraries
 # -------------------------------------------------------------
@@ -507,6 +552,7 @@ add_subdirectory(applications/contingency_analysis)
 add_subdirectory(applications/state_estimation)
 add_subdirectory(applications/kalman_ds)
 add_subdirectory(applications/dynamic_simulation_dae)
+add_subdirectory(applications/emt)
 add_subdirectory(applications/hadrec)
 add_subdirectory(applications/development/wind_dsa)
 add_subdirectory(applications/examples/hello_world)
@@ -518,6 +564,7 @@ add_subdirectory(applications/modules/dynamic_simulation_full_y)
 add_subdirectory(applications/modules/state_estimation)
 add_subdirectory(applications/modules/kalman_ds)
 add_subdirectory(applications/modules/dynamic_simulation_dae)
+add_subdirectory(applications/modules/emt)
 add_subdirectory(applications/modules/hadrec)
 add_subdirectory(applications/components/kds_matrix)
 add_subdirectory(applications/components/ds_matrix)

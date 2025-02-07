@@ -804,11 +804,12 @@ int gridpack::state_estimation::SEBus::matrixNumValues() const
 
 /**
  * Return values from a matrix block
+ * @param nvals: number of values to be inserted
  * @param values: pointer to matrix block values
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
 */
-void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int *rows, int *cols)
+void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *values, int *rows, int *cols)
 {
   p_v = *p_vMag_ptr;
   p_a = *p_vAng_ptr;
@@ -1014,7 +1015,8 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
         cols[ncnt] = jm;
         ncnt++;
       }
-    } 
+    }
+    *nvals = ncnt;
    }
   } else if (p_mode == R_inv) {
    if (!isIsolated()) {
@@ -1029,6 +1031,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
       rows[i] = matrixGetRowIndex(i);
       cols[i] = matrixGetColIndex(i);
     }
+    *nvals = nsize;
    }
   }
 }
@@ -1771,11 +1774,12 @@ int gridpack::state_estimation::SEBranch::matrixNumValues() const
 
 /**
  * Return values from a matrix block
+ * @param nvals: number of values inserted
  * @param values: pointer to matrix block values
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
 */
-void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, int *rows, int *cols)
+void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexType *values, int *rows, int *cols)
 {
   SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
   SEBus *bus2 = dynamic_cast<SEBus*>(getBus2().get());
@@ -2136,6 +2140,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
 
       }
     }
+    *nvals = ncnt;
   } else if (p_mode == R_inv) {
     int nsize = p_meas.size();
     int i;
@@ -2148,6 +2153,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
       rows[i] = matrixGetRowIndex(i);
       cols[i] = matrixGetColIndex(i);
     }
+    *nvals = nsize;
   }
   }
 }

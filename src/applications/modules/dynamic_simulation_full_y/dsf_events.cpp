@@ -182,3 +182,4 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
     }
   }
 }
+

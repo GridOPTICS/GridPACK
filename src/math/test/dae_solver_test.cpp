@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2023-09-13 07:44:15 d3g096
+ * @date   2024-08-20 06:46:59 d3g096
  * 
  * @brief  
  * 
@@ -87,13 +87,13 @@ public:
                            VectorType& F) = 0;
 
   /// Report the time before the timestep
-  static void reportPreTime(const double time)
+  static void reportPreTime(const double time,const double timestep,const VectorType& X)
   {
     std::cerr << "Pre  time step: the time is now " << time << std::endl;
   }
 
   /// Report the time after the timestep
-  static void reportPostTime(const double time)
+  static void reportPostTime(const double time, const VectorType& X)
   {
     std::cerr << "Post time step: the time is now " << time << std::endl;
   }
@@ -109,18 +109,20 @@ public:
   {
     TheSolverType::JacobianBuilder jbuilder = boost::ref(*this);
     TheSolverType::FunctionBuilder fbuilder = boost::ref(*this);
-    TheSolverType::StepFunction sfunc;
+    TheSolverType::PreStepFunction  prefunc;
+    TheSolverType::PostStepFunction postfunc;
+
     TheSolverType::EventManagerPtr eman;
     
     TheSolverType solver(comm, p_size, jbuilder, fbuilder, eman);
     solver.configure(conf);
 
-    sfunc = &reportPreTime;
-    solver.preStep(sfunc);
-    sfunc = &reportPostTime;
-    solver.postStep(sfunc);
+    prefunc = &reportPreTime;
+    solver.preStep(prefunc);
+    postfunc = &reportPostTime;
+    solver.postStep(postfunc);
 
-    std::auto_ptr<VectorType> x(initial(comm));
+    std::unique_ptr<VectorType> x(initial(comm));
     
     double t0(0.0), t(t0);
     solver.initialize(t0, 0.001, *x);
@@ -373,7 +375,7 @@ BOOST_AUTO_TEST_CASE( Rober )
 {
   gridpack::parallel::Communicator world;
 
-  std::auto_ptr<Problem> p(new RoberProblem());
+  std::unique_ptr<Problem> p(new RoberProblem());
 
   p->solve(world, test_config);
 }
@@ -382,7 +384,7 @@ BOOST_AUTO_TEST_CASE( Orego )
 {
   gridpack::parallel::Communicator world;
 
-  std::auto_ptr<Problem> p(new OregoProblem());
+  std::unique_ptr<Problem> p(new OregoProblem());
 
   p->solve(world, test_config);
 
@@ -392,7 +394,7 @@ BOOST_AUTO_TEST_CASE( CE )
 {
   gridpack::parallel::Communicator world;
 
-  std::auto_ptr<Problem> p(new CEProblem());
+  std::unique_ptr<Problem> p(new CEProblem());
 
   p->solve(world, test_config);
 

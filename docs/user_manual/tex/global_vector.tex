@@ -59,7 +59,7 @@ void upload()
 
 This function takes no arguments. After calling \texttt{\textbf{upload}}, it is
 no longer possible to continue adding data to the storage object using the
-\texttt{\textbf{addElement}} function.
+\texttt{\textbf{addElements}} function.
 
 After calling upload, any processor can retrieve data using the function
 
@@ -96,3 +96,5 @@ possible to prevent the hang by calling \texttt{\textbf{Communicator::sync}} on
 the communicator that was used to define the \texttt{\textbf{GlobalVector}}
 object. This should be done after completing all \texttt{\textbf{getData}} calls
 but before making calls to other parallel functions.
+\newline
+\hyperlink{topDoc}{\color{blue}{Top}}

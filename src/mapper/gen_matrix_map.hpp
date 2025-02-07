@@ -33,7 +33,7 @@
 namespace gridpack {
 namespace mapper {
 
-template <class _network>
+  template <class _network,typename T = gridpack::ComplexType, typename MatrixType = gridpack::math::Matrix>
 class GenMatrixMap {
   public: 
 /**
@@ -78,6 +78,10 @@ GenMatrixMap(boost::shared_ptr<_network> network)
 #ifdef NZ_PER_ROW
   if (p_nz_per_row != NULL) delete [] p_nz_per_row;
 #endif
+  delete [] rows;
+  delete [] cols;
+  delete [] values;
+
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -85,12 +89,12 @@ GenMatrixMap(boost::shared_ptr<_network> network)
  * Generate matrix from current component state on network
  * @return return a pointer to new matrix
  */
-boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
+boost::shared_ptr<MatrixType> mapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxRowIndex-p_minRowIndex+1;
-  boost::shared_ptr<gridpack::math::Matrix>
-    Ret(new gridpack::math::Matrix(comm, blockSize, p_colBlockSize, p_nz_per_row));
+  boost::shared_ptr<MatrixType>
+    Ret(new MatrixType(comm, blockSize, p_colBlockSize, p_nz_per_row));
   loadBusData(*Ret,false);
   loadBranchData(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
@@ -99,16 +103,32 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 }
 
 /**
+ * Generate matrix from current component state on network
+ * @return return a pointer to new matrix
+ */
+boost::shared_ptr<MatrixType> createMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxRowIndex-p_minRowIndex+1;
+  boost::shared_ptr<MatrixType>
+    Ret(new MatrixType(comm, blockSize, p_colBlockSize, p_nz_per_row));
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  Ret->zero();
+  return Ret;
+}
+
+/**
  * Generate matrix from current component state on network and return a
  * conventional pointer to it. Used for Fortran interface
  * @return return a pointer to new matrix
  */
-gridpack::math::Matrix* intMapToMatrix(void)
+MatrixType* intMapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxRowIndex-p_minRowIndex+1;
-  gridpack::math::Matrix*
-    Ret(new gridpack::math::Matrix(comm, blockSize, p_colBlockSize, p_nz_per_row));
+  MatrixType*
+    Ret(new MatrixType(comm, blockSize, p_colBlockSize, p_nz_per_row));
   loadBusData(*Ret,false);
   loadBranchData(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
@@ -121,7 +141,7 @@ gridpack::math::Matrix* intMapToMatrix(void)
  * Reset existing matrix from current component state on network
  * @param matrix existing matrix (should be generated from same mapper)
  */
-void mapToMatrix(gridpack::math::Matrix &matrix)
+void mapToMatrix(MatrixType &matrix)
 {
   int t_set, t_bus, t_branch;
   matrix.zero();
@@ -135,17 +155,41 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
  * Reset existing matrix from current component state on network
  * @param matrix existing matrix (should be generated from same mapper)
  */
-void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+void mapToMatrix(boost::shared_ptr<MatrixType> &matrix)
 {
   mapToMatrix(*matrix);
 }
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void mapValuesToMatrix(MatrixType &matrix)
+{
+  int t_set, t_bus, t_branch;
+  matrix.zero();
+  loadBusDataValues(matrix);
+  loadBranchDataValues(matrix);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+}
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void mapValuesToMatrix(boost::shared_ptr<MatrixType> &matrix)
+{
+  mapValuesToMatrix(*matrix);
+}
+
 
 /**
  * Overwrite elements of existing matrix. This can be used to overwrite selected
  * elements of a matrix
  * @param matrix existing matrix (should be generated from same mapper)
  */
-void overwriteMatrix(gridpack::math::Matrix &matrix)
+void overwriteMatrix(MatrixType &matrix)
 {
   loadBusData(matrix,false);
   loadBranchData(matrix,false);
@@ -158,7 +202,7 @@ void overwriteMatrix(gridpack::math::Matrix &matrix)
  * elements of a matrix
  * @param matrix existing matrix (should be generated from same mapper)
  */
-void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+void overwriteMatrix(boost::shared_ptr<MatrixType> &matrix)
 {
   overwriteMatrix(*matrix);
 }
@@ -168,7 +212,7 @@ void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  * elements of a matrix
  * @param matrix existing matrix (should be generated from same mapper)
  */
-void incrementMatrix(gridpack::math::Matrix &matrix)
+void incrementMatrix(MatrixType &matrix)
 {
   loadBusData(matrix,true);
   loadBranchData(matrix,true);
@@ -181,7 +225,7 @@ void incrementMatrix(gridpack::math::Matrix &matrix)
  * elements of a matrix
  * @param matrix existing matrix (should be generated from same mapper)
  */
-void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+void incrementMatrix(boost::shared_ptr<MatrixType> &matrix)
 {
   incrementMatrix(*matrix);
 }
@@ -577,18 +621,19 @@ void numberNonZeros(void)
     p_nz_per_row[i] = 0;
   }
   delete [] row_idx_buf;
-  int nvals;
+  int nvals=0;
   p_maxValues = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       nvals = p_network->getBus(i)->matrixNumValues();
       if (nvals > p_maxValues) p_maxValues = nvals;
       if (nvals > 0) {
-        gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
+        T *values = new T[nvals];
         int *rows = new int[nvals];
         int *cols = new int[nvals];
-        p_network->getBus(i)->matrixGetValues(values, rows, cols);
-        for (j=0; j<nvals; j++) {
+	int nv=0; /* Number of values */
+        p_network->getBus(i)->matrixGetValues(&nv,values, rows, cols);
+        for (j=0; j<nv; j++) {
 //          if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
             p_nz_per_row[rows[j]-p_minRowIndex]++;
 //          }
@@ -610,11 +655,12 @@ void numberNonZeros(void)
         rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
         rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
       }
-      gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
+      T *values = new T[nvals];
       int *rows = new int[nvals];
       int *cols = new int[nvals];
-      p_network->getBranch(i)->matrixGetValues(values, rows, cols);
-      for (j=0; j<nvals; j++) {
+      int nv=0;
+      p_network->getBranch(i)->matrixGetValues(&nv,values, rows, cols);
+      for (j=0; j<nv; j++) {
         if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
           if (ncols > 0) {
             if (cols[j] >= rmin && cols[j] <= rmax) {
@@ -632,6 +678,10 @@ void numberNonZeros(void)
       delete [] values;
     }
   }
+
+  values = new T[p_maxValues];
+  rows   = new int[p_maxValues];
+  cols   = new int[p_maxValues];
 }
 
 /**
@@ -639,17 +689,14 @@ void numberNonZeros(void)
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBusData(gridpack::math::Matrix &matrix, bool flag)
+void loadBusData(MatrixType &matrix, bool flag)
 {
-  int i, j, nvals;
-  ComplexType *values = new ComplexType[p_maxValues];
-  int *rows = new int[p_maxValues];
-  int *cols = new int[p_maxValues];
+  int i, j,nv;
+
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      nvals = p_network->getBus(i)->matrixNumValues();
-      p_network->getBus(i)->matrixGetValues(values,rows,cols);
-      for (j=0; j<nvals; j++) {
+      p_network->getBus(i)->matrixGetValues(&nv,values,rows,cols);
+      for (j=0; j<nv; j++) {
         if (flag) {
           matrix.addElement(rows[j],cols[j],values[j]);
         } else {
@@ -658,9 +705,6 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
       }
     }
   }
-  delete [] values;
-  delete [] rows;
-  delete [] cols;
 }
 
 /**
@@ -668,51 +712,78 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
  */
-void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
+void loadBranchData(MatrixType &matrix, bool flag)
 {
-  int i, j, nvals;
-  ComplexType *values = new ComplexType[p_maxValues];
-  int *rows = new int[p_maxValues];
-  int *cols = new int[p_maxValues];
+  int i, j;
   for (i=0; i<p_nBranches; i++) {
-    nvals = p_network->getBranch(i)->matrixNumValues();
-    if (nvals > 0) {
-      int ncols = p_network->getBranch(i)->matrixNumCols();
-      int rmin, rmax;
-      bool isActive = p_network->getActiveBranch(i);
-      if (ncols > 0) {
-        rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
-        rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
-      }
-      p_network->getBranch(i)->matrixGetValues(values,rows,cols);
-      bool addElem;
-      for (j=0; j<nvals; j++) {
-        if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
-          addElem = false;
-          if (ncols > 0) {
-            if (cols[j] >= rmin && cols[j] <= rmax) {
-              if (isActive) addElem = true;
-            } else {
-              addElem = true;
-            }
-          } else {
-            addElem = true;
-          }
-          if (addElem) {
-            if (flag) {
-              matrix.addElement(rows[j],cols[j],values[j]);
-            } else {
-              matrix.setElement(rows[j],cols[j],values[j]);
-            }
-          }
-        }
+    int ncols = p_network->getBranch(i)->matrixNumCols();
+    int rmin, rmax;
+    bool isActive = p_network->getActiveBranch(i);
+    if (ncols > 0) {
+      rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
+      rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
+    }
+    int nv=0;
+    p_network->getBranch(i)->matrixGetValues(&nv,values,rows,cols);
+    bool addElem;
+    for (j=0; j<nv; j++) {
+      if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+	addElem = false;
+	if (ncols > 0) {
+	  if (cols[j] >= rmin && cols[j] <= rmax) {
+	    if (isActive) addElem = true;
+	  } else {
+	    addElem = true;
+	  }
+	} else {
+	  addElem = true;
+	}
+	if (addElem) {
+	  if (flag) {
+	    matrix.addElement(rows[j],cols[j],values[j]);
+	  } else {
+	    matrix.setElement(rows[j],cols[j],values[j]);
+	  }
+	}
       }
     }
   }
-  delete [] values;
-  delete [] rows;
-  delete [] cols;
 }
+
+/**
+ * Add contributions from buses to matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ *
+ * Note: This method directly passes the matrix to the application
+ */
+void loadBusDataValues(MatrixType &matrix)
+{
+  int i;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->matrixGetValues(matrix);
+    }
+  }
+}
+
+/**
+ * Add contributions from branches to matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ *
+ * Note: This method directly passes the matrix to the application
+ */
+void loadBranchDataValues(MatrixType &matrix)
+{
+  int i;
+  for (i=0; i<p_nBranches; i++) {
+    if(p_network->getActiveBranch(i)) {
+      p_network->getBranch(i)->matrixGetValues(matrix);
+    }
+  }
+}
+
 
     // Configuration information
 int                         p_me;
@@ -736,6 +807,10 @@ int*                        p_nz_per_row;
 
 int*                        p_row_Offsets;
 int*                        p_col_Offsets;
+
+T                           *values;
+int                         *rows;
+int                         *cols;
 
     // global matrix offset arrays
 int                         g_bus_row_offsets;

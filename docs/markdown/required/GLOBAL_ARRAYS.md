@@ -33,16 +33,17 @@ depends on the runtime used to build GA and should only be set to `TRUE`
 if GA was configured using the `--with-mpi-pr` option.
 
 We have used two different configurations of GA to build and run GridPACK.
-For any system with a working version of MPI, you can
-use the MPI two-sided runtime or the progress ranks runtime with GA. Use the
-`--with-mpi-ts` or `--with-mpi-pr` options when configuring GA.
+For any system with a working version of MPI, you can build GA with the MPI
+two-sided runtime or the progress ranks runtime with GA. These can be accessed
+by configuring GA with the `--with-mpi-ts` or `--with-mpi-pr` options,
+respectively.
 The two-sided runtime is the simplest runtime and is suitable for workstations
 with a limited number of cores. This runtime provides reasonable performance on
 a small number of cores but slows down considerably at larger core counts(our
 experience is that you should limit this runtime to 8 or less processors). It is
 not recommended for large-scale parallel computation.  The progress ranks
-runtime is much higher performing and approaches the performance of the OpenIB
-runtime. It is very reliable and runs on any platform that supports MPI.
+runtime is much higher performing.
+It is very reliable and runs on any platform that supports MPI.
 However, it has one peculiarity in that it reserves one MPI process on each SMP
 node to act as a communication manager. Thus, if you are running your
 calculation on 2 nodes with 5 processes on each node, the GridPACK application
@@ -50,9 +51,41 @@ will only see 8 processes (4 on each node). To make sure that the GridPACK build
 is aware of this, the `USE_PROGRESS_RANKS` parameter should be set to
 `TRUE` when using the progress ranks build of GA.
 
+A comparison of the performance of the progress ranks and two-sided runtimes is
+shown below in Figure 1 for the Polish network test calculation included as
+part of the
+contingency analysis application. Contingency analysis consists of many
+individual tasks that can be distributed at runtime to different processors.
+The progress ranks runtime shows significantly
+better performance for all process counts, especially after four processors or
+so. After 16 processors, the performance of the two-sided runtime has degraded
+to the point that the overall runtime for the calculation starts increasing.
+
+<img src="../images/Polish_CA.png" alt="drawing" width="600"/>
+
+**Figure 1:** Comparison of speedup for the progress ranks and two-sided runtimes
+for a contingency analysis calculation using the Polish network data set.
+
+Dynamic simulation has different features with respect to parallelization
+compared to contingency analysis. A comparision of the progress ranks and
+two-sided runtimes is shown in Figure 2 for a simulation on a 12,000 bus
+model of the
+WECC network. In this case the performance is comparable up to 16 processors.
+The dynamic simulation calculation is more tightly coupled than contingency
+analysis and data must be exchanged at a finer level than individual
+simulations. Because of this, individual dynamic simulation calculations do not
+show speedup beyond the point at which the calculation is divided up between two
+SMP nodes. For the computer used in this calculation, this point is reached at
+16 processors.
+
+<img src="../images/WECC_DS.png" alt="drawing" width="600"/>
+
+**Figure 2:** Comparison of speedup for the progress ranks and two-sided runtimes
+for a single dynamic simulation calculation using a 12,000 bus WECC network data
+set.
+
 Global Arrays is a relatively straightforward build if MPI is available on your
-system. To configure GA with the basic two-sided runtime (suitable for
-workstations with a limited number of cores) use the configuration line
+system. To configure GA with the basic two-sided runtime use the configuration line
 
 ```
 ../configure --enable-i4 --enable-cxx --without-blas --disable-f77 \
@@ -63,11 +96,8 @@ workstations with a limited number of cores) use the configuration line
 This configuration line assumes that the build directory is located directly
 below the top level GA directory. If you want to build someplace else, the `../`
 before `configure` needs to be replaced with the path to `configure`.
-The two-sided build will work with almost any version of MPI and is easy to use
-but is
-slow for more than a few processors. For higher performance, particularly on
-clusters with a high performance network, the progress ranks runtime is
-preferable. To configure GA with this runtime, use the configure command
+To configure with the higher performing progress ranks runtime,
+configure GA with the command
 
 ```
 ../configure --enable-i4 --enable-cxx --with-mpi-pr --without-blas --disable-f77

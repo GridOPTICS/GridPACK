@@ -43,7 +43,9 @@ public:
   typedef typename DAEBuilder<T, I>::MatrixType MatrixType;
   typedef typename DAEBuilder<T, I>::Jacobian JacobianBuilder;
   typedef typename DAEBuilder<T, I>::Function FunctionBuilder;
-  typedef typename DAEBuilder<T, I>::StepFunction StepFunction;
+  typedef typename DAEBuilder<T, I>::RHSFunction RHSFunctionBuilder;
+  typedef typename DAEBuilder<T, I>::PreStepFunction PreStepFunction;
+  typedef typename DAEBuilder<T, I>::PostStepFunction PostStepFunction;
   typedef typename gridpack::math::DAEEventManagerT<T, I> EventManager;
   typedef typename boost::shared_ptr<EventManager> EventManagerPtr;
   typedef typename EventManager::Event Event;
@@ -74,6 +76,39 @@ public:
     this->p_initialize(t0, deltat0, x0);
   }
 
+  /// Restart step
+  /**
+   *
+   * Note: PETSc provides functionality to restart a step (see TSRestartStep). This is particularly needed when the step needs to be restarted after a discontinuity.
+   */
+  void restartstep()
+  {
+    this->p_restartstep();
+  }
+
+  void reusepreconditioner(int niter)
+  {
+    this->p_reusepreconditioner(niter);
+  }
+
+  void reusejacobian(int niter)
+  {
+    this->p_reusejacobian(niter);
+  }
+
+
+  /* return time step */
+  double gettimestep()
+  {
+    return this->p_gettimestep();
+  }
+
+  /// Get number of steps
+  int getstepnumber()
+  {
+    return this->p_getstepnumber();
+  }
+
   /// Solve the system to when @c end_time or @c maxsteps is exceeded
   /** 
    * This solves the system from the initial time specified by
@@ -95,13 +130,13 @@ public:
   }
 
   /// Set a function to call before each time step
-  void preStep(StepFunction& f)
+  void preStep(PreStepFunction& f)
   {
     this->p_preStep(f);
   }
 
   /// Set a function to call before each time step
-  void postStep(StepFunction& f)
+  void postStep(PostStepFunction& f)
   {
     this->p_postStep(f);
   }
@@ -124,16 +159,30 @@ protected:
   virtual void p_initialize(const double& t0,
                             const double& deltat0,
                             VectorType& x0) = 0;
-                       
+
+  /// Restart step
+  virtual void p_restartstep() = 0;
+
+  /// Get time step
+  virtual double p_gettimestep() = 0;
+
+  /// Get step number
+  virtual int p_getstepnumber() = 0;
+
+  /// Reuse preconditioner
+  virtual void p_reusepreconditioner(int niter) = 0;
+
+  /// Reuse jacobian
+  virtual void p_reusejacobian(int niter) = 0;
 
   /// Solve the system (specialized)
   virtual void p_solve(double& maxtime, int& maxsteps) = 0;
 
   /// Set a function to call before each time step (specialized)
-  virtual void p_preStep(StepFunction& f) = 0;
+  virtual void p_preStep(PreStepFunction& f) = 0;
 
   /// Set a function to call after each time step (specialized)
-  virtual void p_postStep(StepFunction& f) = 0;
+  virtual void p_postStep(PostStepFunction& f) = 0;
 
   /// Has the solver been terminated by an event (specialized)
   virtual bool p_terminated(void) const = 0;

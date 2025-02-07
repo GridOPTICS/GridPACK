@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2023-09-13 07:43:15 d3g096
+ * @date   2025-01-23 07:52:50 d3g096
  * 
  * @brief  
  * 
@@ -49,7 +49,9 @@ public:
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::PreStepFunction PreStepFunction;
+  typedef typename DAESolverInterface<T, I>::PostStepFunction PostStepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
   /// Default constructor.
@@ -84,6 +86,22 @@ public:
     if (eman) p_eventv.resize(eman->size());
   }
 
+  PETScDAESolverImplementation(const parallel::Communicator& comm, 
+                               const int local_size,
+			       MatrixType* J,
+                               JacobianBuilder& jbuilder,
+                               FunctionBuilder& fbuilder,
+			       RHSFunctionBuilder& rbuilder,
+                               EventManagerPtr eman)
+    : DAESolverImplementation<T, I>(comm, local_size, J, jbuilder, fbuilder, rbuilder,eman),
+      PETScConfigurable(this->communicator()),
+      p_ts(),
+      p_petsc_J(NULL),
+      p_eventv(),
+      p_termFlag(false)
+  {
+    if (eman) p_eventv.resize(eman->size());
+  }
 
   /// Destructor
   ~PETScDAESolverImplementation(void)
@@ -203,8 +221,71 @@ protected:
       throw PETScException(ierr, e);
     }
   
-  }                                      
+  }
 
+  /// Restart step
+  void p_restartstep()
+  {
+    PetscErrorCode ierr(0);
+    try {
+      ierr = TSRestartStep(p_ts);CHKERRXX(ierr);
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
+  /// Reuse preconditioner
+  void p_reusepreconditioner(int niter)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      SNES snes;
+      ierr = TSGetSNES(p_ts,&snes);CHKERRXX(ierr);
+      ierr = SNESSetLagPreconditioner(snes,niter);CHKERRXX(ierr);
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
+  /// Reuse jacobian
+  void p_reusejacobian(int niter)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      SNES snes;
+      ierr = TSGetSNES(p_ts,&snes);CHKERRXX(ierr);
+      ierr = SNESSetLagJacobian(snes,niter);CHKERRXX(ierr);
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
+
+  /// Get time step
+  double p_gettimestep()
+  {
+    PetscErrorCode ierr(0);
+    try {
+      double dt;
+      ierr = TSGetTimeStep(p_ts,&dt);CHKERRXX(ierr);
+      return dt;
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+  
+  /// Get number of steps
+  int p_getstepnumber()
+  {
+    PetscErrorCode ierr(0);
+    try {
+      int nsteps;
+      ierr = TSGetStepNumber(p_ts,&nsteps);CHKERRXX(ierr);
+      return nsteps;
+    } catch(const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Solve the system
   void p_solve(double& maxtime, int& maxsteps)
@@ -214,7 +295,7 @@ protected:
       ierr = TSSetMaxSteps(p_ts, maxsteps); CHKERRXX(ierr);
       ierr = TSSetMaxTime(p_ts, maxtime); CHKERRXX(ierr);
       ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr); 
-      ierr = TSSolve(p_ts, PETSC_NULL);
+      ierr = TSSolve(p_ts, PETSC_NULLPTR);
       // std::cout << this->processor_rank() << ": "
       //           << "DAESolver::solve() returned " << ierr 
       //           << std::endl;
@@ -284,8 +365,10 @@ protected:
     BOOST_ASSERT(B == *(solver->p_petsc_J));
 
     boost::scoped_ptr<VectorType> 
-      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
-      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false)));
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              x, false))),
+      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                 xdot, false)));
 
     // Call the user-specified function (object) to form the Jacobian
     (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, *(solver->p_J));
@@ -295,7 +378,7 @@ protected:
   }
 
 
-  /// Routine to assemble RHS that is sent to PETSc
+  /// Routine to assemble IFunction that is sent to PETSc
   static PetscErrorCode FormIFunction(TS ts, PetscReal t, Vec x, Vec xdot, 
                                       Vec F, void *dummy)
   {
@@ -305,14 +388,35 @@ protected:
       (PETScDAESolverImplementation *)dummy;
 
     boost::scoped_ptr<VectorType> 
-      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
-      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false))),
-      ftmp(new VectorType(new PETScVectorImplementation<T, I>(F, false)));
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              x, false))),
+      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                 xdot, false))),
+      ftmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              F, false)));
 
     (solver->p_Fbuilder)(t, *xtmp, *xdottmp, *ftmp);
     return ierr;
   }
 
+  /// Routine to assemble RHSFunction that is sent to PETSc
+  static PetscErrorCode FormRHSFunction(TS ts, PetscReal t, Vec x, 
+                                      Vec F, void *dummy)
+  {
+    PetscErrorCode ierr(0);
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    boost::scoped_ptr<VectorType> 
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              x, false))),
+      ftmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                              F, false)));
+
+    (solver->p_RHSbuilder)(t, *xtmp, *ftmp);
+    return ierr;
+  }
 
   /// Routine called after each time step
   static PetscErrorCode PostTimeStep(TS ts)
@@ -328,8 +432,14 @@ protected:
 
     if (solver->p_postStepFunc) {
       PetscReal thetime;
+      Vec       x;
       ierr = TSGetTime(ts, &thetime); CHKERRXX(ierr);
-      solver->p_postStepFunc(thetime);
+      ierr = TSGetSolution(ts,&x);CHKERRXX(ierr);
+
+      boost::scoped_ptr<VectorType> 
+	xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                x, false)));
+      solver->p_postStepFunc(thetime, *xtmp);
     }
     return ierr;
   }
@@ -347,16 +457,27 @@ protected:
       (PETScDAESolverImplementation *)dummy;
 
     if (solver->p_preStepFunc) {
-      PetscReal thetime;
+      PetscReal thetime, thetimestep;
+      Vec       x;
       ierr = TSGetTime(ts, &thetime); CHKERRXX(ierr);
-      solver->p_preStepFunc(thetime);
+      ierr = TSGetTimeStep(ts, &thetimestep); CHKERRXX(ierr);
+      ierr = TSGetSolution(ts,&x);CHKERRXX(ierr);
+
+      boost::scoped_ptr<VectorType> 
+	xtmp(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                                x, false)));
+      solver->p_preStepFunc(thetime, thetimestep, *xtmp);
     }
     return ierr;
   }
 
   /// Routine called every step if an event manager is specified
   static PetscErrorCode
+#if PETSC_VERSION_GE(3,21,0)
+  EventHandler(TS ts, PetscReal t, Vec U, PetscReal fvalue[], void* ctx)
+#else
   EventHandler(TS ts, PetscReal t, Vec U, PetscScalar fvalue[], void* ctx)
+#endif
   {
     PetscErrorCode ierr(0);
     void *dummy;
@@ -369,18 +490,26 @@ protected:
     
 
     boost::scoped_ptr<VectorType>
-      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+      state(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                               U, false)));
 
-    // This gets a little tricky.  If PETSc is built w/ complex,
-    // fvalue will be complex, and evalues, whether real or complex,
-    // can be assigned directly.  If T is complex and PetscScalar is
-    // real, then equate<> will return the real part of T.  This is
-    // what PETSc does internally to check a complex event value. So,
-    // this *should* work for PETSc.
+    
+    // This gets a little tricky.  Before 3.21.0, if PETSc is built w/
+    // complex, fvalue will be complex, and evalues, whether real or
+    // complex, can be assigned directly.  If T is complex and
+    // PetscScalar is real, then equate<> will return the real part of
+    // T.  This is what PETSc does internally to check a complex event
+    // value. So, this *should* work for PETSc.  With 3.21.0 and
+    // later, fvalues is PetscReal.  Perhaps in the future, evalues
+    // should just be double?
 
     const T *evalues = solver->p_eventManager->values(t, *state);
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
+#if PETSC_VERSION_GE(3,21,0)
+      fvalue[i] = equate<PetscReal, T>(evalues[i]);
+#else
       fvalue[i] = equate<PetscScalar, T>(evalues[i]);
+#endif
     }
 
     ierr = VecAssemblyBegin(U);
@@ -402,7 +531,8 @@ protected:
       (PETScDAESolverImplementation *)dummy;
 
     boost::scoped_ptr<VectorType>
-      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+      state(new VectorType(new PETScVectorImplementation<T, I>(solver->communicator(),
+                                                               U, false)));
 
     solver->p_eventManager->handle(nevents_zero, events_zero, t, *state);
     return ierr;

@@ -45,7 +45,9 @@ public:
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::RHSFunctionBuilder RHSFunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::PreStepFunction PreStepFunction;
+  typedef typename DAESolverInterface<T, I>::PostStepFunction PostStepFunction;
   typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
   /// Default constructor.
@@ -81,6 +83,23 @@ public:
   {
   }
 
+    DAESolverImplementation(const parallel::Communicator& comm, 
+                          const int local_size,
+			  MatrixType* J,
+                          JacobianBuilder& jbuilder,
+                          FunctionBuilder& fbuilder,
+			  RHSFunctionBuilder& rbuilder,
+                          EventManagerPtr eman)
+    : parallel::Distributed(comm),
+      utility::Configurable("DAESolver"),
+      utility::Uncopyable(),
+      p_J(J),
+      p_J_allocated(false),
+      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder), p_RHSbuilder(rbuilder),
+      p_eventManager(eman),
+      p_doAdaptive(true)
+  {
+  }
 
   /// Destructor
   ~DAESolverImplementation(void)
@@ -96,17 +115,20 @@ protected:
   /// Is p_J locally allocated?
   bool p_J_allocated;
 
-  /// A function to build the RHS vector
+  /// A function to build the IFunction vector
   FunctionBuilder p_Fbuilder;
+
+  /// A function to build the RHS Function vector
+  RHSFunctionBuilder p_RHSbuilder;
 
   /// A function to build the Jacobian
   JacobianBuilder p_Jbuilder;
 
   /// An optional function to call before each time step
-  StepFunction p_preStepFunc;
+  PreStepFunction p_preStepFunc;
 
   /// An optional function to call after each time step
-  StepFunction p_postStepFunc;
+  PostStepFunction p_postStepFunc;
 
   /// An optional event manager
   EventManagerPtr p_eventManager;
@@ -123,13 +145,13 @@ protected:
   }
 
   /// Set a function to call before each time step (specialized)
-  void p_preStep(StepFunction& f)
+  void p_preStep(PreStepFunction& f)
   {
     p_preStepFunc = f;
   }
 
   /// Set a function to call after each time step (specialized)
-  void p_postStep(StepFunction& f)
+  void p_postStep(PostStepFunction& f)
   {
     p_postStepFunc = f;
   }

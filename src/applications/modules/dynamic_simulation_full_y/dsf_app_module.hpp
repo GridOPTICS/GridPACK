@@ -785,7 +785,6 @@ class DSFullApp
   */
   bool solveNetwork(int predcorrflag);
 
-
   /**
    * Utility function to convert faults that are in event list into
    * internal data structure that can be used by code

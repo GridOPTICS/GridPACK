@@ -693,8 +693,9 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
   bool ret = false;
   string[0] = '\0';
   if (!strcmp(signal,"standard")) {
-    sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f  %12.6f\n",
-	    p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1.0, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
+    sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f"
+        "    %12.6f	%12.6f  %12.6f\n", p_bus_id, p_ckt.c_str(), x1d_1,
+        x2w_1+1.0, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
     ret = true;
   } else if (!strcmp(signal,"init_debug")) {
     sprintf(string," %8d  %2s Something\n",p_bus_id,p_ckt.c_str());
@@ -706,13 +707,15 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
     if(getWatch()) {
       char buf[128];
       std::string tag;
-      if(p_ckt[0] != ' ') {
-	tag = p_ckt;
+      if(p_ckt[1] != ' ') {
+        tag = p_ckt;
       } else {
-	tag = p_ckt[1];
+        tag = p_ckt[0];
       }
-      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
-	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
+      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed,"
+          " %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
+          p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
+          p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
@@ -725,8 +728,8 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f",
-	      Vterm,genP*MBase/p_sbase,genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech);
+      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f",Vterm,genP*MBase/p_sbase,
+          genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

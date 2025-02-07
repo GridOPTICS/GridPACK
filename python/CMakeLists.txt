@@ -1,9 +1,16 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5.0)
 project(gridpack-hadrec)
 
 if (DEFINED ENV{RHEL_OPENMPI_HACK})
   add_definitions (-DRHEL_OPENMPI_HACK=1)
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(CMAKE_MACOSX_RPATH 1)
+endif()
+set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # -------------------------------------------------------------
 # Python
@@ -75,6 +82,8 @@ endif()
 include("${GRIDPACK_DIR}/lib/GridPACK.cmake")
 
 gridpack_setup()
+
+list( APPEND CMAKE_INSTALL_RPATH ${GRIDPACK_LIB} )
 
 add_definitions(${GRIDPACK_DEFINITIONS})
 include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})

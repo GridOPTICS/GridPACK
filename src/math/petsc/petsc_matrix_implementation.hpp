@@ -152,10 +152,10 @@ public:
       ierr = MatSetSizes(mtmp, lrow, lcol, grow, gcol); CHKERRXX(ierr);
       if (comm.size() == 1) {
         ierr = MatSetType(mtmp, MATSEQDENSE); CHKERRXX(ierr);
-        ierr = MatSeqDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
+        ierr = MatSeqDenseSetPreallocation(mtmp, PETSC_NULLPTR); CHKERRXX(ierr);
       } else {
         ierr = MatSetType(mtmp, MATDENSE); CHKERRXX(ierr);
-        ierr = MatMPIDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
+        ierr = MatMPIDenseSetPreallocation(mtmp, PETSC_NULLPTR); CHKERRXX(ierr);
       }
       result = new PETScMatrixImplementation(mtmp, false);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
