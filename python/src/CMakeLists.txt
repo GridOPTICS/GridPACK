@@ -10,13 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2025-02-10 12:44:07 d3g096
+# Last Change: 2025-02-10 14:01:49 d3g096
 # -------------------------------------------------------------
 
 pybind11_add_module(gridpack
   gridpack.cpp
   gridpack_ds.cpp
   gridpack_emt.cpp
+  gridpack_pf.cpp
   )
 
 set(parallel_scripts 
@@ -24,6 +25,7 @@ set(parallel_scripts
   ${CMAKE_CURRENT_SOURCE_DIR}/task_manager.py
   ${CMAKE_CURRENT_SOURCE_DIR}/hadrec.py
   ${CMAKE_CURRENT_SOURCE_DIR}/emt.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf.py
 )
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)

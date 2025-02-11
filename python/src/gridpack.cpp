@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2025-05-06 13:06:38 d3g096
+// Last Change: 2025-05-06 13:09:36 d3g096
 // -------------------------------------------------------------
 
 #include "common.hpp"
@@ -118,6 +118,7 @@ MPI_Comm *get_mpi_comm(py::object py_comm) {
 extern void init_gridpack_ds(py::module& gpm);
 extern void init_gridpack_hadrec(py::module& gpm);
 extern void init_gridpack_emt(py::module& gpm);
+extern void init_gridpack_pf(py::module& gpm);
 
 PYBIND11_MODULE(gridpack, gpm) {
   gpm.doc() = "GridPACK module";
@@ -208,7 +209,7 @@ PYBIND11_MODULE(gridpack, gpm) {
                PyUnicode_DecodeLatin1(s.data(), s.length(), nullptr);
              return py::reinterpret_steal<py::str>(py_s);
            }
-           return py::object();
+           return py::cast<py::none>(Py_None);
          })
     .def("getCursor",
          [](ConfigurationCursorWrapper& self,
@@ -219,7 +220,7 @@ PYBIND11_MODULE(gridpack, gpm) {
              result.the_cursor = s;
              return py::cast(result);
            } 
-           return py::object();
+           return py::cast<py::none>(Py_None);
          })
     ;
   
@@ -248,7 +249,7 @@ PYBIND11_MODULE(gridpack, gpm) {
                PyUnicode_DecodeLatin1(s.data(), s.length(), nullptr);
              return py::reinterpret_steal<py::str>(py_s);
            }
-           return py::object();
+           return py::cast<py::none>(Py_None);
          })
     ;
     
@@ -291,5 +292,9 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   init_gridpack_emt(gpm);
 
+  // -------------------------------------------------------------
+  // powerflow application module
+  // -------------------------------------------------------------
+  init_gridpack_pf(gpm);
 
 }

@@ -17,7 +17,7 @@
 
 // -------------------------------------------------------------
 // init_gridpack_emt
-// Inter facet to Emt application module
+// Interface to Emt application module
 // -------------------------------------------------------------
 void
 init_gridpack_emt(py::module& gpm)
