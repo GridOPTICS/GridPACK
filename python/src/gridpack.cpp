@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2025-05-06 13:09:36 d3g096
+// Last Change: 2025-05-06 13:10:00 d3g096
 // -------------------------------------------------------------
 
 #include "common.hpp"
@@ -121,7 +121,7 @@ extern void init_gridpack_emt(py::module& gpm);
 extern void init_gridpack_pf(py::module& gpm);
 
 PYBIND11_MODULE(gridpack, gpm) {
-  gpm.doc() = "GridPACK module";
+  gpm.doc() = "GridPACK Module";
 
 #ifdef RHEL_OPENMPI_HACK
   stupid_openmpi_hack();
@@ -138,34 +138,51 @@ PYBIND11_MODULE(gridpack, gpm) {
   // gridpack.Envronment
   // -------------------------------------------------------------
 
-  py::class_<gp::Environment, boost::shared_ptr<gp::Environment> >(gpm, "Environment")
+  py::class_<gp::Environment, boost::shared_ptr<gp::Environment> >
+    env(gpm, "Environment");
+
+  env.doc() = "GridPACK parallel environment";
+
+  env
     .def(py::init<>([]()
                     { return boost::shared_ptr<gp::Environment>
-                        (new gp::Environment(0, NULL)); }))
+                        (new gp::Environment(0, NULL)); }),
+      "Create a parallel environment with default MPI communicator")
     
     .def(py::init<>([](py::object py_comm)
                     { MPI_Comm *c = get_mpi_comm(py_comm);
                       return boost::shared_ptr<gp::Environment>
-                        (new gp::Environment(0, NULL, *c)); }))
+                        (new gp::Environment(0, NULL, *c)); }),
+      "Create a parallel environment with specified MPI communicator")
     ;
   
 
   // -------------------------------------------------------------
   // gridpack.NoPrint
   // -------------------------------------------------------------
-  py::class_<gp::NoPrint, std::unique_ptr<gp::NoPrint, py::nodelete> >(gpm, "NoPrint")
+  py::class_<gp::NoPrint, std::unique_ptr<gp::NoPrint, py::nodelete> >
+    np(gpm, "NoPrint");
+
+  np.doc() = "Device to control output volume";
+
+  np
     .def(py::init([](){
                     return std::unique_ptr<gp::NoPrint, py::nodelete>
                       (gp::NoPrint::instance());
-                  }))
-    .def("status", &gp::NoPrint::status)
-    .def("setStatus", &gp::NoPrint::setStatus)
+    }), "Create, or get current, NoPrint instance")
+    .def("status", &gp::NoPrint::status,
+         "Get current status")
+    .def("setStatus", &gp::NoPrint::setStatus,
+         "Set status")
     ;
 
   // -------------------------------------------------------------
   // gridpack.Communicator
   // -------------------------------------------------------------
-  py::class_<gpp::Communicator>(gpm, "Communicator")
+  py::class_<gpp::Communicator> comm(gpm, "Communicator");
+  comm.doc() = "GridPACK parallel communicator";
+
+  comm
     .def(py::init<>())
     .def("size", &gpp::Communicator::size)
     .def("rank", &gpp::Communicator::rank)
@@ -179,7 +196,11 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   // gridpack.CoarseTimer
   // -------------------------------------------------------------
-  py::class_<gpu::CoarseTimer, std::unique_ptr<gpu::CoarseTimer, py::nodelete> >(gpm, "CoarseTimer")
+  py::class_<gpu::CoarseTimer, std::unique_ptr<gpu::CoarseTimer, py::nodelete> >
+    timer(gpm, "CoarseTimer");
+  timer.doc() = "A general purpose execution timer";
+
+  timer
     .def(py::init([]() {
                     return std::unique_ptr<gpu::CoarseTimer, py::nodelete>
                       (gpu::CoarseTimer::instance());
@@ -199,7 +220,11 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   // gridpack.Configuration
   // -------------------------------------------------------------
-  py::class_< ConfigurationCursorWrapper>(gpm, "ConfigurationCursor")
+  py::class_< ConfigurationCursorWrapper>
+    confwrap(gpm, "ConfigurationCursor");
+
+  confwrap.doc() = "Cursor into a specific Configuration path";
+  confwrap
     .def("get",
          [](ConfigurationCursorWrapper& self,
             const gpu::Configuration::KeyType& key) -> py::object {
@@ -224,7 +249,12 @@ PYBIND11_MODULE(gridpack, gpm) {
          })
     ;
   
-  py::class_<gpu::Configuration, std::unique_ptr<gpu::Configuration, py::nodelete>> (gpm, "Configuration")
+  py::class_<gpu::Configuration, std::unique_ptr<gpu::Configuration, py::nodelete>>
+    conf (gpm, "Configuration");
+
+  conf.doc() = "Configuration database";
+
+  conf
     .def(py::init([]() {
                     return std::unique_ptr<gpu::Configuration, py::nodelete>
                       (gpu::Configuration::configuration());
@@ -256,7 +286,9 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   // gridpack.TaskCounter
   // -------------------------------------------------------------
-  py::class_<TaskCounter>(gpm, "TaskCounter")
+  py::class_<TaskCounter> tc(gpm, "TaskCounter");
+  tc.doc() = "";
+  tc
     .def(py::init<>())
     .def_readwrite("task_id", &TaskCounter::task_id)
     ;
@@ -264,17 +296,25 @@ PYBIND11_MODULE(gridpack, gpm) {
   // -------------------------------------------------------------
   // gridpack.TaskManager
   // -------------------------------------------------------------
-  py::class_<TaskManagerWrapper> (gpm, "TaskManager")
-    .def(py::init<gpp::Communicator&>())
-    .def("set", &TaskManagerWrapper::set)
+  py::class_<TaskManagerWrapper>
+    tm(gpm, "TaskManager");
+  tm.doc() = "";
+  tm
+    .def(py::init<gpp::Communicator&>(),
+         "Create an instance using the specified communicator")
+    .def("set", &TaskManagerWrapper::set,
+         "Specify total number of tasks and set task manager to zero")
     .def("nextTask",
          (bool (TaskManagerWrapper::*)(TaskCounter&))
-         &TaskManagerWrapper::nextTask)
+         &TaskManagerWrapper::nextTask,
+         "Get the next task from the task manager.")
     .def("nextTask",
          (bool (TaskManagerWrapper::*)(gpp::Communicator&, TaskCounter&))
-         &TaskManagerWrapper::nextTask)
+         &TaskManagerWrapper::nextTask,
+         "Get the next task from the task manager on a (sub)communicator.")
     .def("cancel", &TaskManagerWrapper::cancel)
-    .def("printStats", &TaskManagerWrapper::printStats)
+    .def("printStats", &TaskManagerWrapper::printStats,
+         "Print out statistics on how tasks are distributed on processors")
     ;
 
   // -------------------------------------------------------------

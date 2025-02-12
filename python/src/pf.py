@@ -53,7 +53,7 @@ exportPSSE34 = cursor.get("exportPSSE_v34")
 noPrint = cursor.get("suppressOutput")
 
 # Create and initialize power flow application
-pfapp = gridpack.powerflow.powerflow()
+pfapp = gridpack.powerflow.Powerflow()
 
 if (noPrint):
     pfapp.suppressOutput(True)
