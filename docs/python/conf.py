@@ -203,7 +203,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'cmake_exampledoc'
+htmlhelp_basename = 'gridpack'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -225,8 +225,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'cmake_example.tex', 'cmake_example Documentation',
-     'Sylvain Corlay', 'manual'),
+    (master_doc, 'gridpack.tex', 'GridPACK Python Interface',
+     'GridPACK Dev Team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -255,36 +255,12 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'cmake_example', 'cmake_example Documentation',
+    (master_doc, 'gridpack', 'GridPACK Python Interface',
      [author], 1)
 ]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
-
-
-# -- Options for Texinfo output -------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-# texinfo_documents = [
-#     (master_doc, 'cmake_example', 'cmake_example Documentation',
-#      author, 'cmake_example', 'One line description of project.',
-#      'Miscellaneous'),
-# ]
-
-# Documents to append as an appendix to all manuals.
-#texinfo_appendices = []
-
-# If false, no module index is generated.
-#texinfo_domain_indices = True
-
-# How to display URL addresses: 'footnote', 'no', or 'inline'.
-#texinfo_show_urls = 'footnote'
-
-# If true, do not generate a @detailmenu in the "Top" node's menu.
-#texinfo_no_detailmenu = False
 
 
 # Example configuration for intersphinx: refer to the Python standard library.

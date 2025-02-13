@@ -14,6 +14,8 @@ instance of ``gridpack.Environment``.
 Usage
 -----
 
+A minimal example:
+
 .. code:: python
    
    import gridpack
@@ -34,27 +36,55 @@ Reference
 
 .. autoclass:: gridpack::Communicator
    :members:
-             
 
-Utility Classes
-===============
+
+Configuration
+=============
+
+``Configuration`` is a hierarchical database for storing and
+retrieving keyword/value pairs. It is by GridPACK applications to read
+initial input files from XML format files.
+
+Usage
+-----
+
+A minimal example
+
 
 Reference
 ---------
 
-.. autoclass:: gridpack::Configuration
+.. autoclass:: gridpack.Configuration
    :members:
-.. autoclass:: gridpack::CoarseTimer
-   :members:
-.. autoclass:: gridpack::NoPrint
-   :members:
-
 
 Task Manager
 ============
 
+The ``TaskManager`` is used to distribute and execute an arbitrary
+numbre of tasks across available processors.  
+
+
 Usage
 -----
+
+A minimal example
+
+.. code:: python
+
+   import gridpack
+   
+   env = gridpack.Environment()
+   c = gridpack.Communicator()
+   tskmgr = gridpack.TaskManager(c)
+   
+   task = gridpack.TaskCounter()
+
+   tskmgr.set(100)
+   while tskmgr.nextTask(task):
+       sys.stdout.write("process %d of %d executing task %d\n" %
+                        (c.rank(), c.size(), task.task_id))
+   tskmgr = None
+
 
 Reference
 ---------
@@ -64,3 +94,17 @@ Reference
 
 .. autoclass:: gridpack::TaskManager
    :members:
+
+
+Utility Classes
+===============
+
+Reference
+---------
+
+.. autoclass:: gridpack::CoarseTimer
+   :members:
+.. autoclass:: gridpack::NoPrint
+   :members:
+
+
