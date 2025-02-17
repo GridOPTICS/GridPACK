@@ -23,7 +23,7 @@ A minimal example:
    config = gridpack.Configuration()
    config.open("input.xml", comm)
 
-   pfapp = gridpack.powerflow.powerflow()
+   pfapp = gridpack.powerflow.Powerflow()
    pfapp.readNetwork(config, -1)
    pfapp.initialize()
    pfapp.solve();

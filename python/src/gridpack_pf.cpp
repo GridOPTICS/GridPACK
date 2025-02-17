@@ -41,9 +41,18 @@ init_gridpack_pf(py::module& gpm)
            boost::shared_ptr<gpf::PFNetwork> pfnet( new gpf::PFNetwork(world) );
 
            self.readNetwork(pfnet, &config, idx);
-         }, "Read network specified in the configuration")
+         }, R"eof(
+Read the network specified in the configuration.  
+
+Parameters:
+    config (gridpack.Configuration): power flow problem configuration usually read from an XML file
+    idx (int): The index of the power flow problem in the configuration
+)eof")
     .def("initialize", &gpf::PFAppModule::initialize,
-         "Initialize power network")
+         R"eof(
+Initialize the power network. :func:`~gridpack.Powerflow.readNetwork` must be 
+called before this.
+)eof")
     .def("reload", &gpf::PFAppModule::reload,
          "Reload network state and parameters from data collections")
     .def("nl_solve", &gpf::PFAppModule::nl_solve,
@@ -98,11 +107,11 @@ init_gridpack_pf(py::module& gpm)
            self.writeBranch(signal.c_str());
          },
          "Write branch results" )
-    // .def("writeHeader",
-    //      [](gpf::PFAppModule& self, const std::string& msg) {
-    //        self.writeBranch(msg.c_str());
-    //      },
-    //      "")
+    .def("writeHeader",
+         [](gpf::PFAppModule& self, const std::string& msg) {
+           self.writeBranch(msg.c_str());
+         },
+         "Write the specified header string to output")
     .def("print",
          [](gpf::PFAppModule& self, const std::string& buf) {
            self.print(buf.c_str());
@@ -110,16 +119,39 @@ init_gridpack_pf(py::module& gpm)
          "Print an arbitrary string to output" )
     ;
 
+  // Not implemented in Python, 
+  // "writeBusString", "writeBranchString"
+
   pfapp
     .def("setVoltageLimits", &gpf::PFAppModule::setVoltageLimits,
-         "Set voltage limits on all buses")
+         R"eof(
+"Set voltage limits on all buses"
+
+Parameters:
+    Vmin (float): lower bound on voltages
+    Vmax (float): upper bound on voltages
+)eof")
+         
     .def("checkVoltageViolations",
          py::overload_cast<>(&gpf::PFAppModule::checkVoltageViolations),
-         "Check to see if there are any voltage violations in the network")
+         R"eof(
+Check to see if there are any voltage violations in the network"
+
+Returns:
+    True if no violations found
+)eof")
+
     .def("checkVoltageViolations",
          py::overload_cast<int>(&gpf::PFAppModule::checkVoltageViolations),
-         "Check to see if there are any voltage violations in the network "
-         "in a specific area")
+         R"eof(
+Check to see if there are any voltage violations in an area
+
+Parameters:
+    area (int): area index
+
+Returns:
+    True if no violations found
+)eof")
     .def("ignoreVoltageViolations", &gpf::PFAppModule::ignoreVoltageViolations,
          "Set \"ignore\" parameter on all buses with violations so that "
          "subsequent checks are not counted as violations")
@@ -157,7 +189,16 @@ init_gridpack_pf(py::module& gpm)
          "Check to see if there are any Q limit violations in an area")
     .def("clearQlimViolations", &gpf::PFAppModule::clearQlimViolations)
     .def("resetVoltages", &gpf::PFAppModule::resetVoltages)
-    .def("scaleGeneratorRealPower", &gpf::PFAppModule::scaleGeneratorRealPower)
+    .def("scaleGeneratorRealPower", &gpf::PFAppModule::scaleGeneratorRealPower,
+         R"eof(
+Scale load power. 
+
+Parameters:
+    scale (float): factor to scale real power generation
+    area (int): area index of area for scaling generation
+    zone (int): zone index of zone for scaling generation
+
+)eof")
     .def("scaleLoadPower", &gpf::PFAppModule::scaleLoadPower)
     .def("getTotalLoadRealPower", &gpf::PFAppModule::getTotalLoadRealPower)
     .def("getGeneratorMargins",
