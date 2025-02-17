@@ -33,9 +33,11 @@ Reference
 
 .. autoclass:: gridpack::Environment
    :members:
+   :undoc-members:
 
 .. autoclass:: gridpack::Communicator
    :members:
+   :undoc-members:
 
 
 Configuration
@@ -56,6 +58,7 @@ Reference
 
 .. autoclass:: gridpack.Configuration
    :members:
+   :undoc-members:
 
 Task Manager
 ============
@@ -91,9 +94,11 @@ Reference
 
 .. autoclass:: gridpack::TaskCounter
    :members:
+   :undoc-members:
 
 .. autoclass:: gridpack::TaskManager
    :members:
+   :undoc-members:
 
 
 Utility Classes
@@ -104,7 +109,9 @@ Reference
 
 .. autoclass:: gridpack::CoarseTimer
    :members:
+   :undoc-members:
 .. autoclass:: gridpack::NoPrint
    :members:
+   :undoc-members:
 
 

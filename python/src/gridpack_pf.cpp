@@ -173,10 +173,11 @@ init_gridpack_pf(py::module& gpm)
          "Reset power of loads and generators to original values")
     .def("writeRTPRDiagnostics",
          [](gpf::PFAppModule& self, const int& src_area, const int& src_zone,
-            const int& load_area, const int& load_zone, const int& load_scale,
-            const std::string& file) {
-           self.writeRTPRDiagnostics(src_area, src_zone, load_area, load_zone,
-                                     get_scale, load_scale, file.c_str());
+            const int& load_area, const int& load_zone, const int& gen_scale,
+            const int& load_scale, const std::string& file) {
+           self.writeRTPRDiagnostics(src_area, src_zone,
+                                     load_area, load_zone,
+                                     gen_scale,load_scale, file.c_str());
          },
          "Write real time path rating diagnostics")
     .def("useRateB", &gpf::PFAppModule::useRateB,

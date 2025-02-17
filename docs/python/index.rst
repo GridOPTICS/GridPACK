@@ -10,3 +10,7 @@ Contents:
    gridpack
    
    powerflow
+
+   dynamic_simulation
+
+   emt
