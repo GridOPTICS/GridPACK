@@ -82,6 +82,8 @@ class GridPACKBackend(Backend):
                     "tick": self._counter_time,
                     "name": self._dsapp.getBusInfoString(bus, "LOAD_ID", l),
                     "bus": bus,
+                    "p_mw_int": self._dsapp.getBusInfoReal(bus, 'LOAD_PL', l),
+                    "q_mvar_int": self._dsapp.getBusInfoReal(bus, 'LOAD_QL', l),
                     "p_mw": self._dsapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l),
                     "q_mvar": self._dsapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l),
                     "scaling": self._dsapp.getBusInfoReal(bus, "LOAD_SCALE", l), 
@@ -233,6 +235,11 @@ class GridPACKBackend(Backend):
         # load and its results
         grid.load = pd.DataFrame(load_data)
         grid.res_load = pd.DataFrame(index=grid.load.index, columns=grid.load.columns)
+        # print("Actual Load")
+        # print(grid.load.loc[grid.load["bus"].isin([52, 56, 71, 144, 167])])
+        # print(grid.load)
+        # print("After Load")
+        
         
         # create bus dict for translation
         self.BUS_DICT = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
@@ -401,13 +408,13 @@ class GridPACKBackend(Backend):
             shunts__,
         ) = backendAction()
         print("[GridPACK] Executing action")
-        # print(self._grid.load)
-        # print(load_dict)
-        
+        # print(self._grid.res_load)
+        print(load_p)
+
         # change the active values of the loads
         load_dict = {}
         for load_id, new_p in load_p:
-            # print(load_id, new_p, self._grid.load["p_mw"].iloc[load_id])
+            print(load_id, new_p, self._grid.load["p_mw"].iloc[load_id])
             bus = self.BUS_DICT[self._grid.load.loc[load_id, "bus"]]
             # bus = self._grid.load.loc[load_id, "bus"]
             case_sbase = self._dsapp.getBusInfoReal(bus, "CASE_SBASE")
@@ -511,6 +518,11 @@ class GridPACKBackend(Backend):
         
         # transformer data
         self._grid.res_trafo = pd.DataFrame(trafo_data)
+
+        # print(self._grid.res_line[self._grid.res_line.isnull().any(axis=1)].tail(5))
+        # print(self._grid.res_trafo[self._grid.res_trafo.isnull().any(axis=1)].tail(5))
+        
+        # sys.exit(1)
         
     def _update_data(self):
         # to get current data from dynamic simulation to data collection object
