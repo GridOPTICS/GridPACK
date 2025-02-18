@@ -13,4 +13,6 @@ Contents:
 
    dynamic_simulation
 
+   hadrec
+
    emt
