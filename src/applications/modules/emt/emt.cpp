@@ -7,6 +7,7 @@
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/parser/PTI34_parser.hpp"
 #include "gridpack/parser/PTI35_parser.hpp"
+#include "gridpack/parser/PTI36_parser.hpp"
 
 
 // -------------------------------------------------------------
@@ -277,7 +278,28 @@ void Emt::setup()
 
   std::string networkfilename;
     
-  if (p_configcursor->get("networkConfiguration_v35",&networkfilename)) {
+  if (p_configcursor->get("networkConfiguration_v36",&networkfilename)) {
+
+    gridpack::parser::PTI36_parser<EmtNetwork> parser(emt_network);
+    
+    p_configcursor = p_config->getCursor("Configuration.EMT");
+
+    // Read generator data
+    std::string filename;
+    
+    filename = p_configcursor->get("generatorParameters","");
+
+    try {
+      if(filename.size() > 0) {
+        parser.externalParse(filename.c_str());
+      } else {
+        throw(filename.size());
+      }
+    }
+    catch(int size) {
+      std::cout << "Cannot read dynamic data file %s\n" << filename;
+    }
+  } else if (p_configcursor->get("networkConfiguration_v35",&networkfilename)) {
 
     gridpack::parser::PTI35_parser<EmtNetwork> parser(emt_network);
     

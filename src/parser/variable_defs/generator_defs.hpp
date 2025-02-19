@@ -45,6 +45,13 @@
 #define GENERATOR_ID "GENERATOR_ID"
 
 /**
+ * Alpha-numeric identifier for generator
+ * type: string
+ * indexed
+ */
+#define GENERATOR_NAME "GENERATOR_NAME"
+
+/**
  * Unique global index that runs sequentially over all generators
  * type: integer
  * indexed
@@ -381,6 +388,13 @@
  * indexed
  */
 #define GENERATOR_WPF "GENERATOR_WPF"
+
+/**
+ * Alpha-numeric identifier for voltage droop controller
+ * type: string
+ * indexed
+ */
+#define GENERATOR_DROOPNAME "GENERATOR_DROOPNAME"
 
 /**
  * Generator vset

@@ -42,11 +42,14 @@ add_library(gridpack_block_parsers
     block_parsers/bus_parser33.cpp
     block_parsers/load_parser33.cpp
     block_parsers/fixed_shunt_parser33.cpp
+    block_parsers/v_droop_ctrl_parser36.cpp
     block_parsers/generator_parser33.cpp
     block_parsers/generator_parser34.cpp
     block_parsers/generator_parser35.cpp
+    block_parsers/swtch_dev_rating_tbl_parser36.cpp
     block_parsers/branch_parser33.cpp
     block_parsers/branch_parser34.cpp
+    block_parsers/branch_parser36.cpp
     block_parsers/sys_switch_parser34.cpp
     block_parsers/transformer_parser33.cpp
     block_parsers/transformer_parser34.cpp
@@ -65,6 +68,7 @@ add_library(gridpack_block_parsers
     block_parsers/switched_shunt_parser33.cpp
     block_parsers/switched_shunt_parser34.cpp
     block_parsers/switched_shunt_parser35.cpp
+    block_parsers/switched_shunt_parser36.cpp
     )
 gridpack_set_library_version(gridpack_block_parsers)
 target_link_libraries(gridpack_block_parsers
@@ -139,6 +143,7 @@ install(FILES
   PTI23_parser.hpp
   PTI33_parser.hpp
   PTI35_parser.hpp
+  PTI36_parser.hpp
   PSSE_seq_parser.hpp
   GOSS_parser.hpp
   MAT_parser.hpp
@@ -192,11 +197,14 @@ install (FILES
   block_parsers/bus_parser33.hpp
   block_parsers/load_parser33.hpp
   block_parsers/fixed_shunt_parser33.hpp
+  block_parsers/v_droop_ctrl_parser36.hpp
   block_parsers/generator_parser33.hpp
   block_parsers/generator_parser34.hpp
   block_parsers/generator_parser35.hpp
+  block_parsers/swtch_dev_rating_tbl_parser36.hpp
   block_parsers/branch_parser33.hpp
   block_parsers/branch_parser34.hpp
+  block_parsers/branch_parser36.hpp
   block_parsers/sys_switch_parser34.hpp
   block_parsers/transformer_parser33.hpp
   block_parsers/transformer_parser34.hpp
@@ -215,6 +223,7 @@ install (FILES
   block_parsers/switched_shunt_parser33.hpp
   block_parsers/switched_shunt_parser34.hpp
   block_parsers/switched_shunt_parser35.hpp
+  block_parsers/switched_shunt_parser36.hpp
   DESTINATION include/gridpack/parser/block_parsers
 )
 
