@@ -27,6 +27,17 @@ state estimation, contingency analysis and dynamic simulation. These
 directories also contain sample input networks and input files. Options
 for different solvers can be found in these files.
 
+Most of these applications can use different format PSS/E files for input. The
+standard format is PSS/E v23 and is specified via the ``networkConfiguration``
+field in the input XML file. The v33, v34, v35 and v36 formats can be used by
+appending ``_v33``, ``_v34``, ``_v35``, or ``v_36`` to the
+``networkConfiguration`` field. To include a version 33 network configuration
+file, modify the network configuration line in the input XML file to
+
+::
+
+   <networkConfiguration_v33> v33_format.raw </networkConfiguration_v33>
+
 Power Flow
 ----------
 
