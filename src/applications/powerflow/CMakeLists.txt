@@ -99,6 +99,26 @@ add_custom_command(
   DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
   )
 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_ieee39_v36.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_ieee39_v36.xml"
+  )
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_240_v36.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_240_v36.xml"
+  )
+
 
 add_custom_target(pf.x.input
  
@@ -122,6 +142,14 @@ add_custom_target(pf.x.input
   ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/IEEE39bus_original_Modified_v36_1_ibr.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_PQLoad_fixedshunt_noremotebus_yuan_v36.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
@@ -132,6 +160,10 @@ add_custom_target(pf.x.input
   ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
   ${CMAKE_CURRENT_BINARY_DIR}/input_european.xml
   ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE39bus_original_Modified_v36_1_ibr.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml
+  ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_PQLoad_fixedshunt_noremotebus_yuan_v36.raw
 
 )
 add_dependencies(pf.x pf.x.input)
