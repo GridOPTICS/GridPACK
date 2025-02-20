@@ -65,37 +65,29 @@ shown below:
 
 ::
 
-<?xml version="1.0" encoding="utf-8"?>
-<Configuration>
-  <Powerflow>
-    <networkConfiguration> IEEE14.raw </networkConfiguration>
-    <maxIteration>50</maxIteration>
-    <tolerance>1.0e-6</tolerance>
-    <LinearSolver>
-      <PETScOptions>
-        -ksp_view
-        -ksp_type richardson
-        -pc_type lu
-        -pc_factor_mat_solver_type superlu_dist
-        -ksp_max_it 1
-      </PETScOptions>
-    </LinearSolver>
-    <NonlinearSolver>
-      <SolutionTolerance>1.0E-05</SolutionTolerance>
-      <FunctionTolerance>1.0E-05</FunctionTolerance>
-      <MaxIterations>50</MaxIterations>
-      <PETScOptions>
-        -ksp_type bicg
-        -pc_type bjacobi
-        -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly
-        -snes_view
-        -snes_monitor
-        -ksp_monitor
-        -ksp_view
-      </PETScOptions>
-    </NonlinearSolver>
-  </Powerflow>
-</Configuration>
+  <?xml version="1.0" encoding="utf-8"?>
+  <Configuration>
+    <Powerflow>
+      <networkConfiguration> IEEE14.raw </networkConfiguration>
+      <maxIteration>50</maxIteration>
+      <tolerance>1.0e-6</tolerance>
+      <LinearSolver>
+        <PETScOptions>
+          -ksp_view
+          -ksp_type richardson
+          -pc_type lu
+          -pc_factor_mat_solver_type superlu_dist
+          -ksp_max_it 1
+        </PETScOptions>
+      </LinearSolver>
+    </Powerflow>
+  </Configuration>
+
+This example specifies the input network configuration, the maximum number of
+iterations in the non-linear Newton-Raphson solver, the solution tolerance
+and the properties of the linear solver. This is a minimal example and  more
+options for the solver can be used. Readers are encouraged to look at the
+examples that are copied into the powerflow directory as part of the build.
 
 The network configuration file
 is read directly from the input deck by the
