@@ -126,8 +126,10 @@ class Constantimpedance: public BaseEMTLoadModel
     double p_L[3];  // Inductance part of constant impedance
 
     // Load variables
-  double p_i[3]; // Inductor current
-  double p_idot[3]; // Current derivative
+  double p_i[6]; // current
+  double p_idot[6]; // Current derivative
+
+  bool series_RL;
 };
 
 #endif
