@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2025-02-10 14:01:49 d3g096
+# Last Change: 2025-03-10 13:33:05 d3g096
 # -------------------------------------------------------------
 
 pybind11_add_module(gridpack
@@ -30,6 +30,19 @@ set(parallel_scripts
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)
   list(APPEND parallel_scripts ${CMAKE_CURRENT_SOURCE_DIR}/hello_comm.py)
+endif()
+
+set(CMAKE_CXX_STANDARD 14)
+
+# using regular Clang or AppleClang
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_definitions(
+    -Wno-c++11-extensions
+    -Wno-c++11-compat-deprecated-writable-strings
+    -Wno-format-security
+    -Wall
+    -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
+    )
 endif()
 
 add_definitions(${GRIDPACK_DEFINITIONS})
