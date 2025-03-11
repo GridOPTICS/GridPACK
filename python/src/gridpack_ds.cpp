@@ -81,9 +81,13 @@ init_gridpack_ds(py::module& gpm)
     .def("solvePreInitialize", &gpds::DSFullApp::solvePreInitialize)
     .def("setup", &gpds::DSFullApp::setup)
     .def("executeOneSimuStep", &gpds::DSFullApp::executeOneSimuStep)
-    // .def("run", [](gpds::DSFullApp& self) {self.run();})
+#ifdef USE_OVERLOAD_CAST
     .def("run", py::overload_cast<>(&gpds::DSFullApp::run))
     .def("run", py::overload_cast<double>(&gpds::DSFullApp::run))
+#else
+    .def("run", [](gpds::DSFullApp& self) {self.run();})
+    .def("run", [](gpds::DSFullApp& self, double tend) {self.run(tend);})
+#endif
     .def("scatterInjectionLoad", &gpds::DSFullApp::scatterInjectionLoad)
     .def("scatterInjectionLoadNew", &gpds::DSFullApp::scatterInjectionLoadNew)
     .def("scatterInjectionLoadNew_compensateY",
@@ -104,10 +108,13 @@ init_gridpack_ds(py::module& gpm)
     .def("setConstYLoadtoZero_Q", &gpds::DSFullApp::setConstYLoadtoZero_Q)
     .def("setConstYLoadImpedance", &gpds::DSFullApp::setConstYLoadImpedance)
     .def("applyGeneratorTripping", &gpds::DSFullApp::applyGeneratorTripping)
+#ifdef USE_OVERLOAD_CAST
     .def("setLineTripAction",
          py::overload_cast<int, int, std::string>(&gpds::DSFullApp::setLineTripAction))
     .def("setLineTripAction",
          py::overload_cast<int>(&gpds::DSFullApp::setLineTripAction))
+#else
+#endif
     .def("clearLineTripAction", &gpds::DSFullApp::clearLineTripAction)
     .def("isDynSimuDone", &gpds::DSFullApp::isDynSimuDone)
     .def("write",
@@ -299,24 +306,82 @@ init_gridpack_ds(py::module& gpm)
     ;
 
   dsapp
+#ifdef USE_OVERLOAD_CAST
     .def("modifyDataCollectionGenParam",
          py::overload_cast<int, std::string, std::string, double>
          (&gpds::DSFullApp::modifyDataCollectionGenParam))
     .def("modifyDataCollectionGenParam",
          py::overload_cast<int, std::string, std::string, int>
          (&gpds::DSFullApp::modifyDataCollectionGenParam))
+#else
+    .def("modifyDataCollectionGenParam",
+         [](gpds::DSFullApp& self, int bus_id,
+            std::string gen_id, std::string genParam,
+            double value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionGenParam(bus_id, gen_id, genParam, value);
+           return py::cast(flag);
+         })
+    .def("modifyDataCollectionGenParam",
+         [](gpds::DSFullApp& self, int bus_id,
+            std::string gen_id, std::string genParam,
+            int value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionGenParam(bus_id, gen_id, genParam, value);
+           return py::cast(flag);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST
     .def("modifyDataCollectionLoadParam",
          py::overload_cast<int, std::string, std::string, double>
          (&gpds::DSFullApp::modifyDataCollectionLoadParam))
     .def("modifyDataCollectionLoadParam",
          py::overload_cast<int, std::string, std::string, int>
          (&gpds::DSFullApp::modifyDataCollectionLoadParam))
+#else
+    .def("modifyDataCollectionLoadParam",
+         [](gpds::DSFullApp& self, int bus_id, std::string load_id,
+            std::string loadParam, double value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionLoadParam(bus_id, load_id,
+                                                loadParam, value);
+           return py::cast(flag);
+         })
+    .def("modifyDataCollectionLoadParam",
+         [](gpds::DSFullApp& self, int bus_id, std::string load_id,
+            std::string loadParam, int value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionLoadParam(bus_id, load_id,
+                                                loadParam, value);
+           return py::cast(flag);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST
     .def("modifyDataCollectionBusParam",
          py::overload_cast<int, std::string, double>
          (&gpds::DSFullApp::modifyDataCollectionBusParam))
     .def("modifyDataCollectionBusParam",
          py::overload_cast<int, std::string, int>
          (&gpds::DSFullApp::modifyDataCollectionBusParam))
+#else
+    .def("modifyDataCollectionBusParam",
+         [](gpds::DSFullApp& self, int bus_id,
+            std::string busParam, double value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionBusParam(bus_id, busParam, value);
+           return py::cast(flag);
+         })
+    .def("modifyDataCollectionBusParam",
+         [](gpds::DSFullApp& self, int bus_id,
+            std::string busParam, int value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionBusParam(bus_id, busParam, value);
+           return py::cast(flag);
+         })
+#endif
+    
     ;   
 
   dsapp
@@ -355,22 +420,79 @@ init_gridpack_ds(py::module& gpm)
            self.getBranchEndpoints(oidx, &fbus, &tbus);
            return py::make_tuple(fbus, tbus);
          })
+#ifdef USE_OVERLOAD_CAST
     .def("numGenerators",
          py::overload_cast<>(&gpds::DSFullApp::numGenerators, py::const_))
     .def("numGenerators",
          py::overload_cast<const int&>(&gpds::DSFullApp::numGenerators, py::const_))
+#else
+    .def("numGenerators",
+         [](const gpds::DSFullApp& self) -> py::object {
+           int n(self.numGenerators());
+           return py::cast(n);
+         })
+    .def("numGenerators",
+         [](const gpds::DSFullApp& self, const int& bus_idx) -> py::object {
+           int n(self.numGenerators(bus_idx));
+           return py::cast(n);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST
     .def("numLoads",
          py::overload_cast<>(&gpds::DSFullApp::numLoads, py::const_))
     .def("numLoads",
          py::overload_cast<const int&>(&gpds::DSFullApp::numLoads, py::const_))
+#else
+    .def("numLoads",
+         [](const gpds::DSFullApp& self) -> py::object {
+           int n(self.numLoads());
+           return py::cast(n);
+         })
+    .def("numLoads",
+         [](const gpds::DSFullApp& self, const int& bus_idx) -> py::object {
+           int n(self.numLoads(bus_idx));
+           return py::cast(n);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST    
     .def("numStorage",
          py::overload_cast<>(&gpds::DSFullApp::numStorage, py::const_))
     .def("numStorage",
          py::overload_cast<const int&>(&gpds::DSFullApp::numStorage, py::const_))
+#else
+    .def("numStorage",
+         [](const gpds::DSFullApp& self) -> py::object {
+           int n(self.numStorage());
+           return py::cast(n);
+         })
+    .def("numStorage",
+         [](const gpds::DSFullApp& self, const int& bus_idx) -> py::object {
+           int n(self.numStorage(bus_idx));
+           return py::cast(n);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST    
     .def("numLines",
          py::overload_cast<>(&gpds::DSFullApp::numLines, py::const_))
     .def("numLines",
          py::overload_cast<const int&>(&gpds::DSFullApp::numLines, py::const_))
+#else
+    .def("numLines",
+         [](const gpds::DSFullApp& self) -> py::object {
+           int n(self.numLines());
+           return py::cast(n);
+         })
+    .def("numLines",
+         [](const gpds::DSFullApp& self, const int& branch_idx) -> py::object {
+           int n(self.numLines(branch_idx));
+           return py::cast(n);
+         })
+
+#endif
+    
     .def("getBusInfoInt", 
          [](gpds::DSFullApp& self, const int& bus_idx,
             const std::string& name, const std::optional<int> dev_idx) -> py::object {
@@ -516,22 +638,80 @@ init_gridpack_hadrec(py::module & gpm)
            self.getBranchEndpoints(oidx, &fbus, &tbus);
            return py::make_tuple(fbus, tbus);
          })
+
+#ifdef USE_OVERLOAD_CAST
     .def("numGenerators",
          py::overload_cast<>(&gph::HADRECAppModule::numGenerators, py::const_))
     .def("numGenerators",
          py::overload_cast<const int&>(&gph::HADRECAppModule::numGenerators, py::const_))
+#else
+    .def("numGenerators",
+         [](const gph::HADRECAppModule& self) -> py::object {
+           int n(self.numGenerators());
+           return py::cast(n);
+         })
+    .def("numGenerators",
+         [](const gph::HADRECAppModule& self, const int& bus_idx) -> py::object {
+           int n(self.numGenerators(bus_idx));
+           return py::cast(n);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST
     .def("numLoads",
          py::overload_cast<>(&gph::HADRECAppModule::numLoads, py::const_))
     .def("numLoads",
          py::overload_cast<const int&>(&gph::HADRECAppModule::numLoads, py::const_))
+#else
+    .def("numLoads",
+         [](const gph::HADRECAppModule& self) -> py::object {
+           int n(self.numLoads());
+           return py::cast(n);
+         })
+    .def("numLoads",
+         [](const gph::HADRECAppModule& self, const int& bus_idx) -> py::object {
+           int n(self.numLoads(bus_idx));
+           return py::cast(n);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST    
     .def("numStorage",
          py::overload_cast<>(&gph::HADRECAppModule::numStorage, py::const_))
     .def("numStorage",
          py::overload_cast<const int&>(&gph::HADRECAppModule::numStorage, py::const_))
+#else
+    .def("numStorage",
+         [](const gph::HADRECAppModule& self) -> py::object {
+           int n(self.numStorage());
+           return py::cast(n);
+         })
+    .def("numStorage",
+         [](const gph::HADRECAppModule& self, const int& bus_idx) -> py::object {
+           int n(self.numStorage(bus_idx));
+           return py::cast(n);
+         })
+#endif
+
+#ifdef USE_OVERLOAD_CAST
     .def("numLines",
          py::overload_cast<>(&gph::HADRECAppModule::numLines, py::const_))
     .def("numLines",
          py::overload_cast<const int&>(&gph::HADRECAppModule::numLines, py::const_))
+#else
+    .def("numLines",
+         [](const gph::HADRECAppModule& self) -> py::object {
+           int n(self.numLines());
+           return py::cast(n);
+         })
+    .def("numLines",
+         [](const gph::HADRECAppModule& self, const int& branch_idx) -> py::object {
+           int n(self.numLines(branch_idx));
+           return py::cast(n);
+         })
+
+#endif
+    
     .def("getBusInfoInt", 
          [](gph::HADRECAppModule& self, const int& bus_idx,
             const std::string& name, const std::optional<int> dev_idx) -> py::object {

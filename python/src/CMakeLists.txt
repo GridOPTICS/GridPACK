@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2025-03-10 13:33:05 d3g096
+# Last Change: 2025-03-11 09:29:39 d3g096
 # -------------------------------------------------------------
 
 pybind11_add_module(gridpack
@@ -32,6 +32,7 @@ if (ENABLE_ENVIRONMENT_FROM_COMM)
   list(APPEND parallel_scripts ${CMAKE_CURRENT_SOURCE_DIR}/hello_comm.py)
 endif()
 
+# this sometimes helps with pybind11's overload_cast
 set(CMAKE_CXX_STANDARD 14)
 
 # using regular Clang or AppleClang
@@ -42,7 +43,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     -Wno-format-security
     -Wall
     -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
-    )
+  )
+else()
+  add_definitions(-DUSE_OVERLOAD_CAST=1)
 endif()
 
 add_definitions(${GRIDPACK_DEFINITIONS})

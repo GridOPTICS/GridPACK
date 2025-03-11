@@ -261,9 +261,18 @@ PYBIND11_MODULE(gridpack, gpm) {
                   }))
     .def_property_readonly_static("KeySep",
                                   [](py::object) {return gpu::Configuration::KeySep; })
+#ifdef USE_OVERLOAD_CAST
     .def("open",
          py::overload_cast<const std::string&, gpp::Communicator>
          (&gpu::Configuration::open))
+#else
+    .def("open",
+         [](gpu::Configuration& self, const std::string& file,
+            gpp::Communicator comm) -> py::object {
+           bool ok(self.open(file, comm));
+           return py::cast(ok);
+         })
+#endif
     .def("getCursor",
          [] (gpu::Configuration& self, const std::string& path) {
            ConfigurationCursorWrapper result;

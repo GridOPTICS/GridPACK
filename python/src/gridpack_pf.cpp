@@ -131,7 +131,8 @@ Parameters:
     Vmin (float): lower bound on voltages
     Vmax (float): upper bound on voltages
 )eof")
-         
+
+#ifdef USE_OVERLOAD_CAST
     .def("checkVoltageViolations",
          py::overload_cast<>(&gpf::PFAppModule::checkVoltageViolations),
          R"eof(
@@ -140,7 +141,6 @@ Check to see if there are any voltage violations in the network"
 Returns:
     True if no violations found
 )eof")
-
     .def("checkVoltageViolations",
          py::overload_cast<int>(&gpf::PFAppModule::checkVoltageViolations),
          R"eof(
@@ -152,25 +152,102 @@ Parameters:
 Returns:
     True if no violations found
 )eof")
+#else
+    .def("checkVoltageViolations",
+         [](gpf::PFAppModule& self) -> py::object {
+           bool flag(self.checkVoltageViolations());
+           return py::cast(flag);
+         },
+         R"eof(
+Check to see if there are any voltage violations in the network"
+
+Returns:
+    True if no violations found
+)eof")
+    .def("checkVoltageViolations",
+         [](gpf::PFAppModule& self, const int& area) -> py::object {
+           bool flag(self.checkVoltageViolations(area));
+           return py::cast(flag);
+         },
+         R"eof(
+Check to see if there are any voltage violations in an area
+
+Parameters:
+    area (int): area index
+
+Returns:
+    True if no violations found
+)eof")
+#endif
     .def("ignoreVoltageViolations", &gpf::PFAppModule::ignoreVoltageViolations,
          "Set \"ignore\" parameter on all buses with violations so that "
          "subsequent checks are not counted as violations")
     .def("clearVoltageViolations", &gpf::PFAppModule::clearVoltageViolations,
          "Clear \"ignore\" parameter on all buses")
 
+#ifdef USE_OVERLOAD_CAST
     .def("checkLineOverloadViolations",
          py::overload_cast<>(&gpf::PFAppModule::checkLineOverloadViolations),
          "Check to see if there are any line overload violations in the network")
     .def("checkLineOverloadViolations",
          py::overload_cast<int>(&gpf::PFAppModule::checkLineOverloadViolations),
          "Check to see if there are any line overload violations in an area")
+#else
     .def("checkLineOverloadViolations",
-         py::overload_cast <
-            std::vector<int>&, std::vector<int>&,
-            std::vector<std::string>&, std::vector<bool>&
-         >(&gpf::PFAppModule::checkLineOverloadViolations),
-         "Check for overload violations on specific lines")
+         [](gpf::PFAppModule& self) -> py::object {
+           bool flag(self.checkLineOverloadViolations());
+           return py::cast(flag);
+         },
+         R"eof(
+Check to see if there are any line overload violations in the network.
 
+Returns:
+    True if no violations found
+)eof")
+    .def("checkLineOverloadViolations",
+         [](gpf::PFAppModule& self, const int& area) -> py::object {
+           bool flag(self.checkLineOverloadViolations(area));
+           return py::cast(flag);
+         },
+         R"eof(
+Check to see if there are any line overload violations in the network.
+
+Parameters:
+    area (int): area index
+
+Returns:
+    True if no violations found
+)eof")
+#endif
+    .def("checkLineOverloadViolations",
+         [](gpf::PFAppModule& self, std::vector<int> &bus1,
+            std::vector<int> &bus2, std::vector<std::string> &tags) -> py::object {
+           std::vector<bool> violations;
+           bool flag =
+             self.checkLineOverloadViolations(bus1, bus2, tags, violations);
+           if (flag) {
+             return py::cast(flag);
+           } else {
+             return py::cast(violations);
+           }
+         },
+         R"eof(
+Check for overload violations on specific lines
+
+Parameters:
+    bus1 : list of int
+        original index of "from" bus for branch
+    bus2 : list of int
+        original index of "to" bus for branch
+    tags : list of int
+        line IDs for individual lines
+  violations true if violation detected on branch, false otherwise
+
+
+Returns:
+    True if no violations found, list of flags for each line otherwise
+)eof")
+    
     // Declared but not implemented
     // .def("ignoreLineOverloadViolations",
     //      &gpf::PFAppModule::ignoreLineOverloadViolations,
@@ -180,13 +257,27 @@ Returns:
     //      &gpf::PFAppModule::clearLineOverloadViolations,
     //      "Clear \"ignore\" parameter on all lines")
 
-    
+#ifdef USE_OVERLOAD_CAST
     .def("checkQlimViolations",
          py::overload_cast<>(&gpf::PFAppModule::checkQlimViolations),
          "Check to see if there are any Q limit violations in the network")
     .def("checkQlimViolations",
          py::overload_cast<int>(&gpf::PFAppModule::checkQlimViolations),
          "Check to see if there are any Q limit violations in an area")
+#else
+    .def("checkQlimViolations",
+         [](gpf::PFAppModule& self) -> py::object {
+           bool flag(self.checkQlimViolations());
+           return py::cast(flag);
+         },
+         "Check to see if there are any Q limit violations in the network")
+    .def("checkQlimViolations",
+         [](gpf::PFAppModule& self, const int& area) -> py::object {
+           bool flag(self.checkQlimViolations());
+           return py::cast(flag);
+         },
+         "Check to see if there are any Q limit violations in an area")
+#endif
     .def("clearQlimViolations", &gpf::PFAppModule::clearQlimViolations)
     .def("resetVoltages", &gpf::PFAppModule::resetVoltages)
     .def("scaleGeneratorRealPower", &gpf::PFAppModule::scaleGeneratorRealPower,
@@ -228,6 +319,7 @@ Parameters:
 
   // These query and modify the network's data collection objects
   pfapp
+#ifdef USE_OVERLOAD_CAST
     .def("modifyDataCollectionGenParam",
          py::overload_cast<int, std::string, std::string, double>
          (&gpf::PFAppModule::modifyDataCollectionGenParam),
@@ -236,7 +328,28 @@ Parameters:
          py::overload_cast<int, std::string, std::string, int>
          (&gpf::PFAppModule::modifyDataCollectionGenParam),
           "Modify (integer) generator parameters in data collection for specified bus")
+#else
+    .def("modifyDataCollectionGenParam",
+         [](gpf::PFAppModule& self, int bus_id,
+            std::string gen_id, std::string genParam,
+            double value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionGenParam(bus_id, gen_id, genParam, value);
+           return py::cast(flag);
+         }, 
+         "Modify (real) generator parameters in data collection for specified bus")
+    .def("modifyDataCollectionGenParam",
+         [](gpf::PFAppModule& self, int bus_id,
+            std::string gen_id, std::string genParam,
+            int value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionGenParam(bus_id, gen_id, genParam, value);
+           return py::cast(flag);
+         }, 
+         "Modify (int) generator parameters in data collection for specified bus")
+#endif
 
+#ifdef USE_OVERLOAD_CAST
     .def("modifyDataCollectionLoadParam",
          py::overload_cast<int, std::string, std::string, double>
          (&gpf::PFAppModule::modifyDataCollectionLoadParam),
@@ -245,7 +358,29 @@ Parameters:
          py::overload_cast<int, std::string, std::string, int>
          (&gpf::PFAppModule::modifyDataCollectionLoadParam),
           "Modify (integer) load parameters in data collection for specified bus")
-    
+#else
+    .def("modifyDataCollectionLoadParam",
+         [](gpf::PFAppModule& self, int bus_id,
+            std::string gen_id, std::string genParam,
+            double value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionLoadParam(bus_id, gen_id, genParam, value);
+           return py::cast(flag);
+         },
+         "Modify (real) load parameters in data collection for specified bus")
+    .def("modifyDataCollectionLoadParam",
+         [](gpf::PFAppModule& self, int bus_id,
+            std::string gen_id, std::string genParam,
+            int value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionLoadParam(bus_id, gen_id, genParam, value);
+           return py::cast(flag);
+         }, 
+         "Modify (integer) load parameters in data collection for specified bus")
+
+#endif
+
+#ifdef USE_OVERLOAD_CAST
     .def("modifyDataCollectionBusParam",
          py::overload_cast<int, std::string, double>
          (&gpf::PFAppModule::modifyDataCollectionBusParam),
@@ -254,7 +389,26 @@ Parameters:
          py::overload_cast<int, std::string, int>
          (&gpf::PFAppModule::modifyDataCollectionBusParam),
           "Modify (integer) parameters in data collection for specified bus")
+#else
+    .def("modifyDataCollectionBusParam",
+         [](gpf::PFAppModule& self, int bus_id, std::string busParam,
+            double value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionBusParam(bus_id, busParam, value);
+           return py::cast(flag);
+         },
+         "Modify (real) parameters in data collection for specified bus")
+    .def("modifyDataCollectionBusParam",
+         [](gpf::PFAppModule& self, int bus_id, std::string busParam,
+            int value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionBusParam(bus_id, busParam, value);
+           return py::cast(flag);
+         }, 
+         "Modify (integer) parameters in data collection for specified bus")
+#endif
 
+#ifdef USE_OVERLOAD_CAST
     .def("modifyDataCollectionBranchParam",
          py::overload_cast<int, int, std::string, std::string, double>
          (&gpf::PFAppModule::modifyDataCollectionBranchParam),
@@ -263,7 +417,27 @@ Parameters:
          py::overload_cast<int, int, std::string, std::string, int>
          (&gpf::PFAppModule::modifyDataCollectionBranchParam),
           "Modify (integer) parameters in data collection for specified branch")
-
+#else
+    .def("modifyDataCollectionBranchParam",
+         [](gpf::PFAppModule& self, int bus1, int bus2, std::string ckt,
+            std::string branchParam, double value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionBranchParam(bus1, bus2, ckt,
+                                                  branchParam, value);
+           return py::cast(flag);
+         },
+         "Modify (real) parameters in data collection for specified branch")
+    .def("modifyDataCollectionBranchParam",
+         [](gpf::PFAppModule& self, int bus1, int bus2, std::string ckt,
+            std::string branchParam, int value) -> py::object {
+           bool flag =
+             self.modifyDataCollectionBranchParam(bus1, bus2, ckt,
+                                                  branchParam, value);
+           return py::cast(flag);
+         },
+         "Modify (int) parameters in data collection for specified branch")
+#endif
+    
     .def("getDataCollectionGenParamReal",
          [](gpf::PFAppModule& self, int bidx, std::string gen_id,
             std::string genParam) -> py::object {
