@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(gridpack-hadrec)
+enable_language(CXX)
+
 
 if (DEFINED ENV{RHEL_OPENMPI_HACK})
   add_definitions (-DRHEL_OPENMPI_HACK=1)
@@ -11,6 +13,25 @@ endif()
 set(CMAKE_SKIP_BUILD_RPATH  FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# this sometimes helps with pybind11's overload_cast
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# using regular Clang or AppleClang
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_definitions(
+    -Wno-c++11-extensions
+    -Wno-c++11-compat-deprecated-writable-strings
+    -Wno-format-security
+    -Wall
+    -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
+  )
+else()
+  add_definitions(-DUSE_OVERLOAD_CAST=1)
+endif()
+
+
 
 # -------------------------------------------------------------
 # Python
