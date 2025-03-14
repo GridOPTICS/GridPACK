@@ -4,8 +4,8 @@ import argparse
 
 from datetime import timedelta
 import pandas as pd
-
-sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/install_local/grid2op")
+import pdb; 
+# sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/install_local/grid2op")
 import grid2op
 from grid2op.PlotGrid.PlotMatplot import PlotMatplot
 from grid2op.Agent import BaseAgent, RandomAgent
@@ -20,7 +20,7 @@ def parse_arguments():
         "--gridpack_config", 
         help="Configuration file to run the simulation.", 
         default="input_9bus.xml",
-        choices=["input_9bus.xml", "input_39bus_IBR.xml", "input_240bus.xml"]
+        choices=["input_9bus.xml", "input_39bus_IBR.xml", "input_240bus.xml", "input_240.xml"]
     )
     parser.add_argument(
         "--grid2op_config", 
@@ -97,7 +97,8 @@ class LoadSheddingAgent(BaseAgent):
         self.do_nothing = self.action_space({})
 
     def act(self, obs, reward, done=False):
-        if obs.current_step == 2:
+        print(obs.load_p, obs.load_q)
+        if ((obs.current_step >= 2) & (obs.current_step < 4)):
             new_load_p = obs.load_p * 1.1
             new_load_q = obs.load_q * 1.1
             
@@ -152,11 +153,13 @@ if __name__=="__main__":
 
     # reset environment
     print("============ Environment Reset =============")
+    # pdb.set_trace()
     obs = env.reset()
     reward = env.reward_range[0]
     done = False
 
     my_agent = LoadSheddingAgent(env.action_space)
+    # print("======== Helloooooo ")
         
     # print network analytics
     print("Number of buses:  %d" % (obs.n_sub))

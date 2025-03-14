@@ -5,7 +5,7 @@ set -x
 # This script should be run from the top-level GridPACK directory.
 
 # Flag for install GridPACK and GridPACK python wrapper
-install_gridpack=false
+install_gridpack=true
 install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
@@ -102,21 +102,22 @@ then
 
     rm -rf build dist gridpack_hadrec.egg-info/
     
-    ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
+    ${python_exe} setup.py install
+    # ${python_exe} -m pip install --no-deps --upgrade . # --prefix=$GRIDPACK_INSTALL_DIR .
 
     # Construct the installed package path and check it. The actual
     # path with in the prefix seems to be kind of random, so
     # add a couple of options to PYTHONPATH
 
-    pyvnum=`${python_exe} -V | sed -e 's/Python  *\([23]\)\.\([0-9][0-9]*\)\..*/\1.\2/' `
-    pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages:${GRIDPACK_DIR}/local/lib/python${pyvnum}/dist-packages"
+    # pyvnum=`${python_exe} -V | sed -e 's/Python  *\([23]\)\.\([0-9][0-9]*\)\..*/\1.\2/' `
+    # pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages:${GRIDPACK_DIR}/local/lib/python${pyvnum}/dist-packages"
     
-    if [ -z "$PYTHONPATH" ]; then
-        PYTHONPATH="${pydir}:${PYTHONPATH}"
-    else
-        PYTHONPATH="${pydir}"
-    fi
-    export PYTHONPATH
+    # if [ -z "$PYTHONPATH" ]; then
+    #     PYTHONPATH="${pydir}:${PYTHONPATH}"
+    # else
+    #     PYTHONPATH="${pydir}"
+    # fi
+    # export PYTHONPATH
 
     # A quick check to see if the Python module is available
     ${python_exe} -c 'import gridpack'

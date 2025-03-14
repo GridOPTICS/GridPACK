@@ -36,7 +36,7 @@ class GridPACKBackend(Backend):
         # NOTE: add a timestamp along with the counter - get the time from GridPACK - if possible
         self._log_freq = log_freq
 
-    def _read_bus_gen_load_data(self):
+    def _read_bus_gen_load_data(self, init=False):
         # load and generator data
         # NOTE: Generator and Load values change only when there are dynamic load/generators. If they are not dynamic, the code currently returns the previous value. 
         bus_data = []
@@ -48,7 +48,10 @@ class GridPACKBackend(Backend):
             BUS_BASEKV = self._dsapp.getBusInfoReal(bus, "BUS_BASEKV")
 
             # bus list
-            vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VMAG_CURRENT") # in p.u.
+            if init:
+                vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG") # in p.u.
+            else:
+                vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VMAG_CURRENT") # in p.u.
             vn_kv = vn_pu * BUS_BASEKV # in kV
 
             # BUS_VMAG_CURRENT - latest value
@@ -64,28 +67,42 @@ class GridPACKBackend(Backend):
             
             # bus list
             for g in range(self._dsapp.numGenerators(bus)):
+                # _CURRENT is empty in the first step
+                if init:
+                    p_mw = self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG', g) * CASE_SBASE
+                    q_mvar = self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG', g) * CASE_SBASE
+                else:
+                    p_mw = self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g) * CASE_SBASE
+                    q_mvar = self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g) * CASE_SBASE
+                
                 # gen data
                 gen_data.append({
                     "tick": self._counter_time,
                     "name": self._dsapp.getBusInfoString(bus, "GENERATOR_ID", g),
                     "bus": bus,
-                    "p_mw": self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g) * CASE_SBASE,
-                    "q_mvar": self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g) * CASE_SBASE,
+                    "p_mw": p_mw,
+                    "q_mvar": q_mvar,
                     "vn_kv": vn_kv,
                     "min_q_mvar": self._dsapp.getBusInfoReal(bus, "GENERATOR_QMIN", g),
                     "max_q_mvar": self._dsapp.getBusInfoReal(bus, "GENERATOR_QMAX", g),
                     "in_service": self._dsapp.getBusInfoInt(bus, "GENERATOR_STAT", g)
                 })
             for l in range(self._dsapp.numLoads(bus)):
+                # _CURRENT is empty in the first step
+                if init:
+                    p_mw = self._dsapp.getBusInfoReal(bus, 'LOAD_PL', l)
+                    q_mvar = self._dsapp.getBusInfoReal(bus, 'LOAD_QL', l)
+                else:
+                    p_mw = self._dsapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l)
+                    q_mvar = self._dsapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l)
+                
                 # load list
                 load_data.append({
                     "tick": self._counter_time,
                     "name": self._dsapp.getBusInfoString(bus, "LOAD_ID", l),
                     "bus": bus,
-                    "p_mw_int": self._dsapp.getBusInfoReal(bus, 'LOAD_PL', l),
-                    "q_mvar_int": self._dsapp.getBusInfoReal(bus, 'LOAD_QL', l),
-                    "p_mw": self._dsapp.getBusInfoReal(bus, 'LOAD_PL_CURRENT', l),
-                    "q_mvar": self._dsapp.getBusInfoReal(bus, 'LOAD_QL_CURRENT', l),
+                    "p_mw": p_mw,
+                    "q_mvar": q_mvar,
                     "scaling": self._dsapp.getBusInfoReal(bus, "LOAD_SCALE", l), 
                     "in_service": self._dsapp.getBusInfoInt(bus, "LOAD_STATUS", l)
                 })
@@ -147,7 +164,7 @@ class GridPACKBackend(Backend):
         
         return data_dict
         
-    def _read_line_transformer_data(self):
+    def _read_line_transformer_data(self, init=False):
         # objects for data collection
         line_data = []
         transformer_data = []
@@ -162,9 +179,10 @@ class GridPACKBackend(Backend):
             branch_info["name"] = self._dsapp.getBranchInfoString(branch, "BRANCH_NAME")
 
             # end points
-            (f, t) = self._dsapp.getBranchEndpoints(branch)
-            branch_info["from_bus"] = self.BUS_DICT[f]
-            branch_info["to_bus"] = self.BUS_DICT[t]
+            (fb_real, tb_real) = self._dsapp.getBranchEndpoints(branch)
+            fb_local, tb_local = self.BUS_MAPPING_REAL2LOCAL[fb_real], self.BUS_MAPPING_REAL2LOCAL[tb_real]
+            branch_info["from_bus"] = fb_local
+            branch_info["to_bus"] = tb_local
 
             # from and to bus kv
             branch_info["f_buskv"] = self._dsapp.getBusInfoReal(
@@ -222,19 +240,19 @@ class GridPACKBackend(Backend):
         self.n_sub = self._dsapp.totalBuses()
 
         # read bus, load, and gen data
-        bus_data, gen_data, load_data = self._read_bus_gen_load_data()
+        bus_data, gen_data, load_data = self._read_bus_gen_load_data(init=True)
         # convert to dataframes
         # bus and its results
         grid.bus = pd.DataFrame(bus_data)
-        grid.res_bus = pd.DataFrame(index=grid.bus.index, columns=grid.bus.columns)
+        grid.res_bus = grid.bus.copy()
         
         # gen and its results
         grid.gen = pd.DataFrame(gen_data)
-        grid.res_gen = pd.DataFrame(index=grid.gen.index, columns=grid.gen.columns)
+        grid.res_gen = grid.gen.copy()
         
         # load and its results
         grid.load = pd.DataFrame(load_data)
-        grid.res_load = pd.DataFrame(index=grid.load.index, columns=grid.load.columns)
+        grid.res_load = grid.load.copy()
         # print("Actual Load")
         # print(grid.load.loc[grid.load["bus"].isin([52, 56, 71, 144, 167])])
         # print(grid.load)
@@ -242,19 +260,20 @@ class GridPACKBackend(Backend):
         
         
         # create bus dict for translation
-        self.BUS_DICT = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
-
+        self.BUS_MAPPING_LOCAL2REAL = grid.bus[["id"]].to_dict()['id']
+        self.BUS_MAPPING_REAL2LOCAL = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
+        
         # read line and transformer data
-        line_data, transformer_data = self._read_line_transformer_data()
+        line_data, transformer_data = self._read_line_transformer_data(init=True)
 
         # line and its results
         # NOTE: bus dict is needed to translate actual bus number to dataframe index. The from_bus and to_bus columns in grid.line needs to be replaced with this new index to be consistent across the code. 
         grid.line = pd.DataFrame(line_data)
-        grid.res_line = pd.DataFrame(index=grid.line.index, columns=grid.line.columns)
+        grid.res_line = grid.line.copy()
         
         # transformers and its results - variabe called BRANCH_TAP in the line - non-zero tap implies transformer
         grid.trafo = pd.DataFrame(transformer_data)
-        grid.res_trafo = pd.DataFrame(index=grid.trafo.index, columns=grid.trafo.columns)
+        grid.res_trafo = grid.trafo.copy()
         
         # return
         return grid
@@ -352,7 +371,7 @@ class GridPACKBackend(Backend):
         # )
         
         # FIXME: Random number
-        self.thermal_limit_a = 1000 * np.ones(self.n_line, dtype=int)
+        self.thermal_limit_a = 10000 * np.ones(self.n_line, dtype=int)
             
         self._compute_pos_big_topo()
 
@@ -393,31 +412,40 @@ class GridPACKBackend(Backend):
         ) = backendAction()
         print("[GridPACK] Executing action")
         # print(self._grid.res_load)
-        print(load_p)
+        # print(load_p)
+        # print(self._grid.load)
+        # print(self._grid.res_load)
+
+        # print(self._grid.bus)
+        # print(self._grid.res_bus)
+
+        # print(self._grid.gen)
+        # print(self._grid.res_gen)
 
         # change the active values of the loads
         load_dict = {}
         for load_id, new_p in load_p:
-            print(load_id, new_p, self._grid.load["p_mw"].iloc[load_id])
-            bus = self.BUS_DICT[self._grid.load.loc[load_id, "bus"]]
-            # bus = self._grid.load.loc[load_id, "bus"]
-            case_sbase = self._dsapp.getBusInfoReal(bus, "CASE_SBASE")
-            load_dict[bus] = {"p": new_p / case_sbase}
-            # self._grid.load["p_mw"].iloc[load_id] = new_p
+            bus_localindx = self._grid.load.loc[load_id, "bus"]
+            case_sbase = self._dsapp.getBusInfoReal(bus_localindx, "CASE_SBASE")
+            
+            bus_realindx = self.BUS_MAPPING_LOCAL2REAL[bus_localindx]
+            load_dict[bus_realindx] = {"p": new_p / case_sbase}
             
         # change the reactive values of the loads
         for load_id, new_q in load_q:
-            # bus = self.BUS_DICT[]
-            bus = self.BUS_DICT[self._grid.load.loc[load_id, "bus"]]
-            # bus = self._grid.load.loc[load_id, "bus"]
-            case_sbase = self._dsapp.getBusInfoReal(bus, "CASE_SBASE")
-            if bus in load_dict:
-                load_dict[bus]["q"] = new_q / case_sbase
-            # self._grid.load["q_mvar"].iloc[load_id] = new_q
-
+            bus_localindx = self._grid.load.loc[load_id, "bus"]
+            case_sbase = self._dsapp.getBusInfoReal(bus_localindx, "CASE_SBASE")
+            
+            bus_realindx = self.BUS_MAPPING_LOCAL2REAL[bus_localindx]
+            if bus_realindx in load_dict:
+                load_dict[bus_realindx]["q"] = new_q / case_sbase
+            
         # update load values
         if len(load_dict) != 0:
             load_frame = pd.DataFrame(load_dict).T
+            # breakpoint()
+            # print(self._grid.load)
+            print(load_frame)
             self._dsapp.scatterInjectionLoadNew_compensateY(
                 load_frame.index.values,
                 load_frame["p"].values,
@@ -491,12 +519,7 @@ class GridPACKBackend(Backend):
         # update the dataframe
         self._grid.res_bus = pd.DataFrame(bus_data)
         self._grid.res_gen = pd.DataFrame(gen_data)
-        self._grid.res_load = pd.DataFrame(load_data)
-        
-        test_frame = self._grid.res_load[(self._grid.res_load[["p_mw", "q_mvar"]]==0).any(axis=1)]
-        print(test_frame)
-        # print([self.BUS_DICT[b] for b in test_frame["bus"].values])  
-        print(self._grid.res_bus)      
+        self._grid.res_load = pd.DataFrame(load_data)     
         
     def _update_line_transformer_data(self):
         # read data
