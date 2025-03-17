@@ -26,7 +26,7 @@
 #include <gridpack/math/dae_solver.hpp>
 
 
-class EmtBus; // Forward declaratin for EmtBus
+class EmtBus; // Forward declaration for EmtBus
 class BaseEMTExcModel; // Forward declaration for BaseEMTExcModel
 class BaseEMTGovModel; // Forward declaration for BaseEMTGovModel
 class BaseEMTPlantControllerModel; // Forward declaration for BaseEMTPlantControllerModel
