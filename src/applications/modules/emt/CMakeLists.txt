@@ -48,6 +48,7 @@ set(target_source
   base_classes/base_gov_model.cpp
   base_classes/base_load_model.cpp
   base_classes/base_plant_model.cpp
+  base_classes/base_mechanical_model.cpp
   base_classes/base_branch_model.cpp
   base_classes/fault.cpp	
   model_classes/gencls.cpp
