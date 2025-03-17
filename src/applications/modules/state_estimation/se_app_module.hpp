@@ -11,6 +11,9 @@
  * @Last modified 1/23/2015
  *
  * @brief
+ * @update Yousu Chen
+ *         Adding functions of bad data dection, chi-square testing 
+ * @date   2025-03-05
  *
  *
  */
@@ -97,6 +100,31 @@ class SEAppModule
      */
     void saveData();
 
+    bool hasConverged() const { return p_converged; }
+
+    /**
+     * Perform pre-check for suspicious measurements
+     */
+    void preCheckMeasurements(void);
+
+    /**
+     * Perform a targeted check for bad measurements on Bus 8
+     */
+    void debugMapper();
+
+    /**
+     * Add virtual measurements to enforce voltage magnitude constraints
+     * @param vmin minimum allowed voltage magnitude
+     * @param vmax maximum allowed voltage magnitude
+     * @param deviation standard deviation for virtual measurements
+     */
+    void addVoltageLimitMeasurements(double vmin = 0.9, double vmax = 1.1, 
+                                    double deviation = 0.001);
+
+    // Adjust weights of bad measurements by increasing their sigmas
+    void adjustWeights(const std::vector<int>& badIndices);
+
+
     private:
 
     // pointer to network
@@ -124,6 +152,19 @@ class SEAppModule
 
     // convergence tolerance
     double p_tolerance;
+
+    // void detectBadData(void);
+    std::vector<int> detectBadData(void);
+    double p_bad_data_threshold;
+
+    double getChiSquareThreshold(int dof, double confidence);
+    bool p_converged;
+
+    // Helper function to access and modify the sigma of a measurement by index
+    double& getMeasurementSigma(int idx);
+
+    // Example member variable to store measurement sigmas
+    std::vector<double> p_measurementSigmas;
 };
 
 } // state estimation

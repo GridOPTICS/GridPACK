@@ -10,8 +10,9 @@
  * @date   2016-07-14 13:37:55 d3g096
  * 
  * @brief  
- * 
- * 
+ * @update Yousu Chen
+ *         Adding functions of bad data dection, chi-square testing 
+ * @date   2025-03-05
  */
 // -------------------------------------------------------------
 
@@ -28,7 +29,7 @@
 namespace gridpack {
 namespace state_estimation{
 
-enum SEMode{YBus,Jacobian_H, R_inv, Ez, Voltage};
+enum SEMode{YBus,Jacobian_H, R_inv, Ez, Voltage,Residual};
 
 struct Measurement
 {
@@ -307,6 +308,38 @@ class SEBus
      */
     void getShuntGsBs(double *gs, double *bs);
 
+    /**
+     * Check if residual index matches this bus and report bad data
+     * @param idx: index to check
+     * @param report: if true, print information about the bad data
+     * @return: true if index found on this bus
+     */
+    bool checkResidualIndex(int idx, bool report);
+    bool getResidualDetails(int idx, char* buffer);
+
+    /**
+     * Pre-check measurements for suspicious values
+     * @param string buffer for output (not used in this implementation)
+     * @param bufsize size of buffer
+     * @return true if suspicious measurements found
+     */
+    bool serialWritePreCheck(char *string, const int bufsize);
+
+    /**
+     * Calculate real and reactive power injections at this bus
+     * Used for residual calculations
+     */
+    void calculatePowerInjections(void);
+
+    /**
+     * Set voltage magnitude limits
+     * @param v_min minimum voltage limit
+     * @param v_max maximum voltage limit
+     * @param enforce whether to enforce limits
+     */
+    void setVoltageLimits(double v_min, double v_max, bool enforce);
+
+
 
   private:
     double p_shunt_gs;
@@ -347,6 +380,11 @@ class SEBus
      */
     double* p_vMag_ptr;
     double* p_vAng_ptr;
+
+    // Voltage limits for projection
+    double p_v_min;  // Minimum voltage limit
+    double p_v_max;  // Maximum voltage limit
+    bool p_enforce_v_limits;  // Flag to enable/disable enforcement
 
 private:
 
@@ -623,6 +661,17 @@ class SEBranch
      * other methods
      */
     void configureSE(void);
+
+    /**
+     * Check if residual index matches this branch and report bad data
+     * @param idx: index to check
+     * @param report: if true, print information about the bad data
+     * @return: true if index found on this branch
+     */
+    bool checkResidualIndex(int idx, bool report);
+    bool getResidualDetails(int idx, char* buffer);
+
+    bool vectorValues(ComplexType *values); 
 
   private:
     std::vector<double> p_reactance;

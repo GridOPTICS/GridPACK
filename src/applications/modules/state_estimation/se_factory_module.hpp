@@ -10,6 +10,9 @@
  * @date   1/23/2015
  * 
  * @brief  
+ * @update Yousu Chen
+ *         Adding functions of applying virtual measurements
+ * @date   2025-03-05
  * 
  * 
  */
@@ -54,6 +57,31 @@ class SEFactoryModule
      * Initialize some parameters in state estimation components
      */
     void configureSE(void);
+
+    void identifyBadData(int idx);
+
+    /**
+     * Set the mode for all network components 
+     * @param mode enumerated constant for different modes
+     */
+    void setMode(int mode);
+
+    /**
+     * Report Measurement details 
+     * @Para: int idx for the measurement index 
+     * std::string& details to return the measurement details.
+     */
+    //void reportMeasurement(int idx);
+    bool reportMeasurement(int idx, std::string& details);
+    //bool reportMeasurement(int busID, const std::string& type, std::string& details, int& globalIdx);
+
+    /**
+     * Set voltage limits for all buses
+     * @param v_min minimum voltage limit
+     * @param v_max maximum voltage limit
+     * @param enforce whether to enforce limits
+     */
+    void setVoltageLimits(double v_min, double v_max, bool enforce);
 
   private:
 

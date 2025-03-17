@@ -11,6 +11,9 @@
  * 
  * @brief  
  * 
+ * @update Yousu Chen
+ *         Adding functions of bad data dection, chi-square testing 
+ * @date   2025-03-05
  * 
  */
 // -------------------------------------------------------------
@@ -45,6 +48,10 @@ gridpack::state_estimation::SEBus::SEBus(void)
   p_colJidx.clear();
   p_colRidx.clear();
   setReferenceBus(false);
+  // Default voltage limits 
+  p_v_min = 0.9;
+  p_v_max = 1.1;
+  p_enforce_v_limits = false;
 }
 
 /**
@@ -142,22 +149,6 @@ bool gridpack::state_estimation::SEBus::vectorSize(int *size) const
 }
 
 /**
- * Return the values of the vector block
- * @param values: pointer to vector values
- * @return: false if network component does not contribute
- *        vector element
- */
-bool gridpack::state_estimation::SEBus::vectorValues(ComplexType *values)
-{
-  if (p_mode == Voltage) {
-    // This needs to return true to properly set up the mapper for pushing
-    // voltage values back on to the buses
-    return true;
-  }
-  return false;
-}
-
-/**
  * Set the internal values of the voltage magnitude and phase angle. Need this
  * function to push values from vectors back onto buses 
  * @param values array containing voltage magnitude and angle
@@ -176,6 +167,22 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
     }
     *p_vAng_ptr = p_a;
     *p_vMag_ptr = p_v;
+    // Apply voltage projection using the configurable limits
+    if (p_enforce_v_limits) {
+      if (p_v > p_v_max) {
+        if (getOriginalIndex() == 8) {
+          printf("Bus %d voltage projection: %f → %f\n", getOriginalIndex(), p_v, p_v_max);
+        }
+        p_v = p_v_max;
+        *p_vMag_ptr = p_v;
+      } else if (p_v < p_v_min) {
+        if (getOriginalIndex() == 7) {
+          printf("Bus %d voltage projection: %f → %f\n", getOriginalIndex(), p_v, p_v_min);
+        }
+        p_v = p_v_min;
+        *p_vMag_ptr = p_v;
+      }
+    }
    }
   }
 //        at,vt,real(values[0]),real(values[1]),p_a,p_v);
@@ -187,8 +194,18 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
  */
 int gridpack::state_estimation::SEBus::vectorNumElements() const
 {
-  if (p_mode == Jacobian_H) {
+  if (p_mode == Jacobian_H || p_mode == Residual) {
+    // When computing residuals or Jacobian, we need the measurement count
     return p_meas.size();
+  } else if (p_mode == Voltage) {
+    // Original code for Voltage mode
+    if (!isIsolated()) {
+      if (getReferenceBus()) {
+        return 1;
+      } else {
+        return 2;
+      }
+    }
   }
   return 0;
 }
@@ -201,7 +218,7 @@ int gridpack::state_estimation::SEBus::vectorNumElements() const
  */
 void gridpack::state_estimation::SEBus::vectorSetElementIndex(int ielem, int idx)
 {
-  if (p_mode == Jacobian_H) {
+  if (p_mode == Jacobian_H || p_mode == Residual) {
     if (ielem < p_vecZidx.size()) {
       p_vecZidx[ielem] = idx;
     } else {
@@ -216,7 +233,7 @@ void gridpack::state_estimation::SEBus::vectorSetElementIndex(int ielem, int idx
  */
 void gridpack::state_estimation::SEBus::vectorGetElementIndices(int *idx)
 {
-  if (p_mode == Jacobian_H) {
+  if (p_mode == Jacobian_H || p_mode == Residual) {
     int nsize = p_vecZidx.size();
     int i;
     for (i=0; i<nsize; i++) {
@@ -354,12 +371,73 @@ gridpack::ComplexType gridpack::state_estimation::SEBus::getYBus(void)
  * the mapper
  * @param mode: enumerated constant for different modes
  */
+/**
+ * Set the mode to control what matrices and vectors are built when using
+ * the mapper
+ * @param mode: enumerated constant for different modes
+ */
 void gridpack::state_estimation::SEBus::setMode(int mode)
 {
+  // Save the mode internally
+  p_mode = mode;
+  
+  // Handle specific setup for different modes
   if (mode == YBus) {
     YMBus::setMode(gridpack::ymatrix::YBus);
+  } else if (mode == Jacobian_H) {
+    // Setup for Jacobian matrix calculation
+    // Nothing special needed here beyond setting p_mode
+  } else if (mode == R_inv) {
+    // Setup for measurement error covariance inverse
+    // Nothing special needed here beyond setting p_mode
+  } else if (mode == Voltage) {
+    // Setup for voltage state handling
+    // Nothing special needed here beyond setting p_mode
+  } else if (mode == Residual) {
+    // Setup for residual calculation
+    // Make sure latest state values are used
+    if (p_vAng_ptr != NULL && p_vMag_ptr != NULL) {
+      p_a = *p_vAng_ptr;
+      p_v = *p_vMag_ptr;
+    }
+    // Calculate power injections if needed for residuals
+    calculatePowerInjections();
   }
-  p_mode = mode;
+}
+
+/**
+ * Calculate real and reactive power injections at this bus
+ * Used for residual calculations
+ */
+void gridpack::state_estimation::SEBus::calculatePowerInjections(void)
+{
+  // Only calculate if we're not isolated
+  if (!isIsolated()) {
+    // Get the latest state variables
+    p_a = *p_vAng_ptr;
+    p_v = *p_vMag_ptr;
+    
+    // Initialize power injections
+    p_Pinj = 0.0;
+    p_Qinj = 0.0;
+    
+    // Sum contributions from all branches
+    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int nsize = branches.size();
+    
+    for (int j = 0; j < nsize; j++) {
+      SEBranch *branch = dynamic_cast<SEBranch*>(branches[j].get());
+      double p, q;
+      branch->getPQ(this, &p, &q);
+      p_Pinj += p;
+      p_Qinj += q;
+    }
+    
+    // Add shunt contributions
+    p_Pinj += p_v * p_v * p_ybusr;
+    p_Qinj += p_v * p_v * (-p_ybusi);
+  }
 }
 
 /**
@@ -825,23 +903,6 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
       ctk = p_meas[i].p_ckt;
       type = p_meas[i].p_type;
       if (type == "VM") {
-#if 0
-        std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
-        getNeighborBranches(branch_nghbrs);
-        nsize = branch_nghbrs.size();
-        for (j=0; j<nsize; j++) {
-          jm = matrixGetColIndex(0);
-          values[ncnt] = gridpack::ComplexType(0.0,0.0); 
-          rows[ncnt] = im;
-          cols[ncnt] = jm;
-          ncnt++;
-          jm = matrixGetColIndex(1);
-          values[ncnt] = gridpack::ComplexType(0.0,0.0); 
-          rows[ncnt] = im;
-          cols[ncnt] = jm;
-          ncnt++;
-        }
-#endif
         if (!getReferenceBus()) { 
           jm = matrixGetColIndex(0);
           values[ncnt] = gridpack::ComplexType(0.0,0.0); 
@@ -860,6 +921,64 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
           cols[ncnt] = jm;
           ncnt++;
         }
+      } else if (type == "VUL") {  // ADD THIS SECTION FOR VIRTUAL UPPER LIMIT
+         p_v = *p_vMag_ptr;
+         double limit = p_meas[i].p_value;
+          
+          // Only add non-zero Jacobian elements if the limit is violated
+         if (p_v > limit) {
+            if (!getReferenceBus()) {
+              // Angle derivative (zero)
+              jm = matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(0.0, 0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              
+              // Voltage derivative (one)
+              jm = matrixGetColIndex(1);
+              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            } else {
+              // Reference bus case
+              jm = matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            }
+         }
+      } else if (type == "VLL") { // ADD THIS SECTION FOR VIRTUAL LOWER LIMIT
+         p_v = *p_vMag_ptr;
+         double limit = p_meas[i].p_value;
+          
+         // Only add non-zero Jacobian elements if the limit is violated
+         if (p_v < limit) {
+            if (!getReferenceBus()) {
+              // Angle derivative (zero)
+              jm = matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(0.0, 0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              
+              // Voltage derivative (one)
+              jm = matrixGetColIndex(1);
+              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            } else {
+              // Reference bus case
+              jm = matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            }
+         }
       } else if (type == "PI") {
         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
         getNeighborBranches(branch_nghbrs);
@@ -1041,7 +1160,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
  * @param values: pointer to vector values (z-h(x))
  * @param idx: pointer to vector index 
 */
-void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *values, int *idx)
+void gridpack::state_estimation::SEBus::vectorGetElementValues(ComplexType *values, int *idx)
 {
   p_a = *p_vAng_ptr;
   p_v = *p_vMag_ptr;
@@ -1113,6 +1232,7 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
          int index = getGlobalIndex();
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
          ncnt++;
+
       } else if (type == "VA") {
          int index = getGlobalIndex();
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-p_a),0.0);
@@ -1120,6 +1240,76 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
       }
     } 
    }
+  } else if (p_mode == Residual) {
+    vectorGetElementIndices(idx);
+    // Only proceed if not isolated and have measurements
+    if (!isIsolated() && p_meas.size() > 0) {
+      // Get latest state variables
+      p_a = *p_vAng_ptr;
+      p_v = *p_vMag_ptr;
+      
+      // Calculate power injections
+      double Pinj = 0.0, Qinj = 0.0;
+      std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+      getNeighborBranches(branches);
+      
+      for (int j = 0; j < branches.size(); j++) {
+        SEBranch* branch = dynamic_cast<SEBranch*>(branches[j].get());
+        double p, q;
+        branch->getPQ(this, &p, &q);
+        Pinj += p;
+        Qinj += q;
+      }
+      
+      // Add shunt contribution
+      Pinj += p_v * p_v * p_ybusr;
+      Qinj += p_v * p_v * (-p_ybusi);
+      
+      // Store for later use
+      p_Pinj = Pinj;
+      p_Qinj = Qinj;
+      
+      // Process each measurement
+      for (int i = 0; i < p_meas.size(); i++) {
+        std::string type = p_meas[i].p_type;
+        double measured = p_meas[i].p_value;
+        double estimated = 0.0;
+        
+        if (type == "VM") {
+          estimated = p_v;
+        } 
+        // Handle virtual limit measurements
+	else if (type == "VUL") {
+          // Upper limit
+          estimated = std::min(p_v, measured);  
+          // If p_v <= measured, then estimated = p_v, so residual = measured - p_v (should be positive)
+          // If p_v > measured, then estimated = measured, so residual = 0
+        }
+	else if (type == "VLL") {
+          // Lower limit
+          estimated = std::min(p_v, measured);  
+          // If p_v >= measured, then estimated = p_v, so residual = measured - p_v (should be positive)
+          // If p_v < measured, then estimated = measured, so residual = 0
+        }
+	 else if (type == "VA") {
+          estimated = p_a;
+        } else if (type == "PI") {
+          estimated = Pinj;
+        } else if (type == "QI") {
+          estimated = Qinj;
+        }
+        
+        // Calculate residual
+        double residual = measured - estimated;
+        values[i] = ComplexType(residual, 0.0);
+        
+        // Debug for Bus 8 QI
+        if (getOriginalIndex() == 8 && type == "QI") {
+          printf("Step 1- Bus 8 QI in vectorGetElementValues: measured=%f, estimated=%f, residual=%f, assigned at index=%d\n", 
+                 measured, estimated, residual,idx[i]);
+        }
+      }
+    }
   } else if (p_mode == R_inv) {
   }
 }
@@ -1135,6 +1325,196 @@ void gridpack::state_estimation::SEBus::getShuntGsBs(double *gs, double *bs)
   *bs = p_shunt_bs/p_sbase; 
 //  *gs = p_shunt_gs;
 //  *bs = p_shunt_bs;
+}
+
+/**
+ * Check if residual index matches this bus and report bad data
+ * @param idx: index to check
+ * @param report: if true, print information about the bad data
+ * @return: true if index found on this bus
+ */
+bool gridpack::state_estimation::SEBus::checkResidualIndex(int idx, bool report)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_vecZidx[i] == idx) {
+      if (report) {
+        printf("Bad data detected on bus %d, measurement type: %s, value: %f, deviation: %f\n",
+               getOriginalIndex(), p_meas[i].p_type, p_meas[i].p_value, p_meas[i].p_deviation);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+bool gridpack::state_estimation::SEBus::getResidualDetails(int idx, char* buffer)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_vecZidx[i] == idx) {
+      sprintf(buffer, "Bus %d, Type: %s, Value: %f, Deviation: %f", 
+              getOriginalIndex(), p_meas[i].p_type, 
+              p_meas[i].p_value, p_meas[i].p_deviation);
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Return the values of the residual vector
+ * @param values: pointer to vector values
+ * @return: false if network component does not contribute vector element
+ */
+
+bool gridpack::state_estimation::SEBus::vectorValues(ComplexType *values)
+{
+  if (p_mode == Voltage) {
+    // Existing code for Voltage mode
+    return true;
+  } else if (p_mode == Residual) {
+    // Only proceed if we have measurements and aren't isolated
+    if (!isIsolated() && p_meas.size() > 0) {
+      // Get latest state variables
+      p_a = *p_vAng_ptr;
+      p_v = *p_vMag_ptr;
+      
+      // Calculate power injections
+      double Pinj = 0.0, Qinj = 0.0;
+      std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+      getNeighborBranches(branches);
+      
+      for (int j = 0; j < branches.size(); j++) {
+        SEBranch* branch = dynamic_cast<SEBranch*>(branches[j].get());
+        double p, q;
+        branch->getPQ(this, &p, &q);
+        Pinj += p;
+        Qinj += q;
+      }
+      
+      // Add shunt contribution
+      Pinj += p_v * p_v * p_ybusr;
+      Qinj += p_v * p_v * (-p_ybusi);
+      
+      // Store for later use
+      p_Pinj = Pinj;
+      p_Qinj = Qinj;
+      
+      // Special debug for Bus 8
+      if (getOriginalIndex() == 8) {
+        printf("DEBUG - Bus 8 in vectorValues: V=%f, Pinj=%f, Qinj=%f\n", 
+               p_v, Pinj, Qinj);
+      }
+      
+      // Process each measurement
+      for (int i = 0; i < p_meas.size(); i++) {
+        std::string type = p_meas[i].p_type;
+        double measured = p_meas[i].p_value;
+        double estimated = 0.0;
+        
+        if (type == "VM") {
+          estimated = p_v;
+        } else if (type == "VA") {
+          estimated = p_a;
+        } else if (type == "PI") {
+          estimated = Pinj;
+        } else if (type == "QI") {
+          estimated = Qinj;
+        }
+        
+        // Calculate residual
+        double residual = measured - estimated;
+        values[i] = ComplexType(residual, 0.0);
+        
+        // Debug for Bus 8 QI
+        if (getOriginalIndex() == 8 && type == "QI") {
+          printf("DEBUG - Bus 8 QI residual: measured=%f, estimated=%f, residual=%f\n", 
+                 measured, estimated, residual);
+        }
+      }
+      
+      return true;  // Critical to return true
+    }
+  }
+  return false;
+}
+
+
+bool gridpack::state_estimation::SEBus::serialWritePreCheck(char *string, const int bufsize)
+{
+  if (!isIsolated()) {
+    int nmeas = vectorNumElements();
+    if (nmeas > 0) {
+      char buf[128];
+      int idx = getOriginalIndex();
+      
+      // Loop through all measurements on this bus
+      for (int i = 0; i < p_meas.size(); i++) {
+        std::string type = p_meas[i].p_type;
+        double value = p_meas[i].p_value;
+        double deviation = p_meas[i].p_deviation;
+        
+        // Check for suspicious values based on measurement type
+        bool suspicious = false;
+        std::string reason = "";
+        
+        if (type == "VM") {
+          // Voltage magnitudes are typically in range 0.9-1.1
+          if (value < 0.8 || value > 1.2) {
+            suspicious = true;
+            reason = "unusual voltage magnitude";
+          }
+        } else if (type == "PI" || type == "QI") {
+          // Power injections should be reasonable for system size
+          // For a 14-bus system, values above 5.0 are suspicious
+          if (fabs(value) > 5.0) {
+            suspicious = true;
+            reason = "unusually large power value";
+          }
+        }
+        
+        if (suspicious) {
+          sprintf(buf, "SUSPICIOUS MEASUREMENT: Bus %d, Type %s, Value %.4f - %s\n",
+                  idx, type.c_str(), value, reason.c_str());
+          printf("%s", buf);
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Set voltage magnitude limits
+ * @param v_min minimum voltage limit
+ * @param v_max maximum voltage limit
+ * @param enforce whether to enforce limits
+ */
+void gridpack::state_estimation::SEBus::setVoltageLimits(double v_min, double v_max, bool enforce)
+{
+  p_v_min = v_min;
+  p_v_max = v_max;
+  p_enforce_v_limits = enforce;
+}
+
+// In SEBranch class
+bool gridpack::state_estimation::SEBranch::getResidualDetails(int idx, char* buffer)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_vecZidx[i] == idx) {
+      SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
+      SEBus *bus2 = dynamic_cast<SEBus*>(getBus2().get());
+      sprintf(buffer, "Branch from Bus %d to Bus %d, Circuit %s, Type: %s, Value: %f, Deviation: %f", 
+              bus1->getOriginalIndex(), bus2->getOriginalIndex(), 
+              p_meas[i].p_ckt, p_meas[i].p_type, 
+              p_meas[i].p_value, p_meas[i].p_deviation);
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -1329,12 +1709,40 @@ void gridpack::state_estimation::SEBranch::load(
  * the mapper
  * @param mode: enumerated constant for different modes
  */
+/**
+ * Set the mode to control what matrices and vectors are built when using
+ * the mapper
+ * @param mode: enumerated constant for different modes
+ */
 void gridpack::state_estimation::SEBranch::setMode(int mode)
 {
+  // Save the mode internally
+  p_mode = mode;
+  
+  // Handle specific setup for different modes
   if (mode == YBus) {
     YMBranch::setMode(gridpack::ymatrix::YBus);
+  } else if (mode == Jacobian_H) {
+    // Setup for Jacobian matrix calculation
+    // Nothing special needed here beyond setting p_mode
+  } else if (mode == R_inv) {
+    // Setup for measurement error covariance inverse
+    // Nothing special needed here beyond setting p_mode
+  } else if (mode == Voltage) {
+    // Setup for voltage state handling
+    // Nothing special needed here beyond setting p_mode
+  } else if (mode == Residual) {
+    // Setup for residual calculation
+    // Update branch calculations if needed
+    SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
+    SEBus *bus2 = dynamic_cast<SEBus*>(getBus2().get());
+    
+    // Only continue if both buses are not isolated
+    if (!bus1->isIsolated() && !bus2->isIsolated()) {
+      // Calculate current phase angle
+      p_theta = bus1->getPhase() - bus2->getPhase();
+    }
   }
-  p_mode = mode;
 }
 
 /**
@@ -2162,9 +2570,11 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
  * Return number of elements in vector coming from component
  * @return number of elements contributed from component
  */
+
 int gridpack::state_estimation::SEBranch::vectorNumElements() const
 {
-  if (p_mode == Jacobian_H) {
+  if (p_mode == Jacobian_H || p_mode == Residual) {
+    // When computing residuals or Jacobian, we need the measurement count
     return p_meas.size();
   }
   return 0;
@@ -2178,7 +2588,7 @@ int gridpack::state_estimation::SEBranch::vectorNumElements() const
  */
 void gridpack::state_estimation::SEBranch::vectorSetElementIndex(int ielem, int idx)
 {
-  if (p_mode == Jacobian_H) {
+  if (p_mode == Jacobian_H || p_mode == Residual) {
     if (ielem < p_vecZidx.size()) {
       p_vecZidx[ielem] = idx;
     } else {
@@ -2193,7 +2603,7 @@ void gridpack::state_estimation::SEBranch::vectorSetElementIndex(int ielem, int 
  */
 void gridpack::state_estimation::SEBranch::vectorGetElementIndices(int *idx)
 {
-  if (p_mode == Jacobian_H) {
+  if (p_mode == Jacobian_H || p_mode == Residual) {
     int nsize = p_vecZidx.size();
     int i;
     for (i=0; i<nsize; i++) {
@@ -2217,7 +2627,7 @@ void gridpack::state_estimation::SEBranch::vectorSetElementValues(ComplexType *v
  * @param values: pointer to vector values (z-h(x))
  * @param idx: pointer to vector index 
 */
-void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *values, int *idx)
+void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *values, int *idx)
 {
   if (p_mode == Jacobian_H) {
     gridpack::state_estimation::SEBus *bus1 =
@@ -2358,6 +2768,38 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
       }
     } 
     }
+  } else if (p_mode == Residual) {
+    SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
+    SEBus *bus2 = dynamic_cast<SEBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated() && !bus2->isIsolated();
+    
+    if (ok && p_meas.size() > 0) {
+      // Process branch measurements
+      for (int i = 0; i < p_meas.size(); i++) {
+        std::string type = p_meas[i].p_type;
+        std::string ckt = p_meas[i].p_ckt;
+        double measured = p_meas[i].p_value;
+        double estimated = 0.0;
+        
+        if (type == "PIJ") {
+          gridpack::ComplexType s = getComplexPower(ckt);
+          estimated = real(s)/p_sbase;
+        } else if (type == "QIJ") {
+          gridpack::ComplexType s = getComplexPower(ckt);
+          estimated = imag(s)/p_sbase;
+        } else if (type == "PJI") {
+          gridpack::ComplexType s = getRvrsComplexPower(ckt);
+          estimated = real(s)/p_sbase;
+        } else if (type == "QJI") {
+          gridpack::ComplexType s = getRvrsComplexPower(ckt);
+          estimated = imag(s)/p_sbase;
+        }
+        
+        // Calculate residual
+        double residual = measured - estimated;
+        values[i] = ComplexType(residual, 0.0);
+      }
+    }
   } else if (p_mode == R_inv) {
   }
 }
@@ -2438,3 +2880,89 @@ gridpack::ComplexType gridpack::state_estimation::SEBranch::getComplexPower(
   s = vi*conj(Yii*vi+Yij*vj)*p_sbase;
   return s;
 }
+
+
+/**
+ * Check if residual index matches this branch and report bad data
+ * @param idx: index to check
+ * @param report: if true, print information about the bad data
+ * @return: true if index found on this branch
+ */
+bool gridpack::state_estimation::SEBranch::checkResidualIndex(int idx, bool report)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_vecZidx[i] == idx) {
+      if (report) {
+        SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
+        SEBus *bus2 = dynamic_cast<SEBus*>(getBus2().get());
+        printf("Bad data detected on branch from bus %d to bus %d, circuit %s, " 
+               "measurement type: %s, value: %f, deviation: %f\n",
+               bus1->getOriginalIndex(), bus2->getOriginalIndex(), 
+               p_meas[i].p_ckt, p_meas[i].p_type, 
+               p_meas[i].p_value, p_meas[i].p_deviation);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Return the values of the residual vector
+ * @param values: pointer to vector values
+ * @return: false if network component does not contribute vector element
+ */
+bool gridpack::state_estimation::SEBranch::vectorValues(ComplexType *values)
+{
+  if (p_mode == Residual) {
+    printf("DEBUG: SEBranch::vectorValues called in Residual mode for Branch from Bus %d to Bus %d\n", 
+           getBus1OriginalIndex(), getBus2OriginalIndex());
+    
+    SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
+    SEBus *bus2 = dynamic_cast<SEBus*>(getBus2().get());
+    bool isIsolated = bus1->isIsolated() || bus2->isIsolated();
+    
+    if (!isIsolated && p_meas.size() > 0) {
+      printf("DEBUG: Branch from Bus %d to Bus %d has %d measurements\n", 
+             getBus1OriginalIndex(), getBus2OriginalIndex(), (int)p_meas.size());
+      
+      int nmeas = p_meas.size();
+      for (int j = 0; j < nmeas; j++) {
+        std::string measureType = p_meas[j].p_type;
+        std::string ckt = p_meas[j].p_ckt;
+        double measValue = p_meas[j].p_value;
+        double estimateValue = 0.0;
+        
+        if (measureType == "PIJ") {
+          gridpack::ComplexType s = getComplexPower(ckt);
+          estimateValue = real(s)/p_sbase;
+        } else if (measureType == "QIJ") {
+          gridpack::ComplexType s = getComplexPower(ckt);
+          estimateValue = imag(s)/p_sbase;
+        } else if (measureType == "PJI") {
+          gridpack::ComplexType s = getRvrsComplexPower(ckt);
+          estimateValue = real(s)/p_sbase;
+        } else if (measureType == "QJI") {
+          gridpack::ComplexType s = getRvrsComplexPower(ckt);
+          estimateValue = imag(s)/p_sbase;
+        }
+        
+        double residual = measValue - estimateValue;
+        values[j] = ComplexType(residual, 0.0);
+        
+        printf("DEBUG: Branch %d to %d, Meas %s, Value %f, Est %f, Res %f\n", 
+               getBus1OriginalIndex(), getBus2OriginalIndex(), 
+               measureType.c_str(), measValue, estimateValue, residual);
+      }
+      return true;
+    } else {
+      printf("DEBUG: Branch from Bus %d to Bus %d skipped (isolated=%d, meas_count=%d)\n", 
+             getBus1OriginalIndex(), getBus2OriginalIndex(), 
+             isIsolated, (int)p_meas.size());
+    }
+  }
+  return false;
+}
+
+

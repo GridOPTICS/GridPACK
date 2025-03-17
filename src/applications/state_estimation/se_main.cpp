@@ -10,6 +10,10 @@
  * @date   2016-07-14 14:23:28 d3g096
  *
  * @brief
+ * @update Yousu Chen
+ *         Adding functions of applying virtual measurements, enhancing voltage 
+ *         constraings, and performing bad data detection
+ * @date   2025-03-05
  */
 // -------------------------------------------------------------
 
@@ -56,7 +60,10 @@ main(int argc, char **argv)
     se_app.initialize();
     se_app.readMeasurements();
     se_app.solve();
-    se_app.write();
+    // Only call write() if convergence was achieved
+    if (se_app.hasConverged()) {
+      se_app.write();
+    }
   }
 
   GA_Terminate();
