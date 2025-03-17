@@ -62,6 +62,11 @@ public:
   */
   virtual void getPrefQext(double *Pref, double *Qext) { }
 
+  virtual double getPref( ) {return 0.0;}
+	
+  virtual double getQext( ) {return 0.0;}
+
+
   /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
 

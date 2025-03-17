@@ -97,6 +97,11 @@ public:
   virtual void write(const char* signal, char* string);
 
   /**
+   * Set bus voltage
+   */
+  void setVoltage(double busVD, double busVQ) {VD = busVD; VQ = busVQ; }
+  
+  /**
      set exciter status
   **/
   void setStatus(int estatus) {status = estatus;}
@@ -369,6 +374,7 @@ protected:
   std::string   id;
   double        p_time = 0.0;   /** Current time */
   double        shift; // shift (multiplier) used in the Jacobian calculation
+  double        VD,VQ;
   
   EMTMachineIntegrationType integrationtype; // Integration type 
 
