@@ -65,6 +65,10 @@ set(target_source
   model_classes/regca1.cpp
   model_classes/reeca1.cpp
   model_classes/repca1.cpp
+  model_classes/wtdta1.cpp
+  model_classes/wtpta1.cpp
+  model_classes/wttqa1.cpp
+  model_classes/wtara1.cpp  
   model_classes/gdform.cpp
   model_classes/lumpedline.cpp
   model_classes/transformer.cpp
@@ -138,6 +142,10 @@ install(FILES
   model_classes/regca1.hpp
   model_classes/reeca1.hpp
   model_classes/repca1.hpp
+  model_classes/wtdta1.hpp
+  model_classes/wtpta1.hpp
+  model_classes/wttqa1.hpp
+  model_classes/wtara1.hpp
   model_classes/gdform.hpp
   model_classes/lumpedline.hpp
   model_classes/transformer.hpp
