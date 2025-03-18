@@ -22,10 +22,13 @@
 #include <gridpack/math/matrix.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_gen_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_plant_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_mechanical_model.hpp>
+
 #include <gridpack/math/dae_solver.hpp>
 
 class BaseEMTGenModel; // Forward declaration for BaseGenModel
 class BaseEMTPlantControllerModel; // Forward declaration for BasePlantControllerModel
+class BaseEMTRMechModel; // Forward declaration for BaseMechanicalModel
 
 class BaseEMTExcModel : public gridpack::component::BaseComponent
 {
@@ -235,6 +238,13 @@ public:
   
   bool hasPlantController();
 
+    void setTorqueController(boost::shared_ptr<BaseEMTRMechModel> &p_torquecontroller);
+
+  boost::shared_ptr<BaseEMTRMechModel> getTorqueController();
+  
+  bool hasTorqueController();
+
+
 
   /**
    * Set an internal variable that can be used to control the behavior of the
@@ -304,6 +314,11 @@ protected:
   bool   p_hasPlantController; // Flag indicating whether this electrical controller has a plant controller
   
   boost::shared_ptr<BaseEMTPlantControllerModel> p_plantcontroller; // Plant Controller
+
+  bool   p_hasTorqueController; // Flag indicating whether this electrical controller has a torque controller
+  
+  boost::shared_ptr<BaseEMTRMechModel> p_torquecontroller; // Torque Controller
+
 
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator

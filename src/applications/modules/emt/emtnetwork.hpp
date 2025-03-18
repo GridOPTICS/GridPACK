@@ -25,6 +25,7 @@
 #include <gridpack/applications/modules/emt/base_classes/base_gov_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_load_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/base_branch_model.hpp>
+#include <gridpack/applications/modules/emt/base_classes/base_mechanical_model.hpp>
 #include <gridpack/applications/modules/emt/base_classes/fault.hpp>
 #include <gridpack/math/dae_solver.hpp>
 #include <gridpack/applications/modules/emt/emtutilfunctions.hpp>
