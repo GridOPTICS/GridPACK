@@ -31,6 +31,10 @@
 #include <model_classes/regca1.hpp>
 #include <model_classes/reeca1.hpp>
 #include <model_classes/repca1.hpp>
+#include <model_classes/wtdta1.hpp>
+#include <model_classes/wtpta1.hpp>
+#include <model_classes/wttqa1.hpp>
+#include <model_classes/wtara1.hpp>
 #include <model_classes/gdform.hpp>
 #include <model_classes/tgov1.hpp>
 #include <model_classes/gast.hpp>
@@ -347,7 +351,6 @@ void EmtBus::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
   int i;
   bool has_ex=false,has_gov=false,has_pcon=false;
 
-  
   for(i=0; i < p_ngen; i++) {
     if(!p_gen[i]->getStatus()) continue;
 
@@ -668,9 +671,10 @@ void EmtBus::load(const
   }
       
   gridpack::utility::StringUtils util;
-  bool has_ex;
-  bool has_gv;
+  bool has_ex=false;
+  bool has_gv=false;
   bool has_plantcontroller = false;
+  bool has_wind_tc=false,has_wind_pc=false,has_wind_dt=false,has_wind_aero=false;
 
   // Read Generators 
   // Get number of generators incident on this bus
@@ -856,7 +860,62 @@ void EmtBus::load(const
 	    repca1->load(data,i); // load plant controller model
 	  }
 	}
-      }      
+      }
+
+      if(has_ex && has_plantcontroller) {
+	boost::shared_ptr<BaseEMTRMechModel> torquecon;
+	boost::shared_ptr<BaseEMTRMechModel> pitchcon;
+
+	data->getValue(HAS_WIND_TORQUECONTROL,&has_wind_tc,i);
+	if(has_wind_tc) {
+	  if(data->getValue(WIND_TORQUECONTROL, &model, i)) {
+	    type = util.trimQuotes(model);
+	    if((type == "WTTQA1")) {
+	      Wttqa1 *wttqa1;
+	      wttqa1 = new Wttqa1;
+	      // Set Generator, Electrical Controller, and Plant Controller
+	      wttqa1->setGenerator(p_gen[i]);
+	      wttqa1->setElectricalController(p_gen[i]->getExciter().get());
+	      wttqa1->setPlantController(p_gen[i]->getPlantController().get());
+	      
+	      torquecon.reset(wttqa1);
+	    
+	      // Set torque controller for the electrical controller model
+	      ex->setTorqueController(torquecon);
+	      
+	      // Handle torque controller data loading
+	      wttqa1->load(data,i); // load plant controller model
+	    }
+	  }
+	}
+
+	data->getValue(HAS_WIND_PITCHCONTROL,&has_wind_pc,i);
+	if(has_wind_pc) {
+	  if(data->getValue(WIND_PITCHCONTROL, &model, i)) {
+	    type = util.trimQuotes(model);
+	    if((type == "WTPTA1")) {
+	      Wtpta1 *wtpta1;
+	      wtpta1 = new Wtpta1;
+	      // Set Generator, Electrical Controller, and Plant Controller
+	      wtpta1->setGenerator(p_gen[i]);
+	      wtpta1->setElectricalController(p_gen[i]->getExciter().get());
+	      wtpta1->setPlantController(p_gen[i]->getPlantController().get());
+
+	      pitchcon.reset(wtpta1);
+
+	      // Set torque controller
+	      wtpta1->setTorqueController(torquecon);
+
+	      // Set pitch controller for the torque controller
+	      torquecon->setPitchController(pitchcon);
+	      
+	      // Handle torque controller data loading
+	      wtpta1->load(data,i); // load plant controller model
+	    }
+	  }
+	}
+      }
+      
     }
   }
 

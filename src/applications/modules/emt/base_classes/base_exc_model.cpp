@@ -7,7 +7,7 @@
 /**
  * @file   base_exc_model.cpp
  *  
- * @brief Base exciter model 
+ * @brief Base exciter model. Also used for renewable electrical controller
  *
  *
  */
@@ -19,6 +19,8 @@ BaseEMTExcModel::BaseEMTExcModel(void)
 {
   p_nrows = 0;
   p_ncols = 0;
+  p_hasPlantController = false;
+  p_hasTorqueController = false;
 }
 
 BaseEMTExcModel::~BaseEMTExcModel(void)
@@ -124,4 +126,22 @@ bool BaseEMTExcModel::hasPlantController()
 {
     return p_hasPlantController;
 }
+
+void BaseEMTExcModel::setTorqueController(boost::shared_ptr<BaseEMTRMechModel> &tcontroller)
+{ 
+  p_torquecontroller = tcontroller;
+  p_hasTorqueController = true;
+}
+
+
+boost::shared_ptr<BaseEMTRMechModel> BaseEMTExcModel::getTorqueController()
+{
+  return p_torquecontroller;
+}
+
+bool BaseEMTExcModel::hasTorqueController()
+{
+    return p_hasTorqueController;
+}
+
 
