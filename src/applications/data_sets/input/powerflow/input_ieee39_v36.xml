@@ -7,6 +7,8 @@
 <Configuration>
   <Powerflow>
     <networkConfiguration_v36> IEEE39bus_original_Modified_v36_1_ibr.raw </networkConfiguration_v36>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-4</tolerance>
     <LinearSolver>
       <SolutionTolerance>1.0e-08</SolutionTolerance>
       <RelativeTolerance>1.0e-12</RelativeTolerance>
@@ -38,7 +40,7 @@
     -->
     <UseNewton>false</UseNewton>
     <NewtonRaphsonSolver>
-      <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <SolutionTolerance>1.0E-04</SolutionTolerance>
       <FunctionTolerance>1.0E-05</FunctionTolerance>
       <MaxIterations>50</MaxIterations>
       <LinearSolver>
