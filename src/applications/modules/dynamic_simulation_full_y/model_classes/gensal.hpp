@@ -45,6 +45,15 @@ class GensalGenerator : public BaseGeneratorModel
         data, int idx);
 
     /**
+     * Update parameters in DataCollection object with current values from
+     * generator
+     * @param data collection object for bus that hosts generator
+     * @param index of generator on bus
+     */
+    void updateData(boost::shared_ptr<gridpack::component::DataCollection> data,
+        int idx);
+
+    /**
      * Saturation function
      * @ param x
      */

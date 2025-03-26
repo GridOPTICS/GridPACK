@@ -45,6 +45,15 @@ class MotorwLoad : public BaseLoadModel
         data, int idx, double dloadP, double dloadQ, int ibCMPL);
 
     /**
+     * Update parameters in DataCollection object with current values from
+     * load
+     * @param data collection object for bus that hosts load
+     * @param index of generator on bus
+     */
+    void updateData(boost::shared_ptr<gridpack::component::DataCollection> data,
+        int idx);
+
+    /**
      * Initialize load model before calculation
      * @param mag voltage magnitude
      * @param ang voltage angle
@@ -158,7 +167,7 @@ class MotorwLoad : public BaseLoadModel
     // derivatives of state variables for corrector
     double depq_dt, depd_dt, deppq_dt, deppd_dt, dslip_dt;
 
-    // oter varialbes
+    // other varialbes
     double w0, TL, Tm0, p, q, Pmotor, Qmotor, Qmotor_init, sysMVABase;
 	gridpack::ComplexType nortonImpedance_sysMVA;
 	double Fonline;

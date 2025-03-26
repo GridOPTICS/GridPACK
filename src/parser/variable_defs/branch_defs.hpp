@@ -19,6 +19,12 @@
  *  index are denoted with the keyword "indexed".
  */
 
+/**
+ * Variables that have _CURRENT appended to them may be added to the data
+ * collection during runtime and updated as the simulation
+ * proceeds
+ */
+
 #ifndef _BRANCH_VAR_HPP_
 #define _BRANCH_VAR_HPP_
 
@@ -314,5 +320,47 @@
  * indexed
  */
 #define BRANCH_SEQ_BI "BRANCH_SEQ_BI"
+
+/**
+ * Real power from "from" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_FROM_P_CURRENT "BRANCH_FROM_P_CURRENT"
+
+/**
+ * Reactive power from "from" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_FROM_Q_CURRENT "BRANCH_FROM_Q_CURRENT"
+
+/**
+ * Real power from "to" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_TO_P_CURRENT "BRANCH_TO_P_CURRENT"
+
+/**
+ * Reactive power from "to" bus of branch
+ * type: real float
+ * indexed
+ */
+#define BRANCH_TO_Q_CURRENT "BRANCH_TO_Q_CURRENT"
+
+/**
+ * Real branch current
+ * type: real float
+ * indexed
+ */
+#define BRANCH_IRFLOW_CURRENT "BRANCH_IRFLOW_CURRENT"
+
+/**
+ * Imaginary branch current
+ * type: real float
+ * indexed
+ */
+#define BRANCH_IIFLOW_CURRENT "BRANCH_IIFLOW_CURRENT"
 
 #endif /* _BRANCH_VAR_HPP_ */

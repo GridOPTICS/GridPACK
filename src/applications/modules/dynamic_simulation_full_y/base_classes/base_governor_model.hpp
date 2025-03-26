@@ -45,6 +45,15 @@ class BaseGovernorModel
         data, int idx);
 
     /**
+     * Update parameters in DataCollection object with current values from
+     * governor
+     * @param data collection object for bus that hosts governor
+     * @param index of generator on bus
+     */
+    virtual void updateData(boost::shared_ptr<gridpack::component::DataCollection>
+        data, int idx);
+
+    /**
      * Initialize governor model before calculation
      * @param mag voltage magnitude
      * @param ang voltage angle

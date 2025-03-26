@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2024-05-15 12:27:32 d3g096
+ * @date   2025-01-29 11:52:40 d3g096
  * 
  * @brief  
  * 
@@ -379,6 +379,18 @@ void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(){
    
 */
 }
+
+/**
+ * Update data collection objects for all buses and branches with
+ * current values from simulations
+ */
+void gridpack::hadrec::HADRECAppModule::updateData()
+{
+  if (ds_app_sptr) {
+    ds_app_sptr->updateData();
+  }
+}
+
 
 /**
  * return observations after each simulation time step

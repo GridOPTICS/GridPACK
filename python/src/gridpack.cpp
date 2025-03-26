@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2023-11-30 13:57:21 d3g096
+// Last Change: 2025-01-29 11:49:39 d3g096
 // -------------------------------------------------------------
 
 #include <mpi4py/mpi4py.h>
@@ -481,6 +481,7 @@ PYBIND11_MODULE(gridpack, gpm) {
            return py::make_tuple(total, pmin, pmax);
          })
     .def("resetPower", &gpds::DSFullApp::resetPower)
+    .def("updateData", &gpds::DSFullApp::updateData)
     .def("writeRTPRDiagnostics",
          [](gpds::DSFullApp& self,
             int src_area, int src_zone, int load_area,
@@ -769,6 +770,7 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def(py::init<>())
     .def("transferPFtoDS", &gph::HADRECAppModule::transferPFtoDS)
     .def("executeDynSimuOneStep", &gph::HADRECAppModule::executeDynSimuOneStep)
+    .def("updateData", &gph::HADRECAppModule::updateData)
     .def("isDynSimuDone",  &gph::HADRECAppModule::isDynSimuDone)
     .def("applyAction", &gph::HADRECAppModule::applyAction)
     .def("getObservations", &gph::HADRECAppModule::getObservations,

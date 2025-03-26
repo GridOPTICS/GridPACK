@@ -24,27 +24,34 @@ def network_analytics_dump(ds_app):
               ds_app.numLoads(bus),
               ds_app.getBusInfoReal(bus, "BUS_VOLTAGE_MAG"))
         for g in range(ds_app.numGenerators(bus)):
+            print(bus, g)
             print(" gen: ", g,
                   ds_app.getBusInfoInt(bus, "GENERATOR_NUMBER", g),
                   ds_app.getBusInfoString(bus, "GENERATOR_ID", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG", g),
-                  ds_app.getBusInfoReal(bus, "GENERATOR_QG", g))
+                  ds_app.getBusInfoReal(bus, "GENERATOR_QG", g),
+                  ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
+                  ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g)
+            )
         for l in range(ds_app.numLoads(bus)):
             print("load: ", l,
                   ds_app.getBusInfoInt(bus, "LOAD_NUMBER", l),
                   ds_app.getBusInfoString(bus, "LOAD_ID", l),
                   ds_app.getBusInfoReal(bus, "LOAD_PL", l),
-                  ds_app.getBusInfoReal(bus, "LOAD_QL", l))
+                  ds_app.getBusInfoReal(bus, "LOAD_QL", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_PL_CURRENT", l),
+                  ds_app.getBusInfoReal(bus, "LOAD_QL_CURRENT", l))
     nbranch = ds_app.totalBranches()
     for branch in range(0, nbranch):
         (f, t) = ds_app.getBranchEndpoints(branch)
-        print(branch, f, t, 
-              ds_app.getBranchInfoInt(branch, "BRANCH_ELEMENTS"),
-              ds_app.getBranchInfoInt(branch, "BRANCH_INDEX"),
-              ds_app.getBranchInfoString(branch, "BRANCH_NAME"),
-              ds_app.getBranchInfoReal(branch, "BRANCH_LENGTH"))
-              
-            
+        nelem = ds_app.getBranchInfoInt(branch, "BRANCH_NUM_ELEMENTS")
+        for e in range(0, nelem):
+            print(branch, ds_app.getBranchInfoInt(branch, "BRANCH_INDEX"),
+                  f, t, e, 
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', e),
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', e),
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_Q_CURRENT', e),
+                  ds_app.getBranchInfoReal(branch, 'BRANCH_TO_Q_CURRENT', e))
 
 # -------------------------------------------------------------
 # variable initialization
@@ -95,6 +102,7 @@ ds_app.solvePreInitialize(faults[0])
 while (not ds_app.isDynSimuDone()):
     ds_app.executeOneSimuStep()
 
+ds_app.updateData()
 network_analytics_dump(ds_app)
 
 timer.stop(t_total)

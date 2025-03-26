@@ -251,6 +251,9 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
 
   /* Update frequency */
   p_factory->updateBusFreq(p_time_step);
+
+  /* yuan add: update branch power*/
+  p_factory->updateData();
 	
   std::vector <double> vwideareafreqs;
   vwideareafreqs = p_factory->grabWideAreaFreq();

@@ -243,6 +243,12 @@ class DSFullBus
      *       bus that were read in when network was initialized
      */
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
+
+    /**
+     * Update data collection object with current values from simulation
+     * @param data: DataCollection object containing parameters for this bus
+     */
+    void updateData(boost::shared_ptr<gridpack::component::DataCollection> &data);
 	
  	/**
      * load parameters for the extended buses from composite load model
@@ -761,6 +767,7 @@ class DSFullBus
     std::vector<double> p_mva, p_r, p_dstr, p_dtr, p_gpmin, p_gpmax;
     int p_ngen, p_negngen, p_ngen_nodynmodel;
     int p_ndyn_load, p_npowerflow_load;
+    std::vector<double> p_gload, p_bload; // load impedance
     int p_type;
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
@@ -937,6 +944,17 @@ class DSFullBranch
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
+     * Evaluate branch flows for the to and from bus on the branch
+     */
+    void evaluateBranchFlow();
+
+    /**
+     * Update data collection object with current values from simulation
+     * @param data: DataCollection object containing parameters for this branch
+     */
+    void updateData(boost::shared_ptr<gridpack::component::DataCollection> &data);
+
+    /**
      * Return the complex admittance of the branch
      * @return: complex addmittance of branch
      */
@@ -1103,6 +1121,9 @@ class DSFullBranch
 	std::vector<gridpack::ComplexType> p_branchcurrent; //renke add
 	gridpack::ComplexType p_branchfrombusvolt; //renke add
 	gridpack::ComplexType p_branchtobusvolt; //renke add
+
+  std::vector<gridpack::ComplexType> p_branchfrombuspq; //yuan add
+  std::vector<gridpack::ComplexType> p_branchtobuspq; //yuan add
 
   bool p_line_status_change; // Flag to indicate line status change
   gridpack::ComplexType p_yft,p_ytf; // Ybus off-diagonal contributions from this line
