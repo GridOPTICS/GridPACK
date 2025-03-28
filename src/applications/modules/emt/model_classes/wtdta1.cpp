@@ -83,11 +83,17 @@ void Wtdta1::init(gridpack::RealType* xin)
   dtheta_g = ang;
   u = dthetag_blk.init_given_y(dtheta_g);
 
+  s0 = 0.0;
+
   domega_g = s0; // speed deviation
   std::string domegag_block_name = blkhead + "domegag_blk";
   domegag_blk.setname(domegag_block_name.c_str());
 
   u = domegag_blk.init_given_y(domega_g);
+
+  double pg,qg;
+  getGenerator()->getPower(p_time,&pg,&qg);
+  Te = pg;
 
   Tm = Te + D*domega_g + u;
 

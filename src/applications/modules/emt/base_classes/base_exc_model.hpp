@@ -238,12 +238,17 @@ public:
   
   bool hasPlantController();
 
-    void setTorqueController(boost::shared_ptr<BaseEMTRMechModel> &p_torquecontroller);
+  void setTorqueController(boost::shared_ptr<BaseEMTRMechModel> &p_torquecontroller);
 
   boost::shared_ptr<BaseEMTRMechModel> getTorqueController();
   
   bool hasTorqueController();
 
+  void setDriveTrainController(boost::shared_ptr<BaseEMTRMechModel> &p_drivetraincontroller);
+
+  boost::shared_ptr<BaseEMTRMechModel> getDriveTrainController();
+  
+  bool hasDriveTrainController();
 
 
   /**
@@ -319,6 +324,9 @@ protected:
   
   boost::shared_ptr<BaseEMTRMechModel> p_torquecontroller; // Torque Controller
 
+  bool   p_hasDriveTrainController; // Flag indicating whether this electrical controller has a drive train controller
+  
+  boost::shared_ptr<BaseEMTRMechModel> p_drivetraincontroller; // Drive Train Controller
 
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator

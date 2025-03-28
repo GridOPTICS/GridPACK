@@ -21,6 +21,7 @@ BaseEMTExcModel::BaseEMTExcModel(void)
   p_ncols = 0;
   p_hasPlantController = false;
   p_hasTorqueController = false;
+  p_hasDriveTrainController = false;
 }
 
 BaseEMTExcModel::~BaseEMTExcModel(void)
@@ -144,4 +145,19 @@ bool BaseEMTExcModel::hasTorqueController()
     return p_hasTorqueController;
 }
 
+void BaseEMTExcModel::setDriveTrainController(boost::shared_ptr<BaseEMTRMechModel> &dcontroller)
+{ 
+  p_drivetraincontroller = dcontroller;
+  p_hasDriveTrainController = true;
+}
 
+
+boost::shared_ptr<BaseEMTRMechModel> BaseEMTExcModel::getDriveTrainController()
+{
+  return p_drivetraincontroller;
+}
+
+bool BaseEMTExcModel::hasDriveTrainController()
+{
+    return p_hasDriveTrainController;
+}
