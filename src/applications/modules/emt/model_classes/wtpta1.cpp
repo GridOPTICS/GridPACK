@@ -74,10 +74,20 @@ void Wtpta1::init(gridpack::RealType* xin)
   std::string lag_block_name = blkhead + "lag_blk";
   lag_blk.setname(lag_block_name.c_str());
 
+  Theta = getDriveTrainController()->getAeroDynamicController()->getTheta();
+
   Thetacmd = lag_blk.init_given_y(Theta);
 
   std::string pitchcomp_block_name = blkhead + "pitchcomp_blk";
   pitchcomp_blk.setname(pitchcomp_block_name.c_str());
+
+  Pord = getElectricalController()->getPord();
+
+  Pord0 = getPlantController()->getPref();
+
+  domega_t = getDriveTrainController()->getTurbineSpeedDeviation();
+
+  omega_ref = getTorqueController()->getOmegaref();
   
   u1 = pitchcomp_blk.init_given_y(0.0);
 

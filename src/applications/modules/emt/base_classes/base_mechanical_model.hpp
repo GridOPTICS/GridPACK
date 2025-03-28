@@ -366,21 +366,21 @@ public:
    **/
   virtual double getRotorAngleDeviation() {return 0.0; }
 
-  void setPitchController(BaseEMTRMechModel* pcontroller) {p_pitchcon = pcontroller; }
+  void setPitchController(boost::shared_ptr<BaseEMTRMechModel> &pcontroller) {p_pitchcon = pcontroller; }
 
-  BaseEMTRMechModel* getPitchController() { return p_pitchcon; }
+  boost::shared_ptr<BaseEMTRMechModel> getPitchController() { return p_pitchcon; }
 
-  void setTorqueController(BaseEMTRMechModel* tcontroller) {p_torquecon = tcontroller; }
+  void setTorqueController(boost::shared_ptr<BaseEMTRMechModel> &tcontroller) {p_torquecon = tcontroller; }
 
-  BaseEMTRMechModel* getTorqueController() { return p_torquecon; }
+  boost::shared_ptr<BaseEMTRMechModel> getTorqueController() { return p_torquecon; }
 
-  void setAeroDynamicController(BaseEMTRMechModel* acontroller) {p_aerocon = acontroller; }
+  void setAeroDynamicController(boost::shared_ptr<BaseEMTRMechModel> &acontroller) {p_aerocon = acontroller; }
 
-  BaseEMTRMechModel* getAeroDynamicController() { return p_aerocon; }
+  boost::shared_ptr<BaseEMTRMechModel> getAeroDynamicController() { return p_aerocon; }
 
-  void setDriveTrainController(BaseEMTRMechModel* dtcontroller) {p_drivetraincon = dtcontroller; }
+  void setDriveTrainController(boost::shared_ptr<BaseEMTRMechModel> &dtcontroller) {p_drivetraincon = dtcontroller; }
 
-  BaseEMTRMechModel* getDriveTrainController() { return p_drivetraincon; }
+  boost::shared_ptr<BaseEMTRMechModel> getDriveTrainController() { return p_drivetraincon; }
 
 protected:
   int           status; /**< Plant status */
@@ -396,10 +396,10 @@ protected:
   BaseEMTGenModel* p_gen; // Generator model
   BaseEMTExcModel* p_econ; // Electrical Controller model
   BaseEMTPlantControllerModel* p_pcon; // Plant Controller Model
-  BaseEMTRMechModel* p_pitchcon; // Pitch controller
-  BaseEMTRMechModel* p_torquecon; // Torque controller
-  BaseEMTRMechModel* p_aerocon; // Aerodynamic controller
-  BaseEMTRMechModel* p_drivetraincon; // Drive Train controller
+  boost::shared_ptr<BaseEMTRMechModel> p_pitchcon; // Pitch controller
+  boost::shared_ptr<BaseEMTRMechModel> p_torquecon; // Torque controller
+  boost::shared_ptr<BaseEMTRMechModel> p_aerocon; // Aerodynamic controller
+  boost::shared_ptr<BaseEMTRMechModel> p_drivetraincon; // Drive Train controller
 
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator

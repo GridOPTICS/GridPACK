@@ -891,25 +891,25 @@ void EmtBus::load(const
 	  }
 	}
 
-	data->getValue(HAS_WIND_PITCHCONTROL,&has_wind_pc,i);
-	if(has_wind_pc) {
-	  if(data->getValue(WIND_PITCHCONTROL, &model, i)) {
+	data->getValue(HAS_WIND_DRIVETRAIN,&has_wind_dt,i);
+	if(has_wind_dt) {
+	  if(data->getValue(WIND_DRIVETRAIN, &model, i)) {
 	    type = util.trimQuotes(model);
-	    if((type == "WTPTA1")) {
-	      Wtpta1 *wtpta1;
-	      wtpta1 = new Wtpta1;
+	    if((type == "WTDTA1")) {
+	      Wtdta1 *wtdta1;
+	      wtdta1 = new Wtdta1;
 	      // Set Generator, Electrical Controller, and Plant Controller
-	      wtpta1->setGenerator(p_gen[i]);
-	      wtpta1->setElectricalController(p_gen[i]->getExciter().get());
-	      wtpta1->setPlantController(p_gen[i]->getPlantController().get());
+	      wtdta1->setGenerator(p_gen[i]);
 
-	      pitchcon.reset(wtpta1);
+	      dtcon.reset(wtdta1);
 
-	      // Set torque controller
-	      wtpta1->setTorqueController(torquecon.get());
+	      torquecon->setDriveTrainController(dtcon);
 
-	      // Handle torque controller data loading
-	      wtpta1->load(data,i); // load plant controller model
+	      // Set drive train on Electrical Controller model
+	      ex->setDriveTrainController(dtcon);
+
+	      // Handle drive train controller data loading
+	      wtdta1->load(data,i); // load drive train controller model
 	    }
 	  }
 	}
@@ -926,39 +926,43 @@ void EmtBus::load(const
 
 	      aerocon.reset(wtara1);
 
-	      // Set pitch controller for the torque controller
-	      wtara1->setPitchController(pitchcon.get());
-	      
+	      // Set aerodynamic controller for drive train model
+	      dtcon->setAeroDynamicController(aerocon);
+
 	      // Handle torque controller data loading
 	      wtara1->load(data,i); // load plant controller model
 	    }
 	  }
 	}
 
-	data->getValue(HAS_WIND_DRIVETRAIN,&has_wind_dt,i);
-	if(has_wind_dt) {
-	  if(data->getValue(WIND_DRIVETRAIN, &model, i)) {
+	data->getValue(HAS_WIND_PITCHCONTROL,&has_wind_pc,i);
+	if(has_wind_pc) {
+	  if(data->getValue(WIND_PITCHCONTROL, &model, i)) {
 	    type = util.trimQuotes(model);
-	    if((type == "WTDTA1")) {
-	      Wtdta1 *wtdta1;
-	      wtdta1 = new Wtdta1;
+	    if((type == "WTPTA1")) {
+	      Wtpta1 *wtpta1;
+	      wtpta1 = new Wtpta1;
 	      // Set Generator, Electrical Controller, and Plant Controller
-	      wtdta1->setGenerator(p_gen[i]);
+	      wtpta1->setGenerator(p_gen[i]);
+	      wtpta1->setElectricalController(p_gen[i]->getExciter().get());
+	      wtpta1->setPlantController(p_gen[i]->getPlantController().get());
 
-	      dtcon.reset(wtdta1);
-
-	      // Set aerodynamic controller
-	      wtdta1->setAeroDynamicController(aerocon.get());
-
-	      // Set drive train on torque and pitch controllers
-	      pitchcon->setDriveTrainController(dtcon.get());
-	      torquecon->setDriveTrainController(dtcon.get());
-
-	      // Set drive train on Electrical Controller model
-	      p_gen[i]->getExciter()->setDriveTrainController(dtcon);
+	      pitchcon.reset(wtpta1);
 	      
-	      // Handle drive train controller data loading
-	      wtdta1->load(data,i); // load drive train controller model
+	      // Set drive train on torque and pitch controllers
+	      pitchcon->setDriveTrainController(dtcon);
+
+	      // Set torque controller
+	      pitchcon->setTorqueController(torquecon);
+
+	      // Set pitch controller for the torque controller
+	      torquecon->setPitchController(pitchcon);
+
+	      // Set pitch controller for the aerodynamic controller
+	      aerocon->setPitchController(pitchcon);
+
+	      // Handle torque controller data loading
+	      wtpta1->load(data,i); // load plant controller model
 	    }
 	  }
 	}
@@ -1570,11 +1574,17 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	  torquecon->setTime(p_time);
 	  torquecon->init(x);
 
-	  if(p_gen[i]->getExciter()->hasDriveTrainController()) {
-	    boost::shared_ptr<BaseEMTRMechModel> drivetraincon = p_gen[i]->getExciter()->getDriveTrainController();
-	    drivetraincon->setTime(p_time);
-	    drivetraincon->init(x);
-	  }
+	  boost::shared_ptr<BaseEMTRMechModel> drivetraincon = torquecon->getDriveTrainController();
+	  drivetraincon->setTime(p_time);
+	  drivetraincon->init(x);
+
+	  boost::shared_ptr<BaseEMTRMechModel> aerocon = drivetraincon->getAeroDynamicController();
+	  aerocon->setTime(p_time);
+	  aerocon->init(x);
+	  
+	  boost::shared_ptr<BaseEMTRMechModel> pitchcon = aerocon->getPitchController();
+	  pitchcon->setTime(p_time);
+	  pitchcon->init(x);
 	}
       }
     }
