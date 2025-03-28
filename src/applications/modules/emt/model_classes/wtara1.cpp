@@ -56,6 +56,11 @@ void Wtara1::init(gridpack::RealType* xin)
 {
   gridpack::RealType *x = xin+offsetb; // wtara1 array starts from this location
 
+  boost::shared_ptr<BaseEMTRMechModel> dtcon = getPitchController()->getDriveTrainController();
+  double Tm = dtcon->getTmech();
+  domega_t = dtcon->getTurbineSpeedDeviation();
+  Pmech0 = Tm*(1+domega_t);
+  
   double Pmech;
   Pmech = Pmech0 - Ka * Theta * (Theta - Theta0);
 

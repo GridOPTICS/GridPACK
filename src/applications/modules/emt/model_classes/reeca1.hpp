@@ -59,7 +59,7 @@ public:
   /**
      Get the power order - used by pitch controller model
   */
-   double getPord() { return 0.0; }
+   double getPord() { return Pord; }
 
   /**
      Set omega_g - from drive train model
