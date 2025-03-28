@@ -366,6 +366,21 @@ public:
    **/
   virtual double getRotorAngleDeviation() {return 0.0; }
 
+  void setPitchController(BaseEMTRMechModel* pcontroller) {p_pitchcon = pcontroller; }
+
+  BaseEMTRMechModel* getPitchController() { return p_pitchcon; }
+
+  void setTorqueController(BaseEMTRMechModel* tcontroller) {p_torquecon = tcontroller; }
+
+  BaseEMTRMechModel* getTorqueController() { return p_torquecon; }
+
+  void setAeroDynamicController(BaseEMTRMechModel* acontroller) {p_aerocon = acontroller; }
+
+  BaseEMTRMechModel* getAeroDynamicController() { return p_aerocon; }
+
+  void setDriveTrainController(BaseEMTRMechModel* dtcontroller) {p_drivetraincon = dtcontroller; }
+
+  BaseEMTRMechModel* getDriveTrainController() { return p_drivetraincon; }
 
 protected:
   int           status; /**< Plant status */
@@ -381,7 +396,11 @@ protected:
   BaseEMTGenModel* p_gen; // Generator model
   BaseEMTExcModel* p_econ; // Electrical Controller model
   BaseEMTPlantControllerModel* p_pcon; // Plant Controller Model
-  
+  BaseEMTRMechModel* p_pitchcon; // Pitch controller
+  BaseEMTRMechModel* p_torquecon; // Torque controller
+  BaseEMTRMechModel* p_aerocon; // Aerodynamic controller
+  BaseEMTRMechModel* p_drivetraincon; // Drive Train controller
+
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
   int           p_gloc; // Global location of the first variable for the generator
 

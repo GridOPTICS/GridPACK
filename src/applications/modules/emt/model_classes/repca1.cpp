@@ -36,6 +36,17 @@ void Repca1::getPrefQext(double *Prefout, double *Qextout)
   *Qextout = Qref;
 }
 
+double Repca1::getPref()
+{
+  return Pref;
+}
+
+double Repca1::getQext()
+{
+  return Qref;
+}
+
+
 /**
  * Load parameters from DataCollection object into exciter model
  * @param data collection of exciter parameters from input files

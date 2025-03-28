@@ -865,6 +865,8 @@ void EmtBus::load(const
       if(has_ex && has_plantcontroller) {
 	boost::shared_ptr<BaseEMTRMechModel> torquecon;
 	boost::shared_ptr<BaseEMTRMechModel> pitchcon;
+	boost::shared_ptr<BaseEMTRMechModel> aerocon;
+	boost::shared_ptr<BaseEMTRMechModel> dtcon;
 
 	data->getValue(HAS_WIND_TORQUECONTROL,&has_wind_tc,i);
 	if(has_wind_tc) {
@@ -904,18 +906,63 @@ void EmtBus::load(const
 	      pitchcon.reset(wtpta1);
 
 	      // Set torque controller
-	      wtpta1->setTorqueController(torquecon);
+	      wtpta1->setTorqueController(torquecon.get());
 
-	      // Set pitch controller for the torque controller
-	      torquecon->setPitchController(pitchcon);
-	      
 	      // Handle torque controller data loading
 	      wtpta1->load(data,i); // load plant controller model
 	    }
 	  }
 	}
+
+	data->getValue(HAS_WIND_AERODYNAMIC,&has_wind_aero,i);
+	if(has_wind_aero) {
+	  if(data->getValue(WIND_AERODYNAMIC, &model, i)) {
+	    type = util.trimQuotes(model);
+	    if((type == "WTARA1")) {
+	      Wtara1 *wtara1;
+	      wtara1 = new Wtara1;
+	      // Set Generator
+	      wtara1->setGenerator(p_gen[i]);
+
+	      aerocon.reset(wtara1);
+
+	      // Set pitch controller for the torque controller
+	      wtara1->setPitchController(pitchcon.get());
+	      
+	      // Handle torque controller data loading
+	      wtara1->load(data,i); // load plant controller model
+	    }
+	  }
+	}
+
+	data->getValue(HAS_WIND_DRIVETRAIN,&has_wind_dt,i);
+	if(has_wind_dt) {
+	  if(data->getValue(WIND_DRIVETRAIN, &model, i)) {
+	    type = util.trimQuotes(model);
+	    if((type == "WTDTA1")) {
+	      Wtdta1 *wtdta1;
+	      wtdta1 = new Wtdta1;
+	      // Set Generator, Electrical Controller, and Plant Controller
+	      wtdta1->setGenerator(p_gen[i]);
+
+	      dtcon.reset(wtdta1);
+
+	      // Set aerodynamic controller
+	      wtdta1->setAeroDynamicController(aerocon.get());
+
+	      // Set drive train on torque and pitch controllers
+	      pitchcon->setDriveTrainController(dtcon.get());
+	      torquecon->setDriveTrainController(dtcon.get());
+
+	      // Set drive train on Electrical Controller model
+	      p_gen[i]->getExciter()->setDriveTrainController(dtcon);
+	      
+	      // Handle drive train controller data loading
+	      wtdta1->load(data,i); // load drive train controller model
+	    }
+	  }
+	}
       }
-      
     }
   }
 
@@ -1515,6 +1562,20 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
 	plant->setVoltage(VR,VI); // Initial real and imaginary part of voltage phasor
 	plant->setTime(p_time);
 	plant->init(x);
+      }
+
+      if(p_gen[i]->hasExciter() && p_gen[i]->hasPlantController()) {
+	if(p_gen[i]->getExciter()->hasTorqueController()) {
+	  boost::shared_ptr<BaseEMTRMechModel> torquecon = p_gen[i]->getExciter()->getTorqueController();
+	  torquecon->setTime(p_time);
+	  torquecon->init(x);
+
+	  if(p_gen[i]->getExciter()->hasDriveTrainController()) {
+	    boost::shared_ptr<BaseEMTRMechModel> drivetraincon = p_gen[i]->getExciter()->getDriveTrainController();
+	    drivetraincon->setTime(p_time);
+	    drivetraincon->init(x);
+	  }
+	}
       }
     }
 

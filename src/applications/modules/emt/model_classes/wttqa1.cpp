@@ -84,6 +84,13 @@ void Wttqa1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 void Wttqa1::init(gridpack::RealType* xin) 
 {
   gridpack::RealType *x = xin+offsetb; // wttqa1 array starts from this location
+
+  double Qg;
+  getGenerator()->getPower(p_time,&Pelec,&Qg);
+
+  Pref = getPlantController()->getPref();
+
+  
     /* Create string for setting name */
   std::string blkhead = std::to_string(busnum) + "_" + id + "WTTQA1_";
 
