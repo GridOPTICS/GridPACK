@@ -35,18 +35,19 @@ See the PDF [user manual](https://gridpack.readthedocs.io/en/latest/index.html) 
 The best (and fastest) way to reach us for any technical questions is by posting an issue [here](https://github.com/GridOPTICS/GridPACK/issues). You can also reach us via email   gridpack.account@pnnl.gov.
 
 ## Citing GridPACK
-```
+```bibtex
 @article{doi:10.1177/1094342015607609, 
-author = {Bruce Palmer and William Perkins and Yousu Chen and Shuangshuang Jin and David C allahan and Kevin Glass and Ruisheng Diao and Mark Rice and Stephen Elbert and Mallikarjun a Vallem and Zhenyu Huang}, 
-title ={GridPACKTM: A framework for developing power grid simulations on high-performance computing platforms}, 
-journal = {The International Journal of High Performance Computing Applications}, 
-volume = {30}, 
-number = {2}, 
-pages = {223-240}, 
-year = {2016}, 
-doi = {10.1177/1094342015607609}, 
-URL = {https://doi.org/10.1177/1094342015607609}, 
-eprint = {https://doi.org/10.1177/1094342015607609}
+  author = {Bruce Palmer and William Perkins and Yousu Chen and Shuangshuang Jin and David C allahan and Kevin Glass and Ruisheng Diao and Mark Rice and Stephen Elbert and Mallikarjun a Vallem and Zhenyu Huang}, 
+  title ={GridPACKTM: A framework for developing power grid simulations on high-performance computing platforms}, 
+  journal = {The International Journal of High Performance Computing Applications}, 
+  volume = {30}, 
+  number = {2}, 
+  pages = {223-240}, 
+  year = {2016}, 
+  doi = {10.1177/1094342015607609}, 
+  URL = {https://doi.org/10.1177/1094342015607609}, 
+  eprint = {https://doi.org/10.1177/1094342015607609}
+}
 ```
 
 ## Authors
