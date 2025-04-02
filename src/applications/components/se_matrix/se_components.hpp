@@ -13,6 +13,8 @@
  * @update Yousu Chen
  *         Adding functions of bad data dection, chi-square testing 
  * @date   2025-03-05
+ *         Adding more functions to handle measurements more efficiently
+ * @date   2025-04-02
  */
 // -------------------------------------------------------------
 
@@ -198,6 +200,12 @@ class SEBus
      * @return true if bus is PV bus
      */
     bool isPV(void);
+    
+    /**
+     * Return whether or not the bus is a slack bus (V and angle held fixed)
+     * @return true if bus is slack bus
+     */
+    bool isSlack(void);
 
     /**
      * Return whether or not a bus is isolated
@@ -338,7 +346,28 @@ class SEBus
      * @param enforce whether to enforce limits
      */
     void setVoltageLimits(double v_min, double v_max, bool enforce);
+    
+    /**
+     * Adjust the weight of a measurement by modifying its deviation
+     * @param idx measurement index to adjust
+     * @param factor factor to multiply deviation by
+     * @param oldDeviation returns the old deviation value
+     * @param newDeviation returns the new deviation value
+     * @return true if measurement was found and adjusted, false otherwise
+     */
+    bool adjustMeasurementWeight(int idx, double factor, double& oldDeviation, double& newDeviation);
 
+    /**
+     * Check if this bus has any measurements
+     * @return true if bus has measurements
+     */
+    bool hasMeasurements() const { return !p_meas.empty(); }
+    
+    /**
+     * Get all measurements associated with this bus
+     * @return vector of measurements
+     */
+    std::vector<Measurement> getMeasurements() const { return p_meas; }
 
 
   private:
@@ -367,6 +396,7 @@ class SEBus
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV;
+    bool p_isSlack;
     int p_numElements;
     std::vector<int> p_colJidx;
     std::vector<int> p_rowJidx;
@@ -672,6 +702,60 @@ class SEBranch
     bool getResidualDetails(int idx, char* buffer);
 
     bool vectorValues(ComplexType *values); 
+    
+    /**
+     * Adjust the weight of a measurement by modifying its deviation
+     * @param idx measurement index to adjust
+     * @param factor factor to multiply deviation by
+     * @param oldDeviation returns the old deviation value
+     * @param newDeviation returns the new deviation value
+     * @return true if measurement was found and adjusted, false otherwise
+     */
+    bool adjustMeasurementWeight(int idx, double factor, double& oldDeviation, double& newDeviation);
+    
+    /**
+     * Check if this branch has any measurements
+     * @return true if branch has measurements
+     */
+    bool hasMeasurements() const { return !p_meas.empty(); }
+    
+    /**
+     * Get all measurements associated with this branch
+     * @return vector of measurements
+     */
+    std::vector<Measurement> getMeasurements() const { return p_meas; }
+    
+    /**
+     * Get reactance data for this branch
+     * @param reactance vector to store reactance values
+     */
+    void getReactanceData(std::vector<double>& reactance) const { 
+        reactance = p_reactance; 
+    }
+    
+    /**
+     * Get resistance data for this branch
+     * @param resistance vector to store resistance values
+     */
+    void getResistanceData(std::vector<double>& resistance) const { 
+        resistance = p_resistance; 
+    }
+    
+    /**
+     * Helper method to get SEBus pointer from Bus1
+     * @return pointer to SEBus for first bus
+     */
+    SEBus* getSEBus1() const {
+        return dynamic_cast<SEBus*>(this->getBus1().get());
+    }
+    
+    /**
+     * Helper method to get SEBus pointer from Bus2
+     * @return pointer to SEBus for second bus
+     */
+    SEBus* getSEBus2() const {
+        return dynamic_cast<SEBus*>(this->getBus2().get());
+    }
 
   private:
     std::vector<double> p_reactance;

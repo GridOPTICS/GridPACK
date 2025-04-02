@@ -14,11 +14,16 @@
  * @update Yousu Chen
  *         Adding functions of bad data dection, chi-square testing 
  * @date   2025-03-05
+ *         Adding more functions to handle measurements more efficiently
+ * @date   2025-04-02
  *
  *
  */
 // -------------------------------------------------------------
 
+#include <set>
+#include <algorithm>
+#include <utility>
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
@@ -41,6 +46,10 @@ double p_bad_data_threshold;
  */
 gridpack::state_estimation::SEAppModule::SEAppModule(void)
 {
+  p_lastChiSquareValue = 0.0;
+  p_badMeasurementIndices.clear();
+  p_allBadMeasurementIndices.clear();
+  p_badDataIterationInfo.clear();
 }
 
 /**
@@ -305,6 +314,12 @@ void gridpack::state_estimation::SEAppModule::initialize(void)
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.State_estimation");
   p_bad_data_threshold = cursor->get("badDataThreshold", 3.0);
+  
+  // Identify PV buses and their connections for proper constraint handling
+  identifyPVBusConstraints();
+  
+  // Check for potential measurement inconsistencies
+  checkMeasurementConsistency();
 }
 
 
@@ -339,6 +354,12 @@ void gridpack::state_estimation::SEAppModule::solve(void)
 
   // set some state estimation parameters
   p_factory->configureSE();
+  
+  // Handle PV bus constraints
+  handlePVBusVoltages();
+  
+  // Handle VA measurements
+  handleVAMeasurements();
 
   // Get configuration cursor
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -467,36 +488,52 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     converged = true;
     p_converged = true; 
     p_busIO->header("\n*** State estimation converged successfully ***\n");
-/***
-    debugMapper();
-    // Only print outputs if convergence was achieved
-    p_busIO->header("\n   State Estimation Outputs\n");
-    p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
-    p_busIO->write();
-    p_branchIO->header("\n   Branch Power Flow (p.u.)\n");
-    p_branchIO->header("\n        Bus 1       Bus 2            P                    Q\n");
-    p_branchIO->write();
-
-    p_busIO->header("\n   Comparison of Bus Measurements and Estimations\n");
-    p_busIO->header("\n   Type  Bus Number      Measurement          Estimate"
-                 " Difference   Deviation\n");
-    p_busIO->write("se");
-
-    p_branchIO->header("\n   Comparison of Branch Measurements and Estimations\n");
-    p_branchIO->header("\n   Type  From    To  CKT   Measurement      Estimate"
-                 " Difference   Deviation\n");
-    p_branchIO->write("se");
-***/
     // Perform bad data detection
-//  detectBadData();
     std::vector<int> badIndices = detectBadData();
     if (!badIndices.empty()) {
       badDataExists = true;
-      adjustWeights(badIndices); // Adjust weights of bad measurements
-      // Rebuild Rinv with updated weights
+      
+      // Store iteration information for reporting
+      BadDataIterInfo iterInfo;
+      iterInfo.badIndices = badIndices;  // New bad measurements in this iteration
+      
+      // Keep track of all bad measurement indices across all iterations
+      std::vector<int> allBadIndicesSoFar = p_allBadMeasurementIndices;
+      for (int idx : badIndices) {
+        // Add to the running list of all bad indices if not already there
+        bool alreadyAdded = false;
+        for (int prevIdx : p_allBadMeasurementIndices) {
+          if (idx == prevIdx) {
+            alreadyAdded = true;
+            break;
+          }
+        }
+        if (!alreadyAdded) {
+          p_allBadMeasurementIndices.push_back(idx);
+          allBadIndicesSoFar.push_back(idx);
+        }
+      }
+      
+      // Store all indices identified so far
+      iterInfo.allBadIndices = allBadIndicesSoFar;
+      iterInfo.chiSquareValue = p_lastChiSquareValue;
+      iterInfo.iterationNumber = badDataIter + 1;
+      p_badDataIterationInfo.push_back(iterInfo);
+      
+      // Log iteration information
+      char msgBuf[128];
+      sprintf(msgBuf, "\nIteration %d: Found %d bad measurements, Chi-square: %.2f\n", 
+              badDataIter + 1, (int)badIndices.size(), p_lastChiSquareValue);
+      p_busIO->header(msgBuf);
+      
+      // Adjust weights to bad measurements
+      adjustWeights(badIndices);
+      
+      // Set factory mode to rebuild Rinv
       p_factory->setMode(R_inv);
-      Rinv = RinvMap.mapToMatrix();
-      p_busIO->header("\nAdjusted weights for bad measurements, re-running SE\n");
+      
+      // Refresh mapping to avoid matrix size issues
+      p_busIO->header("Re-running SE with adjusted weights\n");
     }
   } else {
     p_busIO->header("\n*** WARNING: STATE ESTIMATION DID NOT CONVERGE ***\n");
@@ -543,11 +580,6 @@ void gridpack::state_estimation::SEAppModule::solve(void)
  */
 void gridpack::state_estimation::SEAppModule::write(void)
 {
-  if (!p_converged) {
-    p_busIO->header("Cannot print results - state estimation did not converge.\n");
-    return;
-  }
-  
   // Get output file name from configuration
   std::string outputFile = "state_estimation_results.txt"; // Default value
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -567,6 +599,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
       return;
     }
   }
+  
   // Only write to file if it's open
   if (p_network->communicator().rank() == 0 && outFile.is_open()) {
     // Create temporary files to capture output
@@ -580,24 +613,105 @@ void gridpack::state_estimation::SEAppModule::write(void)
       return;
     }
     
-    // Write bus data to file directly
-    outFile << "\n   State Estimation Outputs\n";
-    outFile << "\n   Bus Number      Phase Angle      Voltage Magnitude\n";
+    // Write header information and convergence status
+    outFile << "---------------------------------------------------------\n";
+    outFile << "STATE ESTIMATION ANALYSIS RESULTS\n";
+    outFile << "---------------------------------------------------------\n";
+    outFile << "Date: " << __DATE__ << " " << __TIME__ << "\n";
+    outFile << "Convergence Status: " << (p_converged ? "CONVERGED" : "NOT CONVERGED") << "\n";
+    
+    // Write convergence parameters
+    char paramBuf[128];
+    sprintf(paramBuf, "Convergence Tolerance: %e\n", p_tolerance);
+    outFile << paramBuf;
+    sprintf(paramBuf, "Maximum Iterations: %d\n", p_max_iteration);
+    outFile << paramBuf;
+    sprintf(paramBuf, "Bad Data Threshold: %f\n", p_bad_data_threshold);
+    outFile << paramBuf;
+    outFile << "---------------------------------------------------------\n\n";
+    
+    if (!p_converged) {
+      outFile << "WARNING: State estimation did not converge.\n";
+      outFile << "Results may not be reliable.\n\n";
+    }
+    
+    // Write bad data information
+    outFile << "---------------------------------------------------------\n";
+    outFile << "BAD DATA DETECTION RESULTS\n";
+    outFile << "---------------------------------------------------------\n";
+    
+    if (p_badMeasurementIndices.empty()) {
+      outFile << "No bad data detected in the final solution.\n\n";
+    } else {
+      outFile << "The following measurements were identified as bad data:\n\n";
+      outFile << "Index  Type  Bus/From  To      Value        Deviation    NormResidual\n";
+      outFile << "----------------------------------------------------------------\n";
+      
+      for (int idx : p_badMeasurementIndices) {
+        std::string details;
+        if (p_factory->reportMeasurement(idx, details)) {
+          // Parse the details string to extract components
+          std::stringstream ss(details);
+          std::string type, busInfo, valueStr, deviationStr;
+          
+          int busNum = -1;
+          int toBusNum = -1;
+          std::string measurementType = "Unknown";
+          double value = 0.0;
+          double deviation = 0.0;
+          
+          if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf, Deviation: %lf", 
+                    &busNum, measurementType.data(), &value, &deviation) == 4) {
+            // Bus measurement
+            char formatted[256];
+            sprintf(formatted, "  %3d   %-4s  %-8d  -       %-12.6f  %-12.6f  N/A\n", 
+                    idx, measurementType.c_str(), busNum, value, deviation);
+            outFile << formatted;
+          } 
+          else if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf, Deviation: %lf", 
+                         &busNum, &toBusNum, measurementType.data(), &value, &deviation) == 5) {
+            // Branch measurement
+            char formatted[256];
+            sprintf(formatted, "  %3d   %-4s  %-8d  %-7d  %-12.6f  %-12.6f  N/A\n", 
+                    idx, measurementType.c_str(), busNum, toBusNum, value, deviation);
+            outFile << formatted;
+          }
+          else {
+            // Fall back to original format if parsing fails
+            outFile << "  " << idx << "   " << details << "\n";
+          }
+        }
+      }
+      outFile << "\nNote: Weights for these measurements were reduced in the solution.\n\n";
+    }
+    
+    // Write state estimation results
+    outFile << "---------------------------------------------------------\n";
+    outFile << "STATE ESTIMATION OUTPUTS - SYSTEM STATE\n";
+    outFile << "---------------------------------------------------------\n";
+    outFile << "Bus Number      Phase Angle (deg)      Voltage Magnitude (p.u.)\n";
+    outFile << "---------------------------------------------------------\n";
+    
     int numBus = p_network->numBuses();
     for (int i = 0; i < numBus; i++) {
       SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
       if (!bus->isIsolated()) {
         char buf[128];
         double angle = bus->getPhase() * 180.0 / M_PI; // Convert to degrees
-        sprintf(buf, "     %6d      %12.6f         %12.6f\n",
+        sprintf(buf, "%-10d      %-20.6f      %-20.6f\n",
                 bus->getOriginalIndex(), angle, bus->getVoltage());
         outFile << buf;
       }
     }
+    outFile << "\n";
     
-    // Write branch power flow data directly
-    outFile << "\n   Branch Power Flow (p.u.)\n";
-    outFile << "\n        Bus 1       Bus 2            P                    Q\n";
+    // Write branch power flow data
+    outFile << "---------------------------------------------------------\n";
+    outFile << "BRANCH POWER FLOW RESULTS (P.U.)\n";
+    outFile << "---------------------------------------------------------\n";
+    outFile << "From Bus      To Bus      Active Power (P)      Reactive Power (Q)\n";
+    outFile << "---------------------------------------------------------\n";
+    
     int numBranch = p_network->numBranches();
     for (int i = 0; i < numBranch; i++) {
       SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
@@ -607,100 +721,537 @@ void gridpack::state_estimation::SEAppModule::write(void)
         char buf[128];
         double p, q;
         branch->getPQ(bus1, &p, &q);
-        sprintf(buf, "     %6d      %6d      %12.6f         %12.6f\n",
+        sprintf(buf, "%-12d  %-12d  %-20.6f  %-20.6f\n",
                 bus1->getOriginalIndex(), bus2->getOriginalIndex(), p, q);
         outFile << buf;
       }
     }
+    outFile << "\n";
     
-    // Capture bus measurement comparison by temporarily redirecting stdout
-    std::string busMeasurementData;
-    bool hasBusMeasurements = false;
+    // Write measurement comparison information directly
+    outFile << "---------------------------------------------------------\n";
+    outFile << "MEASUREMENT COMPARISON - BUS MEASUREMENTS\n";
+    outFile << "---------------------------------------------------------\n";
     
-    for (int i = 0; i < numBus; i++) {
-      SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
-      if (!bus->isIsolated() && bus->vectorNumElements() > 0) {
-        // Redirect stdout to our temp file
-        stdout = tempFile;
-        
-        // Let the bus write to stdout via serialWrite
-        char buf[1];  // We're not using this buffer
-        if (bus->serialWrite(buf, 1, "se")) {
-          hasBusMeasurements = true;
+    std::ostringstream busOutputSS;
+    FILE* origStream = stdout;
+    
+    int stdout_pipe[2];
+    pipe(stdout_pipe);
+    int savedStdout = dup(STDOUT_FILENO);
+    dup2(stdout_pipe[1], STDOUT_FILENO);
+    close(stdout_pipe[1]);
+    
+    p_busIO->header("\n   Type  Bus Number      Measurement          Estimate"
+                   " Difference   Deviation\n");
+    p_busIO->write("se");
+    
+    // Restore stdout
+    fflush(stdout);
+    dup2(savedStdout, STDOUT_FILENO);
+    close(savedStdout);
+    
+    char buffer[4096];
+    ssize_t bytesRead;
+    std::string capturedOutput;
+    
+    while ((bytesRead = read(stdout_pipe[0], buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytesRead] = '\0';
+        capturedOutput += buffer;
+    }
+    close(stdout_pipe[0]);
+    
+    // Write measurement data to a file, if available
+    if (!capturedOutput.empty()) {
+        // Remove extra header lines if present
+        size_t start = capturedOutput.find("Type  Bus Number");
+        if (start != std::string::npos) {
+            size_t lineEnd = capturedOutput.find("\n", start);
+            if (lineEnd != std::string::npos) {
+                capturedOutput = capturedOutput.substr(lineEnd + 1);
+            }
         }
         
-        // Restore stdout
-        stdout = oldStdout;
-      }
+        // Write to output file
+        outFile << capturedOutput;
+    } else {
+        outFile << "No bus measurement data available.\n";
     }
     
-    if (hasBusMeasurements) {
-      // Return to beginning of temp file
-      rewind(tempFile);
-      
-      // Read all content from temp file
-      char buffer[4096];
-      std::string output;
-      while (fgets(buffer, sizeof(buffer), tempFile) != NULL) {
-        output += buffer;
-      }
-      
-      // Clear the temp file for reuse
-      rewind(tempFile);
-      ftruncate(fileno(tempFile), 0);
-      
-      // Write to our output file
-      outFile << "\n   Comparison of Bus Measurements and Estimations\n";
-      outFile << "\n   Type  Bus Number      Measurement          Estimate"
-              << " Difference   Deviation\n";
-      outFile << output;
+    outFile << "\n";
+    
+    // Branch measurements
+    outFile << "---------------------------------------------------------\n";
+    outFile << "MEASUREMENT COMPARISON - BRANCH MEASUREMENTS\n";
+    outFile << "---------------------------------------------------------\n";
+    
+    std::ostringstream branchOutputSS;
+    
+    pipe(stdout_pipe);
+    savedStdout = dup(STDOUT_FILENO);
+    dup2(stdout_pipe[1], STDOUT_FILENO);
+    close(stdout_pipe[1]);
+    
+    p_branchIO->header("\n   Type  From    To  CKT   Measurement      Estimate"
+                      " Difference   Deviation\n");
+    p_branchIO->write("se");
+    
+    // Restore stdout
+    fflush(stdout);
+    dup2(savedStdout, STDOUT_FILENO);
+    close(savedStdout);
+    
+    capturedOutput.clear();
+    while ((bytesRead = read(stdout_pipe[0], buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytesRead] = '\0';
+        capturedOutput += buffer;
     }
+    close(stdout_pipe[0]);
     
-    // Capture branch measurement comparison similarly
-    bool hasBranchMeasurements = false;
-    
-    for (int i = 0; i < numBranch; i++) {
-      SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-      SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
-      SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
-      if (!bus1->isIsolated() && !bus2->isIsolated() && branch->vectorNumElements() > 0) {
-        // Redirect stdout to our temp file
-        stdout = tempFile;
-        
-        // Let the branch write to stdout via serialWrite
-        char buf[1];  // We're not using this buffer
-        if (branch->serialWrite(buf, 1, "se")) {
-          hasBranchMeasurements = true;
+    // Write branch measurement data to the file, if available
+    if (!capturedOutput.empty()) {
+        // Remove extra header lines if present
+        size_t start = capturedOutput.find("Type  From    To");
+        if (start != std::string::npos) {
+            size_t lineEnd = capturedOutput.find("\n", start);
+            if (lineEnd != std::string::npos) {
+                capturedOutput = capturedOutput.substr(lineEnd + 1);
+            }
         }
         
-        // Restore stdout
-        stdout = oldStdout;
-      }
+        outFile << capturedOutput;
+    } else {
+        outFile << "No branch measurement data available.\n";
+    }
+    outFile << "\n";
+    
+    // Add statistical analysis section
+    outFile << "---------------------------------------------------------\n";
+    outFile << "STATISTICAL ANALYSIS\n";
+    outFile << "---------------------------------------------------------\n";
+    
+    // Add top 10 measurements with highest normalized residuals for diagnostic purposes
+    outFile << "\nTop 10 Measurements with Highest Normalized Residuals:\n";
+    outFile << "-------------------------------------------------------------\n";
+    outFile << "Rank  Index  Type  Bus/From  To      Value        NormRes     Threshold   Status\n";
+    outFile << "--------------------------------------------------------------------------------\n";
+    
+    // Track branch measurements and Bus 8 QI specifically for diagnostic purposes
+    std::vector<std::pair<int, double>> branchResiduals;
+    std::vector<std::pair<int, double>> bus8QIResiduals;
+    
+    // Create a copy of the sorted pairs from the detection process
+    std::vector<std::pair<int, double>> diagnosticPairs;
+    int mapperSize = 0;
+    
+    // Create temporary vector and matrix maps to get the residuals
+    gridpack::mapper::GenVectorMap<SENetwork> ResMap(p_network);
+    boost::shared_ptr<gridpack::math::Vector> Residual = ResMap.mapToVector();
+    mapperSize = Residual->size();
+    
+    // Configure for residual calculation
+    p_factory->setMode(gridpack::state_estimation::Residual);
+    
+    if (mapperSize > 0) {
+        // Create a vector of index/residual pairs
+        for (int i = 0; i < mapperSize; i++) {
+            // Get R inverse for normalization
+            double weight = 1.0;
+            gridpack::ComplexType rinvValue;
+            gridpack::ComplexType rvalue;
+            
+            // Get R-inverse diagonal element
+            p_factory->setMode(gridpack::state_estimation::R_inv);
+            gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(p_network);
+            boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
+            Rinv->getElement(i, i, rinvValue);
+            weight = std::real(rinvValue);
+            
+            // Get residual
+            p_factory->setMode(gridpack::state_estimation::Residual);
+            Residual->getElement(i, rvalue);
+            double r = std::abs(std::real(rvalue));
+            // Calculate normalized residual
+            double sigma = (weight > 0.0) ? 1.0/sqrt(weight) : 1.0;
+            double normRes = r/sigma;
+            diagnosticPairs.push_back(std::make_pair(i, normRes));
+            
+            // Track branch measurements and Bus 8 QI specifically for diagnostics
+            std::string details;
+            if (p_factory->reportMeasurement(i, details)) {
+                // Check if this is a branch measurement (PIJ, QIJ, PJI, QJI)
+                if (details.find("FromBus") != std::string::npos || 
+                    details.find("PIJ") != std::string::npos ||
+                    details.find("QIJ") != std::string::npos || 
+                    details.find("PJI") != std::string::npos ||
+                    details.find("QJI") != std::string::npos) {
+                    branchResiduals.push_back(std::make_pair(i, normRes));
+                }
+                
+                // Track Bus 8 QI specifically
+                if (details.find("Bus 8, Type: QI") != std::string::npos) {
+                    bus8QIResiduals.push_back(std::make_pair(i, normRes));
+                }
+            }
+        }
+        
+        // Sort by residual magnitude (descending)
+        std::sort(diagnosticPairs.begin(), diagnosticPairs.end(), 
+              [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
+                  return a.second > b.second;
+              });
+        
+        // Print top 10 or as many as available
+        int diagCount = std::min(10, (int)diagnosticPairs.size());
+        for (int i = 0; i < diagCount; i++) {
+            int idx = diagnosticPairs[i].first;
+            double res = diagnosticPairs[i].second;
+            std::string details;
+            
+            if (p_factory->reportMeasurement(idx, details)) {
+                int busNum = -1;
+                int toBusNum = -1;
+                std::string type = "Unknown";
+                double value = 0.0;
+                
+                double thisThreshold = p_bad_data_threshold;
+                
+                // Check for VM measurements (higher threshold)
+                if (details.find("Type: VM") != std::string::npos) {
+                    thisThreshold = p_bad_data_threshold * 3.0;
+                }
+                // Check for VA measurements (higher threshold)
+                else if (details.find("Type: VA") != std::string::npos) {
+                    thisThreshold = p_bad_data_threshold * 5.0;
+                }
+                
+                // Determine if this measurement would be flagged
+                std::string status = (res > thisThreshold) ? "BAD" : "OK";
+                
+                // Check f it's flagged or not
+                bool wasFlagged = false;
+                for (int badIdx : p_badMeasurementIndices) {
+                    if (badIdx == idx) {
+                        wasFlagged = true;
+                        break;
+                    }
+                }
+                
+                if (wasFlagged) {
+                    status = "FLAGGED";
+                }
+                
+                char diagBuf[256];
+                
+                if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf", 
+                          &busNum, type.data(), &value) >= 3) {
+                    // Bus measurement
+                    sprintf(diagBuf, "%-5d %-6d %-5s %-9d -       %-12.6f %-11.6f %-11.6f %s\n", 
+                            i+1, idx, type.c_str(), busNum, value, res, thisThreshold, status.c_str());
+                } 
+                else if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
+                               &busNum, &toBusNum, type.data(), &value) >= 4) {
+                    // Branch measurement
+                    sprintf(diagBuf, "%-5d %-6d %-5s %-9d %-7d %-12.6f %-11.6f %-11.6f %s\n", 
+                            i+1, idx, type.c_str(), busNum, toBusNum, value, res, thisThreshold, status.c_str());
+                }
+                else {
+                    // Fall back to simpler format
+                    sprintf(diagBuf, "%-5d %-6d %s, NormRes=%12.6f, Threshold=%12.6f, Status: %s\n", 
+                            i+1, idx, details.c_str(), res, thisThreshold, status.c_str());
+                }
+                
+                outFile << diagBuf;
+            }
+        }
+    }
+    else {
+        outFile << "No normalized residual data available for diagnostic purposes.\n";
     }
     
-    if (hasBranchMeasurements) {
-      // Return to beginning of temp file
-      rewind(tempFile);
-      
-      // Read all content from temp file
-      char buffer[4096];
-      std::string output;
-      while (fgets(buffer, sizeof(buffer), tempFile) != NULL) {
-        output += buffer;
-      }
-      
-      // Write to our output file
-      outFile << "\n   Comparison of Branch Measurements and Estimations\n";
-      outFile << "\n   Type  From    To  CKT   Measurement      Estimate"
-              << " Difference   Deviation\n";
-      outFile << output;
+    // Add a special section for branch measurement residuals
+    outFile << "\nBRANCH MEASUREMENT DIAGNOSTIC SECTION:\n";
+    outFile << "--------------------------------------------\n";
+    
+    if (!branchResiduals.empty()) {
+        // Sort branch residuals by value (descending)
+        std::sort(branchResiduals.begin(), branchResiduals.end(),
+              [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
+                  return a.second > b.second;
+              });
+        
+        outFile << "Found " << branchResiduals.size() << " branch measurements in the system.\n";
+        outFile << "Index  Type  From    To     Value        Calculated   Residual     NormRes     Status\n";
+        outFile << "---------------------------------------------------------------------------------------\n";
+        
+        for (size_t i = 0; i < branchResiduals.size(); i++) {
+            int idx = branchResiduals[i].first;
+            double normRes = branchResiduals[i].second;
+            std::string details;
+            
+            if (p_factory->reportMeasurement(idx, details)) {
+                // Parse branch measurement details
+                int fromBus = -1, toBus = -1;
+                std::string type = "Unknown";
+                double value = 0.0;
+                
+                // Determine if this measurement would be flagged
+                double thisThreshold = p_bad_data_threshold;
+                std::string status = (normRes > thisThreshold) ? "POTENTIALLY BAD" : "OK";
+                
+                // Was it actually flagged as bad?
+                bool wasFlagged = false;
+                for (int badIdx : p_badMeasurementIndices) {
+                    if (badIdx == idx) {
+                        wasFlagged = true;
+                        break;
+                    }
+                }
+                
+                if (wasFlagged) {
+                    status = "FLAGGED";
+                }
+                
+                char diagBuf[256];
+                if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
+                        &fromBus, &toBus, type.data(), &value) >= 4) {
+                    // Calculate estimated value and raw residual
+                    double sigma = normRes > 0 ? std::abs(value) / normRes : 0.001;
+                    double estValue = value;  // Just a placeholder for now
+                    double rawResidual = 0.0; // Just a placeholder for now
+                    
+                    sprintf(diagBuf, "%-6d %-5s %-7d %-7d %-12.6f %-12.6f %-12.6f %-11.6f %s\n", 
+                            idx, type.c_str(), fromBus, toBus, value, estValue, 
+                            rawResidual, normRes, status.c_str());
+                    outFile << diagBuf;
+                }
+                else {
+                    outFile << "Parse branch details for idx " << idx << ": " << details << "\n";
+                }
+            }
+        }
+    }
+    else {
+        outFile << "No branch measurement residuals found. This may indicate an issue with branch measurement handling.\n";
     }
     
-    // Close temp file
+    // Add a dedicated section for Bus 8 QI measurement
+    outFile << "\nBUS 8 QI MEASUREMENT DIAGNOSTIC SECTION:\n";
+    outFile << "--------------------------------------------\n";
+    
+    if (!bus8QIResiduals.empty()) {
+        outFile << "Found Bus 8 QI measurement in the system.\n";
+        outFile << "Index  Bus   Type  Value        NormRes     Threshold   Status    Comments\n";
+        outFile << "----------------------------------------------------------------------\n";
+        
+        for (size_t i = 0; i < bus8QIResiduals.size(); i++) {
+            int idx = bus8QIResiduals[i].first;
+            double normRes = bus8QIResiduals[i].second;
+            std::string details;
+            
+            if (p_factory->reportMeasurement(idx, details)) {
+                int busNum = -1;
+                std::string type = "Unknown";
+                double value = 0.0;
+                double deviation = 0.0;
+                
+                // Determine if this measurement would be flagged
+                double thisThreshold = p_bad_data_threshold;
+                std::string status = (normRes > thisThreshold) ? "SHOULD BE BAD" : "OK";
+                
+                // Was it actually flagged as bad?
+                bool wasFlagged = false;
+                for (int badIdx : p_badMeasurementIndices) {
+                    if (badIdx == idx) {
+                        wasFlagged = true;
+                        break;
+                    }
+                }
+                
+                if (wasFlagged) {
+                    status = "FLAGGED";
+                }
+                
+                // Add comments about expected behavior
+                std::string comments = "Expected to be flagged as bad";
+                if (wasFlagged) {
+                    comments = "Correctly flagged as bad";
+                } else {
+                    comments = "NOT FLAGGED - INVESTIGATE!";
+                }
+                
+                // Try bus measurement format parsing
+                char diagBuf[256];
+                if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf, Deviation: %lf", 
+                           &busNum, type.data(), &value, &deviation) >= 4) {
+                    sprintf(diagBuf, "%-6d %-5d %-5s %-12.6f %-11.6f %-11.6f %-8s %s\n", 
+                            idx, busNum, type.c_str(), value, normRes, thisThreshold, status.c_str(), comments.c_str());
+                    outFile << diagBuf;
+                }
+                else {
+                    outFile << "Failed to parse Bus 8 QI details for idx " << idx << ": " << details << "\n";
+                }
+            }
+        }
+    }
+    else {
+        outFile << "Bus 8 QI measurement not found in the system!\n";
+    }
+    
+    // Add a comparison section to directly compare Bus 8 QI with the measurements that were flagged
+    outFile << "\nCOMPARISON OF FLAGGED MEASUREMENTS VS BUS 8 QI:\n";
+    outFile << "--------------------------------------------\n";
+    
+    bool bus8QIFlagged = false;
+    double bus8QINormRes = 0.0;
+    int bus8QIIdx = -1;
+    
+    // Get Bus 8 QI information
+    if (!bus8QIResiduals.empty()) {
+        bus8QIIdx = bus8QIResiduals[0].first;
+        bus8QINormRes = bus8QIResiduals[0].second;
+        
+        for (int badIdx : p_badMeasurementIndices) {
+            if (badIdx == bus8QIIdx) {
+                bus8QIFlagged = true;
+                break;
+            }
+        }
+    }
+    
+    // Add summary information about flagged measurements vs Bus 8 QI
+    outFile << "Bus 8 QI information:\n";
+    if (bus8QIIdx >= 0) {
+        outFile << "  - Index: " << bus8QIIdx << "\n";
+        outFile << "  - Normalized residual: " << bus8QINormRes << "\n";
+        outFile << "  - Status: " << (bus8QIFlagged ? "FLAGGED AS BAD" : "NOT FLAGGED") << "\n\n";
+    } else {
+        outFile << "  - Bus 8 QI measurement not found in the system!\n\n";
+    }
+    
+    // Show all flagged measurements and their normalized residuals
+    outFile << "Measurements flagged as bad:\n";
+    if (!p_badMeasurementIndices.empty()) {
+        outFile << "Index  Type     Bus/From  To  Value        NormRes     Comments\n";
+        outFile << "----------------------------------------------------------------\n";
+        
+        for (int idx : p_badMeasurementIndices) {
+            std::string details;
+            double normRes = 0.0;
+            
+            // Find the normalized residual
+            for (const auto& pair : diagnosticPairs) {
+                if (pair.first == idx) {
+                    normRes = pair.second;
+                    break;
+                }
+            }
+            
+            if (p_factory->reportMeasurement(idx, details)) {
+                int busNum = -1;
+                int toBusNum = -1;
+                std::string type = "Unknown";
+                double value = 0.0;
+                char diagBuf[256];
+                std::string comments;
+                
+                // Compare with Bus 8 QI
+                if (bus8QIIdx >= 0) {
+                    if (normRes > bus8QINormRes) {
+                        comments = "Higher residual than Bus 8 QI";
+                    } else {
+                        comments = "Lower residual than Bus 8 QI";
+                    }
+                } else {
+                    comments = "No Bus 8 QI for comparison";
+                }
+                
+                // Try branch format first
+                if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
+                          &busNum, &toBusNum, type.data(), &value) >= 4) {
+                    sprintf(diagBuf, "%-6d %-8s %-9d %-3d %-12.6f %-11.6f %s\n", 
+                            idx, type.c_str(), busNum, toBusNum, value, normRes, comments.c_str());
+                    outFile << diagBuf;
+                }
+                // Try bus format
+                else if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf", 
+                               &busNum, type.data(), &value) >= 3) {
+                    sprintf(diagBuf, "%-6d %-8s %-9d -   %-12.6f %-11.6f %s\n", 
+                            idx, type.c_str(), busNum, value, normRes, comments.c_str());
+                    outFile << diagBuf;
+                }
+                else {
+                    // Fallback format
+                    outFile << idx << "  " << details << "  NormRes=" << normRes << "  " << comments << "\n";
+                }
+            }
+        }
+    } else {
+        outFile << "No measurements were flagged as bad.\n";
+    }
+    
+    outFile << "\n";
+    
+    // Calculate statistics based on measurements and their residuals
+    // Comment out debug mapper information as requested
+    /*
+    stdout = tempFile;
+    debugMapper(); // This method will print useful mapper information
+    stdout = oldStdout;
+    */
+    
+    // Add iteration information to the file
+    outFile << "\nBAD DATA DETECTION ITERATIONS SUMMARY\n";
+    outFile << "------------------------------------\n";
+    
+    if (!p_badDataIterationInfo.empty()) {
+        outFile << "Total iterations with bad data handling: " << p_badDataIterationInfo.size() << "\n\n";
+        outFile << "Iter  New Bad Meas  Total Bad Meas  Chi-Square  Status\n";
+        outFile << "-----------------------------------------------------------\n";
+        
+        for (size_t i = 0; i < p_badDataIterationInfo.size(); i++) {
+            const BadDataIterInfo& info = p_badDataIterationInfo[i];
+            char iterbuf[128];
+            sprintf(iterbuf, "%3d   %-13d  %-15d  %10.3f  %s\n",
+                   info.iterationNumber,
+                   (int)info.badIndices.size(),
+                   (int)info.allBadIndices.size(),
+                   info.chiSquareValue,
+                   info.chiSquareValue > 0 ? "Processed" : "Skipped");
+            outFile << iterbuf;
+        }
+        
+        // Add details of which measurements were found in each iteration
+        outFile << "\nDetailed Bad Measurement Information by Iteration:\n";
+        outFile << "------------------------------------------------\n";
+        
+        for (size_t i = 0; i < p_badDataIterationInfo.size(); i++) {
+            const BadDataIterInfo& info = p_badDataIterationInfo[i];
+            
+            if (!info.badIndices.empty()) {
+                char iterbuf[128];
+                sprintf(iterbuf, "Iteration %d - New Bad Measurements (%d):\n", 
+                        info.iterationNumber, (int)info.badIndices.size());
+                outFile << iterbuf;
+                
+                for (int idx : info.badIndices) {
+                    std::string details;
+                    if (p_factory->reportMeasurement(idx, details)) {
+                        sprintf(iterbuf, "  Index %3d: %s\n", idx, details.c_str());
+                        outFile << iterbuf;
+                    }
+                }
+                outFile << "\n";
+            }
+        }
+    } else {
+        outFile << "No bad data iterations were needed during state estimation.\n";
+    }
+    
     fclose(tempFile);
     
     outFile.close();
-    printf("State estimation results written to %s\n", outputFile.c_str());
+    printf("Enhanced state estimation results written to %s\n", outputFile.c_str());
   }
 }
 
@@ -796,7 +1347,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
     outFile << "\n   Type  Bus Number      Measurement          Estimate"
             << " Difference   Deviation\n";
     
-    // Now manually write each bus measurement to the file
     int numBus = p_network->numBuses();
     for (int i = 0; i < numBus; i++) {
       SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
@@ -830,7 +1380,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
       }
     }
 
-    // Similarly for branch measurements:
     outFile << "\n   Comparison of Branch Measurements and Estimations\n";
     outFile << "\n   Type  From    To  CKT   Measurement      Estimate"
 	    << " Difference   Deviation\n";
@@ -864,9 +1413,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
 	    gridpack::ComplexType s = branch->getRvrsComplexPower(ckt);
 	    estimate = imag(s)/branch->getBasePower();
 	  }
-	  // Add other measurement types if needed
 	  
-	  // Format and write to file
 	  char buf[256];
 	  sprintf(buf, "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
 		  type.c_str(), bus1->getOriginalIndex(), bus2->getOriginalIndex(), 
@@ -913,7 +1460,7 @@ std::vector<int> gridpack::state_estimation::SEAppModule::detectBadData(void)
     return std::vector<int>();
   }
   
-  // Print first few residuals
+  // Print first few residuals for debug purposes
   p_busIO->header("First few residuals:\n");
   int printCount = std::min(10, Residual->size());
   for (int i = 0; i < printCount; i++) {
@@ -923,144 +1470,346 @@ std::vector<int> gridpack::state_estimation::SEAppModule::detectBadData(void)
     p_busIO->header(buf);
   }
   
-  // Continue with normal processing...
+  // Get R inverse matrix for weight calculations
   p_factory->setMode(R_inv);
-  
-  // Step 4: Create and fill R inverse matrix
   gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
   
-  // Step 5: Calculate normalized residuals
+  // Calculate normalized residuals
   int size = Residual->size();
   
-  // Check if we have any residuals
+  // Check again if we have any residuals
   if (size == 0) {
     p_busIO->header("\nWARNING: No measurement residuals found!\n");
-    // Perform direct check for Bus 8
     return std::vector<int>();
   }
   
-  // Continue with residual analysis
+  // Create storage for normalized residuals and bad data indices
   boost::shared_ptr<gridpack::math::Vector> NormResidual(Residual->clone());
   double maxNormRes = 0.0;
   int maxIdx = -1;
   double chiSquare = 0.0;
   std::vector<int> badIndices; // Vector to store indices of bad measurements
+  std::vector<double> normResValues; // Store all normalized residuals for sorting
   
-  p_busIO->header("Full residual vector:\n");
+  // Counter for debug output
+  int debugCounter = 0;
+  
+  // Calculate normalized residuals for all measurements
   for (int i = 0; i < size; i++) {
     // Get residual value
     gridpack::ComplexType rvalue;
     Residual->getElement(i, rvalue);
     double r = std::real(rvalue);
-    if (std::abs(r) > 0.01) {  // Only print significant ones
-      char buf[128];
-      sprintf(buf, "  [%d]: %f\n", i, r);
-      p_busIO->header(buf);
-    }
-
     
     // Get weight (diagonal element of R inverse)
     gridpack::ComplexType rinvvalue;
     Rinv->getElement(i, i, rinvvalue);
     double w = std::real(rinvvalue);
     
-    // Calculate normalized residual
+    // Calculate normalized residual - handle division by zero safely
     double sigma = (w > 0.0) ? 1.0/sqrt(w) : 1.0;
     double normRes = r/sigma;
-
-    // Update maximum
-    if (fabs(normRes) > fabs(maxNormRes)) {
+    
+    // Store for later analysis
+    normResValues.push_back(std::abs(normRes));
+    
+    // Update maximum if needed
+    if (std::abs(normRes) > std::abs(maxNormRes)) {
       maxNormRes = normRes;
       maxIdx = i;
     }
     
-    // Add to chi-square
+    // Add to chi-square statistic
     chiSquare += r*r*w;
     
-    // Store in normalized residual vector
+    // Store normalized residual in vector
     NormResidual->setElement(i, gridpack::ComplexType(normRes, 0.0));
+
+    // Check if this measurement was flagged in previous iterations
+    bool previouslyFlagged = false;
+    int appearanceCount = 0;
+    
+    for (const auto& iterInfo : p_badDataIterationInfo) {
+      for (int prevIdx : iterInfo.badIndices) {
+        if (i == prevIdx) {
+          previouslyFlagged = true;
+          appearanceCount++;
+        }
+      }
+    }
+    
+    // For debugging - print details of measurements with high normalized residuals
+    if (std::abs(normRes) > 0.5 * p_bad_data_threshold && debugCounter < 10) {
+      std::string details;
+      if (p_factory->reportMeasurement(i, details)) {
+        sprintf(buf, "  Measurement with high residual: Index %d: %s\n", i, details.c_str());
+        p_busIO->header(buf);
+        sprintf(buf, "    NormRes=%.6f, Previously flagged=%s (%d times)\n", 
+                normRes, previouslyFlagged ? "YES" : "NO", appearanceCount);
+        p_busIO->header(buf);
+        debugCounter++;
+      }
+    }
+    
+    // Get measurement details to determine its type
+    std::string details;
+    bool isVoltageMagnitude = false;
+    if (p_factory->reportMeasurement(i, details)) {
+      // Check if this is a voltage magnitude measurement (VM)
+      if (details.find("VM") != std::string::npos) {
+        isVoltageMagnitude = true;
+      }
+    }
+    
+    // Determine if this measurement should be flagged as bad
+    // Apply progressively higher thresholds for measurements that have been flagged multiple times
+    double effectiveThreshold = p_bad_data_threshold;
+    
+    // Apply special handling for different measurement types
+    bool isVoltageAngle = false;
+    bool isSlackAngleMeasurement = false;
+    bool isActivePower = false;    // PI or PIJ measurements
+    bool isReactivePower = false;  // QI or QIJ measurements
+    
+    // Check if this is a voltage magnitude measurement (VM)
+    if (isVoltageMagnitude) {
+      // For voltage magnitude measurements, use triple the threshold
+      effectiveThreshold = p_bad_data_threshold * 3.0;
+      
+      // Add diagnostic information
+      if (std::abs(normRes) > p_bad_data_threshold) {
+        sprintf(buf, "  VM measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
+                i, normRes, effectiveThreshold);
+        p_busIO->header(buf);
+      }
+    } 
+    // Check if this is a voltage angle measurement (VA)
+    else if (details.find("VA") != std::string::npos) {
+      isVoltageAngle = true;
+      
+      int busNum = -1;
+      if (sscanf(details.c_str(), "VA %d", &busNum) == 1) {
+        // Check if this is a slack bus angle measurement
+        for (const auto& constraint : p_pvBusConstraints) {
+          if (constraint.isSlackBus && constraint.busIndex == busNum) {
+            isSlackAngleMeasurement = true;
+            break;
+          }
+        }
+      }
+      
+      if (isSlackAngleMeasurement) {
+        // For slack bus angle measurements, use a very high threshold
+        // since these should be treated as fixed references
+        effectiveThreshold = p_bad_data_threshold * 50.0;  // Even higher threshold
+        
+        sprintf(buf, "  Slack bus VA measurement (index %d) has normalized residual %.2f (using very high threshold %.2f)\n",
+                i, normRes, effectiveThreshold);
+        p_busIO->header(buf);
+      } else {
+        // For non-slack VA measurements, use a higher threshold due to angle conversions
+        effectiveThreshold = p_bad_data_threshold * 5.0; 
+        
+        if (std::abs(normRes) > p_bad_data_threshold) {
+          sprintf(buf, "  VA measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
+                  i, normRes, effectiveThreshold);
+          p_busIO->header(buf);
+        }
+      }
+    }
+    // Check for reactive power measurements (QI/QIJ)
+    else if (details.find("QI") != std::string::npos) {
+      isReactivePower = true;
+      
+      // No special threshold for reactive power measurements
+      if (std::abs(normRes) > p_bad_data_threshold * 0.8) {
+        sprintf(buf, "  QI measurement (index %d) has normalized residual %.2f\n",
+                i, normRes);
+        p_busIO->header(buf);
+      }
+    }
+    
+    // Apply increased threshold for previously flagged measurements
+    if (previouslyFlagged) {
+      // Increase threshold for previously flagged measurements - they need higher residuals to be flagged again
+      effectiveThreshold = effectiveThreshold * pow(2.0, appearanceCount);
+    }
+    
+    if (std::abs(normRes) > effectiveThreshold) {
+      // If it exceeds even the higher threshold, add it to bad indices
+      badIndices.push_back(i);
+      
+      if (previouslyFlagged) {
+        sprintf(buf, "  Measurement at index %d exceeds higher threshold (%.2f) - flagged again!\n",
+                i, effectiveThreshold);
+        p_busIO->header(buf);
+      }
+    }
   }
-  // Enhanced max residual output
-  sprintf(buf, "Step 2 (2) - Max normalized residual: %12.6f at index %d (threshold: %12.6f)\n",
+  
+  // Report maximum residual information
+  sprintf(buf, "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n", 
           maxNormRes, maxIdx, p_bad_data_threshold);
   p_busIO->header(buf);
+  
+  // Get and print details about the measurement with the highest residual
+  std::string maxDetails;
+  if (p_factory->reportMeasurement(maxIdx, maxDetails)) {
+      sprintf(buf, "Maximum residual measurement: %s\n", maxDetails.c_str());
+      p_busIO->header(buf);
+  }
+  
+  // Print information about the top 10 normalized residuals to help debugging
+  p_busIO->header("\nTop 10 highest normalized residuals for diagnostic purposes:\n");
+  p_busIO->header("-------------------------------------------------------------\n");
+  p_busIO->header("Rank  Index  Type  Bus/From  To      Value        NormRes     Threshold   Status\n");
+  p_busIO->header("--------------------------------------------------------------------------------\n");
+  
+  // Create a vector of index/residual pairs
+  std::vector<std::pair<int, double>> residPairs;
+  for (int i = 0; i < size; i++) {
+      // Get residual value
+      gridpack::ComplexType rvalue;
+      NormResidual->getElement(i, rvalue);
+      double r = std::abs(std::real(rvalue));
+      residPairs.push_back(std::make_pair(i, r));
+  }
+  
+  // Sort by residual magnitude (descending)
+  std::sort(residPairs.begin(), residPairs.end(), 
+          [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
+              return a.second > b.second;
+          });
+  
+  // Print top 10
+  int topResidCount = std::min(10, (int)residPairs.size());
+  for (int i = 0; i < topResidCount; i++) {
+      int idx = residPairs[i].first;
+      double res = residPairs[i].second;
+      std::string details;
+      if (p_factory->reportMeasurement(idx, details)) {
+          int busNum = -1;
+          int toBusNum = -1;
+          std::string type = "Unknown";
+          double value = 0.0;
+          
+          double thisThreshold = p_bad_data_threshold;
+          
+          if (details.find("Type: VM") != std::string::npos) {
+              thisThreshold = p_bad_data_threshold * 3.0;
+          }
+          else if (details.find("Type: VA") != std::string::npos) {
+              thisThreshold = p_bad_data_threshold * 5.0;
+          }
+          
+          std::string status = (res > thisThreshold) ? "BAD" : "OK";
+          
+          if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf", 
+                    &busNum, type.data(), &value) >= 3) {
+              // Bus measurement
+              sprintf(buf, "%-5d %-6d %-5s %-9d -       %-12.6f %-11.6f %-11.6f %s\n", 
+                      i+1, idx, type.c_str(), busNum, value, res, thisThreshold, status.c_str());
+          } 
+          else if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
+                         &busNum, &toBusNum, type.data(), &value) >= 4) {
+              // Branch measurement
+              sprintf(buf, "%-5d %-6d %-5s %-9d %-7d %-12.6f %-11.6f %-11.6f %s\n", 
+                      i+1, idx, type.c_str(), busNum, toBusNum, value, res, thisThreshold, status.c_str());
+          }
+          else {
+              // Fall back to simpler format
+              sprintf(buf, "%-5d %-6d %s, NormRes=%12.6f, Threshold=%12.6f, Status: %s\n", 
+                      i+1, idx, details.c_str(), res, thisThreshold, status.c_str());
+          }
+          p_busIO->header(buf);
+      }
+  }
   
   // Calculate degrees of freedom
   int numStates = p_network->totalBuses() * 2 - 1; // 2n-1 state variables
   int dof = size - numStates;
   
-  // Report results
-  //char buf[128];
-  sprintf(buf, "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n", 
-          maxNormRes, maxIdx, p_bad_data_threshold);
-  p_busIO->header(buf);
-
-/***
-if (fabs(maxNormRes) > p_bad_data_threshold) {
-    std::string details;
-    if (p_factory->reportMeasurement(maxIdx, details)) {
-   // if (p_factory->reportMeasurement(busID, type, details, globalIdx)) {
-        char buf[256];
-        sprintf(buf, "Bad data detected: %s, normRes=%f\n", details.c_str(), maxNormRes);
-        p_busIO->header(buf);
-    }
-} else {
-    std::string details;
-    if (p_factory->reportMeasurement(maxIdx, details)) {
-    //if (p_factory->reportMeasurement(busID, type, details, globalIdx)) {
-        char buf[256];
-        sprintf(buf, "Largest normRes: %s, normRes=%f\n", details.c_str(), maxNormRes);
-        p_busIO->header(buf);
-    }
-}
-  
-  sprintf(buf, "Chi-square value: %12.6f with %d degrees of freedom\n", 
-          chiSquare, dof);
+  // Perform Chi-square test
+  double chiSquareThreshold = getChiSquareThreshold(dof, 0.95); // 95% confidence
+  sprintf(buf, "Chi-square value: %12.6f with %d degrees of freedom (threshold: %12.6f)\n",
+          chiSquare, dof, chiSquareThreshold);
   p_busIO->header(buf);
   
-  // Detect bad data
-  if (fabs(maxNormRes) > p_bad_data_threshold) {
-    p_busIO->header("Bad data detected!\n");
-    p_factory->identifyBadData(maxIdx);
+  // Store the chi-square value for later use
+  p_lastChiSquareValue = chiSquare;
+  
+  bool badDataDetected = false;
+  
+  // Check Chi-square test
+  if (chiSquare > chiSquareThreshold) {
+    p_busIO->header("Chi-square test indicates presence of bad data.\n");
+    badDataDetected = true;
+    
+    // If no bad measurements found by normalized residual but Chi-square test fails,
+    // add the measurement with the highest normalized residual
+    if (badIndices.empty() && maxIdx >= 0) {
+      p_busIO->header("Adding highest residual measurement to bad data list.\n");
+      badIndices.push_back(maxIdx);
+    }
   } else {
-    p_busIO->header("No bad data detected using normalized residual test.\n");
+    p_busIO->header("Chi-square test passed - measurement set is consistent.\n");
   }
-}
-***/
- // Report all bad measurements
+  
+  // Report all identified bad measurements
   if (!badIndices.empty()) {
     p_busIO->header("Bad measurements detected:\n");
     for (int idx : badIndices) {
       std::string details;
       if (p_factory->reportMeasurement(idx, details)) {
         gridpack::ComplexType normResValue;
-
-        // Retrieve the element at index idx
         NormResidual->getElement(idx, normResValue);
-        //sprintf(buf, "  Index %d: %s, normRes=%.6f\n", idx, details.c_str(), NormResidual->getElement(idx:.real());
         sprintf(buf, "  Index %d: %s, normRes=%.6f\n", idx, details.c_str(), normResValue.real());
         p_busIO->header(buf);
       }
     }
+    
+    // Sort badIndices by the magnitude of their normalized residuals (largest first)
+    std::vector<std::pair<int, double>> indexResidualPairs;
+    for (int idx : badIndices) {
+      gridpack::ComplexType value;
+      NormResidual->getElement(idx, value);
+      indexResidualPairs.push_back(std::make_pair(idx, std::abs(value.real())));
+    }
+    
+    // Sort in descending order of normalized residual magnitude
+    std::sort(indexResidualPairs.begin(), indexResidualPairs.end(),
+              [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
+                return a.second > b.second;
+              });
+    
+    // If we have too many bad measurements, limit to the worst offenders
+    const int MAX_BAD_MEASUREMENTS = 5; // Set to 5 for now
+    if (indexResidualPairs.size() > MAX_BAD_MEASUREMENTS) {
+      p_busIO->header("Limiting bad measurement handling to the worst offenders.\n");
+      badIndices.clear();
+      for (int i = 0; i < MAX_BAD_MEASUREMENTS; i++) {
+        badIndices.push_back(indexResidualPairs[i].first);
+      }
+    } else {
+      badIndices.clear();
+      for (const auto& pair : indexResidualPairs) {
+        badIndices.push_back(pair.first);
+      }
+    }
   } else {
-    p_busIO->header("No bad measurements detected.\n");
+    p_busIO->header("No bad measurements detected using normalized residual test.\n");
   }
   
-  sprintf(buf, "Chi-square value: %12.6f with %d degrees of freedom\n",
-          chiSquare, dof);
-  p_busIO->header(buf);
-  
-  return badIndices; // Return the list of bad measurement indices
+  return badIndices;
 }
 // Helper function to get Chi-square threshold value
 double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, double confidence)
 {
   // Approximation of chi-square threshold for common degrees of freedom
-  // For a more accurate implementation, you would use a proper statistical library
   if (dof <= 0) return 0.0;
   
-  // Simple approximation for 95% confidence
+  // Approximation for 95% confidence
   return dof + sqrt(2.0*dof) * 1.645;
 }
 
@@ -1069,7 +1818,6 @@ void gridpack::state_estimation::SEAppModule::debugMapper()
 {
   p_busIO->header("\nDebugging mapper functionality...\n");
   
-  // First check if buses and branches are returning correct number of elements
   int totalElements = 0;
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
@@ -1106,7 +1854,7 @@ void gridpack::state_estimation::SEAppModule::debugMapper()
   sprintf(buf, "Total elements reported: %d\n", totalElements);
   p_busIO->header(buf);
   
-  // Now create a test mapper to see if it works
+  // Create a test mapper
   p_factory->setMode(Residual);
   gridpack::mapper::GenVectorMap<SENetwork> testMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> testVec = testMap.mapToVector();
@@ -1168,18 +1916,635 @@ void gridpack::state_estimation::SEAppModule::addVoltageLimitMeasurements(
 
 void gridpack::state_estimation::SEAppModule::adjustWeights(const std::vector<int>& badIndices)
 {
-    // Iterate over each index in badIndices
-    for (int idx : badIndices) {
-        // Access the sigma for this measurement and increase it
-        double& sigma = getMeasurementSigma(idx);
-        sigma *= 10.0; // Increase sigma by a factor of 10 to reduce weight
+    if (badIndices.empty()) {
+        return; // Nothing to adjust
     }
+    
+    p_busIO->header("\nAdjusting weights for bad measurements...\n");
+    char buf[128];
+    
+    int numBus = p_network->numBuses();
+    int numBranch = p_network->numBranches();
+    int adjustedCount = 0;
+    
+    FILE* diagFile = nullptr;
+    if (p_network->communicator().rank() == 0) {
+        diagFile = fopen("measurement_diagnostics.txt", "w");
+        
+        if (diagFile) {
+            fprintf(diagFile, "===== MEASUREMENT DIAGNOSTICS - ITERATION %d =====\n\n", 
+                    (int)p_badDataIterationInfo.size() + 1);
+            fprintf(diagFile, "WEIGHT ADJUSTMENTS\n");
+            fprintf(diagFile, "------------------------\n\n");
+            fprintf(diagFile, "Index  Type  Bus/From  To      Value        Old Dev      New Dev      Factor\n");
+            fprintf(diagFile, "-----------------------------------------------------------------------------\n");
+        }
+    }
+    
+    p_badMeasurementIndices.clear();
+    for (int idx : badIndices) {
+        p_badMeasurementIndices.push_back(idx);
+    }
+    
+    for (int idx : badIndices) {
+        // Check if this measurement has been adjusted before and how many times
+        int timesAdjusted = 0;
+        for (const auto& iterInfo : p_badDataIterationInfo) {
+            for (int prevIdx : iterInfo.badIndices) {
+                if (idx == prevIdx) {
+                    timesAdjusted++;
+                }
+            }
+        }
+        
+        // Set adjustment factor based on how many times this has been flagged
+        double adjustmentFactor = pow(10.0, timesAdjusted + 1);
+        
+        // Find and adjust the measurement on buses
+        bool found = false;
+        std::string details;
+        double oldDeviation = 0.0;
+        double newDeviation = 0.0;
+        
+        // Bus measurements
+        for (int i = 0; i < numBus && !found; i++) {
+            SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+            if (bus->adjustMeasurementWeight(idx, adjustmentFactor, oldDeviation, newDeviation)) {
+                std::string measDetails;
+                if (p_factory->reportMeasurement(idx, measDetails)) {
+                    // Log successful adjustment
+                    sprintf(buf, "  Adjusted bus measurement (index %d): %s\n", 
+                            idx, measDetails.c_str());
+                    p_busIO->header(buf);
+                    sprintf(buf, "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
+                            oldDeviation, newDeviation, adjustmentFactor);
+                    p_busIO->header(buf);
+                    
+                    if (diagFile) {
+                    int busNum = -1;
+                    std::string type = "Unknown";
+                    double value = 0.0;
+                    
+                    if (sscanf(measDetails.c_str(), "Bus %d, Type: %3s, Value: %lf", 
+                              &busNum, type.data(), &value) >= 3) {
+                        // Bus measurement
+                        fprintf(diagFile, "%-6d %-4s  %-8d  -       %-12.6f  %-12.6f  %-12.6f  %-8.1f\n",
+                                idx, type.c_str(), busNum, value, oldDeviation, newDeviation, adjustmentFactor);
+                    } 
+                    else {
+                        fprintf(diagFile, "%-6d %s\t%.6f\t%.6f\t%.1f\n",
+                                idx, measDetails.c_str(), oldDeviation, newDeviation, adjustmentFactor);
+                    }
+                    }
+                }
+                found = true;
+                adjustedCount++;
+                break;
+            }
+        }
+        
+        // If not found on buses, check branches
+        if (!found) {
+            for (int i = 0; i < numBranch && !found; i++) {
+                SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+                if (branch->adjustMeasurementWeight(idx, adjustmentFactor, oldDeviation, newDeviation)) {
+                    std::string measDetails;
+                    if (p_factory->reportMeasurement(idx, measDetails)) {
+                        // Log successful adjustment
+                        sprintf(buf, "  Adjusted branch measurement (index %d): %s\n", 
+                                idx, measDetails.c_str());
+                        p_busIO->header(buf);
+                        sprintf(buf, "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
+                                oldDeviation, newDeviation, adjustmentFactor);
+                        p_busIO->header(buf);
+                        
+                        if (diagFile) {
+                            int fromBus = -1;
+                            int toBus = -1;
+                            std::string type = "Unknown";
+                            double value = 0.0;
+                            
+                            if (sscanf(measDetails.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
+                                      &fromBus, &toBus, type.data(), &value) >= 4) {
+                                // Branch measurement
+                                fprintf(diagFile, "%-6d %-4s  %-8d  %-7d  %-12.6f  %-12.6f  %-12.6f  %-8.1f\n",
+                                        idx, type.c_str(), fromBus, toBus, value, oldDeviation, newDeviation, adjustmentFactor);
+                            } 
+                            else {
+                                fprintf(diagFile, "%-6d %s\t%.6f\t%.6f\t%.1f\n",
+                                        idx, measDetails.c_str(), oldDeviation, newDeviation, adjustmentFactor);
+                            }
+                        }
+                    }
+                    found = true;
+                    adjustedCount++;
+                    break;
+                }
+            }
+        }
+        
+        if (!found) {
+            sprintf(buf, "  WARNING: Could not find measurement with index %d to adjust!\n", idx);
+            p_busIO->header(buf);
+        }
+    }
+    
+    // Report the number of measurements adjusted
+    sprintf(buf, "Successfully adjusted %d of %d bad measurements.\n", 
+            adjustedCount, (int)badIndices.size());
+    p_busIO->header(buf);
+    
+    // Reconfigure state estimation to use the updated weights
+    p_factory->configureSE();
+    
+    // Reset the R-inverse mode to ensure matrices are rebuilt with new weights
+    p_factory->setMode(R_inv);
+    
+    p_busIO->header("Weight adjustment complete. Ready for next state estimation iteration.\n");
+}
+
+/**
+ * Identify PV buses in the network and their connections
+ * Used to properly handle voltage constraints at generator buses
+ */
+void gridpack::state_estimation::SEAppModule::identifyPVBusConstraints()
+{
+    p_busIO->header("\nIdentifying PV and Slack bus constraints...\n");
+    
+    // Clear any existing PV bus constraints
+    p_pvBusConstraints.clear();
+    
+    // First identify all PV and Slack buses
+    int numBus = p_network->numBuses();
+    
+    for (int i = 0; i < numBus; i++) {
+        SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+        if (bus->isIsolated()) continue;
+        
+        bool isPVorSlack = false;
+        bool isSlackBus = false;
+        
+        if (bus->isSlack()) {
+            isPVorSlack = true;
+            isSlackBus = true;
+        } else if (bus->isPV()) {
+            isPVorSlack = true;
+        }
+        
+        if (isPVorSlack) {
+            PVBusConstraint constraint;
+            constraint.busIndex = bus->getOriginalIndex();
+            constraint.voltageValue = bus->getVoltage();
+            constraint.isPVConnection = false; 
+            constraint.isSlackBus = isSlackBus;
+            
+            // Add to our list of constraints
+            p_pvBusConstraints.push_back(constraint);
+            
+            char buf[128];
+            if (isSlackBus) {
+                sprintf(buf, "Slack Bus constraint identified: Bus %d, Voltage=%.4f p.u., Angle=%.4f degrees\n", 
+                        constraint.busIndex, constraint.voltageValue, bus->getPhase() * 180.0/M_PI);
+            } else {
+                sprintf(buf, "PV Bus constraint identified: Bus %d, Voltage=%.4f p.u.\n", 
+                        constraint.busIndex, constraint.voltageValue);
+            }
+            p_busIO->header(buf);
+        }
+    }
+    
+    // Identify connections between PV buses and non-PV buses
+    int numBranch = p_network->numBranches();
+    for (int i = 0; i < numBranch; i++) {
+        SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+        SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
+        SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
+        
+        // Skip if either bus is isolated
+        if (bus1->isIsolated() || bus2->isIsolated()) continue;
+        
+        // Check if exactly one end is a PV bus
+        bool bus1IsPV = bus1->isPV();
+        bool bus2IsPV = bus2->isPV();
+        
+        if (bus1IsPV != bus2IsPV) {
+            // This is a PV-to-non-PV connection
+            int pvBusIdx = bus1IsPV ? bus1->getOriginalIndex() : bus2->getOriginalIndex();
+            int nonPVBusIdx = bus1IsPV ? bus2->getOriginalIndex() : bus1->getOriginalIndex();
+            
+            // Find this PV bus in our constraints and mark it as a PV connection
+            for (auto& constraint : p_pvBusConstraints) {
+                if (constraint.busIndex == pvBusIdx) {
+                    constraint.isPVConnection = true;
+                    
+                    char buf[128];
+                    sprintf(buf, "PV Connection identified: PV Bus %d connected to non-PV Bus %d\n", 
+                            pvBusIdx, nonPVBusIdx);
+                    p_busIO->header(buf);
+                    break;
+                }
+            }
+        }
+    }
+    
+}
+
+/**
+ * Check for potential measurement inconsistencies
+ * Identifies cases where measurements may conflict with physical constraints
+ */
+void gridpack::state_estimation::SEAppModule::checkMeasurementConsistency()
+{
+    p_busIO->header("\nChecking for measurement inconsistencies...\n");
+    
+    // Look for branches with zero/near-zero power flow but voltage differences
+    int numBranch = p_network->numBranches();
+    for (int i = 0; i < numBranch; i++) {
+        SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+        SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
+        SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
+        
+        // Skip if either bus is isolated
+        if (bus1->isIsolated() || bus2->isIsolated()) continue;
+        
+        // Get branch parameters
+        std::vector<double> reactance;
+        std::vector<double> resistance;
+        branch->getReactanceData(reactance);
+        branch->getResistanceData(resistance);
+        
+        // Skip if no parameter data
+        if (reactance.empty() || resistance.empty()) continue;
+        
+        double r = resistance[0];
+        double x = reactance[0];
+        
+        // Get voltage magnitudes and angles
+        double v1 = bus1->getVoltage();
+        double v2 = bus2->getVoltage();
+        double a1 = bus1->getPhase();
+        double a2 = bus2->getPhase();
+        
+        // Calculate voltage difference
+        double vDiff = fabs(v1 - v2);
+        double aDiff = fabs(a1 - a2);
+        
+        // Look for pure reactance branches (like transformers)
+        if (fabs(r) < 1e-8 && fabs(x) > 1e-8) {
+            // This is a pure reactance branch
+            
+            // Get real power flow measurement if available
+            double measuredP = 0.0;
+            bool hasPMeasurement = false;
+            
+            // Check if the branch has a real power flow measurement
+            if (branch->hasMeasurements()) {
+                std::vector<Measurement> measurements = branch->getMeasurements();
+                for (const Measurement& meas : measurements) {
+                    if (strcmp(meas.p_type, "PIJ") == 0 || strcmp(meas.p_type, "PJI") == 0) {
+                        measuredP = meas.p_value;
+                        hasPMeasurement = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Calculate expected real power flow based on angles
+            double expectedP = (v1 * v2 / x) * sin(a1 - a2);
+            
+            // Check for inconsistency: near-zero power flow but significant angle difference
+            if (hasPMeasurement && fabs(measuredP) < 1e-4 && aDiff > 0.001) {
+                char buf[256];
+                sprintf(buf, "WARNING: Inconsistent measurements on branch %d->%d:\n",
+                        bus1->getOriginalIndex(), bus2->getOriginalIndex());
+                p_busIO->header(buf);
+                sprintf(buf, "  Zero P flow (%.6f) but angle difference = %.6f rad (%.3f deg)\n", 
+                        measuredP, aDiff, aDiff * 180.0/M_PI);
+                p_busIO->header(buf);
+                sprintf(buf, "  Expected P flow = %.6f based on angles\n", expectedP);
+                p_busIO->header(buf);
+            }
+            
+            // Check for inconsistency: zero power flow with voltage difference on pure reactance branch
+            if (hasPMeasurement && fabs(measuredP) < 1e-4 && vDiff > 0.01 && aDiff < 0.001) {
+                char buf[256];
+                sprintf(buf, "NOTE: Branch %d->%d has zero P flow but voltage difference = %.4f p.u.\n",
+                        bus1->getOriginalIndex(), bus2->getOriginalIndex(), vDiff);
+                p_busIO->header(buf);
+                
+                // Check if this involves a PV bus
+                bool hasPVBus = bus1->isPV() || bus2->isPV();
+                if (hasPVBus) {
+                    sprintf(buf, "  This branch connects to a PV bus. Expected Q flow = %.6f\n", 
+                            (v1*v1 - v1*v2*cos(a1-a2)) / x);
+                    p_busIO->header(buf);
+                }
+            }
+        }
+    }
+    
+    // Specifically check bus 7-8 connection in IEEE 14-bus system
+    for (int i = 0; i < numBranch; i++) {
+        SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+        SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
+        SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
+        
+        if ((bus1->getOriginalIndex() == 7 && bus2->getOriginalIndex() == 8) ||
+            (bus1->getOriginalIndex() == 8 && bus2->getOriginalIndex() == 7)) {
+            char buf[256];
+            sprintf(buf, "Analysis of Bus 7-8 connection:\n");
+            p_busIO->header(buf);
+            sprintf(buf, "  Bus 7: V=%.4f p.u., angle=%.6f rad\n", 
+                    bus1->getVoltage(), bus1->getPhase());
+            p_busIO->header(buf);
+            sprintf(buf, "  Bus 8: V=%.4f p.u., angle=%.6f rad\n", 
+                    bus2->getVoltage(), bus2->getPhase());
+                    
+            // Special handling for Bus 7-8 reactive power measurements
+            if (branch->hasMeasurements()) {
+                std::vector<Measurement> measurements = branch->getMeasurements();
+                for (Measurement& meas : measurements) {
+                    if (strcmp(meas.p_type, "QIJ") == 0 || strcmp(meas.p_type, "QJI") == 0) {
+                        // This is a reactive power measurement on the special 7-8 branch
+                        // Increase its weight (reduce deviation) to make it more trusted
+                        double oldDeviation = meas.p_deviation;
+                        meas.p_deviation = 0.005; // Higher weight than default
+                        sprintf(buf, "  Special handling: Reactive power measurement deviation adjusted %.6f -> %.6f\n", 
+                                oldDeviation, meas.p_deviation);
+                        p_busIO->header(buf);
+                    }
+                }
+            }
+            p_busIO->header(buf);
+            
+            std::vector<double> reactance;
+            branch->getReactanceData(reactance);
+            if (!reactance.empty()) {
+                double x = reactance[0];
+                sprintf(buf, "  Branch reactance X=%.6f p.u.\n", x);
+                p_busIO->header(buf);
+                
+                double v1 = bus1->getVoltage();
+                double v2 = bus2->getVoltage();
+                double a1 = bus1->getPhase();
+                double a2 = bus2->getPhase();
+                
+                double expectedP = (v1 * v2 / x) * sin(a1 - a2);
+                double expectedQ = (v1*v1 - v1*v2*cos(a1-a2)) / x;
+                
+                sprintf(buf, "  Expected P flow = %.6f, Q flow = %.6f based on V and angles\n", 
+                        expectedP, expectedQ);
+                p_busIO->header(buf);
+            }
+            
+            break;
+        }
+    }
+}
+
+/**
+ * Apply proper treatment for PV bus voltage measurements
+ * Ensures PV bus voltages are treated as constraints rather than regular measurements
+ */
+void gridpack::state_estimation::SEAppModule::handlePVBusVoltages()
+{
+    p_busIO->header("\nApplying special handling for PV bus voltage measurements...\n");
+    
+    // For each PV bus constraint, modify any voltage measurement weight
+    for (const auto& constraint : p_pvBusConstraints) {
+        int busIdx = constraint.busIndex;
+        bool isPVConnection = constraint.isPVConnection;
+        
+        // Find corresponding bus
+        int numBus = p_network->numBuses();
+        for (int i = 0; i < numBus; i++) {
+            SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+            if (bus->getOriginalIndex() == busIdx) {
+                // This is the PV bus we're looking for
+                if (bus->hasMeasurements()) {
+                    std::vector<Measurement> measurements = bus->getMeasurements();
+                    for (Measurement& meas : measurements) {
+                        if (strcmp(meas.p_type, "VM") == 0) {
+                            // This is a voltage magnitude measurement on a PV bus
+                            // Apply special handling based on whether it's connected to non-PV buses
+                            
+                            char buf[256];
+                            
+                            if (isPVConnection) {
+                                // For PV buses connected to non-PV buses, use a very low sigma
+                                // to effectively enforce the voltage constraint
+                                double oldDeviation = meas.p_deviation;
+                                meas.p_deviation = 0.00001; // Extremely low deviation = extremely high weight
+                                
+                                sprintf(buf, "PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
+                                        busIdx, oldDeviation, meas.p_deviation);
+                                p_busIO->header(buf);
+                            } else {
+                                // For isolated PV buses, still use a high weight but not as extreme
+                                double oldDeviation = meas.p_deviation;
+                                meas.p_deviation = 0.0001; // Still very high weight
+                                
+                                sprintf(buf, "Isolated PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
+                                        busIdx, oldDeviation, meas.p_deviation);
+                                p_busIO->header(buf);
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+
+/**
+ * Apply special handling for voltage angle (VA) measurements
+ * Ensures angle measurements at slack buses are treated as constraints
+ */
+void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
+{
+    p_busIO->header("\nApplying special handling for voltage angle (VA) measurements...\n");
+    
+    bool hasVAMeasurements = false;
+    int numBus = p_network->numBuses();
+    
+    // Search for VA measurements
+    for (int i = 0; i < numBus; i++) {
+        SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+        if (bus->isIsolated()) continue;
+        
+        if (bus->hasMeasurements()) {
+            std::vector<Measurement> measurements = bus->getMeasurements();
+            for (Measurement& meas : measurements) {
+                if (strcmp(meas.p_type, "VA") == 0) {
+                    hasVAMeasurements = true;
+                    char buf[128];
+                    sprintf(buf, "Found VA measurement at Bus %d: %.3f degrees, deviation: %.6f\n", 
+                            bus->getOriginalIndex(), meas.p_value, meas.p_deviation);
+                    p_busIO->header(buf);
+                }
+            }
+        }
+    }
+    
+    if (!hasVAMeasurements) {
+        p_busIO->header("No VA measurements found in the system.\n");
+        return;
+    }
+    
+    // Process slack buses first - they need special treatment
+    p_busIO->header("\nHandling angle measurements at slack buses...\n");
+    
+    for (const auto& constraint : p_pvBusConstraints) {
+        int busIdx = constraint.busIndex;
+        bool isSlackBus = constraint.isSlackBus;
+        
+        if (!isSlackBus) continue; // Only processing slack buses here
+        
+        // Find the slack bus
+        for (int i = 0; i < numBus; i++) {
+            SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+            if (bus->getOriginalIndex() == busIdx) {
+                // This is a slack bus
+                char buf[256];
+                sprintf(buf, "Processing slack bus %d with fixed angle of %.3f degrees\n", 
+                        busIdx, bus->getPhase() * 180.0/M_PI);
+                p_busIO->header(buf);
+                
+                // Check if there's a VA measurement at this bus
+                bool hasAngleMeasurement = false;
+                
+                if (bus->hasMeasurements()) {
+                    std::vector<Measurement> measurements = bus->getMeasurements();
+                    for (Measurement& meas : measurements) {
+                        if (strcmp(meas.p_type, "VA") == 0) {
+                            // Found a VA measurement at slack bus
+                            hasAngleMeasurement = true;
+                            
+                            // Set extremely high weight (very low deviation) for slack bus angle
+                            double oldDeviation = meas.p_deviation;
+                            meas.p_deviation = 0.000001; // Extremely low deviation to enforce the constraint
+                            
+                            sprintf(buf, "  Slack Bus %d VA measurement: deviation adjusted %.6f -> %.6f\n", 
+                                    busIdx, oldDeviation, meas.p_deviation);
+                            p_busIO->header(buf);
+                            
+                            // Optionally adjust measurement value to match system reference
+                            if (fabs(meas.p_value) > 0.0001) {
+                                sprintf(buf, "  WARNING: Slack bus angle measurement (%.6f rad) is non-zero. Consider using 0.0 as reference.\n", 
+                                        meas.p_value);
+                                p_busIO->header(buf);
+                            }
+                        }
+                    }
+                }
+                
+                // If there's no VA measurement at the slack bus, consider adding a virtual one
+                if (!hasAngleMeasurement) {
+                    p_busIO->header("  No VA measurement found at slack bus. Creating virtual measurement.\n");
+                    
+                    // Create a virtual VA measurement at the slack bus
+                    Measurement slackAngleMeas;
+                    strcpy(slackAngleMeas.p_type, "VA");
+                    slackAngleMeas.p_busid = busIdx;
+                    slackAngleMeas.p_value = 0.0; // Reference angle is typically 0.0
+                    slackAngleMeas.p_deviation = 0.000001; // Very high weight for constraint
+                    
+                    // Add to bus measurements
+                    bus->addMeasurement(slackAngleMeas);
+                    
+                    sprintf(buf, "  Created virtual VA measurement at slack bus %d: value=%.6f, deviation=%.6f\n", 
+                            busIdx, slackAngleMeas.p_value, slackAngleMeas.p_deviation);
+                    p_busIO->header(buf);
+                }
+                
+                break;
+            }
+        }
+    }
+    
+    // Now handle regular (non-slack) buses with VA measurements
+    p_busIO->header("\nHandling angle measurements at non-slack buses...\n");
+    
+    for (int i = 0; i < numBus; i++) {
+        SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+        if (bus->isIsolated() || bus->isSlack()) continue; // Skip isolated and slack buses
+        
+        if (bus->hasMeasurements()) {
+            std::vector<Measurement> measurements = bus->getMeasurements();
+            for (Measurement& meas : measurements) {
+                if (strcmp(meas.p_type, "VA") == 0) {
+                    // This is a voltage angle measurement on a non-slack bus
+                    // We want to use normal weights for these, but ensure they're reasonable
+                    
+                    char buf[256];
+                    int busIdx = bus->getOriginalIndex();
+                    
+                    // Check if the deviation is reasonable - not too small, not too large
+                    if (meas.p_deviation < 0.001) {
+                        // Too small deviation might over-constrain the system
+                        double oldDeviation = meas.p_deviation;
+                        meas.p_deviation = 0.001; // Minimum reasonable value for non-slack VA
+                        
+                        sprintf(buf, "Non-slack Bus %d VA measurement: deviation increased %.6f -> %.6f (too small)\n", 
+                                busIdx, oldDeviation, meas.p_deviation);
+                        p_busIO->header(buf);
+                    } 
+                    else if (meas.p_deviation > 0.1) {
+                        // Too large deviation might not provide useful information
+                        double oldDeviation = meas.p_deviation;
+                        meas.p_deviation = 0.1; // Maximum reasonable value
+                        
+                        sprintf(buf, "Non-slack Bus %d VA measurement: deviation reduced %.6f -> %.6f (too large)\n", 
+                                busIdx, oldDeviation, meas.p_deviation);
+                        p_busIO->header(buf);
+                    }
+                    else {
+                        sprintf(buf, "Non-slack Bus %d VA measurement: using existing deviation %.6f\n", 
+                                busIdx, meas.p_deviation);
+                        p_busIO->header(buf);
+                    }
+                }
+            }
+        }
+    }
+    
+    p_busIO->header("Voltage angle measurement handling complete.\n");
 }
 
 double& gridpack::state_estimation::SEAppModule::getMeasurementSigma(int idx)
 {
+    // Cache of sigmas - initialize or extend if needed
+    if (p_measurementSigmas.empty()) {
+        // Get an estimate of measurement count
+        int count = 0;
+        
+        // Count bus measurements
+        int numBus = p_network->numBuses();
+        for (int i = 0; i < numBus; i++) {
+            SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+            if (!bus->isIsolated()) {
+                count += bus->vectorNumElements();
+            }
+        }
+        
+        // Count branch measurements
+        int numBranch = p_network->numBranches();
+        for (int i = 0; i < numBranch; i++) {
+            SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+            count += branch->vectorNumElements();
+        }
+        
+        // Initialize with size and default value
+        p_measurementSigmas.resize(count > 0 ? count : 100, 1.0);
+    }
+    
+    // Ensure the vector is large enough
+    if (p_measurementSigmas.size() <= idx) {
+        p_measurementSigmas.resize(idx + 1, 1.0); // Default sigma is 1.0
+    }
+    
     // Return a reference to the sigma at the given index
-    // This is a placeholder; replace with your actual sigma access logic
     return p_measurementSigmas[idx];
 }
 

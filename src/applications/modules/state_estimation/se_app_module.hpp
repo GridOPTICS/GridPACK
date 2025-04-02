@@ -14,6 +14,8 @@
  * @update Yousu Chen
  *         Adding functions of bad data dection, chi-square testing 
  * @date   2025-03-05
+ *         Adding more functions to handle measurements more efficiently
+ * @date   2025-04-02
  *
  *
  */
@@ -121,6 +123,30 @@ class SEAppModule
     void addVoltageLimitMeasurements(double vmin = 0.9, double vmax = 1.1, 
                                     double deviation = 0.001);
 
+    /**
+     * Identify PV buses in the network and their connections
+     * Used to properly handle voltage constraints at generator buses
+     */
+    void identifyPVBusConstraints();
+
+    /**
+     * Check for potential measurement inconsistencies
+     * Identifies cases where measurements may conflict with physical constraints
+     */
+    void checkMeasurementConsistency();
+
+    /**
+     * Apply proper treatment for PV bus voltage measurements
+     * Ensures PV bus voltages are treated as constraints rather than regular measurements
+     */
+    void handlePVBusVoltages();
+    
+    /**
+     * Apply special handling for voltage angle (VA) measurements
+     * Ensures angle measurements at slack buses are treated as constraints
+     */
+    void handleVAMeasurements();
+
     // Adjust weights of bad measurements by increasing their sigmas
     void adjustWeights(const std::vector<int>& badIndices);
 
@@ -156,6 +182,7 @@ class SEAppModule
     // void detectBadData(void);
     std::vector<int> detectBadData(void);
     double p_bad_data_threshold;
+    double p_lastChiSquareValue; // Store last chi-square value for reporting
 
     double getChiSquareThreshold(int dof, double confidence);
     bool p_converged;
@@ -163,8 +190,28 @@ class SEAppModule
     // Helper function to access and modify the sigma of a measurement by index
     double& getMeasurementSigma(int idx);
 
-    // Example member variable to store measurement sigmas
+    // Structure to store information about each bad data iteration
+    struct BadDataIterInfo {
+        std::vector<int> badIndices;        // Newly identified bad measurements in this iteration
+        std::vector<int> allBadIndices;     // All bad measurements identified so far
+        double chiSquareValue;
+        int iterationNumber;
+    };
+    
+    // Structure to store PV/Slack bus constraint information
+    struct PVBusConstraint {
+        int busIndex;          // Original bus index
+        double voltageValue;   // Fixed voltage value
+        bool isPVConnection;   // Whether this bus has connections to non-PV buses
+        bool isSlackBus;       // Whether this is a slack bus (vs. PV bus)
+    };
+    
+    // Member variables to store measurement sigmas and bad measurement indices
     std::vector<double> p_measurementSigmas;
+    std::vector<int> p_badMeasurementIndices;  // Current bad measurement indices
+    std::vector<int> p_allBadMeasurementIndices; // All bad measurement indices across iterations
+    std::vector<BadDataIterInfo> p_badDataIterationInfo; // Store information about bad data iterations
+    std::vector<PVBusConstraint> p_pvBusConstraints; // Store information about PV bus constraints
 };
 
 } // state estimation
