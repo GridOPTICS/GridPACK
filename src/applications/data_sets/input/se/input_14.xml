@@ -3,15 +3,23 @@
   <State_estimation>
     <networkConfiguration> IEEE14.raw </networkConfiguration>
     <measurementList>IEEE14_meas.xml</measurementList>
+    <tolerance>1.0e-3</tolerance>
+    <maxIteration> 20 </maxIteration> 
+    <badDataThreshold> 3.0 </badDataThreshold>
+    <useVoltageConstraints> false </useVoltageConstraints>
+    <enforceVoltageLimits> false </enforceVoltageLimits>
+    <minVoltage> 0.9 </minVoltage>
+    <maxVoltage> 1.1 </maxVoltage>
+    <voltageConstraintDeviation> 0.0025 </voltageConstraintDeviation>
     <!--
     <LinearSolver>
-      <SolutionTolerance>1.0E-30</SolutionTolerance>
+      <SolutionTolerance>1.0E-10</SolutionTolerance>
       <RelativeTolerance>1.0E-6</RelativeTolerance>
       <MaxIterations>10</MaxIterations>
       <PETScOptions>
         -ksp_monitor
         -ksp_view
-        -ksp_divtol 1.0E06
+        -ksp_divtol 1.0E-06
       </PETScOptions>
     </LinearSolver>
     -->
