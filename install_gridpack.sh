@@ -10,7 +10,7 @@ install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
 boost_version="1.81.0"
-ga_version="5.8.2"
+ga_version="5.9"
 
 if "$install_gridpack_python"; then
     install_gridpack_shared=true
@@ -75,6 +75,7 @@ then
    -D MPIEXEC:STRING='mpiexec' 
    -D MPIEXEC_MAX_NUMPROCS:STRING=2
    -D GRIDPACK_TEST_TIMEOUT:STRING=120 
+   -D ENABLE_ENVIRONMENT_FROM_COMM:BOOL=YES 
    -D CMAKE_INSTALL_PREFIX:PATH=${GRIDPACK_INSTALL_DIR} 
    -D CMAKE_BUILD_TYPE:STRING=Debug 
    -D BUILD_SHARED_LIBS=$install_gridpack_shared 

@@ -48,43 +48,54 @@ def parse_arguments():
 
     return parser.parse_args()
     
-BUS_LOGGER = []
-GEN_LOGGER = []
-LOAD_LOGGER = []
-LINE_LOGGER = []
-TRAFO_LOGGER = []
+class DataCollector():
+    def __init__(self):
+        self.BUS_LOGGER = []
+        self.GEN_LOGGER = []
+        self.LOAD_LOGGER = []
+        self.LINE_LOGGER = []
+        self.TRAFO_LOGGER = []
 
-def save_data(filename_prefix):
-    print("[INFO] Saving the data")
-    # bus data
-    res_bus = pd.concat(BUS_LOGGER, ignore_index=True)
-    # adjusting for counter increase during warm up calls
-    res_bus["tick"] = res_bus["tick"] - res_bus["tick"].values[0]
-    res_bus.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_bus.csv")
-    
-    # gen data
-    res_gen = pd.concat(GEN_LOGGER, ignore_index=True)
-    # adjusting for counter increase during warm up calls
-    res_gen["tick"] = res_gen["tick"] - res_gen["tick"].values[0]
-    res_gen.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_gen.csv")
-    
-    # load data
-    res_load = pd.concat(LOAD_LOGGER, ignore_index=True)
-    # adjusting for counter increase during warm up calls
-    res_load["tick"] = res_load["tick"] - res_load["tick"].values[0]
-    res_load.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_load.csv")
-    
-    # line data
-    res_line = pd.concat(LINE_LOGGER, ignore_index=True)
-    # adjusting for counter increase during warm up calls
-    res_line["tick"] = res_line["tick"] - res_line["tick"].values[0]
-    res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_line.csv")
+    def log_data(self, env):
+        # log data
+        self.BUS_LOGGER += env.backend.bus_logger
+        self.GEN_LOGGER += env.backend.gen_logger
+        self.LOAD_LOGGER += env.backend.load_logger
+        self.LINE_LOGGER += env.backend.line_logger
+        self.TRAFO_LOGGER += env.backend.trafo_logger
 
-    # trafo data
-    res_trafo = pd.concat(TRAFO_LOGGER, ignore_index=True)
-    # adjusting for counter increase during warm up calls
-    res_trafo["tick"] = res_trafo["tick"] - res_trafo["tick"].values[0]
-    res_trafo.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_trafo.csv")
+    def save_data(self, filename_prefix):
+        print("[INFO] Saving the data")
+        # bus data
+        res_bus = pd.concat(self.BUS_LOGGER, ignore_index=True)
+        print(res_bus.head())
+        # adjusting for counter increase during warm up calls
+        # res_bus["tick"] = res_bus["tick"] - res_bus["tick"].values[0]
+        res_bus.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_bus.csv")
+        
+        # gen data
+        res_gen = pd.concat(self.GEN_LOGGER, ignore_index=True)
+        # adjusting for counter increase during warm up calls
+        # res_gen["tick"] = res_gen["tick"] - res_gen["tick"].values[0]
+        res_gen.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_gen.csv")
+        
+        # load data
+        res_load = pd.concat(self.LOAD_LOGGER, ignore_index=True)
+        # adjusting for counter increase during warm up calls
+        # res_load["tick"] = res_load["tick"] - res_load["tick"].values[0]
+        res_load.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_load.csv")
+        
+        # line data
+        res_line = pd.concat(self.LINE_LOGGER, ignore_index=True)
+        # adjusting for counter increase during warm up calls
+        # res_line["tick"] = res_line["tick"] - res_line["tick"].values[0]
+        res_line.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_line.csv")
+
+        # trafo data
+        res_trafo = pd.concat(self.TRAFO_LOGGER, ignore_index=True)
+        # adjusting for counter increase during warm up calls
+        # res_trafo["tick"] = res_trafo["tick"] - res_trafo["tick"].values[0]
+        res_trafo.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_trafo.csv")
 
 
 class LoadSheddingAgent(BaseAgent):
@@ -97,10 +108,9 @@ class LoadSheddingAgent(BaseAgent):
         self.do_nothing = self.action_space({})
 
     def act(self, obs, reward, done=False):
-        print(obs.load_p, obs.load_q)
         if ((obs.current_step >= 2) & (obs.current_step < 4)):
-            new_load_p = obs.load_p * 1.1
-            new_load_q = obs.load_q * 1.1
+            new_load_p = obs.load_p * 1.2
+            new_load_q = obs.load_q * 1.2
             
             # this is the only method you need to implement
             # it takes an observation obs (and a reward and a flag)
@@ -140,7 +150,8 @@ if __name__=="__main__":
                         grid_path=filename,
                         backend=GridPACKBackend(
                             log_freq=args.log_freq,
-                            grid2op_stepsize=args.grid2op_stepsize
+                            grid2op_stepsize=args.grid2op_stepsize,
+                            can_be_copied=False
                         ),
                         data_feeding_kwargs={
                             # start datatime goes here
@@ -150,11 +161,17 @@ if __name__=="__main__":
                             )}
                     ) # mention the time resolution - resolution of the environment - episode size goes - stuff from config.py file won't be used if mentioned here - episode can be updated in the config files
         # z-environment is passed to the backend - this will be available in the next version.
-
+    
+    dc = DataCollector()
+    dc.log_data(env)
+    
     # reset environment
     print("============ Environment Reset =============")
     # pdb.set_trace()
     obs = env.reset()
+    # log data
+    dc.log_data(env)
+    
     reward = env.reward_range[0]
     done = False
 
@@ -182,16 +199,12 @@ if __name__=="__main__":
         print(f"Reward: {reward}, Done: {done}")
 
         # log data
-        BUS_LOGGER += env.backend.bus_logger
-        GEN_LOGGER += env.backend.gen_logger
-        LOAD_LOGGER += env.backend.load_logger
-        LINE_LOGGER += env.backend.line_logger
-        TRAFO_LOGGER += env.backend.trafo_logger
+        dc.log_data(env)
         
         # save data
         if counter == args.grid2op_steps-1: # save at 2nd grid2op step
             filename_prefix = filename.split(".")[0]
-            save_data(filename_prefix)
+            dc.save_data(filename_prefix)
 
         # update counter
         counter += 1

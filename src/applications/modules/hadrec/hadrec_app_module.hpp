@@ -7,7 +7,11 @@
 /**
  * @file   hadrec_app_module.hpp
  * @author Bruce Palmer
+<<<<<<< HEAD
  * @date   2024-08-19 14:09:06 d3g096
+=======
+ * @date   2025-01-29 11:52:49 d3g096
+>>>>>>> origin/develop
  * 
  * @brief  
  * 
