@@ -18,7 +18,7 @@ In addition, GridPACK is also a framework to simplify the development of new app
 See the [instructions](docs/markdown/BASIC_INSTALL.md) for installing GridPACK, prerequisite software, and installation notes for different platforms.
 
 ## Usage
-See the PDF [user manual](https://gridpack.readthedocs.io/en/latest/index.html) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md) for more info.  There is also an online version of the user manual available at [https://github.com/GridOPTICS/GridPACK/tree/feature/documentation-3.5/docs/user_manual/web/GridPACK.html](https://github.com/GridOPTICS/GridPACK/tree/feature/documentation-3.5/docs/user_manual/web/GridPACK.html).
+See the [user manual](https://gridpack.readthedocs.io/en/latest/index.html) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md) for more info.
 
 - Quick Guide (To do)
 
