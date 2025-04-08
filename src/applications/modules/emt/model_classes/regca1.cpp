@@ -93,10 +93,10 @@ void Regca1::init(gridpack::RealType* xin)
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  omega_Pll_block.setparams(0.1,0.5);
+  omega_Pll_block.setparams(0.001,0.005);
 
   // Integrator block
-  angle_block.setparams(OMEGA_S);
+  angle_block.setparams(1.0);
 
   // Current control blocks
   Iperr_PI_blk.setparams(0,0.05);

@@ -259,7 +259,6 @@ private:
 
   GainLimiter Ipcmd_limit_blk; // Limiter for Iqcmd
 
-  bool p_has_drivetrain; // Is the model connected to drive train?
   double omega_g; // Input from drive train (1.0 if not available)
 
   int Iqinj_sw; // Iqinj switch
@@ -273,6 +272,8 @@ private:
   int p_bus_num;
 
   bool getVoltageDip(double);
+
+  bool getVoltageDipFlag();
 
   void CurrentLimitLogic(int PQFLAG,double Vt_filter, double Ipcmd, double Iqcmd,double *Ipmin_out, double *Ipmax_out, double *Iqmin_out, double *Iqmax_out);
 

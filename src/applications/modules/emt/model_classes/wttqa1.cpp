@@ -90,8 +90,7 @@ void Wttqa1::init(gridpack::RealType* xin)
 
   Pref = getPlantController()->getPref();
 
-  
-    /* Create string for setting name */
+  /* Create string for setting name */
   std::string blkhead = std::to_string(busnum) + "_" + id + "WTTQA1_";
 
   std::string Pelec_filter_block_name = blkhead + "Pelec_filter_blk";
@@ -173,13 +172,19 @@ void Wttqa1::vectorGetValues(gridpack::RealType *values)
 void Wttqa1::preStep(double time ,double timestep)
 {
   double dtorque;
-  bool   updatestate = !Vdip;
-  
+  bool   updatestate;
+  double Qg;
+
+  updatestate= !(getElectricalController()->getVoltageDipFlag());
+
+  getGenerator()->getPower(time,&Pelec,&Qg);
   Pelec_filter_blk_out = Pelec_filter_blk.getoutput(Pelec,timestep,true);
 
   Pomega_blk_out = Pomega_blk.getoutput(Pelec_filter_blk_out);
   omega_ref = wref_filter_blk.getoutput(Pomega_blk_out,timestep,true);
 
+  Pref0 = getPlantController()->getPref();
+  domega_g = getDriveTrainController()->getGeneratorSpeedDeviation();
   if(Tflag == 1) {
     dtorque = (Pref0 - Pelec_filter_blk_out)/(1 + domega_g);
     Tref_pi_blk_out = Tref_pi_blk.getoutput(dtorque,timestep,updatestate);

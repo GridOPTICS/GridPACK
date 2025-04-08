@@ -181,6 +181,7 @@ void EmtBus::preStep(double time, double timestep)
 
     p_gen[i]->setVoltage(v[0],v[1],v[2]);
     
+    
     if(p_gen[i]->hasPlantController()) {
       boost::shared_ptr<BaseEMTPlantControllerModel> plant = p_gen[i]->getPlantController();
       plant->setVoltage(v[0],v[1],v[2]);
@@ -199,6 +200,21 @@ void EmtBus::preStep(double time, double timestep)
       exc->setVoltage(v[0],v[1],v[2]);
       exc->preStep(time,timestep);
     }
+
+    if(p_gen[i]->hasExciter() && p_gen[i]->hasPlantController()) {
+      if(p_gen[i]->getExciter()->hasTorqueController()) {
+	boost::shared_ptr<BaseEMTRMechModel> torquecon = p_gen[i]->getExciter()->getTorqueController();
+	boost::shared_ptr<BaseEMTRMechModel> drivetraincon = torquecon->getDriveTrainController();
+	boost::shared_ptr<BaseEMTRMechModel> aerocon = drivetraincon->getAeroDynamicController();
+	boost::shared_ptr<BaseEMTRMechModel> pitchcon = aerocon->getPitchController();
+	
+	torquecon->preStep(time,timestep);
+	pitchcon->preStep(time,timestep);
+	aerocon->preStep(time,timestep);
+	drivetraincon->preStep(time,timestep);
+      }
+    }   
+    
     p_gen[i]->preStep(time,timestep);
   }
 }

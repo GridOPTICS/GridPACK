@@ -154,6 +154,14 @@ void Wtpta1::preStep(double time ,double timestep)
   
   if(integrationtype != EXPLICIT) return;
 
+  Pord = getElectricalController()->getPord();
+
+  Pord0 = getPlantController()->getPref();
+
+  domega_t = getDriveTrainController()->getTurbineSpeedDeviation();
+
+  omega_ref = getTorqueController()->getOmegaref();
+
   y1 = pitchcomp_blk.getoutput(Pord-Pord0,timestep,true);
   y2 = pitchctrl_blk.getoutput((1+domega_t)-omega_ref + Kcc*(Pord - Pord0),timestep,true);
 
