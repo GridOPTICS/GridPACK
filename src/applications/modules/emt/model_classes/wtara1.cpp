@@ -121,6 +121,9 @@ void Wtara1::vectorGetValues(gridpack::RealType *values)
 void Wtara1::preStep(double time ,double timestep)
 {
   if(integrationtype != EXPLICIT) return;
+
+  Theta = getPitchController()->getTheta();
+  domega_t = getPitchController()->getDriveTrainController()->getTurbineSpeedDeviation();
   
   double Pmech;
   Pmech = Pmech0 - Ka * Theta * (Theta - Theta0);

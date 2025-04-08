@@ -20,6 +20,9 @@ Reeca1::Reeca1(void)
 {
   omega_g = 1.0;
   nxexc = 0;
+  p_hasPlantController = false;
+  p_hasTorqueController = false;
+  p_hasDriveTrainController = false;
 }
 
 Reeca1::~Reeca1(void)
@@ -27,6 +30,13 @@ Reeca1::~Reeca1(void)
 }
 
 bool Reeca1::getVoltageDip(double Vt)
+{
+  if(Vt < Vdip || Vt > Vup)
+    return true;
+  else return false;
+}
+
+bool Reeca1::getVoltageDipFlag()
 {
   if(Vt < Vdip || Vt > Vup)
     return true;
@@ -47,8 +57,6 @@ void Reeca1::getnvar(int *nvar)
 void Reeca1::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
   BaseEMTExcModel::load(data,idx); // load parameters in base exciter model
-    if(!data->getValue(HAS_WIND_DRIVETRAIN,&p_has_drivetrain,idx))
-    p_has_drivetrain = false;
   
   // Parameters
   // default values form
@@ -251,17 +259,19 @@ void Reeca1::init(gridpack::RealType* xin)
   // Get current commands
   getInitialIpcmdIqcmd(&Ipcmd,&Iqcmd);
   
-  // Ipcmd related blocks initialization
-  // Initial value of Ipcmd provided by generator controller
+  // Commanded power output
   Pord = Vt_filter*Ipcmd;
   Pord_blk_in = Pord_blk.init_given_y(Pord);
 
+  Pref = Pord_blk_in;
+
+  /*
   if(PFLAG == 0) Pref = Pord_blk_in;
   else {
-    if(!p_has_drivetrain) {
+    if(!p_hasDriveTrainController) {
       Pref = Pord_blk_in;
     } else {
-      omega_g = 1.0;
+      omega_g = (1 + getDriveTrainController()->getGeneratorSpeedDeviation());
       // *********
       // Need to do drive train initialization here to get omega_g
       // Using omega_g = 1.0 for now
@@ -269,6 +279,7 @@ void Reeca1::init(gridpack::RealType* xin)
       Pref = Pord_blk_in/omega_g;
     }
   }
+  */
 
   // Iqcmd related blocks initialization
   // Initial value of Iqcmd provided by generator controller
@@ -472,6 +483,11 @@ void Reeca1::preStep(double time ,double timestep)
     getPlantController()->getPrefQext(&Pref,&Qref);
   }
 
+  // Pref comes from torque controller if present
+  if(p_hasTorqueController) {
+    Pref = getTorqueController()->getPref();
+  }
+
   // Pref limiter output
   // Update the previous value for the rate limiter block
   Pref_limit_out = Pref_limit_blk.getoutput(Pref,timestep,true);
@@ -482,6 +498,10 @@ void Reeca1::preStep(double time ,double timestep)
   if(!PFLAG) {
     Pord_blk_in = Pref_limit_out;
   } else {
+    if(p_hasDriveTrainController) {
+      omega_g = (1 + getDriveTrainController()->getGeneratorSpeedDeviation());
+    }
+
     Pord_blk_in = Pref_limit_out*omega_g;
   }
 

@@ -160,6 +160,10 @@ void Wtdta1::preStep(double time ,double timestep)
   
   if(integrationtype != EXPLICIT) return;
 
+  double pg,qg;
+  getGenerator()->getPower(time,&pg,&qg);
+  Te = pg/(1+domega_g);
+
   u = Tm - Te - D*domega_g;
   domega_g = domegag_blk.getoutput(u,timestep,true);
 

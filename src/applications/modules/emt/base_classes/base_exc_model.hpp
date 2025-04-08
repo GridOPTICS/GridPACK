@@ -300,6 +300,8 @@ public:
    */
   void setIntegrationType(EMTMachineIntegrationType type) {integrationtype = type; }
 
+  virtual bool getVoltageDipFlag() { return false; }
+
 protected:
   double        VD, VQ;
   int           status = 1; /**< Exciter status */

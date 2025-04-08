@@ -50,15 +50,15 @@ void Transformer::load(const boost::shared_ptr<gridpack::component::DataCollecti
   L1 = X/OMEGA_S;
   L0 = 3*L1;
 
-  double Rs = R1;
-  double Rm = 0.0;
+  double Rs = R1; //(2*R1 + R0)/3.0;
+  double Rm = 0.0; //(R0 - R1)/3.0;
   p_R[0][0] = p_R[1][1] = p_R[2][2] = Rs;
   p_R[0][1] = p_R[1][0] = Rm;
   p_R[0][2] = p_R[2][0] = Rm;
   p_R[1][2] = p_R[2][1] = Rm;
   
-  double Ls = L1;
-  double Lm = 0.0;
+  double Ls = L1; //(2*L1 + L0)/3.0;
+  double Lm = 0.0; // (L0 - L1)/3.0;
   p_L[0][0] = p_L[1][1] = p_L[2][2] = Ls;
   p_L[0][1] = p_L[1][0] = Lm;
   p_L[0][2] = p_L[2][0] = Lm;
