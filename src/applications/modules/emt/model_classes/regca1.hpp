@@ -259,7 +259,7 @@ class Regca1 : public BaseEMTGenModel
     double Ipcmd, Iqcmd, busfreq;  // busfreq is perunit, 1.0
 
   gridpack::ComplexType Zsource, E;
-  double p_Rs,p_L;
+  double p_Rs,p_L,L;
   
   //    boost::shared_ptr<BaseExciterModel> p_exciter;
   //    boost::shared_ptr<BasePlantControllerModel> p_plant;
