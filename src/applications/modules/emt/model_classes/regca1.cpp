@@ -99,8 +99,8 @@ void Regca1::init(gridpack::RealType* xin)
   angle_block.setparams(1.0);
 
   // Current control blocks
-  Iperr_PI_blk.setparams(0,0.05);
-  Iqerr_PI_blk.setparams(0,0.05);
+  Iperr_PI_blk.setparams(0,0.005);
+  Iqerr_PI_blk.setparams(0,0.005);
 
   Pg = pg/mbase;
   Qg = qg/mbase;
@@ -249,7 +249,7 @@ void Regca1::preStep(double time ,double timestep)
   ang = arg(Vdq);
   domega = omega_Pll_block.getoutput(ang, timestep, true);
   //  omega  = OMEGA_S*(1 + domega);
-  delta  = angle_block.getoutput(domega, timestep, true);
+  delta  = angle_block.getoutput(OMEGA_S*domega, timestep, true);
 
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
 
@@ -275,6 +275,9 @@ void Regca1::preStep(double time ,double timestep)
 
   Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
+  Ipref =  (pg/mbase)/Vt_filter;
+  Iqref = -(qg/mbase)/Vt_filter;
+  
   Ed = Iperr_PI_blk.getoutput(Ipref - Ipout);
   Eq = Iqerr_PI_blk.getoutput(Iqref - Iqout);
   E  = gridpack::ComplexType(Ed,Eq);

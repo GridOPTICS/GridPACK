@@ -90,6 +90,8 @@ void Sexs::postStep(double time)
  */
 void Sexs::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
+  BaseEMTExcModel::load(data,idx); // load parameters in base exciter model
+
   if (!data->getValue(EXCITER_TA_OVER_TB, &TA_OVER_TB, idx)) TA_OVER_TB = 0.0; // TA_OVER_TB
   if (!data->getValue(EXCITER_TB, &TB, idx)) TB = 0.0; // TB
   if (!data->getValue(EXCITER_K, &K, idx))   K  = 0.0; // K
@@ -150,11 +152,11 @@ void Sexs::init(gridpack::RealType* xin)
     // calculating the model input Vref
 
     if(Efd >= EMAX) {
+      printf("Generator %s at bus %d: Efd = %lf > Emax = %lf\n",id.c_str(),busnum,Efd,EMAX);
       Efd = EMAX;
-      printf("Generator %s at bus %d: Efd = %lf > Emax = %lf\n",busnum,id.c_str(),Efd,EMAX);
     } else if(Efd <= EMIN) {
+      printf("Generator %s at bus %d: Efd = %lf < Emin = %lf\n",id.c_str(),busnum,Efd,EMIN);
       Efd = EMIN;
-      printf("Generator %s at bus %d: Efd = %lf < Emin = %lf\n",busnum,id.c_str(),Efd,EMIN);
     }
     
     // Initialize second block
