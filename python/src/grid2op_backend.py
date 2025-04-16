@@ -1,5 +1,6 @@
 import copy
 import os, sys
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Optional, Tuple, Union
@@ -309,6 +310,7 @@ class GridPACKBackend(Backend):
         # called once   
         This step is called only ONCE, when the grid2op environment is created. In this step, you read a grid file (in the format that you want) and the backend should inform grid2op about the "objects" on this powergrid and their location.
         '''
+        # breakpoint()
         # first load the grid from the file
         # self.full_path = path
         # if filename is not None:
@@ -318,7 +320,7 @@ class GridPACKBackend(Backend):
         # read XML to get timestep
         with open(self.full_path, 'r') as f:
             data = f.read()
-        bs_data = BeautifulSoup(data, "lxml")
+        bs_data = BeautifulSoup(data, features="lxml")
         # timestep
         self._gridpack_stepsize = float(bs_data.find('timestep').text)
         print(f"[INFO] GridPACK simulation step size: {self._gridpack_stepsize} seconds")
@@ -413,10 +415,11 @@ class GridPACKBackend(Backend):
               grid_filename: Optional[Union[os.PathLike, str]]=None
             ) -> None:
         # TODO: Reset GridPACK simulator
-        # self._del_gridpack()
-        # self._init_gridpack()
-        # self.load_grid(path, grid_filename)
-        pass
+        # breakpoint()
+        self._del_gridpack()
+        self._init_gridpack()
+        self.load_grid(path, grid_filename)
+        # pass
 
     def apply_action(self, backendAction: Union["grid2op.Action._backendAction._BackendAction", None]) -> None:
         '''
@@ -582,6 +585,7 @@ class GridPACKBackend(Backend):
         self._reset_data_collectors()
 
         # run GridPACK
+        # breakpoint()
         for i in range(n_steps):
             # run GridPACK simulation by one time step
             self._dsapp.executeOneSimuStep()  
@@ -750,9 +754,9 @@ class GridPACKBackend(Backend):
         return p_ex, q_ex, v_ex, a_ex
 
     def copy(self):
-        breakpoint()
-        print(self._gridpack_kwargs)
+        # copy the gridpack object
         res = type(self)(**self._gridpack_kwargs)
+
         # copy from base class (backend)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", FutureWarning)

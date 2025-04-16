@@ -108,9 +108,9 @@ class LoadSheddingAgent(BaseAgent):
         self.do_nothing = self.action_space({})
 
     def act(self, obs, reward, done=False):
-        if ((obs.current_step >= 2) & (obs.current_step < 4)):
-            new_load_p = obs.load_p * 1.2
-            new_load_q = obs.load_q * 1.2
+        if ((obs.current_step >= 2) & (obs.current_step < 3)):
+            new_load_p = obs.load_p * 1.1
+            new_load_q = obs.load_q * 1.1
             
             # this is the only method you need to implement
             # it takes an observation obs (and a reward and a flag)

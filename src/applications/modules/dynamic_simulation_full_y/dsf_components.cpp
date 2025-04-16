@@ -1328,13 +1328,8 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
       pl_current = rV*rV*p_gload[i];
       ql_current = -rV*rV*p_bload[i];
       if(p_bscatterinjload_flag_compensateY) {
-<<<<<<< HEAD
-	pl_current -= p_scatterinjload_p;
-	ql_current -= p_scatterinjload_q;
-=======
         pl_current -= p_scatterinjload_p;
         ql_current -= p_scatterinjload_q;
->>>>>>> origin/develop
       }
       if (!data->setValue(LOAD_PL_CURRENT, pl_current, i)) {
         data->addValue(LOAD_PL_CURRENT, pl_current, i);

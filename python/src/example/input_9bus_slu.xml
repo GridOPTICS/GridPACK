@@ -9,7 +9,7 @@
         <!-ksp_view>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package mumps
+        -pc_factor_mat_solver_package superlu_dist
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
@@ -85,7 +85,7 @@
         <!-ksp_view>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package mumps 
+        -pc_factor_mat_solver_package superlu_dist 
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
@@ -94,7 +94,7 @@
         These options are used if SuperLU was built into PETSc 
       -->
       <Ordering>nd</Ordering>
-      <Package>mumps</Package>
+      <Package>superlu_dist</Package>
       <Iterations>1</Iterations>
       <Fill>5</Fill>
       <!--<PETScOptions>

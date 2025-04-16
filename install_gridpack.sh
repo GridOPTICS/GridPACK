@@ -6,6 +6,7 @@ set -x
 
 # Flag for install GridPACK and GridPACK python wrapper
 install_gridpack=true
+install_gridpack_shared=true
 install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
@@ -104,7 +105,7 @@ then
     rm -rf build dist gridpack_hadrec.egg-info/
     
     ${python_exe} setup.py install
-    # ${python_exe} -m pip install --no-deps --upgrade . # --prefix=$GRIDPACK_INSTALL_DIR .
+    # ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
 
     # Construct the installed package path and check it. The actual
     # path with in the prefix seems to be kind of random, so

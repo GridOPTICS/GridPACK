@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Powerflow>
-    <networkConfiguration_v34> case9_PSCAD.raw </networkConfiguration_v34>
+    <networkConfiguration_v35> 240bus_mod.raw </networkConfiguration_v35>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
     <LinearSolver>
@@ -9,7 +9,7 @@
         <!-ksp_view>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package mumps
+        -pc_factor_mat_solver_type superlu_dist
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
@@ -53,29 +53,26 @@
   </Powerflow>
   <Dynamic_simulation>
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
-    <generatorParameters> case9.dyr </generatorParameters>
-    <simulationTime>5.0</simulationTime>
+    <generatorParameters> 240bus.dyr </generatorParameters>
+    <simulationTime>10</simulationTime>
+    <!---<iterativeNetworkInterface>true</iterativeNetworkInterface>-->
     <timeStep>0.005</timeStep>
     <Events>
       <faultEvent>
-        <beginFault> 300</beginFault>
-        <endFault>   400</endFault>
-        <faultBranch>6 9</faultBranch>
-        <timeStep>   0.01</timeStep>
+        <beginFault> 1000.0</beginFault>
+        <endFault>   1111.0</endFault>
+        <faultBranch>1001 1201</faultBranch>
+        <timeStep>   0.005</timeStep>
       </faultEvent>
     </Events>
     <generatorWatch>
       <generator>
-        <busID> 1 </busID>
-        <generatorID> 1 </generatorID>
+        <busID> 1032 </busID>
+        <generatorID> C </generatorID>
       </generator>
       <generator>
-        <busID> 2 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 3 </busID>
-        <generatorID> 1 </generatorID>
+        <busID> 1032 </busID>
+        <generatorID> S </generatorID>
       </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
@@ -85,7 +82,7 @@
         <!-ksp_view>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package mumps 
+        -pc_factor_mat_solver_type superlu_dist 
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
@@ -94,7 +91,7 @@
         These options are used if SuperLU was built into PETSc 
       -->
       <Ordering>nd</Ordering>
-      <Package>mumps</Package>
+      <Package>superlu_dist</Package>
       <Iterations>1</Iterations>
       <Fill>5</Fill>
       <!--<PETScOptions>

@@ -63,7 +63,7 @@ Environment::Environment(int argc, char **argv):p_boostEnv(argc,argv),
   PrintStatus();
   GA_Initialize();
   p_from_comm = true;
-  MA_init(C_DBL,pma_stack,pma_heap);
+  // MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
 
@@ -76,7 +76,7 @@ Environment::Environment(int argc, char **argv,const char* help): p_boostEnv(arg
   PrintStatus();
   GA_Initialize();
   p_from_comm = true;
-  MA_init(C_DBL,pma_stack,pma_heap);
+  // MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
   
@@ -87,7 +87,7 @@ Environment::Environment(int argc, char **argv,const char* help,const long int& 
   PrintStatus();
   GA_Initialize();
   p_from_comm = true;
-  MA_init(C_DBL,ma_stack,ma_heap);
+  // MA_init(C_DBL,ma_stack,ma_heap);
   gridpack::math::Initialize(&argc,&argv);
 
 }
@@ -103,7 +103,7 @@ Environment::Environment(int argc, char **argv, MPI_Comm &comm): p_boostEnv(argc
   // hanging.
   if (GA_Initialize_comm(comm)) {
     p_from_comm = true;
-    MA_init(C_DBL,pma_stack,pma_heap);
+    // MA_init(C_DBL,pma_stack,pma_heap);
     gridpack::math::Initialize(&argc,&argv);
   } else {
     p_from_comm = false;
