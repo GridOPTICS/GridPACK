@@ -44,6 +44,7 @@ target_link_libraries(gridpack_voltage_stability_module
   gridpack_vsmatrix_components
   gridpack_partition
   gridpack_block_parsers
+  gridpack_powerflow_module
   )
 
 # -------------------------------------------------------------

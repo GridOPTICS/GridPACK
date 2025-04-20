@@ -2388,7 +2388,7 @@ bool gridpack::voltage_stability::VSBranch::FVSIWrite()
   for (i=0; i<bsize; i++) {
     s = getComplexPower(tags[i]);
     FVSI = getVoltageStabilityIndex(tags[i]);
-    printf("\n %d %f %f", i, FVSI, tags[i]);
+    printf("\n %d %f %s", i, FVSI, tags[i].c_str());
     double p = real(s);
     double q = imag(s);
     if (!p_branch_status[i]) p = 0.0;

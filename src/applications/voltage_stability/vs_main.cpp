@@ -17,6 +17,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/include/gridpack.hpp"
+#include "gridpack/applications/modules/voltage_stability/vs_app_module.hpp"
 
 // Calling program for the state estimation application
 
