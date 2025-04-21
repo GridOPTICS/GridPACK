@@ -60,9 +60,13 @@ main(int argc, char **argv)
     se_app.initialize();
     se_app.readMeasurements();
     se_app.solve();
-    // Only call write() if convergence was achieved
-    if (se_app.hasConverged()) {
-      se_app.write();
+    // Write results regardless of convergence status
+    se_app.write();
+    // Report convergence status
+    if (!se_app.hasConverged()) {
+      if (world.rank() == 0) {
+        printf("WARNING: State estimation did not fully converge, but results were written anyway.\n");
+      }
     }
   }
 
