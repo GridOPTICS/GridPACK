@@ -16,6 +16,8 @@
  * @date   2025-03-05
  *         Adding more functions to handle measurements more efficiently
  * @date   2025-04-02
+ *         Adding more functions to handle bad data detection and create more comprehensive outputs
+ * @date   2025-04-20
  * 
  */
 // -------------------------------------------------------------
@@ -187,7 +189,6 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
     }
    }
   }
-//        at,vt,real(values[0]),real(values[1]),p_a,p_v);
 }
 
 /**
@@ -350,7 +351,6 @@ void gridpack::state_estimation::SEBus::load(
       }
     }
   }
-
 }
 
 /**
@@ -375,11 +375,6 @@ gridpack::ComplexType gridpack::state_estimation::SEBus::getYBus(void)
   return YMBus::getYBus();
 }
 
-/**
- * Set the mode to control what matrices and vectors are built when using
- * the mapper
- * @param mode: enumerated constant for different modes
- */
 /**
  * Set the mode to control what matrices and vectors are built when using
  * the mapper
@@ -556,28 +551,16 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
         buf[0] = '\0';
         if (meas_type == "VM") {
           estimate = p_v;
-          //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
-          //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
-          //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-//          sprintf(buf,"    %s %16.5f \n", type.c_str(), estimate-p_meas[i].p_value);
           sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "PI") {
           estimate = p_Pinj;
-          //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
-          //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
-          //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-//          sprintf(buf,"    %s %16.5f \n", type.c_str(), estimate-p_meas[i].p_value);
           sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "QI") {
           estimate = p_Qinj;
-          //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
-          //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
-          //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-//          sprintf(buf,"    %s %16.5f \n", type.c_str(), estimate-p_meas[i].p_value);
           sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
@@ -1555,7 +1538,7 @@ bool gridpack::state_estimation::SEBranch::getResidualDetails(int idx, char* buf
 
 
 /**
- *  Simple constructor
+ *  SEBranch constructor
  */
 gridpack::state_estimation::SEBranch::SEBranch(void)
 {
@@ -1582,7 +1565,7 @@ gridpack::state_estimation::SEBranch::SEBranch(void)
 }
 
 /**
- *  Simple destructor
+ *  SEBranch destructor
  */
 gridpack::state_estimation::SEBranch::~SEBranch(void)
 {
@@ -1618,10 +1601,6 @@ bool gridpack::state_estimation::SEBranch::matrixReverseSize(int *isize, int *js
 bool gridpack::state_estimation::SEBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == YBus) {
-//    values[0] = p_ybusr_frwd;
-//    values[1] = p_ybusi_frwd;
-//    values[2] = -p_ybusi_frwd;
-//    values[3] = p_ybusr_frwd;
     return YMBranch::matrixForwardValues(values);
   }
   return false;
@@ -1630,16 +1609,14 @@ bool gridpack::state_estimation::SEBranch::matrixForwardValues(ComplexType *valu
 bool gridpack::state_estimation::SEBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == YBus) {
-  //  values[0] = p_ybusr_rvrs;
-  //  values[1] = p_ybusi_rvrs;
-  //  values[2] = -p_ybusi_rvrs;
-  //  values[3] = p_ybusr_rvrs;
     return YMBranch::matrixReverseValues(values);
   }
   return false;
 }
 
-// Calculate contributions to the admittance matrix from the branches
+/**
+  * Calculate contributions to the admittance matrix from the branches
+**/
 void gridpack::state_estimation::SEBranch::setYBus(void)
 {
   YMBranch::setYBus();
@@ -1650,8 +1627,6 @@ void gridpack::state_estimation::SEBranch::setYBus(void)
   ret = YMBranch::getReverseYBus();
   p_ybusr_rvrs = real(ret);
   p_ybusi_rvrs = imag(ret);
-  // Not really a contribution to the admittance matrix but might as well
-  // calculate phase angle difference between buses at each end of branch
   gridpack::state_estimation::SEBus *bus1 =
     dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
   gridpack::state_estimation::SEBus *bus2 =
@@ -1662,7 +1637,6 @@ void gridpack::state_estimation::SEBranch::setYBus(void)
   if (ok) {
     p_theta = (bus1->getPhase() - bus2->getPhase());
   }
-
 }
 
 /**
@@ -1740,11 +1714,6 @@ void gridpack::state_estimation::SEBranch::load(
   }
 }
 
-/**
- * Set the mode to control what matrices and vectors are built when using
- * the mapper
- * @param mode: enumerated constant for different modes
- */
 /**
  * Set the mode to control what matrices and vectors are built when using
  * the mapper
@@ -2249,7 +2218,6 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
     bus1->getShuntGsBs(&gs1,&bs1);
     bus2->getShuntGsBs(&gs2,&bs2);
     theta = bus1->getPhase() - bus2->getPhase();  
-    //    int ref = getRef(this);
 
     for (i=0; i<nmeas; i++) {
       im = matrixGetRowIndex(i);
@@ -2659,7 +2627,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementIndices(int *idx)
  */
 void gridpack::state_estimation::SEBranch::vectorSetElementValues(ComplexType *values)
 {
-  //TODO: Is this function needed?
+  //TODO: PLACE HOLDER
 }
 
 

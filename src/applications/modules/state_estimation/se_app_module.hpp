@@ -16,6 +16,8 @@
  * @date   2025-03-05
  *         Adding more functions to handle measurements more efficiently
  * @date   2025-04-02
+ *         Adding more functions to handle bad data detection and more comprehensive outputs
+ * @date   2025-04-20
  *
  *
  */
@@ -150,6 +152,8 @@ class SEAppModule
     // Adjust weights of bad measurements by increasing their sigmas
     void adjustWeights(const std::vector<int>& badIndices);
 
+    void debugPrintMeasurements();
+
 
     private:
 
@@ -181,6 +185,7 @@ class SEAppModule
 
     // void detectBadData(void);
     std::vector<int> detectBadData(void);
+
     double p_bad_data_threshold;
     double p_lastChiSquareValue; // Store last chi-square value for reporting
 
@@ -191,11 +196,13 @@ class SEAppModule
     double& getMeasurementSigma(int idx);
 
     // Structure to store information about each bad data iteration
-    struct BadDataIterInfo {
-        std::vector<int> badIndices;        // Newly identified bad measurements in this iteration
-        std::vector<int> allBadIndices;     // All bad measurements identified so far
-        double chiSquareValue;
-        int iterationNumber;
+    struct BadDataIterationInfo {
+        std::vector<int> badIndices;                   // Newly identified bad measurements in this iteration
+        std::vector<int> allBadIndices;                // All bad measurements identified so far
+        std::map<int, double> normalizedResiduals;     // Normalized residual values for all measurements
+        double chiSquareValue;                         // Chi-square value for this iteration
+        int iterationNumber;                           // Iteration number
+        int degreesOfFreedom;                          // Degrees of freedom for this iteration
     };
     
     // Structure to store PV/Slack bus constraint information
@@ -210,7 +217,7 @@ class SEAppModule
     std::vector<double> p_measurementSigmas;
     std::vector<int> p_badMeasurementIndices;  // Current bad measurement indices
     std::vector<int> p_allBadMeasurementIndices; // All bad measurement indices across iterations
-    std::vector<BadDataIterInfo> p_badDataIterationInfo; // Store information about bad data iterations
+    std::vector<BadDataIterationInfo> p_badDataIterationInfo; // Store information about bad data iterations
     std::vector<PVBusConstraint> p_pvBusConstraints; // Store information about PV bus constraints
 };
 

@@ -196,41 +196,7 @@ void gridpack::state_estimation::SEFactoryModule::setMode(int mode)
     // Existing code...
   }
 }
-/***
-void gridpack::state_estimation::SEFactoryModule::reportMeasurement(int idx, std::string& details)
-{
-  int numBus = p_network->numBuses();
-  int numBranch = p_network->numBranches();
-  bool found = false;
-  char buf[128];
-  
-  // Check bus measurements
-  for (int i=0; i<numBus && !found; i++) {
-    SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
-    if (bus->getResidualDetails(idx, buf)) {
-      printf("%s\n", buf);
-      found = true;
-      break;
-    }
-  }
-  
-  // Check branch measurements
-  if (!found) {
-    for (int i=0; i<numBranch && !found; i++) {
-      SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-      if (branch->getResidualDetails(idx, buf)) {
-        printf("%s\n", buf);
-        found = true;
-        break;
-      }
-    }
-  }
-  
-  if (!found) {
-    printf("Unknown measurement index %d\n", idx);
-  }
-}
-***/
+
 bool gridpack::state_estimation::SEFactoryModule::reportMeasurement(int idx, std::string& details)
 {
     char buf[256];
@@ -258,62 +224,6 @@ bool gridpack::state_estimation::SEFactoryModule::reportMeasurement(int idx, std
     return found;
 }
 
-
-/***
-bool gridpack::state_estimation::SEFactoryModule::reportMeasurement(int busID, const std::string& type, std::string& details, int& globalIdx)
-{
-    char buf[256];
-    bool found = false;
-    int numBus = p_network->numBuses();
-    
-    for (int i = 0; i < numBus && !found; i++) {
-        SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
-        if (bus->getOriginalIndex() == busID) {
-            for (int idx = 0; idx < p_network->totalBuses() * 10 && !found; idx++) {
-                if (bus->getResidualDetails(idx, buf)) {
-                    std::string tempDetails = buf;
-                    size_t typePos = tempDetails.find(" Type ");
-                    if (typePos != std::string::npos) {
-                        std::string measType = tempDetails.substr(typePos + 6);
-                        if (measType == type) {
-                            details = tempDetails;
-                            globalIdx = idx;
-                            found = true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    if (!found) {
-        int numBranch = p_network->numBranches();
-        for (int i = 0; i < numBranch && !found; i++) {
-            SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-            int fromBus = branch->getBus1OriginalIndex();
-            int toBus = branch->getBus2OriginalIndex();
-            if (fromBus == busID || toBus == busID) {
-                for (int idx = 0; idx < p_network->totalBranches() * 10 && !found; idx++) {
-                    if (branch->getResidualDetails(idx, buf)) {
-                        std::string tempDetails = buf;
-                        size_t typePos = tempDetails.find(" Type ");
-                        if (typePos != std::string::npos) {
-                            std::string measType = tempDetails.substr(typePos + 6);
-                            if (measType == type) {
-                                details = tempDetails;
-                                globalIdx = idx;
-                                found = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    return found;
-}
-***/
 void gridpack::state_estimation::SEFactoryModule::setVoltageLimits(double v_min, double v_max, bool enforce)
 {
   int numBus = p_network->numBuses();

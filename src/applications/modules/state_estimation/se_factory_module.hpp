@@ -6,13 +6,15 @@
 // -------------------------------------------------------------
 /**
  * @file   se_factory_module.hpp
- * @author Yousu Chen, Bruce Palmer 
+ * @author Yousu Chen, Bruce Palmer
  * @date   1/23/2015
  * 
  * @brief  
  * @update Yousu Chen
  *         Adding functions of applying virtual measurements
  * @date   2025-03-05
+ *         Adding more functions to handle bad data detection and more comprehensive outputs
+ * @date   2025-04-20
  * 
  * 
  */
@@ -21,6 +23,7 @@
 #ifndef _se_factory_module_h_
 #define _se_factory_module_h_
 
+#include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/applications/components/se_matrix/se_components.hpp"
@@ -28,9 +31,12 @@
 namespace gridpack {
 namespace state_estimation {
 
+// State estimation factory class
 class SEFactoryModule
   : public gridpack::factory::BaseFactory<SENetwork> {
   public:
+    typedef boost::shared_ptr<SENetwork> NetworkPtr;
+
     /**
      * Basic constructor
      * @param network: network associated with factory
@@ -48,46 +54,56 @@ class SEFactoryModule
     void setYBus(void);
 
     /**
-     * Disribute measurements
+     * Distribute measurements
      * @param measurements a vector containing all measurements
      */
-    void setMeasurements(std::vector<Measurement> measurements);
+    void setMeasurements(
+        std::vector<gridpack::state_estimation::Measurement> measurements);
 
     /**
      * Initialize some parameters in state estimation components
      */
     void configureSE(void);
 
+    /**
+     * Identify bad data based on residual index
+     * @param idx: index of maximum normalized residual
+     */
     void identifyBadData(int idx);
 
     /**
-     * Set the mode for all network components 
-     * @param mode enumerated constant for different modes
+     * Set mode for all components in the network
+     * @param mode: operation mode for components
      */
     void setMode(int mode);
 
     /**
-     * Report Measurement details 
-     * @Para: int idx for the measurement index 
-     * std::string& details to return the measurement details.
+     * Report measurement details based on index
+     * @param idx: index of measurement
+     * @param details: string to store measurement details
+     * @return true if measurement found, false otherwise
      */
-    //void reportMeasurement(int idx);
     bool reportMeasurement(int idx, std::string& details);
-    //bool reportMeasurement(int busID, const std::string& type, std::string& details, int& globalIdx);
 
     /**
      * Set voltage limits for all buses
-     * @param v_min minimum voltage limit
-     * @param v_max maximum voltage limit
-     * @param enforce whether to enforce limits
+     * @param v_min: minimum voltage magnitude
+     * @param v_max: maximum voltage magnitude
+     * @param enforce: whether to enforce limits
      */
     void setVoltageLimits(double v_min, double v_max, bool enforce);
 
-  private:
+    /**
+     * Get mode name as string for reporting
+     * @param mode: mode enum value
+     * @return string representation of mode
+     */
+    const char* getModeNameString(int mode) const;
 
+  private:
     NetworkPtr p_network;
 };
 
 } // state_estimation
 } // gridpack
-#endif
+#endif // _se_factory_module_h_

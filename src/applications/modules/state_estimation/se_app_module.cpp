@@ -265,28 +265,6 @@ void gridpack::state_estimation::SEAppModule::readMeasurements(void)
   if (cursor) cursor->children(measurements);
   std::vector<gridpack::state_estimation::Measurement>
     meas = getMeasurements(measurements);
-/*
-  if (p_comm.rank() == 0) {
-    int idx;
-    for (idx = 0; idx < meas.size(); idx++) {
-      std::string meas_type = meas[idx].p_type;
-      if (meas_type == "VM" || meas_type == "PI" || meas_type == "QI") {
-        printf("Type: %s\n", meas[idx].p_type);
-        printf("Bus: %d\n", meas[idx].p_busid);
-        printf("Value: %f\n", meas[idx].p_value);
-        printf("Deviation: %f\n", meas[idx].p_deviation);
-      } else if (meas_type == "PIJ" || meas_type == "QIJ") {
-        printf("Type: %s\n", meas[idx].p_type);
-        printf("FromBus: %d\n", meas[idx].p_fbusid);
-        printf("ToBus: %d\n", meas[idx].p_tbusid);
-        printf("CKT: %s\n", meas[idx].p_ckt);
-        printf("Value: %f\n", meas[idx].p_value);
-        printf("Deviation: %f\n", meas[idx].p_deviation);
-      }
-      printf("\n");
-    }
-  }  
-*/ 
   // Add measurements to buses and branches
   p_factory->setMeasurements(meas);
 
@@ -591,7 +569,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
   // Create output file
   std::ofstream outFile;
   
-  // Only have process 0 write to the file
+  // Only have process 0 write 
   if (p_network->communicator().rank() == 0) {
     outFile.open(outputFile.c_str());
     if (!outFile.is_open()) {
@@ -600,7 +578,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
     }
   }
   
-  // Only write to file if it's open
   if (p_network->communicator().rank() == 0 && outFile.is_open()) {
     // Create temporary files to capture output
     FILE* oldStdout = stdout;  // Save original stdout
@@ -1255,181 +1232,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
   }
 }
 
-
-/**
-void gridpack::state_estimation::SEAppModule::write(void)
-{
-  if (!p_converged) {
-    p_busIO->header("Cannot print results - state estimation did not converge.\n");
-    return;
-  }
-  
-  // Get output file name from configuration
-  std::string outputFile = "state_estimation_results.txt"; // Default value
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = p_config->getCursor("Configuration.State_estimation");
-  if (cursor) {
-    cursor->get("outputFile", &outputFile);
-  }
-  
-  // Create output file
-  std::ofstream outFile;
-  
-  // Only have process 0 write to the file (assuming parallel execution)
-  if (p_network->communicator().rank() == 0) {
-    outFile.open(outputFile.c_str());
-    if (!outFile.is_open()) {
-      printf("ERROR: Could not open output file %s\n", outputFile.c_str());
-    }
-  }
-  
-  // First print to screen using existing IO objects
-  p_busIO->header("\n   State Estimation Outputs\n");
-  p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
-  p_busIO->write();
-  
-  p_branchIO->header("\n   Branch Power Flow (p.u.)\n");
-  p_branchIO->header("\n        Bus 1       Bus 2            P                    Q\n");
-  p_branchIO->write();
-
-  p_busIO->header("\n   Comparison of Bus Measurements and Estimations\n");
-  p_busIO->header("\n   Type  Bus Number      Measurement          Estimate"
-               " Difference   Deviation\n");
-  p_busIO->write("se");
-
-  p_branchIO->header("\n   Comparison of Branch Measurements and Estimations\n");
-  p_branchIO->header("\n   Type  From    To  CKT   Measurement      Estimate"
-               " Difference   Deviation\n");
-  p_branchIO->write("se");
-  
-  // Only write to file if it's open
-  if (p_network->communicator().rank() == 0 && outFile.is_open()) {
-    // Capture the same output for the file
-    outFile << "\n   State Estimation Outputs\n";
-    outFile << "\n   Bus Number      Phase Angle      Voltage Magnitude\n";
-    
-    // Write bus data to file
-    int numBus = p_network->numBuses();
-    for (int i = 0; i < numBus; i++) {
-      SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
-      if (!bus->isIsolated()) {
-        char buf[128];
-        double angle = bus->getPhase() * 180.0 / M_PI; // Convert to degrees
-        sprintf(buf, "     %6d      %12.6f         %12.6f\n",
-                bus->getOriginalIndex(), angle, bus->getVoltage());
-        outFile << buf;
-      }
-    }
-    
-    // Similar format for branches
-    outFile << "\n   Branch Power Flow (p.u.)\n";
-    outFile << "\n        Bus 1       Bus 2            P                    Q\n";
-    
-    int numBranch = p_network->numBranches();
-    for (int i = 0; i < numBranch; i++) {
-      SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-      SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
-      SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
-      
-      if (!bus1->isIsolated() && !bus2->isIsolated()) {
-        char buf[128];
-        // Get power flow values
-        double p, q;
-        branch->getPQ(bus1, &p, &q);
-        sprintf(buf, "     %6d      %6d      %12.6f         %12.6f\n",
-                bus1->getOriginalIndex(), bus2->getOriginalIndex(), p, q);
-        outFile << buf;
-      }
-    }
-    
-    // Add similar sections for measurement comparisons
-    outFile << "\n   Comparison of Bus Measurements and Estimations\n";
-    outFile << "\n   Type  Bus Number      Measurement          Estimate"
-            << " Difference   Deviation\n";
-    
-    int numBus = p_network->numBuses();
-    for (int i = 0; i < numBus; i++) {
-      SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
-      if (!bus->isIsolated() && bus->hasMeasurements()) {
-	std::vector<Measurement> measurements = bus->getMeasurements();
-	for (int j = 0; j < measurements.size(); j++) {
-	  Measurement& meas = measurements[j];
-	  std::string type = meas.p_type;
-	  double estimate = 0.0;
-	  
-	  // Calculate the estimated value based on measurement type
-	  if (type == "VM") {
-	    estimate = bus->getVoltage();
-	  } else if (type == "VA") {
-	    estimate = bus->getPhase();
-	  } else if (type == "PI") {
-	    // Calculate real power injection (similar to what's in vectorGetElementValues)
-	    estimate = bus->getInjectedRealPower(); // You might need to add this method
-	  } else if (type == "QI") {
-	    // Calculate reactive power injection
-	    estimate = bus->getInjectedReactivePower(); // You might need to add this method
-	  }
-	  
-	  // Format and write to file
-	  char buf[256];
-	  sprintf(buf, "    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
-		  type.c_str(), bus->getOriginalIndex(), meas.p_value, estimate,
-		  estimate - meas.p_value, meas.p_deviation);
-	  outFile << buf;
-	}
-      }
-    }
-
-    outFile << "\n   Comparison of Branch Measurements and Estimations\n";
-    outFile << "\n   Type  From    To  CKT   Measurement      Estimate"
-	    << " Difference   Deviation\n";
-
-    int numBranch = p_network->numBranches();
-    for (int i = 0; i < numBranch; i++) {
-      SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-      SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
-      SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
-      
-      if (!bus1->isIsolated() && !bus2->isIsolated() && branch->hasMeasurements()) {
-	std::vector<Measurement> measurements = branch->getMeasurements();
-	for (int j = 0; j < measurements.size(); j++) {
-	  Measurement& meas = measurements[j];
-	  std::string type = meas.p_type;
-	  std::string ckt = meas.p_ckt;
-	  double estimate = 0.0;
-	  
-	  // Calculate the estimated value based on measurement type
-	  if (type == "PIJ") {
-	    // Get power flow from bus i to j
-	    gridpack::ComplexType s = branch->getComplexPower(ckt);
-	    estimate = real(s)/branch->getBasePower();
-	  } else if (type == "QIJ") {
-	    gridpack::ComplexType s = branch->getComplexPower(ckt);
-	    estimate = imag(s)/branch->getBasePower();
-	  } else if (type == "PJI") {
-	    gridpack::ComplexType s = branch->getRvrsComplexPower(ckt);
-	    estimate = real(s)/branch->getBasePower();
-	  } else if (type == "QJI") {
-	    gridpack::ComplexType s = branch->getRvrsComplexPower(ckt);
-	    estimate = imag(s)/branch->getBasePower();
-	  }
-	  
-	  char buf[256];
-	  sprintf(buf, "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
-		  type.c_str(), bus1->getOriginalIndex(), bus2->getOriginalIndex(), 
-		  ckt.c_str(), meas.p_value, estimate, 
-		  estimate - meas.p_value, meas.p_deviation);
-	  outFile << buf;
-	}
-      }
-    }
-
-    outFile.close();
-    printf("State estimation results written to %s\n", outputFile.c_str());
-  }
-}
-***/
-
 /**
  * Save results of state estimation calculation to data collection objects
  */
@@ -1438,6 +1240,9 @@ void gridpack::state_estimation::SEAppModule::saveData(void)
   p_factory->saveData();
 }
 
+/**
+ * Bad Data Detection
+ */
 std::vector<int> gridpack::state_estimation::SEAppModule::detectBadData(void)
 {
   p_busIO->header("\nPerforming bad data detection...\n");
@@ -1769,7 +1574,7 @@ std::vector<int> gridpack::state_estimation::SEAppModule::detectBadData(void)
       }
     }
     
-    // Sort badIndices by the magnitude of their normalized residuals (largest first)
+    // Sort normalized residuals (largest first)
     std::vector<std::pair<int, double>> indexResidualPairs;
     for (int idx : badIndices) {
       gridpack::ComplexType value;
@@ -1783,7 +1588,7 @@ std::vector<int> gridpack::state_estimation::SEAppModule::detectBadData(void)
                 return a.second > b.second;
               });
     
-    // If we have too many bad measurements, limit to the worst offenders
+    // If handling top 5 worst measurements
     const int MAX_BAD_MEASUREMENTS = 5; // Set to 5 for now
     if (indexResidualPairs.size() > MAX_BAD_MEASUREMENTS) {
       p_busIO->header("Limiting bad measurement handling to the worst offenders.\n");
@@ -1803,7 +1608,11 @@ std::vector<int> gridpack::state_estimation::SEAppModule::detectBadData(void)
   
   return badIndices;
 }
-// Helper function to get Chi-square threshold value
+
+
+/**
+ * Get Chi-square threshold value
+ */
 double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, double confidence)
 {
   // Approximation of chi-square threshold for common degrees of freedom
@@ -1814,6 +1623,9 @@ double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, d
 }
 
 
+/**
+ * debugMapper
+ */
 void gridpack::state_estimation::SEAppModule::debugMapper()
 {
   p_busIO->header("\nDebugging mapper functionality...\n");
