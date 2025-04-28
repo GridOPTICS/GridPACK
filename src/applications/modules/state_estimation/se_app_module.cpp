@@ -472,7 +472,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       badDataExists = true;
       
       // Store iteration information for reporting
-      BadDataIterInfo iterInfo;
+      BadDataIterationInfo iterInfo;
       iterInfo.badIndices = badIndices;  // New bad measurements in this iteration
       
       // Keep track of all bad measurement indices across all iterations
@@ -1187,7 +1187,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
         outFile << "-----------------------------------------------------------\n";
         
         for (size_t i = 0; i < p_badDataIterationInfo.size(); i++) {
-            const BadDataIterInfo& info = p_badDataIterationInfo[i];
+            const BadDataIterationInfo& info = p_badDataIterationInfo[i];
             char iterbuf[128];
             sprintf(iterbuf, "%3d   %-13d  %-15d  %10.3f  %s\n",
                    info.iterationNumber,
@@ -1203,7 +1203,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
         outFile << "------------------------------------------------\n";
         
         for (size_t i = 0; i < p_badDataIterationInfo.size(); i++) {
-            const BadDataIterInfo& info = p_badDataIterationInfo[i];
+            const BadDataIterationInfo& info = p_badDataIterationInfo[i];
             
             if (!info.badIndices.empty()) {
                 char iterbuf[128];

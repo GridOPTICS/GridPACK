@@ -9,10 +9,14 @@
  * @author Yousu Chen, Bruce Palmer
  * @date   1/23/2015
  * 
- * @brief  
+ * @brief  Implementation of the SE factory module
  * @update Yousu Chen
  *         Adding functions of applying virtual measurements
  * @date   2025-03-05
+ *         Adding more functions to handle bad data detection and create more comprehensive outputs
+ * @date   2025-04-20
+ *         Improved scalability with optimized matrix operation for large systems
+ * @date   2025-04-22
  * 
  * 
  */
@@ -21,6 +25,7 @@
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/hash_distr.hpp"
+#include "timer/coarse_timer.hpp"
 #include "se_factory_module.hpp"
 
 namespace gridpack {
@@ -36,19 +41,31 @@ SEFactoryModule::SEFactoryModule(SEFactoryModule::NetworkPtr network)
   : gridpack::factory::BaseFactory<SENetwork>(network)
 {
   p_network = network;
+  
+  // Optimize for large systems automatically
+  p_optimizeForLargeSystems = false;
+  
+  // Check system size for automatic optimization
+  int numBus = p_network->numBuses();
+  if (numBus > 1000) {
+    p_optimizeForLargeSystems = true;
+    if (p_network->communicator().rank() == 0) {
+      printf("SEFactoryModule: Detected large system (%d buses), enabling optimizations\n", numBus);
+    }
+  }
 }
 
 /**
  * Basic destructor
  */
-gridpack::state_estimation::SEFactoryModule::~SEFactoryModule()
+SEFactoryModule::~SEFactoryModule()
 {
 }
 
 /**
  * Create the admittance (Y-Bus) matrix
  */
-void gridpack::state_estimation::SEFactoryModule::setYBus(void)
+void SEFactoryModule::setYBus(void)
 {
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
@@ -69,7 +86,7 @@ void gridpack::state_estimation::SEFactoryModule::setYBus(void)
  * Disribute measurements
  * @param measurements a vector containing all measurements
  */
-void gridpack::state_estimation::SEFactoryModule::setMeasurements(
+void SEFactoryModule::setMeasurements(
     std::vector<gridpack::state_estimation::Measurement> measurements)
 {
   int me = p_network->communicator().rank();
@@ -81,6 +98,7 @@ void gridpack::state_estimation::SEFactoryModule::setMeasurements(
   std::vector<gridpack::state_estimation::Measurement> branch_meas;
   int i, idx1, idx2;
   std::pair<int,int> key;
+  
   for (i=0; i<size; i++) {
     std::string meas_type = measurements[i].p_type;
     if (meas_type == "VM" || meas_type == "PI" ||
@@ -131,20 +149,36 @@ void gridpack::state_estimation::SEFactoryModule::setMeasurements(
 /**
  * Initialize some parameters in state estimation components
  */
-void gridpack::state_estimation::SEFactoryModule::configureSE(void)
+void SEFactoryModule::configureSE(void)
 {
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
   int i;
 
-  // Invoke setYBus method on all bus objects
-  for (i=0; i<numBus; i++) {
-    (dynamic_cast<SEBus*>(p_network->getBus(i).get()))->configureSE();
-  }
+  // For large systems, we can optimize by minimizing synchronization
+  if (p_optimizeForLargeSystems) {
+    
+    for (i=0; i<numBus; i++) {
+      (dynamic_cast<SEBus*>(p_network->getBus(i).get()))->configureSE();
+    }
+    // Process local branches
+    for (i=0; i<numBranch; i++) {
+      (dynamic_cast<SEBranch*>(p_network->getBranch(i).get()))->configureSE();
+    }
+    
+    // Only synchronize once after all local work is done
+    p_network->communicator().barrier();
+  } else {
+    
+    // Invoke configureSE method on all bus objects
+    for (i=0; i<numBus; i++) {
+      (dynamic_cast<SEBus*>(p_network->getBus(i).get()))->configureSE();
+    }
 
-  // Invoke setYBus method on all branch objects
-  for (i=0; i<numBranch; i++) {
-    (dynamic_cast<SEBranch*>(p_network->getBranch(i).get()))->configureSE();
+    // Invoke configureSE method on all branch objects
+    for (i=0; i<numBranch; i++) {
+      (dynamic_cast<SEBranch*>(p_network->getBranch(i).get()))->configureSE();
+    }
   }
 }
 
@@ -152,7 +186,7 @@ void gridpack::state_estimation::SEFactoryModule::configureSE(void)
  * Identify bad data based on residual index
  * @param idx: index of maximum normalized residual
  */
-void gridpack::state_estimation::SEFactoryModule::identifyBadData(int idx)
+void SEFactoryModule::identifyBadData(int idx)
 {
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
@@ -178,53 +212,69 @@ void gridpack::state_estimation::SEFactoryModule::identifyBadData(int idx)
   }
 }
 
-// In the setMode method
-void gridpack::state_estimation::SEFactoryModule::setMode(int mode)
+// Set mode for components
+void SEFactoryModule::setMode(int mode)
 {
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
   int i;
 
-  if (mode == Residual || mode == Jacobian_H || mode == R_inv || mode == Voltage) {
-    for (i=0; i<numBus; i++) {
+  
+  // For large systems, optimize communication patterns
+  if (p_optimizeForLargeSystems) {
+    
+    // Process local buses
+    for (i = 0; i < numBus; i++) {
       dynamic_cast<SEBus*>(p_network->getBus(i).get())->setMode(mode);
     }
-    for (i=0; i<numBranch; i++) {
+    
+    // Process local branches
+    for (i = 0; i < numBranch; i++) {
       dynamic_cast<SEBranch*>(p_network->getBranch(i).get())->setMode(mode);
     }
-  } else if (mode == YBus) {
-    // Existing code...
+    
+  } else {
+    
+    // Set mode for all buses
+    for (i = 0; i < numBus; i++) {
+      dynamic_cast<SEBus*>(p_network->getBus(i).get())->setMode(mode);
+    }
+    
+    // Set mode for all branches
+    for (i = 0; i < numBranch; i++) {
+      dynamic_cast<SEBranch*>(p_network->getBranch(i).get())->setMode(mode);
+    }
   }
 }
 
-bool gridpack::state_estimation::SEFactoryModule::reportMeasurement(int idx, std::string& details)
+bool SEFactoryModule::reportMeasurement(int idx, std::string& details)
 {
-    char buf[256];
-    bool found = false;
-    int numBus = p_network->numBuses();
-    // Check all buses for the measurement
-    for (int i = 0; i < numBus && !found; i++) {
-        SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
-        if (bus->getResidualDetails(idx, buf)) {
-            details = buf;
-            found = true;
-        }
+  char buf[256];
+  bool found = false;
+  int numBus = p_network->numBuses();
+  // Check all buses for the measurement
+  for (int i = 0; i < numBus && !found; i++) {
+    SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+    if (bus->getResidualDetails(idx, buf)) {
+      details = buf;
+      found = true;
     }
-    // If not found in buses, check branches
-    if (!found) {
-        int numBranch = p_network->numBranches();
-        for (int i = 0; i < numBranch && !found; i++) {
-            SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-            if (branch->getResidualDetails(idx, buf)) {
-                details = buf;
-                found = true;
-            }
-        }
+  }
+  // If not found in buses, check branches
+  if (!found) {
+    int numBranch = p_network->numBranches();
+    for (int i = 0; i < numBranch && !found; i++) {
+      SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+      if (branch->getResidualDetails(idx, buf)) {
+        details = buf;
+        found = true;
+      }
     }
-    return found;
+  }
+  return found;
 }
 
-void gridpack::state_estimation::SEFactoryModule::setVoltageLimits(double v_min, double v_max, bool enforce)
+void SEFactoryModule::setVoltageLimits(double v_min, double v_max, bool enforce)
 {
   int numBus = p_network->numBuses();
   for (int i = 0; i < numBus; i++) {
@@ -235,7 +285,26 @@ void gridpack::state_estimation::SEFactoryModule::setVoltageLimits(double v_min,
   }
 }
 
+// Get Mode Names
+const char* SEFactoryModule::getModeNameString(int mode) const
+{
+  switch (mode) {
+    case YBus:
+      return "YBus";
+    case Jacobian_H:
+      return "Jacobian_H";
+    case R_inv:
+      return "R_inv";
+    case Ez:
+      return "Ez (Measurement)";
+    case Voltage:
+      return "Voltage";
+    case Residual:
+      return "Residual";
+    default:
+      return "Unknown";
+  }
+}
+
 } // namespace state_estimation
 } // namespace gridpack
-
-

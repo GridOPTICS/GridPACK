@@ -102,6 +102,7 @@ class SEFactoryModule
 
   private:
     NetworkPtr p_network;
+    bool p_optimizeForLargeSystems; // Flag for enabling large-system optimizations
 };
 
 } // state_estimation
