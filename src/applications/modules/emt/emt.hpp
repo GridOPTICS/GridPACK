@@ -79,6 +79,8 @@ public:
 
   void transferPFtoEMT(boost::shared_ptr<gridpack::powerflow::PFNetwork> pf_network,boost::shared_ptr<EmtNetwork> emt_network);
 
+  void postprocessing(void);
+
   /// Build the DAE Jacobian
   void operator() (const double& time, 
 		   const gridpack::math::RealVector& X, 

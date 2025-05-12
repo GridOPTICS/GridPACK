@@ -127,7 +127,8 @@ then
   fi
 
   # petsc_version="3.21.4"
-  petsc_version="3.20.6"
+  #petsc_version="3.20.6"
+  petsc_version="3.22.4"
   # petsc_version="3.19.4"
     
   # Install PETSc 

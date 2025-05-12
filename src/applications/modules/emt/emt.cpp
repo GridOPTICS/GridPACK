@@ -515,3 +515,9 @@ void Emt::save_output(const double& time)
   }
 }
 
+void Emt::postprocessing()
+{
+    p_profiler.startpostprocessingtimer();
+    p_profiler.stoppostprocessingtimer();
+}
+

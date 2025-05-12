@@ -73,6 +73,16 @@ class EmtProfiler
     p_timer->stop(p_tsolve);
   }
 
+  void startpostprocessingtimer(void) 
+  {
+    p_tpostprocess = p_timer->createCategory("EMT Simulation: Post Processing");
+    p_timer->start(p_tpostprocess);
+  }
+
+  void stoppostprocessingtimer(void) 
+  {
+    p_timer->stop(p_tpostprocess);
+  }
 
   ~EmtProfiler()
   {

@@ -63,6 +63,9 @@ int main(int argc, char **argv)
   // Solve
   emt->solve();
 
+  // Postprocessing
+  emt->postprocessing();
+
   delete(emt);
   ierr = gridpack_finalize();
 
