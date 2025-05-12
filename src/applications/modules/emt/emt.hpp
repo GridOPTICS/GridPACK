@@ -196,6 +196,9 @@ public:
     p_factory->postStep(time);
 
     save_output(time);
+    //if (int(time * 100000) / 5 % 5 == 0)
+    //  save_output(time);
+
     timestep_prev = this_timestep;
   }
 
