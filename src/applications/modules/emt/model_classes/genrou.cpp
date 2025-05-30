@@ -12,7 +12,7 @@
 Genrou::Genrou(void)
 {
   nxgen   = 12; // Number of variables for this model
-  flux_speed_sensitivity = 0;
+  flux_speed_sensitivity = 1;
 }
 
 void Genrou::getnvar(int *nvar)
@@ -196,11 +196,11 @@ bool Genrou::serialWrite(char *string, const int bufsize,const char *signal)
 {
   if(!strcmp(signal,"header")) {
     /* Print output header */
-    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_Qg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
     return true;
   } else if(!strcmp(signal,"monitor")) {
     /* Print output */
-    double Vm, Pgen,dspd;
+    double Vm, Pgen,Qgen,dspd;
     if(p_online) {
       Vm = sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
       dspd = dw;
@@ -209,7 +209,9 @@ bool Genrou::serialWrite(char *string, const int bufsize,const char *signal)
       dspd = 0.0;
     }
     Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
-    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vm,Pgen,delta,dspd);
+    Qgen = p_online*(vdq0[1]*idq0[0] - vdq0[0]*idq0[1])*mbase/sbase;
+
+    sprintf(string,", %6.5f,%6.5f,%6.5f,%6.5f,%6.5f",Vm,Pgen,Qgen,delta,dspd);
     return true;
   }
   return false;
@@ -1084,7 +1086,7 @@ void Genrou::preStep(double time ,double timestep)
     TM = getGovernor()->getMechanicalPower();
   }
   
-  f[5] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)); 
+  f[5] = 1 / (2 *H) * ((TM - D*dw)/(1 + dw)  - (psid*Iq - psiq*Id)); 
 
   for(int i=0; i < 6; i++) {
     x[i] += timestep*f[i]; // Forward Euler update

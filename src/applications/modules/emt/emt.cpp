@@ -247,7 +247,7 @@ void Emt::setMonitors(gridpack::utility::Configuration::CursorPtr p_configcursor
       write_data = monitored_buses[i]->serialWrite(buf,128,"header");
       if(write_data) {
 	slen = strlen(buf);
-	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	if(len + slen < 2084) snprintf(ptr,slen+1,"%s",buf);
 	len += slen;
 	ptr += slen;
       }
@@ -258,7 +258,7 @@ void Emt::setMonitors(gridpack::utility::Configuration::CursorPtr p_configcursor
       write_data = monitored_gens[i]->serialWrite(buf,128,"header");
       if(write_data) {
 	slen = strlen(buf);
-	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	if(len + slen < 2084) snprintf(ptr,slen+1,"%s",buf);
 	len += slen;
 	ptr += slen;
       }
@@ -494,7 +494,7 @@ void Emt::save_output(const double& time)
       write_data = monitored_buses[i]->serialWrite(buf,128,"monitor");
       if(write_data) {
 	slen = strlen(buf);
-	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	if(len + slen < 2084) snprintf(ptr,slen+1,"%s",buf);
 	len += slen;
 	ptr += slen;
       }
@@ -505,7 +505,7 @@ void Emt::save_output(const double& time)
       write_data = monitored_gens[i]->serialWrite(buf,128,"monitor");
       if(write_data) {
 	slen = strlen(buf);
-	if(len + slen < 512) snprintf(ptr,slen+1,"%s",buf);
+	if(len + slen < 2084) snprintf(ptr,slen+1,"%s",buf);
 	len += slen;
 	ptr += slen;
       }

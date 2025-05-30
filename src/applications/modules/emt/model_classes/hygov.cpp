@@ -119,7 +119,8 @@ void Hygov::init(gridpack::RealType* xin)
   std::string gate_block_name = blkhead + "gate_blk";
   gate_block.setname(gate_block_name.c_str());
 
-  gate_block.setparams(1/r,1/(r*TR),GMIN,GMAX,-10000,10000);
+  gate_block.setparams(1/r,1/(r*TR),GMIN,GMAX,-VELM,VELM,-10000,10000);
+  
   opening_block.setparams(1.0,TG);
   turbine_flow_block.setparams(TW);
 

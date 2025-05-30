@@ -63,16 +63,25 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,double dxmin
   double xout,dx_dt;
 
   dx_dt = getderivative(x[0],u);
+  if(dx_dt < p_dxmin) {
+    printf("Block %s state derivative %lf out of min. bounds %lf\n",name,dx_dt,p_dxmin);
+  } else if(dx_dt > p_dxmax) {
+    printf("Block %s state derivative %lf out of max. bounds %lf\n",name,dx_dt,p_dxmax);
+  }
+
   p_dxdt[0] = std::max(p_dxmin,std::min(dx_dt,p_dxmax));
   xout = x[0] + dt*p_dxdt[0];
+
+  if(xout < xmin) {
+    printf("Block %s state %lf out of min. bounds %lf\n",name,xout,xmin);
+  } else if(xout > xmax) {
+    printf("Block %s state %lf out of max. bounds %lf\n",name,xout,xmax);
+  }
+
+  
   xout = std::max(xmin,std::min(xout,xmax));
   x[0] = xout;
 
-  if(x[0] < xmin) {
-    printf("Block %s initial state %lf out of min. bounds %lf\n",name,x[0],xmin);
-  } else if(x[0] > xmax) {
-    printf("Block %s initial state %lf out of max. bounds %lf\n",name,x[0],xmax);
-  }
 
 }
 
@@ -87,6 +96,13 @@ double Cblock::getoutput(double u)
   x_n = x[0];
   
   y_n = p_C[0]*x_n + p_D[0]*u;
+
+  if(y_n < p_ymin) {
+    printf("Block %s output %lf out of min. bounds %lf\n",name,y_n,p_ymin);
+  } else if(y_n > p_ymax) {
+    printf("Block %s output %lf out of max. bounds %lf\n",name,y_n,p_ymax);
+  }
+
 
   y_n = std::max(p_ymin,std::min(y_n,p_ymax));
 
@@ -379,6 +395,7 @@ void Integrator::setparams(double T)
 
   setcoeffs(a,b);
   setxlimits(-1000.0,1000.0);
+  setdxlimits(-1E6,1E6);
   setylimits(-1000.0,1000.0);
 }
 
