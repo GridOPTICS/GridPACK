@@ -306,7 +306,7 @@ public:
   std::vector<BaseEMTGenModel*> monitored_gens;
   std::vector<EmtBus*> monitored_buses;
 
-  char output_string[512]; // Output is written to this string
+  char output_string[2084]; // Output is written to this string
 
   /// These class needs to see inside Emt
   friend class EmtTimedFaultEvent;

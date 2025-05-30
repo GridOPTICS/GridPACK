@@ -100,7 +100,7 @@ template <class _data_struct> class Wtpta1Parser
         data->setValue(WIND_PC_KCC, data_struct.wind_kcc, g_id);
       }
 
-      // WIND_BR_TP
+      // WIND_PC_TP
       if (!data->getValue(WIND_PC_TP,&rval,g_id)) {
         data->addValue(WIND_PC_TP, data_struct.wind_tp, g_id);
       } else {

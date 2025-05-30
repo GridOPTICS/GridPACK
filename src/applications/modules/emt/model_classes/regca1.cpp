@@ -29,8 +29,7 @@ void Regca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 
   // load parameters for the model type
   data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
-  p_Rs = real(Zsource); 
-  p_L  = imag(Zsource)/OMEGA_S;
+  L = imag(Zsource)/OMEGA_S;
 
   if (!data->getValue(GENERATOR_REGC_LVPLSW , &lvplsw, idx)) lvplsw = 0; 
   if (!data->getValue(GENERATOR_REGC_TG  ,    &tg, idx))     tg = 0.02; 
@@ -93,14 +92,10 @@ void Regca1::init(gridpack::RealType* xin)
   Iqlowlim_blk.setparams(1.0,lolim,1000.0);
 
   // PLL block
-  omega_Pll_block.setparams(0.001,0.005);
+  omega_Pll_block.setparams(0.001,0.005,-1000.0,1000.0,-0.1,0.1);
 
   // Integrator block
-  angle_block.setparams(1.0);
-
-  // Current control blocks
-  Iperr_PI_blk.setparams(0,0.005);
-  Iqerr_PI_blk.setparams(0,0.005);
+  angle_block.setparams(1.0/OMEGA_S);
 
   Pg = pg/mbase;
   Qg = qg/mbase;
@@ -116,11 +111,6 @@ void Regca1::init(gridpack::RealType* xin)
   I = conj(S/V);
   double Im = abs(I);
   double Ia = arg(I);
-
-  // Internal voltage
-  E = V + I*Zsource;
-  Ed = real(E);
-  Eq = imag(E);
 
   double ia,ib,ic;
   ia = Im*sin(OMEGA_S*p_time + Ia);
@@ -144,6 +134,7 @@ void Regca1::init(gridpack::RealType* xin)
   // Initialize blocks
 
   domega = 0.0;
+  
   // PLL
   double Vq = omega_Pll_block.init_given_y(domega);
 
@@ -157,9 +148,8 @@ void Regca1::init(gridpack::RealType* xin)
   Iqcmd = Iq_blk.init_given_y(Iq);
   Vt_filter = Vt_filter_blk.init_given_u(p_Vm0);
 
-  Iperr_PI_blk.init_given_y(Ed);
-  Iqerr_PI_blk.init_given_y(Eq);
-  
+  Vt = p_Vm0;
+
   x[0] = ia;
   x[1] = ib;
   x[2] = ic;
@@ -180,12 +170,16 @@ bool Regca1::serialWrite(char *string, const int bufsize,const char *signal)
 {
   if(!strcmp(signal,"header")) {
     /* Print output header */
-    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_Qg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
     return true;
   } else if(!strcmp(signal,"monitor")) {
     /* Print output */
+    double dspd;
+    if(p_online) dspd = domega;
+    else dspd = 0.0;
+    
     getPower(p_time,&Pgen,&Qgen);
-    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vt_filter,Pgen*mbase/sbase,delta,domega);
+    sprintf(string,", %6.5f,%6.5f,%6.5f,%6.5f,%6.5f",Vt_filter,Pgen*mbase/sbase,Qgen*mbase/sbase,delta,dspd);
     return true;
   }
   return false;
@@ -230,7 +224,7 @@ void Regca1::setValues(gridpack::RealType *values)
 */
 void Regca1::preStep(double time ,double timestep)
 {
-  double Vd,Vq, Vt;
+  double Vd,Vq;
   double Iq_olim;
 
   vabc[0] = p_va;
@@ -249,7 +243,7 @@ void Regca1::preStep(double time ,double timestep)
   ang = arg(Vdq);
   domega = omega_Pll_block.getoutput(ang, timestep, true);
   //  omega  = OMEGA_S*(1 + domega);
-  delta  = angle_block.getoutput(OMEGA_S*domega, timestep, true);
+  delta  = angle_block.getoutput(domega, timestep, true);
 
   Vt_filter = Vt_filter_blk.getoutput(Vt, timestep, true);
 
@@ -274,18 +268,6 @@ void Regca1::preStep(double time ,double timestep)
   Iq_olim = std::max(0.0,khv*(Vt - volim));
 
   Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
-
-  Ipref =  (pg/mbase)/Vt_filter;
-  Iqref = -(qg/mbase)/Vt_filter;
-  
-  Ed = Iperr_PI_blk.getoutput(Ipref - Ipout);
-  Eq = Iqerr_PI_blk.getoutput(Iqref - Iqout);
-  E  = gridpack::ComplexType(Ed,Eq);
-  Eabs = abs(E);
-  Eangle = arg(E);
-
-  //  printf("Time = %lf, Vt = %lf, Ipout = %lf, Iqout = %lf, domega = %lf, delta = %lf\n",p_time,Vt_filter, Ipcmd,Iqcmd,domega,delta);
-
 }
 
 /**
@@ -308,27 +290,30 @@ void Regca1::vectorGetValues(gridpack::RealType *values)
   gridpack::RealType *f = values+offsetb; // generator array starts from this location
 
   if(p_mode == RESIDUAL_EVAL) {
-    double e[3];
+    double Ipq0[3], igen[3];
+    Ipq0[0] = Ip;
+    Ipq0[1] = Iq;
+    Ipq0[2] = 0.0;
 
-    e[0] = Eabs*sin(OMEGA_S*p_time + Eangle);
-    e[1] = Eabs*sin(OMEGA_S*p_time + Eangle - TWOPI_OVER_THREE);
-    e[2] = Eabs*sin(OMEGA_S*p_time + Eangle + TWOPI_OVER_THREE);
+    dq02abc(Ipq0,p_time, delta, igen);
 
-    // Generator equations
-    if(abs(p_L) > 1e-6) {
-      // f = di_dt - idot => L^-1*(e - R*i - v) - idot
-      f[0] = (e[0] - p_Rs*iabc[0] - p_va)/p_L - diabc[0];
-      f[1] = (e[1] - p_Rs*iabc[1] - p_vb)/p_L - diabc[1];
-      f[2] = (e[2] - p_Rs*iabc[2] - p_vc)/p_L - diabc[2];
+    if(p_online) {
+      f[0] = igen[0] - iabc[0];
+      f[1] = igen[1] - iabc[1];
+      f[2] = igen[2] - iabc[2];
+      
+      f[3] = iabc[0]*mbase/sbase - iout[0];
+      f[4] = iabc[1]*mbase/sbase - iout[1];
+      f[5] = iabc[2]*mbase/sbase - iout[2];
     } else {
-      f[0] = (e[0] - p_Rs*iabc[0] - p_va);
-      f[1] = (e[1] - p_Rs*iabc[1] - p_vb);
-      f[2] = (e[2] - p_Rs*iabc[2] - p_vc);
+      f[0] = iabc[0];
+      f[1] = iabc[1];
+      f[2] = iabc[2];
+
+      f[3] = iout[0];
+      f[4] = iout[1];
+      f[5] = iout[2];
     }
-    
-    f[3] = iabc[0]*mbase/sbase - iout[0];
-    f[4] = iabc[1]*mbase/sbase - iout[1];
-    f[5] = iabc[2]*mbase/sbase - iout[2];
   }
 }
 
@@ -382,8 +367,8 @@ void Regca1::getPower(double time,double *Pg, double *Qg)
   Pgen = real(S);
   Qgen = imag(S);
 
-  *Pg = Pgen;
-  *Qg = Qgen;
+  *Pg = p_online*Pgen;
+  *Qg = p_online*Qgen;
 
 }
 
@@ -408,9 +393,9 @@ void Regca1::getInitialPower(double *Pg, double *Qg)
  */
 void Regca1::getCurrent(double *ia, double *ib, double *ic)
 {
-  *ia = iout[0];
-  *ib = iout[1];
-  *ic = iout[2];
+  *ia = p_online*iout[0];
+  *ib = p_online*iout[1];
+  *ic = p_online*iout[2];
 }
 
 /**
@@ -433,7 +418,7 @@ int Regca1::matrixNumValues()
 {
   int numVals;
 
-  numVals = 12;
+  numVals = 9;
 
   return numVals;
 }
@@ -448,106 +433,78 @@ int Regca1::matrixNumValues()
 void Regca1::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
   int ctr = 0;
-  int ia_idx = p_gloc;
-  int ib_idx = p_gloc+1;
-  int ic_idx = p_gloc+2;
-  int va_idx = p_glocvoltage;
-  int vb_idx = p_glocvoltage+1;
-  int vc_idx = p_glocvoltage+2;
 
-  // partial derivatives w.r.t. f[0]-f[2]
-  if(abs(p_L) > 1e-6) {
-    rows[ctr]   = ia_idx;
-    cols[ctr]   = ia_idx;
-    values[ctr] = -p_Rs/p_L - shift;
+  if(!p_online) {
+    rows[ctr] = p_gloc;
+    cols[ctr] = p_gloc;
+    values[ctr] = 1.0;
 
-    rows[ctr+1]   = ia_idx;
-    cols[ctr+1]   = va_idx;
-    values[ctr+1] = -1.0/p_L;
+    rows[ctr+1] = p_gloc+1;
+    cols[ctr+1] = p_gloc+1;
+    values[ctr+1] = 1.0;
 
-    ctr += 2;
+    rows[ctr+2] = p_gloc+2;
+    cols[ctr+2] = p_gloc+2;
+    values[ctr+2] = 1.0;
 
-    rows[ctr]   = ib_idx;
-    cols[ctr]   = ib_idx;
-    values[ctr] = -p_Rs/p_L - shift;
+    rows[ctr+3] = p_gloc+3;
+    cols[ctr+3] = p_gloc+3;
+    values[ctr+3] = 1.0;
 
-    rows[ctr+1]   = ib_idx;
-    cols[ctr+1]   = vb_idx;
-    values[ctr+1] = -1.0/p_L;
+    rows[ctr+4] = p_gloc+4;
+    cols[ctr+4] = p_gloc+4;
+    values[ctr+4] = 1.0;
 
-    ctr += 2;
+    rows[ctr+5] = p_gloc+5;
+    cols[ctr+5] = p_gloc+5;
+    values[ctr+5] = 1.0;
 
-    rows[ctr]   = ic_idx;
-    cols[ctr]   = ic_idx;
-    values[ctr] = -p_Rs/p_L - shift;
-
-    rows[ctr+1]   = ic_idx;
-    cols[ctr+1]   = vc_idx;
-    values[ctr+1] = -1.0/p_L;
-
-    ctr += 2;
+    ctr += 6;
   } else {
-
-    rows[ctr]   = ia_idx;
-    cols[ctr]   = ia_idx;
-    values[ctr] = -p_Rs;
-
-    rows[ctr+1]   = ia_idx;
-    cols[ctr+1]   = va_idx;
+    rows[ctr] = p_gloc;
+    cols[ctr] = p_gloc;
+    values[ctr] = -1.0;
+    
+    rows[ctr+1] = p_gloc+1;
+    cols[ctr+1] = p_gloc+1;
     values[ctr+1] = -1.0;
-
+    
+    rows[ctr+2] = p_gloc+2;
+    cols[ctr+2] = p_gloc+2;
+    values[ctr+2] = -1.0;
+    
+    ctr += 3;
+    
+    rows[ctr] = p_gloc + 3;
+    cols[ctr] = p_gloc;
+    values[ctr] = mbase/sbase;
+    
+    rows[ctr+1] = p_gloc + 3;
+    cols[ctr+1] = p_gloc + 3;
+    values[ctr+1] = -1.0;
+  
     ctr += 2;
-
-    rows[ctr]   = ib_idx;
-    cols[ctr]   = ib_idx;
-    values[ctr] = -p_Rs;
-
-    rows[ctr+1]   = ib_idx;
-    cols[ctr+1]   = vb_idx;
+    
+    rows[ctr] = p_gloc + 4;
+    cols[ctr] = p_gloc + 1;
+    values[ctr] = mbase/sbase;
+    
+    rows[ctr+1] = p_gloc + 4;
+    cols[ctr+1] = p_gloc + 4;
     values[ctr+1] = -1.0;
-
+    
     ctr += 2;
-
-    rows[ctr]   = ic_idx;
-    cols[ctr]   = ic_idx;
-    values[ctr] = -p_Rs;
-
-    rows[ctr+1]   = ic_idx;
-    cols[ctr+1]   = vc_idx;
+    
+    rows[ctr] = p_gloc + 5;
+    cols[ctr] = p_gloc + 2;
+    values[ctr] = mbase/sbase;
+    
+    rows[ctr+1] = p_gloc + 5;
+    cols[ctr+1] = p_gloc + 5;
     values[ctr+1] = -1.0;
-
+    
     ctr += 2;
   }
-
-  rows[ctr] = p_gloc + 3;
-  cols[ctr] = p_gloc;
-  values[ctr] = mbase/sbase;
-
-  rows[ctr+1] = p_gloc + 3;
-  cols[ctr+1] = p_gloc + 3;
-  values[ctr+1] = -1.0;
-
-  ctr += 2;
-
-  rows[ctr] = p_gloc + 4;
-  cols[ctr] = p_gloc + 1;
-  values[ctr] = mbase/sbase;
-
-  rows[ctr+1] = p_gloc + 4;
-  cols[ctr+1] = p_gloc + 4;
-  values[ctr+1] = -1.0;
-
-  ctr += 2;
-
-  rows[ctr] = p_gloc + 5;
-  cols[ctr] = p_gloc + 2;
-  values[ctr] = mbase/sbase;
-
-  rows[ctr+1] = p_gloc + 5;
-  cols[ctr+1] = p_gloc + 5;
-  values[ctr+1] = -1.0;
-
-  ctr += 2;
   
   *nvals = ctr;
 }

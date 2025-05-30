@@ -41,16 +41,16 @@ void Wtpta1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
 {
   BaseEMTRMechModel::load(data,idx); // load parameters in base wtpta1 model
 
-  if (!data->getValue(WIND_PC_KCC, &Kcc, idx)) Kcc = 0.0;
   if (!data->getValue(WIND_PC_KIW, &Kiw, idx)) Kiw = 0.0; 
   if (!data->getValue(WIND_PC_KPW, &Kpw, idx)) Kpw = 0.0; 
   if (!data->getValue(WIND_PC_KIC, &Kic, idx)) Kic = 0.0; 
-  if (!data->getValue(WIND_PC_KPC ,&Kpc,idx)) Kpc = 0.0; 
+  if (!data->getValue(WIND_PC_KPC ,&Kpc,idx)) Kpc = 0.0;
+  if (!data->getValue(WIND_PC_KCC, &Kcc, idx)) Kcc = 0.0;
+  if (!data->getValue(WIND_PC_TP, &Tp, idx)) Tp = 0.0;
   if (!data->getValue(WIND_PC_THETAMAX,&Thetamax,idx))  Thetamax = 0.0; 
   if (!data->getValue(WIND_PC_THETAMIN,&Thetamin,idx)) Thetamin = 0.0;
-  if (!data->getValue(WIND_PC_RTHETAMAX,&dThetamax,idx))  dThetamax = 0.0; 
+  if (!data->getValue(WIND_PC_RTHETAMAX,&dThetamax,idx))  dThetamax = 0.0;
   if (!data->getValue(WIND_PC_RTHETAMIN,&dThetamin,idx)) dThetamin = 0.0;
-  if (!data->getValue(WIND_PC_TP,&Tp,idx)) Tp = 0.0;
   
   // Set parameters for blocks
   pitchcomp_blk.setparams(Kpc,Kic,Thetamin,Thetamax,-1000.0,1000.0);

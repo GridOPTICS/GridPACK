@@ -79,10 +79,10 @@ void Lumpedline::load(const boost::shared_ptr<gridpack::component::DataCollectio
 
   C1 = Bc/OMEGA_S; C0 = 3*C1;
   
-  //  double Cp = (2*C1 + C0)/3.0;
-  //  double Cg = (C0 - C1)/3.0;
-    double Cp = C1;
-    double Cg = 0.0;
+  double Cp = (2*C1 + C0)/3.0;
+  double Cg = (C0 - C1)/3.0;
+    //  double Cp = C1;
+    //    double Cg = 0.0;
   
   p_C[0][0] = p_C[1][1] = p_C[2][2] = Cp;
   p_C[0][1] = p_C[1][0] = Cg;
