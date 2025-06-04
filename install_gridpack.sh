@@ -6,7 +6,7 @@ set -x
 
 # Flag for install GridPACK and GridPACK python wrapper
 install_gridpack=true
-install_gridpack_shared=false
+install_gridpack_shared=true
 install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
@@ -70,6 +70,7 @@ then
 
   cmake_args="-D GA_DIR:STRING=${ga_dir}
    -D Boost_ROOT:STRING=$boost_dir
+   -D Boost_DIR:STRING=$boost_dir/lib/cmake/Boost-$boost_version
    -D PETSC_DIR:PATH=${petsc_dir} 
    -D MPI_CXX_COMPILER:STRING='mpicxx' 
    -D MPI_C_COMPILER:STRING='mpicc' 
