@@ -165,6 +165,7 @@ then
       --download-mumps \
       --download-cmake=0 \
       --with-sowing=0 \
+      --with-debugging=0 \
       $petscopts
 
   # Build PETSc
