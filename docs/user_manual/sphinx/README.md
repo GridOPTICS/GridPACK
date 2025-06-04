@@ -1,3 +1,15 @@
+To modify any parameters associated the read the docs documentation, start by
+going to `readthedocs.org`. You should be able to do this by just typing
+`readthedocs.org` into a browser.
+
+Click on the `Log in` button and log in using your github credentials. Select
+`Read the Docs Community`. Find GridPACK under your projects and click on the
+link. Click on the `Settings` button. This will bring up a window with various
+settings. You can edit any of these fields. When you are done, hit the `Save`
+button at the bottom of the page.
+
+#Old material from converting GridPACK documentation from LaTeX to restructured text
+
 Convert GridPACK.tex to restructured text format by running
 
 ```

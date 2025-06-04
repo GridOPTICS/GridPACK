@@ -15,10 +15,10 @@ Other applications under development or not full featured are
 In addition, GridPACK is also a framework to simplify the development of new applications on HPC platforms. To ease the development, GridPACK offers several building blocks such as setting up and distributing (partitioning) power grid networks, support for custom components on buses and branches, converting the network models to the corresponding algebraic equations, parallel routines for manipulating and solving large algebraic systems, and input and output modules as well as basic profiling and error management. GridPACK is written in C++ with python wrappers available.
 
 ## Installation
-See the [instructions](docs/markdown/BASIC_INSTALL.md) for installing GridPACK, prerequisite software, and installation notes for different platforms.
+See the [instructions](docs/markdown/BASIC_INSTALL.md) for installing GridPACK, prerequisite software, and installation notes for different platforms. Formal releases are available [here](https://github.com/GridOPTICS/GridPACK/releases).
 
 ## Usage
-See the PDF [user manual](https://gridpack.readthedocs.io/en/latest/index.html) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md) for more info.  There is also an online version of the user manual available at [https://github.com/GridOPTICS/GridPACK/tree/feature/documentation-3.5/docs/user_manual/web/GridPACK.html](https://github.com/GridOPTICS/GridPACK/tree/feature/documentation-3.5/docs/user_manual/web/GridPACK.html).
+See the [user manual](https://gridpack.readthedocs.io/en/latest/index.html) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md) for more info.
 
 - Quick Guide (To do)
 
