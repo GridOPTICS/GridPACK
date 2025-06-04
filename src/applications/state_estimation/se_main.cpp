@@ -23,6 +23,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/include/gridpack.hpp"
+#include "timer/coarse_timer.hpp"
 
 // Calling program for the state estimation application
 
@@ -141,6 +142,11 @@ main(int argc, char **argv)
           printf("ERROR: Unknown exception during result writing\n");
         }
         return_code = 1;
+      }
+      
+      // Dump timing information
+      if (world.rank() == 0) {
+        gridpack::utility::CoarseTimer::instance()->dump();
       }
       
       // Report convergence status

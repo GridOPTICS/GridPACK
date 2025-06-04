@@ -36,6 +36,7 @@
 #include "gridpack/mapper/gen_vector_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
+#include "timer/coarse_timer.hpp"
 #include "se_app_module.hpp"
 double p_bad_data_threshold;
 
@@ -142,6 +143,12 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   p_config = config;
   p_comm = network->communicator();
 
+  // Initialize timer for profiling
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("State Estimation: Total Application");
+  timer->start(t_total);
+
   gridpack::utility::Configuration::CursorPtr cursor, secursor;
   secursor = config->getCursor("Configuration.State_estimation");
   std::string filename;
@@ -157,6 +164,7 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
       filetype = PTI36;
     } else {
       printf("No network configuration file specified\n");
+      timer->stop(t_total);
       return;
     }
   }
@@ -170,6 +178,8 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   //parser.parse(filename.c_str());
   double phaseShiftSign = secursor->get("phaseShiftSign",1.0);
 
+  int t_pti = timer->createCategory("State Estimation: Network Parser");
+  timer->start(t_pti);
   if (filetype == PTI23) {
     gridpack::parser::PTI23_parser<SENetwork> parser(network);
     parser.parse(filename.c_str());
@@ -201,13 +211,18 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
       parser.changePhaseShiftSign();
     }
   }
+  timer->stop(t_pti);
 
   // partition network
+  int t_part = timer->createCategory("State Estimation: Partition");
+  timer->start(t_part);
   p_network->partition();
+  timer->stop(t_part);
 
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(1024, p_network));
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(1024, p_network));
+  timer->stop(t_total);
 }
 
 /**
@@ -250,6 +265,14 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
  */
 void gridpack::state_estimation::SEAppModule::readMeasurements(void)
 {
+  // Initialize timer for profiling
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("State Estimation: Total Application");
+  int t_meas = timer->createCategory("State Estimation: Read Measurements");
+  timer->start(t_total);
+  timer->start(t_meas);
+
   // Read in measurement file
   std::string measurementfile;
   gridpack::utility::Configuration::CursorPtr cursor, secursor;
@@ -265,9 +288,12 @@ void gridpack::state_estimation::SEAppModule::readMeasurements(void)
   if (cursor) cursor->children(measurements);
   std::vector<gridpack::state_estimation::Measurement>
     meas = getMeasurements(measurements);
+  
   // Add measurements to buses and branches
   p_factory->setMeasurements(meas);
 
+  timer->stop(t_meas);
+  timer->stop(t_total);
 }
 
 /**
@@ -276,28 +302,58 @@ void gridpack::state_estimation::SEAppModule::readMeasurements(void)
  */
 void gridpack::state_estimation::SEAppModule::initialize(void)
 {
+  // Initialize timer for profiling
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("State Estimation: Total Application");
+  int t_init = timer->createCategory("State Estimation: Initialize");
+  timer->start(t_total);
+  timer->start(t_init);
+
   // create factory
   p_factory.reset(new gridpack::state_estimation::SEFactoryModule(p_network));
+  
+  int t_load = timer->createCategory("State Estimation: Factory Load");
+  timer->start(t_load);
   p_factory->load();
+  timer->stop(t_load);
 
   // set network components using factory
+  int t_setc = timer->createCategory("State Estimation: Factory Set Components");
+  timer->start(t_setc);
   p_factory->setComponents();
+  timer->stop(t_setc);
 
   // Set up bus data exchange buffers. Need to decide what data needs to be exchanged
+  int t_setx = timer->createCategory("State Estimation: Factory Set Exchange");
+  timer->start(t_setx);
   p_factory->setExchange();
+  timer->stop(t_setx);
 
   // Create bus data exchange
+  int t_updt = timer->createCategory("State Estimation: Bus Update");
+  timer->start(t_updt);
   p_network->initBusUpdate();
+  timer->stop(t_updt);
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.State_estimation");
   p_bad_data_threshold = cursor->get("badDataThreshold", 3.0);
   
   // Identify PV buses and their connections for proper constraint handling
+  int t_pv = timer->createCategory("State Estimation: PV Bus Constraints");
+  timer->start(t_pv);
   identifyPVBusConstraints();
+  timer->stop(t_pv);
   
   // Check for potential measurement inconsistencies
+  int t_cons = timer->createCategory("State Estimation: Measurement Consistency");
+  timer->start(t_cons);
   checkMeasurementConsistency();
+  timer->stop(t_cons);
+  
+  timer->stop(t_init);
+  timer->stop(t_total);
 }
 
 
@@ -324,11 +380,20 @@ void gridpack::state_estimation::SEAppModule::preCheckMeasurements()
  */
 void gridpack::state_estimation::SEAppModule::solve(void)
 {
+  // Initialize timer for profiling
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("State Estimation: Total Application");
+  timer->start(t_total);
+
   // Run pre-check to identify obviously suspicious measurements
   preCheckMeasurements();
 
   // set YBus components so that you can create Y matrix  
+  int t_ybus = timer->createCategory("State Estimation: YBus");
+  timer->start(t_ybus);
   p_factory->setYBus();
+  timer->stop(t_ybus);
 
   // set some state estimation parameters
   p_factory->configureSE();
@@ -373,6 +438,8 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   }
 
   //Create Y-bus matrix
+  int t_matrix = timer->createCategory("State Estimation: Matrix Creation");
+  timer->start(t_matrix);
   p_factory->setMode(YBus);
   gridpack::mapper::FullMatrixMap<SENetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
@@ -392,6 +459,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   p_factory->setMode(R_inv);
   gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
+  timer->stop(t_matrix);
 
   // Convergence and iteration parameters
   ComplexType tol;
@@ -410,55 +478,64 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     tol = 2.0 * p_tolerance; // Reset tolerance
     int iter = 0;
 
+    int t_nr_loop = timer->createCategory("State Estimation: N-R Iterations");
+    timer->start(t_nr_loop);
 
-  // Start N-R loop
-  while (real(tol) > p_tolerance && iter < p_max_iteration) {
+    // Start N-R loop
+    while (real(tol) > p_tolerance && iter < p_max_iteration) {
+      
+      // Update Jacobian for current iteration
+      p_factory->setMode(Jacobian_H);
+      HJacMap.mapToMatrix(HJac);
+
+      // Form H'
+      boost::shared_ptr<gridpack::math::Matrix> trans_HJac(transpose(*HJac));
+
+      // Build measurement equation
+      EzMap.mapToVector(Ez);
+
+      // Form Gain matrix
+      boost::shared_ptr<gridpack::math::Matrix> Gain1(multiply(*trans_HJac, *Rinv));
+      boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*Gain1, *HJac));
+
+      // Form right hand side vector
+      boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
+      boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
+
+      // create a linear solver
+      int t_solve = timer->createCategory("State Estimation: Linear Solver");
+      timer->start(t_solve);
+      gridpack::utility::Configuration::CursorPtr cursor;
+      cursor = p_config->getCursor("Configuration.State_estimation");
+      gridpack::math::LinearSolver solver(*Gain);
+      solver.configure(cursor);
+      
+      p_busIO->header("\n Print Gain matrix\n");
+
+      // Solve linear equation
+      boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
+      p_busIO->header("\n Print RHS vector\n");
+      X->zero(); //might not need to do this
+      solver.solve(*RHS, *X);
+      timer->stop(t_solve);
+      
+      tol = X->normInfinity();
+      char ioBuf[128];
+      sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+      p_busIO->header(ioBuf);
+
+      // Push solution back onto bus variables
+      p_factory->setMode(Voltage);
+      VMap.mapToBus(X);
     
-    p_factory->setMode(Jacobian_H);
-    HJacMap.mapToMatrix(HJac);
+      // update values
+      p_network->updateBuses();
+      iter++;
 
-    // Form H'
-    boost::shared_ptr<gridpack::math::Matrix> trans_HJac(transpose(*HJac));
-
-    // Build measurement equation
-    EzMap.mapToVector(Ez);
-
-    // Form Gain matrix
-    boost::shared_ptr<gridpack::math::Matrix> Gain1(multiply(*trans_HJac, *Rinv));
-    boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*Gain1, *HJac));
-
-    // Form right hand side vector
-    boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
-    boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
-
-    // create a linear solver
-    gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = p_config->getCursor("Configuration.State_estimation");
-    gridpack::math::LinearSolver solver(*Gain);
-    solver.configure(cursor);
+    // End N-R loop
+    }
     
-    p_busIO->header("\n Print Gain matrix\n");
-
-    // Solve linear equation
-    boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
-    p_busIO->header("\n Print RHS vector\n");
-    X->zero(); //might not need to do this
-    solver.solve(*RHS, *X);
-    tol = X->normInfinity();
-    char ioBuf[128];
-    sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
-    p_busIO->header(ioBuf);
-
-     // Push solution back onto bus variables
-    p_factory->setMode(Voltage);
-    VMap.mapToBus(X);
-  
-    // update values
-    p_network->updateBuses();
-    iter++;
-
-  // End N-R loop
-  }
+    timer->stop(t_nr_loop);
 
   // Check convergence and handle bad data
   if (real(tol) <= p_tolerance) {
@@ -467,7 +544,11 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     p_converged = true; 
     p_busIO->header("\n*** State estimation converged successfully ***\n");
     // Perform bad data detection
+    int t_baddata = timer->createCategory("State Estimation: Bad Data Detection");
+    timer->start(t_baddata);
     std::vector<int> badIndices = detectBadData();
+    timer->stop(t_baddata);
+    
     if (!badIndices.empty()) {
       badDataExists = true;
       
@@ -505,7 +586,10 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       p_busIO->header(msgBuf);
       
       // Adjust weights to bad measurements
+      int t_adjust = timer->createCategory("State Estimation: Adjust Weights");
+      timer->start(t_adjust);
       adjustWeights(badIndices);
+      timer->stop(t_adjust);
       
       // Set factory mode to rebuild Rinv
       p_factory->setMode(R_inv);
@@ -550,6 +634,9 @@ void gridpack::state_estimation::SEAppModule::solve(void)
         char bdioBuf[128];
         sprintf(bdioBuf,"\nBad Data Iteration %d \n",badDataIter);
     }
+    
+    // Stop total timer
+    timer->stop(t_total);
 }
 
 /**
