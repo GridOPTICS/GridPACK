@@ -179,7 +179,7 @@ bool Regca1::serialWrite(char *string, const int bufsize,const char *signal)
     else dspd = 0.0;
     
     getPower(p_time,&Pgen,&Qgen);
-    sprintf(string,", %6.5f,%6.5f,%6.5f,%6.5f,%6.5f",Vt_filter,Pgen*mbase/sbase,Qgen*mbase/sbase,delta,dspd);
+    sprintf(string,", %.17g,%.17g,%.17g,%.17g,%.17g",Vt_filter,Pgen*mbase/sbase,Qgen*mbase/sbase,delta,dspd);
     return true;
   }
   return false;
