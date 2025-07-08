@@ -211,7 +211,7 @@ bool Genrou::serialWrite(char *string, const int bufsize,const char *signal)
     Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
     Qgen = p_online*(vdq0[1]*idq0[0] - vdq0[0]*idq0[1])*mbase/sbase;
 
-    sprintf(string,", %6.5f,%6.5f,%6.5f,%6.5f,%6.5f",Vm,Pgen,Qgen,delta,dspd);
+    sprintf(string,", %.17g,%.17g,%.17g,%.17g,%.17g",Vm,Pgen,Qgen,delta,dspd);
     return true;
   }
   return false;
