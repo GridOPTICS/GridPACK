@@ -54,6 +54,12 @@ void BaseEMTGenModel::load(const boost::shared_ptr<gridpack::component::DataColl
     data->getValue(GENERATOR_QG,&qg,idx); // Generator reactive power
     pg *= sbase;
     qg *= sbase;
+    double sg = sqrt(pg*pg + qg*qg);
+    if(sg > mbase) {
+      printf("Bus number %d generator id %s has Sg %.17g greater than mbase %.17g\n",busnum,id.c_str(),sg,mbase);
+      printf("Increasing mbase to 1.5*sg\n");
+      mbase = 1.5*sg;
+    }
   } else {
     pg = qg;
   }

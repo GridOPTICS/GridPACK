@@ -216,6 +216,9 @@ void Reeca1::init(gridpack::RealType* xin)
   Verr_PI_blk.setname(Verr_PI_blk_name.c_str());
   Verr_PI_blk.setparams(Kvp,Kvi);
   // Iq lag block
+  std::string Iq_lag_blk_name = blkhead + "Iq_lag_blk";
+  Iq_lag_blk.setname(Iq_lag_blk_name.c_str());
+
   Iq_lag_blk.setparams(1.0,Tiq);
 
   // Vt filter output used in division
