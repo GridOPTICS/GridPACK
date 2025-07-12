@@ -6,6 +6,8 @@ Cblock::Cblock()
   p_order = 1; // For future use
   p_xmin  = p_ymin = p_dxmin = -1000.0;
   p_xmax  = p_ymax = p_dxmax =  1000.0;
+  x[0] = 0.0;
+  p_dxdt[0] = 0.0;
   strcpy(name,"cblock");
 }
 
@@ -64,18 +66,18 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,double dxmin
 
   dx_dt = getderivative(x[0],u);
   if(dx_dt < p_dxmin) {
-    printf("Block %s state derivative %lf out of min. bounds %lf\n",name,dx_dt,p_dxmin);
+    printf("Block %s state derivative %.17g out of min. bounds %.17g\n",name,dx_dt,p_dxmin);
   } else if(dx_dt > p_dxmax) {
-    printf("Block %s state derivative %lf out of max. bounds %lf\n",name,dx_dt,p_dxmax);
+    printf("Block %s state derivative %.17g out of max. bounds %.17g\n",name,dx_dt,p_dxmax);
   }
 
   p_dxdt[0] = std::max(p_dxmin,std::min(dx_dt,p_dxmax));
   xout = x[0] + dt*p_dxdt[0];
 
   if(xout < xmin) {
-    printf("Block %s state %lf out of min. bounds %lf\n",name,xout,xmin);
+    printf("Block %s state %.17g out of min. bounds %.17g\n",name,xout,xmin);
   } else if(xout > xmax) {
-    printf("Block %s state %lf out of max. bounds %lf\n",name,xout,xmax);
+    printf("Block %s state %.17g out of max. bounds %.17g\n",name,xout,xmax);
   }
 
   
@@ -98,9 +100,9 @@ double Cblock::getoutput(double u)
   y_n = p_C[0]*x_n + p_D[0]*u;
 
   if(y_n < p_ymin) {
-    printf("Block %s output %lf out of min. bounds %lf\n",name,y_n,p_ymin);
+    printf("Block %s output %.17g out of min. bounds %.17g\n",name,y_n,p_ymin);
   } else if(y_n > p_ymax) {
-    printf("Block %s output %lf out of max. bounds %lf\n",name,y_n,p_ymax);
+    printf("Block %s output %.17g out of max. bounds %.17g\n",name,y_n,p_ymax);
   }
 
 
@@ -111,7 +113,7 @@ double Cblock::getoutput(double u)
   
 double Cblock::getoutput(double u,double dt,double xmin,double xmax,double ymin,double ymax,bool dostateupdate)
 {
-  double x_n,y_n=0.0,x_n1;
+  double x_n,y_n=0.0;
 
   x_n = x[0];
   
@@ -173,15 +175,15 @@ double Cblock::init_given_u(double u)
     y    = p_C[0]*x[0] + p_D[0]*u;
   }
   if(x[0] < p_xmin) {
-    printf("Block %s initial state %lf out of min. bounds %lf\n",name,x[0],p_xmin);
+    printf("Block %s initial state %.17g out of min. bounds %.17g\n",name,x[0],p_xmin);
   } else if(x[0] > p_xmax) {
-    printf("Block %s initial state %lf out of max. bounds %lf\n",name,x[0],p_xmax);
+    printf("Block %s initial state %.17g out of max. bounds %.17g\n",name,x[0],p_xmax);
   }
 
   if(y < p_ymin) {
-    printf("Block %s initial output %lf out of min. bounds %lf\n",name,y,p_ymin);
+    printf("Block %s initial output %.17g out of min. bounds %.17g\n",name,y,p_ymin);
   } else if(y > p_ymax) {
-    printf("Block %s initial output %lf out of max. bounds %lf\n",name,y,p_ymax);
+    printf("Block %s initial output %.17g out of max. bounds %.17g\n",name,y,p_ymax);
   }
   
   return y;
@@ -199,15 +201,15 @@ double Cblock::init_given_y(double y)
   }
 
   if(x[0] < p_xmin) {
-    printf("Block %s initial state %lf out of min. bounds %lf\n",name,x[0],p_xmin);
+    printf("Block %s initial state %.17g out of min. bounds %.17g\n",name,x[0],p_xmin);
   } else if(x[0] > p_xmax) {
-    printf("Block %s initial state %lf out of max. bounds %lf\n",name,x[0],p_xmax);
+    printf("Block %s initial state %.17g out of max. bounds %.17g\n",name,x[0],p_xmax);
   }
 
   if(y < p_ymin) {
-    printf("Block %s initial output %lf out of min. bounds %lf\n",name,y,p_ymin);
+    printf("Block %s initial output %.17g out of min. bounds %.17g\n",name,y,p_ymin);
   } else if(y > p_ymax) {
-    printf("Block %s initial output %lf out of max. bounds %lf\n",name,y,p_ymax);
+    printf("Block %s initial output %.17g out of max. bounds %.17g\n",name,y,p_ymax);
   }
   
   return u;

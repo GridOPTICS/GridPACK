@@ -60,11 +60,19 @@ void Regca1::init(gridpack::RealType* xin)
   double Vr, Vi;
 
   // Set up blocks
+  /* Create string for setting name */
+  std::string blkhead = std::to_string(busnum) + "_" + id + "REGCA1_";
+
 
   // transfer function blocks
+  std::string Ip_blk_name = blkhead + "Ip_blk";
+  Ip_blk.setname(Ip_blk_name.c_str());
   Ip_blk.setparams(1.0,tg);
-  
+
+  std::string Iq_blk_name = blkhead + "Iq_blk";
+  Iq_blk.setname(Iq_blk_name.c_str());
   Iq_blk.setparams(-1.0,tg);
+  
   if(qg > 0.0) {
     // Upper limit active with Qg > 0
     Iq_blk.setdxlimits(-1000.0,iqrmax);
@@ -72,6 +80,9 @@ void Regca1::init(gridpack::RealType* xin)
     // Lower limit active when Qg < 0
     Iq_blk.setdxlimits(iqrmin,1000.0);
   }
+
+  std::string Vt_filter_blk_name = blkhead + "Vt_filter_blk";
+  Vt_filter_blk.setname(Vt_filter_blk_name.c_str());
   Vt_filter_blk.setparams(1.0,tfltr);
 
   double u[2],y[2];

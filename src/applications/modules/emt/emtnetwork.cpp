@@ -1677,6 +1677,8 @@ void EmtBus::vectorGetElementValues(gridpack::RealType *values, int *idx)
     for(i=0; i < p_ngen; i++) {
       if(!p_gen[i]->getStatus()) continue;
 
+      //printf("Bus number: %d\n",p_busnum);
+	    
       p_gen[i]->setVoltage(v[0],v[1],v[2]);
       p_gen[i]->setTime(p_time);
 
