@@ -31,6 +31,10 @@
 namespace gridpack {
 namespace state_estimation{
 
+// Forward declarations
+class SEBus;
+class SEBranch;
+
 enum SEMode{YBus,Jacobian_H, R_inv, Ez, Voltage,Residual};
 
 struct Measurement
@@ -369,6 +373,21 @@ class SEBus
      */
     std::vector<Measurement> getMeasurements() const { return p_meas; }
 
+    /**
+     * Reset performance profiling statistics
+     */
+    void resetPerformanceCounters();
+
+    /**
+     * Get performance profiling statistics
+     */
+    void getPerformanceStats(int& cache_hits, int& cache_misses, 
+                           double& cache_time, double& jacobian_time, int& jacobian_calls) const;
+
+    /**
+     * Invalidate the neighbor branch cache (call when network topology changes)
+     */
+    void invalidateNeighborCache();
 
   private:
     double p_shunt_gs;
@@ -416,6 +435,34 @@ class SEBus
     double p_v_max;  // Maximum voltage limit
     bool p_enforce_v_limits;  // Flag to enable/disable enforcement
 
+    // Optimization: Cache neighbor branch data to avoid repeated getNeighborBranches() calls
+    struct NeighborBranchData {
+        SEBranch* branch;
+        SEBus* otherBus;
+        double yfbusr;     // Real part of admittance
+        double yfbusi;     // Imaginary part of admittance
+        double v;          // Voltage at other bus
+        double theta;      // Angle difference
+        bool isForward;    // True if this bus is Bus1, false if Bus2
+        bool isValid;      // True if both buses are not isolated
+    };
+    
+    mutable std::vector<NeighborBranchData> p_cached_neighbors;
+    mutable bool p_cache_valid;
+    mutable int p_last_jacobian_update;
+    
+    // Performance profiling variables
+    mutable int p_cache_hits;
+    mutable int p_cache_misses;
+    mutable double p_total_cache_time;
+    mutable double p_total_jacobian_time;
+    mutable int p_jacobian_calls;
+
+    /**
+     * Cache neighbor branch data for efficient Jacobian computation
+     */
+    void cacheNeighborBranchData() const;
+
 private:
 
 
@@ -447,7 +494,11 @@ private:
       & p_rowJidx
       & p_colRidx
       & p_rowRidx
-      & p_vecZidx;
+      & p_vecZidx
+      & p_cache_valid
+      & p_last_jacobian_update
+      & p_cache_hits
+      & p_cache_misses;
   }  
 
 };

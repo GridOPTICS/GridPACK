@@ -154,6 +154,10 @@ class SEAppModule
 
     void debugPrintMeasurements();
 
+    /**
+     * Report Jacobian optimization performance statistics
+     */
+    void reportJacobianPerformance();
 
     private:
 
@@ -179,15 +183,32 @@ class SEAppModule
 
     // maximum number of iterations
     int p_max_iteration;
+    
+    // maximum number of bad data iterations
+    int p_max_bad_data_iterations;
 
     // convergence tolerance
     double p_tolerance;
 
+    // Structure to return both bad indices and their normalized residuals
+    struct BadDataResult {
+        std::vector<int> badIndices;
+        std::map<int, double> normalizedResiduals;
+        double chiSquareValue;
+        int degreesOfFreedom;
+    };
+    
     // void detectBadData(void);
-    std::vector<int> detectBadData(void);
+    BadDataResult detectBadData(void);
 
     double p_bad_data_threshold;
     double p_lastChiSquareValue; // Store last chi-square value for reporting
+    
+    // Diagnostic output level control
+    std::string p_diagnosticLevel; // "basic", "standard", "detailed"
+    
+    // Sparse matrix optimization control
+    bool p_use_sparse_matrices; // Enable sparse matrix storage
 
     double getChiSquareThreshold(int dof, double confidence);
     bool p_converged;

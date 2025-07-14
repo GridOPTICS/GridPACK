@@ -24,6 +24,8 @@
 
 #include <vector>
 #include <iostream>
+#include <chrono>
+#include <ctime>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -56,6 +58,18 @@ gridpack::state_estimation::SEBus::SEBus(void)
   p_v_min = 0.9;
   p_v_max = 1.1;
   p_enforce_v_limits = false;
+  
+  // Initialize Jacobian optimization cache
+  p_cache_valid = false;
+  p_last_jacobian_update = -1;
+  p_cached_neighbors.clear();
+  
+  // Initialize performance profiling counters
+  p_cache_hits = 0;
+  p_cache_misses = 0;
+  p_total_cache_time = 0.0;
+  p_total_jacobian_time = 0.0;
+  p_jacobian_calls = 0;
 }
 
 /**
@@ -186,6 +200,12 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
         p_v = p_v_min;
         *p_vMag_ptr = p_v;
       }
+    }
+    
+    // Invalidate cache only if state variables changed significantly (more tolerant threshold)
+    // This reduces cache rebuilds during convergence
+    if (fabs(vt - p_v) > 1e-3 || fabs(at - p_a) > 1e-3) {
+      invalidateNeighborCache();
     }
    }
   }
@@ -886,6 +906,9 @@ int gridpack::state_estimation::SEBus::matrixNumValues() const
 */
 void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *values, int *rows, int *cols)
 {
+  // Start timing for Jacobian calculation
+  auto jacobian_start = std::chrono::high_resolution_clock::now();
+  
   p_v = *p_vMag_ptr;
   p_a = *p_vAng_ptr;
   if (p_mode == Jacobian_H) {
@@ -977,49 +1000,50 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
             }
          }
       } else if (type == "PI") {
-        std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
-        getNeighborBranches(branch_nghbrs);
-        nsize = branch_nghbrs.size();
+        // Use cached neighbor data to avoid repeated getNeighborBranches() calls
+        if (!p_cache_valid) {
+          auto cache_start = std::chrono::high_resolution_clock::now();
+          cacheNeighborBranchData();
+          auto cache_end = std::chrono::high_resolution_clock::now();
+          p_total_cache_time += std::chrono::duration<double>(cache_end - cache_start).count();
+          p_cache_misses++;
+        } else {
+          p_cache_hits++;
+        }
+        
+        nsize = p_cached_neighbors.size();
         double ret1 = 0.0;
         double ret2 = 0.0;
+        
         for (j=0; j<nsize; j++) {
-          SEBranch *branch
-            = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
-          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
-          SEBus *bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
-          bool ok2 = !bus->isIsolated();
-          ok2 = ok2 && !bus2->isIsolated();
-          if (ok2) { 
-          branch->getVTheta(this, &v, &theta);
-          ComplexType yfbus;
-          if (bus == this) {
-            yfbus=branch->getForwardYBus();
-            bus = dynamic_cast<SEBus*>(branch->getBus2().get());
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          } else {
-            yfbus=branch->getReverseYBus();
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          }
-          // to discuss, how to use YBus branch data in bus 
-          ret1 += p_v * v * (-yfbusr*sin(theta) + yfbusi*cos(theta));
-          if (!bus->getReferenceBus()) {
-            values[ncnt] = gridpack::ComplexType(p_v*v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
-            jm = bus->matrixGetColIndex(0);
+          const NeighborBranchData& neighbor = p_cached_neighbors[j];
+          
+          if (neighbor.isValid) {
+            // Use cached values
+            v = neighbor.v;
+            theta = neighbor.theta;
+            yfbusr = neighbor.yfbusr;
+            yfbusi = neighbor.yfbusi;
+            SEBus* bus = neighbor.otherBus;
+            
+            // Calculate Jacobian elements using cached data
+            ret1 += p_v * v * (-yfbusr*sin(theta) + yfbusi*cos(theta));
+            if (!bus->getReferenceBus()) {
+              values[ncnt] = gridpack::ComplexType(p_v*v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
+              jm = bus->matrixGetColIndex(0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              jm = bus->matrixGetColIndex(1);
+            } else {
+              jm = bus->matrixGetColIndex(0);
+            }
+            ret2 += v * (yfbusr*cos(theta) + yfbusi*sin(theta));
+            values[ncnt] = gridpack::ComplexType(p_v*(yfbusr*cos(theta)+yfbusi*sin(theta)),0.0);
             rows[ncnt] = im;
             cols[ncnt] = jm;
             ncnt++;
-            jm = bus->matrixGetColIndex(1);
-          } else {
-            jm = bus->matrixGetColIndex(0);
           }
-          ret2 += v * (yfbusr*cos(theta) + yfbusi*sin(theta));
-          values[ncnt] = gridpack::ComplexType(p_v*(yfbusr*cos(theta)+yfbusi*sin(theta)),0.0);
-          rows[ncnt] = im;
-          cols[ncnt] = jm;
-          ncnt++;
-        }
         }
         if (!getReferenceBus()) {
           jm = matrixGetColIndex(0);
@@ -1037,48 +1061,50 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
         cols[ncnt] = jm;
         ncnt++;
       } else if (type == "QI") {
-        std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
-        getNeighborBranches(branch_nghbrs);
-        nsize = branch_nghbrs.size();
+        // Use cached neighbor data to avoid repeated getNeighborBranches() calls
+        if (!p_cache_valid) {
+          auto cache_start = std::chrono::high_resolution_clock::now();
+          cacheNeighborBranchData();
+          auto cache_end = std::chrono::high_resolution_clock::now();
+          p_total_cache_time += std::chrono::duration<double>(cache_end - cache_start).count();
+          p_cache_misses++;
+        } else {
+          p_cache_hits++;
+        }
+        
+        nsize = p_cached_neighbors.size();
         double ret1 = 0.0;
         double ret2 = 0.0;
+        
         for (j=0; j<nsize; j++) {
-          SEBranch *branch
-            = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
-          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
-          SEBus *bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
-          bool ok2 = !bus->isIsolated();
-          ok2 = ok2 && !bus2->isIsolated();
-          if (ok2) { 
-          branch->getVTheta(this, &v, &theta);
-          ComplexType yfbus;
-          if (bus == this) {
-            yfbus=branch->getForwardYBus();
-            bus = dynamic_cast<SEBus*>(branch->getBus2().get());
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          } else {
-            yfbus=branch->getReverseYBus();
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          }
-          ret1 += p_v * v * (yfbusr*cos(theta) + yfbusi*sin(theta));
-          if (!bus->getReferenceBus()) {
-            values[ncnt] = gridpack::ComplexType(p_v*v*(-yfbusr*cos(theta)-yfbusi*sin(theta)),0.0);
-            jm = bus->matrixGetColIndex(0);
+          const NeighborBranchData& neighbor = p_cached_neighbors[j];
+          
+          if (neighbor.isValid) {
+            // Use cached values
+            v = neighbor.v;
+            theta = neighbor.theta;
+            yfbusr = neighbor.yfbusr;
+            yfbusi = neighbor.yfbusi;
+            SEBus* bus = neighbor.otherBus;
+            
+            // Calculate Jacobian elements using cached data
+            ret1 += p_v * v * (yfbusr*cos(theta) + yfbusi*sin(theta));
+            if (!bus->getReferenceBus()) {
+              values[ncnt] = gridpack::ComplexType(p_v*v*(-yfbusr*cos(theta)-yfbusi*sin(theta)),0.0);
+              jm = bus->matrixGetColIndex(0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              jm = bus->matrixGetColIndex(1);
+            } else {
+              jm = bus->matrixGetColIndex(0);
+            }
+            ret2 += v * (yfbusr*sin(theta) - yfbusi*cos(theta));
+            values[ncnt] = gridpack::ComplexType(p_v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
             rows[ncnt] = im;
             cols[ncnt] = jm;
             ncnt++;
-            jm = bus->matrixGetColIndex(1);
-          } else {
-            jm = bus->matrixGetColIndex(0);
           }
-          ret2 += v * (yfbusr*sin(theta) - yfbusi*cos(theta));
-          values[ncnt] = gridpack::ComplexType(p_v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
-          rows[ncnt] = im;
-          cols[ncnt] = jm;
-          ncnt++;
-        }
         }
 //        ret1 += p_v * p_v * p_ybusr;
 //        ret2 += p_v * p_ybusi
@@ -1151,6 +1177,13 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
     *nvals = nsize;
    }
   }
+  
+  // End timing for Jacobian calculation
+  if (p_mode == Jacobian_H) {
+    auto jacobian_end = std::chrono::high_resolution_clock::now();
+    p_total_jacobian_time += std::chrono::duration<double>(jacobian_end - jacobian_start).count();
+    p_jacobian_calls++;
+  }
 }
 
 /**
@@ -1177,26 +1210,32 @@ void gridpack::state_estimation::SEBus::vectorGetElementValues(ComplexType *valu
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-p_v),0.0);
          ncnt++;
        } else if (type == "PI") {
-         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
-         getNeighborBranches(branch_nghbrs);
-         nsize = branch_nghbrs.size();
-         double ret=0.0;
+         // Use cached neighbor data to avoid repeated getNeighborBranches() calls
+         if (!p_cache_valid) {
+           auto cache_start = std::chrono::high_resolution_clock::now();
+           cacheNeighborBranchData();
+           auto cache_end = std::chrono::high_resolution_clock::now();
+           p_total_cache_time += std::chrono::duration<double>(cache_end - cache_start).count();
+           p_cache_misses++;
+         } else {
+           p_cache_hits++;
+         }
+         
+         nsize = p_cached_neighbors.size();
+         double ret = 0.0;
+         
          for (j=0; j<nsize; j++) {
-           gridpack::state_estimation::SEBranch *branch
-             = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[j].get());
-          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
-          ComplexType yfbus;
-          if (bus == this) {
-            yfbus=branch->getForwardYBus();
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          } else {
-            yfbus=branch->getReverseYBus();
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          }
-           branch->getVTheta(this, &v, &theta);
-           ret +=  v * (yfbusr*cos(theta) + yfbusi*sin(theta));
+           const NeighborBranchData& neighbor = p_cached_neighbors[j];
+           
+           if (neighbor.isValid) {
+             // Use cached values
+             v = neighbor.v;
+             theta = neighbor.theta;
+             yfbusr = neighbor.yfbusr;
+             yfbusi = neighbor.yfbusi;
+             
+             ret += v * (yfbusr*cos(theta) + yfbusi*sin(theta));
+           }
          }
          ret += p_v * p_ybusr;
          ret *= p_v; 
@@ -1204,26 +1243,32 @@ void gridpack::state_estimation::SEBus::vectorGetElementValues(ComplexType *valu
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
          ncnt++;
        } else if (type == "QI") {
-         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
-         getNeighborBranches(branch_nghbrs);
-         nsize = branch_nghbrs.size();
-         double ret=0.0;
+         // Use cached neighbor data to avoid repeated getNeighborBranches() calls
+         if (!p_cache_valid) {
+           auto cache_start = std::chrono::high_resolution_clock::now();
+           cacheNeighborBranchData();
+           auto cache_end = std::chrono::high_resolution_clock::now();
+           p_total_cache_time += std::chrono::duration<double>(cache_end - cache_start).count();
+           p_cache_misses++;
+         } else {
+           p_cache_hits++;
+         }
+         
+         nsize = p_cached_neighbors.size();
+         double ret = 0.0;
+         
          for (j=0; j<nsize; j++) {
-           gridpack::state_estimation::SEBranch *branch
-             = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[j].get());
-          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
-          ComplexType yfbus;
-          if (bus == this) {
-            yfbus=branch->getForwardYBus();
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          } else {
-            yfbus=branch->getReverseYBus();
-            yfbusr = real (yfbus);
-            yfbusi = imag (yfbus);
-          }
-           branch->getVTheta(this,&v,&theta);
-           ret +=  v * (yfbusr*sin(theta) - yfbusi*cos(theta));
+           const NeighborBranchData& neighbor = p_cached_neighbors[j];
+           
+           if (neighbor.isValid) {
+             // Use cached values
+             v = neighbor.v;
+             theta = neighbor.theta;
+             yfbusr = neighbor.yfbusr;
+             yfbusi = neighbor.yfbusi;
+             
+             ret += v * (yfbusr*sin(theta) - yfbusi*cos(theta));
+           }
          }
          ret -= p_v * p_ybusi;
          ret *= p_v; 
@@ -1534,6 +1579,106 @@ bool gridpack::state_estimation::SEBranch::getResidualDetails(int idx, char* buf
     }
   }
   return false;
+}
+
+/**
+ * Cache neighbor branch data for efficient Jacobian computation
+ */
+void gridpack::state_estimation::SEBus::cacheNeighborBranchData() const
+{
+  // Performance optimization: Return early if cache is already valid
+  if (p_cache_valid) {
+    p_cache_hits++;
+    return;
+  }
+  
+  // Clear existing cache
+  p_cached_neighbors.clear();
+  
+  // Get current state variables 
+  double current_v = *p_vMag_ptr;
+  double current_a = *p_vAng_ptr;
+  
+  // Get neighbor branches
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branch_nghbrs;
+  getNeighborBranches(branch_nghbrs);
+  
+  // Cache data for each neighbor branch
+  for (int j = 0; j < branch_nghbrs.size(); j++) {
+    NeighborBranchData data;
+    
+    data.branch = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
+    SEBus *bus = dynamic_cast<SEBus*>(data.branch->getBus1().get());
+    SEBus *bus2 = dynamic_cast<SEBus*>(data.branch->getBus2().get());
+    
+    // Check if both buses are valid (not isolated)
+    data.isValid = !bus->isIsolated() && !bus2->isIsolated();
+    
+    if (data.isValid) {
+      // Determine direction and get other bus
+      if (bus == this) {
+        data.isForward = true;
+        data.otherBus = dynamic_cast<SEBus*>(data.branch->getBus2().get());
+        gridpack::ComplexType yfbus = data.branch->getForwardYBus();
+        data.yfbusr = real(yfbus);
+        data.yfbusi = imag(yfbus);
+      } else {
+        data.isForward = false;
+        data.otherBus = bus;
+        gridpack::ComplexType yfbus = data.branch->getReverseYBus();
+        data.yfbusr = real(yfbus);
+        data.yfbusi = imag(yfbus);
+      }
+      
+      // Get voltage and angle data  
+      data.branch->getVTheta(const_cast<SEBus*>(this), &data.v, &data.theta);
+    } else {
+      data.otherBus = nullptr;
+      data.yfbusr = 0.0;
+      data.yfbusi = 0.0;
+      data.v = 0.0;
+      data.theta = 0.0;
+      data.isForward = true;
+    }
+    
+    p_cached_neighbors.push_back(data);
+  }
+  
+  p_cache_valid = true;
+}
+
+/**
+ * Invalidate the neighbor branch cache
+ */
+void gridpack::state_estimation::SEBus::invalidateNeighborCache()
+{
+  p_cache_valid = false;
+  p_cached_neighbors.clear();
+}
+
+/**
+ * Reset performance profiling statistics
+ */
+void gridpack::state_estimation::SEBus::resetPerformanceCounters()
+{
+  p_cache_hits = 0;
+  p_cache_misses = 0;
+  p_total_cache_time = 0.0;
+  p_total_jacobian_time = 0.0;
+  p_jacobian_calls = 0;
+}
+
+/**
+ * Get performance profiling statistics
+ */
+void gridpack::state_estimation::SEBus::getPerformanceStats(int& cache_hits, int& cache_misses, 
+                                                           double& cache_time, double& jacobian_time, int& jacobian_calls) const
+{
+  cache_hits = p_cache_hits;
+  cache_misses = p_cache_misses;
+  cache_time = p_total_cache_time;
+  jacobian_time = p_total_jacobian_time;
+  jacobian_calls = p_jacobian_calls;
 }
 
 
@@ -2787,10 +2932,12 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
       int bus1_idx = bus1->getOriginalIndex();
       int bus2_idx = bus2->getOriginalIndex();
       
-      // Debug output - only on rank 0
-      if (bus1_idx == 5 && bus2_idx == 6) { // Only debug the branch 5-6 as an example
+      // Debug output - only on rank 0 and only during first call
+      static bool debugPrinted = false;
+      if (!debugPrinted && bus1_idx == 5 && bus2_idx == 6) { // Only debug the branch 5-6 as an example
         printf("DEBUG: Processing branch %d-%d measurements, count=%d\n", 
                bus1_idx, bus2_idx, (int)p_meas.size());
+        debugPrinted = true;
       }
       
       for (int i = 0; i < p_meas.size(); i++) {
@@ -2817,10 +2964,12 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
         double residual = measured - estimated;
         values[i] = ComplexType(residual, 0.0);
         
-        // Debug output for specific branches (only on rank 0)
-        if (bus1_idx == 5 && bus2_idx == 6) { // Only debug the branch 5-6 as an example
+        // Debug output for specific branches (only on rank 0 and first few calls)
+        static int debugCount = 0;
+        if (debugCount < 2 && bus1_idx == 5 && bus2_idx == 6) { // Only debug the branch 5-6 as an example
           printf("DEBUG: Branch %d-%d, type=%s, measured=%.6f, estimated=%.6f, residual=%.6f, idx=%d\n", 
                  bus1_idx, bus2_idx, type.c_str(), measured, estimated, residual, idx[i]);
+          if (i == p_meas.size() - 1) debugCount++; // Increment after all measurements for this branch
         }
       }
     }
@@ -2994,9 +3143,21 @@ bool gridpack::state_estimation::SEBus::adjustMeasurementWeight(
 {
   if (isIsolated()) return false;
   
+  // Safety check for TAMU500 issue
+  if (p_vecZidx.size() != p_meas.size()) {
+    printf("ERROR: SEBus::adjustMeasurementWeight - size mismatch: p_vecZidx.size()=%d, p_meas.size()=%d\n",
+           (int)p_vecZidx.size(), (int)p_meas.size());
+    return false;
+  }
+  
   // Find the measurement with this index in our vector
   for (int i = 0; i < p_vecZidx.size(); i++) {
-    if (p_vecZidx[i] == idx && i < p_meas.size()) {
+    if (p_vecZidx[i] == idx) {
+      if (i >= p_meas.size()) {
+        printf("ERROR: SEBus::adjustMeasurementWeight - index %d out of bounds (p_meas.size()=%d)\n",
+               i, (int)p_meas.size());
+        return false;
+      }
       // Found the measurement, adjust its deviation
       oldDeviation = p_meas[i].p_deviation;
       p_meas[i].p_deviation *= factor;
@@ -3015,8 +3176,20 @@ bool gridpack::state_estimation::SEBranch::adjustMeasurementWeight(
 {
   if (!p_active) return false;
   
+  // Safety check for TAMU500 issue
+  if (p_vecZidx.size() != p_meas.size()) {
+    printf("ERROR: SEBranch::adjustMeasurementWeight - size mismatch: p_vecZidx.size()=%d, p_meas.size()=%d\n",
+           (int)p_vecZidx.size(), (int)p_meas.size());
+    return false;
+  }
+  
   for (int i = 0; i < p_vecZidx.size(); i++) {
-    if (p_vecZidx[i] == idx && i < p_meas.size()) {
+    if (p_vecZidx[i] == idx) {
+      if (i >= p_meas.size()) {
+        printf("ERROR: SEBranch::adjustMeasurementWeight - index %d out of bounds (p_meas.size()=%d)\n",
+               i, (int)p_meas.size());
+        return false;
+      }
       // Found the measurement, adjust its deviation
       oldDeviation = p_meas[i].p_deviation;
       p_meas[i].p_deviation *= factor;
