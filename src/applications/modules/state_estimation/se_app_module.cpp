@@ -236,15 +236,15 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   
   // Print configuration parameters
   char buf[128];
-  sprintf(buf,"Tolerance: %12.4e\n",p_tolerance);
+  snprintf(buf, sizeof(buf), "Tolerance: %12.4e\n", p_tolerance);
   p_busIO->header(buf);
-  sprintf(buf,"Maximum number of iterations: %d\n",p_max_iteration);
+  snprintf(buf, sizeof(buf), "Maximum number of iterations: %d\n", p_max_iteration);
   p_busIO->header(buf);
-  sprintf(buf,"Maximum bad data iterations: %d\n",p_max_bad_data_iterations);
+  snprintf(buf, sizeof(buf), "Maximum bad data iterations: %d\n", p_max_bad_data_iterations);
   p_busIO->header(buf);
-  sprintf(buf,"Diagnostic output level: %s\n",p_diagnosticLevel.c_str());
+  snprintf(buf, sizeof(buf), "Diagnostic output level: %s\n", p_diagnosticLevel.c_str());
   p_busIO->header(buf);
-  sprintf(buf,"Sparse matrix optimization: %s\n", p_use_sparse_matrices ? "enabled" : "disabled");
+  snprintf(buf, sizeof(buf), "Sparse matrix optimization: %s\n", p_use_sparse_matrices ? "enabled" : "disabled");
   p_busIO->header(buf);
   
   timer->stop(t_total);
@@ -281,15 +281,15 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   p_use_sparse_matrices = secursor->get("useSparseMatrices", true);
   
   char buf[128];
-  sprintf(buf,"Tolerance: %12.4e\n",p_tolerance);
+  snprintf(buf, sizeof(buf), "Tolerance: %12.4e\n", p_tolerance);
   p_busIO->header(buf);
-  sprintf(buf,"Maximum number of iterations: %d\n",p_max_iteration);
+  snprintf(buf, sizeof(buf), "Maximum number of iterations: %d\n", p_max_iteration);
   p_busIO->header(buf);
-  sprintf(buf,"Maximum bad data iterations: %d\n",p_max_bad_data_iterations);
+  snprintf(buf, sizeof(buf), "Maximum bad data iterations: %d\n", p_max_bad_data_iterations);
   p_busIO->header(buf);
-  sprintf(buf,"Diagnostic output level: %s\n",p_diagnosticLevel.c_str());
+  snprintf(buf, sizeof(buf), "Diagnostic output level: %s\n", p_diagnosticLevel.c_str());
   p_busIO->header(buf);
-  sprintf(buf,"Sparse matrix optimization: %s\n", p_use_sparse_matrices ? "enabled" : "disabled");
+  snprintf(buf, sizeof(buf), "Sparse matrix optimization: %s\n", p_use_sparse_matrices ? "enabled" : "disabled");
   p_busIO->header(buf);
 
   // Create serial IO object to export data from buses or branches
@@ -457,7 +457,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   if (enforce_v_limits) {
     p_busIO->header("\nEnforcing voltage magnitude limits\n");
     char buf[128];
-    sprintf(buf, "Voltage limits: %.3f <= V <= %.3f\n", v_min, v_max);
+    snprintf(buf, sizeof(buf), "Voltage limits: %.3f <= V <= %.3f\n", v_min, v_max);
     p_busIO->header(buf);
     
     // Set voltage limits for all buses
@@ -468,7 +468,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     double constraint_deviation = cursor->get("voltageConstraintDeviation", 0.0025);
     p_busIO->header("\nAdding voltage magnitude constraints\n");
     char buf[128];
-    sprintf(buf, "Voltage limits: %.3f <= V <= %.3f (deviation: %.4f)\n", 
+    snprintf(buf, sizeof(buf), "Voltage limits: %.3f <= V <= %.3f (deviation: %.4f)\n", 
             v_min, v_max, constraint_deviation);
     p_busIO->header(buf);
 
@@ -577,7 +577,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       
       tol = X->normInfinity();
       char ioBuf[128];
-      sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+      snprintf(ioBuf, sizeof(ioBuf), "\nIteration %d Tol: %12.6e\n", iter+1, real(tol));
       p_busIO->header(ioBuf);
 
       // Push solution back onto bus variables
@@ -604,13 +604,8 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     timer->start(t_baddata);
     
     // Perform bad data detection
-    p_busIO->header("DEBUG: About to call detectBadData\n");
-    
     std::vector<int> badIndices;
     badIndices.reserve(50); // Pre-allocate reasonable space for bad measurements
-    
-    // Call original bad data detection
-    p_busIO->header("DEBUG: Before calling detectBadData\n");
     
     // Call detectBadData and handle the return issue
     BadDataResult badDataResult = detectBadData();
@@ -618,37 +613,30 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     // Extract bad indices from the result
     badIndices = badDataResult.badIndices;
     
-    p_busIO->header("DEBUG: After calling detectBadData, received indices\n");
-    p_busIO->header("DEBUG: detectBadData call completed, stopping timer\n");
-    
     timer->stop(t_baddata);
-    p_busIO->header("DEBUG: Timer stopped successfully\n");
-    
-    p_busIO->header("DEBUG: Back from detectBadData\n");
     
     // Safety check for TAMU500 abort issue
     char buf[256];
     try {
-      sprintf(buf, "DEBUG: badIndices.size() = %d\n", (int)badIndices.size());
-      p_busIO->header(buf);
-      
-      // Check if the vector is valid and print indices
-      if (!badIndices.empty()) {
-        sprintf(buf, "DEBUG: First bad index = %d\n", badIndices[0]);
+      if (p_diagnosticLevel == "detailed") {
+        snprintf(buf, sizeof(buf), "DEBUG: badIndices.size() = %d\n", (int)badIndices.size());
         p_busIO->header(buf);
+        
+        if (!badIndices.empty()) {
+          snprintf(buf, sizeof(buf), "DEBUG: First bad index = %d\n", badIndices[0]);
+          p_busIO->header(buf);
+        }
       }
     } catch (const std::exception& e) {
-      sprintf(buf, "ERROR: Exception accessing badIndices: %s\n", e.what());
+      snprintf(buf, sizeof(buf), "ERROR: Exception accessing badIndices: %s\n", e.what());
       p_busIO->header(buf);
     }
     
     if (!badIndices.empty()) {
-      p_busIO->header("DEBUG: Processing bad indices\n");
       badDataExists = true;
       
       // Store iteration information for reporting
       BadDataIterationInfo iterInfo;
-      p_busIO->header("DEBUG: Creating BadDataIterationInfo\n");
       iterInfo.badIndices = badIndices;  // New bad measurements in this iteration
       
       // Store the normalized residuals for all measurements from the detection result
@@ -656,13 +644,13 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       iterInfo.chiSquareValue = badDataResult.chiSquareValue;
       
       // Keep track of all bad measurement indices across all iterations
-      p_busIO->header("DEBUG: Creating allBadIndicesSoFar vector\n");
       std::vector<int> allBadIndicesSoFar = p_allBadMeasurementIndices;
       
-      p_busIO->header("DEBUG: Processing individual bad indices\n");
       for (int idx : badIndices) {
-        sprintf(buf, "DEBUG: Processing badIndex %d\n", idx);
-        p_busIO->header(buf);
+        if (p_diagnosticLevel == "detailed") {
+          snprintf(buf, sizeof(buf), "DEBUG: Processing badIndex %d\n", idx);
+          p_busIO->header(buf);
+        }
         
         // Add to the running list of all bad indices if not already there
         bool alreadyAdded = false;
@@ -676,8 +664,6 @@ void gridpack::state_estimation::SEAppModule::solve(void)
           p_allBadMeasurementIndices.push_back(idx);
           allBadIndicesSoFar.push_back(idx);
         }
-        sprintf(buf, "DEBUG: Finished processing badIndex %d\n", idx);
-        p_busIO->header(buf);
       }
       
       // Store all indices identified so far
@@ -692,7 +678,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       
       // Log iteration information
       char msgBuf[128];
-      sprintf(msgBuf, "\nIteration %d: Found %d bad measurements, Chi-square: %.2f\n", 
+      snprintf(msgBuf, sizeof(msgBuf), "\nIteration %d: Found %d bad measurements, Chi-square: %.2f\n", 
               badDataIter + 1, (int)badIndices.size(), p_lastChiSquareValue);
       p_busIO->header(msgBuf);
       
@@ -711,7 +697,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   } else {
     p_busIO->header("\n*** WARNING: STATE ESTIMATION DID NOT CONVERGE ***\n");
     char ioBuf[128];
-    sprintf(ioBuf,"Maximum iterations (%d) reached with tolerance %12.6e > %12.6e\n", 
+    snprintf(ioBuf, sizeof(ioBuf), "Maximum iterations (%d) reached with tolerance %12.6e > %12.6e\n", 
             p_max_iteration, real(tol), p_tolerance);
     p_busIO->header(ioBuf);
     p_busIO->header("Results may not be reliable.\n");
@@ -743,7 +729,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     if (!badDataExists) {
         p_busIO->header("\nSE completed successfully with no bad data remaining\n");
         char bdioBuf[128];
-        sprintf(bdioBuf,"\nBad Data Iteration %d \n",badDataIter);
+        snprintf(bdioBuf, sizeof(bdioBuf), "\nBad Data Iteration %d \n", badDataIter);
     }
     
     // Report Jacobian optimization performance - only for detailed diagnostics
@@ -751,13 +737,10 @@ void gridpack::state_estimation::SEAppModule::solve(void)
         reportJacobianPerformance();
     }
     
-    p_busIO->header("DEBUG: After reportJacobianPerformance, about to stop timer\n");
-    fflush(stdout);
-    
     // Stop total timer
     timer->stop(t_total);
     
-    p_busIO->header("DEBUG: Timer stopped successfully\n");
+    // Timer stopped successfully
 }
 
 /**
@@ -1190,18 +1173,18 @@ void gridpack::state_estimation::SEAppModule::write(void)
                 if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf", 
                           &busNum, type.data(), &value) >= 3) {
                     // Bus measurement
-                    sprintf(diagBuf, "%-5d %-6d %-5s %-9d -       %-12.6f %-11.6f %-11.6f %s\n", 
+                    snprintf(diagBuf, sizeof(diagBuf), "%-5d %-6d %-5s %-9d -       %-12.6f %-11.6f %-11.6f %s\n", 
                             i+1, idx, type.c_str(), busNum, value, res, thisThreshold, status.c_str());
                 } 
                 else if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
                                &busNum, &toBusNum, type.data(), &value) >= 4) {
                     // Branch measurement
-                    sprintf(diagBuf, "%-5d %-6d %-5s %-9d %-7d %-12.6f %-11.6f %-11.6f %s\n", 
+                    snprintf(diagBuf, sizeof(diagBuf), "%-5d %-6d %-5s %-9d %-7d %-12.6f %-11.6f %-11.6f %s\n", 
                             i+1, idx, type.c_str(), busNum, toBusNum, value, res, thisThreshold, status.c_str());
                 }
                 else {
                     // Fall back to simpler format
-                    sprintf(diagBuf, "%-5d %-6d %s, NormRes=%12.6f, Threshold=%12.6f, Status: %s\n", 
+                    snprintf(diagBuf, sizeof(diagBuf), "%-5d %-6d %s, NormRes=%12.6f, Threshold=%12.6f, Status: %s\n", 
                             i+1, idx, details.c_str(), res, thisThreshold, status.c_str());
                 }
                 
@@ -1266,7 +1249,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
                     double estValue = value;  // Just a placeholder for now
                     double rawResidual = 0.0; // Just a placeholder for now
                     
-                    sprintf(diagBuf, "%-6d %-5s %-7d %-7d %-12.6f %-12.6f %-12.6f %-11.6f %s\n", 
+                    snprintf(diagBuf, sizeof(diagBuf), "%-6d %-5s %-7d %-7d %-12.6f %-12.6f %-12.6f %-11.6f %s\n", 
                             idx, type.c_str(), fromBus, toBus, value, estValue, 
                             rawResidual, normRes, status.c_str());
                     outFile << diagBuf;
@@ -1617,7 +1600,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   
   // Print size information  
   char buf[512]; // Increase buffer size to prevent overflow
-  sprintf(buf, "Residual vector size: %d\n", Residual->size());
+  snprintf(buf, sizeof(buf), "Residual vector size: %d\n", Residual->size());
   p_busIO->header(buf);
   
   // Check if vector is empty
@@ -1634,7 +1617,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   for (int i = 0; i < printCount; i++) {
     gridpack::ComplexType value;
     Residual->getElement(i, value);
-    sprintf(buf, "  [%d]: %f\n", i, std::real(value));
+    snprintf(buf, sizeof(buf), "  [%d]: %f\n", i, std::real(value));
     p_busIO->header(buf);
   }
   
@@ -1655,7 +1638,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   }
   
   // Create storage for normalized residuals - use heap allocation for large systems
-  p_busIO->header("DEBUG: Creating normalized residual storage (avoiding clone)\n");
+  // Create normalized residual storage
   
   // For large systems, allocate on heap to avoid stack overflow
   std::vector<double>* normResValuesPtr = nullptr;
@@ -1678,11 +1661,10 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   std::vector<int>* badIndicesPtr = new std::vector<int>();
   std::vector<int>& badIndices = *badIndicesPtr;
   
-  // Counter for debug output
+  // Counter for debug output (detailed mode only)
   int debugCounter = 0;
   
   // Calculate normalized residuals for all measurements
-  p_busIO->header("DEBUG: Starting normalized residual calculation loop\n");
   for (int i = 0; i < size; i++) {
     // Get residual value
     gridpack::ComplexType rvalue;
@@ -1729,9 +1711,9 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     if (std::abs(normRes) > 0.5 * p_bad_data_threshold && debugCounter < 10) {
       std::string details;
       if (p_factory->reportMeasurement(i, details)) {
-        sprintf(buf, "  Measurement with high residual: Index %d: %s\n", i, details.c_str());
+        snprintf(buf, sizeof(buf), "  Measurement with high residual: Index %d: %s\n", i, details.c_str());
         p_busIO->header(buf);
-        sprintf(buf, "    NormRes=%.6f, Previously flagged=%s (%d times)\n", 
+        snprintf(buf, sizeof(buf), "    NormRes=%.6f, Previously flagged=%s (%d times)\n", 
                 normRes, previouslyFlagged ? "YES" : "NO", appearanceCount);
         p_busIO->header(buf);
         debugCounter++;
@@ -1765,7 +1747,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       
       // Add diagnostic information
       if (std::abs(normRes) > p_bad_data_threshold) {
-        sprintf(buf, "  VM measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
+        snprintf(buf, sizeof(buf), "  VM measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
                 i, normRes, effectiveThreshold);
         p_busIO->header(buf);
       }
@@ -1790,7 +1772,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
         // since these should be treated as fixed references
         effectiveThreshold = p_bad_data_threshold * 50.0;  // Even higher threshold
         
-        sprintf(buf, "  Slack bus VA measurement (index %d) has normalized residual %.2f (using very high threshold %.2f)\n",
+        snprintf(buf, sizeof(buf), "  Slack bus VA measurement (index %d) has normalized residual %.2f (using very high threshold %.2f)\n",
                 i, normRes, effectiveThreshold);
         p_busIO->header(buf);
       } else {
@@ -1798,7 +1780,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
         effectiveThreshold = p_bad_data_threshold * 5.0; 
         
         if (std::abs(normRes) > p_bad_data_threshold) {
-          sprintf(buf, "  VA measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
+          snprintf(buf, sizeof(buf), "  VA measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
                   i, normRes, effectiveThreshold);
           p_busIO->header(buf);
         }
@@ -1810,7 +1792,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       
       // No special threshold for reactive power measurements
       if (std::abs(normRes) > p_bad_data_threshold * 0.8) {
-        sprintf(buf, "  QI measurement (index %d) has normalized residual %.2f\n",
+        snprintf(buf, sizeof(buf), "  QI measurement (index %d) has normalized residual %.2f\n",
                 i, normRes);
         p_busIO->header(buf);
       }
@@ -1827,7 +1809,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       badIndices.push_back(i);
       
       if (previouslyFlagged) {
-        sprintf(buf, "  Measurement at index %d exceeds higher threshold (%.2f) - flagged again!\n",
+        snprintf(buf, sizeof(buf), "  Measurement at index %d exceeds higher threshold (%.2f) - flagged again!\n",
                 i, effectiveThreshold);
         p_busIO->header(buf);
       }
@@ -1835,14 +1817,14 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   }
   
   // Report maximum residual information
-  sprintf(buf, "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n", 
+  snprintf(buf, sizeof(buf), "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n", 
           maxNormRes, maxIdx, p_bad_data_threshold);
   p_busIO->header(buf);
   
   // Get and print details about the measurement with the highest residual
   std::string maxDetails;
   if (p_factory->reportMeasurement(maxIdx, maxDetails)) {
-      sprintf(buf, "Maximum residual measurement: %s\n", maxDetails.c_str());
+      snprintf(buf, sizeof(buf), "Maximum residual measurement: %s\n", maxDetails.c_str());
       p_busIO->header(buf);
   }
   
@@ -1892,18 +1874,18 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
           if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf", 
                     &busNum, type.data(), &value) >= 3) {
               // Bus measurement
-              sprintf(buf, "%-5d %-6d %-5s %-9d -       %-12.6f %-11.6f %-11.6f %s\n", 
+              snprintf(buf, sizeof(buf), "%-5d %-6d %-5s %-9d -       %-12.6f %-11.6f %-11.6f %s\n", 
                       i+1, idx, type.c_str(), busNum, value, res, thisThreshold, status.c_str());
           } 
           else if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
                          &busNum, &toBusNum, type.data(), &value) >= 4) {
               // Branch measurement
-              sprintf(buf, "%-5d %-6d %-5s %-9d %-7d %-12.6f %-11.6f %-11.6f %s\n", 
+              snprintf(buf, sizeof(buf), "%-5d %-6d %-5s %-9d %-7d %-12.6f %-11.6f %-11.6f %s\n", 
                       i+1, idx, type.c_str(), busNum, toBusNum, value, res, thisThreshold, status.c_str());
           }
           else {
               // Fall back to simpler format
-              sprintf(buf, "%-5d %-6d %s, NormRes=%12.6f, Threshold=%12.6f, Status: %s\n", 
+              snprintf(buf, sizeof(buf), "%-5d %-6d %s, NormRes=%12.6f, Threshold=%12.6f, Status: %s\n", 
                       i+1, idx, details.c_str(), res, thisThreshold, status.c_str());
           }
           p_busIO->header(buf);
@@ -1942,23 +1924,23 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   
   // Safety check for DOF
   if (dof <= 0) {
-    sprintf(buf, "WARNING: Invalid DOF (%d). Measurements (%d) <= State variables (%d). Using minimum DOF of 1.\n",
+    snprintf(buf, sizeof(buf), "WARNING: Invalid DOF (%d). Measurements (%d) <= State variables (%d). Using minimum DOF of 1.\n",
             dof, totalMeasurements, numStates);
     p_busIO->header(buf);
     dof = 1; // Set minimum DOF to avoid issues
   }
   
   // Debug the measurement counting issue
-  sprintf(buf, "DEBUG DOF calculation: vector size=%d, actual measurements=%d, buses=%d, states=%d, DOF=%d\n",
+  snprintf(buf, sizeof(buf), "DEBUG DOF calculation: vector size=%d, actual measurements=%d, buses=%d, states=%d, DOF=%d\n",
           size, totalMeasurements, p_network->totalBuses(), numStates, dof);
   p_busIO->header(buf);
   
   // Perform Chi-square test
   double chiSquareThreshold = getChiSquareThreshold(dof, 0.95); // 95% confidence
-  sprintf(buf, "System size: %d buses, %d measurements, %d state variables\n",
+  snprintf(buf, sizeof(buf), "System size: %d buses, %d measurements, %d state variables\n",
           p_network->totalBuses(), totalMeasurements, numStates);
   p_busIO->header(buf);
-  sprintf(buf, "Chi-square value: %12.6f with %d degrees of freedom (threshold: %12.6f)\n",
+  snprintf(buf, sizeof(buf), "Chi-square value: %12.6f with %d degrees of freedom (threshold: %12.6f)\n",
           chiSquare, dof, chiSquareThreshold);
   p_busIO->header(buf);
   
@@ -1997,7 +1979,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     for (int idx : badIndices) {
       std::string details;
       if (p_factory->reportMeasurement(idx, details)) {
-        sprintf(buf, "  Index %d: %s, normRes=%.6f\n", idx, details.c_str(), normResValues[idx]);
+        snprintf(buf, sizeof(buf), "  Index %d: %s, normRes=%.6f\n", idx, details.c_str(), normResValues[idx]);
         p_busIO->header(buf);
       }
     }
@@ -2055,20 +2037,15 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     p_badMeasurementIndices.push_back(idx);
   }
   
-  p_busIO->header("DEBUG: detectBadData completed, stored in member\n");
+  // Store result in member variable for backward compatibility
   
-  // For large systems, log but still return proper result
-  if (normResValues.size() > 1000) {
-    p_busIO->header("DEBUG: Large system detected - returning BadDataResult structure\n");
-    
-    // Try to diagnose memory issue - use safer buffer operations
-    char memBuf[512]; // Increase buffer size
-    snprintf(memBuf, sizeof(memBuf), "DEBUG: Current stack usage context - normResValues size: %d, badIndices size: %d\n", 
+  // For large systems, include additional diagnostic information
+  if (normResValues.size() > 1000 && p_diagnosticLevel == "detailed") {
+    char memBuf[512];
+    snprintf(memBuf, sizeof(memBuf), "DEBUG: Processing large system - normResValues size: %d, badIndices size: %d\n", 
             (int)normResValues.size(), (int)badIndices.size());
     p_busIO->header(memBuf);
   }
-  
-  p_busIO->header("DEBUG: detectBadData returning successfully\n");
   
   // Clean up heap allocations before return
   if (normResValuesPtr != nullptr) {
@@ -2093,7 +2070,7 @@ double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, d
   
   // Debug output to understand what's happening
   char debugBuf[256];
-  sprintf(debugBuf, "DEBUG Chi-square threshold: DOF=%d, buses=%d\n", 
+  snprintf(debugBuf, sizeof(debugBuf), "DEBUG Chi-square threshold: DOF=%d, buses=%d\n", 
           dof, p_network->totalBuses());
   p_busIO->header(debugBuf);
   
@@ -2112,7 +2089,7 @@ double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, d
     double a = 2.0 / (9.0 * dof);
     chiSquareValue = dof * pow(1.0 - a + z * sqrt(a), 3.0);
     
-    sprintf(debugBuf, "DEBUG Chi-square threshold: Using theoretical chi-square=%.1f for DOF=%d\n", 
+    snprintf(debugBuf, sizeof(debugBuf), "DEBUG Chi-square threshold: Using theoretical chi-square=%.1f for DOF=%d\n", 
             chiSquareValue, dof);
     p_busIO->header(debugBuf);
     
@@ -2133,7 +2110,7 @@ double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, d
       practicalThreshold = 2000.0;  // Extremely large systems
     }
     
-    sprintf(debugBuf, "DEBUG Chi-square threshold: DOF=%d seems unrealistic, using practical threshold=%.1f for %d-bus system\n", 
+    snprintf(debugBuf, sizeof(debugBuf), "DEBUG Chi-square threshold: DOF=%d seems unrealistic, using practical threshold=%.1f for %d-bus system\n", 
             dof, practicalThreshold, numBuses);
     p_busIO->header(debugBuf);
     
@@ -2162,7 +2139,7 @@ void gridpack::state_estimation::SEAppModule::debugMapper()
     int elements = bus->vectorNumElements();
     if (elements > 0) {
       char buf[128];
-      sprintf(buf, "  Bus %d: %d measurements\n", bus->getOriginalIndex(), elements);
+      snprintf(buf, sizeof(buf), "  Bus %d: %d measurements\n", bus->getOriginalIndex(), elements);
       p_busIO->header(buf);
       totalElements += elements;
     }
@@ -2174,7 +2151,7 @@ void gridpack::state_estimation::SEAppModule::debugMapper()
     int elements = branch->vectorNumElements();
     if (elements > 0) {
       char buf[128];
-      sprintf(buf, "  Branch %d->%d: %d measurements\n", 
+      snprintf(buf, sizeof(buf), "  Branch %d->%d: %d measurements\n", 
               branch->getBus1OriginalIndex(), branch->getBus2OriginalIndex(), elements);
       p_busIO->header(buf);
       totalElements += elements;
@@ -2182,7 +2159,7 @@ void gridpack::state_estimation::SEAppModule::debugMapper()
   }
   
   char buf[128];
-  sprintf(buf, "Total elements reported: %d\n", totalElements);
+  snprintf(buf, sizeof(buf), "Total elements reported: %d\n", totalElements);
   p_busIO->header(buf);
   
   // Create a test mapper
@@ -2190,7 +2167,7 @@ void gridpack::state_estimation::SEAppModule::debugMapper()
   gridpack::mapper::GenVectorMap<SENetwork> testMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> testVec = testMap.mapToVector();
   
-  sprintf(buf, "Mapper vector size: %d\n", testVec->size());
+  snprintf(buf, sizeof(buf), "Mapper vector size: %d\n", testVec->size());
   p_busIO->header(buf);
   
   // Check if values are non-zero
@@ -2279,7 +2256,7 @@ void gridpack::state_estimation::SEAppModule::adjustWeights(const std::vector<in
     
     for (int idx : badIndices) {
         // Debug output for TAMU500 issue
-        sprintf(buf, "DEBUG: Processing bad measurement index %d\n", idx);
+        snprintf(buf, sizeof(buf), "DEBUG: Processing bad measurement index %d\n", idx);
         p_busIO->header(buf);
         
         // Check if this measurement has been adjusted before and how many times
@@ -2295,7 +2272,7 @@ void gridpack::state_estimation::SEAppModule::adjustWeights(const std::vector<in
         // Set adjustment factor based on how many times this has been flagged
         double adjustmentFactor = pow(10.0, timesAdjusted + 1);
         
-        sprintf(buf, "DEBUG: Adjustment factor: %.1f (times adjusted: %d)\n", 
+        snprintf(buf, sizeof(buf), "DEBUG: Adjustment factor: %.1f (times adjusted: %d)\n", 
                 adjustmentFactor, timesAdjusted);
         p_busIO->header(buf);
         
@@ -2312,10 +2289,10 @@ void gridpack::state_estimation::SEAppModule::adjustWeights(const std::vector<in
                 std::string measDetails;
                 if (p_factory->reportMeasurement(idx, measDetails)) {
                     // Log successful adjustment
-                    sprintf(buf, "  Adjusted bus measurement (index %d): %s\n", 
+                    snprintf(buf, sizeof(buf), "  Adjusted bus measurement (index %d): %s\n", 
                             idx, measDetails.c_str());
                     p_busIO->header(buf);
-                    sprintf(buf, "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
+                    snprintf(buf, sizeof(buf), "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
                             oldDeviation, newDeviation, adjustmentFactor);
                     p_busIO->header(buf);
                     
@@ -2350,10 +2327,10 @@ void gridpack::state_estimation::SEAppModule::adjustWeights(const std::vector<in
                     std::string measDetails;
                     if (p_factory->reportMeasurement(idx, measDetails)) {
                         // Log successful adjustment
-                        sprintf(buf, "  Adjusted branch measurement (index %d): %s\n", 
+                        snprintf(buf, sizeof(buf), "  Adjusted branch measurement (index %d): %s\n", 
                                 idx, measDetails.c_str());
                         p_busIO->header(buf);
-                        sprintf(buf, "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
+                        snprintf(buf, sizeof(buf), "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
                                 oldDeviation, newDeviation, adjustmentFactor);
                         p_busIO->header(buf);
                         
@@ -2383,13 +2360,13 @@ void gridpack::state_estimation::SEAppModule::adjustWeights(const std::vector<in
         }
         
         if (!found) {
-            sprintf(buf, "  WARNING: Could not find measurement with index %d to adjust!\n", idx);
+            snprintf(buf, sizeof(buf), "  WARNING: Could not find measurement with index %d to adjust!\n", idx);
             p_busIO->header(buf);
         }
     }
     
     // Report the number of measurements adjusted
-    sprintf(buf, "Successfully adjusted %d of %d bad measurements.\n", 
+    snprintf(buf, sizeof(buf), "Successfully adjusted %d of %d bad measurements.\n", 
             adjustedCount, (int)badIndices.size());
     p_busIO->header(buf);
     
@@ -2442,10 +2419,10 @@ void gridpack::state_estimation::SEAppModule::identifyPVBusConstraints()
             
             char buf[128];
             if (isSlackBus) {
-                sprintf(buf, "Slack Bus constraint identified: Bus %d, Voltage=%.4f p.u., Angle=%.4f degrees\n", 
+                snprintf(buf, sizeof(buf), "Slack Bus constraint identified: Bus %d, Voltage=%.4f p.u., Angle=%.4f degrees\n", 
                         constraint.busIndex, constraint.voltageValue, bus->getPhase() * 180.0/M_PI);
             } else {
-                sprintf(buf, "PV Bus constraint identified: Bus %d, Voltage=%.4f p.u.\n", 
+                snprintf(buf, sizeof(buf), "PV Bus constraint identified: Bus %d, Voltage=%.4f p.u.\n", 
                         constraint.busIndex, constraint.voltageValue);
             }
             p_busIO->header(buf);
@@ -2477,7 +2454,7 @@ void gridpack::state_estimation::SEAppModule::identifyPVBusConstraints()
                     constraint.isPVConnection = true;
                     
                     char buf[128];
-                    sprintf(buf, "PV Connection identified: PV Bus %d connected to non-PV Bus %d\n", 
+                    snprintf(buf, sizeof(buf), "PV Connection identified: PV Bus %d connected to non-PV Bus %d\n", 
                             pvBusIdx, nonPVBusIdx);
                     p_busIO->header(buf);
                     break;
@@ -2554,27 +2531,27 @@ void gridpack::state_estimation::SEAppModule::checkMeasurementConsistency()
             // Check for inconsistency: near-zero power flow but significant angle difference
             if (hasPMeasurement && fabs(measuredP) < 1e-4 && aDiff > 0.001) {
                 char buf[256];
-                sprintf(buf, "WARNING: Inconsistent measurements on branch %d->%d:\n",
+                snprintf(buf, sizeof(buf), "WARNING: Inconsistent measurements on branch %d->%d:\n",
                         bus1->getOriginalIndex(), bus2->getOriginalIndex());
                 p_busIO->header(buf);
-                sprintf(buf, "  Zero P flow (%.6f) but angle difference = %.6f rad (%.3f deg)\n", 
+                snprintf(buf, sizeof(buf), "  Zero P flow (%.6f) but angle difference = %.6f rad (%.3f deg)\n", 
                         measuredP, aDiff, aDiff * 180.0/M_PI);
                 p_busIO->header(buf);
-                sprintf(buf, "  Expected P flow = %.6f based on angles\n", expectedP);
+                snprintf(buf, sizeof(buf), "  Expected P flow = %.6f based on angles\n", expectedP);
                 p_busIO->header(buf);
             }
             
             // Check for inconsistency: zero power flow with voltage difference on pure reactance branch
             if (hasPMeasurement && fabs(measuredP) < 1e-4 && vDiff > 0.01 && aDiff < 0.001) {
                 char buf[256];
-                sprintf(buf, "NOTE: Branch %d->%d has zero P flow but voltage difference = %.4f p.u.\n",
+                snprintf(buf, sizeof(buf), "NOTE: Branch %d->%d has zero P flow but voltage difference = %.4f p.u.\n",
                         bus1->getOriginalIndex(), bus2->getOriginalIndex(), vDiff);
                 p_busIO->header(buf);
                 
                 // Check if this involves a PV bus
                 bool hasPVBus = bus1->isPV() || bus2->isPV();
                 if (hasPVBus) {
-                    sprintf(buf, "  This branch connects to a PV bus. Expected Q flow = %.6f\n", 
+                    snprintf(buf, sizeof(buf), "  This branch connects to a PV bus. Expected Q flow = %.6f\n", 
                             (v1*v1 - v1*v2*cos(a1-a2)) / x);
                     p_busIO->header(buf);
                 }
@@ -2591,12 +2568,12 @@ void gridpack::state_estimation::SEAppModule::checkMeasurementConsistency()
         if ((bus1->getOriginalIndex() == 7 && bus2->getOriginalIndex() == 8) ||
             (bus1->getOriginalIndex() == 8 && bus2->getOriginalIndex() == 7)) {
             char buf[256];
-            sprintf(buf, "Analysis of Bus 7-8 connection:\n");
+            snprintf(buf, sizeof(buf), "Analysis of Bus 7-8 connection:\n");
             p_busIO->header(buf);
-            sprintf(buf, "  Bus 7: V=%.4f p.u., angle=%.6f rad\n", 
+            snprintf(buf, sizeof(buf), "  Bus 7: V=%.4f p.u., angle=%.6f rad\n", 
                     bus1->getVoltage(), bus1->getPhase());
             p_busIO->header(buf);
-            sprintf(buf, "  Bus 8: V=%.4f p.u., angle=%.6f rad\n", 
+            snprintf(buf, sizeof(buf), "  Bus 8: V=%.4f p.u., angle=%.6f rad\n", 
                     bus2->getVoltage(), bus2->getPhase());
                     
             // Special handling for Bus 7-8 reactive power measurements
@@ -2608,7 +2585,7 @@ void gridpack::state_estimation::SEAppModule::checkMeasurementConsistency()
                         // Increase its weight (reduce deviation) to make it more trusted
                         double oldDeviation = meas.p_deviation;
                         meas.p_deviation = 0.005; // Higher weight than default
-                        sprintf(buf, "  Special handling: Reactive power measurement deviation adjusted %.6f -> %.6f\n", 
+                        snprintf(buf, sizeof(buf), "  Special handling: Reactive power measurement deviation adjusted %.6f -> %.6f\n", 
                                 oldDeviation, meas.p_deviation);
                         p_busIO->header(buf);
                     }
@@ -2620,7 +2597,7 @@ void gridpack::state_estimation::SEAppModule::checkMeasurementConsistency()
             branch->getReactanceData(reactance);
             if (!reactance.empty()) {
                 double x = reactance[0];
-                sprintf(buf, "  Branch reactance X=%.6f p.u.\n", x);
+                snprintf(buf, sizeof(buf), "  Branch reactance X=%.6f p.u.\n", x);
                 p_busIO->header(buf);
                 
                 double v1 = bus1->getVoltage();
@@ -2631,7 +2608,7 @@ void gridpack::state_estimation::SEAppModule::checkMeasurementConsistency()
                 double expectedP = (v1 * v2 / x) * sin(a1 - a2);
                 double expectedQ = (v1*v1 - v1*v2*cos(a1-a2)) / x;
                 
-                sprintf(buf, "  Expected P flow = %.6f, Q flow = %.6f based on V and angles\n", 
+                snprintf(buf, sizeof(buf), "  Expected P flow = %.6f, Q flow = %.6f based on V and angles\n", 
                         expectedP, expectedQ);
                 p_busIO->header(buf);
             }
@@ -2675,7 +2652,7 @@ void gridpack::state_estimation::SEAppModule::handlePVBusVoltages()
                                 double oldDeviation = meas.p_deviation;
                                 meas.p_deviation = 0.00001; // Extremely low deviation = extremely high weight
                                 
-                                sprintf(buf, "PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
+                                snprintf(buf, sizeof(buf), "PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
                                         busIdx, oldDeviation, meas.p_deviation);
                                 p_busIO->header(buf);
                             } else {
@@ -2683,7 +2660,7 @@ void gridpack::state_estimation::SEAppModule::handlePVBusVoltages()
                                 double oldDeviation = meas.p_deviation;
                                 meas.p_deviation = 0.0001; // Still very high weight
                                 
-                                sprintf(buf, "Isolated PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
+                                snprintf(buf, sizeof(buf), "Isolated PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
                                         busIdx, oldDeviation, meas.p_deviation);
                                 p_busIO->header(buf);
                             }
@@ -2718,7 +2695,7 @@ void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
                 if (strcmp(meas.p_type, "VA") == 0) {
                     hasVAMeasurements = true;
                     char buf[128];
-                    sprintf(buf, "Found VA measurement at Bus %d: %.3f degrees, deviation: %.6f\n", 
+                    snprintf(buf, sizeof(buf), "Found VA measurement at Bus %d: %.3f degrees, deviation: %.6f\n", 
                             bus->getOriginalIndex(), meas.p_value, meas.p_deviation);
                     p_busIO->header(buf);
                 }
@@ -2746,7 +2723,7 @@ void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
             if (bus->getOriginalIndex() == busIdx) {
                 // This is a slack bus
                 char buf[256];
-                sprintf(buf, "Processing slack bus %d with fixed angle of %.3f degrees\n", 
+                snprintf(buf, sizeof(buf), "Processing slack bus %d with fixed angle of %.3f degrees\n", 
                         busIdx, bus->getPhase() * 180.0/M_PI);
                 p_busIO->header(buf);
                 
@@ -2764,13 +2741,13 @@ void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
                             double oldDeviation = meas.p_deviation;
                             meas.p_deviation = 0.000001; // Extremely low deviation to enforce the constraint
                             
-                            sprintf(buf, "  Slack Bus %d VA measurement: deviation adjusted %.6f -> %.6f\n", 
+                            snprintf(buf, sizeof(buf), "  Slack Bus %d VA measurement: deviation adjusted %.6f -> %.6f\n", 
                                     busIdx, oldDeviation, meas.p_deviation);
                             p_busIO->header(buf);
                             
                             // Optionally adjust measurement value to match system reference
                             if (fabs(meas.p_value) > 0.0001) {
-                                sprintf(buf, "  WARNING: Slack bus angle measurement (%.6f rad) is non-zero. Consider using 0.0 as reference.\n", 
+                                snprintf(buf, sizeof(buf), "  WARNING: Slack bus angle measurement (%.6f rad) is non-zero. Consider using 0.0 as reference.\n", 
                                         meas.p_value);
                                 p_busIO->header(buf);
                             }
@@ -2792,7 +2769,7 @@ void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
                     // Add to bus measurements
                     bus->addMeasurement(slackAngleMeas);
                     
-                    sprintf(buf, "  Created virtual VA measurement at slack bus %d: value=%.6f, deviation=%.6f\n", 
+                    snprintf(buf, sizeof(buf), "  Created virtual VA measurement at slack bus %d: value=%.6f, deviation=%.6f\n", 
                             busIdx, slackAngleMeas.p_value, slackAngleMeas.p_deviation);
                     p_busIO->header(buf);
                 }
@@ -2825,7 +2802,7 @@ void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
                         double oldDeviation = meas.p_deviation;
                         meas.p_deviation = 0.001; // Minimum reasonable value for non-slack VA
                         
-                        sprintf(buf, "Non-slack Bus %d VA measurement: deviation increased %.6f -> %.6f (too small)\n", 
+                        snprintf(buf, sizeof(buf), "Non-slack Bus %d VA measurement: deviation increased %.6f -> %.6f (too small)\n", 
                                 busIdx, oldDeviation, meas.p_deviation);
                         p_busIO->header(buf);
                     } 
@@ -2834,12 +2811,12 @@ void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
                         double oldDeviation = meas.p_deviation;
                         meas.p_deviation = 0.1; // Maximum reasonable value
                         
-                        sprintf(buf, "Non-slack Bus %d VA measurement: deviation reduced %.6f -> %.6f (too large)\n", 
+                        snprintf(buf, sizeof(buf), "Non-slack Bus %d VA measurement: deviation reduced %.6f -> %.6f (too large)\n", 
                                 busIdx, oldDeviation, meas.p_deviation);
                         p_busIO->header(buf);
                     }
                     else {
-                        sprintf(buf, "Non-slack Bus %d VA measurement: using existing deviation %.6f\n", 
+                        snprintf(buf, sizeof(buf), "Non-slack Bus %d VA measurement: using existing deviation %.6f\n", 
                                 busIdx, meas.p_deviation);
                         p_busIO->header(buf);
                     }
@@ -2940,32 +2917,32 @@ void gridpack::state_estimation::SEAppModule::reportJacobianPerformance()
     
     // Report the statistics
     char buf[256];
-    sprintf(buf, "Buses with measurements: %d\n", busesWithMeasurements);
+    snprintf(buf, sizeof(buf), "Buses with measurements: %d\n", busesWithMeasurements);
     p_busIO->header(buf);
     
-    sprintf(buf, "Total Jacobian calculations: %d\n", totalJacobianCalls);
+    snprintf(buf, sizeof(buf), "Total Jacobian calculations: %d\n", totalJacobianCalls);
     p_busIO->header(buf);
     
-    sprintf(buf, "Total Jacobian computation time: %.6f seconds\n", totalJacobianTime);
+    snprintf(buf, sizeof(buf), "Total Jacobian computation time: %.6f seconds\n", totalJacobianTime);
     p_busIO->header(buf);
     
-    sprintf(buf, "Average time per Jacobian calculation: %.6f seconds\n", avgJacobianTime);
+    snprintf(buf, sizeof(buf), "Average time per Jacobian calculation: %.6f seconds\n", avgJacobianTime);
     p_busIO->header(buf);
     
     p_busIO->header("\n--- Cache Performance ---\n");
-    sprintf(buf, "Cache hits: %d\n", totalCacheHits);
+    snprintf(buf, sizeof(buf), "Cache hits: %d\n", totalCacheHits);
     p_busIO->header(buf);
     
-    sprintf(buf, "Cache misses: %d\n", totalCacheMisses);
+    snprintf(buf, sizeof(buf), "Cache misses: %d\n", totalCacheMisses);
     p_busIO->header(buf);
     
-    sprintf(buf, "Cache hit rate: %.2f%%\n", cacheHitRate);
+    snprintf(buf, sizeof(buf), "Cache hit rate: %.2f%%\n", cacheHitRate);
     p_busIO->header(buf);
     
-    sprintf(buf, "Total cache population time: %.6f seconds\n", totalCacheTime);
+    snprintf(buf, sizeof(buf), "Total cache population time: %.6f seconds\n", totalCacheTime);
     p_busIO->header(buf);
     
-    sprintf(buf, "Average cache population time: %.6f seconds\n", avgCacheTime);
+    snprintf(buf, sizeof(buf), "Average cache population time: %.6f seconds\n", avgCacheTime);
     p_busIO->header(buf);
     
     // Calculate efficiency metrics
@@ -2974,20 +2951,20 @@ void gridpack::state_estimation::SEAppModule::reportJacobianPerformance()
         double timeWithCache = totalJacobianTime;
         double speedup = timeWithoutCache / timeWithCache;
         
-        sprintf(buf, "\n--- Performance Improvement ---\n");
+        snprintf(buf, sizeof(buf), "\n--- Performance Improvement ---\n");
         p_busIO->header(buf);
         
-        sprintf(buf, "Estimated time without cache: %.6f seconds\n", timeWithoutCache);
+        snprintf(buf, sizeof(buf), "Estimated time without cache: %.6f seconds\n", timeWithoutCache);
         p_busIO->header(buf);
         
-        sprintf(buf, "Actual time with cache: %.6f seconds\n", timeWithCache);
+        snprintf(buf, sizeof(buf), "Actual time with cache: %.6f seconds\n", timeWithCache);
         p_busIO->header(buf);
         
-        sprintf(buf, "Estimated speedup: %.2fx\n", speedup);
+        snprintf(buf, sizeof(buf), "Estimated speedup: %.2fx\n", speedup);
         p_busIO->header(buf);
         
         double timeReduction = (timeWithoutCache - timeWithCache) / timeWithoutCache * 100.0;
-        sprintf(buf, "Time reduction: %.2f%%\n", timeReduction);
+        snprintf(buf, sizeof(buf), "Time reduction: %.2f%%\n", timeReduction);
         p_busIO->header(buf);
     }
     

@@ -526,14 +526,14 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
   if (signal == NULL) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
-    sprintf(string, "     %6d      %12.6f         %12.6f\n",
+    snprintf(string, bufsize, "     %6d      %12.6f         %12.6f\n",
         getOriginalIndex(),angle,p_v);
   } else if (!strcmp(signal,"pq")) {
     gridpack::ComplexType v[2];
     vectorValues(v);
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
-    sprintf(string, "     %6d      %12.6f         %12.6f      %2d\n",
+    snprintf(string, bufsize, "     %6d      %12.6f         %12.6f      %2d\n",
         getOriginalIndex(),real(v[0]),real(v[1]),
         static_cast<int>(branches.size()));
   } else if (!strcmp(signal,"se")) {
@@ -571,23 +571,23 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
         buf[0] = '\0';
         if (meas_type == "VM") {
           estimate = p_v;
-          sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
+          snprintf(buf, sizeof(buf), "    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "PI") {
           estimate = p_Pinj;
-          sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
+          snprintf(buf, sizeof(buf), "    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "QI") {
           estimate = p_Qinj;
-          sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
+          snprintf(buf, sizeof(buf), "    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         }
         int buflen = strlen(buf);
         if (buflen + ilen < bufsize) {
-          sprintf(string,"%s",buf);
+          snprintf(string, bufsize - ilen, "%s", buf);
           string += buflen;
           ilen += buflen;
         }
@@ -628,7 +628,7 @@ void gridpack::state_estimation::SEBus::sortMeasurements(void)
   char sbuf[32];
   for (i=0; i<nsize; i++) {
     // Create a unique (hopefully) key for each measurement
-    sprintf(sbuf,"%s%s%f",p_meas[i].p_type,p_meas[i].p_ckt,p_meas[i].p_value);
+    snprintf(sbuf, sizeof(sbuf), "%s%s%f", p_meas[i].p_type, p_meas[i].p_ckt, p_meas[i].p_value);
     std::string key = sbuf;
     map.insert(std::pair<std::string,
         gridpack::state_estimation::Measurement>(key,p_meas[i]));
@@ -1415,7 +1415,7 @@ bool gridpack::state_estimation::SEBus::getResidualDetails(int idx, char* buffer
   int nsize = p_vecZidx.size();
   for (int i = 0; i < nsize; i++) {
     if (p_vecZidx[i] == idx) {
-      sprintf(buffer, "Bus %d, Type: %s, Value: %f, Deviation: %f", 
+      snprintf(buffer, 256, "Bus %d, Type: %s, Value: %f, Deviation: %f", 
               getOriginalIndex(), p_meas[i].p_type, 
               p_meas[i].p_value, p_meas[i].p_deviation);
       return true;
@@ -1537,7 +1537,7 @@ bool gridpack::state_estimation::SEBus::serialWritePreCheck(char *string, const 
         }
         
         if (suspicious) {
-          sprintf(buf, "SUSPICIOUS MEASUREMENT: Bus %d, Type %s, Value %.4f - %s\n",
+          snprintf(buf, sizeof(buf), "SUSPICIOUS MEASUREMENT: Bus %d, Type %s, Value %.4f - %s\n",
                   idx, type.c_str(), value, reason.c_str());
           printf("%s", buf);
           return true;
@@ -1571,7 +1571,7 @@ bool gridpack::state_estimation::SEBranch::getResidualDetails(int idx, char* buf
       SEBus *bus1 = dynamic_cast<SEBus*>(b1.get());
       boost::shared_ptr<gridpack::component::BaseComponent> b2 = getBus2();
       SEBus *bus2 = dynamic_cast<SEBus*>(b2.get());
-      sprintf(buffer, "Branch from Bus %d to Bus %d, Circuit %s, Type: %s, Value: %f, Deviation: %f", 
+      snprintf(buffer, 256, "Branch from Bus %d to Bus %d, Circuit %s, Type: %s, Value: %f, Deviation: %f", 
               bus1->getOriginalIndex(), bus2->getOriginalIndex(), 
               p_meas[i].p_ckt, p_meas[i].p_type, 
               p_meas[i].p_value, p_meas[i].p_deviation);
@@ -2018,7 +2018,7 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
   //  double pi = 4.0*atan(1.0);
   //  double angle = p_a*180.0/pi;
     if (signal == NULL) {
-      sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
+      snprintf(string, bufsize, "     %6d      %6d      %12.6f         %12.6f\n",
           bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
     } else if (!strcmp(signal,"se")) {
       if (p_meas.size()>0) {
@@ -2040,33 +2040,33 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
           if (meas_type == "PIJ") {
             s = getComplexPower(p_meas[i].p_ckt);
             estimate = real(s)/p_sbase;
-            sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "QIJ") {
             s = getComplexPower(p_meas[i].p_ckt);
             estimate = imag(s)/p_sbase;
-            sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "IIJ") {
           } else if (meas_type == "PJI") {
             s = getRvrsComplexPower(p_meas[i].p_ckt);
             estimate = real(s)/p_sbase;
-            sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "QJI") {
             s = getRvrsComplexPower(p_meas[i].p_ckt);
             estimate = imag(s)/p_sbase;
-            sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
                 type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
                 p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "IJI") {
           }
           int buflen = strlen(buf);
           if (buflen + ilen < bufsize) {
-            sprintf(string,"%s",buf);
+            snprintf(string, bufsize - ilen, "%s", buf);
             string += buflen;
             ilen += buflen;
           }
@@ -2106,7 +2106,7 @@ void gridpack::state_estimation::SEBranch::sortMeasurements(void)
   char sbuf[32];
   for (i=0; i<nsize; i++) {
     // Create a unique (hopefully) key for each measurement
-    sprintf(sbuf,"%s%s%f",p_meas[i].p_type,p_meas[i].p_ckt,p_meas[i].p_value);
+    snprintf(sbuf, sizeof(sbuf), "%s%s%f", p_meas[i].p_type, p_meas[i].p_ckt, p_meas[i].p_value);
     std::string key = sbuf;
     map.insert(std::pair<std::string,
         gridpack::state_estimation::Measurement>(key,p_meas[i]));
