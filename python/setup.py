@@ -5,7 +5,6 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2023-11-30 11:37:23 d3g096
 # -------------------------------------------------------------
 
 import os
@@ -39,7 +38,7 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DPython_EXECUTABLE=' + sys.executable,
                       '-DCMAKE_VERBOSE_MAKEFILE=YES' ]
 
         cfg = 'Debug' if self.debug else 'Release'
@@ -78,6 +77,7 @@ setup(
         'src/dsf.py',
         'src/dsf2.py',
         'src/emt.py',
+        'src/pf.py',
     ],
     test_suite='nose.collector',
     tests_require=['nose'],
