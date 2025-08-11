@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2025-03-11 14:04:06 d3g096
+# Last Change: 2025-08-07 14:14:42 d3g096
 # -------------------------------------------------------------
 
 pybind11_add_module(gridpack
@@ -18,6 +18,7 @@ pybind11_add_module(gridpack
   gridpack_ds.cpp
   gridpack_emt.cpp
   gridpack_pf.cpp
+  gridpack_se.cpp
   )
 
 set(parallel_scripts 

@@ -7,7 +7,7 @@
 /**
  * @file   se_app_module.hpp
  * @author Yousu Chen, Bruce Palmer
- * @date   1/23/2015
+ * @date   2025-08-07 14:20:11 d3g096
  * @Last modified 1/23/2015
  *
  * @brief
@@ -27,6 +27,7 @@
 #define _se_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
 #include "se_factory_module.hpp"
 
 namespace gridpack {
