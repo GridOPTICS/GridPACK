@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August  6, 2025 by Perkins
-// Last Change: 2025-08-07 14:34:33 d3g096
+// Last Change: 2025-08-11 13:00:19 d3g096
 // -------------------------------------------------------------
 
 #include "common.hpp"
@@ -28,11 +28,12 @@ init_gridpack_se(py::module& gpm)
   py::module sem =
     gpm.def_submodule("state_estimation", "GridPACK state estimation module");
 
-  py::class_<gse::SEAppModule> seapp(sem, "StateEstimation");
+  py::class_<gse::SEAppModule> seapp(sem, "SEApp");
   
   seapp.doc() = ("State estimation application module");
 
   seapp
+    .def(py::init<>())
     .def("readNetwork",
          [](gse::SEAppModule& self, gpu::Configuration& config) {
            gpp::Communicator world;
@@ -129,7 +130,8 @@ Apply special handling for voltage angle (VA) measurements Ensures
 angle measurements at slack buses are treated as constraints
 )eof")
 
-    .def("debugPrintMeasurements", &gse::SEAppModule::debugPrintMeasurements)
+    // Declared, but not implemented
+    // .def("debugPrintMeasurements", &gse::SEAppModule::debugPrintMeasurements)
 
     .def("reportJacobianPerformance", &gse::SEAppModule::reportJacobianPerformance,
          R"eof(
