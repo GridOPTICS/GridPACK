@@ -56,26 +56,25 @@ void gridpack::parser::ImpedCorrParser34::parse(
     this->cleanComment(line);
     std::vector<std::string>  split_line;
     // accumulate lines for table into one line
-    bool end_table = false;
-    while (!end_table && test_end(line)) {
+    bool end_line = false;
+    while (!end_line && test_end(line)) {
       std::vector<std::string>  tmp_list;
       tmp_list = this->splitPSSELine(line);
-      if (tmp_list.size() >= 3 && atof(tmp_list[0].c_str()) == 0.0 &&
-          atof(tmp_list[1].c_str()) == 0.0 &&
-          atof(tmp_list[2].c_str()) == 0.0) {
-        end_table = true;
-      } else {
-        int i;
-        int n = tmp_list.size();
-        for (i=0; i<n; i++) split_line.push_back(tmp_list[i]);
+      int tsize = tmp_list.size();
+      if (tmp_list.size() >= 3 && atof(tmp_list[tsize-3].c_str()) == 0.0 &&
+          atof(tmp_list[tsize-2].c_str()) == 0.0 &&
+          atof(tmp_list[tsize-1].c_str()) == 0.0) {
+        end_line = true;
+        tsize -= 3;
       }
-      if (!end_table) stream.nextLine(line);
+      int i;
+      for (i=0; i<tsize; i++) split_line.push_back(tmp_list[i]);
+      if (!end_line) stream.nextLine(line);
     }
 
     int nval = split_line.size();
     int entries = nval-1;
-    entries =  entries - entries%3;
-    entries = entries/2;
+    entries = entries/3;
     // Limit number of entries to version 33 format
     if (entries > 11) entries = 11;
 
@@ -98,14 +97,14 @@ void gridpack::parser::ImpedCorrParser34::parse(
        * #define XFMR_CORR_TABLE_Ti "XFMR_CORR_TABLE_Ti"
        */
       sprintf(buf,"XFMR_CORR_TABLE_T%d",i+1);
-      data->addValue(buf, atof(split_line[1+2*i].c_str()));
+      data->addValue(buf, atof(split_line[2+3*i].c_str()));
 
       /*
        * type: real float
        * #define XFMR_CORR_TABLE_Fi "XFMR_CORR_TABLE_Fi"
        */
       sprintf(buf,"XFMR_CORR_TABLE_F%d",i+1);
-      data->addValue(buf, atof(split_line[2+2*i].c_str()));
+      data->addValue(buf, atof(split_line[3+3*i].c_str()));
     }
 
     p_imp_corr_table.insert(std::pair<int,
