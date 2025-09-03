@@ -123,6 +123,7 @@ install(FILES
   base_classes/base_load_model.hpp
   base_classes/base_plant_model.hpp
   base_classes/base_branch_model.hpp
+  base_classes/base_mechanical_model.hpp
   base_classes/fault.hpp
   DESTINATION include/gridpack/applications/modules/emt/base_classes
 )
