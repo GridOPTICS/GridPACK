@@ -711,7 +711,7 @@ template <class _data_struct> class Wsieg1Parser
           data->addValue(GOVERNOR_GV5,
               atof(split_line[36].c_str()), g_id);
         } else {
-          data->setValue(GOVERNOR_GV4,
+          data->setValue(GOVERNOR_GV5,
               atof(split_line[36].c_str()), g_id);
         }
       } 
@@ -730,7 +730,7 @@ template <class _data_struct> class Wsieg1Parser
       // GOVERNOR_IBLOCK
       if (nstr > 38) {
         if (!data->getValue(GOVERNOR_IBLOCK,&ival,g_id)) {
-          data->addValue(GOVERNOR_PGV5,
+          data->addValue(GOVERNOR_IBLOCK,
               atoi(split_line[38].c_str()), g_id);
         } else {
           data->setValue(GOVERNOR_IBLOCK,
