@@ -5,6 +5,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = python /usr/share/sphinx/scripts/python3/sphinx-build
+SPHINXBUILD   = sphinx-build
 PAPER         = letter
 BUILDDIR      = _build
 
@@ -72,6 +73,12 @@ man:
 	$(SPHINXBUILD) -b man $(ALLSPHINXOPTS) $(BUILDDIR)/man
 	@echo
 	@echo "Build finished. The manual pages are in $(BUILDDIR)/man."
+
+.PHONY: rst
+rst:
+	$(SPHINXBUILD) -b rst $(ALLSPHINXOPTS) $(BUILDDIR)/rst
+	@echo
+	@echo "Build finished. The rst pages are in $(BUILDDIR)/rst."
 
 .PHONY: doctest
 doctest:
