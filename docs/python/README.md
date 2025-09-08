@@ -11,7 +11,7 @@ required:
 
 ```
 pip install sphinx
-pip intall sphinxcontrib-restbuilder
+pip isntall sphinxcontrib-restbuilder
 pip install sphinx_rtd_theme
 pip install sphinx_subfigure
 ```
