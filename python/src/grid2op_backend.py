@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 
 import grid2op
 from grid2op.Backend import Backend   # required
+from grid2op.dtypes import dt_float
 
 import gridpack
 from mpi4py import MPI
@@ -21,6 +22,25 @@ class GridPACKBackend(Backend):
         # Run Backend init
         super().__init__(can_be_copied=False)
 
+        # needed to copy
+        self._gridpack_kwargs : Dict[str, Any] = {
+            "grid2op_stepsize": grid2op_stepsize,
+            "log_freq": log_freq,
+            "detailed_infos_for_cascading_failures": detailed_infos_for_cascading_failures,
+            "can_be_copied": can_be_copied
+        }
+        
+        self._grid2op_stepsize = grid2op_stepsize
+        print(f"[INFO] Grid2Op Simulation Timestep: {self._grid2op_stepsize} seconds")
+
+        # NOTE: add a timestamp along with the counter - get the time from GridPACK - if possible
+        self._log_freq = log_freq
+
+        self.can_output_bus_freq = True
+
+        self._init_gridpack()
+
+    def _init_gridpack(self):
         # Create GridPACK environment and pass the communicator to it
         self.env = gridpack.Environment()
         comm = gridpack.Communicator()
@@ -229,7 +249,14 @@ class GridPACKBackend(Backend):
                     transformer_data.append(data_dict)
                 else:
                     line_data.append(data_dict)
-                
+        
+        # when there is no transformer
+        if len(transformer_data) == 0:
+            keys = [
+                "tick", "branch_num", "line_num", "name", "in_service", "thermal_limit_a", "hv_bus", "lv_bus", "vn_hv_kv", "vn_lv_kv", "p_hv_mw", "p_lv_mw", "q_hv_mvar", "q_lv_mvar", "i_hv_ka", "i_lv_ka"
+            ]
+            transformer_data = {key: [] for key in keys}
+
         return line_data, transformer_data
     
     def _build_grid(self):
@@ -239,6 +266,12 @@ class GridPACKBackend(Backend):
 
         # then fill the "n_sub" and "sub_info"
         self.n_sub = self._dsapp.totalBuses()
+        nb_busbars = int(self.n_sub) * int(self.n_busbar_per_sub)
+
+        self._busbar_to_gpbus = np.repeat(np.arange(self.n_sub, dtype=int),
+                                  self.n_busbar_per_sub)
+        
+        self._bus_freq_buf = np.empty(nb_busbars, dtype=dt_float)
 
         # read bus, load, and gen data
         bus_data, gen_data, load_data = self._read_bus_gen_load_data(init=True)
@@ -287,7 +320,6 @@ class GridPACKBackend(Backend):
         # called once   
         This step is called only ONCE, when the grid2op environment is created. In this step, you read a grid file (in the format that you want) and the backend should inform grid2op about the "objects" on this powergrid and their location.
         '''
-        # breakpoint()
         # first load the grid from the file
         # self.full_path = path
         # if filename is not None:
@@ -307,6 +339,7 @@ class GridPACKBackend(Backend):
         
         # NOTE: Need to duble check this
         self.cannot_handle_more_than_2_busbar()
+        self.cannot_handle_detachment()
 
         # select index
         sel_index = -1
@@ -408,11 +441,9 @@ class GridPACKBackend(Backend):
               grid_filename: Optional[Union[os.PathLike, str]]=None
             ) -> None:
         # TODO: Reset GridPACK simulator
-        # breakpoint()
         self._del_gridpack()
         self._init_gridpack()
         self.load_grid(path, grid_filename)
-        # pass
 
     def apply_action(self, backendAction: Union["grid2op.Action._backendAction._BackendAction", None]) -> None:
         '''
@@ -430,18 +461,8 @@ class GridPACKBackend(Backend):
             _,
             shunts__,
         ) = backendAction()
-        print("[GridPACK] Executing action")
-        # print(self._grid.res_load)
-        # print(load_p)
-        # print(self._grid.load)
-        # print(self._grid.res_load)
-
-        # print(self._grid.bus)
-        # print(self._grid.res_bus)
-
-        # print(self._grid.gen)
-        # print(self._grid.res_gen)
-
+        # print("[GridPACK] Executing action")
+        
         # change the active values of the loads
         load_dict = {}
         for load_id, new_p in load_p:
@@ -596,7 +617,6 @@ class GridPACKBackend(Backend):
         self._reset_data_collectors()
 
         # run GridPACK
-        # breakpoint()
         for i in range(n_steps):
             # run GridPACK simulation by one time step
             self._dsapp.executeOneSimuStep()  
@@ -662,6 +682,28 @@ class GridPACKBackend(Backend):
         load_v = self._grid.res_bus.iloc[self._grid.load["bus"].values]["vn_kv"].values  # in kV
 
         return load_p, load_q, load_v
+    
+    def get_bus_freq(self) -> np.ndarray:
+        """
+        # retrieve the results (per busbar, Hz)
+        """
+        # frequency per solver bus (shape ~ n_sub)
+        # ensure dtype is dt_float without extra copy if possible
+        gp_freq = self._grid.res_bus["frequency"].to_numpy(dtype=dt_float, copy=False)
+
+        # sanity check (dev safety)
+        if gp_freq.size != self.n_sub:
+            raise ValueError(f"GridPACK freq length {gp_freq.size} != n_sub {self.n_sub}")
+
+        # fan out to per-busbar vector in one vectorized shot
+        np.take(gp_freq, self._busbar_to_gpbus, out=self._bus_freq_buf)
+
+        # Optionally: set NaN for de-energized busbars if you track that:
+        # mask = (some boolean mask length nb_busbars)
+        # self._bus_freq_buf[mask] = np.nan
+
+        return self._bus_freq_buf
+
 
     def generators_info(self)-> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         '''
@@ -719,7 +761,7 @@ class GridPACKBackend(Backend):
                 self._grid.line["in_service"].values,
                 self._grid.trafo["in_service"].values,
             )
-        )
+        ).astype(int)
         
         # NOTE: v_or[~s] doesn't work in this version of python
         v_or[[~s for s in status]] = 0.
@@ -757,7 +799,7 @@ class GridPACKBackend(Backend):
                 self._grid.line["in_service"].values,
                 self._grid.trafo["in_service"].values,
             )
-        )
+        ).astype(int)
 
         # NOTE: v_or[~s] doesn't work in this version of python
         v_ex[[~s for s in status]] = 0.
@@ -777,5 +819,6 @@ class GridPACKBackend(Backend):
         return res
 
     def close(self):
-        self._dsapp = None
-        self.env = None
+        # close the gridpack environment
+        self._del_gridpack()
+        
