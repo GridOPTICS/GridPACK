@@ -1,3 +1,4 @@
+import copy
 import os, sys
 import warnings
 import numpy as np
@@ -18,9 +19,19 @@ class Grid:
         pass
 
 class GridPACKBackend(Backend):
-    def __init__(self, grid2op_stepsize, log_freq=1) -> None:
+    def __init__(
+        self, 
+        grid2op_stepsize, 
+        log_freq=1, 
+        detailed_infos_for_cascading_failures : bool=False,
+        can_be_copied: bool=True
+    ) -> None:
         # Run Backend init
-        super().__init__(can_be_copied=False)
+        Backend.__init__(
+            self,
+            detailed_infos_for_cascading_failures=detailed_infos_for_cascading_failures,
+            can_be_copied=can_be_copied
+        )
 
         # needed to copy
         self._gridpack_kwargs : Dict[str, Any] = {
@@ -43,19 +54,19 @@ class GridPACKBackend(Backend):
     def _init_gridpack(self):
         # Create GridPACK environment and pass the communicator to it
         self.env = gridpack.Environment()
-        comm = gridpack.Communicator()
+        self.comm = gridpack.Communicator()
 
         np = gridpack.NoPrint()
-        sys.stdout.write("%d: NoPrint status: %r\n" % (comm.rank(), np.status()))
+        sys.stdout.write("%d: NoPrint status: %r\n" % (self.comm.rank(), np.status()))
         np.setStatus (True)
 
         # Create hadrec module
         self._dsapp = gridpack.dynamic_simulation.DSFullApp()
-        self._grid2op_stepsize = grid2op_stepsize
-        print(f"[INFO] Grid2Op Simulation Timestep: {self._grid2op_stepsize} seconds")
 
-        # NOTE: add a timestamp along with the counter - get the time from GridPACK - if possible
-        self._log_freq = log_freq
+    def _del_gridpack(self):
+        del self._dsapp
+        del self.comm
+        del self.env
 
     def _read_bus_gen_load_data(self, init=False):
         # load and generator data
@@ -287,11 +298,6 @@ class GridPACKBackend(Backend):
         # load and its results
         grid.load = pd.DataFrame(load_data)
         grid.res_load = grid.load.copy()
-        # print("Actual Load")
-        # print(grid.load.loc[grid.load["bus"].isin([52, 56, 71, 144, 167])])
-        # print(grid.load)
-        # print("After Load")
-        
         
         # create bus dict for translation
         self.BUS_MAPPING_LOCAL2REAL = grid.bus[["id"]].to_dict()['id']
@@ -410,22 +416,6 @@ class GridPACKBackend(Backend):
             
         self._compute_pos_big_topo()
 
-        # # transfer data from power flow network to dynamic simulation network
-        # self._hadapp.transferPFtoDS()
-        
-        # # define a bus fault
-        # busfault = gridpack.dynamic_simulation.Event()
-        # busfault.start = 1.0 # fault start time
-        # busfault.end = 1.1   # fault end time
-        # busfault.step = 0.005  # fault duration simu time step
-        # busfault.isBus = True
-        # busfault.bus_idx = 22 # bus number of the fault		  
-
-        # busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
-
-        # # initialize the dynamic simulation
-        # self._hadapp.initializeDynSimu(busfaultlist, 0) # 0 inidcates read in the first dyr dynamic parameter file, the xml file supports multiple dyr files read in
-
         # Remember the input file was read into the Configuration singleton
         conf = gridpack.Configuration()
         cursor = conf.getCursor("Configuration.Dynamic_simulation")
@@ -484,9 +474,6 @@ class GridPACKBackend(Backend):
         # update load values
         if len(load_dict) != 0:
             load_frame = pd.DataFrame(load_dict).T
-            # breakpoint()
-            # print(self._grid.load)
-            print(load_frame)
             self._dsapp.scatterInjectionLoadNew_compensateY(
                 load_frame.index.values,
                 load_frame["p"].values,
@@ -560,7 +547,7 @@ class GridPACKBackend(Backend):
         # update the dataframe
         self._grid.res_bus = pd.DataFrame(bus_data)
         self._grid.res_gen = pd.DataFrame(gen_data)
-        self._grid.res_load = pd.DataFrame(load_data)
+        self._grid.res_load = pd.DataFrame(load_data)     
         
     def _update_line_transformer_data(self):
         # read data
@@ -571,11 +558,6 @@ class GridPACKBackend(Backend):
         
         # transformer data
         self._grid.res_trafo = pd.DataFrame(trafo_data)
-
-        # print(self._grid.res_line[self._grid.res_line.isnull().any(axis=1)].tail(5))
-        # print(self._grid.res_trafo[self._grid.res_trafo.isnull().any(axis=1)].tail(5))
-        
-        # sys.exit(1)
         
     def _update_data(self):
         # to get current data from dynamic simulation to data collection object
@@ -625,7 +607,7 @@ class GridPACKBackend(Backend):
             self._update_data()
 
             # log data at log frequency
-            if ((self._counter-1) % self._log_freq) == 0:
+            if (self._counter % self._log_freq) == 0:
                 self._log_data()
 
             # counter
