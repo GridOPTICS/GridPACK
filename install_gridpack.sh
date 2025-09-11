@@ -5,12 +5,12 @@ set -x
 # This script should be run from the top-level GridPACK directory.
 
 # Flag for install GridPACK and GridPACK python wrapper
-install_gridpack=true
+install_gridpack=false
 install_gridpack_shared=true
 install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
-boost_version="1.81.0"
+boost_version="1_81_0"
 ga_version="5.9"
 
 if "$install_gridpack_python"; then
@@ -36,8 +36,8 @@ then
      export GP_EXT_DEPS=${GRIDPACK_ROOT_DIR}/external-dependencies
 fi
 
-boost_us_version=`echo $boost_version | sed -e 's/\./_/g'`
-boost_dir="${GP_EXT_DEPS}/boost_${boost_us_version}/install_for_gridpack"
+# boost_version=`echo $boost_version | sed -e 's/\./_/g'` # not working
+boost_dir="${GP_EXT_DEPS}/boost_${boost_version}/install_for_gridpack"
 
 petsc_dir="${GP_EXT_DEPS}/petsc/install_for_gridpack"
 
@@ -103,24 +103,25 @@ then
     # This is necessary on RHEL/CentOS systems
     # export RHEL_OPENMPI_HACK=yes
 
-    rm -rf build dist gridpack_hadrec.egg-info/
+    rm -rf build dist gridpack.egg-info/
     
-    ${python_exe} setup.py install
-    # ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
+    # CXXFLAGS="-include cstdint" \
+    # LDFLAGS="-Wl,-rpath,/qfs/projects/ops/rh7_gpu/gcc/13.1.0/lib64" \
+    ${python_exe} -m pip install --no-deps --upgrade . # --prefix=$GRIDPACK_INSTALL_DIR .
 
     # Construct the installed package path and check it. The actual
     # path with in the prefix seems to be kind of random, so
     # add a couple of options to PYTHONPATH
 
-    # pyvnum=`${python_exe} -V | sed -e 's/Python  *\([23]\)\.\([0-9][0-9]*\)\..*/\1.\2/' `
-    # pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages:${GRIDPACK_DIR}/local/lib/python${pyvnum}/dist-packages"
+    pyvnum=`${python_exe} -V | sed -e 's/Python  *\([23]\)\.\([0-9][0-9]*\)\..*/\1.\2/' `
+    pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages:${GRIDPACK_DIR}/local/lib/python${pyvnum}/dist-packages"
     
-    # if [ -z "$PYTHONPATH" ]; then
-    #     PYTHONPATH="${pydir}:${PYTHONPATH}"
-    # else
-    #     PYTHONPATH="${pydir}"
-    # fi
-    # export PYTHONPATH
+    if [ -z "$PYTHONPATH" ]; then
+        PYTHONPATH="${pydir}:${PYTHONPATH}"
+    else
+        PYTHONPATH="${pydir}"
+    fi
+    export PYTHONPATH
 
     # A quick check to see if the Python module is available
     ${python_exe} -c 'import gridpack'

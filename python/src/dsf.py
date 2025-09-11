@@ -31,14 +31,8 @@ def network_analytics_dump(ds_app):
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_QG", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
-<<<<<<< HEAD
-                  ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g),
-                  )
-        # sys.exit(1)
-=======
                   ds_app.getBusInfoReal(bus, "GENERATOR_QG_CURRENT", g)
             )
->>>>>>> origin/develop
         for l in range(ds_app.numLoads(bus)):
             print("load: ", l,
                   ds_app.getBusInfoInt(bus, "LOAD_NUMBER", l),
@@ -46,12 +40,7 @@ def network_analytics_dump(ds_app):
                   ds_app.getBusInfoReal(bus, "LOAD_PL", l),
                   ds_app.getBusInfoReal(bus, "LOAD_QL", l),
                   ds_app.getBusInfoReal(bus, "LOAD_PL_CURRENT", l),
-<<<<<<< HEAD
-                  ds_app.getBusInfoReal(bus, "LOAD_QL_CURRENT", l)
-                  )
-=======
                   ds_app.getBusInfoReal(bus, "LOAD_QL_CURRENT", l))
->>>>>>> origin/develop
     nbranch = ds_app.totalBranches()
     for branch in range(0, nbranch):
         (f, t) = ds_app.getBranchEndpoints(branch)
