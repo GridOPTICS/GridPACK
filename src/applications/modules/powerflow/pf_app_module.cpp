@@ -75,7 +75,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   timer->start(t_total);
 
   // read configuration file
-  config->enableLogging(&std::cout);
+  // config->enableLogging(&std::cout);
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");

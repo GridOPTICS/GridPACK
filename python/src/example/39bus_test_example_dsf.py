@@ -18,7 +18,7 @@ from gridpack.dynamic_simulation import DSFullApp, Event, EventVector
 def network_dump_state(ds_app):
     nbus = ds_app.totalBuses()
     for bus in range(nbus):
-        print(bus,
+        print("Hellllooooo", bus,
               ds_app.getBusInfoInt(bus, "BUS_NUMBER"),
               ds_app.getBusInfoString(bus, "BUS_NAME"),
               ds_app.getBusInfoReal(bus, "BUS_VMAG_CURRENT"))
@@ -34,6 +34,15 @@ def network_dump_state(ds_app):
                   ds_app.getBusInfoReal(bus, "LOAD_PL_CURRENT", l),
                   ds_app.getBusInfoReal(bus, "LOAD_QL_CURRENT", l)
                   )
+            
+    nbranch = ds_app.totalBranches()
+    for branch in range(nbranch):
+        n_elements = ds_app.getBranchInfoInt(branch, 'BRANCH_NUM_ELEMENTS')
+        for elem_num in range(n_elements):
+            print("line p current", ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num))
+    
+    sys.exit(1)
+
 
 # -------------------------------------------------------------
 # variable initialization

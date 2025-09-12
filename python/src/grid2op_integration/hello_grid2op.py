@@ -3,7 +3,7 @@ import sys, time
 from memory_profiler import memory_usage
 from datetime import timedelta
 
-# sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/install_local/grid2op")
+sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/grid2op_local/")
 import grid2op
 from grid2op.PlotGrid.PlotMatplot import PlotMatplot
 from grid2op.Chronics import ChangeNothing
@@ -36,8 +36,10 @@ def main():
                         grid_path=filename,
                         backend=GridPACKBackend(
                             log_freq=args.log_freq,
+                            gridpack_stepsize=0.005,
                             grid2op_stepsize=args.grid2op_stepsize,
-                            can_be_copied=False
+                            can_be_copied=True,
+                            grid_path=filename
                         ),
                         data_feeding_kwargs={
                             # start datatime goes here
@@ -50,11 +52,14 @@ def main():
     
     dc = DataCollector()
     # dc.log_data(env)
-    
+    obs = env.get_obs()
+    print(obs.load_p)
+    breakpoint()
+
     # reset environment
     print("============ Environment Reset =============")
-    # pdb.set_trace()
     obs = env.reset()
+    print(obs.load_p)
     # log data
     dc.log_data(env)
     

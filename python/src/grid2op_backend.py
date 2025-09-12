@@ -1,10 +1,12 @@
 import copy
-import os, sys
+import os
+import sys
 import warnings
+from typing import Optional, Tuple, Union, Dict, Any
+
 import numpy as np
 import pandas as pd
-from typing import Optional, Tuple, Union
-from bs4 import BeautifulSoup
+
 import xml.etree.ElementTree as ET
 
 import grid2op
@@ -12,19 +14,40 @@ from grid2op.Backend import Backend   # required
 from grid2op.dtypes import dt_float
 
 import gridpack
-from mpi4py import MPI
 
+_GP_ENV = None
+_GP_COMM = None
+_GP_REFCOUNT = 0  # optional, see close()
+
+def _ensure_gp_singletons():
+    global _GP_ENV, _GP_COMM, _GP_REFCOUNT
+    if _GP_ENV is None:
+        gridpack.NoPrint().setStatus(False)
+        _GP_ENV = gridpack.Environment()
+        _GP_COMM = gridpack.Communicator()
+    _GP_REFCOUNT += 1
+    return _GP_ENV, _GP_COMM
+
+# ---------------------------------------------------------------------------
+# Simple container for grid tables
+# ---------------------------------------------------------------------------
 class Grid:
     def __init__(self):
+        # Will be filled with pandas.DataFrames
         pass
 
+# ---------------------------------------------------------------------------
+# Backend
+# ---------------------------------------------------------------------------
 class GridPACKBackend(Backend):
     def __init__(
         self, 
-        grid2op_stepsize, 
-        log_freq=1, 
-        detailed_infos_for_cascading_failures : bool=False,
-        can_be_copied: bool=True
+        gridpack_stepsize: float,
+        grid2op_stepsize: float,
+        grid_path: Union[str, os.PathLike],
+        log_freq: int = 1,
+        detailed_infos_for_cascading_failures: bool = False,
+        can_be_copied: bool = True,
     ) -> None:
         # Run Backend init
         Backend.__init__(
@@ -35,11 +58,16 @@ class GridPACKBackend(Backend):
 
         # needed to copy
         self._gridpack_kwargs : Dict[str, Any] = {
+            "gridpack_stepsize": gridpack_stepsize,
             "grid2op_stepsize": grid2op_stepsize,
             "log_freq": log_freq,
             "detailed_infos_for_cascading_failures": detailed_infos_for_cascading_failures,
-            "can_be_copied": can_be_copied
+            "can_be_copied": can_be_copied,
+            "grid_path": grid_path
         }
+
+        self._gridpack_stepsize = gridpack_stepsize # float(bs_data.find('timestep').text)
+        print(f"[INFO] GridPACK simulation step size: {self._gridpack_stepsize} seconds")
         
         self._grid2op_stepsize = grid2op_stepsize
         print(f"[INFO] Grid2Op Simulation Timestep: {self._grid2op_stepsize} seconds")
@@ -49,17 +77,18 @@ class GridPACKBackend(Backend):
 
         self.can_output_bus_freq = True
 
-        self._init_gridpack()
+        self.sel_index = 0
 
     def _init_gridpack(self):
         # Create GridPACK environment and pass the communicator to it
-        self.env = gridpack.Environment()
-        self.comm = gridpack.Communicator()
-
+        # self.env = gridpack.Environment()
+        # self.comm = gridpack.Communicator()
+        self.env, self.comm = _ensure_gp_singletons()
+        
         np = gridpack.NoPrint()
         sys.stdout.write("%d: NoPrint status: %r\n" % (self.comm.rank(), np.status()))
         np.setStatus (True)
-
+        
         # Create hadrec module
         self._dsapp = gridpack.dynamic_simulation.DSFullApp()
 
@@ -68,6 +97,194 @@ class GridPACKBackend(Backend):
         del self.comm
         del self.env
 
+    def _build_grid(self):
+        # create grid object and update data
+        grid = Grid()
+        
+        # then fill the "n_sub" and "sub_info"
+        self.n_sub = self._dsapp.totalBuses()
+        nb_busbars = int(self.n_sub) * int(self.n_busbar_per_sub)
+
+        self._busbar_to_gpbus = np.repeat(np.arange(self.n_sub, dtype=int),
+                                  self.n_busbar_per_sub)
+        
+        self._bus_freq_buf = np.empty(nb_busbars, dtype=dt_float)
+
+        # read bus, load, and gen data
+        bus_data, gen_data, load_data = self._read_bus_gen_load_data(init=True)
+        # convert to dataframes
+        # bus and its results
+        grid.bus = pd.DataFrame(bus_data)
+        grid.res_bus = grid.bus.copy()
+        
+        # gen and its results
+        grid.gen = pd.DataFrame(gen_data)
+        grid.res_gen = grid.gen.copy()
+        
+        # load and its results
+        grid.load = pd.DataFrame(load_data)
+        grid.res_load = grid.load.copy()
+        
+        # create bus dict for translation
+        self.BUS_MAPPING_LOCAL2REAL = grid.bus[["id"]].to_dict()['id']
+        self.BUS_MAPPING_REAL2LOCAL = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
+        
+        # breakpoint()
+        # read line and transformer data
+        # breakpoint()
+        line_data, transformer_data = self._read_line_transformer_data(init=True)
+
+        # line and its results
+        # NOTE: bus dict is needed to translate actual bus number to dataframe index. The from_bus and to_bus columns in grid.line needs to be replaced with this new index to be consistent across the code. 
+        grid.line = pd.DataFrame(line_data)
+        grid.res_line = grid.line.copy()
+        
+        # transformers and its results - variabe called BRANCH_TAP in the line - non-zero tap implies transformer
+        grid.trafo = pd.DataFrame(transformer_data)
+        grid.res_trafo = grid.trafo.copy()
+        
+        # return
+        return grid
+
+    def load_grid(self, 
+                  path : Union[os.PathLike, str], 
+                  filename : Optional[Union[os.PathLike, str]]=None
+        ) -> None:
+        '''
+        # called once   
+        This step is called only ONCE, when the grid2op environment is created. In this step, you read a grid file (in the format that you want) and the backend should inform grid2op about the "objects" on this powergrid and their location.
+        '''
+        # first load the grid from the file
+        self.full_path = path
+        if filename is not None:
+            self.full_path = os.path.join(self.full_path, filename)
+        
+        self._counter = 0
+        self._counter_time = self._counter * self._gridpack_stepsize
+        
+        # NOTE: Need to duble check this
+        self.cannot_handle_more_than_2_busbar()
+        self.cannot_handle_detachment()
+
+        print("************** [INFO] Initializing GridPACK Backend *****************")
+        self._init_gridpack()
+        
+        # solve the power flow - to load the grid data
+        self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        self._dsapp.readGenerators(self.sel_index);
+        self._dsapp.readSequenceData();
+        self._dsapp.initialize();
+        self._dsapp.setGeneratorWatch();
+
+        # Remember the input file was read into the Configuration singleton
+        conf = gridpack.Configuration()
+        cursor = conf.getCursor("Configuration.Dynamic_simulation")
+
+        # get faults
+        faults = self._dsapp.getEvents(cursor)
+
+        # solve with faults
+        self._dsapp.setObservations(cursor)
+        self._dsapp.solvePreInitialize(faults[0])
+        
+        self._dsapp.updateData() 
+        print("************* [INFO] GridPACK Initialized **************************")
+
+        # Building grid object from hadapp
+        print("************* [INFO] Loading GridPACK Data *************************")
+        self._grid = self._build_grid()
+        
+        # then fill the number and location of loads
+        self.n_load = self._grid.load.shape[0]
+        self.load_to_subid = np.zeros(self.n_load, dtype=int)
+        for load_id in range(self.n_load):
+            self.load_to_subid[load_id] = self._grid.load.iloc[load_id]["bus"]
+            
+        # then fill the number and location of generators
+        self.n_gen = self._grid.gen.shape[0]
+        self.gen_to_subid = np.zeros(self.n_gen, dtype=int)
+        for gen_id in range(self.n_gen):
+            self.gen_to_subid[gen_id] = self._grid.gen.iloc[gen_id]["bus"]
+            
+        # then fill the number and location of storage units
+        # self.n_storage = self._grid.storage.shape[0]
+        # self.storage_to_subid = np.zeros(self.n_storage, dtype=int)
+        # for storage_id in range(self.n_storage):
+        #     self.storage_to_subid[storage_id] = self._grid.storage.iloc[storage_id]["bus"]
+        
+        # WARNING
+        # for storage, their description is loaded in a different file (see 
+        # the doc of Backend.load_storage_data)
+        # to start we recommend you to ignore the storage unit of your grid with:
+        self.set_no_storage()
+        
+        # finally handle powerlines
+        # NB: grid2op considers that trafos are powerlines.
+        # so we decide here to say: first n "powerlines" of grid2Op
+        # will be pandapower powerlines and
+        # last k "powerlines" of grid2op will be the trafos of pandapower.
+        self.n_line = self._grid.line.shape[0] + self._grid.trafo.shape[0]
+        self.line_or_to_subid = np.zeros(self.n_line, dtype=int)
+        self.line_ex_to_subid = np.zeros(self.n_line, dtype=int)
+        for line_id in range(self._grid.line.shape[0]):
+            self.line_or_to_subid[line_id] = self._grid.line.iloc[line_id]["from_bus"]
+            self.line_ex_to_subid[line_id] = self._grid.line.iloc[line_id]["to_bus"]
+
+        nb_powerline = self._grid.line.shape[0]
+        for trafo_id in range(self._grid.trafo.shape[0]):
+            self.line_or_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["hv_bus"]
+            self.line_ex_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["lv_bus"]
+            
+        # FIXME: Missing info from gridpack
+        # and now the thermal limit
+        # self.thermal_limit_a = 1000. * np.concatenate(
+        #     (
+        #         self._grid.line["max_i_ka"].values,
+        #         self._grid.trafo["sn_mva"].values
+        #         / (np.sqrt(3) * self._grid.trafo["vn_hv_kv"].values),
+        #     )
+        # )
+        
+        # FIXME: Random number
+        self.thermal_limit_a = 10000 * np.ones(self.n_line, dtype=int)
+            
+        self._compute_pos_big_topo()
+
+    def reset(self, 
+              path: Union[os.PathLike, str], 
+              filename: Optional[Union[os.PathLike, str]]=None
+            ) -> None:
+        # TODO: Reset GridPACK simulator
+        self.full_path = path
+        if filename is not None:
+            self.full_path = os.path.join(self.full_path, filename)
+
+        self._dsapp = None
+        self._dsapp = gridpack.dynamic_simulation.DSFullApp()
+
+        # solve the power flow - to load the grid data
+        self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        self._dsapp.readGenerators(self.sel_index);
+        self._dsapp.readSequenceData();
+        self._dsapp.initialize();
+        self._dsapp.setGeneratorWatch();
+        
+        # Remember the input file was read into the Configuration singleton
+        conf = gridpack.Configuration()
+        cursor = conf.getCursor("Configuration.Dynamic_simulation")
+
+        # get faults
+        faults = self._dsapp.getEvents(cursor)
+
+        # solve with faults
+        self._dsapp.setObservations(cursor)
+        self._dsapp.solvePreInitialize(faults[0])
+
+        self._dsapp.updateData() 
+        
+        # Building grid object from hadapp
+        self._grid = self._build_grid()
+        
     def _read_bus_gen_load_data(self, init=False):
         # load and generator data
         # NOTE: Generator and Load values change only when there are dynamic load/generators. If they are not dynamic, the code currently returns the previous value. 
@@ -153,6 +370,7 @@ class GridPACKBackend(Backend):
         data_dict["vn_to_kv"] = branch_info["vn_to_kv"]
             
         # p-values
+        # breakpoint()
         data_dict["p_from_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num) * branch_info["f_case_sbase"]
         data_dict["p_to_mw"] = self._dsapp.getBranchInfoReal(branch, 'BRANCH_TO_P_CURRENT', elem_num) * branch_info["t_case_sbase"]
 
@@ -229,11 +447,12 @@ class GridPACKBackend(Backend):
                 branch_info["to_bus"], "CASE_SBASE")
             
             # from and to voltage
+            vol_col = "BUS_VOLTAGE_MAG" if init else "BUS_VMAG_CURRENT" # in p.u.
             branch_info["vn_from_kv"] = self._dsapp.getBusInfoReal(
-                branch_info["from_bus"], 'BUS_VMAG_CURRENT') * branch_info["f_buskv"]
+                branch_info["from_bus"], vol_col) * branch_info["f_buskv"]
             branch_info["vn_to_kv"] = self._dsapp.getBusInfoReal(
-                branch_info["to_bus"], 'BUS_VMAG_CURRENT') * branch_info["t_buskv"]
-
+                branch_info["to_bus"], vol_col) * branch_info["t_buskv"]
+            
             # number of lines
             n_elements = self._dsapp.getBranchInfoInt(branch, 'BRANCH_NUM_ELEMENTS')
 
@@ -270,171 +489,6 @@ class GridPACKBackend(Backend):
 
         return line_data, transformer_data
     
-    def _build_grid(self):
-        # create grid object and update data
-        grid = Grid()
-        self._dsapp.updateData()   
-
-        # then fill the "n_sub" and "sub_info"
-        self.n_sub = self._dsapp.totalBuses()
-        nb_busbars = int(self.n_sub) * int(self.n_busbar_per_sub)
-
-        self._busbar_to_gpbus = np.repeat(np.arange(self.n_sub, dtype=int),
-                                  self.n_busbar_per_sub)
-        
-        self._bus_freq_buf = np.empty(nb_busbars, dtype=dt_float)
-
-        # read bus, load, and gen data
-        bus_data, gen_data, load_data = self._read_bus_gen_load_data(init=True)
-        # convert to dataframes
-        # bus and its results
-        grid.bus = pd.DataFrame(bus_data)
-        grid.res_bus = grid.bus.copy()
-        
-        # gen and its results
-        grid.gen = pd.DataFrame(gen_data)
-        grid.res_gen = grid.gen.copy()
-        
-        # load and its results
-        grid.load = pd.DataFrame(load_data)
-        grid.res_load = grid.load.copy()
-        
-        # create bus dict for translation
-        self.BUS_MAPPING_LOCAL2REAL = grid.bus[["id"]].to_dict()['id']
-        self.BUS_MAPPING_REAL2LOCAL = grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
-        
-        # read line and transformer data
-        line_data, transformer_data = self._read_line_transformer_data(init=True)
-
-        # line and its results
-        # NOTE: bus dict is needed to translate actual bus number to dataframe index. The from_bus and to_bus columns in grid.line needs to be replaced with this new index to be consistent across the code. 
-        grid.line = pd.DataFrame(line_data)
-        grid.res_line = grid.line.copy()
-        
-        # transformers and its results - variabe called BRANCH_TAP in the line - non-zero tap implies transformer
-        grid.trafo = pd.DataFrame(transformer_data)
-        grid.res_trafo = grid.trafo.copy()
-        
-        # return
-        return grid
-
-    def load_grid(self, 
-                  path : Union[os.PathLike, str], 
-                  filename : Optional[Union[os.PathLike, str]]=None
-        ) -> None:
-        '''
-        # called once   
-        This step is called only ONCE, when the grid2op environment is created. In this step, you read a grid file (in the format that you want) and the backend should inform grid2op about the "objects" on this powergrid and their location.
-        '''
-        # first load the grid from the file
-        # self.full_path = path
-        # if filename is not None:
-        #     self.full_path = os.path.join(self.full_path, filename)
-        self.full_path = self.make_complete_path(path, filename)
-        
-        # read XML to get timestep
-        with open(self.full_path, 'r') as f:
-            data = f.read()
-        bs_data = BeautifulSoup(data, features="lxml")
-        # timestep
-        self._gridpack_stepsize = float(bs_data.find('timestep').text)
-        print(f"[INFO] GridPACK simulation step size: {self._gridpack_stepsize} seconds")
-
-        self._counter = 0
-        self._counter_time = self._counter * self._gridpack_stepsize
-        
-        # NOTE: Need to duble check this
-        self.cannot_handle_more_than_2_busbar()
-        self.cannot_handle_detachment()
-
-        # select index
-        sel_index = -1
-
-        # solve the power flow - to load the grid data
-        self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, sel_index)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
-        self._dsapp.readGenerators(sel_index);
-        self._dsapp.readSequenceData();
-        self._dsapp.initialize();
-        self._dsapp.setGeneratorWatch();
-        
-        # Building grid object from hadapp
-        self._grid = self._build_grid()
-        
-        # then fill the number and location of loads
-        self.n_load = self._grid.load.shape[0]
-        self.load_to_subid = np.zeros(self.n_load, dtype=int)
-        for load_id in range(self.n_load):
-            self.load_to_subid[load_id] = self._grid.load.iloc[load_id]["bus"]
-            
-        # then fill the number and location of generators
-        self.n_gen = self._grid.gen.shape[0]
-        self.gen_to_subid = np.zeros(self.n_gen, dtype=int)
-        for gen_id in range(self.n_gen):
-            self.gen_to_subid[gen_id] = self._grid.gen.iloc[gen_id]["bus"]
-            
-        # then fill the number and location of storage units
-        # self.n_storage = self._grid.storage.shape[0]
-        # self.storage_to_subid = np.zeros(self.n_storage, dtype=int)
-        # for storage_id in range(self.n_storage):
-        #     self.storage_to_subid[storage_id] = self._grid.storage.iloc[storage_id]["bus"]
-        
-        # WARNING
-        # for storage, their description is loaded in a different file (see 
-        # the doc of Backend.load_storage_data)
-        # to start we recommend you to ignore the storage unit of your grid with:
-        self.set_no_storage()
-        
-        # finally handle powerlines
-        # NB: grid2op considers that trafos are powerlines.
-        # so we decide here to say: first n "powerlines" of grid2Op
-        # will be pandapower powerlines and
-        # last k "powerlines" of grid2op will be the trafos of pandapower.
-        self.n_line = self._grid.line.shape[0] + self._grid.trafo.shape[0]
-        self.line_or_to_subid = np.zeros(self.n_line, dtype=int)
-        self.line_ex_to_subid = np.zeros(self.n_line, dtype=int)
-        for line_id in range(self._grid.line.shape[0]):
-            self.line_or_to_subid[line_id] = self._grid.line.iloc[line_id]["from_bus"]
-            self.line_ex_to_subid[line_id] = self._grid.line.iloc[line_id]["to_bus"]
-
-        nb_powerline = self._grid.line.shape[0]
-        for trafo_id in range(self._grid.trafo.shape[0]):
-            self.line_or_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["hv_bus"]
-            self.line_ex_to_subid[trafo_id + nb_powerline] = self._grid.trafo.iloc[trafo_id]["lv_bus"]
-            
-        # FIXME: Missing info from gridpack
-        # and now the thermal limit
-        # self.thermal_limit_a = 1000. * np.concatenate(
-        #     (
-        #         self._grid.line["max_i_ka"].values,
-        #         self._grid.trafo["sn_mva"].values
-        #         / (np.sqrt(3) * self._grid.trafo["vn_hv_kv"].values),
-        #     )
-        # )
-        
-        # FIXME: Random number
-        self.thermal_limit_a = 10000 * np.ones(self.n_line, dtype=int)
-            
-        self._compute_pos_big_topo()
-
-        # Remember the input file was read into the Configuration singleton
-        conf = gridpack.Configuration()
-        cursor = conf.getCursor("Configuration.Dynamic_simulation")
-
-        # get faults
-        faults = self._dsapp.getEvents(cursor)
-
-        # solve with faults
-        self._dsapp.solvePreInitialize(faults[0])
-
-    def reset(self, 
-              path: Union[os.PathLike, str], 
-              grid_filename: Optional[Union[os.PathLike, str]]=None
-            ) -> None:
-        # TODO: Reset GridPACK simulator
-        self._del_gridpack()
-        self._init_gridpack()
-        self.load_grid(path, grid_filename)
-
     def apply_action(self, backendAction: Union["grid2op.Action._backendAction._BackendAction", None]) -> None:
         '''
         # called for each "step", thousands of times
@@ -599,6 +653,8 @@ class GridPACKBackend(Backend):
         self._reset_data_collectors()
 
         # run GridPACK
+        print(n_steps)
+        breakpoint()
         for i in range(n_steps):
             # run GridPACK simulation by one time step
             self._dsapp.executeOneSimuStep()  
@@ -790,17 +846,91 @@ class GridPACKBackend(Backend):
 
     def copy(self):
         # copy the gridpack object
+        print(self._gridpack_kwargs)
         res = type(self)(**self._gridpack_kwargs)
+        res.env, res.comm = _GP_ENV, _GP_COMM             # reuse singletons
+
+        res.full_path = self._gridpack_kwargs["grid_path"]
+        filename = None
+        if filename is not None:
+            res.full_path = os.path.join(res.full_path, filename)
+        
+        res._counter = 0
+        res._counter_time = res._counter * res._gridpack_stepsize
+        
+        # res.env = gridpack.Environment()
+        # res.comm = gridpack.Communicator()
+        res._dsapp = gridpack.dynamic_simulation.DSFullApp()
+
+        # solve the power flow - to load the grid data
+        res._dsapp.solvePowerFlowBeforeDynSimu(res.full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        res._dsapp.readGenerators(res.sel_index);
+        res._dsapp.readSequenceData();
+        res._dsapp.initialize();
+        res._dsapp.setGeneratorWatch();
+
+        # Remember the input file was read into the Configuration singleton
+        conf = gridpack.Configuration()
+        cursor = conf.getCursor("Configuration.Dynamic_simulation")
+
+        # get faults
+        faults = res._dsapp.getEvents(cursor)
+
+        # solve with faults
+        res._dsapp.setObservations(cursor)
+        res._dsapp.solvePreInitialize(faults[0])
+
+        res._dsapp.updateData() 
 
         # copy from base class (backend)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", FutureWarning)
             # warnings depending on pandas version and pp version
             res._grid = copy.deepcopy(self._grid)
+
+        # create bus dict for translation
+        res.BUS_MAPPING_LOCAL2REAL = res._grid.bus[["id"]].to_dict()['id']
+        res.BUS_MAPPING_REAL2LOCAL = res._grid.bus[["id"]].reset_index().set_index("id").to_dict()['index']
+        
+        res.bus_logger = copy.deepcopy(self.bus_logger)
+        res.gen_logger = copy.deepcopy(self.gen_logger)
+        res.load_logger = copy.deepcopy(self.load_logger)
+        res.line_logger = copy.deepcopy(self.line_logger)
+        res.trafo_logger = copy.deepcopy(self.trafo_logger)
+
+        # then fill the number and location of loads
+        res.n_load = copy.deepcopy(self.n_load)
+        res.load_to_subid = copy.deepcopy(self.load_to_subid)
+        res.n_gen = copy.deepcopy(self.n_gen)
+        res.gen_to_subid = copy.deepcopy(self.gen_to_subid)
+        res.n_line = copy.deepcopy(self.n_line)
+        res.line_or_to_subid = copy.deepcopy(self.line_or_to_subid)
+        res.line_ex_to_subid = copy.deepcopy(self.line_ex_to_subid)
+        res.line_ex_to_subid = copy.deepcopy(self.thermal_limit_a)
+
+        # then fill the number and location of storage units
+        # self.n_storage = self._grid.storage.shape[0]
+        # self.storage_to_subid = np.zeros(self.n_storage, dtype=int)
+        # for storage_id in range(self.n_storage):
+        #     self.storage_to_subid[storage_id] = self._grid.storage.iloc[storage_id]["bus"]
+        
+        # WARNING
+        # for storage, their description is loaded in a different file (see 
+        # the doc of Backend.load_storage_data)
+        # to start we recommend you to ignore the storage unit of your grid with:
+        res.set_no_storage()
+        print("************** [INFO] Copying GridPACK Backend *****************")
+
         
         return res
 
     def close(self):
         # close the gridpack environment
-        self._del_gridpack()
+        global _GP_REFCOUNT
+        if self._dsapp is not None:
+            del self._dsapp
+            self._dsapp = None
+        if _GP_REFCOUNT > 0:
+            _GP_REFCOUNT -= 1
+        # self._del_gridpack()
         

@@ -1,6 +1,8 @@
+import sys
 import numpy as np
 from datetime import timedelta
 
+sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/grid2op_local/")
 import grid2op
 from grid2op import make
 from grid2op.Action import BaseAction
@@ -18,7 +20,6 @@ print(f"Grid2Op Version: {grid2op.__version__}")
 print(f"Stable Baseline3 Version: {stable_baselines3.__version__}")
 print(f"Gymnasium Version: {gym.__version__}")
 
-import sys
 sys.path.append("/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/")
 from grid2op_backend import GridPACKBackend
 from test_probe import test_probe_run_gym
