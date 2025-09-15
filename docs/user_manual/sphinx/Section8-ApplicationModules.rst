@@ -13,18 +13,18 @@ calculations are provided so that once a network has been read in and
 partitioned, it is not necessary to repeat this process when a new
 calculation is started based on the results of a previous simulation.
 
-Currently, three applications are available as modules within GridPACK.
-They include power flow, state estimation, and dynamic simulation using
-the full Y-matrix. Each of these modules can be used to create a short,
-standalone application, but the goal is to enable users to combine
-modules together in more complicated work flows. These modules can also
-be used as a starting point for users to create their own applications
-by modifying the existing code in the modules to create new
-functionality. Each of the modules is described in more detail below.
+Currently, four applications are available as modules within GridPACK.
+They include power flow, state estimation, dynamic simulation using
+the full Y-matrix, and electromagnetic transient (EMT) simulation. Each of 
+these modules can be used to create a short, standalone application, but the 
+goal is to enable users to combine modules together in more complicated work 
+flows. These modules can also be used as a starting point for users to create 
+their own applications by modifying the existing code in the modules to create 
+new functionality. Each of the modules is described in more detail below.
 Example codes that use the modules to implement applications can be
 found in the ``src/application`` directory. These include powerflow,
-state estimation, contingency analysis and dynamic simulation. These
-directories also contain sample input networks and input files. Options
+state estimation, contingency analysis, dynamic simulation, and EMT simulation. 
+These directories also contain sample input networks and input files. Options
 for different solvers can be found in these files.
 
 Power Flow
@@ -913,3 +913,163 @@ run and output generated using
 The values of the rotor speed and rotor angle for all generators will be
 written to the files ``omega.dat`` and ``delta.dat`` after this
 simulation is run.
+
+Electromagnetic Transient (EMT) Module
+---------------------------------------
+
+GridPACK includes an electromagnetic transient (EMT) simulation module
+that provides detailed modeling of power system components using 
+differential-algebraic equations (DAE). The EMT module is designed for
+high-fidelity analysis of electromagnetic phenomena in power systems,
+making it suitable for studying transient behavior, fault analysis,
+and detailed generator dynamics. The module uses a DAE solver to integrate
+the system equations and supports both explicit and implicit integration
+algorithms for machine models.
+
+The EMT module is represented by the ``Emt`` class and uses an 
+``EmtNetwork`` for the network representation. Unlike other GridPACK
+modules, the EMT class does not use a specific namespace but is designed
+to work seamlessly with the GridPACK framework. The module requires both
+a power flow initialization phase and an EMT simulation phase.
+
+The EMT module uses an input deck with both ``Powerflow`` and ``EMT`` 
+configuration blocks. An example input file has the form:
+
+::
+
+   <?xml version="1.0" encoding="utf-8"?>
+   <Configuration>
+     <Powerflow>
+       <networkConfiguration_v34>case9_PSCAD.raw</networkConfiguration_v34>
+       <maxIteration>50</maxIteration>
+       <tolerance>1.0e-6</tolerance>
+       <LinearSolver>
+         <PETScOptions>
+           -ksp_type richardson
+           -pc_type lu
+           -pc_factor_mat_solver_package superlu_dist
+           -ksp_max_it 1
+         </PETScOptions>
+       </LinearSolver>
+       <UseNonLinear>false</UseNonLinear>
+     </Powerflow>
+     <EMT>
+       <generatorParameters>case9_GAST.dyr</generatorParameters>
+       <machineIntegrationType>EXPLICIT</machineIntegrationType>
+       <simulationTime>2.0</simulationTime>
+       <timeStep>0.00005</timeStep>
+       <Events>
+         <BusFault>
+           <begin>0.5</begin>
+           <end>0.6</end>
+           <bus>9</bus>
+           <type>ThreePhase</type>
+           <Ron>0.011</Ron>
+           <Rgnd>0.0</Rgnd>
+         </BusFault>
+       </Events>
+       <Monitors>
+         <Generator>
+           <bus>1</bus>
+           <id>1</id>
+         </Generator>
+         <Generator>
+           <bus>2</bus>
+           <id>1</id>
+         </Generator>
+       </Monitors>
+       <DAESolver>
+         <PETScPrefix>emt_</PETScPrefix>
+       </DAESolver>
+     </EMT>
+   </Configuration>
+
+The ``Powerflow`` block contains standard power flow configuration 
+parameters including the network configuration file and solver options.
+The ``EMT`` block contains parameters specific to the EMT simulation:
+
+#. ``generatorParameters``: PSS/E .dyr format file containing additional
+   generator model parameters for the EMT simulation.
+
+#. ``machineIntegrationType``: Integration algorithm for machine models.
+   Can be set to ``EXPLICIT`` or ``IMPLICIT`` (default).
+
+#. ``simulationTime``: Total simulation time in seconds.
+
+#. ``timeStep``: Integration time step for the EMT simulation.
+
+#. ``Events``: Block containing fault events and other disturbances.
+   Currently supports ``BusFault`` events with parameters for fault
+   timing, location, type, and impedance values.
+
+#. ``Monitors``: Specifies generators to be monitored during simulation.
+   Output from monitored generators is written to files.
+
+#. ``DAESolver``: Configuration parameters for the DAE solver.
+
+After instantiating an ``Emt`` object with a communicator, the EMT
+calculation can be set up using the following sequence of function calls.
+First, the configuration file must be assigned:
+
+::
+
+   void setconfigurationfile(const char* configfile)
+
+This function assigns the input configuration file to the EMT object.
+Next, an initial power flow calculation must be performed to establish
+the system operating point:
+
+::
+
+   void solvepowerflow()
+
+This function reads the network configuration, performs the power flow
+calculation, and initializes the system state variables. The power flow
+solution provides the initial conditions for the EMT simulation.
+
+After the power flow is complete, the EMT-specific setup can be performed:
+
+::
+
+   void setup()
+
+This function reads the generator parameters from the .dyr file, sets up
+the EMT network components, initializes the DAE solver, and prepares the
+system for transient simulation. The setup process includes creating
+vector and matrix mappers for the DAE system and configuring event
+handlers for faults and other disturbances.
+
+The EMT simulation can then be executed using:
+
+::
+
+   void solve()
+
+This function integrates the DAE system over the specified simulation time,
+handling events such as faults and writing output for monitored generators.
+The integration uses the configured time step and machine integration type.
+
+The EMT module supports several types of events that can be specified in
+the input configuration:
+
+#. **Bus Faults**: Three-phase faults applied to specified buses with
+   configurable fault resistance and grounding resistance.
+
+#. **Generator Monitoring**: Real-time monitoring and output of generator
+   state variables during simulation.
+
+The module uses a DAE solver framework that supports various integration
+algorithms and can handle stiff differential equations typical in power
+system transient analysis. The solver configuration can be controlled
+through PETSc options in the ``DAESolver`` block.
+
+Output from the EMT simulation includes time series data for monitored
+generators, which is written to files during the simulation. The output
+frequency and monitored variables can be controlled through the input
+configuration.
+
+The EMT module is designed to work in conjunction with other GridPACK
+modules, particularly power flow, to provide comprehensive power system
+analysis capabilities. The module can be used as a starting point for
+developing specialized EMT applications or can be integrated into larger
+multi-physics simulations.
