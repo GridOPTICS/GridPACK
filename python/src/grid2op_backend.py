@@ -115,6 +115,7 @@ class GridPACKBackend(Backend):
         # convert to dataframes
         # bus and its results
         grid.bus = pd.DataFrame(bus_data)
+        breakpoint()
         grid.res_bus = grid.bus.copy()
         
         # gen and its results
@@ -300,6 +301,7 @@ class GridPACKBackend(Backend):
             if init:
                 vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG") # in p.u.
             else:
+                breakpoint()
                 vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VMAG_CURRENT") # in p.u.
             vn_kv = vn_pu * BUS_BASEKV # in kV
 
@@ -601,7 +603,8 @@ class GridPACKBackend(Backend):
         # update the dataframe
         self._grid.res_bus = pd.DataFrame(bus_data)
         self._grid.res_gen = pd.DataFrame(gen_data)
-        self._grid.res_load = pd.DataFrame(load_data)     
+        self._grid.res_load = pd.DataFrame(load_data) 
+        print(self._grid.res_load)    
         
     def _update_line_transformer_data(self):
         # read data
@@ -653,8 +656,8 @@ class GridPACKBackend(Backend):
         self._reset_data_collectors()
 
         # run GridPACK
-        print(n_steps)
-        breakpoint()
+        # print(n_steps)
+        # breakpoint()
         for i in range(n_steps):
             # run GridPACK simulation by one time step
             self._dsapp.executeOneSimuStep()  
@@ -715,6 +718,7 @@ class GridPACKBackend(Backend):
         # retrieve the results
         '''
         # carefull with copy / deep copy
+        breakpoint()
         load_p = self._grid.res_load["p_mw"].values  # in MW
         load_q = self._grid.res_load["q_mvar"].values  # in MVAr
         load_v = self._grid.res_bus.iloc[self._grid.load["bus"].values]["vn_kv"].values  # in kV

@@ -1306,6 +1306,7 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
   double rV = real(voltage);
   double iV = imag(voltage);
   rV = sqrt(rV*rV+iV*iV);
+  std::cout << "DSFullBus::updateData(), Bus No.: " << getOriginalIndex() << ", Vmag: " << rV << std::endl;
   if (!data->setValue(BUS_VMAG_CURRENT, rV)) {
     data->addValue(BUS_VMAG_CURRENT, rV);
   }
