@@ -10,7 +10,7 @@ install_gridpack_shared=true
 install_gridpack_python=true
 
 # These must match install_gridpack_deps.sh
-boost_version="1_81_0"
+boost_version="1.81.0"
 ga_version="5.9"
 
 if "$install_gridpack_python"; then
@@ -36,8 +36,8 @@ then
      export GP_EXT_DEPS=${GRIDPACK_ROOT_DIR}/external-dependencies
 fi
 
-# boost_version=`echo $boost_version | sed -e 's/\./_/g'` # not working
-boost_dir="${GP_EXT_DEPS}/boost_${boost_version}/install_for_gridpack"
+boost_us_version=`echo $boost_version | sed -e 's/\./_/g'`
+boost_dir="${GP_EXT_DEPS}/boost_${boost_us_version}/install_for_gridpack"
 
 petsc_dir="${GP_EXT_DEPS}/petsc/install_for_gridpack"
 
@@ -103,11 +103,9 @@ then
     # This is necessary on RHEL/CentOS systems
     # export RHEL_OPENMPI_HACK=yes
 
-    rm -rf build dist gridpack.egg-info/
+    rm -rf build dist gridpack_hadrec.egg-info/
     
-    # CXXFLAGS="-include cstdint" \
-    # LDFLAGS="-Wl,-rpath,/qfs/projects/ops/rh7_gpu/gcc/13.1.0/lib64" \
-    ${python_exe} -m pip install --no-deps --upgrade . # --prefix=$GRIDPACK_INSTALL_DIR .
+    ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
 
     # Construct the installed package path and check it. The actual
     # path with in the prefix seems to be kind of random, so

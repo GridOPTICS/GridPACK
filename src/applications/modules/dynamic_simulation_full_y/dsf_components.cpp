@@ -1399,6 +1399,7 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 	//set the LOW_SIDE_BUS voltage
 	setVoltage(bus_mag);
 	setPhase(bus_ang);
+  p_volt_full = gridpack::ComplexType(bus_mag*cos(bus_ang),bus_mag*sin(bus_ang));
   
 	for ( i=0 ; i<nghbrs_size; i++ ) {
 		bus1 = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(nghbrs[i].get());
@@ -1406,6 +1407,7 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 		{
 			bus1->setVoltage(bus_mag);
 			bus1->setPhase(bus_ang);
+      bus1->setComplexVoltage(p_volt_full);
 			p_CmplFeederBus = bus1;
 			printf("   DSFullBus::setExtendedCmplBusVoltage(), find LOAD_BUS, bus no.: %d, set value, mag: %f, ang: %f, \n", bus1->getOriginalIndex(), bus_mag, bus_ang);
 			break;
@@ -1652,6 +1654,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   //set the voltage value of the transformer bus with the composite load model
   p_CmplXfmrBus->setVoltage(abs(volt_low));
   p_CmplXfmrBus->setPhase(atan2(imag(volt_low), real(volt_low)));
+  p_CmplXfmrBus->setComplexVoltage(volt_low);
   
   // current flowing from the low voltage side into the feeder
   gridpack::ComplexType I_lowbus = Ilf_pu*Tfixhs/(tap*Tfixls);
@@ -1688,6 +1691,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   gridpack::ComplexType Sload = volt_load*Ifeeder_conj;
   PloadBus_pu = real(Sload);
   QloadBus_pu = imag(Sload);
+  p_volt_full = gridpack::ComplexType(Vload_mag*cos(Vload_ang),Vload_mag*sin(Vload_ang));
   
   printf("DSFullBus::LoadExtendedCmplBus() PloadBus_pu: %f, QloadBus_pu: %f, \n", PloadBus_pu, QloadBus_pu);
     
@@ -1914,6 +1918,14 @@ void gridpack::dynamic_simulation::DSFullBus::setVoltage(double mag)
 void gridpack::dynamic_simulation::DSFullBus::setPhase(double ang)
 {
 	p_angle = ang;
+}
+
+/**
+ * Set the value of the complex voltage
+ */
+void gridpack::dynamic_simulation::DSFullBus::setComplexVoltage(ComplexType value)
+{
+  p_volt_full = value;
 }
 
 /**
