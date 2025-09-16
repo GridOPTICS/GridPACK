@@ -295,6 +295,11 @@ class DSFullBus
      */
     void setPhase(double ang);
 	
+   /**
+    * Set the value of the complex voltage
+    */
+    void setComplexVoltage(ComplexType value);
+
 	/**
      * Set the point of the related extended transformer branch of this bus, due to composite load model
      */
