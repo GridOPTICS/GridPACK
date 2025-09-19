@@ -80,9 +80,12 @@ void gridpack::parser::MultiSectParser33::parse(
         found = true;
       }
     }
-    nelems = split_line.size() - 3;
+    nelems = split_line.size() - 4;
 
-    if (!found || nelems <= 0) continue;
+    if (!found || nelems <= 0) {
+      stream.nextLine(line);
+      continue;
+    }
 
     // Clean up 2 character tag
     gridpack::utility::StringUtils util;
@@ -106,7 +109,7 @@ void gridpack::parser::MultiSectParser33::parse(
 
     int i;
     char buf[32];
-    for (i=0; i<9; i++) {
+    for (i=0; i<nelems; i++) {
       sprintf(buf,"MULTI_SEC_LINE_DUM%d",i+1);
       p_branchData[l_idx]->addValue(buf,atoi(split_line[i+4].c_str()));
     }

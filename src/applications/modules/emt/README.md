@@ -120,7 +120,7 @@ Your current directory should now have the files for the two-bus system and the 
 ### GridPACK configuration file
 The `input_2bus.xml` is the GridPACK configuration that controls the input for the EMT simulation. Let's take a look at the main elements of this xml file. Note, the file has some other elements for controlling other features but we will only focus on those that are needed for EMT.
 1. Setting the raw file: The network raw file is set with the tag `<networkConfiguration>`. In the `input_2bus.xml` file the network file is set to
-`<networkConfiguration> case2mod.raw </networkConfiguration>`. Recall `case2mod.raw` is the file we copied. GridPACK supports various version of PTI raw data files including v23, v33, v34, v35. `<networkConfiguration>` tag assumes the file format is v23. If you have files in other versions then add an `_vXX` to the tag where `XX` is the version number. For e.g., to read a v34 file use `<networkConfiguration_v34>` tag.
+`<networkConfiguration> case2mod.raw </networkConfiguration>`. Recall `case2mod.raw` is the file we copied. GridPACK supports various version of PTI raw data files including v23, v33, v34, v35, v36. `<networkConfiguration>` tag assumes the file format is v23. If you have files in other versions then add an `_vXX` to the tag where `XX` is the version number. For e.g., to read a v34 file use `<networkConfiguration_v34>` tag.
 2. Setting the dyr file: The dyr file is set with the tag `<generatorParameters>`. In the `input_2bus.xml` file the dyr file is set to 
 `<generatorParameters> case2.dyr </generatorParameters>`
 3. Setting the simulation time and timestep: The simulation time and time-step is set with the tags `<simulationTime>` and `timeStep`, respectively.

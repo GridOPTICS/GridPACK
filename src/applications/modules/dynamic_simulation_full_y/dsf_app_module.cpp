@@ -10,6 +10,7 @@
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/parser/PTI34_parser.hpp"
 #include "gridpack/parser/PTI35_parser.hpp"
+#include "gridpack/parser/PTI36_parser.hpp"
 #include "gridpack/parser/PSSE_seq_parser.hpp"
 //#include "gridpack/mapper/full_map.hpp"
 //#include "gridpack/mapper/bus_vector_map.hpp"
@@ -153,7 +154,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePowerFlowBeforeDynSimu(const 
 }
   
 
-enum Format{PTI23, PTI33, PTI34, PTI35};
+enum Format{PTI23, PTI33, PTI34, PTI35, PTI36};
 /**
  * Read in and partition the dynamic simulation network. The input file is read
  * directly from the Dynamic_simulation block in the configuration file so no
@@ -186,6 +187,8 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
       filetype = PTI34;
     } else if (cursor->get("networkConfiguration_v35",&filename)) {
       filetype = PTI35;
+    } else if (cursor->get("networkConfiguration_v36",&filename)) {
+      filetype = PTI36;
     } else {
       printf("No network configuration specified\n");
     }
@@ -229,6 +232,8 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
     if (filename.size() > 0) parser.parse(filename.c_str());
   } else if (filetype == PTI35) {
     gridpack::parser::PTI35_parser<DSFullNetwork> parser(network);
+  } else if (filetype == PTI36) {
+    gridpack::parser::PTI36_parser<DSFullNetwork> parser(network);
     if (filename.size() > 0) parser.parse(filename.c_str());
   } else {
     printf("Unknown filetype\n");

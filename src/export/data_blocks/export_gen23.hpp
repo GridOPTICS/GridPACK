@@ -150,7 +150,7 @@ class ExportGen23
             ptr += strlen(ptr);
             zval = ComplexType(0.0,1.0);
             data->getValue(GENERATOR_ZSOURCE,&zval,j);
-            sprintf(ptr," %f, %f,",real(zval),imag(zval),j);
+            sprintf(ptr," %f, %f,",real(zval),imag(zval));
             ptr += strlen(ptr);
             rval = 0.0;
             data->getValue(GENERATOR_RT,&rval,j);

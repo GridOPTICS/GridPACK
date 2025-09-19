@@ -2361,8 +2361,8 @@ they can read the file.
 
 Currently, GridPACK supports five file formats. Files based on the PSS/E
 PTI version 23, 33, 34 and 35 formats can be read in using the classes
-``PTI23_parser``, ``PTI33_parser``, ``PTI34_parser``, and
-``PTI35_parser``. These parsers can also read PSS/E formatted .dyr
+``PTI23_parser``, ``PTI33_parser``, ``PTI34_parser``, ``PTI35_parser``
+and ``PTI36_parser``. These parsers can also read PSS/E formatted .dyr
 files that are used to read in extra parameters used in dynamic
 simulation. In addition, there is a parser that can read MatPower
 formatted files, ``MAT_Parser``. The parsers are templated classes
@@ -2379,6 +2379,8 @@ only a few important functions. The first are the constructors
    PTI34_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
 
    PTI35_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+
+   PTI36_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
 
    MAT_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
 
