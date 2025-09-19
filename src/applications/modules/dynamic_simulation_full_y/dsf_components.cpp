@@ -1306,7 +1306,7 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
   double rV = real(voltage);
   double iV = imag(voltage);
   rV = sqrt(rV*rV+iV*iV);
-  std::cout << "DSFullBus::updateData(), Bus No.: " << getOriginalIndex() << ", Vmag: " << rV << std::endl;
+  // std::cout << "DSFullBus::updateData(), Bus No.: " << getOriginalIndex() << ", Vmag: " << rV << std::endl;
   if (!data->setValue(BUS_VMAG_CURRENT, rV)) {
     data->addValue(BUS_VMAG_CURRENT, rV);
   }
@@ -1400,7 +1400,8 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 	//set the LOW_SIDE_BUS voltage
 	setVoltage(bus_mag);
 	setPhase(bus_ang);
-  p_volt_full = gridpack::ComplexType(bus_mag*cos(bus_ang),bus_mag*sin(bus_ang));
+  // std::cout << "DSFullBus::setExtendedCmplBusVoltage(), Bus No.: " << getOriginalIndex() << ", Vmag: " << bus_mag << ", Vang: " << bus_ang << std::endl;
+  // p_volt_full = gridpack::ComplexType(bus_mag*cos(bus_ang),bus_mag*sin(bus_ang));
   
 	for ( i=0 ; i<nghbrs_size; i++ ) {
 		bus1 = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(nghbrs[i].get());
@@ -1408,7 +1409,7 @@ void gridpack::dynamic_simulation::DSFullBus::setExtendedCmplBusVoltage(
 		{
 			bus1->setVoltage(bus_mag);
 			bus1->setPhase(bus_ang);
-      bus1->setComplexVoltage(p_volt_full);
+      // bus1->setComplexVoltage(p_volt_full);
 			p_CmplFeederBus = bus1;
 			printf("   DSFullBus::setExtendedCmplBusVoltage(), find LOAD_BUS, bus no.: %d, set value, mag: %f, ang: %f, \n", bus1->getOriginalIndex(), bus_mag, bus_ang);
 			break;
@@ -1655,7 +1656,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   //set the voltage value of the transformer bus with the composite load model
   p_CmplXfmrBus->setVoltage(abs(volt_low));
   p_CmplXfmrBus->setPhase(atan2(imag(volt_low), real(volt_low)));
-  p_CmplXfmrBus->setComplexVoltage(volt_low);
+  // p_CmplXfmrBus->setComplexVoltage(volt_low);
   
   // current flowing from the low voltage side into the feeder
   gridpack::ComplexType I_lowbus = Ilf_pu*Tfixhs/(tap*Tfixls);

@@ -105,7 +105,7 @@ then
 
     rm -rf build dist gridpack_hadrec.egg-info/
     
-    ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
+    ${python_exe} -m pip install --no-deps --upgrade . #-prefix=$GRIDPACK_INSTALL_DIR .
 
     # Construct the installed package path and check it. The actual
     # path with in the prefix seems to be kind of random, so

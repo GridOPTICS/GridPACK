@@ -18,11 +18,12 @@ from gridpack.dynamic_simulation import DSFullApp, Event, EventVector
 def network_dump_state(ds_app):
     nbus = ds_app.totalBuses()
     for bus in range(nbus):
-        print("Hellllooooo", bus,
+        print("bus: ", bus,
               ds_app.getBusInfoInt(bus, "BUS_NUMBER"),
               ds_app.getBusInfoString(bus, "BUS_NAME"),
               ds_app.getBusInfoReal(bus, "BUS_VMAG_CURRENT"))
         for g in range(ds_app.numGenerators(bus)):
+            breakpoint()
             print(" gen: ", g,
                   ds_app.getBusInfoString(bus, "GENERATOR_MODEL", g),
                   ds_app.getBusInfoReal(bus, "GENERATOR_PG_CURRENT", g),
@@ -41,7 +42,7 @@ def network_dump_state(ds_app):
         for elem_num in range(n_elements):
             print("line p current", ds_app.getBranchInfoReal(branch, 'BRANCH_FROM_P_CURRENT', elem_num))
     
-    sys.exit(1)
+    # sys.exit(1)
 
 
 # -------------------------------------------------------------
@@ -50,7 +51,9 @@ def network_dump_state(ds_app):
 program = os.path.basename(sys.argv[0])
 usage = "usage: " + program
 
-inname = "input_39bus_step005_v33.xml"
+# inname = "input_39bus_step005_v33.xml"
+inname = "input_9bus.xml"
+# inname = "input_39bus_IBR.xml"
 
 # -------------------------------------------------------------
 # main program
@@ -61,12 +64,12 @@ comm = gridpack.Communicator()
 
 ds_app = DSFullApp()
 
-ds_app.solvePowerFlowBeforeDynSimu(inname, 0)
+ds_app.solvePowerFlowBeforeDynSimu(inname, -1)
 
 conf = gridpack.Configuration()
 cursor = conf.getCursor("Configuration.Dynamic_simulation")
 
-ds_app.readGenerators(0);
+ds_app.readGenerators(-1);
 ds_app.readSequenceData();
 ds_app.initialize();
 ds_app.setGeneratorWatch();
@@ -144,6 +147,7 @@ while (not ds_app.isDynSimuDone()):
         ob_vals.extend(fOnline)
         ob_vals.extend(busfreq)
         ds_app.updateData()
+        breakpoint()
         network_dump_state(ds_app)
         print('After getObservations')
         

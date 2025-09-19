@@ -1,6 +1,7 @@
 import copy
 import os
 import sys
+import gc
 import warnings
 from typing import Optional, Tuple, Union, Dict, Any
 
@@ -77,8 +78,6 @@ class GridPACKBackend(Backend):
 
         self.can_output_bus_freq = True
 
-        self.sel_index = 0
-
     def _init_gridpack(self):
         # Create GridPACK environment and pass the communicator to it
         # self.env = gridpack.Environment()
@@ -115,7 +114,7 @@ class GridPACKBackend(Backend):
         # convert to dataframes
         # bus and its results
         grid.bus = pd.DataFrame(bus_data)
-        breakpoint()
+        # breakpoint()
         grid.res_bus = grid.bus.copy()
         
         # gen and its results
@@ -157,6 +156,12 @@ class GridPACKBackend(Backend):
         '''
         # first load the grid from the file
         self.full_path = path
+        
+        # file index
+        self.sel_index = -1
+        if ("input_39bus_step005_v33" in self.full_path):
+            self.sel_index = 0
+        
         if filename is not None:
             self.full_path = os.path.join(self.full_path, filename)
         
@@ -171,7 +176,7 @@ class GridPACKBackend(Backend):
         self._init_gridpack()
         
         # solve the power flow - to load the grid data
-        self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, self.sel_index)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
         self._dsapp.readGenerators(self.sel_index);
         self._dsapp.readSequenceData();
         self._dsapp.initialize();
@@ -247,7 +252,7 @@ class GridPACKBackend(Backend):
         # )
         
         # FIXME: Random number
-        self.thermal_limit_a = 10000 * np.ones(self.n_line, dtype=int)
+        self.thermal_limit_a = 100000 * np.ones(self.n_line, dtype=int)
             
         self._compute_pos_big_topo()
 
@@ -256,15 +261,22 @@ class GridPACKBackend(Backend):
               filename: Optional[Union[os.PathLike, str]]=None
             ) -> None:
         # TODO: Reset GridPACK simulator
+        # breakpoint()
         self.full_path = path
         if filename is not None:
             self.full_path = os.path.join(self.full_path, filename)
 
-        self._dsapp = None
+        self._dsapp.close()
+        del self._dsapp
+        # self._dsapp = None
+        # gc.collect()
+        # gc.collect()
+
+        # _GP_COMM.barrier()
         self._dsapp = gridpack.dynamic_simulation.DSFullApp()
 
         # solve the power flow - to load the grid data
-        self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        self._dsapp.solvePowerFlowBeforeDynSimu(self.full_path, self.sel_index)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
         self._dsapp.readGenerators(self.sel_index);
         self._dsapp.readSequenceData();
         self._dsapp.initialize();
@@ -282,6 +294,9 @@ class GridPACKBackend(Backend):
         self._dsapp.solvePreInitialize(faults[0])
 
         self._dsapp.updateData() 
+
+        self._counter = 0
+        self._counter_time = self._counter * self._gridpack_stepsize
         
         # Building grid object from hadapp
         self._grid = self._build_grid()
@@ -301,7 +316,6 @@ class GridPACKBackend(Backend):
             if init:
                 vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VOLTAGE_MAG") # in p.u.
             else:
-                breakpoint()
                 vn_pu = self._dsapp.getBusInfoReal(bus, "BUS_VMAG_CURRENT") # in p.u.
             vn_kv = vn_pu * BUS_BASEKV # in kV
 
@@ -312,6 +326,8 @@ class GridPACKBackend(Backend):
                 "tick": self._counter_time,
                 "vn_pu": vn_pu,
                 "vn_kv": vn_kv,
+                "base_kv": BUS_BASEKV,
+                "case_sbase": CASE_SBASE,
                 "frequency": self._dsapp.getBusInfoReal(bus, "BUS_FREQUENCY"),
                 "type": self._dsapp.getBusInfoInt(bus, "BUS_TYPE")
             })
@@ -323,8 +339,8 @@ class GridPACKBackend(Backend):
                     p_mw = self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG', g) * CASE_SBASE
                     q_mvar = self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG', g) * CASE_SBASE
                 else:
-                    p_mw = self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g) * CASE_SBASE
-                    q_mvar = self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g) * CASE_SBASE
+                    p_mw = self._dsapp.getBusInfoReal(bus, 'GENERATOR_PG_CURRENT', g)# * CASE_SBASE
+                    q_mvar = self._dsapp.getBusInfoReal(bus, 'GENERATOR_QG_CURRENT', g)# * CASE_SBASE
                 
                 # gen data
                 gen_data.append({
@@ -334,6 +350,7 @@ class GridPACKBackend(Backend):
                     "p_mw": p_mw,
                     "q_mvar": q_mvar,
                     "vn_kv": vn_kv,
+                    "vn_pu": vn_pu,
                     "min_q_mvar": self._dsapp.getBusInfoReal(bus, "GENERATOR_QMIN", g),
                     "max_q_mvar": self._dsapp.getBusInfoReal(bus, "GENERATOR_QMAX", g),
                     "in_service": self._dsapp.getBusInfoInt(bus, "GENERATOR_STAT", g)
@@ -604,7 +621,7 @@ class GridPACKBackend(Backend):
         self._grid.res_bus = pd.DataFrame(bus_data)
         self._grid.res_gen = pd.DataFrame(gen_data)
         self._grid.res_load = pd.DataFrame(load_data) 
-        print(self._grid.res_load)    
+        # print(self._grid.res_load)    
         
     def _update_line_transformer_data(self):
         # read data
@@ -636,9 +653,14 @@ class GridPACKBackend(Backend):
 
     def _log_data(self):
         # append to out list
-        self.bus_logger.append(pd.concat([self._grid.bus[["id"]], self._grid.res_bus], axis=1))
-        self.gen_logger.append(pd.concat([self._grid.gen[["name", "bus"]], self._grid.res_gen], axis=1))
-        self.load_logger.append(pd.concat([self._grid.load[["name", "bus"]], self._grid.res_load], axis=1))
+        # self.bus_logger.append(pd.concat([self._grid.bus[["id"]], self._grid.res_bus], axis=1))
+        # self.gen_logger.append(pd.concat([self._grid.gen[["name", "bus"]], self._grid.res_gen], axis=1))
+        # self.load_logger.append(pd.concat([self._grid.load[["name", "bus"]], self._grid.res_load], axis=1))
+        # self.line_logger.append(self._grid.res_line)
+        # self.trafo_logger.append(self._grid.res_trafo)
+        self.bus_logger.append(self._grid.res_bus)
+        self.gen_logger.append(self._grid.res_gen)
+        self.load_logger.append(self._grid.res_load)
         self.line_logger.append(self._grid.res_line)
         self.trafo_logger.append(self._grid.res_trafo)
     
@@ -664,6 +686,7 @@ class GridPACKBackend(Backend):
 
             # update data in result dataframes
             self._update_data()
+            # breakpoint()
 
             # log data at log frequency
             if (self._counter % self._log_freq) == 0:
@@ -718,7 +741,7 @@ class GridPACKBackend(Backend):
         # retrieve the results
         '''
         # carefull with copy / deep copy
-        breakpoint()
+        # breakpoint()
         load_p = self._grid.res_load["p_mw"].values  # in MW
         load_q = self._grid.res_load["q_mvar"].values  # in MVAr
         load_v = self._grid.res_bus.iloc[self._grid.load["bus"].values]["vn_kv"].values  # in kV
@@ -850,7 +873,7 @@ class GridPACKBackend(Backend):
 
     def copy(self):
         # copy the gridpack object
-        print(self._gridpack_kwargs)
+        # print(self._gridpack_kwargs)
         res = type(self)(**self._gridpack_kwargs)
         res.env, res.comm = _GP_ENV, _GP_COMM             # reuse singletons
 
@@ -867,7 +890,7 @@ class GridPACKBackend(Backend):
         res._dsapp = gridpack.dynamic_simulation.DSFullApp()
 
         # solve the power flow - to load the grid data
-        res._dsapp.solvePowerFlowBeforeDynSimu(res.full_path, -1)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
+        res._dsapp.solvePowerFlowBeforeDynSimu(res.full_path, res.sel_index)  # 0 inidcates that solves the first raw file for power flow, the xml file supports multiple power flow raw files read in
         res._dsapp.readGenerators(res.sel_index);
         res._dsapp.readSequenceData();
         res._dsapp.initialize();

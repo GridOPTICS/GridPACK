@@ -19,13 +19,17 @@ def main():
     args = parse_arguments()
     
     # NOTE: You must run this code from the application folder
-    # filename = "input_240bus.xml"
+    # filename = "input_9bus.xml"
+    # filename = "input_240.xml"
+    filename = "input_39bus_IBR.xml"
+    # filename = "input_9bus_slu.xml"
     # filename = "input_9b3g.xml"
     # filename = "input_39bus_step005_v33.xml" ## formatting issues
-    filename = args.gridpack_config
+    # filename = args.gridpack_config
+    # filename = "input_39bus_step005_v33.xml"
     
     # config_filepath = "/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/example/test_grid2op"
-    config_filepath = args.grid2op_config
+    config_filepath = f"/qfs/projects/gridpack_wind/grid2op_interface/GridPACK/python/src/grid2op_integration/grid2op_{filename.split('.')[0]}"
 
     # make environment
     print("============ Initializing Environment =============")

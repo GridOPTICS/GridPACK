@@ -1,4 +1,9 @@
-import argparse
+import os, sys, argparse
+from typing import Tuple, Optional, Dict
+from bs4 import BeautifulSoup
+from config import OBS_ATTRS
+
+import numpy as np
 import pandas as pd
 
 def parse_arguments():
@@ -88,3 +93,27 @@ class DataCollector():
         # adjusting for counter increase during warm up calls
         # res_trafo["tick"] = res_trafo["tick"] - res_trafo["tick"].values[0]
         res_trafo.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_trafo.csv")
+
+# ------------ Helpers ------------
+def read_gridpack_stepsize(xml_path: str) -> float:
+    with open(xml_path, "r") as f: txt = f.read()
+    bs = BeautifulSoup(txt, "lxml")
+    return float(bs.find("timestep").text)
+
+
+
+def flatten_obs(env_obs) -> np.ndarray:
+    parts = [np.asarray(getattr(env_obs, a)).ravel() for a in OBS_ATTRS]
+    return np.concatenate(parts).astype(np.float32, copy=False)
+
+def detect_attrs(obs) -> Dict[str,bool]:
+    names = ["bus_v","bus_freq","load_v","load_p","load_q"]
+    return {n: hasattr(obs, n) and getattr(obs, n) is not None for n in names}
+
+def get_sizes(obs) -> Tuple[Optional[int], Optional[int]]:
+    n_bus, n_load = None, None
+    if hasattr(obs, "bus_v") and getattr(obs, "bus_v") is not None:
+        n_bus = int(np.asarray(getattr(obs, "bus_v")).size)
+    if hasattr(obs, "load_p") and getattr(obs, "load_p") is not None:
+        n_load = int(np.asarray(getattr(obs, "load_p")).size)
+    return n_bus, n_load
