@@ -39,8 +39,9 @@ A minimal example
     del env
 
 
- Reference
-===========
+
+Reference
+=========
 
 .. automodule:: gridpack.state_estimation
    :members:
