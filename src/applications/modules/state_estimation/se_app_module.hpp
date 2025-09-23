@@ -7,7 +7,7 @@
 /**
  * @file   se_app_module.hpp
  * @author Yousu Chen, Bruce Palmer
- * @date   2025-09-22 13:19:36 d3g096
+ * @date   2025-09-23 11:31:09 d3g096
  * @Last modified 1/23/2015
  *
  * @brief
@@ -56,6 +56,13 @@ class SEAppModule
      */
     std::vector<gridpack::state_estimation::Measurement>
     getMeasurements(gridpack::utility::Configuration::ChildCursors measurements);
+
+  /**
+   * Set the list of measurements.
+   * @param measurements a vector of @c Measurment 
+   */
+  void
+  setMeasurements(std::vector<Measurement>& measurments);
 
     /**
      * Read in and partition the network. The input file is read

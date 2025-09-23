@@ -7,7 +7,7 @@
 /**
  * @file   se_app_module.cpp
  * @author Yousu Chen, Bruce Palmer
- * @date   2014-09-18 12:27:18 d3g096
+ * @date   2025-09-23 11:21:35 d3g096
  * Last updated: 8/5/2014 
  *
  * @brief
@@ -333,6 +333,13 @@ void gridpack::state_estimation::SEAppModule::readMeasurements(void)
 
   timer->stop(t_meas);
   timer->stop(t_total);
+}
+
+void
+gridpack::state_estimation::SEAppModule::setMeasurements
+(std::vector<gridpack::state_estimation::Measurement>& measurements)
+{
+  p_factory->setMeasurements(measurements);
 }
 
 /**

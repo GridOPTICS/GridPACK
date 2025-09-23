@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created August 11, 2025 by Perkins
-# Last Change: 2025-09-22 15:01:32 d3g096
+# Last Change: 2025-09-23 12:06:59 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -52,12 +52,16 @@ mconfig.open(measname, comm)
 
 measures = se.getMeasurements(mconfig)
 
+# List some measurements
 for m in measures:
-    print(m)
+    if m.type() == "VM":
+        print("%s: Bus %d: %f, %f" % (m.type(), m.busid, m.value, m.deviation))
 
 se.readNetwork(config)
 se.initialize()
-se.readMeasurements()
+
+#se.readMeasurements()
+se.setMeasurements(measures)
 
 se.solve()
 se.saveData()

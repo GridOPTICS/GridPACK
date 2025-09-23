@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August  6, 2025 by Perkins
-// Last Change: 2025-09-22 14:59:20 d3g096
+// Last Change: 2025-09-23 11:41:40 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/stl_bind.h>
@@ -135,8 +135,18 @@ which the network was read.
            measures = self.getMeasurements(mcursors);
            return(measures);
          }, R"eof(
-Get measurments from an open Configuration. 
+Get measurements from an open Configuration. 
 )eof")
+
+    .def("setMeasurements", &gse::SEAppModule::setMeasurements,
+         R"eof(
+Set bus and branch measurements. 
+
+Parameters:
+
+measurments a list of Measurement possibly from getMeasurements()
+)eof") 
+           
 
     .def("solve", &gse::SEAppModule::solve,
          R"eof( 
