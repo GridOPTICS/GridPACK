@@ -10,13 +10,18 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August  6, 2025 by Perkins
-// Last Change: 2025-08-11 13:00:19 d3g096
+// Last Change: 2025-09-22 14:59:20 d3g096
 // -------------------------------------------------------------
 
+#include <pybind11/stl_bind.h>
+#include <cstring>
+#include <stdexcept>
 #include "common.hpp"
 #include "gridpack/applications/modules/state_estimation/se_app_module.hpp"
 
 namespace gse = gridpack::state_estimation;
+
+PYBIND11_MAKE_OPAQUE(std::vector<gse::Measurement>)
 
 // -------------------------------------------------------------
 // init_gridpack_se
@@ -28,6 +33,65 @@ init_gridpack_se(py::module& gpm)
   py::module sem =
     gpm.def_submodule("state_estimation", "GridPACK state estimation module");
 
+
+  // -------------------------------------------------------------
+  // gridpack.state_estimation.Measurement
+  // -------------------------------------------------------------
+  py::class_<gse::Measurement> meas(sem, "Measurement");
+
+  meas.doc() = ("Container for state estimation measurement data");
+
+  meas
+    .def(py::init<>())
+    .def_readwrite("busid", &gse::Measurement::p_busid)
+    .def_readwrite("fbusid", &gse::Measurement::p_fbusid)
+    .def_readwrite("tbusid", &gse::Measurement::p_tbusid)
+    .def_readwrite("value", &gse::Measurement::p_value)
+    .def_readwrite("deviation", &gse::Measurement::p_deviation)
+    .def("type", [](gse::Measurement &self) -> std::string {
+      std::string result(self.p_type);
+      return result;
+    }, R"eof(
+Get measurement type.
+)eof")
+    .def("type", [](gse::Measurement &self, const std::string& code) {
+      if (code.length() > 4) {
+        std::string msg("Invalid Measurement type: ");
+        msg += code;
+        throw std::runtime_error(msg);
+      }
+      strncpy(self.p_type, code.c_str(), 4);
+    }, R"eof(
+Set measurment type, one of "VA", "VM", "VUL", "VLL", "PIJ", "QIJ"
+)eof")
+    .def("ckt", [](gse::Measurement &self) -> std::string {
+      std::string result(self.p_ckt);
+      return result;
+    }, R"eof(
+Get measurement ckt.
+)eof")
+    .def("ckt", [](gse::Measurement &self, const std::string& code) {
+      if (code.length() > 3) {
+        std::string msg("Invalid Measurement ckt: ");
+        msg += code;
+        throw std::runtime_error(msg);
+      }
+      strncpy(self.p_ckt, code.c_str(), 3);
+    }, R"eof(
+Set measurment ckt"
+)eof")
+    ;
+
+
+  // -------------------------------------------------------------
+  // gridpack.state_estimation.MeasurementVector
+  // -------------------------------------------------------------
+
+  py::bind_vector< std::vector< gse::Measurement > >(sem, "MeasurementVector");
+
+  // -------------------------------------------------------------
+  // gridpack.state_estimation.SEApp
+  // -------------------------------------------------------------
   py::class_<gse::SEAppModule> seapp(sem, "SEApp");
   
   seapp.doc() = ("State estimation application module");
@@ -58,6 +122,20 @@ network components using data from data collection
 Read branch and bus measurements. These will come from a separate
 file.  The name of this file comes from the input configuration from
 which the network was read.
+)eof")
+
+    .def("getMeasurements",
+         [](gse::SEAppModule& self, gpu::Configuration& config) ->
+         std::vector<gse::Measurement> {
+           gpu::Configuration::CursorPtr cursor;
+           cursor = config.getCursor("Measurements");
+           gpu::Configuration::ChildCursors mcursors;
+           cursor->children(mcursors);
+           std::vector<gse::Measurement> measures;
+           measures = self.getMeasurements(mcursors);
+           return(measures);
+         }, R"eof(
+Get measurments from an open Configuration. 
 )eof")
 
     .def("solve", &gse::SEAppModule::solve,

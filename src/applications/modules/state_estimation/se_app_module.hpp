@@ -7,7 +7,7 @@
 /**
  * @file   se_app_module.hpp
  * @author Yousu Chen, Bruce Palmer
- * @date   2025-08-07 14:20:11 d3g096
+ * @date   2025-09-22 13:19:36 d3g096
  * @Last modified 1/23/2015
  *
  * @brief
@@ -54,8 +54,8 @@ class SEAppModule
      * @param cursor pointer to contingencies in input deck
      * @return vector of measurements
      */
-    std::vector<gridpack::state_estimation::Measurement> getMeasurements(
-        gridpack::utility::Configuration::ChildCursors measurements);
+    std::vector<gridpack::state_estimation::Measurement>
+    getMeasurements(gridpack::utility::Configuration::ChildCursors measurements);
 
     /**
      * Read in and partition the network. The input file is read

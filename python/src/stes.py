@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created August 11, 2025 by Perkins
-# Last Change: 2025-08-12 08:21:44 d3g096
+# Last Change: 2025-09-22 15:01:32 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -43,9 +43,22 @@ config.open(inname, comm)
 
 se = gridpack.state_estimation.SEApp()
 
+measname = config.get("Configuration.State_estimation.measurementList")
+print(measname)
+
+mconfig = gridpack.Configuration()
+mconfig.open(measname, comm)
+
+
+measures = se.getMeasurements(mconfig)
+
+for m in measures:
+    print(m)
+
 se.readNetwork(config)
 se.initialize()
 se.readMeasurements()
+
 se.solve()
 se.saveData()
 se.write()
