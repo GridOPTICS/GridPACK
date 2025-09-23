@@ -4,7 +4,7 @@
 
 The state estimation Python module closely mirrors the ``SEAppModule``
 C++ interface, including reading, manipulation, and setting
-``Measurement``s. 
+``Measurement`` instances. 
 
 Usage
 =====

@@ -40,7 +40,7 @@ GridPACK HADREC Application module
    **fullInitializationBeforeDynSimuSteps(self:
    gridpack.hadrec.Module, s: str = '', BusFaults:
    gridpack.dynamic_simulation.EventVector =
-   <gridpack.dynamic_simulation.EventVector object at 0x1296345e2eb0>,
+   <gridpack.dynamic_simulation.EventVector object at 0xf3e1627f670>,
    pfcase_idx: int = -1, dscase_idx: int) -> None**
 
    **getBranchEndpoints(self: gridpack.hadrec.Module, arg0: int) ->
@@ -138,7 +138,7 @@ GridPACK HADREC Application module
 
    **initializeDynSimu(self: gridpack.hadrec.Module, faults:
    gridpack.dynamic_simulation.EventVector =
-   <gridpack.dynamic_simulation.EventVector object at 0x1296345cc870>,
+   <gridpack.dynamic_simulation.EventVector object at 0xf3e16274770>,
    dscase_idx: int = -1) -> None**
 
    **isDynSimuDone(self: gridpack.hadrec.Module) -> bool**
