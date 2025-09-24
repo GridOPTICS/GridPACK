@@ -35,6 +35,12 @@
  * Number of loads on bus
  * type: integer
  */
+
+/**
+ * Alpha-numeric identifier assigned to load
+ * type: string
+ */
+#define LOAD_NAME "LOAD_NAME"
 #define LOAD_NUMBER "LOAD_NUMBER"
 
 /**

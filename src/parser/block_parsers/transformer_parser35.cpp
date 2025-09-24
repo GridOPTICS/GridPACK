@@ -565,7 +565,7 @@ void gridpack::parser::TransformerParser35::parse(
       // Add parameters from line 2
       /*
        * type: float
-       * SBASE2
+       * SBASE1_2
        */
       double sbase2 = atof(split_line2[2].c_str());
       p_branchData[l_idx]->addValue(TRANSFORMER_SBASE1_2,sbase2,nelems);
@@ -581,10 +581,10 @@ void gridpack::parser::TransformerParser35::parse(
       double windv1 = atof(split_line3[0].c_str());
       double windv2 = atof(split_line4[0].c_str());
       if(cw == 2) {
-	double nomv1 = atof(split_line3[1].c_str());
-	double nomv2 = atof(split_line4[1].c_str());
-	windv1 = windv1/nomv1;
-	windv2 = windv2/nomv2;
+        double nomv1 = atof(split_line3[1].c_str());
+        double nomv2 = atof(split_line4[1].c_str());
+        windv1 = windv1/nomv1;
+        windv2 = windv2/nomv2;
       }
       double tap = windv1/windv2;
       p_branchData[l_idx]->addValue(BRANCH_TAP,tap,nelems);
@@ -598,7 +598,8 @@ void gridpack::parser::TransformerParser35::parse(
        */
       double rval = atof(split_line2[0].c_str());
       p_branchData[l_idx]->addValue(TRANSFORMER_R1_2,rval,nelems);
-      rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio to the req of the transformer
+      rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio
+                                      // to the req of the transformer
       if (sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
       } else {
@@ -613,7 +614,8 @@ void gridpack::parser::TransformerParser35::parse(
        */
       rval = atof(split_line2[1].c_str());
       p_branchData[l_idx]->addValue(TRANSFORMER_X1_2,rval,nelems);
-      rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio to the xeq of the transformer
+      rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio
+                                      // to the xeq of the transformer
       if (sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
       } else {
@@ -658,7 +660,7 @@ void gridpack::parser::TransformerParser35::parse(
           atof(split_line3[12].c_str()),nelems);
       p_branchData[l_idx]->addValue(BRANCH_RATE11,
           atof(split_line3[13].c_str()),nelems);
-      p_branchData[l_idx]->addValue(BRANCH_RATE11,
+      p_branchData[l_idx]->addValue(BRANCH_RATE12,
           atof(split_line3[14].c_str()),nelems);
 
       /*

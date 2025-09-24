@@ -41,6 +41,6 @@ enum EMTMachineIntegrationType{EXPLICIT,IMPLICIT,IMPLICITEXPLICIT};
 #define BRANCHBUFSIZE 60
 
 // PTI file version
-enum PTIFileVersion {PTI23, PTI33, PTI34, PTI35};
+enum PTIFileVersion {PTI23, PTI33, PTI34, PTI35, PTI36};
 
 #endif

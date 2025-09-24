@@ -27,6 +27,18 @@ state estimation, contingency analysis, dynamic simulation, and EMT simulation.
 These directories also contain sample input networks and input files. Options
 for different solvers can be found in these files.
 
+Most of these applications can use different format PSS/E files for input. The
+standard format is PSS/E v23 and is specified via the ``networkConfiguration``
+field in the input XML file. The v33, v34, v35 and v36 formats can be used by
+appending ``_v33``, ``_v34``, ``_v35``, or ``v_36`` to the
+``networkConfiguration`` field. For example, to include a version 33
+network configuration
+file, modify the network configuration line in the input XML file to
+
+::
+
+   <networkConfiguration_v33> v33_format.raw </networkConfiguration_v33>
+
 Power Flow
 ----------
 
@@ -48,7 +60,36 @@ network configuration file is read in. This can be done with the call
 The ``Configuation`` object should already be pointing to an open
 file containing a ``Powerflow`` block. This block contains a
 ``networkConfiguration`` field that has the name of the PSS/E format
-file containing the network information. The network configuration file
+file containing the network information. An example powerflow input file is
+shown below:
+
+::
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <Configuration>
+    <Powerflow>
+      <networkConfiguration> IEEE14.raw </networkConfiguration>
+      <maxIteration>50</maxIteration>
+      <tolerance>1.0e-6</tolerance>
+      <LinearSolver>
+        <PETScOptions>
+          -ksp_view
+          -ksp_type richardson
+          -pc_type lu
+          -pc_factor_mat_solver_type superlu_dist
+          -ksp_max_it 1
+        </PETScOptions>
+      </LinearSolver>
+    </Powerflow>
+  </Configuration>
+
+This example specifies the input network configuration, the maximum number of
+iterations in the non-linear Newton-Raphson solver, the solution tolerance
+and the properties of the linear solver. This is a minimal example and  more
+options for the solver can be used. Readers are encouraged to look at the
+examples that are copied into the powerflow directory as part of the build.
+
+The network configuration file
 is read directly from the input deck by the
 ``readNetwork`` method. The ``PFNetwork`` is defined in
 the the ``gridpack.hpp`` header file. The configuration module is

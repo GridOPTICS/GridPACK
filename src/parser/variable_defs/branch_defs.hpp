@@ -209,6 +209,15 @@
 #define BRANCH_METER "BRANCH_METER"
 
 /**
+ * Bypass flag
+ * 0: disable bypass 
+ * 1: bypass branch and treat it as zero impedence line
+ * type: integer
+ * indexed
+ */
+#define BRANCH_BYPASS "BRANCH_BYPASS"
+
+/**
  * Parameter describing length of line
  * type: real float
  * indexed

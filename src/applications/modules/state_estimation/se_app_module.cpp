@@ -22,6 +22,7 @@
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/parser/PTI34_parser.hpp"
 #include "gridpack/parser/PTI35_parser.hpp"
+#include "gridpack/parser/PTI36_parser.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/gen_matrix_map.hpp"
 #include "gridpack/mapper/gen_vector_map.hpp"
@@ -109,7 +110,7 @@ std::vector<gridpack::state_estimation::Measurement>
 }
 
 
-enum Parser{PTI23, PTI33, PTI34, PTI35};
+enum Parser{PTI23, PTI33, PTI34, PTI35, PTI36};
 
 /**
  * Read in and partition the network. The input file is read
@@ -137,6 +138,10 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
       filetype = PTI33;
     } else if (secursor->get("networkConfiguration_v34",&filename)) {
       filetype = PTI34;
+    } else if (secursor->get("networkConfiguration_v35",&filename)) {
+      filetype = PTI35;
+    } else if (secursor->get("networkConfiguration_v36",&filename)) {
+      filetype = PTI36;
     } else {
       printf("No network configuration file specified\n");
       return;
@@ -172,6 +177,12 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
     }
   } else if (filetype == PTI35) {
     gridpack::parser::PTI35_parser<SENetwork> parser(network);
+    parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
+  } else if (filetype == PTI36) {
+    gridpack::parser::PTI36_parser<SENetwork> parser(network);
     parser.parse(filename.c_str());
     if (phaseShiftSign == -1.0) {
       parser.changePhaseShiftSign();

@@ -229,6 +229,25 @@ void gridpack::parser::GeneratorParser35::parse(
           atof(split_line[29].c_str()), ngen);
     }
 
+    // These entries only appear in v36 format. Otherwise, v35 and v36 are
+    // identical
+    if (nstr > 30) {
+      if (split_line[30].find_first_of('\'',0) != std::string::npos) {
+        gridpack::utility::StringUtils util;
+        util.trim(split_line[30]);
+        std::string tmp = util.trimQuotes(split_line[30]);
+        p_busData[l_idx]->addValue(GENERATOR_DROOPNAME, tmp.c_str(), ngen);
+      }
+    }
+    if (nstr > 31) {
+      if (split_line[31].find_first_of('\'',0) != std::string::npos) {
+        gridpack::utility::StringUtils util;
+        util.trim(split_line[31]);
+        std::string tmp = util.trimQuotes(split_line[31]);
+        p_busData[l_idx]->addValue(GENERATOR_NAME, tmp.c_str(), ngen);
+      }
+    }
+
     // Increment number of generators in data object
     if (ngen == 0) {
       ngen = 1;

@@ -239,6 +239,9 @@ assumes that the build directory is located directly under
 script is pointing to the directory containing the
 ``CMakeLists.txt`` file.
 
+Running GridPACK Applications
+-----------------------------
+
 Once the GridPACK framework has been built, applications and framework
 tests can be run using standard MPI scripts for running jobs. A typical
 invocation to run a code ``code.x`` on some number of processors is
@@ -247,10 +250,15 @@ invocation to run a code ``code.x`` on some number of processors is
 
    mpirun -n 2 code.x input.xml
 
-In this case the code will run on 2 processors. Different platforms may
-use different scripts to run the parallel job. Consult your local system
-documentation for details. Applications may also have additional
-arguments that are processed inside the application itself. Most
-GridPACK applications will take an argument representing the input file
-for the application. In this example, the input file is
-``input.xml``.
+The command ``mpirun`` is used to launch an application on multiple
+processors and invokes the MPI library. The ``-n`` indicates the number
+of processors that the run will use.  In this case the code will run on
+2 processors.  Note that different MPI implementations may use different
+commands for launching MPI jobs.  Another common command is ``mpiexec``.
+Consult your local system documentation for details. Applications may
+also have additional arguments that are processed inside the application
+itself. Most GridPACK applications will take an argument representing
+the input file for the application. In this example, the input file is
+``input.xml``. Additional information needed to execute the job is
+typically located within the input XML file, so GridPACK application do
+not take more than one argument.

@@ -31,6 +31,12 @@
 #define SHUNT_NUMBER "SHUNT_NUMBER"
 
 /**
+ * Alpha-numeric identifier assigned to shunt
+ * type: string
+ */
+#define SHUNT_NAME "SHUNT_NAME"
+
+/**
  * Character string to identify shunt on buses with more than one shunt
  * type: string
  * indexed

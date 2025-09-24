@@ -154,22 +154,6 @@ template <class _data_struct> class GenrouParser
       } else {
         data->setValue(GENERATOR_S12, data_struct.s12, g_id);
       }
-
-      // GENERATOR_TQOP
-      if (!data->getValue(GENERATOR_TQOP,&rval,g_id)) {
-        data->addValue(GENERATOR_TQOP,
-            data_struct.tqop, g_id);
-      } else {
-        data->setValue(GENERATOR_TQOP, data_struct.tqop, g_id);
-      }
-
-      // GENERATOR_XQP
-      if (!data->getValue(GENERATOR_XQP,&rval,g_id)) {
-        data->addValue(GENERATOR_XQP,
-            data_struct.xqp, g_id);
-      } else {
-        data->setValue(GENERATOR_XQP, data_struct.xqp, g_id);
-      }
     }
 
     /**
@@ -278,7 +262,7 @@ template <class _data_struct> class GenrouParser
               atof(split_line[10].c_str()), g_id);
         } else {
           data->setValue(GENERATOR_XQ,
-              atof(split_line[9].c_str()), g_id);
+              atof(split_line[10].c_str()), g_id);
         }
       } 
 
