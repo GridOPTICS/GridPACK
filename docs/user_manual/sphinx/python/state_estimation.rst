@@ -14,8 +14,6 @@ A minimal example
 
 .. code:: python
 
-   import sys, os
-   from optparse import OptionParser
    import gridpack
    import gridpack.state_estimation
 
