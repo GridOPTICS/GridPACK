@@ -42,6 +42,7 @@ functionality appears in the develop branch.
   - **Bill:** Add note on python interface updates
   - **Somebody:** Add note EMT capability
   - **Yuan or Yousu:** Add note on improvements to dynamic simulation
+  - **Shri and/or anyone else:** Add note on variable timestepping.
   - Updated parsers and dictionary to handle wind machines.
 - Changed
   - The user manual has been moved to a Github ReadTheDocs location and is now
