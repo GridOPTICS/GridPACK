@@ -20,6 +20,10 @@ functionality appears in the develop branch.
     libraries used by GridPACK and to build and install GridPACK based on those
     libraries. These scripts work most of the time, but may need to be
     customized for individual platforms.
+  - GridPACK can be initialized from a user-supplied communicator (if using GA
+    5.9 or greater) instead of forcing GridPACK to initialize on MPI_COMM_WORLD.
+    This can be useful if integrating GridPACK with other applications that
+    may be spawning off GridPACK simulations as individual tasks.
   - Added new version of dynamic simulation based on variable time-stepping
     algorithm. This can potentially run much faster than fixed timestep
     implementations since large timesteps can be used when the system is
@@ -33,12 +37,12 @@ functionality appears in the develop branch.
     in and then exported will have less data than the original file. In general,
     if a variable or block is not used by the current GridPACK applications,
     it is likely that it will not appear in the exported file.
-  - Yousu or Yuan: Add description of functionality imported from Hadrec project
+  - **Yousu or Yuan:** Add note on functionality imported from Hadrec project
     to GridPACK.
-  - Modified PSS/E parsers so that they can read files that use the convention
-    "value1,value2,,,,value6,value7....". The missing values are assumed to be
-    0. True PSS/E parser may set these to a default value. If this is not 0,
-    then these values will fail in GridPACK.
+  - **Bill:** Add note on python interface updates
+  - **Somebody:** Add note EMT capability
+  - **Yuan or Yousu:** Add note on improvements to dynamic simulation
+  - Updated parsers and dictionary to handle wind machines.
 - Changed
   - The user manual has been moved to a Github ReadTheDocs location and is now
     available on the web. The previous PDF files are no longer supported.
@@ -50,3 +54,7 @@ functionality appears in the develop branch.
 - Fixed
   - Fixed bug in PSS/e parsers so that names containing '\' character are not
     confused with comments.
+  - Modified PSS/E parsers so that they can read files that use the convention
+    "value1,value2,,,,value6,value7....". The missing values are assumed to be
+    0. True PSS/E parsers may set these to a default value. If this is not 0,
+    then these values will fail in GridPACK.
