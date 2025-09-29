@@ -14,10 +14,9 @@ functionality appears in the develop branch.
 ## [3.5]
 - Known Limitations
   - 3-winding transformers are handled by splitting them into a star configuration,
-  which introduces a dummy bus and represents the transformer with three
-  equivalent 2-winding branches. This approach is currently integrated into the
-  PSS/E parsers. 
-  next release.
+    which introduces a dummy bus and represents the transformer with three
+    equivalent 2-winding branches. This approach is currently integrated into the
+    PSS/E parsers. 
 - Added
   - Added install_gridpack_deps.sh and install_gridpack.sh scripts to build
     libraries used by GridPACK and to build and install GridPACK based on those
@@ -40,6 +39,17 @@ functionality appears in the develop branch.
     in and then exported will have less data than the original file. In general,
     if a variable or block is not used by the current GridPACK applications,
     it is likely that it will not appear in the exported file.
+  - Expanded the dynamic simulation application by added many new models. These
+    include
+    - Added a grid-forming inverter-based resource (IBR) model (e.g. gdform) and
+      grid-following IBR models (e.g. regca1, regcb1, regcc1, epria1) and control
+      model (reeca1).
+    - Added block diagram components (e.g. DelayBlock, DelayBlockwithLimit,
+      PIBlockwithLimit) and updated old generator, exciter and governor models by
+      block diagram implementation.
+    - Added several new exciter and governor models (e.g. gast, hygov, ieeet1, sexs,
+      tgov1).
+    - Implemented wind turbine control blocks (e.g. wtara1, wtdta1, wtpta1, wttqa1).
   - Added HADREC (Hierarchical Adaptive Dynamic Resilience Coordinator) module
     providing real-time grid monitoring and control capabilities including load
     shedding, line/generator tripping, wide-area control signals for PSS, and
