@@ -12,9 +12,12 @@ The Unreleased section will be empty for tagged releases. Unreleased
 functionality appears in the develop branch.
 
 ## [3.5]
-- Known Bugs
-  - 3-winding transformers are not handled correctly by any of the existing
-    PSS/E parsers.
+- Known Limitations
+  - 3-winding transformers are handled by splitting them into a star configuration,
+  which introduces a dummy bus and represents the transformer with three
+  equivalent 2-winding branches. This approach is currently integrated into the
+  PSS/E parsers. 
+  next release.
 - Added
   - Added install_gridpack_deps.sh and install_gridpack.sh scripts to build
     libraries used by GridPACK and to build and install GridPACK based on those
@@ -37,16 +40,23 @@ functionality appears in the develop branch.
     in and then exported will have less data than the original file. In general,
     if a variable or block is not used by the current GridPACK applications,
     it is likely that it will not appear in the exported file.
-  - **Yousu or Yuan:** Add note on functionality imported from Hadrec project
-    to GridPACK.
-  - **Bill:** Add note on python interface updates
-  - **Somebody:** Add note EMT capability
-  - **Yuan or Yousu:** Add note on improvements to dynamic simulation
-  - **Shri and/or anyone else:** Add note on variable timestepping.
+  - Added HADREC (Hierarchical Adaptive Dynamic Resilience Coordinator) module
+    providing real-time grid monitoring and control capabilities including load
+    shedding, line/generator tripping, wide-area control signals for PSS, and
+    zone-based load/generation tracking with observation collection interfaces.
+  - Completed Python interface to power flow, HADREC, dynamic simulation
+    application modules.
+  - Added electromagnetic transient (EMT) simulation capability supporting
+    three-phase abc domain analysis with DAE-based time-domain simulations
+    and abc-to-dq0 reference frame transformations.
+  - Implemented variable timestepping algorithms in dynamic simulation and EMT
+    modules, enabling adaptive timestep control for improved computational
+    efficiency and numerical stability during system transients.
   - Updated parsers and dictionary to handle wind machines.
 - Changed
   - The user manual has been moved to a Github ReadTheDocs location and is now
     available on the web. The previous PDF files are no longer supported.
+  - The user manual now includes Python interface documentation.
   - The webpages at www.gridpack.pnl.gov based on Wikimedia are no longer
     supported. These webpages have been converted to markdown syntax and are
     now part of the GitHub repository. Documentation can be found by scrolling
