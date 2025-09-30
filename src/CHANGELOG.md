@@ -12,11 +12,6 @@ The Unreleased section will be empty for tagged releases. Unreleased
 functionality appears in the develop branch.
 
 ## [3.5]
-- Known Limitations
-  - 3-winding transformers are handled by splitting them into a star configuration,
-    which introduces a dummy bus and represents the transformer with three
-    equivalent 2-winding branches. This approach is currently integrated into the
-    PSS/E parsers. 
 - Added
   - Added install_gridpack_deps.sh and install_gridpack.sh scripts to build
     libraries used by GridPACK and to build and install GridPACK based on those
@@ -79,3 +74,5 @@ functionality appears in the develop branch.
     "value1,value2,,,,value6,value7....". The missing values are assumed to be
     0. True PSS/E parsers may set these to a default value. If this is not 0,
     then these values will fail in GridPACK.
+- Known Limitations
+  - 3-winding transformers are not fully supported PSS/E version 33-36 parsers.
