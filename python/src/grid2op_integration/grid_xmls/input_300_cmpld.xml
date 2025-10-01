@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Powerflow>
-    <networkConfiguration_v34> IEEE39bus_IBR.raw </networkConfiguration_v34>
-    <maxIteration>50</maxIteration>
-    <tolerance>1.0e-6</tolerance>
+    <networkConfiguration> 300bus_v23_no0imp_pslf.raw </networkConfiguration>
+    <maxIteration>20</maxIteration>
+    <tolerance>1.0e-8</tolerance>
+    <qLimit>True</qLimit>
     <LinearSolver>
+      <SolutionTolerance>1.0E-11 </SolutionTolerance> 
       <PETScOptions>
         <!-ksp_view>
         -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_solver_package mumps
+        -pc_factor_mat_solver_type mumps
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
@@ -23,7 +25,7 @@
     <NewtonRaphsonSolver>
       <SolutionTolerance>1.0E-05</SolutionTolerance>
       <FunctionTolerance>1.0E-05</FunctionTolerance>
-      <MaxIterations>50</MaxIterations>
+      <MaxIterations>20</MaxIterations>
       <LinearSolver>
         <SolutionTolerance>1.0E-08</SolutionTolerance>
         <MaxIterations>50</MaxIterations>
@@ -53,70 +55,39 @@
   </Powerflow>
   <Dynamic_simulation>
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
-    <generatorParameters> IEEE39bus1.dyr </generatorParameters>
-    <simulationTime>5.0</simulationTime>
-    <timeStep>0.005</timeStep>
+    <!--generatorParameters> 300bus_detail_model_cmpld_motorW.dyr </generatorParameters-->
+    <generatorParameters> 300bus_detail_model_cmpld_combine.dyr </generatorParameters>
+    <simulationTime>10</simulationTime>
+    <timeStep>0.001</timeStep>
     <Events>
       <faultEvent>
-        <beginFault> 0.03</beginFault>
-        <endFault>   0.06</endFault>
-        <faultBranch>16 17</faultBranch>
-        <timeStep>   0.01</timeStep>
+        <beginFault> 2.0</beginFault>
+        <endFault>   2.04</endFault>
+        <faultBranch>90  92</faultBranch>
+
+        <timeStep>   0.001</timeStep>
       </faultEvent>
-<!--      	<GenStatus>
-	<bus> 33 </bus>
-	<id> 1 </id>
-	<time> 1.0 </time>
-	<status> 0 </status>
-      </GenStatus>-->
     </Events>
     <generatorWatch>
       <generator>
-        <busID> 31 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 32 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 33 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-            <generator>
-        <busID> 34 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 35 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 36 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 37 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 38 </busID>
-        <generatorID> 1 </generatorID>
-      </generator>
-      <generator>
-        <busID> 39 </busID>
-        <generatorID> 1 </generatorID>
+       <busID> 10063 </busID>
+       <generatorID> 1 </generatorID>
       </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
-    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
+    <generatorWatchFileName> 300bus_cmpld_gridpack_test_gen10063.csv </generatorWatchFileName>
     <LinearSolver>
+      <SolutionTolerance>1.0E-12 </SolutionTolerance> 
+      <ForceSerial>true</ForceSerial>
+      <InitialGuessZero>true</InitialGuessZero>
+      <SerialMatrixConstant>true</SerialMatrixConstant>
       <PETScOptions>
-        <!-ksp_view>
-        -ksp_type richardson
+        <!--
+                     -ksp_type richardson
+        -->
+        -ksp_type preonly
         -pc_type lu
-        -pc_factor_mat_solver_package mumps 
-        -ksp_max_it 1
+        -pc_factor_mat_ordering_type amd
       </PETScOptions>
     </LinearSolver>
     <LinearMatrixSolver>

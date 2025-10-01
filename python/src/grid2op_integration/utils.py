@@ -95,9 +95,33 @@ class DataCollector():
         res_trafo.to_csv(f"/qfs/projects/gridpack_wind/grid2op_interface/temp/{filename_prefix}_res_trafo.csv")
 
 # ------------ Helpers ------------
+def _to_float(x):
+    try:
+        return float(str(x).strip())
+    except Exception:
+        return None
+    
 def read_gridpack_stepsize(xml_path: str) -> float:
-    with open(xml_path, "r") as f: txt = f.read()
-    bs = BeautifulSoup(txt, "lxml")
+    with open(xml_path, "r", encoding="utf-8") as f:
+        cleaned = "\n".join(line for line in f if not line.lstrip().startswith("<!-"))
+
+    bs = BeautifulSoup(cleaned, "xml")
+    dyn = bs.find("Dynamic_simulation")
+    global_dt = _to_float(dyn.find("timeStep").string if dyn else None)
+
+    events = []
+    for fe in bs.select("Dynamic_simulation > Events > faultEvent"):
+        events.append({
+            "beginFault": _to_float(fe.find("beginFault").string if fe.find("beginFault") else None),
+            "endFault":   _to_float(fe.find("endFault").string   if fe.find("endFault")   else None),
+            "timeStep":   _to_float(fe.find("timeStep").string   if fe.find("timeStep")   else None),  # per-event
+        })
+
+    return {
+        "global_timeStep": global_dt,
+        "faultEvents": events,
+    }
+
     return float(bs.find("timestep").text)
 
 
