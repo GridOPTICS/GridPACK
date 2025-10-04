@@ -13,6 +13,16 @@ functionality appears in the develop branch.
 
 ## [3.5]
 - Added
+  - A new application for electromagnetic transient simulation has been added to GridPACK. Its features are as follows:
+    - Has typical models of synchronous generators (GENROU) and controls (exciter and turbine governor)
+    - Includes Grid-Following (REGCA1) and Grid-Forming (REGCFM) inverter models
+    - Transmission lines are modeled as lumped parameter lines
+    - Loads are modeled as constant impedance loads
+    - Uses .raw and .dyr as inputs.
+    - Steady-state initialization
+    - Fixed-step and variable time-stepping support
+    - Parallelization through network partitioning
+    - Number of test cases including IEEE-9bus, IEEE-39bus, Kundur 2-area network, and WECC-240 bus.
   - Added install_gridpack_deps.sh and install_gridpack.sh scripts to build
     libraries used by GridPACK and to build and install GridPACK based on those
     libraries. These scripts work most of the time, but may need to be
@@ -67,6 +77,7 @@ functionality appears in the develop branch.
     now part of the GitHub repository. Documentation can be found by scrolling
     to the README.md section of the GitHub repository for GridPACK and following
     the links from there.
+  - Updated Math Module DAE solver to support both real and complex datatypes
 - Fixed
   - Fixed bug in PSS/e parsers so that names containing '\' character are not
     confused with comments.
