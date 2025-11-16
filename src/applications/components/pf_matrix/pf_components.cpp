@@ -1029,13 +1029,21 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
 	pval = p_pFac[i]*(p_Pinj*p_sbase+pl);
 	qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
       } else if (p_isPV) {
-	pval = p_pg[i];
 	if(p_gstatus[i]) {
+	  pval = p_pg[i];
 	  qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	} else {
+	  pval = 0.0;
+	  qval = 0.0;
 	}
       } else {
-	pval = p_pg[i];
-	qval = p_qg[i];
+	if(p_gstatus[i]) {
+	  pval = p_pg[i];
+	  qval = p_qg[i];
+	} else {
+	  pval = 0.0;
+	  qval = 0.0;
+	}
       }
       if (!strcmp(signal,"power")) {
         sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
@@ -1222,20 +1230,41 @@ void gridpack::powerflow::PFBus::saveData(
 	data->addValue("GENERATOR_PF_QGEN",rval,i);
       }
     } else if (p_isPV) {
-      if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
-	data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
-      }
-      rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
-      if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
-	data->addValue("GENERATOR_PF_QGEN",rval,i);
+      if (p_gstatus[i]) {
+        if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+        }
+        rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+        if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",rval,i);
+        }
+      } else {
+        if (!data->setValue("GENERATOR_PF_PGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",0.0,i);
+        }
+        if (!data->setValue("GENERATOR_PF_QGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",0.0,i);
+        }
       }
     } else {
-      if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
-	data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+      if (p_gstatus[i]) {
+        if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+        }
+      } else {
+        if (!data->setValue("GENERATOR_PF_PGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",0.0,i);
+        }
       }
 
-      if (!data->setValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i)) {
-	data->addValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i);
+      if (p_gstatus[i]) {
+        if (!data->setValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i);
+        }
+      } else {
+        if (!data->setValue("GENERATOR_PF_QGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",0.0,i);
+        }
       }
     }
   }
