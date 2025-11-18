@@ -7,6 +7,8 @@
  * transformer_parser35.cpp
  *       Created on: December 5, 2022
  *           Author: Bruce Palmer
+ *       Updated 3-winding transformer: Nov. 17th, 2025
+ *           Author: Yousu Chen
  */
 #include "transformer_parser35.hpp"
 
@@ -182,6 +184,20 @@ void gridpack::parser::TransformerParser35::parse(
         r31 = atof(split_line2[6].c_str());
         x31 = atof(split_line2[7].c_str());
         sb31 = atof(split_line2[8].c_str());
+        // Convert pairwise impedances to case base BEFORE delta-to-star conversion
+        if (sb12 != p_case_sbase && sb12 != 0.0) {
+          r12 = r12*p_case_sbase/sb12;
+          x12 = x12*p_case_sbase/sb12;
+        }
+        if (sb23 != p_case_sbase && sb23 != 0.0) {
+          r23 = r23*p_case_sbase/sb23;
+          x23 = x23*p_case_sbase/sb23;
+        }
+        if (sb31 != p_case_sbase && sb31 != 0.0) {
+          r31 = r31*p_case_sbase/sb31;
+          x31 = x31*p_case_sbase/sb31;
+        }
+        // Now apply delta-to-star conversion with all impedances on same base
         r1 = 0.5*(r12+r31-r23);
         x1 = 0.5*(x12+x31-x23);
         b1 = 0.0;
@@ -191,19 +207,6 @@ void gridpack::parser::TransformerParser35::parse(
         r3 = 0.5*(r23+r31-r12);
         x3 = 0.5*(x23+x31-x12);
         b3 = 0.0;
-        // correct R and X values, if necessary
-        if (sb12 != p_case_sbase && sb12 == 0.0) {
-          r1 = r1*p_case_sbase/sb12;
-          x1 = x1*p_case_sbase/sb12;
-        }
-        if (sb23 != p_case_sbase && sb23 == 0.0) {
-          r2 = r2*p_case_sbase/sb23;
-          x2 = x2*p_case_sbase/sb23;
-        }
-        if (sb31 != p_case_sbase && sb31 == 0.0) {
-          r3 = r3*p_case_sbase/sb31;
-          x3 = x3*p_case_sbase/sb31;
-        }
 
         // create branch between new bus and bus I
         int index = p_branchData.size();
