@@ -466,4 +466,20 @@
     <Value>-14.9385</Value>
     <Deviation>0.0050</Deviation>
   </Measurement>
+  <Measurement>
+    <Type>IIJ</Type>
+    <FromBus>13</FromBus>
+    <ToBus>14</ToBus>
+    <CKT>BL</CKT>
+    <Value>0.0564</Value>
+    <Deviation>0.0100</Deviation>
+  </Measurement>
+  <Measurement>
+    <Type>IJI</Type>
+    <FromBus>13</FromBus>
+    <ToBus>14</ToBus>
+    <CKT>BL</CKT>
+    <Value>0.0560</Value>
+    <Deviation>0.0100</Deviation>
+  </Measurement>
 </Measurements>

@@ -18,6 +18,9 @@
  * @date   2025-04-02
  *         Adding more functions to handle bad data detection and create more comprehensive outputs
  * @date   2025-04-20
+ *         Added IIJ and IJI measurements
+           Cleaned up debug information
+ * @date   2025-11-19
  * 
  */
 // -------------------------------------------------------------
@@ -188,15 +191,9 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
     // Apply voltage projection using the configurable limits
     if (p_enforce_v_limits) {
       if (p_v > p_v_max) {
-        if (getOriginalIndex() == 8) {
-          printf("Bus %d voltage projection: %f → %f\n", getOriginalIndex(), p_v, p_v_max);
-        }
         p_v = p_v_max;
         *p_vMag_ptr = p_v;
       } else if (p_v < p_v_min) {
-        if (getOriginalIndex() == 7) {
-          printf("Bus %d voltage projection: %f → %f\n", getOriginalIndex(), p_v, p_v_min);
-        }
         p_v = p_v_min;
         *p_vMag_ptr = p_v;
       }
@@ -669,8 +666,8 @@ void gridpack::state_estimation::SEBus::configureSE(void)
   for (i=0; i<nmeas; i++) {
 //   if (!isIsolated()) {
     std::string type = p_meas[i].p_type;
-    if (type == "VM" || type == "VA") {
-      if (!getReferenceBus()) { 
+    if (type == "VM" || type == "VA" || type == "VUL" || type == "VLL") {
+      if (!getReferenceBus()) {
         ncnt += 2;
       } else {
         ncnt++;
@@ -944,60 +941,58 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
       } else if (type == "VUL") {  // ADD THIS SECTION FOR VIRTUAL UPPER LIMIT
          p_v = *p_vMag_ptr;
          double limit = p_meas[i].p_value;
-          
-          // Only add non-zero Jacobian elements if the limit is violated
-         if (p_v > limit) {
-            if (!getReferenceBus()) {
-              // Angle derivative (zero)
-              jm = matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(0.0, 0.0);
-              rows[ncnt] = im;
-              cols[ncnt] = jm;
-              ncnt++;
-              
-              // Voltage derivative (one)
-              jm = matrixGetColIndex(1);
-              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
-              rows[ncnt] = im;
-              cols[ncnt] = jm;
-              ncnt++;
-            } else {
-              // Reference bus case
-              jm = matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
-              rows[ncnt] = im;
-              cols[ncnt] = jm;
-              ncnt++;
-            }
+
+         // Always add Jacobian elements to maintain consistent matrix structure
+         // The residual will be zero when not violated, so this won't affect the solution
+         if (!getReferenceBus()) {
+           // Angle derivative (zero)
+           jm = matrixGetColIndex(0);
+           values[ncnt] = gridpack::ComplexType(0.0, 0.0);
+           rows[ncnt] = im;
+           cols[ncnt] = jm;
+           ncnt++;
+
+           // Voltage derivative (one)
+           jm = matrixGetColIndex(1);
+           values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+           rows[ncnt] = im;
+           cols[ncnt] = jm;
+           ncnt++;
+         } else {
+           // Reference bus case
+           jm = matrixGetColIndex(0);
+           values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+           rows[ncnt] = im;
+           cols[ncnt] = jm;
+           ncnt++;
          }
       } else if (type == "VLL") { // ADD THIS SECTION FOR VIRTUAL LOWER LIMIT
          p_v = *p_vMag_ptr;
          double limit = p_meas[i].p_value;
-          
-         // Only add non-zero Jacobian elements if the limit is violated
-         if (p_v < limit) {
-            if (!getReferenceBus()) {
-              // Angle derivative (zero)
-              jm = matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(0.0, 0.0);
-              rows[ncnt] = im;
-              cols[ncnt] = jm;
-              ncnt++;
-              
-              // Voltage derivative (one)
-              jm = matrixGetColIndex(1);
-              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
-              rows[ncnt] = im;
-              cols[ncnt] = jm;
-              ncnt++;
-            } else {
-              // Reference bus case
-              jm = matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(1.0, 0.0);
-              rows[ncnt] = im;
-              cols[ncnt] = jm;
-              ncnt++;
-            }
+
+         // Always add Jacobian elements (maintain matrix structure)
+         // The residual will be zero when not violated
+         if (!getReferenceBus()) {
+           // Angle derivative (zero)
+           jm = matrixGetColIndex(0);
+           values[ncnt] = gridpack::ComplexType(0.0, 0.0);
+           rows[ncnt] = im;
+           cols[ncnt] = jm;
+           ncnt++;
+
+           // Voltage derivative (one)
+           jm = matrixGetColIndex(1);
+           values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+           rows[ncnt] = im;
+           cols[ncnt] = jm;
+           ncnt++;
+         } else {
+           // Reference bus case
+           jm = matrixGetColIndex(0);
+           values[ncnt] = gridpack::ComplexType(1.0, 0.0);
+           rows[ncnt] = im;
+           cols[ncnt] = jm;
+           ncnt++;
          }
       } else if (type == "PI") {
         // Use cached neighbor data to avoid repeated getNeighborBranches() calls
@@ -1323,16 +1318,20 @@ void gridpack::state_estimation::SEBus::vectorGetElementValues(ComplexType *valu
         } 
         // Handle virtual limit measurements
 	else if (type == "VUL") {
-          // Upper limit
-          estimated = std::min(p_v, measured);  
-          // If p_v <= measured, then estimated = p_v, so residual = measured - p_v (should be positive)
-          // If p_v > measured, then estimated = measured, so residual = 0
+          // Upper limit: only compute residual if limit is violated (consistent with Jacobian)
+          if (p_v > measured) {
+            estimated = p_v;  // Violation: residual = measured - p_v (negative, pushes voltage down)
+          } else {
+            estimated = measured;  // No violation: residual = 0
+          }
         }
 	else if (type == "VLL") {
-          // Lower limit
-          estimated = std::min(p_v, measured);  
-          // If p_v >= measured, then estimated = p_v, so residual = measured - p_v (should be positive)
-          // If p_v < measured, then estimated = measured, so residual = 0
+          // Lower limit: only compute residual if limit is violated (consistent with Jacobian)
+          if (p_v < measured) {
+            estimated = p_v;  // Violation: residual = measured - p_v (positive, pushes voltage up)
+          } else {
+            estimated = measured;  // No violation: residual = 0
+          }
         }
 	 else if (type == "VA") { // angle to radians
           estimated = p_a * 180.0 / M_PI;
@@ -1345,21 +1344,14 @@ void gridpack::state_estimation::SEBus::vectorGetElementValues(ComplexType *valu
         // Calculate residual
         double residual = measured - estimated;
         values[i] = ComplexType(residual, 0.0);
-        
-        // Debug for Bus 8 QI
-        if (getOriginalIndex() == 8 && type == "QI") {
-          printf("Step 1- Bus 8 QI in vectorGetElementValues: measured=%f, estimated=%f, residual=%f, assigned at index=%d\n", 
-                 measured, estimated, residual,idx[i]);
-        }
       }
     }
   } else if (p_mode == R_inv) {
     // Implement proper R_inv handling for branch measurements
     vectorGetElementIndices(idx);
     int nmeas = p_meas.size();
-    
+
     if (nmeas > 0) {
-      // Get current bus index for debugging
       int bus_idx = getOriginalIndex();
       
       for (int i = 0; i < nmeas; i++) {
@@ -1462,13 +1454,7 @@ bool gridpack::state_estimation::SEBus::vectorValues(ComplexType *values)
       // Store for later use
       p_Pinj = Pinj;
       p_Qinj = Qinj;
-      
-      // Special debug for Bus 8
-      if (getOriginalIndex() == 8) {
-        printf("DEBUG - Bus 8 in vectorValues: V=%f, Pinj=%f, Qinj=%f\n", 
-               p_v, Pinj, Qinj);
-      }
-      
+
       // Process each measurement
       for (int i = 0; i < p_meas.size(); i++) {
         std::string type = p_meas[i].p_type;
@@ -1488,14 +1474,8 @@ bool gridpack::state_estimation::SEBus::vectorValues(ComplexType *values)
         // Calculate residual
         double residual = measured - estimated;
         values[i] = ComplexType(residual, 0.0);
-        
-        // Debug for Bus 8 QI
-        if (getOriginalIndex() == 8 && type == "QI") {
-          printf("DEBUG - Bus 8 QI residual: measured=%f, estimated=%f, residual=%f\n", 
-                 measured, estimated, residual);
-        }
       }
-      
+
       return true;  // Critical to return true
     }
   }
@@ -2050,6 +2030,11 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "IIJ") {
+            s = getComplexCurrent(p_meas[i].p_ckt);
+            estimate = abs(s);
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "PJI") {
             s = getRvrsComplexPower(p_meas[i].p_ckt);
             estimate = real(s)/p_sbase;
@@ -2063,6 +2048,11 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
                 type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
                 p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "IJI") {
+            s = getRvrsComplexCurrent(p_meas[i].p_ckt);
+            estimate = abs(s);
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           }
           int buflen = strlen(buf);
           if (buflen + ilen < bufsize) {
@@ -2174,7 +2164,7 @@ void gridpack::state_estimation::SEBranch::getV1V2Theta(gridpack::state_estimati
  */
 void gridpack::state_estimation::SEBranch::configureSE(void)
 {
-  // Calculate the number of matrix elements associated witht this branch
+  // Calculate the number of matrix elements associated with this branch
   int reference = 1; // TBD: to be read from XML
   gridpack::state_estimation::SEBus *bus1 =
     dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
@@ -2194,7 +2184,7 @@ void gridpack::state_estimation::SEBranch::configureSE(void)
     if (type == "PIJ" || type == "QIJ" || type == "IIJ" || type == "PJI" || type == "QJI" || type == "IJI") {
       int nsize = p_tag.size();
       for (j=0; j<nsize; j++) {
-        if (p_tag[j] == ckt) {
+        if (p_tag[j] == ckt && p_active) {
           if (!bus1->getReferenceBus()) {
             ncnt += 2;
           } else {  // reference bus, only for dPIJ/DVI
@@ -2492,7 +2482,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
             }
           } 
         }
-      } else if (type == "IIJ") {  // Need more work to support transformer 
+      } else if (type == "IIJ") { 
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt && p_active) {
@@ -2509,59 +2499,113 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
               shifter=0.0;
               t=1.0;
             }
-            double Iij = sqrt((gij*gij+bij*bij) *(v1*v1+v2*v2-2*v1*v2*cos(theta))); 
+
+            double delta1 = bus1->getPhase();
+            double delta2 = bus2->getPhase();
+
+            //double Iij = sqrt((gij*gij+bij*bij) *(v1*v1+v2*v2-2*v1*v2*cos(theta))); 
+            // Define self Admittance (Bus 1 side) 
+
+            gridpack::ComplexType Yij_series(gij, bij);
+            gridpack::ComplexType Yij_prime(gij/(t*t), bij/(t*t) + B); // Y'_ij = Y_ij/t^2 + jB
+            gridpack::ComplexType a_conj(t * cos(-shifter), t * sin(-shifter));
+            gridpack::ComplexType Yij_mutual = Yij_series / a_conj;
+
+            // V1 and V2 in rectangular form
+            gridpack::ComplexType V1(v1 * cos(delta1), v1 * sin(delta1));
+            gridpack::ComplexType V2(v2 * cos(delta2), v2 * sin(delta2));
+
+            // Calculate complex current I_ij = Y'_ij * V1 - Y_ij * V2
+            gridpack::ComplexType Iij = Yij_prime * V1 - Yij_mutual * V2;
+            double Iij_mag = abs(Iij); 
+      
+            // Check for zero division (unlikely in state estimation)
+            //if (Iij_mag < 1.0e-9) Iij_mag = 1.0e-9;
+
+            gridpack::ComplexType V1_div_v1(cos(delta1), sin(delta1)); // V2 / |V1|
+            gridpack::ComplexType V2_div_v2(cos(delta2), sin(delta2)); // V2 / |V2|
+
             if (!bus1->getReferenceBus()) {
+              // dIij/d(delta_i) term (H_Iij, delta_i)
+              gridpack::ComplexType dI_d_delta1 = Yij_prime * gridpack::ComplexType(0.0, 1.0) * V1;
+              gridpack::ComplexType H_d_delta1 = (conj(Iij) * dI_d_delta1) / Iij_mag;
               jm = bus1->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType((gij*gij
-                    +bij*bij)*v1*v2*sin(theta)/Iij,0.0);  
+	      if (Iij_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_delta1),0.0);
+              } 
+
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
+
+              // dIij/d(v_i) term (H_Iij, v_i)
+              gridpack::ComplexType dI_d_v1 = Yij_prime * V1_div_v1;
+              gridpack::ComplexType H_d_v1 = (conj(Iij) * dI_d_v1) / Iij_mag;
               jm = bus1->matrixGetColIndex(1);
-              values[ncnt] = gridpack::ComplexType((gij*gij
-                    +bij*bij)*(v1-v2*cos(theta))/Iij,0.0);  
+	      if (Iij_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_v1),0.0);
+              } 
+
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dIIJ/DVI
+              gridpack::ComplexType dI_d_v1 = Yij_prime * V1_div_v1;
+              gridpack::ComplexType H_d_v1 = (conj(Iij) * dI_d_v1) / Iij_mag;
               jm = bus1->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType((gij*gij
-                    +bij*bij)*(v1-v2*cos(theta))/Iij,0.0);  
+	      if (Iij_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_v1),0.0);
+              } 
+
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             }
+
+            // dIij/d(delta_j) term (H_Iij, delta_j)
             if (!bus2->getReferenceBus()) {
+              gridpack::ComplexType dI_d_delta2 = -Yij_mutual * gridpack::ComplexType(0.0, 1.0) * V2;
+              gridpack::ComplexType H_d_delta2 = (conj(Iij) * dI_d_delta2) / Iij_mag;
               jm = bus2->matrixGetColIndex(0);
-              if (p_tap_ratio[j] != 0.0) {
-                gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-                a = p_tap_ratio[j]*a;
-                ret = ret/(conj(a)*a);
-                gij=real(ret);
-                bij=imag(ret);
-              }
-              values[ncnt] = gridpack::ComplexType(-(gij*gij
-                    +bij*bij)*v1*v2*sin(theta)/Iij,0.0);  
+	      if (Iij_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_delta2),0.0);
+              } 
+
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
+
+              // dIij/d(v_j) term (H_Iij, v_j)
+              gridpack::ComplexType dI_d_v2 = -Yij_mutual * V2_div_v2;
+              gridpack::ComplexType H_d_v2 = (conj(Iij) * dI_d_v2) / Iij_mag;
               jm = bus2->matrixGetColIndex(1);
-              values[ncnt] = gridpack::ComplexType((gij*gij
-                    +bij*bij)*(v2-v1*cos(theta))/Iij,0.0);  
+              if (Iij_mag < 1.0e-4) {
+                values[ncnt] = gridpack::ComplexType(0.0,0.0);
+              } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_v2),0.0);
+              }
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
+
             } else {  // reference bus, only for dIIJ/DVJ
+              // dIij/d(v_j) term (H_Iij, v_j)
+              gridpack::ComplexType dI_d_v2 = -Yij_mutual * V2_div_v2;
+              gridpack::ComplexType H_d_v2 = (conj(Iij) * dI_d_v2) / Iij_mag;
               jm = bus2->matrixGetColIndex(0);
-              if (p_tap_ratio[j] != 0.0) {
-                gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-                a = p_tap_ratio[j]*a;
-                ret = ret/(conj(a)*a);
-                gij=real(ret);
-                bij=imag(ret);
+              if (Iij_mag < 1.0e-4) {
+                values[ncnt] = gridpack::ComplexType(0.0,0.0);
+              } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_v2),0.0);
               }
-              values[ncnt] = gridpack::ComplexType((gij*gij
-                    +bij*bij)*(v2-v1*cos(theta))/Iij,0.0);  
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
@@ -2691,7 +2735,133 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
             }
           } 
         }
-      } else if (type == "IJI") {  // TO DO
+      } else if (type == "IJI") {  // DONE !
+	int nsize = p_tag.size();
+	for (j=0; j<nsize; j++) {
+	  if (p_tag[j] == ckt && p_active) {
+	    found = true;
+	    gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+	    double B = 0.5*p_charging[j];
+	    ret = 1.0/ret; // ret is series admittance Y_ij = Y_ji = G + jB
+	    gij=real(ret);
+	    bij=imag(ret);
+	    if (p_tap_ratio[j] != 0.0) {
+	      shifter=p_phase_shift[j];
+	      t = p_tap_ratio[j];
+	    } else {
+	      shifter=0.0;
+	      t=1.0;
+	    }
+	    
+	    // Phase angle calculation
+	    double delta1 = bus1->getPhase();
+	    double delta2 = bus2->getPhase();
+	    
+	    // Define Admittances
+	    gridpack::ComplexType Yji_series(gij, bij); // Series admittance Y_ji
+	    gridpack::ComplexType Yji_prime(gij, bij + B); // Y'_ji = Y_ji + jB (since tap is on bus i side)
+            gridpack::ComplexType a(t * cos(shifter), t * sin(shifter));
+            gridpack::ComplexType Yji_mutual = Yji_series / a;
+
+	    // V1 and V2 in rectangular form
+	    gridpack::ComplexType V1(v1 * cos(delta1), v1 * sin(delta1));
+	    gridpack::ComplexType V2(v2 * cos(delta2), v2 * sin(delta2));
+
+	    // Calculate complex current I_ji = Y'_ji * V2 - Y_ji * V1
+	    gridpack::ComplexType Iji = Yji_prime * V2 - Yji_mutual * V1;
+	    double Iji_mag = abs(Iji); 
+	    
+	    // Check for zero division
+	    //if (Iji_mag < 1.0e-9) Iji_mag = 1.0e-9; 
+	    
+	    // Calculate derivatives of I_ji and Jacobian elements
+	    gridpack::ComplexType V1_div_v1(cos(delta1), sin(delta1)); // V1 / |V1|
+	    gridpack::ComplexType V2_div_v2(cos(delta2), sin(delta2)); // V2 / |V2|
+
+	    // dIji/d(delta_i) term (H_Iji, delta_i) - Bus 1
+	    if (!bus1->getReferenceBus()) {
+	      gridpack::ComplexType dI_d_delta1 = -Yji_mutual * gridpack::ComplexType(0.0, 1.0) * V1;
+	      gridpack::ComplexType H_d_delta1 = (conj(Iji) * dI_d_delta1) / Iji_mag;
+	      jm = bus1->matrixGetColIndex(0);
+
+	      if (Iji_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_delta1),0.0);
+              } 
+	      rows[ncnt] = im;
+	      cols[ncnt] = jm;
+	      ncnt++;
+
+	      // dIji/d(v_i) term (H_Iji, v_i)
+	      gridpack::ComplexType dI_d_v1 = -Yji_mutual * V1_div_v1;
+	      gridpack::ComplexType H_d_v1 = (conj(Iji) * dI_d_v1) / Iji_mag;
+	      jm = bus1->matrixGetColIndex(1);
+	      if (Iji_mag < 1.0e-4) {
+	        values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+	        values[ncnt] = gridpack::ComplexType(real(H_d_v1),0.0);
+	      }
+	      rows[ncnt] = im;
+	      cols[ncnt] = jm;
+	      ncnt++;
+	    } else {  // reference bus, only for dIJI/DVI
+	      // dIji/d(v_i) term (H_Iji, v_i)
+	      gridpack::ComplexType dI_d_v1 = -Yji_mutual * V1_div_v1;
+	      gridpack::ComplexType H_d_v1 = (conj(Iji) * dI_d_v1) / Iji_mag;
+	      jm = bus1->matrixGetColIndex(0);
+	      if (Iji_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+                values[ncnt] = gridpack::ComplexType(real(H_d_v1),0.0);
+              } 
+	      rows[ncnt] = im;
+	      cols[ncnt] = jm;
+	      ncnt++;
+	    }
+
+	    // dIji/d(delta_j) term (H_Iji, delta_j) - Bus 2
+	    if (!bus2->getReferenceBus()) {
+	      gridpack::ComplexType dI_d_delta2 = Yji_prime * gridpack::ComplexType(0.0, 1.0) * V2;
+	      gridpack::ComplexType H_d_delta2 = (conj(Iji) * dI_d_delta2) / Iji_mag;
+	      jm = bus2->matrixGetColIndex(0);
+	      if (Iji_mag < 1.0e-4) {
+	        values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+	        values[ncnt] = gridpack::ComplexType(real(H_d_delta2),0.0);
+	      }
+	      rows[ncnt] = im;
+	      cols[ncnt] = jm;
+	      ncnt++;
+
+	      // dIji/d(v_j) term (H_Iji, v_j)
+	      gridpack::ComplexType dI_d_v2 = Yji_prime * V2_div_v2;
+	      gridpack::ComplexType H_d_v2 = (conj(Iji) * dI_d_v2) / Iji_mag;
+	      jm = bus2->matrixGetColIndex(1);
+	      if (Iji_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+	        values[ncnt] = gridpack::ComplexType(real(H_d_v2),0.0);
+              }
+	      rows[ncnt] = im;
+	      cols[ncnt] = jm;
+	      ncnt++;
+	    } else {  // reference bus, only for dIJI/DVJ
+	      // dIji/d(v_j) term (H_Iji, v_j)
+	      gridpack::ComplexType dI_d_v2 = Yji_prime * V2_div_v2;
+	      gridpack::ComplexType H_d_v2 = (conj(Iji) * dI_d_v2) / Iji_mag;
+	      jm = bus2->matrixGetColIndex(0);
+	      if (Iji_mag < 1.0e-4) {
+		values[ncnt] = gridpack::ComplexType(0.0,0.0);
+	      } else {
+	        values[ncnt] = gridpack::ComplexType(real(H_d_v2),0.0);
+              }
+	      rows[ncnt] = im;
+	      cols[ncnt] = jm;
+	      ncnt++;
+	    }
+	  }
+	}
       }
       if (!found) {
         printf("No match found for branch measurement\n   type: %s\n"
@@ -2863,17 +3033,26 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
             gij=real(ret);
             bij=imag(ret);
             if (p_tap_ratio[j] != 0.0) {
-              shifter=p_phase_shift[j];
               t = p_tap_ratio[j];
+              shifter = p_phase_shift[j];
             } else {
-              shifter=0.0;
               t=1.0;
+              shifter = 0.0;
             }
-            ret1 =  v1*v1*gij/(t*t) - 1.0/t*v1*v2*(gij*cos(theta+shifter) + bij*sin(theta+shifter));
-            ret2 = - v1*v1* (bij+B)/(t*t) - 1.0/t*v1*v2*(gij*sin(theta+shifter) - bij*cos(theta+shifter));
+
+            // Calculate I_ij using complex form matching Jacobian (line 2536)
+            double delta1 = bus1->getPhase();
+            double delta2 = bus2->getPhase();
+            gridpack::ComplexType V1(v1 * cos(delta1), v1 * sin(delta1));
+            gridpack::ComplexType V2(v2 * cos(delta2), v2 * sin(delta2));
+            gridpack::ComplexType Yij_prime(gij/(t*t), bij/(t*t) + B);
+            gridpack::ComplexType Y_series(gij, bij);
+            gridpack::ComplexType a_conj(t * cos(-shifter), t * sin(-shifter));
+            gridpack::ComplexType Yij_mutual = Y_series / a_conj;
+            gridpack::ComplexType Iij = Yij_prime * V1 - Yij_mutual * V2;
+            ret3 = abs(Iij);
           }
         }
-        ret3 = sqrt(ret1*ret1+ret2*ret2)/v1;
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret3),0.0);
         ncnt++;
       } else if (type == "PJI") {
@@ -2917,7 +3096,38 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret2),0.0);
         ncnt++;
-      } else if (type == "IJI") { //to do
+      } else if (type == "IJI") {
+        int nsize = p_tag.size();
+        for (j=0; j<nsize; j++) {
+          if (p_tag[j] == p_meas[i].p_ckt) {
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double Bch=0.5*p_charging[j];
+            ret = 1.0/ret;
+            gij=real(ret);
+            bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              t = p_tap_ratio[j];
+              shifter = p_phase_shift[j];
+            } else {
+              t=1.0;
+              shifter = 0.0;
+            }
+
+            // Calculate I_ji using complex form matching Jacobian (line 2759)
+            double delta1 = bus1->getPhase();
+            double delta2 = bus2->getPhase();
+            gridpack::ComplexType V1(v1 * cos(delta1), v1 * sin(delta1));
+            gridpack::ComplexType V2(v2 * cos(delta2), v2 * sin(delta2));
+            gridpack::ComplexType Yji_prime(gij, bij + Bch);
+            gridpack::ComplexType Y_series(gij, bij);
+            gridpack::ComplexType a(t * cos(shifter), t * sin(shifter));
+            gridpack::ComplexType Yji_mutual = Y_series / a;
+            gridpack::ComplexType Iji = Yji_prime * V2 - Yji_mutual * V1;
+            ret3 = abs(Iji);
+          }
+        }
+        values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret3),0.0);
+        ncnt++;
       }
     } 
     }
@@ -2929,17 +3139,6 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
     bool ok = !bus1->isIsolated() && !bus2->isIsolated();
     
     if (ok && p_meas.size() > 0) {
-      int bus1_idx = bus1->getOriginalIndex();
-      int bus2_idx = bus2->getOriginalIndex();
-      
-      // Debug output - only on rank 0 and only during first call
-      static bool debugPrinted = false;
-      if (!debugPrinted && bus1_idx == 5 && bus2_idx == 6) { // Only debug the branch 5-6 as an example
-        printf("DEBUG: Processing branch %d-%d measurements, count=%d\n", 
-               bus1_idx, bus2_idx, (int)p_meas.size());
-        debugPrinted = true;
-      }
-      
       for (int i = 0; i < p_meas.size(); i++) {
         std::string type = p_meas[i].p_type;
         std::string ckt = p_meas[i].p_ckt;
@@ -2958,52 +3157,24 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
         } else if (type == "QJI") {
           gridpack::ComplexType s = getRvrsComplexPower(ckt);
           estimated = imag(s)/p_sbase;
+        } else if (type == "IIJ") {
+          gridpack::ComplexType s = getComplexCurrent(ckt);
+          estimated = abs(s);
+        } else if (type == "IJI") {
+          gridpack::ComplexType s = getRvrsComplexCurrent(ckt);
+          estimated = abs(s);
         }
         
         // Calculate residual
         double residual = measured - estimated;
         values[i] = ComplexType(residual, 0.0);
-        
-        // Debug output for specific branches (only on rank 0 and first few calls)
-        static int debugCount = 0;
-        if (debugCount < 2 && bus1_idx == 5 && bus2_idx == 6) { // Only debug the branch 5-6 as an example
-          printf("DEBUG: Branch %d-%d, type=%s, measured=%.6f, estimated=%.6f, residual=%.6f, idx=%d\n", 
-                 bus1_idx, bus2_idx, type.c_str(), measured, estimated, residual, idx[i]);
-          if (i == p_meas.size() - 1) debugCount++; // Increment after all measurements for this branch
-        }
       }
-    }
-    // Debug empty measurements
-    else if (p_meas.size() == 0) {
-      // Get bus indices for debugging
-      gridpack::state_estimation::SEBus *bus1 = 
-        dynamic_cast<gridpack::state_estimation::SEBus*>(this->getBus1().get());
-      gridpack::state_estimation::SEBus *bus2 = 
-        dynamic_cast<gridpack::state_estimation::SEBus*>(this->getBus2().get());
-      int bus1_idx = bus1->getOriginalIndex();
-      int bus2_idx = bus2->getOriginalIndex();
-      
-      printf("DEBUG: Branch %d-%d has 0 measurements to process\n", 
-               bus1_idx, bus2_idx);
     }
   } else if (p_mode == R_inv) {
     vectorGetElementIndices(idx);
     int nmeas = p_meas.size();
-    
+
     if (nmeas > 0) {
-      gridpack::state_estimation::SEBus *bus1 = 
-        dynamic_cast<gridpack::state_estimation::SEBus*>(this->getBus1().get());
-      gridpack::state_estimation::SEBus *bus2 = 
-        dynamic_cast<gridpack::state_estimation::SEBus*>(this->getBus2().get());
-      int bus1_idx = bus1->getOriginalIndex();
-      int bus2_idx = bus2->getOriginalIndex();
-      
-      // Debug output for specific branches
-      if (bus1_idx == 5 && bus2_idx == 6) {
-        printf("DEBUG: Setting R_inv for branch %d-%d, meas_count=%d\n", 
-               bus1_idx, bus2_idx, nmeas);
-      }
-      
       for (int i = 0; i < nmeas; i++) {
         double sigma = p_meas[i].p_deviation;
         if (sigma > 0.0) {
@@ -3104,6 +3275,133 @@ gridpack::ComplexType gridpack::state_estimation::SEBranch::getComplexPower(
   getLineElements(tag,&Yii,&Yij);
   s = vi*conj(Yii*vi+Yij*vj)*p_sbase;
   return s;
+}
+
+
+
+/**
+ * Return reverse complex current for line element (IJI)
+ * Calculates I_ji (from Bus 2 to Bus 1) using explicit admittance calculation
+ * to match the IJI Jacobian matrix exactly (see line 2759).
+ * Formula: I_ji = Y'_ji * V_j - Y_ji * V_i
+ * where Y'_ji = gij + j(bij + Bch)  [charging added]
+ *       Y_ji = gij + jbij            [plain series admittance]
+ * @param tag describing line element on branch
+ * @return complex current I_ji
+ */
+gridpack::ComplexType gridpack::state_estimation::SEBranch::getRvrsComplexCurrent(
+        std::string tag)
+{
+  gridpack::ComplexType vi, vj, Iji;
+  Iji = ComplexType(0.0,0.0);
+
+  gridpack::state_estimation::SEBus *bus1 =
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
+  gridpack::state_estimation::SEBus *bus2 =
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
+
+  if (bus1 && bus2) {
+    // Find the line index corresponding to this tag
+    int line_idx = -1;
+    for (int j = 0; j < p_tag.size(); j++) {
+      if (p_tag[j] == tag) {
+        line_idx = j;
+        break;
+      }
+    }
+
+    if (line_idx >= 0) {
+      // Calculate series admittance Y_series = gij + jbij
+      gridpack::ComplexType ret(p_resistance[line_idx], p_reactance[line_idx]);
+      double B = 0.5 * p_charging[line_idx];
+      ret = 1.0 / ret;
+      double gij = real(ret);
+      double bij = imag(ret);
+      gridpack::ComplexType Y_series(gij,bij);
+
+      // Get tap ratio
+      double t = (p_tap_ratio[line_idx] != 0.0) ? p_tap_ratio[line_idx] : 1.0;
+      double shifter = p_phase_shift[line_idx]; 
+
+      // Define admittances (tap assumed on Bus 1 side)
+      // Self Admittance (Y'_ji) on non-tap side:
+      gridpack::ComplexType Yji_prime(gij, bij + B);  // Self admittance with tap and charging
+
+      gridpack::ComplexType a(t * cos(shifter), t * (sin(shifter)));
+      gridpack::ComplexType Yji_mutual = Y_series / a; // Mutual admittance
+
+      // Get complex voltages
+      vi = bus1->getComplexVoltage();
+      vj = bus2->getComplexVoltage();
+
+      // Calculate I_ji 
+      Iji = Yji_prime * vj - Yji_mutual * vi;
+    }
+  }
+  return Iji;
+}
+
+
+/**
+ * Return complex current for line element (IIJ)
+ * Calculates I_ij (from Bus 1 to Bus 2) using explicit admittance calculation
+ * to match the IIJ Jacobian matrix exactly (see line 2536).
+ * Formula: I_ij = Y'_ij * V_i - Y_ij * V_j
+ * where Y'_ij = gij/t² + j(bij/t² + B)  [tap on self admittance]
+ *       Y_ij = gij + jbij                [plain series admittance]
+ * @param tag describing line element on branch
+ * @return complex current I_ij
+ */
+gridpack::ComplexType gridpack::state_estimation::SEBranch::getComplexCurrent(
+        std::string tag)
+{
+  gridpack::ComplexType vi, vj, Iij;
+  Iij = ComplexType(0.0,0.0);
+
+  gridpack::state_estimation::SEBus *bus1 =
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
+  gridpack::state_estimation::SEBus *bus2 =
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
+
+  if (bus1 && bus2) {
+    // Find the line index corresponding to this tag
+    int line_idx = -1;
+    for (int j = 0; j < p_tag.size(); j++) {
+      if (p_tag[j] == tag) {
+        line_idx = j;
+        break;
+      }
+    }
+
+    if (line_idx >= 0) {
+      // Calculate series admittance Y_series = gij + jbij
+      gridpack::ComplexType ret(p_resistance[line_idx], p_reactance[line_idx]);
+      double B = 0.5 * p_charging[line_idx];
+      ret = 1.0 / ret;
+      double gij = real(ret);
+      double bij = imag(ret);
+      gridpack::ComplexType Y_series(gij, bij);
+
+      double t = (p_tap_ratio[line_idx] != 0.0) ? p_tap_ratio[line_idx] : 1.0;
+      double shifter = p_phase_shift[line_idx];
+
+      // Define admittances (Tap assumed on Bus 1 side)
+      gridpack::ComplexType Yij_prime(gij / (t * t), (bij / (t * t) + B));  // Self admittance with charging
+
+      // Mutual Admittance correction for IIJ
+      // For I_ij, the mutual term is Y_series / conj(a) = Y_series / (t * e^-j*phi)
+      gridpack::ComplexType a_conj(t * cos(-shifter), t * sin(-shifter));
+      gridpack::ComplexType Yij_mutual = Y_series / a_conj;
+
+      // Get complex voltages
+      vi = bus1->getComplexVoltage();
+      vj = bus2->getComplexVoltage();
+
+      // Calculate I_ij
+      Iij = Yij_prime * vi - Yij_mutual * vj;
+    }
+  }
+  return Iij;
 }
 
 

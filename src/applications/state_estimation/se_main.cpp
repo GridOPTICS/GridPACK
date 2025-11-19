@@ -112,15 +112,9 @@ main(int argc, char **argv)
       }
       
       try {
-        printf("DEBUG: About to call se_app.solve()\n");
-        fflush(stdout);
         se_app.solve();
-        printf("DEBUG: se_app.solve() completed, about to call saveData()\n");
-        fflush(stdout);
         // Save data to data collection objects
         se_app.saveData();
-        printf("DEBUG: se_app.saveData() completed\n");
-        fflush(stdout);
       } catch (const std::exception& e) {
         if (world.rank() == 0) {
           printf("ERROR: Exception caught during state estimation: %s\n", e.what());
@@ -134,14 +128,10 @@ main(int argc, char **argv)
         }
         return_code = 1;
       }
-      
-      printf("DEBUG: About to call se_app.write()\n");
-      fflush(stdout);
+
       try {
         // Write results regardless of convergence status
         se_app.write();
-        printf("DEBUG: se_app.write() completed\n");
-        fflush(stdout);
       } catch (const std::exception& e) {
         if (world.rank() == 0) {
           printf("ERROR: Exception during result writing: %s\n", e.what());
@@ -153,24 +143,18 @@ main(int argc, char **argv)
         }
         return_code = 1;
       }
-      
-      printf("DEBUG: About to dump timing information\n");
-      fflush(stdout);
+
       // Dump timing information
       if (world.rank() == 0) {
         gridpack::utility::CoarseTimer::instance()->dump();
       }
-      printf("DEBUG: Timing dump completed\n");
-      fflush(stdout);
-      
+
       // Report convergence status
       if (!se_app.hasConverged()) {
         if (world.rank() == 0) {
           printf("WARNING: State estimation did not fully converge, but results were written anyway.\n");
         }
       }
-      printf("DEBUG: Convergence check completed\n");
-      fflush(stdout);
     } catch (const std::exception& e) {
       if (argc >= 1 && argv[0] != NULL) {
         printf("%s: ERROR: Unhandled exception: %s\n", argv[0], e.what());

@@ -16,6 +16,9 @@
  * @date   2025-03-05
  *         Adding more functions to handle measurements more efficiently
  * @date   2025-04-02
+ *         Enhanced voltage constraint featuer
+           Cleaned up debug information
+ * @date   2025-11-19
  *
  *
  */
@@ -475,12 +478,15 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     double constraint_deviation = cursor->get("voltageConstraintDeviation", 0.0025);
     p_busIO->header("\nAdding voltage magnitude constraints\n");
     char buf[128];
-    snprintf(buf, sizeof(buf), "Voltage limits: %.3f <= V <= %.3f (deviation: %.4f)\n", 
+    snprintf(buf, sizeof(buf), "Voltage limits: %.3f <= V <= %.3f (deviation: %.4f)\n",
             v_min, v_max, constraint_deviation);
     p_busIO->header(buf);
 
     // Add virtual measurements for voltage constraints
     addVoltageLimitMeasurements(v_min, v_max, constraint_deviation);
+
+    // Reconfigure SE to update element counts with new VUL/VLL measurements
+    p_factory->configureSE();
   }
 
   //Create Y-bus matrix
@@ -572,12 +578,9 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       cursor = p_config->getCursor("Configuration.State_estimation");
       gridpack::math::LinearSolver solver(*Gain);
       solver.configure(cursor);
-      
-      p_busIO->header("\n Print Gain matrix\n");
 
       // Solve linear equation
-      boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
-      p_busIO->header("\n Print RHS vector\n");
+      boost::shared_ptr<gridpack::math::Vector> X(RHS->clone());
       X->zero(); //might not need to do this
       solver.solve(*RHS, *X);
       timer->stop(t_solve);
@@ -714,7 +717,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
 }
   // Output results if converged
   if (converged) {
-    debugMapper();
+    // debugMapper(); // Disabled debug output
     p_busIO->header("\n   State Estimation Outputs\n");
     p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
     p_busIO->write();
@@ -756,9 +759,6 @@ void gridpack::state_estimation::SEAppModule::solve(void)
  */
 void gridpack::state_estimation::SEAppModule::write(void)
 {
-  printf("DEBUG: Starting write() function\n");
-  fflush(stdout);
-  
   // Get output file name from configuration
   std::string outputFile = "state_estimation_results.txt"; // Default value
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -780,9 +780,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
   }
   
   if (p_network->communicator().rank() == 0 && outFile.is_open()) {
-    printf("DEBUG: Starting output generation\n");
-    fflush(stdout);
-    
     // Create temporary files to capture output
     FILE* oldStdout = stdout;  // Save original stdout
     
@@ -874,8 +871,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
     }
     
     // Write state estimation results
-    printf("DEBUG: Writing state estimation results\n");
-    fflush(stdout);
     outFile << "---------------------------------------------------------\n";
     outFile << "STATE ESTIMATION OUTPUTS - SYSTEM STATE\n";
     outFile << "---------------------------------------------------------\n";
@@ -883,8 +878,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
     outFile << "---------------------------------------------------------\n";
     
     int numBus = p_network->numBuses();
-    printf("DEBUG: Processing %d buses\n", numBus);
-    fflush(stdout);
     for (int i = 0; i < numBus; i++) {
       SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
       if (!bus->isIsolated()) {
@@ -898,8 +891,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
     outFile << "\n";
     
     // Write branch power flow data
-    printf("DEBUG: Writing branch power flow data\n");
-    fflush(stdout);
     outFile << "---------------------------------------------------------\n";
     outFile << "BRANCH POWER FLOW RESULTS (P.U.)\n";
     outFile << "---------------------------------------------------------\n";
@@ -907,8 +898,6 @@ void gridpack::state_estimation::SEAppModule::write(void)
     outFile << "---------------------------------------------------------\n";
     
     int numBranch = p_network->numBranches();
-    printf("DEBUG: Processing %d branches\n", numBranch);
-    fflush(stdout);
     for (int i = 0; i < numBranch; i++) {
       SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
       SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
@@ -925,21 +914,15 @@ void gridpack::state_estimation::SEAppModule::write(void)
     outFile << "\n";
     
     // Write measurement comparison information directly
-    printf("DEBUG: Starting measurement comparison output\n");
-    fflush(stdout);
     outFile << "---------------------------------------------------------\n";
     outFile << "MEASUREMENT COMPARISON - BUS MEASUREMENTS\n";
     outFile << "---------------------------------------------------------\n";
     
     // For large systems, skip detailed measurement output to prevent hangs
     if (numBus > 100) {
-        printf("DEBUG: Large system detected (%d buses), skipping detailed measurement output\n", numBus);
-        fflush(stdout);
         outFile << "System has " << numBus << " buses - detailed measurement output skipped for performance.\n";
         outFile << "Use smaller systems for detailed measurement analysis.\n\n";
     } else {
-        printf("DEBUG: Processing detailed measurement output for small system\n");
-        fflush(stdout);
         std::ostringstream busOutputSS;
         FILE* origStream = stdout;
         
@@ -996,16 +979,12 @@ void gridpack::state_estimation::SEAppModule::write(void)
     outFile << "\n";
     
     // Branch measurements
-    printf("DEBUG: Starting branch measurement output\n");
-    fflush(stdout);
     outFile << "---------------------------------------------------------\n";
     outFile << "MEASUREMENT COMPARISON - BRANCH MEASUREMENTS\n";
     outFile << "---------------------------------------------------------\n";
     
     // For large systems, skip detailed branch measurement output
     if (numBus > 100) {
-        printf("DEBUG: Large system detected, skipping detailed branch measurement output\n");
-        fflush(stdout);
         outFile << "System has " << numBus << " buses - detailed branch measurement output skipped for performance.\n";
         outFile << "Use smaller systems for detailed measurement analysis.\n\n";
     } else {
@@ -1605,27 +1584,13 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   gridpack::mapper::GenVectorMap<SENetwork> ResMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> Residual = ResMap.mapToVector();
   
-  // Print size information  
-  char buf[512]; // Increase buffer size to prevent overflow
-  snprintf(buf, sizeof(buf), "Residual vector size: %d\n", Residual->size());
-  p_busIO->header(buf);
-  
   // Check if vector is empty
+  char buf[512]; // Increase buffer size to prevent overflow
   if (Residual->size() == 0) {
     p_busIO->header("ERROR: Residual vector is empty!\n");
     BadDataResult emptyResult;
     emptyResult.chiSquareValue = 0.0;
     return emptyResult;
-  }
-  
-  // Print first few residuals for debug purposes
-  p_busIO->header("First few residuals:\n");
-  int printCount = std::min(10, Residual->size());
-  for (int i = 0; i < printCount; i++) {
-    gridpack::ComplexType value;
-    Residual->getElement(i, value);
-    snprintf(buf, sizeof(buf), "  [%d]: %f\n", i, std::real(value));
-    p_busIO->header(buf);
   }
   
   // Get R inverse matrix for weight calculations
@@ -1936,12 +1901,6 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     p_busIO->header(buf);
     dof = 1; // Set minimum DOF to avoid issues
   }
-  
-  // Debug the measurement counting issue
-  snprintf(buf, sizeof(buf), "DEBUG DOF calculation: vector size=%d, actual measurements=%d, buses=%d, states=%d, DOF=%d\n",
-          size, totalMeasurements, p_network->totalBuses(), numStates, dof);
-  p_busIO->header(buf);
-  
   // Perform Chi-square test
   double chiSquareThreshold = getChiSquareThreshold(dof, 0.95); // 95% confidence
   snprintf(buf, sizeof(buf), "System size: %d buses, %d measurements, %d state variables\n",
@@ -2074,41 +2033,31 @@ double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, d
 {
   // Approximation of chi-square threshold for common degrees of freedom
   if (dof <= 0) return 0.0;
-  
-  // Debug output to understand what's happening
-  char debugBuf[256];
-  snprintf(debugBuf, sizeof(debugBuf), "DEBUG Chi-square threshold: DOF=%d, buses=%d\n", 
-          dof, p_network->totalBuses());
-  p_busIO->header(debugBuf);
-  
+
   // Check if DOF is reasonable (not the inflated vector size)
   // Expected DOF range: 0.5x to 3x the number of buses
   int numBuses = p_network->totalBuses();
   bool useTheoreticalThreshold = (dof > 0 && dof <= numBuses * 3);
-  
+
   if (useTheoreticalThreshold) {
     // Use theoretical chi-square distribution for reasonable DOF values
     double chiSquareValue;
-    
+
     // Chi-square approximation using Wilson-Hilferty transformation
     // For 95% confidence level, z = 1.645
     double z = 1.645;
     double a = 2.0 / (9.0 * dof);
     chiSquareValue = dof * pow(1.0 - a + z * sqrt(a), 3.0);
-    
-    snprintf(debugBuf, sizeof(debugBuf), "DEBUG Chi-square threshold: Using theoretical chi-square=%.1f for DOF=%d\n", 
-            chiSquareValue, dof);
-    p_busIO->header(debugBuf);
-    
+
     return chiSquareValue;
   } else {
     // Fall back to practical threshold for unrealistic DOF values
     double practicalThreshold;
-    
+
     if (numBuses <= 50) {
       practicalThreshold = 50.0;    // Small systems
     } else if (numBuses <= 100) {
-      practicalThreshold = 150.0;   // Medium systems  
+      practicalThreshold = 150.0;   // Medium systems
     } else if (numBuses <= 300) {
       practicalThreshold = 500.0;   // Large systems
     } else if (numBuses <= 500) {
@@ -2116,11 +2065,7 @@ double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, d
     } else {
       practicalThreshold = 2000.0;  // Extremely large systems
     }
-    
-    snprintf(debugBuf, sizeof(debugBuf), "DEBUG Chi-square threshold: DOF=%d seems unrealistic, using practical threshold=%.1f for %d-bus system\n", 
-            dof, practicalThreshold, numBuses);
-    p_busIO->header(debugBuf);
-    
+
     return practicalThreshold;
   }
 }
@@ -2205,8 +2150,14 @@ void gridpack::state_estimation::SEAppModule::addVoltageLimitMeasurements(
   for (int i = 0; i < numBus; i++) {
     SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
     if (bus && !bus->isIsolated()) {
+      // Skip PV buses and slack buses - they have controlled voltages
+      // that may legitimately be outside the normal operating range
+      if (bus->isPV() || bus->getReferenceBus()) {
+        continue;
+      }
+
       int busId = bus->getOriginalIndex();
-      
+
       // Create upper limit measurement
       gridpack::state_estimation::Measurement upper_limit;
       strcpy(upper_limit.p_type, "VUL");  // Voltage Upper Limit
@@ -2214,7 +2165,7 @@ void gridpack::state_estimation::SEAppModule::addVoltageLimitMeasurements(
       upper_limit.p_value = vmax;
       upper_limit.p_deviation = deviation;
       virtual_measurements.push_back(upper_limit);
-      
+
       // Create lower limit measurement
       gridpack::state_estimation::Measurement lower_limit;
       strcpy(lower_limit.p_type, "VLL");  // Voltage Lower Limit

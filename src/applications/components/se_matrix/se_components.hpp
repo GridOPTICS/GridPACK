@@ -15,6 +15,8 @@
  * @date   2025-03-05
  *         Adding more functions to handle measurements more efficiently
  * @date   2025-04-02
+ *         Adding two more functions to get bi-directional line current
+ * @date   2025-11-19
  */
 // -------------------------------------------------------------
 
@@ -606,6 +608,20 @@ class SEBranch
      ** @return complex power
      **/
     gridpack::ComplexType getRvrsComplexPower(std::string tag);
+
+    /**
+     ** Return complex current for line element
+     ** @param tag describing line element on branch
+     ** @return complex current
+     **/
+    gridpack::ComplexType getComplexCurrent(std::string tag);
+
+    /**
+     ** Return complex current for line element at to end
+     ** @param tag describing line element on branch
+     ** @return complex current
+     **/
+    gridpack::ComplexType getRvrsComplexCurrent(std::string tag);
 
     /**
      * Add a measurement to the branch
