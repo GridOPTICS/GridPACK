@@ -255,7 +255,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<PFNetwork>(512,network));
 
   // Create serial IO object to export data from branches
-  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<PFNetwork>(512,network));
+  // Increased buffer size from 512 to 2048 to handle branches with many parallel lines
+  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<PFNetwork>(2048,network));
   char ioBuf[128];
 
   if (!p_no_print) {
