@@ -2030,11 +2030,11 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "IIJ") {
-            s = getComplexCurrent(p_meas[i].p_ckt);
-            estimate = abs(s);
-            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
-              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
-              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+            s = getComplexCurrent(p_meas[i].p_ckt);
+            estimate = abs(s);
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "PJI") {
             s = getRvrsComplexPower(p_meas[i].p_ckt);
             estimate = real(s)/p_sbase;
@@ -2048,11 +2048,11 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
                 type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
                 p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           } else if (meas_type == "IJI") {
-            s = getRvrsComplexCurrent(p_meas[i].p_ckt);
-            estimate = abs(s);
-            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
-              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
-              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+            s = getRvrsComplexCurrent(p_meas[i].p_ckt);
+            estimate = abs(s);
+            snprintf(buf, sizeof(buf), "    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           }
           int buflen = strlen(buf);
           if (buflen + ilen < bufsize) {
