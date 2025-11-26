@@ -143,27 +143,6 @@ void gridpack::parser::TransformerParser34::parse(
         data->addValue(BUS_AREA,ival);
         p_busData[l_idx1]->getValue(BUS_OWNER,&ival);
         data->addValue(BUS_OWNER, ival);
-        double rval = 0.0;
-        double rvol;
-        p_busData[l_idx1]->getValue(BUS_VOLTAGE_MAG,&rvol);
-        rval += rvol;
-        p_busData[l_idx2]->getValue(BUS_VOLTAGE_MAG,&rvol);
-        rval += rvol;
-        p_busData[l_idx3]->getValue(BUS_VOLTAGE_MAG,&rvol);
-        rval += rvol;
-        rval = rval/3.0;
-        rval = 1.0;
-        data->addValue(BUS_VOLTAGE_MAG,rval);
-        rval = 0.0;
-        p_busData[l_idx1]->getValue(BUS_VOLTAGE_ANG,&rvol);
-        rval += rvol;
-        p_busData[l_idx2]->getValue(BUS_VOLTAGE_ANG,&rvol);
-        rval += rvol;
-        p_busData[l_idx3]->getValue(BUS_VOLTAGE_ANG,&rvol);
-        rval += rvol;
-        rval = rval/3.0;
-        rval = 0.0;
-        data->addValue(BUS_VOLTAGE_ANG,rval);
 
         // parse remainder of line 1
         double mag1, mag2;
@@ -185,6 +164,19 @@ void gridpack::parser::TransformerParser34::parse(
         r31 = atof(split_line2[6].c_str());
         x31 = atof(split_line2[7].c_str());
         sb31 = atof(split_line2[8].c_str());
+        // Parse VMSTAR and ANSTAR for star bus voltage initialization
+        // Line 2 format: R12,X12,SBASE12,R23,X23,SBASE23,R31,X31,SBASE31,VMSTAR,ANSTAR
+        double vmstar = 1.0;  // default value
+        double anstar = 0.0;  // default value (degrees)
+        if (split_line2.size() > 9) {
+          vmstar = atof(split_line2[9].c_str());
+        }
+        if (split_line2.size() > 10) {
+          anstar = atof(split_line2[10].c_str());
+        }
+        // Set star bus voltage using VMSTAR and ANSTAR from RAW file
+        data->addValue(BUS_VOLTAGE_MAG, vmstar);
+        data->addValue(BUS_VOLTAGE_ANG, anstar);
         // Convert pairwise impedances to case base BEFORE delta-to-star conversion
         if (sb12 != p_case_sbase && sb12 != 0.0) {
           r12 = r12*p_case_sbase/sb12;
