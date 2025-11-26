@@ -19,8 +19,10 @@
  *         Adding more functions to handle bad data detection and create more comprehensive outputs
  * @date   2025-04-20
  *         Added IIJ and IJI measurements
-           Cleaned up debug information
+ *         Cleaned up debug information
  * @date   2025-11-19
+ *         Implemented parallel version
+ * @date   2025-11-25
  * 
  */
 // -------------------------------------------------------------
@@ -35,6 +37,19 @@
 #include "se_components.hpp"
 
 //#define LARGE_MATRIX
+
+namespace {
+  // Helper function to trim trailing whitespace from circuit IDs
+  std::string trimCircuitID(const std::string& str) {
+    size_t end = str.find_last_not_of(" \t\r\n");
+    return (end == std::string::npos) ? "" : str.substr(0, end + 1);
+  }
+
+  // Helper function to compare circuit IDs ignoring trailing whitespace
+  bool circuitIDsMatch(const std::string& ckt1, const std::string& ckt2) {
+    return trimCircuitID(ckt1) == trimCircuitID(ckt2);
+  }
+}
 
 /**
  *  Simple constructor
@@ -1095,7 +1110,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(int *nvals,ComplexType *
               jm = bus->matrixGetColIndex(0);
             }
             ret2 += v * (yfbusr*sin(theta) - yfbusi*cos(theta));
-            values[ncnt] = gridpack::ComplexType(p_v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
+            values[ncnt] = gridpack::ComplexType(p_v*v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
             rows[ncnt] = im;
             cols[ncnt] = jm;
             ncnt++;
@@ -2184,7 +2199,7 @@ void gridpack::state_estimation::SEBranch::configureSE(void)
     if (type == "PIJ" || type == "QIJ" || type == "IIJ" || type == "PJI" || type == "QJI" || type == "IJI") {
       int nsize = p_tag.size();
       for (j=0; j<nsize; j++) {
-        if (p_tag[j] == ckt && p_active) {
+        if (circuitIDsMatch(p_tag[j], ckt) && p_active) {
           if (!bus1->getReferenceBus()) {
             ncnt += 2;
           } else {  // reference bus, only for dPIJ/DVI
@@ -2362,7 +2377,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
       if (type == "PIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == ckt && p_active) {
+          if (circuitIDsMatch(p_tag[j], ckt) && p_active) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
@@ -2424,7 +2439,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
       } else if (type == "QIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == ckt && p_active) {
+          if (circuitIDsMatch(p_tag[j], ckt) && p_active) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
@@ -2485,7 +2500,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
       } else if (type == "IIJ") { 
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == ckt && p_active) {
+          if (circuitIDsMatch(p_tag[j], ckt) && p_active) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
@@ -2615,7 +2630,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
       } else if (type == "PJI") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == ckt && p_active) {
+          if (circuitIDsMatch(p_tag[j], ckt) && p_active) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
@@ -2677,7 +2692,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
       } else if (type == "QJI") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == ckt && p_active) {
+          if (circuitIDsMatch(p_tag[j], ckt) && p_active) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
@@ -2738,7 +2753,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(int *nvals,ComplexTyp
       } else if (type == "IJI") {  // DONE !
 	int nsize = p_tag.size();
 	for (j=0; j<nsize; j++) {
-	  if (p_tag[j] == ckt && p_active) {
+	  if (circuitIDsMatch(p_tag[j], ckt) && p_active) {
 	    found = true;
 	    gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
 	    double B = 0.5*p_charging[j];

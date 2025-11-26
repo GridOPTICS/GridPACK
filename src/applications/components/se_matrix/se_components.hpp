@@ -17,6 +17,8 @@
  * @date   2025-04-02
  *         Adding two more functions to get bi-directional line current
  * @date   2025-11-19
+ *         Implemented parallel version
+ * @date   2025-11-25
  */
 // -------------------------------------------------------------
 
@@ -804,10 +806,18 @@ class SEBranch
      * Get resistance data for this branch
      * @param resistance vector to store resistance values
      */
-    void getResistanceData(std::vector<double>& resistance) const { 
-        resistance = p_resistance; 
+    void getResistanceData(std::vector<double>& resistance) const {
+        resistance = p_resistance;
     }
-    
+
+    /**
+     * Get circuit IDs (tags) for this branch
+     * @return vector of circuit ID strings
+     */
+    std::vector<std::string> getCircuitIDs() const {
+        return p_tag;
+    }
+
     /**
      * Helper method to get SEBus pointer from Bus1
      * @return pointer to SEBus for first bus

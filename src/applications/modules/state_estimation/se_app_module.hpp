@@ -18,6 +18,9 @@
  * @date   2025-04-02
  *         Adding more functions to handle bad data detection and more comprehensive outputs
  * @date   2025-04-20
+ *         Implemented parallel version
+ *         Added chi-sqrare convergent criteria
+ * @date   2025-11-25
  *
  *
  */
@@ -167,6 +170,18 @@ class SEAppModule
      */
     void reportJacobianPerformance();
 
+    // Lightweight structure for bad measurement info (for output file)
+    // Must be public for boost serialization
+    struct BadMeasInfo {
+        int index;
+        int busOrFromBus;
+        int toBus;  // -1 for bus measurements
+        char type[8];  // e.g. "PI", "QI", "VM", etc.
+        double value;
+        double deviation;
+        double normRes;
+    };
+
     private:
 
     // pointer to network
@@ -203,6 +218,7 @@ class SEAppModule
         std::vector<int> badIndices;
         std::map<int, double> normalizedResiduals;
         double chiSquareValue;
+        double chiSquareThreshold;
         int degreesOfFreedom;
     };
     
@@ -218,7 +234,7 @@ class SEAppModule
     // Sparse matrix optimization control
     bool p_use_sparse_matrices; // Enable sparse matrix storage
 
-    double getChiSquareThreshold(int dof, double confidence);
+    double getChiSquareThreshold(int dof, double confidence, int numBuses);
     bool p_converged;
 
     // Helper function to access and modify the sigma of a measurement by index
@@ -229,6 +245,7 @@ class SEAppModule
         std::vector<int> badIndices;                   // Newly identified bad measurements in this iteration
         std::vector<int> allBadIndices;                // All bad measurements identified so far
         std::map<int, double> normalizedResiduals;     // Normalized residual values for all measurements
+        std::vector<BadMeasInfo> badMeasDetails;       // Lightweight measurement details for output
         double chiSquareValue;                         // Chi-square value for this iteration
         int iterationNumber;                           // Iteration number
         int degreesOfFreedom;                          // Degrees of freedom for this iteration

@@ -16,6 +16,8 @@
  * @date   2025-03-05
  *         Adding try/catch function to enable more robust state estimation
  * @date   2025-04-20
+ *         Implemented parallel version
+ * @date   2025-11-25
  */
 // -------------------------------------------------------------
 
@@ -145,9 +147,11 @@ main(int argc, char **argv)
       }
 
       // Dump timing information
-      if (world.rank() == 0) {
-        gridpack::utility::CoarseTimer::instance()->dump();
-      }
+
+      // ALL processes must call dump() - it may have collective operations
+      // But only rank 0 will actually print the output
+      gridpack::utility::CoarseTimer::instance()->dump();
+
 
       // Report convergence status
       if (!se_app.hasConverged()) {
@@ -172,8 +176,12 @@ main(int argc, char **argv)
     }
 
     // Clean up regardless of exceptions
+    int myRank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);  // Get rank using MPI directly
     GA_Terminate();
+
     gridpack::math::Finalize();
+
     MPI_Finalize();
     
   } catch (...) {

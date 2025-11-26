@@ -17,8 +17,11 @@
  *         Adding more functions to handle measurements more efficiently
  * @date   2025-04-02
  *         Enhanced voltage constraint featuer
-           Cleaned up debug information
+ *         Cleaned up debug information
  * @date   2025-11-19
+ *         Implemented parallel version
+ *         Added chi-sqrare convergent criteria
+ * @date   2025-11-25
  *
  *
  */
@@ -28,6 +31,10 @@
 #include <algorithm>
 #include <utility>
 #include <string>
+#include <unistd.h>
+#include <boost/mpi.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
@@ -43,6 +50,36 @@
 #include "timer/coarse_timer.hpp"
 #include "se_app_module.hpp"
 double p_bad_data_threshold;
+
+// Anonymous namespace for boost serialization support
+namespace {
+  // Make BadMeasInfo serializable for MPI
+  template<class Archive>
+  void serialize(Archive & ar, gridpack::state_estimation::SEAppModule::BadMeasInfo& info, const unsigned int version) {
+    ar & info.index;
+    ar & info.busOrFromBus;
+    ar & info.toBus;
+    ar & info.type;
+    ar & info.value;
+    ar & info.deviation;
+    ar & info.normRes;
+  }
+}
+
+namespace boost {
+namespace serialization {
+  template<class Archive>
+  inline void serialize(Archive & ar, gridpack::state_estimation::SEAppModule::BadMeasInfo& info, const unsigned int version) {
+    ar & info.index;
+    ar & info.busOrFromBus;
+    ar & info.toBus;
+    ar & info.type;
+    ar & info.value;
+    ar & info.deviation;
+    ar & info.normRes;
+  }
+}
+}
 
 // Calling program for state estimation application
 
@@ -97,8 +134,6 @@ std::vector<gridpack::state_estimation::Measurement>
         measurement.p_busid = busid;
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
-        //printf("%s %d %f %f\n", measurement.p_type.c_str(), measurement.p_busid,
-        //  measurement.p_value, measurement.p_deviation);
         ret.push_back(measurement); 
       } else if (meas_type == "PIJ" || meas_type == "PJI" ||
           meas_type == "QIJ" || meas_type == "QJI" ||
@@ -109,9 +144,12 @@ std::vector<gridpack::state_estimation::Measurement>
         measurements[idx]->get("ToBus", &tbusid);
         std::string ckt;
         measurements[idx]->get("CKT", &ckt);
-        // Fix up tag so that single character tags are right-justified
-        if (ckt.length() == 1) {
-          ckt.insert(0,1,' ');
+        // Ensure circuit ID is exactly 2 characters by padding with trailing space
+        // This matches the fixed-width format used in power system files
+        if (ckt.length() < 2) {
+          ckt.append(2 - ckt.length(), ' ');
+        } else if (ckt.length() > 2) {
+          ckt = ckt.substr(0, 2);
         }
         gridpack::state_estimation::Measurement measurement;
         strcpy(measurement.p_type,meas_type.c_str());
@@ -120,9 +158,6 @@ std::vector<gridpack::state_estimation::Measurement>
         strcpy(measurement.p_ckt,ckt.c_str());
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
-        //printf("%s %d %d %s %f %f\n", measurement.p_type.c_str(), measurement.p_fbusid,
-        //  measurement.p_tbusid, measurement.p_ckt.c_str(), measurement.p_value,
-        //  measurement.p_deviation);
         ret.push_back(measurement);
       } 
     }
@@ -187,9 +222,6 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   // Sparse matrix optimization control
   p_use_sparse_matrices = secursor->get("useSparseMatrices", true);
 
-  // load input file
-  //gridpack::parser::PTI23_parser<SENetwork> parser(p_network);
-  //parser.parse(filename.c_str());
   double phaseShiftSign = secursor->get("phaseShiftSign",1.0);
 
   int t_pti = timer->createCategory("State Estimation: Network Parser");
@@ -446,12 +478,15 @@ void gridpack::state_estimation::SEAppModule::solve(void)
 
   // set some state estimation parameters
   p_factory->configureSE();
-  
+
   // Handle PV bus constraints
   handlePVBusVoltages();
-  
-  // Handle VA measurements
+
+  // Handle VA measurements (may add virtual measurements)
   handleVAMeasurements();
+
+  // Reconfigure SE after VA measurements since they may have added virtual measurements
+  p_factory->configureSE();
 
   // Get configuration cursor
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -507,7 +542,6 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   
   if (p_use_sparse_matrices) {
     HJac = HJacMap.mapToMatrix();
-    // Note: GridPACK defaults to sparse matrices, so no special action needed
     p_busIO->header("Using sparse matrix storage for Jacobian H\n");
   } else {
     HJac = HJacMap.mapToMatrix();
@@ -523,7 +557,6 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   
   if (p_use_sparse_matrices) {
     Rinv = RinvMap.mapToMatrix();
-    // Note: GridPACK defaults to sparse matrices
     p_busIO->header("Using sparse matrix storage for R_inv\n");
   } else {
     Rinv = RinvMap.mapToMatrix();
@@ -533,12 +566,11 @@ void gridpack::state_estimation::SEAppModule::solve(void)
 
   // Convergence and iteration parameters
   ComplexType tol;
-  //tol = 2.0*p_tolerance;
-  //int iter = 0;
   bool converged = false;
   p_converged = false;
   int badDataIter = 0;
-  bool badDataExists = true; 
+  bool badDataExists = true;
+  double previousChiSquare = std::numeric_limits<double>::max(); // Track chi-square progress
 
 
   //Out loop for bad data handling
@@ -605,9 +637,27 @@ void gridpack::state_estimation::SEAppModule::solve(void)
 
   // Check convergence and handle bad data
   if (real(tol) <= p_tolerance) {
-
     converged = true;
-    p_converged = true; 
+  } else {
+    converged = false;
+  }
+
+  // Synchronize convergence status across all MPI processes
+  // This is essential to prevent deadlock where different processes have different convergence states
+  int numProcs = p_network->communicator().size();
+  std::vector<int> convergenceStatus(numProcs, 0);
+  convergenceStatus[p_network->communicator().rank()] = converged ? 1 : 0;
+  p_network->communicator().sum(&convergenceStatus[0], numProcs);
+
+  // All processes must agree it converged
+  int totalConverged = 0;
+  for (int i = 0; i < numProcs; i++) {
+    totalConverged += convergenceStatus[i];
+  }
+  converged = (totalConverged == numProcs);
+  p_converged = converged;
+
+  if (converged) {
     p_busIO->header("\n*** State estimation converged successfully ***\n");
     // Perform bad data detection
     int t_baddata = timer->createCategory("State Estimation: Bad Data Detection");
@@ -619,11 +669,44 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     
     // Call detectBadData and handle the return issue
     BadDataResult badDataResult = detectBadData();
-    
+
+
     // Extract bad indices from the result
     badIndices = badDataResult.badIndices;
-    
+
+    // Check stopping criteria
+    double currentChiSquare = badDataResult.chiSquareValue;
+    double chiSquareThreshold = badDataResult.chiSquareThreshold;
+
+    if (badDataIter > 0) {
+      char stopBuf[512];
+
+      // Criterion 1: Chi-square below threshold AND no new bad measurements
+      if (currentChiSquare < chiSquareThreshold && badIndices.empty()) {
+        snprintf(stopBuf, sizeof(stopBuf),
+                "\nChi-square below threshold (%.2f < %.2f) and no new bad measurements - converged.\n",
+                currentChiSquare, chiSquareThreshold);
+        p_busIO->header(stopBuf);
+        break; // Exit bad data loop
+      }
+
+      // Criterion 2: Chi-square increased significantly
+      if (currentChiSquare > previousChiSquare * 1.1) {
+        snprintf(stopBuf, sizeof(stopBuf),
+                "\nChi-square increased from %.2f to %.2f (+%.1f%%) - stopping bad data detection.\n",
+                previousChiSquare, currentChiSquare,
+                100.0 * (currentChiSquare - previousChiSquare) / previousChiSquare);
+        p_busIO->header(stopBuf);
+        p_busIO->header("Flagging additional measurements is making solution worse - reverting to previous iteration.\n");
+        badIndices.clear();
+        break; // Exit bad data loop
+      }
+    }
+    previousChiSquare = currentChiSquare;
+
+
     timer->stop(t_baddata);
+
     
     // Safety check for TAMU500 abort issue
     char buf[256];
@@ -676,29 +759,97 @@ void gridpack::state_estimation::SEAppModule::solve(void)
         }
       }
       
-      // Store all indices identified so far
       iterInfo.allBadIndices = allBadIndicesSoFar;
       iterInfo.chiSquareValue = p_lastChiSquareValue;
       iterInfo.iterationNumber = badDataIter + 1;
-      iterInfo.degreesOfFreedom = badDataResult.degreesOfFreedom; // Store the actual DOF from detection result
-      
-      // Normalized residuals will be stored when the iteration info is created
-      
-      p_badDataIterationInfo.push_back(iterInfo);
-      
-      // Log iteration information
+      iterInfo.degreesOfFreedom = badDataResult.degreesOfFreedom;
+
       char msgBuf[128];
-      snprintf(msgBuf, sizeof(msgBuf), "\nIteration %d: Found %d bad measurements, Chi-square: %.2f\n", 
+      snprintf(msgBuf, sizeof(msgBuf), "\nIteration %d: Found %d bad measurements, Chi-square: %.2f\n",
               badDataIter + 1, (int)badIndices.size(), p_lastChiSquareValue);
       p_busIO->header(msgBuf);
-      
-      // Adjust weights to bad measurements
+
+      // Collect measurement details for output file
+      std::vector<BadMeasInfo> localBadMeas;
+      for (int idx : badIndices) {
+        std::string detailStr;
+        if (p_factory->reportMeasurement(idx, detailStr)) {
+          BadMeasInfo info;
+          info.index = idx;
+          info.busOrFromBus = -1;
+          info.toBus = -1;
+          info.value = 0.0;
+          info.deviation = 0.0;
+          strncpy(info.type, "??", sizeof(info.type)-1);
+
+          size_t busPos = detailStr.find("Bus ");
+          size_t fromPos = detailStr.find("From ");
+          size_t typePos = detailStr.find("Type: ");
+          size_t valPos = detailStr.find("Value: ");
+          size_t devPos = detailStr.find("Deviation: ");
+
+          if (busPos != std::string::npos) {
+            sscanf(detailStr.c_str() + busPos + 4, "%d", &info.busOrFromBus);
+          } else if (fromPos != std::string::npos) {
+            sscanf(detailStr.c_str() + fromPos + 5, "%d", &info.busOrFromBus);
+            size_t toPos = detailStr.find("To ");
+            if (toPos != std::string::npos) {
+              sscanf(detailStr.c_str() + toPos + 3, "%d", &info.toBus);
+            }
+          }
+          if (typePos != std::string::npos) {
+            sscanf(detailStr.c_str() + typePos + 6, "%7s", info.type);
+            size_t len = strlen(info.type);
+            if (len > 0 && info.type[len-1] == ',') info.type[len-1] = '\0';
+          }
+          if (valPos != std::string::npos) {
+            sscanf(detailStr.c_str() + valPos + 7, "%lf", &info.value);
+          }
+          if (devPos != std::string::npos) {
+            sscanf(detailStr.c_str() + devPos + 12, "%lf", &info.deviation);
+          }
+
+          info.normRes = 0.0;
+          if (badDataResult.normalizedResiduals.find(idx) != badDataResult.normalizedResiduals.end()) {
+            info.normRes = badDataResult.normalizedResiduals.at(idx);
+          }
+
+          localBadMeas.push_back(info);
+        }
+      }
+
+      // MPI collective: all processes must participate
+      boost::mpi::communicator comm = static_cast<boost::mpi::communicator>(p_network->communicator());
+      std::vector<std::vector<BadMeasInfo>> allBadMeas;
+      boost::mpi::all_gather(comm, localBadMeas, allBadMeas);
+
+      if (p_network->communicator().rank() == 0) {
+        for (const auto& procMeas : allBadMeas) {
+          for (const auto& meas : procMeas) {
+            bool isDuplicate = false;
+            for (const auto& existing : iterInfo.badMeasDetails) {
+              if (existing.index == meas.index) {
+                isDuplicate = true;
+                break;
+              }
+            }
+            if (!isDuplicate) {
+              iterInfo.badMeasDetails.push_back(meas);
+            }
+          }
+        }
+        std::sort(iterInfo.badMeasDetails.begin(), iterInfo.badMeasDetails.end(),
+                 [](const BadMeasInfo& a, const BadMeasInfo& b) { return a.index < b.index; });
+      }
+
+      p_network->communicator().sync();
+      p_badDataIterationInfo.push_back(iterInfo);
+
       int t_adjust = timer->createCategory("State Estimation: Adjust Weights");
       timer->start(t_adjust);
       adjustWeights(badIndices);
       timer->stop(t_adjust);
-      
-      // Set factory mode to rebuild Rinv
+
       p_factory->setMode(R_inv);
       
       // Refresh mapping to avoid matrix size issues
@@ -713,43 +864,101 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     p_busIO->header("Results may not be reliable.\n");
     break; //Exist Outer loop if SE doesn't converge
   }
+
+
   badDataIter++;
 }
+
+  // Ensure all processes are synchronized before output
+  p_network->communicator().sync();
+
+  // Processes may have exited the loop with different convergence states
+  int numProcs = p_network->communicator().size();
+  std::vector<int> finalConvergenceStatus(numProcs, 0);
+  finalConvergenceStatus[p_network->communicator().rank()] = converged ? 1 : 0;
+  p_network->communicator().sum(&finalConvergenceStatus[0], numProcs);
+
+  // All processes must agree on final convergence status
+  int totalFinalConverged = 0;
+  for (int i = 0; i < numProcs; i++) {
+    totalFinalConverged += finalConvergenceStatus[i];
+  }
+  converged = (totalFinalConverged > 0);  // If ANY process converged, consider it converged
+  p_converged = converged;
+
+
   // Output results if converged
   if (converged) {
-    // debugMapper(); // Disabled debug output
     p_busIO->header("\n   State Estimation Outputs\n");
     p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+
+    // Debug: Check how many buses each process will write
+    int numBus = p_network->numBuses();
+    int writableBuses = 0;
+    for (int i = 0; i < numBus; i++) {
+      SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+      if (bus && !bus->isIsolated()) {
+        writableBuses++;
+      }
+    }
+    char debugBuf[256];
+    snprintf(debugBuf, sizeof(debugBuf), "DEBUG: Process %d has %d total buses, %d writable buses before write()\n",
+            p_network->communicator().rank(), numBus, writableBuses);
+    p_busIO->header(debugBuf);
+
+
+    p_network->communicator().sync();  // Ensure all processes ready
+
+
+
+    // Use printf so ALL processes can print (header() only prints from rank 0)
+
     p_busIO->write();
+
+
+    p_network->communicator().sync();  // Wait for write to complete
+
     p_branchIO->header("\n   Branch Power Flow (p.u.)\n");
     p_branchIO->header("\n        Bus 1       Bus 2            P                    Q\n");
+    p_network->communicator().sync();
     p_branchIO->write();
+    p_network->communicator().sync();
 
     p_busIO->header("\n   Comparison of Bus Measurements and Estimations\n");
     p_busIO->header("\n   Type  Bus Number      Measurement          Estimate"
                     " Difference   Deviation\n");
+    p_network->communicator().sync();
     p_busIO->write("se");
+    p_network->communicator().sync();
 
     p_branchIO->header("\n   Comparison of Branch Measurements and Estimations\n");
     p_branchIO->header("\n   Type  From    To  CKT   Measurement      Estimate"
                        " Difference   Deviation\n");
+    p_network->communicator().sync();
     p_branchIO->write("se");
+    p_network->communicator().sync();
   }
+
+  // Ensure all processes complete output before proceeding
+  p_network->communicator().sync();
     // Output final results if converged
     if (!badDataExists) {
         p_busIO->header("\nSE completed successfully with no bad data remaining\n");
         char bdioBuf[128];
         snprintf(bdioBuf, sizeof(bdioBuf), "\nBad Data Iteration %d \n", badDataIter);
     }
-    
+
+
     // Report Jacobian optimization performance - only for detailed diagnostics
     if (p_diagnosticLevel == "detailed") {
         reportJacobianPerformance();
     }
-    
+
+
     // Stop total timer
     timer->stop(t_total);
-    
+
+
     // Timer stopped successfully
 }
 
@@ -759,6 +968,28 @@ void gridpack::state_estimation::SEAppModule::solve(void)
  */
 void gridpack::state_estimation::SEAppModule::write(void)
 {
+  // Define structures for complete bus/branch data at function scope
+  struct BusData {
+    int busNum;
+    double angle;
+    double voltage;
+  };
+
+  struct BranchData {
+    int fromBus;
+    int toBus;
+    char branchID[32];  // To identify branches between same buses
+    double P;
+    double Q;
+  };
+
+  // Vectors to hold complete system data from all processes
+  std::vector<BusData> allBuses;
+  std::vector<BranchData> allBranches;
+
+  // Ensure all processes are synchronized before writing
+  p_network->communicator().sync();
+
   // Get output file name from configuration
   std::string outputFile = "state_estimation_results.txt"; // Default value
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -766,25 +997,231 @@ void gridpack::state_estimation::SEAppModule::write(void)
   if (cursor) {
     cursor->get("outputFile", &outputFile);
   }
-  
+
+  // ALL PROCESSES: Create vectors/matrices for collective operations
+  // These MUST be created by all processes before rank 0 starts writing
+  p_factory->setMode(gridpack::state_estimation::Residual);
+  gridpack::mapper::GenVectorMap<SENetwork> globalResMap(p_network);
+  boost::shared_ptr<gridpack::math::Vector> globalResidual = globalResMap.mapToVector();
+
+  p_factory->setMode(gridpack::state_estimation::R_inv);
+  gridpack::mapper::GenMatrixMap<SENetwork> globalRinvMap(p_network);
+  boost::shared_ptr<gridpack::math::Matrix> globalRinv = globalRinvMap.mapToMatrix();
+
+  // Synchronize before file operations
+  p_network->communicator().sync();
+
   // Create output file
   std::ofstream outFile;
-  
-  // Only have process 0 write 
+
+  // Only have process 0 write
+  bool fileOpened = false;
   if (p_network->communicator().rank() == 0) {
     outFile.open(outputFile.c_str());
     if (!outFile.is_open()) {
       printf("ERROR: Could not open output file %s\n", outputFile.c_str());
-      return;
+      fileOpened = false;
+    } else {
+      fileOpened = true;
     }
   }
-  
+
+  // If file couldn't be opened, all processes must sync and return together
+  if (p_network->communicator().rank() == 0 && !fileOpened) {
+    p_network->communicator().sync();  // Sync before early return
+    return;
+  }
+
+  // Declare variables that will be used across multiple rank 0 blocks (after syncs)
+  FILE* tempFile = nullptr;
+
+  // ALL processes need to know numBus for collective operations
+  int numBus = p_network->numBuses();
+
+  // All processes sync before rank 0 starts heavy file I/O work
+  p_network->communicator().sync();
+
+  // Collect complete bus/branch data from ALL processes using MPI gather
+  // This happens BEFORE file writing so rank 0 has all data ready
+  std::vector<BusData> localBuses;
+  std::vector<BranchData> localBranches;
+
+  {
+    int localNumBus = p_network->numBuses();
+    for (int i = 0; i < localNumBus; i++) {
+      SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
+      if (bus && !bus->isIsolated()) {
+        BusData bd;
+        bd.busNum = bus->getOriginalIndex();
+        bd.angle = bus->getPhase() * 180.0 / M_PI;
+        bd.voltage = bus->getVoltage();
+        localBuses.push_back(bd);
+      }
+    }
+
+    int localNumBranch = p_network->numBranches();
+    for (int i = 0; i < localNumBranch; i++) {
+      SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+      if (branch) {
+        SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
+        SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
+        if (bus1 && bus2 && !bus1->isIsolated() && !bus2->isIsolated()) {
+          BranchData brd;
+          brd.fromBus = bus1->getOriginalIndex();
+          brd.toBus = bus2->getOriginalIndex();
+
+          // Get circuit IDs from branch
+          std::vector<std::string> circuitIDs = branch->getCircuitIDs();
+
+          // Use first circuit ID (or concatenate if multiple parallel lines)
+          std::string ckt = "";
+          if (!circuitIDs.empty()) {
+            if (circuitIDs.size() == 1) {
+              ckt = circuitIDs[0];
+            } else {
+              // Multiple parallel lines - concatenate circuit IDs
+              for (size_t j = 0; j < circuitIDs.size(); j++) {
+                if (j > 0) ckt += "/";
+                ckt += circuitIDs[j];
+              }
+            }
+          }
+
+          // Ensure circuit ID fits in branchID field (max 31 chars)
+          if (ckt.length() > 31) {
+            ckt = ckt.substr(0, 31);
+          }
+
+          // Use circuit ID as branch ID (fromBus and toBus are already in separate columns)
+          snprintf(brd.branchID, sizeof(brd.branchID), "%s", ckt.c_str());
+
+          branch->getPQ(bus1, &brd.P, &brd.Q);
+          localBranches.push_back(brd);
+        }
+      }
+    }
+  }
+
+  // Gather bus counts from all processes
+  int localBusCount = localBuses.size();
+  int localBranchCount = localBranches.size();
+
+  std::vector<int> allBusCounts;
+  std::vector<int> allBranchCounts;
+
+  int nprocs = p_network->communicator().size();
+  int rank = p_network->communicator().rank();
+
+  if (rank == 0) {
+    allBusCounts.resize(nprocs);
+    allBranchCounts.resize(nprocs);
+  }
+
+  // Gather counts to rank 0
+  MPI_Gather(&localBusCount, 1, MPI_INT,
+             rank == 0 ? allBusCounts.data() : NULL, 1, MPI_INT,
+             0, p_network->communicator().getCommunicator());
+
+  MPI_Gather(&localBranchCount, 1, MPI_INT,
+             rank == 0 ? allBranchCounts.data() : NULL, 1, MPI_INT,
+             0, p_network->communicator().getCommunicator());
+
+  // Resize allBuses and allBranches on rank 0 to hold gathered data
+  if (rank == 0) {
+    int totalBuses = 0;
+    int totalBranches = 0;
+    for (int i = 0; i < nprocs; i++) {
+      totalBuses += allBusCounts[i];
+      totalBranches += allBranchCounts[i];
+    }
+    allBuses.resize(totalBuses);
+    allBranches.resize(totalBranches);
+  }
+
+  // Calculate displacements for Gatherv
+  std::vector<int> busDisplacements;
+  std::vector<int> branchDisplacements;
+
+  if (rank == 0) {
+    busDisplacements.resize(nprocs);
+    branchDisplacements.resize(nprocs);
+    busDisplacements[0] = 0;
+    branchDisplacements[0] = 0;
+    for (int i = 1; i < nprocs; i++) {
+      busDisplacements[i] = busDisplacements[i-1] + allBusCounts[i-1];
+      branchDisplacements[i] = branchDisplacements[i-1] + allBranchCounts[i-1];
+    }
+  }
+
+  // Gather bus data (int + 2 doubles = sizeof(BusData) bytes)
+  std::vector<int> busCounts_bytes(nprocs);
+  std::vector<int> busDisp_bytes(nprocs);
+  if (rank == 0) {
+    for (int i = 0; i < nprocs; i++) {
+      busCounts_bytes[i] = allBusCounts[i] * sizeof(BusData);
+      busDisp_bytes[i] = busDisplacements[i] * sizeof(BusData);
+    }
+  }
+
+  MPI_Gatherv(localBuses.data(), localBusCount * sizeof(BusData), MPI_BYTE,
+              rank == 0 ? allBuses.data() : NULL,
+              rank == 0 ? busCounts_bytes.data() : NULL,
+              rank == 0 ? busDisp_bytes.data() : NULL,
+              MPI_BYTE, 0, p_network->communicator().getCommunicator());
+
+  // Gather branch data (2 ints + 2 doubles = sizeof(BranchData) bytes)
+  std::vector<int> branchCounts_bytes(nprocs);
+  std::vector<int> branchDisp_bytes(nprocs);
+  if (rank == 0) {
+    for (int i = 0; i < nprocs; i++) {
+      branchCounts_bytes[i] = allBranchCounts[i] * sizeof(BranchData);
+      branchDisp_bytes[i] = branchDisplacements[i] * sizeof(BranchData);
+    }
+  }
+
+  MPI_Gatherv(localBranches.data(), localBranchCount * sizeof(BranchData), MPI_BYTE,
+              rank == 0 ? allBranches.data() : NULL,
+              rank == 0 ? branchCounts_bytes.data() : NULL,
+              rank == 0 ? branchDisp_bytes.data() : NULL,
+              MPI_BYTE, 0, p_network->communicator().getCommunicator());
+
+  // Rank 0 sorts and deduplicates the gathered data
+  if (rank == 0) {
+    // Sort buses by bus number
+    std::sort(allBuses.begin(), allBuses.end(),
+              [](const BusData& a, const BusData& b) { return a.busNum < b.busNum; });
+
+    // Remove duplicate buses (buses may appear on multiple processes due to partitioning)
+    auto busEndUnique = std::unique(allBuses.begin(), allBuses.end(),
+              [](const BusData& a, const BusData& b) { return a.busNum == b.busNum; });
+    allBuses.erase(busEndUnique, allBuses.end());
+
+    // Sort branches by from bus, then to bus
+    std::sort(allBranches.begin(), allBranches.end(),
+              [](const BranchData& a, const BranchData& b) {
+                if (a.fromBus != b.fromBus) return a.fromBus < b.fromBus;
+                return a.toBus < b.toBus;
+              });
+
+    // Remove duplicate branches (compare fromBus, toBus, AND circuit ID)
+    auto branchEndUnique = std::unique(allBranches.begin(), allBranches.end(),
+              [](const BranchData& a, const BranchData& b) {
+                return (a.fromBus == b.fromBus && a.toBus == b.toBus &&
+                        strcmp(a.branchID, b.branchID) == 0);
+              });
+    allBranches.erase(branchEndUnique, allBranches.end());
+  }
+
+  p_network->communicator().sync();
+
+  // Rank 0 does header and non-collective file writing
   if (p_network->communicator().rank() == 0 && outFile.is_open()) {
+
     // Create temporary files to capture output
     FILE* oldStdout = stdout;  // Save original stdout
-    
+
     // Redirect stdout to a temporary file
-    FILE* tempFile = tmpfile();
+    tempFile = tmpfile();
     if (!tempFile) {
       printf("Error creating temporary file\n");
       outFile.close();
@@ -870,391 +1307,207 @@ void gridpack::state_estimation::SEAppModule::write(void)
       outFile << "\nNote: Weights for these measurements were reduced in the solution.\n\n";
     }
     
-    // Write state estimation results
+    // Write complete state estimation results from all processes
     outFile << "---------------------------------------------------------\n";
-    outFile << "STATE ESTIMATION OUTPUTS - SYSTEM STATE\n";
+    outFile << "STATE ESTIMATION OUTPUTS - COMPLETE SYSTEM STATE\n";
     outFile << "---------------------------------------------------------\n";
     outFile << "Bus Number      Phase Angle (deg)      Voltage Magnitude (p.u.)\n";
     outFile << "---------------------------------------------------------\n";
-    
-    int numBus = p_network->numBuses();
-    for (int i = 0; i < numBus; i++) {
-      SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
-      if (!bus->isIsolated()) {
-        char buf[512];  // Increase buffer size
-        double angle = bus->getPhase() * 180.0 / M_PI; // Convert to degrees
-        snprintf(buf, sizeof(buf), "%-10d      %-20.6f      %-20.6f\n",
-                bus->getOriginalIndex(), angle, bus->getVoltage());
-        outFile << buf;
-      }
+
+    for (const auto& bus : allBuses) {
+      char buf[256];
+      snprintf(buf, sizeof(buf), "%-10d      %-20.6f      %-20.6f\n",
+              bus.busNum, bus.angle, bus.voltage);
+      outFile << buf;
     }
     outFile << "\n";
-    
-    // Write branch power flow data
+
+    // Write complete branch power flow data from all processes
     outFile << "---------------------------------------------------------\n";
-    outFile << "BRANCH POWER FLOW RESULTS (P.U.)\n";
+    outFile << "BRANCH POWER FLOW RESULTS - COMPLETE (P.U.)\n";
     outFile << "---------------------------------------------------------\n";
-    outFile << "From Bus      To Bus      Active Power (P)      Reactive Power (Q)\n";
+    outFile << "From Bus  To Bus  Branch ID        Active Power (P)  Reactive Power (Q)\n";
     outFile << "---------------------------------------------------------\n";
-    
-    int numBranch = p_network->numBranches();
-    for (int i = 0; i < numBranch; i++) {
-      SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-      SEBus* bus1 = dynamic_cast<SEBus*>(branch->getBus1().get());
-      SEBus* bus2 = dynamic_cast<SEBus*>(branch->getBus2().get());
-      if (!bus1->isIsolated() && !bus2->isIsolated()) {
-        char buf[512];  // Increase buffer size
-        double p, q;
-        branch->getPQ(bus1, &p, &q);
-        snprintf(buf, sizeof(buf), "%-12d  %-12d  %-20.6f  %-20.6f\n",
-                bus1->getOriginalIndex(), bus2->getOriginalIndex(), p, q);
-        outFile << buf;
-      }
+
+    for (const auto& branch : allBranches) {
+      char buf[256];
+      snprintf(buf, sizeof(buf), "%-8d  %-8d %-16s %-18.6f %-18.6f\n",
+              branch.fromBus, branch.toBus, branch.branchID, branch.P, branch.Q);
+      outFile << buf;
     }
     outFile << "\n";
-    
-    // Write measurement comparison information directly
-    outFile << "---------------------------------------------------------\n";
-    outFile << "MEASUREMENT COMPARISON - BUS MEASUREMENTS\n";
-    outFile << "---------------------------------------------------------\n";
-    
-    // For large systems, skip detailed measurement output to prevent hangs
-    if (numBus > 100) {
-        outFile << "System has " << numBus << " buses - detailed measurement output skipped for performance.\n";
-        outFile << "Use smaller systems for detailed measurement analysis.\n\n";
-    } else {
-        std::ostringstream busOutputSS;
-        FILE* origStream = stdout;
-        
-        int stdout_pipe[2];
-        pipe(stdout_pipe);
-        int savedStdout = dup(STDOUT_FILENO);
-        dup2(stdout_pipe[1], STDOUT_FILENO);
-        close(stdout_pipe[1]);
-        
-        p_busIO->header("\n   Type  Bus Number      Measurement          Estimate"
-                       " Difference   Deviation\n");
-        p_busIO->write("se");
-        
-        // Restore stdout
+  }  // End rank 0 section before collective bus/branch data collection
+
+  // Write measurement comparison - bus measurements (requires collective operations)
+  // For large systems, skip detailed measurement output to prevent hangs
+  if (numBus > 1000) {
+    if (p_network->communicator().rank() == 0 && outFile.is_open()) {
+      outFile << "---------------------------------------------------------\n";
+      outFile << "MEASUREMENT COMPARISON - BUS MEASUREMENTS\n";
+      outFile << "---------------------------------------------------------\n";
+      outFile << "System has " << numBus << " buses - detailed measurement output skipped for performance.\n";
+      outFile << "Use smaller systems for detailed measurement analysis.\n\n";
+    }
+  } else {
+    // Detailed measurement output - requires collective write() operation
+    if (p_network->communicator().rank() == 0 && outFile.is_open()) {
+      outFile << "---------------------------------------------------------\n";
+      outFile << "MEASUREMENT COMPARISON - BUS MEASUREMENTS\n";
+      outFile << "---------------------------------------------------------\n";
+    }
+
+    int numProcs = p_network->communicator().size();
+    FILE* tempFileBus = nullptr;
+    int savedStdout = -1;
+    std::streambuf* coutBuf = nullptr;
+
+    if (p_network->communicator().rank() == 0) {
+      if (numProcs > 1) {
+        // Multi-process: use tmpfile() to avoid pipe buffer deadlock
+        // tmpfile() creates anonymous temp file with unlimited buffering
+        tempFileBus = tmpfile();
+        if (tempFileBus) {
+          savedStdout = dup(STDOUT_FILENO);
+          dup2(fileno(tempFileBus), STDOUT_FILENO);
+        }
+      } else {
+        // Single process: redirect cout directly to file
+        coutBuf = std::cout.rdbuf();
+        std::cout.rdbuf(outFile.rdbuf());
+      }
+    }
+
+    p_busIO->header("\n   Type  Bus Number      Measurement          Estimate"
+                   " Difference   Deviation\n");
+
+    // ALL processes must call write() - it's a collective operation
+    p_busIO->write("se");
+
+    // Only rank 0 restores stdout/cout and reads temp file
+    if (p_network->communicator().rank() == 0) {
+      if (numProcs > 1) {
         fflush(stdout);
         dup2(savedStdout, STDOUT_FILENO);
         close(savedStdout);
-        
-        char buffer[4096];
-        ssize_t bytesRead;
-        std::string capturedOutput;
-        const size_t MAX_OUTPUT_SIZE = 10 * 1024 * 1024;  // 10MB limit
-        
-        while ((bytesRead = read(stdout_pipe[0], buffer, sizeof(buffer) - 1)) > 0) {
-            buffer[bytesRead] = '\0';
-            capturedOutput += buffer;
-            
-            // Prevent infinite memory growth for large systems
-            if (capturedOutput.size() > MAX_OUTPUT_SIZE) {
-                capturedOutput += "\n[OUTPUT TRUNCATED - System too large for detailed measurement output]\n";
-                break;
+
+        // Read from temp file and write to output file
+        if (tempFileBus && outFile.is_open()) {
+          rewind(tempFileBus);
+          char buffer[4096];
+          bool skipHeader = true;
+          while (fgets(buffer, sizeof(buffer), tempFileBus)) {
+            std::string line(buffer);
+            // Skip the header line we already wrote
+            if (skipHeader && line.find("Type  Bus Number") != std::string::npos) {
+              skipHeader = false;
+              continue;
             }
-        }
-        close(stdout_pipe[0]);
-        
-        // Write measurement data to a file, if available
-        if (!capturedOutput.empty()) {
-            // Remove extra header lines if present
-            size_t start = capturedOutput.find("Type  Bus Number");
-            if (start != std::string::npos) {
-                size_t lineEnd = capturedOutput.find("\n", start);
-                if (lineEnd != std::string::npos) {
-                    capturedOutput = capturedOutput.substr(lineEnd + 1);
-                }
+            if (!skipHeader) {
+              outFile << line;
             }
-            
-            // Write to output file
-            outFile << capturedOutput;
-        } else {
-            outFile << "No bus measurement data available.\n";
+          }
+          fclose(tempFileBus);  // Auto-deletes temp file
         }
+      } else {
+        // Restore cout for single-process runs
+        std::cout.rdbuf(coutBuf);
+      }
     }
-    
-    outFile << "\n";
-    
-    // Branch measurements
-    outFile << "---------------------------------------------------------\n";
-    outFile << "MEASUREMENT COMPARISON - BRANCH MEASUREMENTS\n";
-    outFile << "---------------------------------------------------------\n";
-    
-    // For large systems, skip detailed branch measurement output
-    if (numBus > 100) {
-        outFile << "System has " << numBus << " buses - detailed branch measurement output skipped for performance.\n";
-        outFile << "Use smaller systems for detailed measurement analysis.\n\n";
-    } else {
-        std::ostringstream branchOutputSS;
-        
-        int stdout_pipe[2];
-        pipe(stdout_pipe);
-        int savedStdout = dup(STDOUT_FILENO);
-        dup2(stdout_pipe[1], STDOUT_FILENO);
-        close(stdout_pipe[1]);
-        
-        p_branchIO->header("\n   Type  From    To  CKT   Measurement      Estimate"
-                          " Difference   Deviation\n");
-        p_branchIO->write("se");
-        
-        // Restore stdout
+  }  // End else block for detailed measurement output
+
+  // All processes sync after bus measurements
+  p_network->communicator().sync();
+
+  // Write measurement comparison - branch measurements (requires collective operations)
+  // For large systems, skip detailed branch measurement output
+  if (numBus > 1000) {
+    if (p_network->communicator().rank() == 0 && outFile.is_open()) {
+      outFile << "---------------------------------------------------------\n";
+      outFile << "MEASUREMENT COMPARISON - BRANCH MEASUREMENTS\n";
+      outFile << "---------------------------------------------------------\n";
+      outFile << "System has " << numBus << " buses - detailed branch measurement output skipped for performance.\n";
+      outFile << "Use smaller systems for detailed measurement analysis.\n\n";
+    }
+  } else {
+    // Detailed branch measurement output - requires collective write() operation
+    if (p_network->communicator().rank() == 0 && outFile.is_open()) {
+      outFile << "---------------------------------------------------------\n";
+      outFile << "MEASUREMENT COMPARISON - BRANCH MEASUREMENTS\n";
+      outFile << "---------------------------------------------------------\n";
+    }
+
+    int numProcs = p_network->communicator().size();
+    FILE* tempFileBranch = nullptr;
+    int savedStdout = -1;
+    std::streambuf* coutBuf = nullptr;
+
+    if (p_network->communicator().rank() == 0) {
+      if (numProcs > 1) {
+        // Multi-process: use tmpfile() to avoid pipe buffer deadlock
+        // tmpfile() creates anonymous temp file with unlimited buffering
+        tempFileBranch = tmpfile();
+        if (tempFileBranch) {
+          savedStdout = dup(STDOUT_FILENO);
+          dup2(fileno(tempFileBranch), STDOUT_FILENO);
+        }
+      } else {
+        // Single process: redirect cout directly to file
+        coutBuf = std::cout.rdbuf();
+        std::cout.rdbuf(outFile.rdbuf());
+      }
+    }
+
+    p_branchIO->header("\n   Type  From    To  CKT   Measurement      Estimate"
+                      " Difference   Deviation\n");
+
+    // ALL processes must call write() - it's a collective operation
+    p_branchIO->write("se");
+
+    // Only rank 0 restores stdout/cout and reads temp file
+    if (p_network->communicator().rank() == 0) {
+      if (numProcs > 1) {
         fflush(stdout);
         dup2(savedStdout, STDOUT_FILENO);
         close(savedStdout);
-        
-        char buffer[4096];
-        ssize_t bytesRead;
-        std::string capturedOutput;
-        const size_t MAX_OUTPUT_SIZE = 10 * 1024 * 1024;  // 10MB limit
-        
-        capturedOutput.clear();
-        while ((bytesRead = read(stdout_pipe[0], buffer, sizeof(buffer) - 1)) > 0) {
-            buffer[bytesRead] = '\0';
-            capturedOutput += buffer;
-            
-            // Prevent infinite memory growth for large systems
-            if (capturedOutput.size() > MAX_OUTPUT_SIZE) {
-                capturedOutput += "\n[OUTPUT TRUNCATED - System too large for detailed measurement output]\n";
-                break;
+
+        // Read from temp file and write to output file
+        if (tempFileBranch && outFile.is_open()) {
+          rewind(tempFileBranch);
+          char buffer[4096];
+          bool skipHeader = true;
+          while (fgets(buffer, sizeof(buffer), tempFileBranch)) {
+            std::string line(buffer);
+            // Skip the header line we already wrote
+            if (skipHeader && line.find("Type  From    To") != std::string::npos) {
+              skipHeader = false;
+              continue;
             }
-        }
-        close(stdout_pipe[0]);
-        
-        // Write branch measurement data to the file, if available
-        if (!capturedOutput.empty()) {
-            // Remove extra header lines if present
-            size_t start = capturedOutput.find("Type  From    To");
-            if (start != std::string::npos) {
-                size_t lineEnd = capturedOutput.find("\n", start);
-                if (lineEnd != std::string::npos) {
-                    capturedOutput = capturedOutput.substr(lineEnd + 1);
-                }
+            if (!skipHeader) {
+              outFile << line;
             }
-            
-            outFile << capturedOutput;
-        } else {
-            outFile << "No branch measurement data available.\n";
+          }
+          fclose(tempFileBranch);  // Auto-deletes temp file
         }
+      } else {
+        // Restore cout for single-process runs
+        std::cout.rdbuf(coutBuf);
+      }
     }
-    outFile << "\n";
-    
-    // Track branch measurements for diagnostic purposes - needed for both standard and detailed levels
-    std::vector<std::pair<int, double>> branchResiduals;
-    
-    // Statistical analysis section - only for standard and detailed levels
-    if (p_diagnosticLevel == "standard" || p_diagnosticLevel == "detailed") {
-        outFile << "---------------------------------------------------------\n";
-        outFile << "STATISTICAL ANALYSIS\n";
-        outFile << "---------------------------------------------------------\n";
-        
-        // Add top 10 measurements with highest normalized residuals for diagnostic purposes
-        outFile << "\nTop 10 Measurements with Highest Normalized Residuals:\n";
-        outFile << "-------------------------------------------------------------\n";
-        outFile << "Rank  Index  Type  Bus/From  To      Value        NormRes     Threshold   Status\n";
-        outFile << "--------------------------------------------------------------------------------\n";
-    
-    // Create a copy of the sorted pairs from the detection process
-    std::vector<std::pair<int, double>> diagnosticPairs;
-    int mapperSize = 0;
-    
-    // Create temporary vector and matrix maps to get the residuals
-    gridpack::mapper::GenVectorMap<SENetwork> ResMap(p_network);
-    boost::shared_ptr<gridpack::math::Vector> Residual = ResMap.mapToVector();
-    mapperSize = Residual->size();
-    
-    // Configure for residual calculation
-    p_factory->setMode(gridpack::state_estimation::Residual);
-    
-    if (mapperSize > 0) {
-        // Create a vector of index/residual pairs
-        for (int i = 0; i < mapperSize; i++) {
-            // Get R inverse for normalization
-            double weight = 1.0;
-            gridpack::ComplexType rinvValue;
-            gridpack::ComplexType rvalue;
-            
-            // Get R-inverse diagonal element
-            p_factory->setMode(gridpack::state_estimation::R_inv);
-            gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(p_network);
-            boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
-            Rinv->getElement(i, i, rinvValue);
-            weight = std::real(rinvValue);
-            
-            // Get residual
-            p_factory->setMode(gridpack::state_estimation::Residual);
-            Residual->getElement(i, rvalue);
-            double r = std::abs(std::real(rvalue));
-            // Calculate normalized residual
-            double sigma = (weight > 0.0) ? 1.0/sqrt(weight) : 1.0;
-            double normRes = r/sigma;
-            diagnosticPairs.push_back(std::make_pair(i, normRes));
-            
-            // Track branch measurements for diagnostics
-            std::string details;
-            if (p_factory->reportMeasurement(i, details)) {
-                // Check if this is a branch measurement (PIJ, QIJ, PJI, QJI)
-                if (details.find("FromBus") != std::string::npos || 
-                    details.find("PIJ") != std::string::npos ||
-                    details.find("QIJ") != std::string::npos || 
-                    details.find("PJI") != std::string::npos ||
-                    details.find("QJI") != std::string::npos) {
-                    branchResiduals.push_back(std::make_pair(i, normRes));
-                }
-                
-                // Bus 8 tracking removed
-            }
-        }
-        
-        // Sort by residual magnitude (descending)
-        std::sort(diagnosticPairs.begin(), diagnosticPairs.end(), 
-              [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
-                  return a.second > b.second;
-              });
-        
-        // Print top 10 or as many as available
-        int diagCount = std::min(10, (int)diagnosticPairs.size());
-        for (int i = 0; i < diagCount; i++) {
-            int idx = diagnosticPairs[i].first;
-            double res = diagnosticPairs[i].second;
-            std::string details;
-            
-            if (p_factory->reportMeasurement(idx, details)) {
-                int busNum = -1;
-                int toBusNum = -1;
-                std::string type = "Unknown";
-                double value = 0.0;
-                
-                double thisThreshold = p_bad_data_threshold;
-                
-                // Check for VM measurements (higher threshold)
-                if (details.find("Type: VM") != std::string::npos) {
-                    thisThreshold = p_bad_data_threshold * 3.0;
-                }
-                // Check for VA measurements (higher threshold)
-                else if (details.find("Type: VA") != std::string::npos) {
-                    thisThreshold = p_bad_data_threshold * 5.0;
-                }
-                
-                // Determine if this measurement would be flagged
-                std::string status = (res > thisThreshold) ? "BAD" : "OK";
-                
-                // Check f it's flagged or not
-                bool wasFlagged = false;
-                for (int badIdx : p_badMeasurementIndices) {
-                    if (badIdx == idx) {
-                        wasFlagged = true;
-                        break;
-                    }
-                }
-                
-                if (wasFlagged) {
-                    status = "FLAGGED";
-                }
-                
-                char diagBuf[256];
-                
-                if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf", 
-                          &busNum, type.data(), &value) >= 3) {
-                    // Bus measurement
-                    snprintf(diagBuf, sizeof(diagBuf), "%-5d %-6d %-5s %-9d -       %-12.6f %-11.6f %-11.6f %s\n", 
-                            i+1, idx, type.c_str(), busNum, value, res, thisThreshold, status.c_str());
-                } 
-                else if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
-                               &busNum, &toBusNum, type.data(), &value) >= 4) {
-                    // Branch measurement
-                    snprintf(diagBuf, sizeof(diagBuf), "%-5d %-6d %-5s %-9d %-7d %-12.6f %-11.6f %-11.6f %s\n", 
-                            i+1, idx, type.c_str(), busNum, toBusNum, value, res, thisThreshold, status.c_str());
-                }
-                else {
-                    // Fall back to simpler format
-                    snprintf(diagBuf, sizeof(diagBuf), "%-5d %-6d %s, NormRes=%12.6f, Threshold=%12.6f, Status: %s\n", 
-                            i+1, idx, details.c_str(), res, thisThreshold, status.c_str());
-                }
-                
-                outFile << diagBuf;
-            }
-        }
-    }
-    else {
-        outFile << "No normalized residual data available for diagnostic purposes.\n";
-    }
-    } // End statistical analysis section
-    
-    // Branch measurement diagnostic section - only for detailed level
-    if (p_diagnosticLevel == "detailed") {
-        outFile << "\nBRANCH MEASUREMENT DIAGNOSTIC SECTION:\n";
-        outFile << "--------------------------------------------\n";
-    
-    if (!branchResiduals.empty()) {
-        // Sort branch residuals by value (descending)
-        std::sort(branchResiduals.begin(), branchResiduals.end(),
-              [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
-                  return a.second > b.second;
-              });
-        
-        outFile << "Found " << branchResiduals.size() << " branch measurements in the system.\n";
-        outFile << "Index  Type  From    To     Value        Calculated   Residual     NormRes     Status\n";
-        outFile << "---------------------------------------------------------------------------------------\n";
-        
-        for (size_t i = 0; i < branchResiduals.size(); i++) {
-            int idx = branchResiduals[i].first;
-            double normRes = branchResiduals[i].second;
-            std::string details;
-            
-            if (p_factory->reportMeasurement(idx, details)) {
-                // Parse branch measurement details
-                int fromBus = -1, toBus = -1;
-                std::string type = "Unknown";
-                double value = 0.0;
-                
-                // Determine if this measurement would be flagged
-                double thisThreshold = p_bad_data_threshold;
-                std::string status = (normRes > thisThreshold) ? "POTENTIALLY BAD" : "OK";
-                
-                // Was it actually flagged as bad?
-                bool wasFlagged = false;
-                for (int badIdx : p_badMeasurementIndices) {
-                    if (badIdx == idx) {
-                        wasFlagged = true;
-                        break;
-                    }
-                }
-                
-                if (wasFlagged) {
-                    status = "FLAGGED";
-                }
-                
-                char diagBuf[256];
-                if (sscanf(details.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
-                        &fromBus, &toBus, type.data(), &value) >= 4) {
-                    // Calculate estimated value and raw residual
-                    double sigma = normRes > 0 ? std::abs(value) / normRes : 0.001;
-                    double estValue = value;  // Just a placeholder for now
-                    double rawResidual = 0.0; // Just a placeholder for now
-                    
-                    snprintf(diagBuf, sizeof(diagBuf), "%-6d %-5s %-7d %-7d %-12.6f %-12.6f %-12.6f %-11.6f %s\n", 
-                            idx, type.c_str(), fromBus, toBus, value, estValue, 
-                            rawResidual, normRes, status.c_str());
-                    outFile << diagBuf;
-                }
-                else {
-                    // Branch parsing failed - skip detailed output for cleaner results
-                }
-            }
-        }
-    }
-    else {
-        outFile << "No branch measurement residuals found. This may indicate an issue with branch measurement handling.\n";
-    }
-    } // End branch diagnostic section
-    
-    // Bus 8 diagnostic section removed for cleaner output
-    
-    // Bus 8 comparison section removed for cleaner output
-    
+  }  // End else block for detailed branch measurement output
+
+  // All processes sync after branch measurements
+  p_network->communicator().sync();
+
+  // All processes sync before rank 0 starts statistical analysis
+  p_network->communicator().sync();
+
+  // ALL processes must call size() on global vectors - it's a collective operation
+  int totalMeasurements_global = globalResidual->size();
+  int totalBuses_global = p_network->totalBuses();
+  int totalBranches_global = p_network->totalBranches();
+
+  if (p_network->communicator().rank() == 0 && outFile.is_open()) {
+
     // Show all flagged measurements and their normalized residuals
     outFile << "Measurements flagged as bad";
     if (p_badMeasurementIndices.size() > 5) {
@@ -1355,7 +1608,8 @@ void gridpack::state_estimation::SEAppModule::write(void)
     }
     
     outFile << "\n";
-    
+
+
     // Calculate statistics based on measurements and their residuals
     // Comment out debug mapper information as requested
     /*
@@ -1363,23 +1617,22 @@ void gridpack::state_estimation::SEAppModule::write(void)
     debugMapper(); // This method will print useful mapper information
     stdout = oldStdout;
     */
-    
+
     // Add enhanced system summary header to the output file
     outFile << "\n";
     outFile << "=================================================================\n";
     outFile << "                    BAD DATA DETECTION SUMMARY\n";
     outFile << "=================================================================\n";
-    
-    // Get system statistics
-    int totalBuses = p_network->totalBuses();
-    int totalBranches = p_network->totalBranches();
-    
-    // Count total measurements by recreating residual vector 
-    p_factory->setMode(gridpack::state_estimation::Residual);
-    gridpack::mapper::GenVectorMap<SENetwork> tempResMap(p_network);
-    boost::shared_ptr<gridpack::math::Vector> tempResidual = tempResMap.mapToVector();
-    int totalMeasurements = tempResidual->size();
-    
+
+
+    // Get system statistics - use pre-calculated values from outside rank 0 block
+    int totalBuses = totalBuses_global;
+    int totalBranches = totalBranches_global;
+
+    // Count total measurements using the globally created residual vector
+    int totalMeasurements = totalMeasurements_global;
+
+
     outFile << "System Overview:\n";
     outFile << "  Total buses: " << totalBuses << "\n";
     outFile << "  Total branches: " << totalBranches << "\n";
@@ -1388,19 +1641,40 @@ void gridpack::state_estimation::SEAppModule::write(void)
     outFile << "  Chi-square confidence: 95%\n";
     outFile << "  Detection method: Normalized residual + Chi-square test\n";
     outFile << "  Diagnostic output level: " << p_diagnosticLevel << "\n\n";
-    
+
+
     // Add iteration information to the file
     outFile << "BAD DATA DETECTION ITERATIONS SUMMARY\n";
     outFile << "------------------------------------\n";
-    
+
+
     if (!p_badDataIterationInfo.empty()) {
-        outFile << "Total iterations with bad data handling: " << p_badDataIterationInfo.size() << "\n\n";
-        outFile << "Iter  New Bad  Total Bad  Chi-Square  Reduction%  Convergence  Status\n";
-        outFile << "---------------------------------------------------------------------\n";
-        
-        for (size_t i = 0; i < p_badDataIterationInfo.size(); i++) {
+        // Calculate total bad measurements for basic summary
+        int totalBadMeasurements = p_badDataIterationInfo.back().allBadIndices.size();
+
+        if (p_diagnosticLevel == "basic") {
+            // For basic level, show only a concise summary
+            outFile << "Total bad measurements identified: " << totalBadMeasurements << " out of " << totalMeasurements
+                    << " (" << std::fixed << std::setprecision(1)
+                    << (double)totalBadMeasurements / totalMeasurements * 100.0 << "%)\n";
+            outFile << "Bad data detection iterations: " << p_badDataIterationInfo.size() << "\n";
+
+            if (!p_badDataIterationInfo.empty()) {
+                const auto& lastInfo = p_badDataIterationInfo.back();
+                double threshold = getChiSquareThreshold(lastInfo.degreesOfFreedom, 0.95, totalBuses_global);
+                outFile << "Final chi-square: " << std::fixed << std::setprecision(3)
+                        << lastInfo.chiSquareValue << " (threshold: " << threshold << ")\n";
+                outFile << "Status: " << (lastInfo.chiSquareValue <= threshold ? "Converged" : "Reached max iterations") << "\n\n";
+            }
+        } else {
+            // For standard and detailed levels, show iteration table
+            outFile << "Total iterations with bad data handling: " << p_badDataIterationInfo.size() << "\n\n";
+            outFile << "Iter  New Bad  Total Bad  Chi-Square  Reduction%  Convergence  Status\n";
+            outFile << "---------------------------------------------------------------------\n";
+
+            for (size_t i = 0; i < p_badDataIterationInfo.size(); i++) {
             const BadDataIterationInfo& info = p_badDataIterationInfo[i];
-            
+
             // Calculate chi-square reduction percentage
             double reductionPercent = 0.0;
             if (i > 0) {
@@ -1409,12 +1683,12 @@ void gridpack::state_estimation::SEAppModule::write(void)
                     reductionPercent = ((prevChiSquare - info.chiSquareValue) / prevChiSquare) * 100.0;
                 }
             }
-            
+
             // Determine convergence status
             const char* convergenceStatus = "Continuing";
             if (i == p_badDataIterationInfo.size() - 1) {
                 // Last iteration - check if converged
-                double threshold = getChiSquareThreshold(info.degreesOfFreedom, 0.95);
+                double threshold = getChiSquareThreshold(info.degreesOfFreedom, 0.95, totalBuses_global);
                 convergenceStatus = (info.chiSquareValue <= threshold) ? "Converged" : "Max Iter";
             }
             
@@ -1440,64 +1714,93 @@ void gridpack::state_estimation::SEAppModule::write(void)
             }
             outFile << iterbuf;
         }
-        
-        // Add performance metrics
-        outFile << "\nPERFORMANCE METRICS\n";
-        outFile << "------------------\n";
-        
-        // Calculate total bad measurements count
-        int totalBadMeasurements = 0;
-        if (!p_badDataIterationInfo.empty()) {
-            totalBadMeasurements = p_badDataIterationInfo.back().allBadIndices.size();
-        }
-        
-        // Calculate total processing time (if available)
-        outFile << "Bad Data Detection Performance:\n";
-        outFile << "  Total iterations: " << p_badDataIterationInfo.size() << " (max: " << p_max_bad_data_iterations << ")\n";
-        outFile << "  Total bad measurements identified: " << totalBadMeasurements << "\n";
-        outFile << "  Bad data detection rate: " << std::fixed << std::setprecision(2) 
-                << (double)totalBadMeasurements / totalMeasurements * 100.0 << "%\n";
-        
-        // Explain why bad data detection stopped
-        if (p_badDataIterationInfo.size() < p_max_bad_data_iterations) {
-            outFile << "  Termination reason: No additional bad measurements found (converged naturally)\n";
-        } else {
-            outFile << "  Termination reason: Maximum iterations reached\n";
-        }
-        
-        // Calculate chi-square improvement
-        if (p_badDataIterationInfo.size() > 1) {
-            double initialChiSquare = p_badDataIterationInfo[0].chiSquareValue;
-            double finalChiSquare = p_badDataIterationInfo.back().chiSquareValue;
-            double improvement = ((initialChiSquare - finalChiSquare) / initialChiSquare) * 100.0;
-            outFile << "  Chi-square improvement: " << std::fixed << std::setprecision(1) 
-                    << improvement << "%\n";
-        }
-        
-        // Measurement quality assessment (chi-square test)
-        if (!p_badDataIterationInfo.empty()) {
-            const auto& lastInfo = p_badDataIterationInfo.back();
-            double threshold = getChiSquareThreshold(lastInfo.degreesOfFreedom, 0.95);
-            bool statisticallyConsistent = lastInfo.chiSquareValue <= threshold;
-            
-            outFile << "MEASUREMENT QUALITY ASSESSMENT:\n";
-            outFile << "  Chi-square value: " << std::fixed << std::setprecision(3) 
-                    << lastInfo.chiSquareValue << " (threshold: " << threshold << ")\n";
-            
-            if (!statisticallyConsistent) {
-                double ratio = lastInfo.chiSquareValue / threshold;
-                outFile << "  Statistical consistency: " << std::fixed << std::setprecision(1) 
-                        << ratio << "x above theoretical threshold\n";
-                outFile << "  Assessment: ACCEPTABLE for large-scale power systems\n";
-                outFile << "  Explanation: Chi-square values naturally increase with system size.\n";
-                outFile << "               This result is typical for " << p_network->totalBuses() << "-bus systems after bad data removal.\n";
-                outFile << "               The state estimation solution remains valid and reliable.\n";
+
+            // Add performance metrics for standard and detailed levels
+            outFile << "\nPERFORMANCE METRICS\n";
+            outFile << "------------------\n";
+
+            // Calculate total bad measurements count
+            int totalBadMeasurements = 0;
+            if (!p_badDataIterationInfo.empty()) {
+                totalBadMeasurements = p_badDataIterationInfo.back().allBadIndices.size();
+            }
+
+            // Calculate total processing time (if available)
+            outFile << "Bad Data Detection Performance:\n";
+            outFile << "  Total iterations: " << p_badDataIterationInfo.size() << " (max: " << p_max_bad_data_iterations << ")\n";
+            outFile << "  Total bad measurements identified: " << totalBadMeasurements << "\n";
+            outFile << "  Bad data detection rate: " << std::fixed << std::setprecision(2)
+                    << (double)totalBadMeasurements / totalMeasurements * 100.0 << "%\n";
+
+            // Explain why bad data detection stopped
+            if (p_badDataIterationInfo.size() < p_max_bad_data_iterations) {
+                outFile << "  Termination reason: No additional bad measurements found (converged naturally)\n";
             } else {
-                outFile << "  Statistical consistency: EXCELLENT\n";
-                outFile << "  Assessment: Measurement set is statistically consistent with system model.\n";
+                outFile << "  Termination reason: Maximum iterations reached\n";
+            }
+
+            // Calculate chi-square improvement
+            if (p_badDataIterationInfo.size() > 1) {
+                double initialChiSquare = p_badDataIterationInfo[0].chiSquareValue;
+                double finalChiSquare = p_badDataIterationInfo.back().chiSquareValue;
+                double improvement = ((initialChiSquare - finalChiSquare) / initialChiSquare) * 100.0;
+                outFile << "  Chi-square improvement: " << std::fixed << std::setprecision(1)
+                        << improvement << "%\n";
+            }
+
+            // Chi-square test summary
+            if (!p_badDataIterationInfo.empty()) {
+                const auto& lastInfo = p_badDataIterationInfo.back();
+                double threshold = getChiSquareThreshold(lastInfo.degreesOfFreedom, 0.95, totalBuses_global);
+
+                outFile << "Chi-square: " << std::fixed << std::setprecision(3)
+                        << lastInfo.chiSquareValue << " (threshold: " << threshold
+                        << ", DOF: " << lastInfo.degreesOfFreedom << ")\n";
+            }
+        }  // End of standard/detailed level output
+
+        // Add detailed bad measurement information for each iteration (all levels)
+        if (!p_badDataIterationInfo.empty()) {
+            outFile << "\nDETAILED BAD MEASUREMENTS BY ITERATION\n";
+            outFile << "======================================\n\n";
+
+            for (size_t iterIdx = 0; iterIdx < p_badDataIterationInfo.size(); iterIdx++) {
+                const BadDataIterationInfo& info = p_badDataIterationInfo[iterIdx];
+
+                if (info.badIndices.empty()) {
+                    continue;
+                }
+
+                if (p_network->communicator().rank() == 0) {
+                    outFile << "Iteration " << info.iterationNumber << " - Found " << info.badIndices.size()
+                            << " bad measurement(s), Chi-square: " << std::fixed << std::setprecision(2)
+                            << info.chiSquareValue << "\n";
+                    outFile << "-----------------------------------------------------------------------------------------------------------------------------\n";
+                    outFile << "Index  Type  Bus/From  To      Measured     Estimated    Residual     Deviation    NormRes\n";
+                    outFile << "-----------------------------------------------------------------------------------------------------------------------------\n";
+
+                    for (const auto& meas : info.badMeasDetails) {
+                        double estimated = meas.value - (meas.normRes * meas.deviation);
+                        double residual = meas.value - estimated;
+
+                        char buf[300];
+                        if (meas.toBus >= 0) {
+                            snprintf(buf, sizeof(buf), "%-6d %-5s %-9d %-7d %-12.6f %-12.6f %-12.6f %-12.6f %.4f\n",
+                                    meas.index, meas.type, meas.busOrFromBus, meas.toBus,
+                                    meas.value, estimated, residual, meas.deviation, meas.normRes);
+                        } else {
+                            snprintf(buf, sizeof(buf), "%-6d %-5s %-9d %-7s %-12.6f %-12.6f %-12.6f %-12.6f %.4f\n",
+                                    meas.index, meas.type, meas.busOrFromBus, "-",
+                                    meas.value, estimated, residual, meas.deviation, meas.normRes);
+                        }
+                        outFile << buf;
+                    }
+
+                    outFile << "-----------------------------------------------------------------------------------------------------------------------------\n\n";
+                }
             }
         }
-        
+
         // Add details of which measurements were found in each iteration - detailed level only
         if (p_diagnosticLevel == "detailed") {
             outFile << "\nDetailed Bad Measurement Information by Iteration:\n";
@@ -1555,10 +1858,15 @@ void gridpack::state_estimation::SEAppModule::write(void)
     }
     
     fclose(tempFile);
-    
+
     outFile.close();
     printf("Enhanced state estimation results written to %s\n", outputFile.c_str());
   }
+
+
+  // Ensure rank 0 completes writing before other processes proceed
+  p_network->communicator().sync();
+
 }
 
 /**
@@ -1575,8 +1883,11 @@ void gridpack::state_estimation::SEAppModule::saveData(void)
  */
 gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimation::SEAppModule::detectBadData(void)
 {
+  // Ensure all processes are synchronized before bad data detection
+  p_network->communicator().sync();
+
   p_busIO->header("\nPerforming bad data detection...\n");
-  
+
   // Configure for residual calculation
   p_factory->setMode(Residual);
   
@@ -1600,7 +1911,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   
   // Calculate normalized residuals
   int size = Residual->size();
-  
+
   // Check again if we have any residuals
   if (size == 0) {
     p_busIO->header("\nWARNING: No measurement residuals found!\n");
@@ -1608,63 +1919,55 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     emptyResult.chiSquareValue = 0.0;
     return emptyResult;
   }
-  
-  // Create storage for normalized residuals - use heap allocation for large systems
-  // Create normalized residual storage
-  
-  // For large systems, allocate on heap to avoid stack overflow
-  std::vector<double>* normResValuesPtr = nullptr;
-  
-  if (size > 1000) {
-    snprintf(buf, sizeof(buf), "DEBUG: Large system detected (%d measurements) - using heap allocation\n", size);
+
+  // Get local index range for this MPI process
+  int lo, hi;
+  Residual->localIndexRange(lo, hi);
+  int localSize = hi - lo;
+
+  snprintf(buf, sizeof(buf), "DEBUG: Process %d: global size=%d, local range=[%d, %d), local size=%d\n",
+          p_network->communicator().rank(), size, lo, hi, localSize);
+  if (p_diagnosticLevel == "detailed") {
     p_busIO->header(buf);
-    normResValuesPtr = new std::vector<double>(size, 0.0);
-  } else {
-    // For small systems, create vector normally
-    normResValuesPtr = new std::vector<double>(size, 0.0);
   }
-  
-  // Always use heap allocation to avoid destructor issues
-  std::vector<double>& normResValues = *normResValuesPtr;
-  double maxNormRes = 0.0;
-  int maxIdx = -1;
-  double chiSquare = 0.0;
-  // Use heap allocation for badIndices too to avoid destructor issues  
-  std::vector<int>* badIndicesPtr = new std::vector<int>();
-  std::vector<int>& badIndices = *badIndicesPtr;
-  
+
+  // Use map to store normalized residuals (allows sparse storage and easy gathering)
+  std::map<int, double> localNormResValues;
+  double localMaxNormRes = 0.0;
+  int localMaxIdx = -1;
+  double localChiSquare = 0.0;
+  std::vector<int> localBadIndices;
+
   // Counter for debug output (detailed mode only)
   int debugCounter = 0;
-  
-  // Calculate normalized residuals for all measurements
-  for (int i = 0; i < size; i++) {
-    // Get residual value
+
+  // Calculate normalized residuals ONLY for local measurements
+  for (int i = lo; i < hi; i++) {
+    // Get residual value (now using local index)
     gridpack::ComplexType rvalue;
     Residual->getElement(i, rvalue);
     double r = std::real(rvalue);
-    
+
     // Get weight (diagonal element of R inverse)
     gridpack::ComplexType rinvvalue;
     Rinv->getElement(i, i, rinvvalue);
     double w = std::real(rinvvalue);
-    
+
     // Calculate normalized residual - handle division by zero safely
     double sigma = (w > 0.0) ? 1.0/sqrt(w) : 1.0;
     double normRes = r/sigma;
-    
-    // Note: normResValues[i] is already set below
-    
-    // Update maximum if needed
-    if (std::abs(normRes) > std::abs(maxNormRes)) {
-      maxNormRes = normRes;
-      maxIdx = i;
+
+    // Update local maximum if needed
+    if (std::abs(normRes) > std::abs(localMaxNormRes)) {
+      localMaxNormRes = normRes;
+      localMaxIdx = i;
     }
-    
-    // Add to chi-square statistic
-    chiSquare += r*r*w;
-    
-    // Store normalized residual in simple vector
-    normResValues[i] = normRes;
+
+    // Add to local chi-square statistic
+    localChiSquare += r*r*w;
+
+    // Store normalized residual in map
+    localNormResValues[i] = normRes;
 
     // Check if this measurement was flagged in previous iterations
     bool previouslyFlagged = false;
@@ -1777,9 +2080,9 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     }
     
     if (std::abs(normRes) > effectiveThreshold) {
-      // If it exceeds even the higher threshold, add it to bad indices
-      badIndices.push_back(i);
-      
+      // If it exceeds even the higher threshold, add it to local bad indices
+      localBadIndices.push_back(i);
+
       if (previouslyFlagged) {
         snprintf(buf, sizeof(buf), "  Measurement at index %d exceeds higher threshold (%.2f) - flagged again!\n",
                 i, effectiveThreshold);
@@ -1787,17 +2090,77 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       }
     }
   }
-  
+
+  // Gather results from all MPI processes
+  // 1. Gather chi-square contributions
+  double chiSquare = 0.0;
+  p_network->communicator().sum(&localChiSquare, 1);
+  chiSquare = localChiSquare;
+
+  // 2. Find global maximum residual using MPI all-gather and local reduction
+  boost::mpi::communicator comm = static_cast<boost::mpi::communicator>(p_network->communicator());
+
+  // Gather all local max values and indices
+  std::vector<double> allMaxValues;
+  std::vector<int> allMaxIndices;
+  boost::mpi::all_gather(comm, localMaxNormRes, allMaxValues);
+  boost::mpi::all_gather(comm, localMaxIdx, allMaxIndices);
+
+  // Find global maximum
+  double maxNormRes = 0.0;
+  int maxIdx = -1;
+  for (size_t p = 0; p < allMaxValues.size(); p++) {
+    if (std::abs(allMaxValues[p]) > std::abs(maxNormRes)) {
+      maxNormRes = allMaxValues[p];
+      maxIdx = allMaxIndices[p];
+    }
+  }
+
+  // 3. Gather all normalized residuals from all processes
+  std::map<int, double> normResValues;
+  // Convert local map to vectors for MPI communication
+  std::vector<int> localIndices;
+  std::vector<double> localValues;
+  for (const auto& pair : localNormResValues) {
+    localIndices.push_back(pair.first);
+    localValues.push_back(pair.second);
+  }
+
+  // Gather all indices and values from all processes
+  std::vector<std::vector<int>> allIndices;
+  std::vector<std::vector<double>> allValues;
+  boost::mpi::all_gather(comm, localIndices, allIndices);
+  boost::mpi::all_gather(comm, localValues, allValues);
+
+  // Combine all gathered data into the global map
+  for (size_t p = 0; p < allIndices.size(); p++) {
+    for (size_t i = 0; i < allIndices[p].size(); i++) {
+      normResValues[allIndices[p][i]] = allValues[p][i];
+    }
+  }
+
+  // 4. Gather all bad indices from all processes
+  std::vector<std::vector<int>> allBadIndices;
+  boost::mpi::all_gather(comm, localBadIndices, allBadIndices);
+
+  // Combine all bad indices
+  std::vector<int> badIndices;
+  for (const auto& procBadIndices : allBadIndices) {
+    badIndices.insert(badIndices.end(), procBadIndices.begin(), procBadIndices.end());
+  }
+
   // Report maximum residual information
-  snprintf(buf, sizeof(buf), "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n", 
-          maxNormRes, maxIdx, p_bad_data_threshold);
-  p_busIO->header(buf);
-  
-  // Get and print details about the measurement with the highest residual
-  std::string maxDetails;
-  if (p_factory->reportMeasurement(maxIdx, maxDetails)) {
-      snprintf(buf, sizeof(buf), "Maximum residual measurement: %s\n", maxDetails.c_str());
-      p_busIO->header(buf);
+  if (p_network->communicator().rank() == 0) {
+    snprintf(buf, sizeof(buf), "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n",
+            maxNormRes, maxIdx, p_bad_data_threshold);
+    p_busIO->header(buf);
+
+    // Get and print details about the measurement with the highest residual
+    std::string maxDetails;
+    if (p_factory->reportMeasurement(maxIdx, maxDetails)) {
+        snprintf(buf, sizeof(buf), "Maximum residual measurement: %s\n", maxDetails.c_str());
+        p_busIO->header(buf);
+    }
   }
   
   // Print information about the top 10 normalized residuals to help debugging
@@ -1865,8 +2228,10 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   }
   
   // Calculate degrees of freedom correctly by counting actual measurements
-  int numStates = p_network->totalBuses() * 2 - 1; // 2n-1 state variables
-  
+  // Get total buses once (collective operation, but OK since all processes call detectBadData)
+  int totalBuses = p_network->totalBuses();
+  int numStates = totalBuses * 2 - 1; // 2n-1 state variables
+
   // Count actual physical measurements (not vector size)
   int totalMeasurements = 0;
   int numBus = p_network->numBuses();
@@ -1882,7 +2247,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     }
   }
   
-  // Count branch measurements  
+  // Count branch measurements
   for (int i = 0; i < numBranch; i++) {
     if (p_network->getActiveBranch(i)) {
       SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
@@ -1891,9 +2256,19 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       }
     }
   }
-  
+
+  // Sum measurements across all MPI processes to get global count
+  int localMeasurements = totalMeasurements;
+  p_network->communicator().sum(&totalMeasurements, 1);
+
+  if (p_diagnosticLevel == "detailed") {
+    snprintf(buf, sizeof(buf), "DEBUG: Process %d has %d local measurements, global total: %d\n",
+            p_network->communicator().rank(), localMeasurements, totalMeasurements);
+    p_busIO->header(buf);
+  }
+
   int dof = totalMeasurements - numStates;
-  
+
   // Safety check for DOF
   if (dof <= 0) {
     snprintf(buf, sizeof(buf), "WARNING: Invalid DOF (%d). Measurements (%d) <= State variables (%d). Using minimum DOF of 1.\n",
@@ -1902,9 +2277,9 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     dof = 1; // Set minimum DOF to avoid issues
   }
   // Perform Chi-square test
-  double chiSquareThreshold = getChiSquareThreshold(dof, 0.95); // 95% confidence
+  double chiSquareThreshold = getChiSquareThreshold(dof, 0.95, totalBuses); // 95% confidence
   snprintf(buf, sizeof(buf), "System size: %d buses, %d measurements, %d state variables\n",
-          p_network->totalBuses(), totalMeasurements, numStates);
+          totalBuses, totalMeasurements, numStates);
   p_busIO->header(buf);
   snprintf(buf, sizeof(buf), "Chi-square value: %12.6f with %d degrees of freedom (threshold: %12.6f)\n",
           chiSquare, dof, chiSquareThreshold);
@@ -1916,6 +2291,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   // Create result structure to store normalized residuals for ALL measurements
   BadDataResult result;
   result.chiSquareValue = chiSquare;
+  result.chiSquareThreshold = chiSquareThreshold;
   
   // Store normalized residuals for all measurements (not just bad ones)
   for (int i = 0; i < size; i++) {
@@ -1988,10 +2364,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   } else {
     p_busIO->header("No bad measurements detected using normalized residual test.\n");
   }
-  
-  snprintf(buf, sizeof(buf), "DEBUG: detectBadData about to return %d bad indices\n", (int)badIndices.size());
-  p_busIO->header(buf);
-  
+
   // Store bad indices in result structure
   result.badIndices = badIndices;
   result.degreesOfFreedom = dof; // Store the actual DOF calculated from real measurements
@@ -2004,24 +2377,15 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   }
   
   // Store result in member variable for backward compatibility
-  
+
   // For large systems, include additional diagnostic information
   if (normResValues.size() > 1000 && p_diagnosticLevel == "detailed") {
     char memBuf[512];
-    snprintf(memBuf, sizeof(memBuf), "DEBUG: Processing large system - normResValues size: %d, badIndices size: %d\n", 
+    snprintf(memBuf, sizeof(memBuf), "DEBUG: Processing large system - normResValues size: %d, badIndices size: %d\n",
             (int)normResValues.size(), (int)badIndices.size());
     p_busIO->header(memBuf);
   }
-  
-  // Clean up heap allocations before return
-  if (normResValuesPtr != nullptr) {
-    delete normResValuesPtr;
-  }
-  
-  if (badIndicesPtr != nullptr) {
-    delete badIndicesPtr;
-  }
-  
+
   return result;
 }
 
@@ -2029,14 +2393,14 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
 /**
  * Get Chi-square threshold value
  */
-double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, double confidence)
+double gridpack::state_estimation::SEAppModule::getChiSquareThreshold(int dof, double confidence, int numBuses)
 {
   // Approximation of chi-square threshold for common degrees of freedom
   if (dof <= 0) return 0.0;
 
   // Check if DOF is reasonable (not the inflated vector size)
   // Expected DOF range: 0.5x to 3x the number of buses
-  int numBuses = p_network->totalBuses();
+  // numBuses is passed as parameter to avoid collective operation inside rank 0 block
   bool useTheoreticalThreshold = (dof > 0 && dof <= numBuses * 3);
 
   if (useTheoreticalThreshold) {
