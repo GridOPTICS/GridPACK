@@ -3,6 +3,7 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
+#include <complex>
 #include <vector>
 #include <iostream>
 
@@ -1300,11 +1301,13 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
   int i;
   std::string name;
   gridpack::ComplexType voltage = getComplexVoltage();
-  double rV = real(voltage);
-  double iV = imag(voltage);
-  rV = sqrt(rV*rV+iV*iV);
-  if (!data->setValue(BUS_VMAG_CURRENT, rV)) {
-    data->addValue(BUS_VMAG_CURRENT, rV);
+  auto vmag = std::abs(voltage);
+  if (!data->setValue(BUS_VMAG_CURRENT, vmag)) {
+    data->addValue(BUS_VMAG_CURRENT, vmag);
+  }
+  auto vang = std::arg(voltage);
+  if (!data->setValue(BUS_VANG_CURRENT, vang)) {
+    data->addValue(BUS_VANG_CURRENT, vang);
   }
   for (i=0; i<p_ngen; i++) {
     if (data->getValue(GENERATOR_MODEL,&name,i)) {
@@ -1325,8 +1328,8 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
       lcnt++;
     } else {
       double pl_current,ql_current;
-      pl_current = rV*rV*p_gload[i];
-      ql_current = -rV*rV*p_bload[i];
+      pl_current = vmag*vmag*p_gload[i];
+      ql_current = -vmag*vmag*p_bload[i];
       if(p_bscatterinjload_flag_compensateY) {
         pl_current -= p_scatterinjload_p;
         ql_current -= p_scatterinjload_q;
