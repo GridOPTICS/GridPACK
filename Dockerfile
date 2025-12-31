@@ -8,13 +8,19 @@ ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC GNUMAKEFLAGS=--no-print-directory
 ENV PETSC_DIR=/deps/petsc PETSC_ARCH=build-dir
 ENV OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
+# GridPACK dependency environment variables
+ENV GRIDPACK_ROOT_DIR=/app
+ENV GP_EXT_DEPS=/deps
+ENV LD_LIBRARY_PATH=/deps/boost-${boost_version}/install_for_gridpack/lib:/deps/ga-${ga_version}/install_for_gridpack/lib:/deps/petsc/install_for_gridpack/lib
+ENV DYLD_LIBRARY_PATH=/deps/boost-${boost_version}/install_for_gridpack/lib:/deps/ga-${ga_version}/install_for_gridpack/lib:/deps/petsc/install_for_gridpack/lib
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends cmake make wget tzdata git gfortran \
     python3 python3-pip python3-venv \
     build-essential openmpi-bin openmpi-common openmpi-doc libopenmpi-dev && \
     apt-get clean
 
-COPY README.md install_gridpack.sh install_gridpack_deps.sh /app/
+COPY README.md install_gridpack.sh /app/
 COPY docs /app/docs
 COPY python /app/python
 COPY src /app/src
@@ -66,3 +72,5 @@ RUN ./configure \
 RUN make all
 RUN make install
 RUN make PETSC_DIR=/deps/petsc/install_for_gridpack PETSC_ARCH="" check
+
+WORKDIR /app
