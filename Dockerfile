@@ -2,10 +2,14 @@ FROM ubuntu:questing
 
 ARG boost_version=1.81.0
 ARG ga_version=5.9.1
-ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
+ARG petsc_version=3.24.2
+
+ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC GNUMAKEFLAGS=--no-print-directory
+ENV PETSC_DIR=/deps/petsc PETSC_ARCH=build-dir
+ENV OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends make wget tzdata git \
+    apt-get install -y --no-install-recommends cmake make wget tzdata git gfortran \
     python3 python3-pip python3-venv \
     build-essential openmpi-bin openmpi-common openmpi-doc libopenmpi-dev && \
     apt-get clean
@@ -40,3 +44,25 @@ RUN ./configure --with-mpi-ts --disable-f77 \
 RUN make -j 10 install
 WORKDIR /deps
 
+# Compile/Install PETSc
+RUN git clone https://gitlab.com/petsc/petsc.git
+WORKDIR /deps/petsc
+RUN git checkout "tags/v${petsc_version}" -b "v${petsc_version}"
+RUN ./configure \
+    --prefix=${PWD}/install_for_gridpack \
+    --scalar-type=real  \
+    --with-fortran-bindings=0 \
+    --download-superlu_dist \
+    --download-metis \
+    --download-parmetis \
+    --download-suitesparse \
+    --download-f2cblaslapack \
+    --download-scalapack \
+    --download-mumps \
+    --download-cmake=0 \
+    --with-sowing=0 \
+    --with-debugging=0 \
+    --with-shared-libraries=1
+RUN make all
+RUN make install
+RUN make PETSC_DIR=/deps/petsc/install_for_gridpack PETSC_ARCH="" check
