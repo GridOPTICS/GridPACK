@@ -7,7 +7,6 @@ ARG petsc_version=3.24.2
 ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC GNUMAKEFLAGS=--no-print-directory
 ENV OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
-# GridPACK dependency environment variables
 ENV GRIDPACK_ROOT_DIR=/app GP_EXT_DEPS=/deps
 ENV GRIDPACK_INSTALL_DIR=${GRIDPACK_ROOT_DIR}/src/install GRIDPACK_BUILD_DIR=${GRIDPACK_ROOT_DIR}/src/build
 ENV GRIDPACK_DIR=${GRIDPACK_INSTALL_DIR}
@@ -27,8 +26,8 @@ ENV DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends cmake make wget tzdata git gfortran \
-    python3 python3-pip python3-venv \
     build-essential openmpi-bin openmpi-common openmpi-doc libopenmpi-dev && \
+    python3 python3-pip python3-venv python-is-python3 \
     apt-get clean
 
 COPY README.md install_gridpack.sh ${GRIDPACK_ROOT_DIR}/
