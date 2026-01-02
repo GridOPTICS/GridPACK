@@ -25,12 +25,13 @@ ENV LD_LIBRARY_PATH=${boost_gp_dir}/lib:${ga_gp_dir}/lib:${petsc_gp_dir}/lib
 ENV DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends cmake make wget tzdata git gfortran \
-    build-essential openmpi-bin openmpi-common openmpi-doc libopenmpi-dev && \
+    apt-get install -y --no-install-recommends cmake make wget tzdata git gfortran build-essential pkg-config \
     python3 python3-pip python3-venv python-is-python3 \
+    openmpi-bin openmpi-common openmpi-doc libopenmpi-dev && \
     apt-get clean
 
-COPY README.md install_gridpack.sh ${GRIDPACK_ROOT_DIR}/
+COPY README.md .gitignore .gitmodules ${GRIDPACK_ROOT_DIR}/
+COPY .git ${GRIDPACK_ROOT_DIR}/.git
 COPY docs ${GRIDPACK_ROOT_DIR}/docs
 COPY python ${GRIDPACK_ROOT_DIR}/python
 COPY src ${GRIDPACK_ROOT_DIR}/src
@@ -83,4 +84,25 @@ RUN make all
 RUN make install
 RUN make PETSC_DIR=${petsc_gp_dir} PETSC_ARCH="" check
 
-WORKDIR /app
+WORKDIR ${GRIDPACK_BUILD_DIR}
+RUN cmake -Wdev -D GA_DIR:STRING=${ga_gp_dir} \
+    -D Boost_ROOT:STRING=${boost_gp_dir} \
+    -D Boost_DIR:string=${boost_gp_dir}/lib/cmake/Boost-${boost_version} \
+    -D PETSC_DIR:PATH=${petsc_gp_dir} \
+    -D MPI_CXX_COMPILER:STRING='mpicxx' \
+    -D MPI_C_COMPILER:STRING='mpicc' \
+    -D MPIEXEC:STRING='mpiexec' \
+    -D MPIEXEC_MAX_NUMPROCS:STRING=2 \
+    -D GRIDPACK_TEST_TIMEOUT:STRING=120 \
+    -D ENABLE_ENVIRONMENT_FROM_COMM:BOOL=YES \
+    -D CMAKE_INSTALL_PREFIX:PATH=${GRIDPACK_INSTALL_DIR} \
+    -D CMAKE_BUILD_TYPE:STRING=Debug \
+    -D BUILD_SHARED_LIBS=true \
+    ..
+RUN make install
+
+WORKDIR ${GRIDPACK_ROOT_DIR}
+RUN git submodule update --init
+WORKDIR ${GRIDPACK_ROOT_DIR}/python
+#RUN pip install --no-deps --upgrade --prefix=${GRIDPACK_INSTALL_DIR} .
+#ENV
