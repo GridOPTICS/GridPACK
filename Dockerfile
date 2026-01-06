@@ -1,9 +1,11 @@
 FROM ubuntu:questing
 
+# Configure dependency versions
 ARG boost_version=1.81.0
 ARG ga_version=5.9.1
 ARG petsc_version=3.24.2
 
+# Setup environment variables used throughout installation
 ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC GNUMAKEFLAGS=--no-print-directory
 ENV OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
@@ -24,17 +26,12 @@ ENV PETSC_DIR=${petsc_dir} PETSC_ARCH=build-dir
 ENV LD_LIBRARY_PATH=${boost_gp_dir}/lib:${ga_gp_dir}/lib:${petsc_gp_dir}/lib
 ENV DYLD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 
+# Install required system packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends cmake make wget tzdata git gfortran build-essential pkg-config \
-    python3 python3-pip python3-venv python-is-python3 \
+    python3 python3-pip python3-venv python3-dev python-is-python3 \
     openmpi-bin openmpi-common openmpi-doc libopenmpi-dev && \
     apt-get clean
-
-COPY README.md .gitignore .gitmodules ${GRIDPACK_ROOT_DIR}/
-COPY .git ${GRIDPACK_ROOT_DIR}/.git
-COPY docs ${GRIDPACK_ROOT_DIR}/docs
-COPY python ${GRIDPACK_ROOT_DIR}/python
-COPY src ${GRIDPACK_ROOT_DIR}/src
 
 # Compile/Install Boost
 WORKDIR ${GP_EXT_DEPS}
@@ -84,6 +81,14 @@ RUN make all
 RUN make install
 RUN make PETSC_DIR=${petsc_gp_dir} PETSC_ARCH="" check
 
+# Copy in GridPACK source code from repository
+COPY README.md .gitignore .gitmodules ${GRIDPACK_ROOT_DIR}/
+COPY .git ${GRIDPACK_ROOT_DIR}/.git
+COPY docs ${GRIDPACK_ROOT_DIR}/docs
+COPY python ${GRIDPACK_ROOT_DIR}/python
+COPY src ${GRIDPACK_ROOT_DIR}/src
+
+# Build GridPACK
 WORKDIR ${GRIDPACK_BUILD_DIR}
 RUN cmake -Wdev -D GA_DIR:STRING=${ga_gp_dir} \
     -D Boost_ROOT:STRING=${boost_gp_dir} \
@@ -101,8 +106,19 @@ RUN cmake -Wdev -D GA_DIR:STRING=${ga_gp_dir} \
     ..
 RUN make install
 
+# Install Python bindings
 WORKDIR ${GRIDPACK_ROOT_DIR}
 RUN git submodule update --init
+RUN pip config --global set global.break-system-packages true
 WORKDIR ${GRIDPACK_ROOT_DIR}/python
-#RUN pip install --no-deps --upgrade --prefix=${GRIDPACK_INSTALL_DIR} .
-#ENV
+RUN pip install --upgrade --prefix=${GRIDPACK_INSTALL_DIR} .
+
+# Configure Python module search path using .pth file (no environment variables needed)
+# Python automatically reads .pth files from its site-packages directories
+RUN pyvnum=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")') && \
+    system_site_packages=$(python3 -c 'import site; print(site.getsitepackages()[0])') && \
+    echo "${GRIDPACK_INSTALL_DIR}/lib/python${pyvnum}/site-packages" > ${system_site_packages}/gridpack.pth && \
+    echo "${GRIDPACK_INSTALL_DIR}/local/lib/python${pyvnum}/dist-packages" >> ${system_site_packages}/gridpack.pth && \
+    echo "Configured Python ${pyvnum} module search path via ${system_site_packages}/gridpack.pth"
+
+WORKDIR ${GRIDPACK_ROOT_DIR}
