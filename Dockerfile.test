@@ -1,0 +1,10 @@
+FROM ubuntu:24.04
+
+# Install minimal dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Simple verification command
+CMD ["echo", "Multi-arch Docker build pipeline test successful"]
