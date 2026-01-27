@@ -84,3 +84,15 @@ jobs:
           TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
           docker buildx imagetools inspect ${TAG}
 
+      - name: Run ctest smoke tests
+        if: ${{ !inputs.skip_tests }}
+        continue-on-error: true
+        run: |
+          echo "Running ctest smoke tests..."
+          echo "Note: Test failures will NOT cause the workflow to fail (continue-on-error: true)"
+          echo "Typical pass rate: ~94%"
+          echo ""
+          
+          # Get the first tag from the tags output
+          TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          docker run --rm ${TAG} bash -c "cd /app/src/build && ctest -j"
