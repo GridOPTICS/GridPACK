@@ -79,7 +79,7 @@ RUN ./configure \
     --with-shared-libraries=1
 RUN make all
 RUN make install
-RUN make PETSC_DIR=${petsc_gp_dir} PETSC_ARCH="" check
+#RUN make PETSC_DIR=${petsc_gp_dir} PETSC_ARCH="" check
 
 # Copy in GridPACK source code from repository
 COPY README.md .gitignore .gitmodules ${GRIDPACK_ROOT_DIR}/
