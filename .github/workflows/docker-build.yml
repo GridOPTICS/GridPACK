@@ -80,15 +80,18 @@ jobs:
           TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
           docker buildx imagetools inspect ${TAG}
 
-      - name: Run ctest smoke tests
-        if: ${{ !inputs.skip_tests }}
+      - name: Run ctest smoke tests (AMD64 only)
+        if: ${{ !inputs.skip_tests && contains(inputs.platforms || 'linux/amd64,linux/arm64', 'linux/amd64') }}
         continue-on-error: true
         run: |
-          echo "Running ctest smoke tests..."
+          echo "Running ctest smoke tests on linux/amd64 architecture only..."
           echo "Note: Test failures will NOT cause the workflow to fail (continue-on-error: true)"
           echo "Typical pass rate: ~94%"
           echo ""
           
           # Get the first tag from the tags output
           TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
-          docker run --rm ${TAG} bash -c "cd /app/src/build && ctest -j"
+          
+          # Pull and run the AMD64-specific image
+          docker pull --platform linux/amd64 ${TAG}
+          docker run --platform linux/amd64 --rm ${TAG} bash -c "cd /app/src/build && ctest -j"
