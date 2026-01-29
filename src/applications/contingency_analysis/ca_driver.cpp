@@ -722,7 +722,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // calculation runs out of task, nextTask will return false.
   while (taskmgr.nextTask(task_comm, &task_id)) {
     printf("Executing task %d on process %d\n",task_id,world.rank());
-    sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
+    // Trim trailing spaces from contingency name for filename
+    std::string fname = events[task_id].p_name;
+    size_t end = fname.find_last_not_of(' ');
+    if (end != std::string::npos) fname = fname.substr(0, end + 1);
+    sprintf(sbuf,"%s.out",fname.c_str());
     // Open a new file, based on the contingency name, to store results from
     // this particular contingency calculation
     if (print_calcs) pf_app.open(sbuf);
