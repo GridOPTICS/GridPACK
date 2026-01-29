@@ -137,7 +137,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);
-  p_qlim = cursor->get("qlim",0);
+  p_qlim = cursor->get("qlim",false);
   p_max_iteration = cursor->get("maxIteration",50);
   p_max_qlim_iterations = cursor->get("maxQlimIterations",3);
   ComplexType tol;
@@ -552,7 +552,7 @@ bool gridpack::powerflow::PFAppModule::solve()
       iter++;
 
       // Early stagnation detection: if tolerance unchanged, check Q limits early
-      if (p_qlim != 0 && fabs(real(tol) - real(tol_prev)) < STAGNANT_TOL) {
+      if (p_qlim && fabs(real(tol) - real(tol_prev)) < STAGNANT_TOL) {
         stagnant_count++;
         if (stagnant_count >= STAGNANT_THRESHOLD) {
           if (!p_factory->checkQlimViolations()) {
@@ -584,7 +584,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     }
 
     if (iter >= p_max_iteration) ret = false;
-    if (p_qlim == 0) {
+    if (!p_qlim) {
       repeat = false;
     } else if (qlim_handled_early) {
       // Q limits were already handled during early stagnation detection

@@ -54,8 +54,8 @@ in this data.
 stored values all represent the phase angle at each bus. PV buses are included
 in this data.
 
-**pq\_changed\_cnt.txt** This file is only created if the checkQLimit flag is
-set to "true" in the input file. It counts the number of times a PV bused is
+**pq\_changed\_cnt.txt** This file is only created if the qlim flag is
+set to true in the input file. It counts the number of times a PV bus is
 changed to a PQ bus during the simulation.
 
 column 1: row index

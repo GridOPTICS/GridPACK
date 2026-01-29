@@ -877,8 +877,8 @@ class PFAppModule
     // convergence tolerance
     double p_tolerance;
 
-    // qlim enforce flag
-    int p_qlim;
+    // qlim enforce flag (true=enabled, false=disabled)
+    bool p_qlim;
 
     // maximum number of Q-limit iterations
     int p_max_qlim_iterations;
