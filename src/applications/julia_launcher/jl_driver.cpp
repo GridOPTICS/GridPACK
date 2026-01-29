@@ -9,6 +9,9 @@
  * @date   2026-01-09
  *
  * @brief  Implementation of Julia launcher driver
+ *
+ * Follows the same pattern as contingency_analysis/ca_driver.cpp
+ * for proper MPI/GA initialization.
  */
 
 #include <iostream>
@@ -48,11 +51,13 @@ JuliaLauncherDriver::~JuliaLauncherDriver(void)
 }
 
 /**
- * Print usage information
+ * Print usage information (uses MPI rank directly)
  */
 void JuliaLauncherDriver::printUsage(void)
 {
-    if (p_comm.rank() == 0) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0) {
         std::cout << "Usage: julia_launcher.x [options]" << std::endl;
         std::cout << "Options:" << std::endl;
         std::cout << "  --task_queue=FILE    Path to task_queue.csv (required)" << std::endl;
@@ -66,10 +71,13 @@ void JuliaLauncherDriver::printUsage(void)
 }
 
 /**
- * Parse command line arguments
+ * Parse command line arguments (uses MPI rank directly)
  */
 void JuliaLauncherDriver::configure(int argc, char **argv)
 {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     for (int i = 1; i < argc; i++) {
         std::string arg(argv[i]);
 
@@ -89,16 +97,18 @@ void JuliaLauncherDriver::configure(int argc, char **argv)
             p_qRange = arg.substr(10);
         } else if (arg == "--help" || arg == "-h") {
             printUsage();
+            MPI_Finalize();
             exit(0);
         }
     }
 
     // Validate required arguments
     if (p_taskQueueFile.empty() || p_workdir.empty() || p_juliaProject.empty()) {
-        if (p_comm.rank() == 0) {
+        if (rank == 0) {
             std::cerr << "Error: Missing required arguments" << std::endl;
             printUsage();
         }
+        MPI_Finalize();
         exit(1);
     }
 
@@ -113,11 +123,15 @@ void JuliaLauncherDriver::configure(int argc, char **argv)
  */
 void JuliaLauncherDriver::readTaskQueue(const std::string &filepath)
 {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     std::ifstream file(filepath.c_str());
     if (!file.is_open()) {
-        if (p_comm.rank() == 0) {
+        if (rank == 0) {
             std::cerr << "Error: Cannot open task queue file: " << filepath << std::endl;
         }
+        MPI_Finalize();
         exit(1);
     }
 
@@ -184,11 +198,16 @@ bool JuliaLauncherDriver::runJuliaWorker(int task_id)
 
 /**
  * Execute task distribution and Julia worker spawning
+ * Following the same pattern as CA driver - create communicator locally
  */
 void JuliaLauncherDriver::execute(void)
 {
-    int rank = p_comm.rank();
-    int nprocs = p_comm.size();
+    // Create world communicator using MPI_COMM_WORLD directly
+    // (bypasses GA_MPI_Comm() which may return NULL on some systems)
+    gridpack::parallel::Communicator world(MPI_COMM_WORLD);
+
+    int rank = world.rank();
+    int nprocs = world.size();
 
     // Read task queue (all ranks read it)
     readTaskQueue(p_taskQueueFile);
@@ -206,10 +225,10 @@ void JuliaLauncherDriver::execute(void)
     }
 
     // Synchronize before starting
-    p_comm.barrier();
+    world.barrier();
 
     // Set up task manager for dynamic load balancing
-    gridpack::parallel::TaskManager taskmgr(p_comm);
+    gridpack::parallel::TaskManager taskmgr(world);
     taskmgr.set(ntasks);
 
     // Track local results
@@ -235,10 +254,10 @@ void JuliaLauncherDriver::execute(void)
     }
 
     // Synchronize after all tasks complete
-    p_comm.barrier();
+    world.barrier();
 
     // Collect results using GlobalVector
-    gridpack::parallel::GlobalVector<int> results(p_comm);
+    gridpack::parallel::GlobalVector<int> results(world);
     if (!local_task_ids.empty()) {
         results.addElements(local_task_ids, local_results);
     }

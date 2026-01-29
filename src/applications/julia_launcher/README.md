@@ -1,24 +1,36 @@
-# Julia Launcher Application
+# GridPACK Julia Launcher Application
+
+**Author:** Yousu Chen
+**Date:** January 2026
+
+> **Note:** This README covers local development setup. Perlmutter/HPC deployment instructions will be added later.
 
 ## Overview
 
-This application uses GridPACK's TaskManager to distribute OPF tasks across MPI ranks, with each rank spawning a Julia worker to solve the AC-OPF problem using PowerModels.jl.
+This application uses GridPACK's TaskManager to distribute OPF tasks across MPI ranks, with each rank spawning a Julia worker to solve the AC-OPF problem using PowerModels.jl. 
+
+Features:
+- TaskManager provides dynamic load balancing across ranks
+- Each task spawns a new Julia process (~2-5s overhead)
+
+## Dependencies
+
+- GridPACK parallel components (TaskManager, GlobalVector): https://github.com/GridOPTICS/GridPACK
+- Julia with PowerModels.jl: https://github.com/lanl-ansi/PowerModels.jl
+- ExaGrid-DataGen: https://github.com/exanauts/ExaGrid-DataGen
 
 ## Architecture
 
 ```
 GridPACK (MPI)                    Julia Workers
-┌─────────────────┐              ┌─────────────────┐
-│ Rank 0          │              │ task_worker.jl  │
-│   TaskManager   │──spawns──────│   PowerModels   │
-│   GlobalVector  │              │   Ipopt         │
-├─────────────────┤              └─────────────────┘
-│ Rank 1          │              ┌─────────────────┐
-│   TaskManager   │──spawns──────│ task_worker.jl  │
-│   GlobalVector  │              │   PowerModels   │
-├─────────────────┤              └─────────────────┘
-│ ...             │              │ ...             │
-└─────────────────┘              └─────────────────┘
+  Rank 0                           task_worker.jl 
+    TaskManager    ──spawns───       PowerModels 
+    GlobalVector                     Ipopt/other optimizers      
+  ...                              ...         
+  Rank N                           task_worker.jl 
+    TaskManager    ──spawns────      PowerModels 
+    GlobalVector                     Ipopt/other optimizers
+  ...                              ...          
 ```
 
 ## Building
@@ -29,7 +41,7 @@ cmake ..
 make julia_launcher.x
 ```
 
-## Usage
+## Usage, using pglib_opf_case24_ieee_rts as an example
 
 ### Step 1: Generate Task Queue (Julia)
 
@@ -60,35 +72,5 @@ julia --project=/path/to/ExaGrid-DataGen \
     --output_dir=final_output
 ```
 
-## Command Line Options
 
-| Option | Required | Description |
-|--------|----------|-------------|
-| `--task_queue` | Yes | Path to task_queue.csv |
-| `--workdir` | Yes | Working directory with results/ |
-| `--julia_project` | Yes | Path to Julia project (ExaGrid-DataGen) |
-| `--julia_script` | No | Path to task_worker.jl (default: workdir/task_worker.jl) |
-| `--instance` | No | PGLib instance name |
-| `--p_range` | No | P perturbation range (default: 0.9,1.1) |
-| `--q_range` | No | Q perturbation range (default: 0.9,1.1) |
 
-## Files
-
-| File | Description |
-|------|-------------|
-| `jl_main.cpp` | Main entry point |
-| `jl_driver.hpp` | Driver class header |
-| `jl_driver.cpp` | Driver implementation |
-| `CMakeLists.txt` | Build configuration |
-
-## Dependencies
-
-- GridPACK parallel components (TaskManager, GlobalVector)
-- Julia with PowerModels.jl, Ipopt.jl
-- MPI
-
-## Performance Notes
-
-- Each task spawns a new Julia process (~2-5s overhead)
-- For better performance, consider persistent Julia workers
-- TaskManager provides dynamic load balancing across ranks

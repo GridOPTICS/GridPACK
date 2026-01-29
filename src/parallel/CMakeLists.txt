@@ -36,11 +36,23 @@ gridpack_set_library_version(gridpack_parallel)
 # For some reason this is necessary for Mac OS X, but messes things up on Linux
 message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 if (BUILD_SHARED_LIBS)
-  target_link_libraries(gridpack_parallel
-   ${Boost_LIBRARIES} 
-   ${GA_LIBRARIES} 
-   ${MPI_CXX_LIBRARIES}
-   )
+  # On macOS, re-export GA symbols so dependent libraries can find them
+  # (macOS two-level namespace requires this)
+  if (APPLE)
+    target_link_libraries(gridpack_parallel
+      ${Boost_LIBRARIES}
+      "-Wl,-reexport_library,${GA_LIBRARY}"
+      "-Wl,-reexport_library,${GA_CXX_LIBRARY}"
+      "-Wl,-reexport_library,${ARMCI_LIBRARY}"
+      ${MPI_CXX_LIBRARIES}
+    )
+  else()
+    target_link_libraries(gridpack_parallel
+      ${Boost_LIBRARIES}
+      ${GA_LIBRARIES}
+      ${MPI_CXX_LIBRARIES}
+    )
+  endif()
 else()
   if (GRIDPACK_LIB_LINK_LIBRARIES)
     target_link_libraries(gridpack_parallel

@@ -13,9 +13,9 @@
 # Created 2026-01-09
 # -------------------------------------------------------------
 
-# This application only needs parallel components (no power flow modules)
+# This application needs parallel and math components (same as CA app)
 set(target_libraries
-    gridpack_environment
+    gridpack_math
     gridpack_parallel
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
