@@ -11,6 +11,7 @@
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
 # Last Change: 2017-12-08 09:37:40 d3g096
+# Updated Jan. 29, 2026 by Yousu Chen
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -96,58 +97,72 @@ add_custom_command(
   DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input.euro.xml"
   )
 
-add_custom_target(ca.x.input
- 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14_auto_n1.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input_14_auto_n1.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14_auto_n1.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input_14_auto_n1.xml"
+  )
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input_14_qlim.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input_14_qlim.xml"
+  )
+
+# Copy data files only when source changes (avoids unnecessary copies on every build)
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/IEEE14_ca.raw"
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
   ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS "${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw"
+  )
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/contingencies_14.xml"
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS "${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml"
+  )
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/IEEE118.raw"
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
   ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS "${GRIDPACK_DATA_DIR}/raw/IEEE118.raw"
+  )
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/contingencies_118.xml"
+  COMMAND ${CMAKE_COMMAND} -E copy
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml
   ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS "${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml"
+  )
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
+# Note: README.md and contingencies_nk_example.xml are static files that don't
+# need processing. They are installed directly from source locations.
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy
-  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
-  ${CMAKE_CURRENT_BINARY_DIR}
-
+add_custom_target(ca.x.input
   DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14_auto_n1.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml
   ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/contingencies_14.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/contingencies_118.xml
 )
 add_dependencies(ca.x ca.x.input)
 
@@ -157,11 +172,14 @@ add_dependencies(ca.x ca.x.input)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
-install(FILES 
+install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14_auto_n1.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_nk_example.xml
   ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml
@@ -174,6 +192,7 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
   DESTINATION share/gridpack/example/contingency_analysis
 )
 
@@ -184,4 +203,6 @@ install(TARGETS ca.x DESTINATION bin)
 # -------------------------------------------------------------
 set(TIMEOUT 120.0)
 gridpack_add_run_test("contingency_analysis" ca.x input_14.xml)
+gridpack_add_run_test("contingency_analysis_auto_n1" ca.x input_14_auto_n1.xml)
+gridpack_add_run_test("contingency_analysis_qlim" ca.x input_14_qlim.xml)
 

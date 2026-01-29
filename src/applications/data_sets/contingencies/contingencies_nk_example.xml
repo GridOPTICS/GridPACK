@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Example contingency file showing N-1, N-2, and N-3 contingency formats.
+
+  This file can be used with FullBranchN1/FullGeneratorN1 options to add
+  custom N-K contingencies on top of auto-generated N-1 contingencies.
+  Duplicate N-1 contingencies will be automatically skipped.
+
+  Contingency Types:
+    - Line: Trip one or more branches (transmission lines or transformers)
+    - Generator: Trip one or more generators
+
+  Naming Convention (industry standard):
+    - Branch:    BR_{from}_{to}_{ckt}  (lines and transformers)
+    - Generator: GN_{bus}_{id}
+    - N-K:       Use + to concatenate, e.g., BR_1_2_1+GN_3_1
+
+  Format for Line contingencies:
+    - contingencyLineBuses: pairs of (from_bus, to_bus) separated by spaces
+    - contingencyLineNames: circuit IDs (2-char) matching the raw file (e.g., BL, 1, B1)
+
+  Format for Generator contingencies:
+    - contingencyBuses: bus IDs where generators are located
+    - contingencyGenerators: generator IDs (2-char) matching the raw file (e.g., 1, G1)
+
+  Note: Circuit/generator IDs must exactly match those in the .raw network file.
+-->
+<ContingencyList>
+  <Contingency_analysis>
+    <Contingencies>
+      <!-- ============================================= -->
+      <!-- N-1 Line Contingencies (single element)      -->
+      <!-- Naming: BR_{from}_{to}_{ckt}                 -->
+      <!-- ============================================= -->
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>BR_1_2_1</contingencyName>
+        <contingencyLineBuses> 1 2 </contingencyLineBuses>
+        <contingencyLineNames> 1 </contingencyLineNames>
+      </Contingency>
+
+      <!-- ============================================= -->
+      <!-- N-1 Generator Contingencies (single element) -->
+      <!-- Naming: GN_{bus}_{id}                        -->
+      <!-- ============================================= -->
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>GN_1_1</contingencyName>
+        <contingencyBuses> 1 </contingencyBuses>
+        <contingencyGenerators> 1 </contingencyGenerators>
+      </Contingency>
+
+      <!-- ============================================= -->
+      <!-- N-2 Line Contingencies (two elements)        -->
+      <!-- Naming: BR_{from}_{to}_{ckt}+BR_{from}_{to}_{ckt} -->
+      <!-- ============================================= -->
+      <!-- Trip two parallel lines between same buses -->
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>BR_1_2_1+BR_1_2_2</contingencyName>
+        <contingencyLineBuses> 1 2  1 2 </contingencyLineBuses>
+        <contingencyLineNames> 1  2 </contingencyLineNames>
+      </Contingency>
+
+      <!-- Trip two lines on different corridors -->
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>BR_1_2_1+BR_3_4_1</contingencyName>
+        <contingencyLineBuses> 1 2  3 4 </contingencyLineBuses>
+        <contingencyLineNames> 1  1 </contingencyLineNames>
+      </Contingency>
+
+      <!-- ============================================= -->
+      <!-- N-2 Generator Contingencies (two elements)   -->
+      <!-- ============================================= -->
+      <!-- Trip two generators at the same bus -->
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>GN_1_1+GN_1_2</contingencyName>
+        <contingencyBuses> 1  1 </contingencyBuses>
+        <contingencyGenerators> 1  2 </contingencyGenerators>
+      </Contingency>
+
+      <!-- Trip generators at different buses -->
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>GN_1_1+GN_2_1</contingencyName>
+        <contingencyBuses> 1  2 </contingencyBuses>
+        <contingencyGenerators> 1  1 </contingencyGenerators>
+      </Contingency>
+
+      <!-- ============================================= -->
+      <!-- N-3 Line Contingencies (three elements)      -->
+      <!-- ============================================= -->
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>BR_1_2_1+BR_2_3_1+BR_3_4_1</contingencyName>
+        <contingencyLineBuses> 1 2  2 3  3 4 </contingencyLineBuses>
+        <contingencyLineNames> 1  1  1 </contingencyLineNames>
+      </Contingency>
+
+      <!-- ============================================= -->
+      <!-- N-3 Generator Contingencies (three elements) -->
+      <!-- ============================================= -->
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>GN_1_1+GN_2_1+GN_3_1</contingencyName>
+        <contingencyBuses> 1  2  3 </contingencyBuses>
+        <contingencyGenerators> 1  1  1 </contingencyGenerators>
+      </Contingency>
+
+    </Contingencies>
+  </Contingency_analysis>
+</ContingencyList>

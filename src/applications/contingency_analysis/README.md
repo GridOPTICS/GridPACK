@@ -47,6 +47,41 @@ See `contingencies_nk_example.xml` for examples of N-1, N-2, and N-3 contingency
 
 ---
 
+## Advanced Features
+
+### Automatic Slack Bus Transfer
+
+When a generator contingency trips the slack bus generator, the application automatically transfers the slack bus role to the largest remaining online generator. This mimics commercial power flow tools (PSS/E, PowerWorld) behavior.
+
+**Example output:**
+```
+Slack bus transferred from bus 69 to bus 80 (capacity: 577.0 MW)
+```
+
+After the contingency analysis completes, the slack bus is restored to its original location.
+
+### Slack Capacity Check
+
+After the power flow solves, the application checks if the slack bus generator output exceeds its Pmax rating. If the required generation exceeds capacity, the contingency is marked as failed with a warning message:
+
+```
+WARNING: Slack bus 80 generator output (475.3 MW) exceeds capacity (400.0 MW)
+Insufficient generation capacity for contingency GN_69_1
+```
+
+This ensures realistic results - a contingency that requires more generation than available capacity is properly flagged as a failure.
+
+### Island Detection
+
+The application detects network islands (disconnected portions) caused by branch contingencies:
+
+- **Lone bus**: A bus with no active branches is marked as isolated
+- **Island**: A group of buses disconnected from the main network
+
+When isolation is detected, the isolated buses are excluded from the power flow solution, and a warning is added to the results. The main network portion is still solved if possible.
+
+---
+
 ## Output Files
 
 The contingency analysis calculation produces a number of files summarize the
@@ -55,10 +90,23 @@ for contingencies that ran to completion are included. Calculations that failed
 either because of a numerical instability or because the calculations failed to
 converge are not included in the results. The output files are described below.
 
-**success.txt**: This file summarizes that results of each contingency and
-reports 1) whether the contingency calculation successfully ran to completion
-and 2) whether a violation was found. If a violation is found, the calculation
-reports on whether it was a on a bus, on a branch, or both.
+**success.txt**: This file summarizes the results of each contingency and
+reports 1) whether the contingency calculation successfully ran to completion,
+2) whether a violation was found (bus, branch, or both), and 3) whether any
+buses were isolated.
+
+Example output:
+```
+contingency: 1 success: true violation: none
+contingency: 2 success: true violation: branch
+contingency: 3 success: true violation: none warning: isolated
+contingency: 4 success: false
+```
+
+- `success: true` - Power flow converged and slack capacity is within limits
+- `success: false` - Power flow failed, island detected, or slack capacity exceeded
+- `violation: none/bus/branch` - Whether voltage or thermal limits were violated
+- `warning: isolated` - One or more buses were isolated (lone bus or island)
 
 **vmag.txt**: This file contains the average value of the voltage magnitude for
 non-PV buses. It also contains the RMS fluctuations of the voltage magnitude
