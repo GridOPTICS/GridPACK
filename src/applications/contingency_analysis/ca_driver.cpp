@@ -403,38 +403,27 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   pf_app.ignoreVoltageViolations();
 
   // Check if auto-generation of N-1 contingencies is enabled
+  // FullBranchN1: generate N-1 contingencies for all branches
+  // FullGeneratorN1: generate N-1 contingencies for all generators
   cursor = config->getCursor("Configuration.Contingency_analysis");
-  bool auto_generate_n1 = false;
-  bool auto_gen_branches = true;   // Default: generate branch contingencies
-  bool auto_gen_generators = true; // Default: generate generator contingencies
+  bool full_branch_n1 = false;
+  bool full_generator_n1 = false;
 
-  if (!cursor->get("autoGenerateN1",&tmp_bool)) {
-    auto_generate_n1 = false;
+  if (!cursor->get("FullBranchN1",&tmp_bool)) {
+    full_branch_n1 = false;
   } else {
     util.toLower(tmp_bool);
-    if (tmp_bool == "true") {
-      auto_generate_n1 = true;
-    } else {
-      auto_generate_n1 = false;
-    }
+    full_branch_n1 = (tmp_bool == "true");
   }
 
-  if (auto_generate_n1) {
-    // Read options for what to auto-generate
-    if (!cursor->get("autoGenBranches",&tmp_bool)) {
-      auto_gen_branches = true;
-    } else {
-      util.toLower(tmp_bool);
-      auto_gen_branches = (tmp_bool == "true");
-    }
-
-    if (!cursor->get("autoGenGenerators",&tmp_bool)) {
-      auto_gen_generators = true;
-    } else {
-      util.toLower(tmp_bool);
-      auto_gen_generators = (tmp_bool == "true");
-    }
+  if (!cursor->get("FullGeneratorN1",&tmp_bool)) {
+    full_generator_n1 = false;
+  } else {
+    util.toLower(tmp_bool);
+    full_generator_n1 = (tmp_bool == "true");
   }
+
+  bool auto_generate_n1 = full_branch_n1 || full_generator_n1;
 
   std::vector<gridpack::powerflow::Contingency> events;
   int auto_generated_count = 0;
@@ -446,11 +435,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     if (world.rank() == 0) {
       printf("\n==================================================================\n");
       printf("Auto-generating N-1 contingencies from network\n");
-      printf("  Branch contingencies: %s\n", auto_gen_branches ? "YES" : "NO");
-      printf("  Generator contingencies: %s\n", auto_gen_generators ? "YES" : "NO");
+      printf("  FullBranchN1: %s\n", full_branch_n1 ? "YES" : "NO");
+      printf("  FullGeneratorN1: %s\n", full_generator_n1 ? "YES" : "NO");
       printf("==================================================================\n\n");
     }
-    events = generateN1Contingencies(pf_app, auto_gen_branches, auto_gen_generators);
+    events = generateN1Contingencies(pf_app, full_branch_n1, full_generator_n1);
     auto_generated_count = events.size();
   }
 
