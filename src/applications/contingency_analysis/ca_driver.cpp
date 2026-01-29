@@ -176,7 +176,7 @@ std::vector<gridpack::powerflow::Contingency>
         // Create contingency for this branch
         gridpack::powerflow::Contingency contingency;
         char name_buf[64];
-        sprintf(name_buf, "N1_BR_%d_%d_%s", from_bus, to_bus,
+        sprintf(name_buf, "BR_%d_%d_%s", from_bus, to_bus,
                 utils.clean2Char(ckt_id).c_str());
         contingency.p_name = name_buf;
         contingency.p_type = Branch;
@@ -212,7 +212,7 @@ std::vector<gridpack::powerflow::Contingency>
         // Create contingency for this generator
         gridpack::powerflow::Contingency contingency;
         char name_buf[64];
-        sprintf(name_buf, "N1_GEN_%d_%s", bus_id,
+        sprintf(name_buf, "GN_%d_%s", bus_id,
                 utils.clean2Char(gen_id).c_str());
         contingency.p_name = name_buf;
         contingency.p_type = Generator;
@@ -377,6 +377,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   gridpack::parallel::GlobalVector<bool> ca_success(world);
   std::vector<int> contingency_violation;
   gridpack::parallel::GlobalVector<int> ca_violation(world);
+  std::vector<bool> contingency_isolated;
+  gridpack::parallel::GlobalVector<bool> ca_isolated(world);
 #endif
 
   // Create powerflow applications on each task communicator
@@ -758,27 +760,51 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // ghost buses use the correct reset voltages in power flow calculation
     pf_network->updateBuses();
     // Set contingency
-    pf_app.setContingency(events[task_id]);
+    bool contingencyFound = pf_app.setContingency(events[task_id]);
+    if (!contingencyFound) {
+      printf("WARNING: Contingency '%s' - elements not found or no valid slack bus\n",
+             events[task_id].p_name.c_str());
+    }
     // Check for islanding before attempting to solve
+    // Note: lone bus isolation is handled separately as a warning, not a failure
     int islandCount = pf_app.getIslandCount();
+    bool hasLoneBus = pf_app.hasLoneBus();
     bool islandDetected = (islandCount > 1);
     // Solve power flow equations for this system
 #ifdef USE_SUCCESS
     contingency_idx.push_back(task_id);
 #endif
-    if (!islandDetected && pf_app.solve()) {
-#ifdef USE_SUCCESS
-      contingency_success.push_back(true);
-#endif
+    // Skip power flow if contingency setup failed (no valid slack) or islanding detected
+    bool slackCapacityOk = true;  // Will be checked after solve
+    if (contingencyFound && !islandDetected && pf_app.solve()) {
       if (check_Qlim && !pf_app.checkQlimViolations()) {
         pf_app.solve();
       }
-      // If power flow solution is successful, write out voltages and currents
-      if (print_calcs) pf_app.write();
-      // Check for violations
-      bool ok1 = pf_app.checkVoltageViolations();
-      bool ok2 = pf_app.checkLineOverloadViolations();
-      bool ok = ok1 && ok2;
+      // Check if slack bus generator exceeds capacity
+      slackCapacityOk = pf_app.checkSlackCapacity();
+      if (!slackCapacityOk) {
+        // Slack generator exceeds Pmax - insufficient generation capacity
+        // This is treated as a failure, similar to divergence
+#ifdef USE_SUCCESS
+        contingency_success.push_back(false);
+        contingency_violation.push_back(0);
+        contingency_isolated.push_back(false);
+#endif
+        sprintf(sbuf,"\nInsufficient generation capacity for contingency %s\n",
+            events[task_id].p_name.c_str());
+        if (print_calcs) pf_app.print(sbuf);
+      } else {
+        // Power flow solved and slack within capacity
+#ifdef USE_SUCCESS
+        contingency_success.push_back(true);
+        contingency_isolated.push_back(hasLoneBus);
+#endif
+        // If power flow solution is successful, write out voltages and currents
+        if (print_calcs) pf_app.write();
+        // Check for violations
+        bool ok1 = pf_app.checkVoltageViolations();
+        bool ok2 = pf_app.checkLineOverloadViolations();
+        bool ok = ok1 && ok2;
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
@@ -913,15 +939,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       timer->stop(t_store);
 #endif
-      // Note: clearQlimViolations() moved after unSetContingency() below
+        // Note: clearQlimViolations() moved after unSetContingency() below
+      }  // end slackCapacityOk block
     } else {
 #ifdef USE_SUCCESS
       contingency_success.push_back(false);
       contingency_violation.push_back(0);
+      contingency_isolated.push_back(false);
 #endif
       if (islandDetected) {
         sprintf(sbuf,"\nIslanding detected for contingency %s (%d islands)\n",
             events[task_id].p_name.c_str(), islandCount);
+      } else if (!contingencyFound) {
+        sprintf(sbuf,"\nNo valid slack bus for contingency %s\n",
+            events[task_id].p_name.c_str());
       } else {
         sprintf(sbuf,"\nDivergent for contingency %s\n",
             events[task_id].p_name.c_str());
@@ -1032,32 +1063,40 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   if (task_comm.rank() == 0) {
     ca_success.addElements(contingency_idx, contingency_success);
     ca_violation.addElements(contingency_idx, contingency_violation);
+    ca_isolated.addElements(contingency_idx, contingency_isolated);
   }
   ca_success.upload();
   ca_violation.upload();
+  ca_isolated.upload();
   // Write out stats on successful calculations
   if (world.rank() == 0) {
     contingency_idx.clear();
     contingency_success.clear();
     contingency_violation.clear();
+    contingency_isolated.clear();
     for (i=0; i<ntasks; i++) contingency_idx.push_back(i);
     ca_success.getData(contingency_idx, contingency_success);
     contingency_success.clear();
     ca_violation.getData(contingency_idx, contingency_violation);
+    ca_isolated.getData(contingency_idx, contingency_isolated);
     std::ofstream fout;
     fout.open("success.txt");
     for (i=0; i<ntasks; i++) {
       if (contingency_success[i]) {
         fout << "contingency: " << i+1 << " success: true";
         if (contingency_violation[i] == 1) {
-          fout << " violation: none" << std::endl;
+          fout << " violation: none";
         } else if (contingency_violation[i] == 2) {
-          fout << " violation: bus" << std::endl;
+          fout << " violation: bus";
         } else if (contingency_violation[i] == 3) {
-          fout << " violation: branch" << std::endl;
+          fout << " violation: branch";
         } else if (contingency_violation[i] == 4) {
-          fout << " violation: bus and branch" << std::endl;
+          fout << " violation: bus and branch";
         }
+        if (contingency_isolated[i]) {
+          fout << " warning: isolated";
+        }
+        fout << std::endl;
       } else {
         fout << "contingency: " << i+1 << " success: false" << std::endl;
       }

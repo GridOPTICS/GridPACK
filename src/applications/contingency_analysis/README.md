@@ -1,3 +1,54 @@
+## Configuration Options
+
+The contingency analysis application is configured via XML input files. Key options include:
+
+### Contingency Specification
+
+You can specify contingencies in two ways (or combine both):
+
+**Option 1: Auto-generate N-1 contingencies**
+```xml
+<Contingency_analysis>
+  <FullBranchN1>true</FullBranchN1>      <!-- N-1 for all branches -->
+  <FullGeneratorN1>true</FullGeneratorN1> <!-- N-1 for all generators -->
+</Contingency_analysis>
+```
+
+**Option 2: Use a contingency list file**
+```xml
+<Contingency_analysis>
+  <contingencyList>contingencies.xml</contingencyList>
+</Contingency_analysis>
+```
+
+**Option 3: Combine both** (auto-generate N-1 + custom N-K from file)
+```xml
+<Contingency_analysis>
+  <FullBranchN1>true</FullBranchN1>
+  <FullGeneratorN1>true</FullGeneratorN1>
+  <contingencyList>custom_nk_contingencies.xml</contingencyList>
+</Contingency_analysis>
+```
+When combined, duplicates from the file are automatically skipped.
+
+### Other Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `groupSize` | Number of MPI processes per contingency (parallelization) | 1 |
+| `printCalcFiles` | Write detailed output for each contingency | true |
+| `minVoltage` | Minimum voltage threshold for violations (p.u.) | 0.9 |
+| `maxVoltage` | Maximum voltage threshold for violations (p.u.) | 1.1 |
+| `qlim` | Enable reactive power limit enforcement (PV to PQ bus conversion) | false |
+
+### Contingency File Format
+
+See `contingencies_nk_example.xml` for examples of N-1, N-2, and N-3 contingency definitions.
+
+---
+
+## Output Files
+
 The contingency analysis calculation produces a number of files summarize the
 results of the entire set of individual contingency simulations. Only results
 for contingencies that ran to completion are included. Calculations that failed

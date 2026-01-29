@@ -171,6 +171,36 @@ class PFBus
     bool getGenStatus(std::string gen_id);
 
     /**
+     * Check if bus has any online generator
+     * @return true if at least one generator is online
+     */
+    bool hasOnlineGenerator();
+
+    /**
+     * Get total capacity (Pmax) of all online generators on this bus
+     * @return total Pmax in MW
+     */
+    double getOnlineGenCapacity();
+
+    /**
+     * Calculate power injection at this bus from connected branches.
+     * Updates p_Pinj and p_Qinj for slack bus.
+     */
+    void calculatePowerInjection();
+
+    /**
+     * Get total real power output of all generators on this bus (after PF solve)
+     * @return total Pgen in MW
+     */
+    double getTotalGenOutput();
+
+    /**
+     * Check if generator output exceeds capacity on this bus
+     * @return true if within limits, false if Pgen > Pmax
+     */
+    bool checkGenCapacity();
+
+    /**
      * Get list of generator IDs
      * @return vector of generator IDs
      */
@@ -203,8 +233,9 @@ class PFBus
      * Set generator status
      * @param gen_id generator ID
      * @param status generator status
+     * @return true if generator ID found, false otherwise
      */
-    void setGenStatus(std::string gen_id, bool status);
+    bool setGenStatus(std::string gen_id, bool status);
 
     /**
      * Set isPV status
@@ -643,8 +674,9 @@ class PFBranch
      * Set the status of the branch element
      * @param tag character string identifying branch element
      * @param status status of branch element
+     * @return true if circuit ID found, false otherwise
      */
-    void setBranchStatus(std::string tag, bool status);
+    bool setBranchStatus(std::string tag, bool status);
 
     /**
      * get branch rating A value

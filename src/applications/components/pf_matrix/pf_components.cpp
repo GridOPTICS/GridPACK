@@ -741,6 +741,115 @@ bool gridpack::powerflow::PFBus::getGenStatus(std::string gen_id)
 }
 
 /**
+ * Check if bus has any online generator
+ * @return true if at least one generator is online
+ */
+bool gridpack::powerflow::PFBus::hasOnlineGenerator()
+{
+  int gsize = p_gstatus.size();
+  for (int i = 0; i < gsize; i++) {
+    if (p_gstatus[i] == 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Get total capacity (Pmax) of all online generators on this bus
+ * @return total Pmax in MW
+ */
+double gridpack::powerflow::PFBus::getOnlineGenCapacity()
+{
+  double capacity = 0.0;
+  int gsize = p_gstatus.size();
+  for (int i = 0; i < gsize; i++) {
+    if (p_gstatus[i] == 1) {
+      capacity += p_pt[i];
+    }
+  }
+  return capacity;
+}
+
+/**
+ * Calculate power injection at this bus from connected branches.
+ * This updates p_Pinj and p_Qinj for the slack bus.
+ * Should be called after power flow solve before checking generator output.
+ */
+void gridpack::powerflow::PFBus::calculatePowerInjection()
+{
+  if (!getReferenceBus() && !isIsolated()) return;
+
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+  getNeighborBranches(branches);
+  int size = branches.size();
+  double P = 0.0, Q = 0.0, p, q;
+
+  for (int i = 0; i < size; i++) {
+    gridpack::powerflow::PFBranch *branch =
+      dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+    branch->getPQ(this, &p, &q);
+    P += p;
+    Q += q;
+  }
+  // Also add bus's own Pi, Qi (from shunts)
+  P += p_v * p_v * p_ybusr;
+  Q += p_v * p_v * (-p_ybusi);
+
+  p_Pinj = P;
+  p_Qinj = Q;
+}
+
+/**
+ * Get total real power output of all generators on this bus (after PF solve)
+ * For slack bus, this is calculated from power injection.
+ * For PV/PQ buses, this is the sum of scheduled generator outputs.
+ * @return total Pgen in MW
+ */
+double gridpack::powerflow::PFBus::getTotalGenOutput()
+{
+  double totalPgen = 0.0;
+  int gsize = p_gstatus.size();
+
+  if (getReferenceBus()) {
+    // For slack bus, calculate from power injection
+    // First update p_Pinj if needed
+    calculatePowerInjection();
+    double pl = 0.0;
+    for (int i = 0; i < p_pl.size(); i++) {
+      if (p_lstatus[i] == 1) {
+        pl += p_pl[i];
+      }
+    }
+    totalPgen = p_Pinj * p_sbase + pl;
+  } else {
+    // For non-slack buses, sum scheduled generator outputs
+    for (int i = 0; i < gsize; i++) {
+      if (p_gstatus[i] == 1) {
+        totalPgen += p_pg[i];
+      }
+    }
+  }
+  return totalPgen;
+}
+
+/**
+ * Check if generator output exceeds capacity on this bus
+ * @return true if within limits, false if Pgen > Pmax
+ */
+bool gridpack::powerflow::PFBus::checkGenCapacity()
+{
+  double pgen = getTotalGenOutput();
+  double pmax = getOnlineGenCapacity();
+
+  // Allow small tolerance for numerical errors
+  double tolerance = 0.01 * pmax;  // 1% tolerance
+  if (tolerance < 0.1) tolerance = 0.1;  // At least 0.1 MW
+
+  return (pgen <= pmax + tolerance);
+}
+
+/**
  * Get list of generator IDs
  * @return vector of generator IDs
  */
@@ -762,8 +871,9 @@ std::vector<std::string> gridpack::powerflow::PFBus::getLoads()
  * Set generator status
  * @param gen_id generator ID
  * @param status generator status
+ * @return true if generator ID found, false otherwise
  */
-void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
+bool gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
 {
   int i;
   int gsize = p_gstatus.size();
@@ -772,7 +882,7 @@ void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
       // Only modify values if status is actually changing
       // For already-offline generators, calling setGenStatus(false) should be a no-op
       if (p_gstatus[i] == status) {
-        return;  // Status unchanged, nothing to do
+        return true;  // Status unchanged, but ID was found
       }
       p_gstatus[i] = status;
       if (status == 0) {
@@ -808,9 +918,10 @@ void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
         if (p_PV_ptr) *p_PV_ptr = true;
       }
 
-      return;
+      return true;
     }
   }
+  return false;
 }
 
 /**
@@ -2506,8 +2617,9 @@ bool gridpack::powerflow::PFBranch::getBranchStatus(std::string tag)
  * Set the status of the branch element
  * @param tag character string identifying branch element
  * @param status status of branch element
+ * @return true if circuit ID found, false otherwise
  */
-void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status)
+bool gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status)
 {
   int i;
   int bsize = p_branch_status.size();
@@ -2515,9 +2627,10 @@ void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status
     if (tag == p_ckt[i]) {
       p_branch_status[i] = status;
       YMBranch::setLineStatus(tag,status);
-      return;
+      return true;
     }
   }
+  return false;
 }
 
 /**

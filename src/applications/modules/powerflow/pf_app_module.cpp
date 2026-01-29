@@ -955,14 +955,25 @@ bool gridpack::powerflow::PFAppModule::setContingency(
       idx = event.p_busid[i];
       std::string tag = event.p_genid[i];
       std::vector<int> lids = p_network->getLocalBusIndices(idx);
-      if (lids.size() == 0) ret = false;
+      if (lids.size() == 0) {
+        printf("WARNING: Bus %d not found for generator contingency\n", idx);
+        ret = false;
+        continue;
+      }
       gridpack::powerflow::PFBus *bus;
+      bool found = false;
       for (j=0; j<lids.size(); j++) {
         jdx = lids[j];
         bus = dynamic_cast<gridpack::powerflow::PFBus*>(
             p_network->getBus(jdx).get());
         event.p_saveGenStatus[i] = bus->getGenStatus(tag);
-        bus->setGenStatus(tag, false);
+        if (bus->setGenStatus(tag, false)) {
+          found = true;
+        }
+      }
+      if (!found) {
+        printf("WARNING: Generator '%s' not found on bus %d\n", tag.c_str(), idx);
+        ret = false;
       }
     }
   } else if (event.p_type == Branch) {
@@ -974,14 +985,25 @@ bool gridpack::powerflow::PFAppModule::setContingency(
       from = event.p_from[i];
       std::string tag = event.p_ckt[i];
       std::vector<int> lids = p_network->getLocalBranchIndices(from,to);
-      if (lids.size() == 0) ret = false;
+      if (lids.size() == 0) {
+        printf("WARNING: Branch %d-%d not found\n", from, to);
+        ret = false;
+        continue;
+      }
       gridpack::powerflow::PFBranch *branch;
+      bool found = false;
       for (j=0; j<lids.size(); j++) {
         jdx = lids[j];
         branch = dynamic_cast<gridpack::powerflow::PFBranch*>(
             p_network->getBranch(jdx).get());
         event.p_saveLineStatus[i] = branch->getBranchStatus(tag);
-        branch->setBranchStatus(tag, false);
+        if (branch->setBranchStatus(tag, false)) {
+          found = true;
+        }
+      }
+      if (!found) {
+        printf("WARNING: Circuit ID '%s' not found on branch %d-%d\n", tag.c_str(), from, to);
+        ret = false;
       }
     }
   } else {
@@ -993,6 +1015,12 @@ bool gridpack::powerflow::PFAppModule::setContingency(
     p_contingency_name.clear();
   }
   p_factory->checkLoneBus();
+  // Check if slack bus still has online generator, transfer if needed
+  bool slackOk = p_factory->checkAndTransferSlack();
+  if (!slackOk) {
+    // No valid slack bus - system cannot be solved
+    ret = false;
+  }
   p_factory->detectIslands();  // Detect islands after applying contingency
   return ret;
 }
@@ -1007,6 +1035,41 @@ int gridpack::powerflow::PFAppModule::getIslandCount()
 }
 
 /**
+ * Check if any lone buses were found after setting a contingency
+ * @return true if at least one bus became isolated (no active branches)
+ */
+bool gridpack::powerflow::PFAppModule::hasLoneBus()
+{
+  return p_factory->hasLoneBus();
+}
+
+/**
+ * Check if slack bus has online generator, transfer if needed
+ * @return true if valid slack exists, false if no generation capacity
+ */
+bool gridpack::powerflow::PFAppModule::checkAndTransferSlack()
+{
+  return p_factory->checkAndTransferSlack();
+}
+
+/**
+ * Restore original slack bus after contingency
+ */
+void gridpack::powerflow::PFAppModule::restoreSlack()
+{
+  p_factory->restoreSlack();
+}
+
+/**
+ * Check if slack bus generator output exceeds capacity
+ * @return true if within limits, false if Pgen > Pmax
+ */
+bool gridpack::powerflow::PFAppModule::checkSlackCapacity()
+{
+  return p_factory->checkSlackCapacity();
+}
+
+/**
  * Return system to the state before the contingency
  * @param event data describing location and type of contingency
  * @return false if location of contingency is not found in network
@@ -1016,6 +1079,7 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
 {
   p_factory->clearLoneBus();
   p_factory->clearIslands();
+  p_factory->restoreSlack();  // Restore original slack bus if it was transferred
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();

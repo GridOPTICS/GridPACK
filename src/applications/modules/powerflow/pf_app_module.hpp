@@ -212,6 +212,29 @@ class PFAppModule
     int getIslandCount();
 
     /**
+     * Check if any lone buses were found after setting a contingency
+     * @return true if at least one bus became isolated (no active branches)
+     */
+    bool hasLoneBus();
+
+    /**
+     * Check if slack bus has online generator, transfer if needed
+     * @return true if valid slack exists, false if no generation capacity
+     */
+    bool checkAndTransferSlack();
+
+    /**
+     * Restore original slack bus after contingency
+     */
+    void restoreSlack();
+
+    /**
+     * Check if slack bus generator output exceeds capacity
+     * @return true if within limits, false if Pgen > Pmax
+     */
+    bool checkSlackCapacity();
+
+    /**
      * Set voltage limits on all buses
      * @param Vmin lower bound on voltages
      * @param Vmax upper bound on voltages
