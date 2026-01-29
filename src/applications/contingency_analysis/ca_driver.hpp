@@ -68,6 +68,27 @@ class CADriver
         gridpack::utility::Configuration::ChildCursors contingencies);
 
     /**
+     * Auto-generate N-1 contingencies from network
+     * @param pf_app power flow application module with loaded network
+     * @param gen_branches generate branch contingencies
+     * @param gen_generators generate generator contingencies
+     * @return vector of auto-generated contingencies
+     */
+    std::vector<gridpack::powerflow::Contingency> generateN1Contingencies(
+        gridpack::powerflow::PFAppModule &pf_app,
+        bool gen_branches, bool gen_generators);
+
+    /**
+     * Check if a contingency is a duplicate of any in the existing list
+     * @param contingency the contingency to check
+     * @param existing_list vector of existing contingencies
+     * @return true if duplicate found, false otherwise
+     */
+    bool isDuplicateContingency(
+        const gridpack::powerflow::Contingency &contingency,
+        const std::vector<gridpack::powerflow::Contingency> &existing_list);
+
+    /**
      * Execute application
      * @param argc number of arguments
      * @param argv list of character strings

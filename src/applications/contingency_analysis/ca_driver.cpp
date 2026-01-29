@@ -142,6 +142,173 @@ std::vector<gridpack::powerflow::Contingency>
 }
 
 /**
+ * Auto-generate N-1 contingencies from the network
+ * @param pf_app power flow application module with loaded network
+ * @param gen_branches generate branch contingencies
+ * @param gen_generators generate generator contingencies
+ * @return vector of auto-generated contingencies
+ */
+std::vector<gridpack::powerflow::Contingency>
+  gridpack::contingency_analysis::CADriver::generateN1Contingencies(
+      gridpack::powerflow::PFAppModule &pf_app,
+      bool gen_branches, bool gen_generators)
+{
+  std::vector<gridpack::powerflow::Contingency> ret;
+  gridpack::utility::StringUtils utils;
+
+  // Generate N-1 branch contingencies
+  if (gen_branches) {
+    std::vector<std::string> branch_data = pf_app.writeBranchString("flow_str");
+    int branch_count = 0;
+
+    for (size_t i=0; i<branch_data.size(); i++) {
+      std::vector<std::string> tokens = utils.blankTokenizer(branch_data[i]);
+      if (tokens.size()%8 != 0) {
+        continue;  // Skip malformed data
+      }
+
+      int nline = tokens.size()/8;
+      for (int j=0; j<nline; j++) {
+        int from_bus = atoi(tokens[j*8].c_str());
+        int to_bus = atoi(tokens[j*8+1].c_str());
+        std::string ckt_id = tokens[j*8+2];
+
+        // Create contingency for this branch
+        gridpack::powerflow::Contingency contingency;
+        char name_buf[64];
+        sprintf(name_buf, "N1_BR_%d_%d_%s", from_bus, to_bus,
+                utils.clean2Char(ckt_id).c_str());
+        contingency.p_name = name_buf;
+        contingency.p_type = Branch;
+        contingency.p_from.push_back(from_bus);
+        contingency.p_to.push_back(to_bus);
+        contingency.p_ckt.push_back(utils.clean2Char(ckt_id));
+        contingency.p_saveLineStatus.push_back(true);
+
+        ret.push_back(contingency);
+        branch_count++;
+      }
+    }
+
+    printf("Auto-generated %d N-1 branch contingencies\n", branch_count);
+  }
+
+  // Generate N-1 generator contingencies
+  if (gen_generators) {
+    std::vector<std::string> gen_data = pf_app.writeBusString("power");
+    int gen_count = 0;
+
+    for (size_t i=0; i<gen_data.size(); i++) {
+      std::vector<std::string> tokens = utils.blankTokenizer(gen_data[i]);
+      if (tokens.size()%4 != 0) {
+        continue;  // Skip malformed data
+      }
+
+      int ngen = tokens.size()/4;
+      for (int j=0; j<ngen; j++) {
+        int bus_id = atoi(tokens[j*4].c_str());
+        std::string gen_id = tokens[j*4+1];
+
+        // Create contingency for this generator
+        gridpack::powerflow::Contingency contingency;
+        char name_buf[64];
+        sprintf(name_buf, "N1_GEN_%d_%s", bus_id,
+                utils.clean2Char(gen_id).c_str());
+        contingency.p_name = name_buf;
+        contingency.p_type = Generator;
+        contingency.p_busid.push_back(bus_id);
+        contingency.p_genid.push_back(utils.clean2Char(gen_id));
+        contingency.p_saveGenStatus.push_back(true);
+
+        ret.push_back(contingency);
+        gen_count++;
+      }
+    }
+
+    printf("Auto-generated %d N-1 generator contingencies\n", gen_count);
+  }
+
+  return ret;
+}
+
+/**
+ * Check if a contingency is a duplicate of any in the existing list
+ * @param contingency the contingency to check
+ * @param existing_list vector of existing contingencies
+ * @return true if duplicate found, false otherwise
+ */
+bool gridpack::contingency_analysis::CADriver::isDuplicateContingency(
+    const gridpack::powerflow::Contingency &contingency,
+    const std::vector<gridpack::powerflow::Contingency> &existing_list)
+{
+  for (size_t i = 0; i < existing_list.size(); i++) {
+    const gridpack::powerflow::Contingency &existing = existing_list[i];
+
+    // Check if same type
+    if (existing.p_type != contingency.p_type) {
+      continue;
+    }
+
+    if (contingency.p_type == Branch) {
+      // For branch contingencies, check if same branches are tripped
+      // A duplicate means all branches match (order doesn't matter)
+      if (existing.p_from.size() != contingency.p_from.size()) {
+        continue;
+      }
+
+      bool all_match = true;
+      for (size_t j = 0; j < contingency.p_from.size(); j++) {
+        bool found = false;
+        for (size_t k = 0; k < existing.p_from.size(); k++) {
+          if (contingency.p_from[j] == existing.p_from[k] &&
+              contingency.p_to[j] == existing.p_to[k] &&
+              contingency.p_ckt[j] == existing.p_ckt[k]) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          all_match = false;
+          break;
+        }
+      }
+
+      if (all_match) {
+        return true;  // Duplicate found
+      }
+
+    } else if (contingency.p_type == Generator) {
+      // For generator contingencies, check if same generators are tripped
+      if (existing.p_busid.size() != contingency.p_busid.size()) {
+        continue;
+      }
+
+      bool all_match = true;
+      for (size_t j = 0; j < contingency.p_busid.size(); j++) {
+        bool found = false;
+        for (size_t k = 0; k < existing.p_busid.size(); k++) {
+          if (contingency.p_busid[j] == existing.p_busid[k] &&
+              contingency.p_genid[j] == existing.p_genid[k]) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          all_match = false;
+          break;
+        }
+      }
+
+      if (all_match) {
+        return true;  // Duplicate found
+      }
+    }
+  }
+
+  return false;  // Not a duplicate
+}
+
+/**
  * Execute application. argc and argv are standard runtime parameters
  */
 void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
@@ -235,25 +402,134 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // buses to ignore voltage violations on them.
   pf_app.ignoreVoltageViolations();
 
-  // Read in contingency file name
-  std::string contingencyfile;
-  if (!cursor->get("contingencyList",&contingencyfile)) {
-    contingencyfile = "contingencies.xml";
-  }
-  if (world.rank() == 0) printf("Contingency List: %s\n",contingencyfile.c_str());
-  // Open contingency file
-  bool ok = config->open(contingencyfile,world);
+  // Check if auto-generation of N-1 contingencies is enabled
+  cursor = config->getCursor("Configuration.Contingency_analysis");
+  bool auto_generate_n1 = false;
+  bool auto_gen_branches = true;   // Default: generate branch contingencies
+  bool auto_gen_generators = true; // Default: generate generator contingencies
 
-  // Get a list of contingencies. Set cursor so that it points to the
-  // Contingencies block in the contingency file
-  cursor = config->getCursor(
-      "ContingencyList.Contingency_analysis.Contingencies");
-  gridpack::utility::Configuration::ChildCursors contingencies;
-  if (cursor) cursor->children(contingencies);
-  std::vector<gridpack::powerflow::Contingency>
-    events = getContingencies(contingencies);
-  // Contingencies are now available. Print out a list of contingencies from
-  // process 0 (the list is replicated on all processors)
+  if (!cursor->get("autoGenerateN1",&tmp_bool)) {
+    auto_generate_n1 = false;
+  } else {
+    util.toLower(tmp_bool);
+    if (tmp_bool == "true") {
+      auto_generate_n1 = true;
+    } else {
+      auto_generate_n1 = false;
+    }
+  }
+
+  if (auto_generate_n1) {
+    // Read options for what to auto-generate
+    if (!cursor->get("autoGenBranches",&tmp_bool)) {
+      auto_gen_branches = true;
+    } else {
+      util.toLower(tmp_bool);
+      auto_gen_branches = (tmp_bool == "true");
+    }
+
+    if (!cursor->get("autoGenGenerators",&tmp_bool)) {
+      auto_gen_generators = true;
+    } else {
+      util.toLower(tmp_bool);
+      auto_gen_generators = (tmp_bool == "true");
+    }
+  }
+
+  std::vector<gridpack::powerflow::Contingency> events;
+  int auto_generated_count = 0;
+  int file_loaded_count = 0;
+  int duplicates_skipped = 0;
+
+  // Step 1: Auto-generate N-1 contingencies if requested
+  if (auto_generate_n1) {
+    if (world.rank() == 0) {
+      printf("\n==================================================================\n");
+      printf("Auto-generating N-1 contingencies from network\n");
+      printf("  Branch contingencies: %s\n", auto_gen_branches ? "YES" : "NO");
+      printf("  Generator contingencies: %s\n", auto_gen_generators ? "YES" : "NO");
+      printf("==================================================================\n\n");
+    }
+    events = generateN1Contingencies(pf_app, auto_gen_branches, auto_gen_generators);
+    auto_generated_count = events.size();
+  }
+
+  // Step 2: Load contingencies from file if specified
+  // This allows combining auto-generated N-1 with custom N-2+ contingencies
+  std::string contingencyfile;
+  bool has_contingency_file = cursor->get("contingencyList",&contingencyfile);
+
+  if (has_contingency_file || !auto_generate_n1) {
+    // Set default filename if not specified
+    if (!has_contingency_file) {
+      contingencyfile = "contingencies.xml";
+    }
+
+    if (world.rank() == 0) {
+      if (auto_generate_n1) {
+        printf("Loading additional contingencies from file: %s\n", contingencyfile.c_str());
+        printf("(Duplicates of auto-generated contingencies will be skipped)\n\n");
+      } else {
+        printf("Contingency List: %s\n", contingencyfile.c_str());
+      }
+    }
+
+    // Open contingency file
+    bool ok = config->open(contingencyfile,world);
+
+    if (ok) {
+      // Get a list of contingencies from file
+      cursor = config->getCursor(
+          "ContingencyList.Contingency_analysis.Contingencies");
+      gridpack::utility::Configuration::ChildCursors contingencies;
+      if (cursor) cursor->children(contingencies);
+      std::vector<gridpack::powerflow::Contingency> file_contingencies =
+          getContingencies(contingencies);
+
+      // If auto-generation was used, check for duplicates before adding
+      if (auto_generate_n1) {
+        for (size_t i = 0; i < file_contingencies.size(); i++) {
+          if (isDuplicateContingency(file_contingencies[i], events)) {
+            duplicates_skipped++;
+            if (world.rank() == 0) {
+              printf("  Skipping duplicate: %s\n", file_contingencies[i].p_name.c_str());
+            }
+          } else {
+            events.push_back(file_contingencies[i]);
+            file_loaded_count++;
+          }
+        }
+        if (world.rank() == 0 && file_loaded_count > 0) {
+          printf("\nAdded %d unique contingencies from file\n", file_loaded_count);
+          if (duplicates_skipped > 0) {
+            printf("Skipped %d duplicates\n", duplicates_skipped);
+          }
+        }
+      } else {
+        // No auto-generation, just use file contingencies
+        events = file_contingencies;
+        file_loaded_count = events.size();
+      }
+    }
+  }
+
+  // Print summary
+  if (world.rank() == 0) {
+    printf("\n==================================================================\n");
+    printf("Total contingencies to analyze: %d\n", (int)events.size());
+    if (auto_generate_n1) {
+      printf("  Auto-generated: %d\n", auto_generated_count);
+      if (file_loaded_count > 0) {
+        printf("  From file: %d\n", file_loaded_count);
+      }
+      if (duplicates_skipped > 0) {
+        printf("  Duplicates skipped: %d\n", duplicates_skipped);
+      }
+    }
+    printf("==================================================================\n\n");
+  }
+
+  // Print contingency details
   if (world.rank() == 0) {
     int idx;
     for (idx = 0; idx < events.size(); idx++) {
@@ -827,7 +1103,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
   // all timing variables)
-  if (contingencies.size()*grp_size >= world.size()) {
+  if (events.size()*grp_size >= world.size()) {
     timer->dump();
   }
 }
