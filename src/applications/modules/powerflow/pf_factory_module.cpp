@@ -16,6 +16,8 @@
 // -------------------------------------------------------------
 
 #include <vector>
+#include <queue>
+#include <map>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/parallel/global_vector.hpp"
@@ -36,6 +38,7 @@ PFFactoryModule::PFFactoryModule(PFFactoryModule::NetworkPtr network)
 {
   p_network = network;
   p_rateB = false;
+  p_islandCount = 0;
 }
 
 /**
@@ -226,6 +229,198 @@ void gridpack::powerflow::PFFactoryModule::clearLoneBus()
 }
 
 /**
+ * Detect islands (disconnected subnetworks) in the network using BFS.
+ * Mark buses in smaller islands as isolated to prevent singular Jacobian.
+ * @param stream optional stream pointer for printing island info
+ * @return number of islands found (1 = connected network, >1 = islanding)
+ */
+int gridpack::powerflow::PFFactoryModule::detectIslands(std::ofstream *stream)
+{
+  int numBus = p_network->numBuses();
+  int numBranch = p_network->numBranches();
+  int i, j, k;
+  char buf[256];
+
+  // Clear previous island isolated status
+  p_saveIslandIsolatedStatus.clear();
+
+  // Build mapping from bus local index to original index and vice versa
+  std::map<int, int> origToLocal;  // original bus ID -> local index
+  std::vector<int> localToOrig;    // local index -> original bus ID
+  std::vector<bool> busActive;     // whether bus is active and not already isolated
+
+  for (i = 0; i < numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+    if (bus->isIsolated()) continue;  // Skip already isolated buses
+
+    int origIdx = bus->getOriginalIndex();
+    origToLocal[origIdx] = localToOrig.size();
+    localToOrig.push_back(i);  // Store local network index
+    busActive.push_back(true);
+  }
+
+  int activeBusCount = localToOrig.size();
+  if (activeBusCount == 0) {
+    p_islandCount = 0;
+    return 0;
+  }
+
+  // Build adjacency list based on active branches
+  std::vector<std::vector<int> > adj(activeBusCount);
+
+  for (i = 0; i < numBranch; i++) {
+    if (!p_network->getActiveBranch(i)) continue;
+
+    gridpack::powerflow::PFBranch *branch =
+      dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
+
+    // Check if branch has any active lines
+    std::vector<bool> status = branch->getLineStatus();
+    bool branchActive = false;
+    for (k = 0; k < status.size(); k++) {
+      if (status[k]) {
+        branchActive = true;
+        break;
+      }
+    }
+    if (!branchActive) continue;
+
+    // Get the two buses connected by this branch
+    int bus1Orig = branch->getBus1OriginalIndex();
+    int bus2Orig = branch->getBus2OriginalIndex();
+
+    // Check if both buses are in our active set
+    std::map<int, int>::iterator it1 = origToLocal.find(bus1Orig);
+    std::map<int, int>::iterator it2 = origToLocal.find(bus2Orig);
+
+    if (it1 != origToLocal.end() && it2 != origToLocal.end()) {
+      int idx1 = it1->second;
+      int idx2 = it2->second;
+      adj[idx1].push_back(idx2);
+      adj[idx2].push_back(idx1);
+    }
+  }
+
+  // BFS to find connected components (islands)
+  std::vector<int> islandId(activeBusCount, -1);
+  std::vector<std::vector<int> > islands;  // Each island contains list of local indices
+  int currentIsland = 0;
+
+  for (i = 0; i < activeBusCount; i++) {
+    if (islandId[i] >= 0) continue;  // Already assigned to an island
+
+    // BFS from bus i
+    std::vector<int> currentIslandBuses;
+    std::queue<int> q;
+    q.push(i);
+    islandId[i] = currentIsland;
+
+    while (!q.empty()) {
+      int curr = q.front();
+      q.pop();
+      currentIslandBuses.push_back(curr);
+
+      for (j = 0; j < adj[curr].size(); j++) {
+        int neighbor = adj[curr][j];
+        if (islandId[neighbor] < 0) {
+          islandId[neighbor] = currentIsland;
+          q.push(neighbor);
+        }
+      }
+    }
+
+    islands.push_back(currentIslandBuses);
+    currentIsland++;
+  }
+
+  p_islandCount = islands.size();
+
+  // If only one island, network is connected
+  if (p_islandCount <= 1) {
+    return p_islandCount;
+  }
+
+  // Find the largest island (main network)
+  int largestIsland = 0;
+  int largestSize = islands[0].size();
+  for (i = 1; i < islands.size(); i++) {
+    if (islands[i].size() > largestSize) {
+      largestSize = islands[i].size();
+      largestIsland = i;
+    }
+  }
+
+  // Mark buses in smaller islands as isolated
+  p_islandIsolatedBusIndices.clear();
+  for (i = 0; i < islands.size(); i++) {
+    if (i == largestIsland) continue;  // Keep main island
+
+    sprintf(buf, "\nIsland %d detected with %d buses (marking as isolated):\n",
+            i + 1, (int)islands[i].size());
+    printf("%s", buf);
+    if (stream != NULL) *stream << buf;
+
+    for (j = 0; j < islands[i].size(); j++) {
+      int localIdx = localToOrig[islands[i][j]];  // Get network local index
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(localIdx).get());
+
+      sprintf(buf, "  Bus %d\n", bus->getOriginalIndex());
+      printf("%s", buf);
+      if (stream != NULL) *stream << buf;
+
+      // Save current isolated status and local index, then mark as isolated
+      p_saveIslandIsolatedStatus.push_back(bus->isIsolated());
+      p_islandIsolatedBusIndices.push_back(localIdx);
+      bus->setIsolated(true);
+    }
+  }
+
+  sprintf(buf, "\nNetwork split into %d islands. Main island has %d buses.\n",
+          p_islandCount, largestSize);
+  printf("%s", buf);
+  if (stream != NULL) *stream << buf;
+
+  return p_islandCount;
+}
+
+/**
+ * Get the number of islands detected in the last call to detectIslands
+ * @return number of islands (0 if detectIslands not called)
+ */
+int gridpack::powerflow::PFFactoryModule::getIslandCount() const
+{
+  return p_islandCount;
+}
+
+/**
+ * Clear island detection state and restore isolated status of buses
+ * that were marked as isolated due to islanding
+ */
+void gridpack::powerflow::PFFactoryModule::clearIslands()
+{
+  if (p_islandIsolatedBusIndices.size() == 0) {
+    p_islandCount = 0;
+    p_saveIslandIsolatedStatus.clear();
+    return;
+  }
+
+  // Restore isolated status of buses that were marked during island detection
+  for (int i = 0; i < p_islandIsolatedBusIndices.size(); i++) {
+    int localIdx = p_islandIsolatedBusIndices[i];
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(localIdx).get());
+    bus->setIsolated(p_saveIslandIsolatedStatus[i]);
+  }
+
+  p_saveIslandIsolatedStatus.clear();
+  p_islandIsolatedBusIndices.clear();
+  p_islandCount = 0;
+}
+
+/**
  * Set voltage limits on all buses
  * @param Vmin lower bound on voltages
  * @param Vmax upper bound on voltages
@@ -315,7 +510,8 @@ void gridpack::powerflow::PFFactoryModule::ignoreVoltageViolations()
       gridpack::powerflow::PFBus *bus =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
-      if (bus->checkVoltageViolation()) bus->setIgnore(true);
+      // Set ignore on buses WITH violations (checkVoltageViolation returns false when violated)
+      if (!bus->checkVoltageViolation()) bus->setIgnore(true);
     }
   }
 }

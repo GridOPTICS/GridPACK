@@ -267,7 +267,7 @@ class PFBus
 	 * This can be used as a way of moving data in a way that is useful for
 	 * creating output or for copying state data from one network to another.
 	 * @param data data collection object into which new values are inserted
-	 * added by Renke, also modify the original bus mag, ang, 
+	 * added by Renke, also modify the original bus mag, ang,
 	 * and the original generator PG QG in the datacollection
 	 */
 	void saveDataAlsotoOrg(boost::shared_ptr<gridpack::component::DataCollection> data);
@@ -456,6 +456,7 @@ class PFBus
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg, p_pFac;
     std::vector<double> p_savePg;
+    std::vector<double> p_saveQg;  // Save original Q for restoration after Q limit handling
     std::vector<int> p_gstatus;
     std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
@@ -477,6 +478,7 @@ class PFBus
     int p_ngen;
     int p_nload;
     int p_type;
+    int p_save_type;  // Save original bus type for restoration after Q limit handling
     int p_area;
     int p_zone;
     bool p_source;
@@ -516,6 +518,7 @@ private:
       & p_angle & p_voltage
       & p_pg & p_qg & p_pFac & p_qmin & p_qmax
       & p_qmin_orig & p_qmax_orig & p_pFac_orig
+      & p_saveQg
       & p_gstatus
       & p_vs & p_gid
       & p_pt & p_pb
@@ -527,7 +530,7 @@ private:
       & p_vmin & p_vmax
       & p_isPV
       & p_saveisPV
-      & p_ngen & p_type & p_nload
+      & p_ngen & p_type & p_save_type & p_nload
       & p_area & p_zone
       & p_source & p_sink
       & p_rtpr_scale;

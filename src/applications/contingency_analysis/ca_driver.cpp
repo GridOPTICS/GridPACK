@@ -492,13 +492,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     if (print_calcs) pf_app.writeHeader(sbuf);
     // Reset all voltages back to their original values
     pf_app.resetVoltages();
+    // Sync ghost bus data after voltage reset to ensure branches connected to
+    // ghost buses use the correct reset voltages in power flow calculation
+    pf_network->updateBuses();
     // Set contingency
     pf_app.setContingency(events[task_id]);
+    // Check for islanding before attempting to solve
+    int islandCount = pf_app.getIslandCount();
+    bool islandDetected = (islandCount > 1);
     // Solve power flow equations for this system
 #ifdef USE_SUCCESS
     contingency_idx.push_back(task_id);
 #endif
-    if (pf_app.solve()) {
+    if (!islandDetected && pf_app.solve()) {
 #ifdef USE_SUCCESS
       contingency_success.push_back(true);
 #endif
@@ -518,15 +524,23 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 #ifdef USE_SUCCESS
         contingency_violation.push_back(1);
 #endif
-      } 
+      }
+      // Report bus voltage violations
       if (!ok1) {
         sprintf(sbuf,"\nBus Violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else if (!ok) {
+        sprintf(sbuf,"\nNo Bus Violation for contingency %s\n",
             events[task_id].p_name.c_str());
       }
       if (print_calcs) pf_app.print(sbuf);
       if (print_calcs) pf_app.writeCABus();
+      // Report branch overload violations
       if (!ok2) {
         sprintf(sbuf,"\nBranch Violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else if (!ok) {
+        sprintf(sbuf,"\nNo Branch Violation for contingency %s\n",
             events[task_id].p_name.c_str());
       }
 
@@ -539,7 +553,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         contingency_violation.push_back(3);
       }
 #endif
-        
+
       if (print_calcs) pf_app.print(sbuf);
       if (print_calcs) pf_app.writeCABranch();
       // Get strings of data from power flow calculation and parse them to
@@ -637,14 +651,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       timer->stop(t_store);
 #endif
-      if (check_Qlim) pf_app.clearQlimViolations();
+      // Note: clearQlimViolations() moved after unSetContingency() below
     } else {
 #ifdef USE_SUCCESS
       contingency_success.push_back(false);
       contingency_violation.push_back(0);
 #endif
-      sprintf(sbuf,"\nDivergent for contingency %s\n",
-          events[task_id].p_name.c_str());
+      if (islandDetected) {
+        sprintf(sbuf,"\nIslanding detected for contingency %s (%d islands)\n",
+            events[task_id].p_name.c_str(), islandCount);
+      } else {
+        sprintf(sbuf,"\nDivergent for contingency %s\n",
+            events[task_id].p_name.c_str());
+      }
       if (print_calcs) pf_app.print(sbuf);
       // Add dummy values to StatBlock object. Mask value is set to 0 for all
       // network elements to indicate calculation failure
@@ -732,9 +751,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       timer->stop(t_store);
 #endif
-    } 
+    }
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
+    // Clear Q limit violations AFTER unSetContingency so generators are restored first.
+    // This ensures clearQlim() sees the correct generator status when deciding
+    // whether to restore p_isPV (PV bus status).
+    if (check_Qlim) pf_app.clearQlimViolations();
     // Close output file for this contingency
     if (print_calcs) pf_app.close();
   }

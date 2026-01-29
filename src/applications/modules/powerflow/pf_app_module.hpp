@@ -159,7 +159,7 @@ class PFAppModule
 	
 	/**
 	 * Save results of powerflow calculation to data collection objects
-	 * added by Renke, also modify the original bus mag, ang, 
+	 * added by Renke, also modify the original bus mag, ang,
 	 * and the original generator PG QG in the datacollection
 	*/
 	void saveDataAlsotoOrg();
@@ -204,6 +204,12 @@ class PFAppModule
      * @return false if location of contingency is not found in network
      */
     bool unSetContingency(Contingency &event);
+
+    /**
+     * Get the number of islands detected after setting a contingency
+     * @return number of islands (1 = connected network, >1 = islanding)
+     */
+    int getIslandCount();
 
     /**
      * Set voltage limits on all buses
@@ -873,6 +879,9 @@ class PFAppModule
 
     // qlim enforce flag
     int p_qlim;
+
+    // maximum number of Q-limit iterations
+    int p_max_qlim_iterations;
 
     // pointer to bus IO module
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<PFNetwork> > p_busIO;

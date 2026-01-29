@@ -262,48 +262,38 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     double qval = p_Qinj*p_sbase+ql;
 
 //  If qval exceeds the total generator Q capacity, perform PV->PQ
+//  Generator remains online with Q clamped to limit.
+//  setSBus() will be called at start of next iteration to update p_Q0.
 //
     if (qval > qmax ) {
-      printf("\nWarning: Gen(s) at bus %d exceeds the QMAX %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmax);  
-      ql = ql-qmax;
+      printf("\nWarning: Gen(s) at bus %d exceeds the QMAX %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmax);
       p_save2isPV = p_isPV;
       p_isPV = false;
-      *p_PV_ptr = false;
-      pl -= ppl;
-    //p_gstatus.clear();
+      p_type = 1;  // Change bus type from PV(2) to PQ(1)
+      if (p_PV_ptr) *p_PV_ptr = false;
+      // Generator stays online, clamp Q to limit
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
-        p_gstatus[i] = 0;
-        p_qg[i] = p_qmax[i];
-      }
-      for (int i=0; i<p_lstatus.size(); i++) {
-        if (p_lstatus[i] == 1) {
-          p_pl[i] = pl;
-          p_ql[i] = ql;
+        // Keep p_gstatus[i] unchanged - generator stays online
+        if (p_gstatus[i] == 1) {
+          p_qg[i] = p_qmax[i];
         }
       }
-      if (p_PV_ptr) *p_PV_ptr = p_isPV;
       return true;
     } else if (qval < qmin) {
-      printf("\nWarning: Gen(s) at bus %d exceeds the QMIN %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmin);  
-      ql = ql-qmin;
+      printf("\nWarning: Gen(s) at bus %d exceeds the QMIN %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmin);
       p_save2isPV = p_isPV;
       p_isPV = false;
-      pl -= ppl;
-    //  p_gstatus.clear();
+      p_type = 1;  // Change bus type from PV(2) to PQ(1)
+      if (p_PV_ptr) *p_PV_ptr = false;
+      // Generator stays online, clamp Q to limit
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
-        p_gstatus[i] = 0;
-        p_qg[i] = p_qmin[i];
-      }
-      for (int i=0; i<p_lstatus.size(); i++) {
-        if (p_lstatus[i] == 1) {
-          p_pl[i] = pl;
-          p_ql[i] = ql;
+        // Keep p_gstatus[i] unchanged - generator stays online
+        if (p_gstatus[i] == 1) {
+          p_qg[i] = p_qmin[i];
         }
       }
-
-      if (p_PV_ptr) *p_PV_ptr = p_isPV;
       return true;
     } else {
        if (p_PV_ptr) *p_PV_ptr = p_isPV;
@@ -320,16 +310,52 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
 /**
  * Clear changes that were made for Q limit violations and reset
  * bus to its original state
+ *
+ * Note: chkQlim() does NOT modify p_gstatus - generators stay online when Q limits
+ * are hit. It only converts PV buses to PQ and clamps Q to limits. Therefore,
+ * clearQlim() should NOT restore p_gstatus. Generator status restoration is handled
+ * by unSetContingency() which uses setGenStatus().
+ *
+ * The p_gstatus_save mechanism was designed for a different Q limit implementation
+ * that turned off generators. In the current implementation, we only need to:
+ * 1. Clear p_gstatus_save to reset the tracking state
+ * 2. Restore p_isPV if there are online generators
  */
 void gridpack::powerflow::PFBus::clearQlim()
 {
-  int size = p_gstatus_save.size();
-  p_gstatus.clear();
-  int i;
-  for (i=0; i<size; i++) {
-    p_gstatus.push_back(p_gstatus_save[i]);
+  // Clear p_gstatus_save to reset Q limit violation tracking for next iteration.
+  // Do NOT restore p_gstatus from p_gstatus_save - that would undo the generator
+  // restoration done by unSetContingency().
+  p_gstatus_save.clear();
+
+  // Only restore p_isPV to true (PV bus) if there's at least one online generator.
+  // This prevents an inconsistent state when a generator contingency tripped a generator
+  // and caused a Q limit violation due to qmax=0. Without this check, the bus would be
+  // restored to PV status but with no online generator, causing subsequent power flows
+  // to immediately hit Q limit violations and potentially diverge.
+  bool hasOnlineGen = false;
+  int ngen = p_gstatus.size();
+  for (int i = 0; i < ngen; i++) {
+    if (p_gstatus[i] == 1) {
+      hasOnlineGen = true;
+      break;
+    }
   }
-  p_isPV = p_save2isPV;
+
+  if (hasOnlineGen) {
+    p_isPV = p_save2isPV;
+    p_type = p_save_type;  // Restore original bus type (e.g., from PQ back to PV)
+  }
+  // If no online generators, keep p_isPV and p_type unchanged
+
+  // Always restore generator Q to original values.
+  // During Q limit handling, p_qg was clamped to limits. This caused setSBus()
+  // to compute a different scheduled Q (p_Q0) than the original base case.
+  // Restoring p_qg ensures contingencies start with the same scheduled power.
+  for (int i = 0; i < ngen; i++) {
+    p_qg[i] = p_saveQg[i];
+  }
+
   if (p_PV_ptr) *p_PV_ptr = p_isPV;
 }
 
@@ -455,6 +481,7 @@ void gridpack::powerflow::PFBus::load(
   p_angle = p_angle*pi/180.0;
   p_a = p_angle;
   data->getValue(BUS_TYPE, &p_type);
+  p_save_type = p_type;  // Save original bus type for restoration after Q limit handling
   if (p_type == 3) {
     setReferenceBus(true);
   }
@@ -503,6 +530,7 @@ void gridpack::powerflow::PFBus::load(
 	p_pg.push_back(pg);
         p_savePg.push_back(pg);
         p_qg.push_back(qg);
+        p_saveQg.push_back(qg);
         p_qmax.push_back(qmax);
         p_qmin.push_back(qmin);
         p_qmax_orig.push_back(qmax);
@@ -519,6 +547,7 @@ void gridpack::powerflow::PFBus::load(
 
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
+          p_voltage = vs;  // Also update p_voltage so resetVoltage() uses the same initial value as base case
           if (p_type == 2) p_isPV = true;
         }
         std::string id("-1");
@@ -538,6 +567,7 @@ void gridpack::powerflow::PFBus::load(
     }
   }
   p_saveisPV = p_isPV;
+  p_save2isPV = p_isPV;  // Initialize for Q limit handling - ensures valid value if chkQlim() never called
 
 // Add load
   int lstatus;
@@ -739,6 +769,11 @@ void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
   int gsize = p_gstatus.size();
   for (i=0; i<gsize; i++) {
     if (gen_id == p_gid[i]) {
+      // Only modify values if status is actually changing
+      // For already-offline generators, calling setGenStatus(false) should be a no-op
+      if (p_gstatus[i] == status) {
+        return;  // Status unchanged, nothing to do
+      }
       p_gstatus[i] = status;
       if (status == 0) {
         p_pFac[i] = 0.0;
@@ -749,6 +784,30 @@ void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
         p_qmax[i] = p_qmax_orig[i];
         p_qmin[i] = p_qmin_orig[i];
       }
+
+      // Check if any generators are still online on this bus.
+      // If not, convert the bus from PV to PQ to avoid inconsistent state
+      // where the bus is flagged as PV but has no Q capacity.
+      // When turning a generator back on, restore PV status if the bus was originally PV.
+      bool hasOnlineGen = false;
+      for (int j = 0; j < gsize; j++) {
+        if (p_gstatus[j] == 1) {
+          hasOnlineGen = true;
+          break;
+        }
+      }
+
+      if (!hasOnlineGen && p_isPV) {
+        // Save the original PV status before converting to PQ
+        p_saveisPV = p_isPV;
+        p_isPV = false;
+        if (p_PV_ptr) *p_PV_ptr = false;
+      } else if (hasOnlineGen && !p_isPV && p_saveisPV) {
+        // Restore PV status if the bus was originally PV and now has an online generator
+        p_isPV = true;
+        if (p_PV_ptr) *p_PV_ptr = true;
+      }
+
       return;
     }
   }
@@ -1275,7 +1334,7 @@ void gridpack::powerflow::PFBus::saveData(
  * This can be used as a way of moving data in a way that is useful for
  * creating output or for copying state data from one network to another.
  * @param data data collection object into which new values are inserted
- * added by Renke, also modify the original bus mag, ang, 
+ * added by Renke, also modify the original bus mag, ang,
  * and the original generator PG QG in the datacollection
  */
 void gridpack::powerflow::PFBus::saveDataAlsotoOrg(

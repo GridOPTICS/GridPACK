@@ -97,6 +97,26 @@ class PFFactoryModule
     void clearLoneBus();
 
     /**
+     * Detect islands (disconnected subnetworks) in the network using BFS.
+     * Mark buses in smaller islands as isolated to prevent singular Jacobian.
+     * @param stream optional stream pointer for printing island info
+     * @return number of islands found (1 = connected network, >1 = islanding)
+     */
+    int detectIslands(std::ofstream *stream = NULL);
+
+    /**
+     * Get the number of islands detected in the last call to detectIslands
+     * @return number of islands (0 if detectIslands not called)
+     */
+    int getIslandCount() const;
+
+    /**
+     * Clear island detection state and restore isolated status of buses
+     * that were marked as isolated due to islanding
+     */
+    void clearIslands();
+
+    /**
      * Set voltage limits on all buses
      * @param Vmin lower bound on voltages
      * @param Vmax upper bound on voltages
@@ -247,6 +267,9 @@ class PFFactoryModule
 
     NetworkPtr p_network;
     std::vector<bool> p_saveIsolatedStatus;
+    std::vector<bool> p_saveIslandIsolatedStatus;  // For island detection
+    std::vector<int> p_islandIsolatedBusIndices;   // Local indices of buses isolated due to islanding
+    int p_islandCount;  // Number of islands detected
 
     std::vector<Violation> p_violations;
 
