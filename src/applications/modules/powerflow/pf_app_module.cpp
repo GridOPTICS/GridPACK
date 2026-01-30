@@ -253,7 +253,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   timer->stop(t_pti);
 
   // Create serial IO object to export data from buses
-  p_busIO.reset(new gridpack::serial_io::SerialBusIO<PFNetwork>(512,network));
+  // Increased buffer size from 512 to 2048 to handle buses with many generators
+  p_busIO.reset(new gridpack::serial_io::SerialBusIO<PFNetwork>(2048,network));
 
   // Create serial IO object to export data from branches
   // Increased buffer size from 512 to 2048 to handle branches with many parallel lines
