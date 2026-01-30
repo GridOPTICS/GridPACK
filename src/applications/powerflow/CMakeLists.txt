@@ -81,46 +81,6 @@ add_custom_command(
   )
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_ieee39_v36.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_ieee39_v36.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_240_v36.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_240_v36.xml"
-  )
-
-add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml"
   COMMAND ${CMAKE_COMMAND}
   -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_14_qlim.xml"
