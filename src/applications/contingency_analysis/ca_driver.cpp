@@ -9,6 +9,12 @@
  * @author Bruce Palmer
  * @date   2017-12-08 13:12:46 d3g096
  *
+ * @updated Yousu Chen
+ * - N-1 auto-generation for branch and generator contingencies
+ * - Automatic slack bus transfer and capacity check
+ * - Q-limit support integration
+ * @date  2026-01-31
+ *
  * @brief Driver for contingency analysis calculation that make use of the
  *        powerflow module to implement individual power flow simulations for
  *        each contingency. The different contingencies are distributed across

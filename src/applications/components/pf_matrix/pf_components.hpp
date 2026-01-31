@@ -8,10 +8,17 @@
  * @file   pf_components.hpp
  * @author Bruce Palmer
  * @date   2016-07-14 13:27:00 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Improved Q-limit handling with iterative PV-PQ conversion
+ * - Added island detection function
+ * - Automatic slack bus transfer for contingency analysis
+ * - RMPCT-based reactive power distribution for multi-generator buses
+ * @date  2026-01-31
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
@@ -492,6 +499,7 @@ class PFBus
     std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
     std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig;
+    std::vector<double> p_rmpct;  // RMPCT: reactive power participation factor (PSS/E)
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
@@ -548,7 +556,7 @@ private:
       & p_P0 & p_Q0
       & p_angle & p_voltage
       & p_pg & p_qg & p_pFac & p_qmin & p_qmax
-      & p_qmin_orig & p_qmax_orig & p_pFac_orig
+      & p_qmin_orig & p_qmax_orig & p_pFac_orig & p_rmpct
       & p_saveQg
       & p_gstatus
       & p_vs & p_gid

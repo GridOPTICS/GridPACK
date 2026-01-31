@@ -9,6 +9,12 @@
  * @author Bruce Palmer
  * @date   February 10, 2014
  *
+ * @updated Yousu Chen
+ * - N-1 auto-generation for branch and generator contingencies
+ * - Automatic slack bus transfer and capacity check
+ * - Q-limit support integration
+ * @date  2026-01-31
+ *
  * @brief
  *
  *
