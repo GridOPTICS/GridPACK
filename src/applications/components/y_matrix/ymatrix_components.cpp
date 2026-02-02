@@ -154,10 +154,12 @@ void gridpack::ymatrix::YMBus::load(
 
   p_shunt_gs /= sbase;
   p_shunt_bs /= sbase;
-  // update shunt based on shunt table 
+  // update shunt based on shunt table
+  // Add switched shunt BINIT to fixed shunt BL (not replace)
+  // This matches commercial tool behavior (PSS/E, PowerWorld)
   if (binit) {
-    shunt_binit /= sbase; 
-    p_shunt_bs = shunt_binit;
+    shunt_binit /= sbase;
+    p_shunt_bs += shunt_binit;
   }
   // Check to see if bus is reference bus
   int itype;
