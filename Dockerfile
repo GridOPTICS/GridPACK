@@ -122,5 +122,5 @@ RUN pyvnum=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.versi
     echo "${GRIDPACK_INSTALL_DIR}/local/lib/python${pyvnum}/dist-packages" >> ${system_site_packages}/gridpack.pth && \
     echo "Configured Python ${pyvnum} module search path via ${system_site_packages}/gridpack.pth"
 
-WORKDIR ${GRIDPACK_ROOT_DIR}
+WORKDIR ${GRIDPACK_ROOT_DIR}/workspace
 ENV PATH=${GRIDPACK_INSTALL_DIR}/bin:${GRIDPACK_INSTALL_DIR}/local/bin:${PATH}
