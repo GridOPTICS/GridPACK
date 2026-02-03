@@ -68,13 +68,17 @@ int main(int argc, char **argv)
     std::string initStart = "warm";
     cursor->get("initStart", &initStart);
 
-    // Set initial start mode BEFORE creating network
+    // Parse qlim flag
+    bool qlim = cursor->get("qlim", false);
+
+    // Set flags BEFORE creating network
     // This must be called before readNetwork() for it to take effect
     if (initStart == "flat") {
       gridpack::powerflow::PFBus::setInitStartMode(gridpack::powerflow::INIT_START_FLAT);
     } else {
       gridpack::powerflow::PFBus::setInitStartMode(gridpack::powerflow::INIT_START_WARM);
     }
+    gridpack::powerflow::PFBus::setQlim(qlim);
 
     // setup and run powerflow calculation
     boost::shared_ptr<gridpack::powerflow::PFNetwork>

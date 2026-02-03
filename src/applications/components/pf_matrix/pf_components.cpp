@@ -50,6 +50,7 @@
 
 // Static member initialization
 gridpack::powerflow::InitStartMode gridpack::powerflow::PFBus::p_initStartMode = INIT_START_WARM;
+bool gridpack::powerflow::PFBus::p_qlim = true;
 
 /**
  * Set the initial start mode for power flow solver
@@ -57,6 +58,14 @@ gridpack::powerflow::InitStartMode gridpack::powerflow::PFBus::p_initStartMode =
 void gridpack::powerflow::PFBus::setInitStartMode(InitStartMode mode)
 {
   p_initStartMode = mode;
+}
+
+/**
+ * Set the qlim flag
+ */
+void gridpack::powerflow::PFBus::setQlim(bool qlim)
+{
+  p_qlim = qlim;
 }
 
 /**
@@ -684,13 +693,13 @@ void gridpack::powerflow::PFBus::load(
 	p_pFac_orig.push_back(pt - pb);
 
         if (gstatus == 1) {
-          // For flat start: PV and Slack buses use VS (generator setpoint)
-          // For warm start: preserve raw file voltage values
-          if (p_initStartMode == INIT_START_FLAT) {
+          // Use VS for PV/Slack buses when:
+          // - flat start, OR
+          // - warm start with qlim=false
+          if (p_initStartMode == INIT_START_FLAT || !p_qlim) {
             p_v = vs;        // Set voltage to generator setpoint
             p_voltage = vs;  // Also update p_voltage so resetVoltage() uses VS
           }
-          // Note: for warm start, p_v and p_voltage retain values from raw file
           // Only set PV if generator has reactive power capability (Qmax != Qmin)
           // Generators with Qmax == Qmin cannot regulate voltage and should be
           // treated as PQ injections with fixed Q output
@@ -1347,8 +1356,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       } else if (p_isPV) {
 	if(p_gstatus[i]) {
 	  pval = p_pg[i];
-	  // Use p_qg which is set by chkQlim() with RMPCT-based distribution
-	  qval = p_qg[i];
+	  if (p_qlim) {
+	    // When qlim=true, use p_qg which is set by chkQlim() with RMPCT-based distribution
+	    qval = p_qg[i];
+	  } else {
+	    // When qlim=false, chkQlim() is not called, so calculate Q from p_Qinj
+	    qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	  }
 	} else {
 	  pval = 0.0;
 	  qval = 0.0;
@@ -1551,8 +1565,13 @@ void gridpack::powerflow::PFBus::saveData(
         if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
 	  data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
         }
-        // Use p_qg which is set by chkQlim() with RMPCT-based distribution
-        rval = p_qg[i]/p_sbase;
+        if (p_qlim) {
+          // When qlim=true, use p_qg which is set by chkQlim() with RMPCT-based distribution
+          rval = p_qg[i]/p_sbase;
+        } else {
+          // When qlim=false, chkQlim() is not called, so calculate Q from p_Qinj
+          rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+        }
         if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
 	  data->addValue("GENERATOR_PF_QGEN",rval,i);
         }

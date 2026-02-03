@@ -494,9 +494,11 @@ class PFBus
      *             INIT_START_FLAT: flat start (PV/Slack use VS, PQ use 1.0 pu, all angles 0)
      */
     static void setInitStartMode(InitStartMode mode);
+    static void setQlim(bool qlim);
 
   private:
-    static InitStartMode p_initStartMode;  // Static flag to control voltage initialization
+    static InitStartMode p_initStartMode;
+    static bool p_qlim;
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
