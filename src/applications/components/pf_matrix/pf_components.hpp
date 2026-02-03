@@ -16,6 +16,13 @@
  * - RMPCT-based reactive power distribution for multi-generator buses
  * @date  2026-01-31
  *
+ * @updated Yousu Chen
+ * - Added initStart option for power flow initialization (warm/flat start)
+ * - Treated generators with Qmax == Qmin (zero Q capability) as PQ buses
+ * - Q distribution uses RMPCT when available, otherwise uses relative reactive
+ *   capability (Qmax) to share reactive power among generators
+ * @date  2026-02-02
+ *
  * @brief
  *
  *
@@ -35,6 +42,12 @@ namespace gridpack {
 namespace powerflow {
 
 enum PFMode{YBus, Jacobian, RHS, S_Cal, State};
+
+// Initial start mode for power flow solver
+enum InitStartMode {
+  INIT_START_WARM = 0,  // Use voltage values from raw file (default)
+  INIT_START_FLAT = 1   // Flat start: PV/Slack use VS, PQ use 1.0 pu, all angles 0
+};
 
 class PFBus
   : public gridpack::ymatrix::YMBus
@@ -475,7 +488,15 @@ class PFBus
      */
     void setScale(double scale);
 
+    /**
+     * Set the initial start mode for power flow solver
+     * @param mode INIT_START_WARM (default): use voltage values from raw file
+     *             INIT_START_FLAT: flat start (PV/Slack use VS, PQ use 1.0 pu, all angles 0)
+     */
+    static void setInitStartMode(InitStartMode mode);
+
   private:
+    static InitStartMode p_initStartMode;  // Static flag to control voltage initialization
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;

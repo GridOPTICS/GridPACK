@@ -8,10 +8,14 @@
  * @file   pf_app_module.hpp
  * @author Bruce Palmer
  * @date   2014-01-28 11:30:49 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Added setInitStartMode for power flow initialization (warm/flat start)
+ * @date  2026-02-02
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
@@ -305,6 +309,14 @@ class PFAppModule
      * Reset voltages to values in network configuration file
      */
     void resetVoltages();
+
+    /**
+     * Set the initial start mode for power flow solver
+     * Call this BEFORE calling readNetwork() for it to take effect
+     * @param mode INIT_START_WARM (default): use voltage values from raw file
+     *             INIT_START_FLAT: flat start (PV/Slack use VS, PQ use 1.0 pu, all angles 0)
+     */
+    void setInitStartMode(InitStartMode mode);
 
     /**
      * Scale generator real power. If zone less than 1 then scale all

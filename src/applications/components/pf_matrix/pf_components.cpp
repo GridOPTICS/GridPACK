@@ -21,6 +21,13 @@
  * - RMPCT-based reactive power distribution for multi-generator buses
  * @date  2026-01-31
  *
+ * @updated Yousu Chen
+ * - Added initStart option for power flow initialization (warm/flat start)
+ * - Treated generators with Qmax == Qmin (zero Q capability) as PQ buses
+ * - Q distribution uses RMPCT when available, otherwise uses relative reactive
+ *   capability (Qmax) to share reactive power among generators
+ * @date  2026-02-02
+ *
  * @brief Methods used in power flow application
  * 
  * 
@@ -40,6 +47,17 @@
 #include "gridpack/parser/dictionary.hpp"
 
 //#define LARGE_MATRIX
+
+// Static member initialization
+gridpack::powerflow::InitStartMode gridpack::powerflow::PFBus::p_initStartMode = INIT_START_WARM;
+
+/**
+ * Set the initial start mode for power flow solver
+ */
+void gridpack::powerflow::PFBus::setInitStartMode(InitStartMode mode)
+{
+  p_initStartMode = mode;
+}
 
 /**
  *  Simple constructor
@@ -232,7 +250,7 @@ bool gridpack::powerflow::PFBus::vectorValues(RealType *values)
 }
 
 /**
- * Check QLIM with RMPCT-based iterative Q distribution (PSS/E style)
+ * Check QLIM with RMPCT-based iterative Q distribution 
  *
  * Algorithm:
  * 1. Calculate required Q for the bus
@@ -280,7 +298,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
   bool converged = false;
 
   for (int iter = 0; iter < MAX_ITER && !converged; iter++) {
-    // Calculate total RMPCT for active (non-limited) generators
+    // Calculate total RMPCT and Qmax for active (non-limited) generators
     double total_rmpct = 0.0;
     double total_qmax = 0.0;
     int active_count = 0;
@@ -306,9 +324,16 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       }
     }
 
-    // Choose distribution basis: RMPCT if available, else Qmax
-    bool use_qmax = (total_rmpct <= 0.0);
-    double total_basis = use_qmax ? total_qmax : total_rmpct;
+    // Choose distribution basis:
+    // 1. RMPCT if available (total_rmpct > 0)
+    // 2. Otherwise, use relative reactive capability (Qmax)
+    bool use_rmpct = (total_rmpct > 0.0);
+    double total_basis;
+    if (use_rmpct) {
+      total_basis = total_rmpct;
+    } else {
+      total_basis = total_qmax;
+    }
 
     if (total_basis <= 0.0) {
       // No basis for distribution - all generators have zero capability
@@ -320,7 +345,12 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     for (int i = 0; i < ngen; i++) {
       if (p_gstatus[i] != 1 || at_limit[i]) continue;
 
-      double basis = use_qmax ? p_qmax[i] : p_rmpct[i];
+      double basis;
+      if (use_rmpct) {
+        basis = p_rmpct[i];
+      } else {
+        basis = p_qmax[i];
+      }
       double share = (basis / total_basis) * Q_remaining;
 
       // Check against limits
@@ -566,11 +596,23 @@ void gridpack::powerflow::PFBus::load(
 
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
-  data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
-  p_v = p_voltage;
+  data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
   double pi = 4.0*atan(1.0);
-  p_angle = p_angle*pi/180.0;
-  p_a = p_angle;
+
+  // Apply initial start mode
+  if (p_initStartMode == INIT_START_FLAT) {
+    // Flat start: all angles to 0, PQ buses to 1.0 pu
+    // (PV/Slack voltage will be set to VS later when processing generators)
+    p_v = 1.0;       // Default to 1.0 pu for flat start (will be overridden for PV/Slack)
+    p_voltage = 1.0; // Also set p_voltage for resetVoltage()
+    p_angle = 0.0;   // Flat angle
+    p_a = 0.0;
+  } else {
+    // Warm start: use values from raw file
+    p_v = p_voltage;
+    p_angle = p_angle*pi/180.0;
+    p_a = p_angle;
+  }
   data->getValue(BUS_TYPE, &p_type);
   p_save_type = p_type;  // Save original bus type for restoration after Q limit handling
   if (p_type == 3) {
@@ -642,9 +684,17 @@ void gridpack::powerflow::PFBus::load(
 	p_pFac_orig.push_back(pt - pb);
 
         if (gstatus == 1) {
-          p_v = vs; //reset initial PV voltage to set voltage
-          p_voltage = vs;  // Also update p_voltage so resetVoltage() uses the same initial value as base case
-          if (p_type == 2) p_isPV = true;
+          // For flat start: PV and Slack buses use VS (generator setpoint)
+          // For warm start: preserve raw file voltage values
+          if (p_initStartMode == INIT_START_FLAT) {
+            p_v = vs;        // Set voltage to generator setpoint
+            p_voltage = vs;  // Also update p_voltage so resetVoltage() uses VS
+          }
+          // Note: for warm start, p_v and p_voltage retain values from raw file
+          // Only set PV if generator has reactive power capability (Qmax != Qmin)
+          // Generators with Qmax == Qmin cannot regulate voltage and should be
+          // treated as PQ injections with fixed Q output
+          if (p_type == 2 && qmax != qmin) p_isPV = true;
         }
         std::string id("-1");
         data->getValue(GENERATOR_ID,&id,i);

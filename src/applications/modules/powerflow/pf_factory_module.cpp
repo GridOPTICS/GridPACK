@@ -8,10 +8,14 @@
  * @file   pf_factory.cpp
  * @author Bruce Palmer
  * @date   2014-01-28 11:31:23 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Added setInitStartMode for power flow initialization (warm/flat start)
+ * @date  2026-02-02
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
@@ -1049,6 +1053,14 @@ void gridpack::powerflow::PFFactoryModule::resetVoltages()
       bus->resetVoltage();
     }
   }
+}
+
+/**
+ * Set the initial start mode for power flow solver
+ */
+void gridpack::powerflow::PFFactoryModule::setInitStartMode(InitStartMode mode)
+{
+  gridpack::powerflow::PFBus::setInitStartMode(mode);
 }
 
 /**

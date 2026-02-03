@@ -8,10 +8,14 @@
  * @file   pf_factory_module.hpp
  * @author Bruce Palmer
  * @date   2014-01-28 11:33:42 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Added setInitStartMode for power flow initialization (warm/flat start)
+ * @date  2026-02-02
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
@@ -214,6 +218,13 @@ class PFFactoryModule
      * Reinitialize voltages
      */
     void resetVoltages();
+
+    /**
+     * Set the initial start mode for power flow solver
+     * @param mode INIT_START_WARM (default): use voltage values from raw file
+     *             INIT_START_FLAT: flat start (PV/Slack use VS, PQ use 1.0 pu, all angles 0)
+     */
+    void setInitStartMode(InitStartMode mode);
 
     /**
      * Scale generator real power. If zone less than 1 then scale all

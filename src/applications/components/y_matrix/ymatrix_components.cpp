@@ -9,6 +9,10 @@
  * @author Bruce Palmer
  * @date   2014-01-28 11:30:59 d3g096
  * 
+ * @updated Yousu Chen
+ * - Fixed switched shunt handling to check SHUNT_SWCH_STAT before applying BINIT
+ * - Fixed fixed shunt handling to check SHUNT_STATUS before applying GL/BL
+ * @date  2026-02-02
  * @brief  
  * 
  * 
@@ -145,10 +149,27 @@ void gridpack::ymatrix::YMBus::load(
 {
   double sbase;
   data->getValue(CASE_SBASE, &sbase);
-  p_shunt = true;
+  p_shunt = false;
+  p_shunt_gs = 0.0;
+  p_shunt_bs = 0.0;
+
+  // Process fixed shunts - only add if SHUNT_STATUS = 1 (in service)
+  int nshunt = 0;
+  data->getValue(SHUNT_NUMBER, &nshunt);
+  for (int i = 0; i < nshunt; i++) {
+    int shunt_stat = 1;  // Default to in-service
+    data->getValue(SHUNT_STATUS, &shunt_stat, i);
+    if (shunt_stat == 1) {
+      double gl = 0.0, bl = 0.0;
+      data->getValue(BUS_SHUNT_GL, &gl, i);
+      data->getValue(BUS_SHUNT_BL, &bl, i);
+      p_shunt_gs += gl;
+      p_shunt_bs += bl;
+      p_shunt = true;
+    }
+  }
+
   double shunt_binit;
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs,0);
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs,0);
   bool binit = data->getValue(SHUNT_BINIT, &shunt_binit);
   if (binit) p_shunt = true;
 
@@ -156,10 +177,15 @@ void gridpack::ymatrix::YMBus::load(
   p_shunt_bs /= sbase;
   // update shunt based on shunt table
   // Add switched shunt BINIT to fixed shunt BL (not replace)
+  // Only add if switched shunt is in service (SHUNT_SWCH_STAT = 1)
   // This matches commercial tool behavior (PSS/E, PowerWorld)
   if (binit) {
-    shunt_binit /= sbase;
-    p_shunt_bs += shunt_binit;
+    int swshunt_stat = 1;  // Default to in-service
+    data->getValue(SHUNT_SWCH_STAT, &swshunt_stat);
+    if (swshunt_stat == 1) {
+      shunt_binit /= sbase;
+      p_shunt_bs += shunt_binit;
+    }
   }
   // Check to see if bus is reference bus
   int itype;
