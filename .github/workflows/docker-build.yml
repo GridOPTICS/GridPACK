@@ -17,28 +17,64 @@ on:
         required: false
         type: boolean
         default: false
-      platforms:
-        description: 'Target platforms (comma-separated)'
-        required: false
-        default: 'linux/amd64,linux/arm64'
       dockerfile:
         description: 'Dockerfile to use'
         required: false
         default: './Dockerfile'
 
 jobs:
-  build-and-push:
-    name: Build and Push Multi-Architecture Docker Images
+  # Generate metadata once to be shared across all jobs
+  prepare-metadata:
+    name: Prepare Build Metadata
     runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      json: ${{ steps.meta.outputs.json }}
+      primary-tag: ${{ steps.primary.outputs.tag }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up QEMU for ARM64 emulation
-        uses: docker/setup-qemu-action@v3
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          platforms: arm64
+          images: pnnl/gridpack
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ inputs.tag || 'dev' }},enable=${{ github.event_name == 'workflow_dispatch' }}
+
+      - name: Extract primary tag
+        id: primary
+        run: |
+          PRIMARY_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          echo "tag=${PRIMARY_TAG}" >> $GITHUB_OUTPUT
+          echo "Primary tag: ${PRIMARY_TAG}"
+
+  # Build for each architecture using native runners
+  build-native:
+    name: Build ${{ matrix.platform }} on native runner
+    needs: prepare-metadata
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm64
+            arch: arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -49,50 +85,124 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/gp
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ inputs.tag || 'dev' }},enable=${{ github.event_name == 'workflow_dispatch' }}
-
-      - name: Build and push Docker images
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ${{ inputs.dockerfile || './Dockerfile' }}
-          platforms: ${{ inputs.platforms || 'linux/amd64,linux/arm64' }}
+          platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          labels: ${{ needs.prepare-metadata.outputs.labels }}
+          outputs: type=image,name=pnnl/gridpack,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=build-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.arch }}
           build-args: |
             boost_version=1.81.0
             ga_version=5.9.1
             petsc_version=3.24.2
 
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "Digest for ${{ matrix.arch }}: ${digest}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Merge the architecture-specific images into a multi-arch manifest
+  merge-manifest:
+    name: Create Multi-Architecture Manifest
+    runs-on: ubuntu-latest
+    needs:
+      - prepare-metadata
+      - build-native
+
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digests-*
+          path: /tmp/digests
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          # Parse all tags from metadata
+          TAGS="${{ needs.prepare-metadata.outputs.tags }}"
+          
+          # Build docker buildx imagetools create command with all tags
+          CMD="docker buildx imagetools create"
+          for tag in ${TAGS}; do
+            CMD="${CMD} -t ${tag}"
+          done
+          
+          # Add all digests
+          for digest in $(ls -1); do
+            CMD="${CMD} pnnl/gridpack@sha256:${digest}"
+          done
+          
+          echo "Creating manifest with command:"
+          echo "${CMD}"
+          eval "${CMD}"
+
       - name: Inspect multi-arch manifest
         run: |
           echo "Inspecting multi-architecture manifest..."
-          # Get the first tag from the tags output
-          TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          TAG="${{ needs.prepare-metadata.outputs.primary-tag }}"
           docker buildx imagetools inspect ${TAG}
 
-      - name: Run ctest smoke tests
-        if: ${{ !inputs.skip_tests }}
-        continue-on-error: true
+  # Test both architectures in parallel
+  test-native:
+    name: Test ${{ matrix.platform }} image
+    needs:
+      - prepare-metadata
+      - merge-manifest
+    runs-on: ${{ matrix.runner }}
+    if: ${{ !inputs.skip_tests }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm64
+            arch: arm64
+
+    steps:
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Run ctest smoke tests on ${{ matrix.arch }}
         run: |
-          echo "Running ctest smoke tests..."
+          echo "Running ctest smoke tests on ${{ matrix.arch }}..."
           echo "Note: Test failures will NOT cause the workflow to fail (continue-on-error: true)"
           echo "Typical pass rate: ~94%"
           echo ""
           
-          # Get the first tag from the tags output
-          TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          TAG="${{ needs.prepare-metadata.outputs.primary-tag }}"
+          docker pull ${TAG}
           docker run --rm ${TAG} bash -c "cd /app/src/build && ctest -j"
