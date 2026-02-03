@@ -23,6 +23,36 @@ on:
         default: './Dockerfile'
 
 jobs:
+  # Validate DockerHub credentials before running expensive builds
+  check-docker-token:
+    name: Validate DockerHub Credentials
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test DockerHub authentication
+        run: |
+          echo "Testing DockerHub credentials..."
+          if echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin; then
+            echo "✓ DockerHub credentials are valid"
+          else
+            echo "✗ DockerHub authentication failed!"
+            echo ""
+            echo "ERROR: The DockerHub credentials could not authenticate."
+            echo ""
+            echo "This usually means:"
+            echo "  - The Personal Access Token (PAT) has expired"
+            echo "  - The token has been revoked"
+            echo "  - The username or token is incorrect"
+            echo ""
+            echo "To fix this issue:"
+            echo "  1. Go to https://hub.docker.com/settings/security to create a new PAT"
+            echo "  2. Update the GitHub repository secrets:"
+            echo "     - DOCKERHUB_USERNAME: Your DockerHub username"
+            echo "     - DOCKERHUB_TOKEN: Your new DockerHub PAT"
+            echo "  3. Navigate to: Settings > Secrets and variables > Actions"
+            echo ""
+            exit 1
+          fi
+
   # Generate metadata once to be shared across all jobs
   prepare-metadata:
     name: Prepare Build Metadata
@@ -59,7 +89,9 @@ jobs:
   # Build for each architecture using native runners
   build-native:
     name: Build ${{ matrix.platform }} on native runner
-    needs: prepare-metadata
+    needs:
+      - prepare-metadata
+      - check-docker-token
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -124,6 +156,7 @@ jobs:
     needs:
       - prepare-metadata
       - build-native
+      - check-docker-token
 
     steps:
       - name: Download digests
@@ -175,6 +208,7 @@ jobs:
     needs:
       - prepare-metadata
       - merge-manifest
+      - check-docker-token
     runs-on: ${{ matrix.runner }}
     if: ${{ !inputs.skip_tests }}
     continue-on-error: true
