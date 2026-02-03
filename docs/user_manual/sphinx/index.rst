@@ -8,14 +8,15 @@ GridPACK documentation
 
    Section0-GridPACK
    Section1-Introduction
-   Section2-ConfigureBuild
-   Section3-BuildApplications
-   Section4-FrameworkComponents
-   Section5-DevelopingApplications
-   Section6-AdvancedFunctionality
-   Section7-GeneralizedMatVecInterface
-   Section8-ApplicationModules
-   Section9-Examples
+   Section2-Docker
+   Section3-ConfigureBuild
+   Section4-BuildApplications
+   Section5-FrameworkComponents
+   Section6-DevelopingApplications
+   Section7-AdvancedFunctionality
+   Section8-GeneralizedMatVecInterface
+   Section9-ApplicationModules
+   Section10-Examples
 
 .. toctree::
    :maxdepth: 1
