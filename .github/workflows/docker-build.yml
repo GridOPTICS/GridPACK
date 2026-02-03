@@ -1,9 +1,9 @@
-name: Docker Multi-Architecture Build and Publish
+name: Docker Build and Publish
 
 on:
   # Trigger on GitHub releases for production builds
-  release:
-    types: [published]
+  #release:
+  #  types: [published]
 
   # Manual workflow dispatch for development/testing
   workflow_dispatch:
