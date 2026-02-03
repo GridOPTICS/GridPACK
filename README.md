@@ -17,12 +17,32 @@ In addition, GridPACK is also a framework to simplify the development of new app
 ## Installation
 See the [instructions](docs/markdown/BASIC_INSTALL.md) for installing GridPACK, prerequisite software, and installation notes for different platforms. Formal releases are available [here](https://github.com/GridOPTICS/GridPACK/releases).
 
+### Using Docker (Recommended)
+
+GridPACK is available as a multi-architecture Docker image with all dependencies pre-installed:
+
+```bash
+# Pull the image
+docker pull pnnl/gridpack:latest
+
+# Run with your files (container starts in /app/workspace)
+docker run -it --rm -v $(pwd):/app/workspace pnnl/gridpack:latest bash
+```
+
+The Docker image supports both AMD64 and ARM64 architectures. See the [Docker usage guide](https://gridpack.readthedocs.io/en/latest/Section2-Docker.html) for more examples.
+
+### Building from Source
+
+See the [installation instructions](docs/markdown/BASIC_INSTALL.md) for building GridPACK from source, prerequisite software, and platform-specific installation notes. Formal releases are available [here](https://github.com/GridOPTICS/GridPACK/releases).
+
 ## Usage
 See the [user manual](https://gridpack.readthedocs.io/en/latest/index.html) for a deep dive on GridPACK internals and/or refer to the [tutorials](docs/markdown/TUTORIALS.md) for more info.
 
 - Quick Guide (To do)
 
 ## Documentation
+- [Docker Usage Guide](https://gridpack.readthedocs.io/en/latest/Section2-Docker.html)
+- [CI/CD Pipeline](docs/markdown/CI-CD.md)
 - [User manual](https://gridpack.readthedocs.io/en/latest/index.html)
 - [Tutorials](docs/markdown/TUTORIALS.md)
 - [FAQS](docs/markdown/FAQS.md)
