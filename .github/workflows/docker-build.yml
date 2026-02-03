@@ -1,9 +1,9 @@
-name: Docker Multi-Architecture Build and Publish
+name: Docker Build and Publish
 
 on:
   # Trigger on GitHub releases for production builds
-  release:
-    types: [published]
+  #release:
+  #  types: [published]
 
   # Manual workflow dispatch for development/testing
   workflow_dispatch:
@@ -69,7 +69,7 @@ jobs:
             runner: ubuntu-latest
             arch: amd64
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm64
+            runner: ubuntu-24.04-arm
             arch: arm64
 
     steps:
