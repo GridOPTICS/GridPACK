@@ -515,13 +515,13 @@ class PFBus
     double p_angle;   // initial bus angle read from parser
     double p_voltage; // initial bus voltage read from parser
     // newly added priavate variables:
-    std::vector<double> p_pg, p_qg, p_pFac;
+    std::vector<double> p_pg, p_qg, p_pFac, p_qFac;
     std::vector<double> p_savePg;
     std::vector<double> p_saveQg;  // Save original Q for restoration after Q limit handling
     std::vector<int> p_gstatus;
     std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
-    std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig;
+    std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig, p_qFac_orig;
     std::vector<double> p_rmpct;  // RMPCT: reactive power participation factor (PSS/E)
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;

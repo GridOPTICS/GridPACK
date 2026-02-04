@@ -373,7 +373,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     Vmax = 1.1;
   }
   // Check for Q limit violations (qlim: true=enabled, false=disabled)
-  bool check_Qlim = cursor->get("qlim", false);
+  bool check_Qlim = cursor->get("qlim", true);
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations

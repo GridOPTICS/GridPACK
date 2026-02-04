@@ -141,7 +141,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);
-  p_qlim = cursor->get("qlim",false);
+  p_qlim = cursor->get("qlim",true);
   p_max_iteration = cursor->get("maxIteration",50);
   p_max_qlim_iterations = cursor->get("maxQlimIterations",3);
   ComplexType tol;

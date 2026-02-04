@@ -68,8 +68,8 @@ int main(int argc, char **argv)
     std::string initStart = "warm";
     cursor->get("initStart", &initStart);
 
-    // Parse qlim flag
-    bool qlim = cursor->get("qlim", false);
+    // Parse qlim flag (default: true - enforce reactive power limits)
+    bool qlim = cursor->get("qlim", true);
 
     // Set flags BEFORE creating network
     // This must be called before readNetwork() for it to take effect

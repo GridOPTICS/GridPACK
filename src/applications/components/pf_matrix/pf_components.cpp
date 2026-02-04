@@ -588,6 +588,8 @@ void gridpack::powerflow::PFBus::load(
   p_qg.clear();
   p_pFac.clear();
   p_pFac_orig.clear();
+  p_qFac.clear();
+  p_qFac_orig.clear();
   p_gstatus.clear();
   p_gstatus_save.clear();
   p_qmin.clear();
@@ -649,6 +651,7 @@ void gridpack::powerflow::PFBus::load(
   p_ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
     double pcaptot = 0.0;
+    double qcaptot = 0.0;   // Total Qmax for Q factor calculation
     for (i=0; i<ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
@@ -687,10 +690,20 @@ void gridpack::powerflow::PFBus::load(
 	if(gstatus) {
 	  p_pFac.push_back(pt - pb);
 	  pcaptot += pt - pb;
+	  // For p_qFac, use Qmax for generators with reactive capability (Qmax > Qmin)
+	  // Generators with Qmax == Qmin (including Qmax=Qmin=0) get zero p_qFac
+	  if (qmax > qmin) {
+	    p_qFac.push_back(qmax);
+	    qcaptot += qmax;
+	  } else {
+	    p_qFac.push_back(0.0);
+	  }
 	} else {
 	  p_pFac.push_back(0.0);
+	  p_qFac.push_back(0.0);
 	}
 	p_pFac_orig.push_back(pt - pb);
+	p_qFac_orig.push_back(qmax > qmin ? qmax : 0.0);
 
         if (gstatus == 1) {
           // Use VS for PV/Slack buses when:
@@ -711,6 +724,7 @@ void gridpack::powerflow::PFBus::load(
         p_ngen++;
       }
     }
+    // Normalize p_pFac (P-based factor for P distribution)
     if (pcaptot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
         p_pFac[i] = p_pFac[i]/pcaptot;
@@ -719,6 +733,36 @@ void gridpack::powerflow::PFBus::load(
     } else {
       p_pFac[0] = 1.0;
       p_pFac_orig[0] = p_pFac[0];
+    }
+    // Normalize p_qFac (Q-based factor for Q distribution when qlim=false)
+    // Uses Qmax to distribute Q among generators with reactive capability
+    // Generators with Qmax == Qmin (zero Q capability) get zero p_qFac
+    if (qcaptot != 0.0 && p_ngen > 1) {
+      for (i=0; i<p_ngen; i++) {
+        p_qFac[i] = p_qFac[i]/qcaptot;
+        p_qFac_orig[i] = p_qFac[i];
+      }
+    } else if (p_ngen > 0) {
+      // If no Q capability (qcaptot=0) or single generator, first gen with
+      // any capability gets all Q, otherwise distribute equally
+      bool found = false;
+      for (i=0; i<p_ngen; i++) {
+        if (p_qFac_orig[i] > 0.0 && !found) {
+          p_qFac[i] = 1.0;
+          p_qFac_orig[i] = 1.0;
+          found = true;
+        } else if (!found && i == p_ngen - 1) {
+          // No generators with Q capability - give to first online gen
+          // (will be clamped to zero anyway if Qmax=Qmin=0)
+          for (int j=0; j<p_ngen; j++) {
+            if (p_gstatus[j] == 1) {
+              p_qFac[j] = 1.0;
+              p_qFac_orig[j] = 1.0;
+              break;
+            }
+          }
+        }
+      }
     }
   }
   p_saveisPV = p_isPV;
@@ -1042,10 +1086,12 @@ bool gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
       p_gstatus[i] = status;
       if (status == 0) {
         p_pFac[i] = 0.0;
+        p_qFac[i] = 0.0;
         p_qmax[i] = 0.0;
         p_qmin[i] = 0.0;
       } else {
         p_pFac[i] = p_pFac_orig[i];
+        p_qFac[i] = p_qFac_orig[i];
         p_qmax[i] = p_qmax_orig[i];
         p_qmin[i] = p_qmin_orig[i];
       }
@@ -1352,7 +1398,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
 
       if(getReferenceBus()) {
 	pval = p_pFac[i]*(p_Pinj*p_sbase+pl);
-	qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	// Use p_qFac for Q distribution (based on Qmax capability)
+	qval = p_qFac[i]*(p_Qinj*p_sbase+ql);
       } else if (p_isPV) {
 	if(p_gstatus[i]) {
 	  pval = p_pg[i];
@@ -1361,7 +1408,9 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
 	    qval = p_qg[i];
 	  } else {
 	    // When qlim=false, chkQlim() is not called, so calculate Q from p_Qinj
-	    qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	    // Use p_qFac (Qmax-based) to distribute Q among generators with reactive capability
+	    // Generators with Qmax=Qmin=0 get p_qFac=0, so they won't be assigned Q they can't provide
+	    qval = p_qFac[i]*(p_Qinj*p_sbase+ql);
 	  }
 	} else {
 	  pval = 0.0;
@@ -1556,7 +1605,8 @@ void gridpack::powerflow::PFBus::saveData(
       if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
 	data->addValue("GENERATOR_PF_PGEN",rval,i);
       }
-      rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+      // Use p_qFac for Q distribution (based on Qmax capability)
+      rval = p_qFac[i]*(p_Qinj+ql/p_sbase);
       if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
 	data->addValue("GENERATOR_PF_QGEN",rval,i);
       }
@@ -1570,7 +1620,8 @@ void gridpack::powerflow::PFBus::saveData(
           rval = p_qg[i]/p_sbase;
         } else {
           // When qlim=false, chkQlim() is not called, so calculate Q from p_Qinj
-          rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+          // Use p_qFac (Qmax-based) for generators with reactive capability
+          rval = p_qFac[i]*(p_Qinj+ql/p_sbase);
         }
         if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
 	  data->addValue("GENERATOR_PF_QGEN",rval,i);
@@ -1675,14 +1726,15 @@ void gridpack::powerflow::PFBus::saveDataAlsotoOrg(
     if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
       data->addValue("GENERATOR_PF_PGEN",rval,i);
     }
-	data->setValue(GENERATOR_PG,rval*100.0,i); //also modify the original GENERATOR_PG 
-	
-    rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+	data->setValue(GENERATOR_PG,rval*100.0,i); //also modify the original GENERATOR_PG
+
+    // Use p_qFac for Q distribution (based on Qmax capability)
+    rval = p_qFac[i]*(p_Qinj+ql/p_sbase);
     if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
       data->addValue("GENERATOR_PF_QGEN",rval,i);
     }
-	data->setValue(GENERATOR_QG,rval*100.0,i); //also modify the original GENERATOR_QG 
-	
+	data->setValue(GENERATOR_QG,rval*100.0,i); //also modify the original GENERATOR_QG
+
   }
 }
 
