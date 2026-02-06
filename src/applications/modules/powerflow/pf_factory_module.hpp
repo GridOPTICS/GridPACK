@@ -8,10 +8,14 @@
  * @file   pf_factory_module.hpp
  * @author Bruce Palmer
  * @date   2014-01-28 11:33:42 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Added setInitStartMode for power flow initialization (warm/flat start)
+ * @date  2026-02-02
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
@@ -97,6 +101,54 @@ class PFFactoryModule
     void clearLoneBus();
 
     /**
+     * Detect islands (disconnected subnetworks) in the network using BFS.
+     * Mark buses in smaller islands as isolated to prevent singular Jacobian.
+     * @param stream optional stream pointer for printing island info
+     * @return number of islands found (1 = connected network, >1 = islanding)
+     */
+    int detectIslands(std::ofstream *stream = NULL);
+
+    /**
+     * Get the number of islands detected in the last call to detectIslands
+     * @return number of islands (0 if detectIslands not called)
+     */
+    int getIslandCount() const;
+
+    /**
+     * Check if any lone buses were found in the last call to checkLoneBus
+     * @return true if at least one lone bus was found
+     */
+    bool hasLoneBus() const;
+
+    /**
+     * Check if the reference (slack) bus has an online generator.
+     * If not, transfer the slack function to the bus with the largest
+     * online generator capacity.
+     * @return true if a valid slack bus exists (or was transferred),
+     *         false if no generator with real power capacity is available
+     */
+    bool checkAndTransferSlack();
+
+    /**
+     * Restore the original slack bus after a contingency.
+     * Called by clearIslands() or unSetContingency().
+     */
+    void restoreSlack();
+
+    /**
+     * Check if slack bus generator output exceeds its capacity (Pmax).
+     * Should be called after power flow solve.
+     * @return true if within limits, false if Pgen > Pmax
+     */
+    bool checkSlackCapacity();
+
+    /**
+     * Clear island detection state and restore isolated status of buses
+     * that were marked as isolated due to islanding
+     */
+    void clearIslands();
+
+    /**
      * Set voltage limits on all buses
      * @param Vmin lower bound on voltages
      * @param Vmax upper bound on voltages
@@ -166,6 +218,13 @@ class PFFactoryModule
      * Reinitialize voltages
      */
     void resetVoltages();
+
+    /**
+     * Set the initial start mode for power flow solver
+     * @param mode INIT_START_WARM (default): use voltage values from raw file
+     *             INIT_START_FLAT: flat start (PV/Slack use VS, PQ use 1.0 pu, all angles 0)
+     */
+    void setInitStartMode(InitStartMode mode);
 
     /**
      * Scale generator real power. If zone less than 1 then scale all
@@ -247,6 +306,13 @@ class PFFactoryModule
 
     NetworkPtr p_network;
     std::vector<bool> p_saveIsolatedStatus;
+    std::vector<bool> p_saveIslandIsolatedStatus;  // For island detection
+    std::vector<int> p_islandIsolatedBusIndices;   // Local indices of buses isolated due to islanding
+    int p_islandCount;  // Number of islands detected
+    bool p_hasLoneBus;  // Whether any lone buses were found
+    int p_originalSlackBusIdx;  // Local index of original slack bus
+    int p_currentSlackBusIdx;   // Local index of current slack bus (may differ after transfer)
+    bool p_slackTransferred;    // Whether slack was transferred during contingency
 
     std::vector<Violation> p_violations;
 

@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Contingency_analysis>
-    <printCalcFiles>true</printCalcFiles>
-    <!-- Option 1: Use a contingency list file -->
-    <contingencyList>contingencies_118.xml</contingencyList>
-    <!-- Option 2: Auto-generate N-1 contingencies from network -->
-    <!-- <FullBranchN1>true</FullBranchN1> -->
-    <!-- <FullGeneratorN1>true</FullGeneratorN1> -->
-    <!-- Note: Can combine both options - auto-generate N-1 plus custom N-K from file -->
+    <!-- Test auto N-1 generation feature -->
+    <printCalcFiles>false</printCalcFiles>
+    <FullBranchN1>true</FullBranchN1>
+    <FullGeneratorN1>true</FullGeneratorN1>
     <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
     <qlim>false</qlim>
   </Contingency_analysis>
   <Powerflow>
-    <networkConfiguration>IEEE118.raw</networkConfiguration>
+    <networkConfiguration>IEEE14_ca.raw</networkConfiguration>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-3</tolerance>
     <qlim>false</qlim>

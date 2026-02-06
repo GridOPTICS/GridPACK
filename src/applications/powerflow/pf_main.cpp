@@ -10,6 +10,10 @@
  * @author Bruce Palmer
  * @date   2025-01-29 11:35:06 d3g096
  *
+ * @updated Yousu Chen
+ * - Added initStart config option for power flow initialization (warm/flat start)
+ * @date  2026-02-02
+ *
  * @brief
  */
 // -------------------------------------------------------------
@@ -19,6 +23,7 @@
 #include <macdecls.h>
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
+#include "gridpack/applications/components/pf_matrix/pf_components.hpp"
 
 const char* help = "GridPACK power flow application";
 
@@ -58,6 +63,22 @@ int main(int argc, char **argv)
     exportPSSE34 = cursor->get("exportPSSE_v34",&filename34);
     bool noPrint = false;
     cursor->get("suppressOutput",&noPrint);
+
+    // Parse initial start mode: "warm" (default) or "flat"
+    std::string initStart = "warm";
+    cursor->get("initStart", &initStart);
+
+    // Parse qlim flag (default: true - enforce reactive power limits)
+    bool qlim = cursor->get("qlim", true);
+
+    // Set flags BEFORE creating network
+    // This must be called before readNetwork() for it to take effect
+    if (initStart == "flat") {
+      gridpack::powerflow::PFBus::setInitStartMode(gridpack::powerflow::INIT_START_FLAT);
+    } else {
+      gridpack::powerflow::PFBus::setInitStartMode(gridpack::powerflow::INIT_START_WARM);
+    }
+    gridpack::powerflow::PFBus::setQlim(qlim);
 
     // setup and run powerflow calculation
     boost::shared_ptr<gridpack::powerflow::PFNetwork>

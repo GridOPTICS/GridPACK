@@ -9,6 +9,12 @@
  * @author Bruce Palmer
  * @date   2017-12-08 13:12:46 d3g096
  *
+ * @updated Yousu Chen
+ * - N-1 auto-generation for branch and generator contingencies
+ * - Automatic slack bus transfer and capacity check
+ * - Q-limit support integration
+ * @date  2026-01-31
+ *
  * @brief Driver for contingency analysis calculation that make use of the
  *        powerflow module to implement individual power flow simulations for
  *        each contingency. The different contingencies are distributed across
@@ -142,6 +148,173 @@ std::vector<gridpack::powerflow::Contingency>
 }
 
 /**
+ * Auto-generate N-1 contingencies from the network
+ * @param pf_app power flow application module with loaded network
+ * @param gen_branches generate branch contingencies
+ * @param gen_generators generate generator contingencies
+ * @return vector of auto-generated contingencies
+ */
+std::vector<gridpack::powerflow::Contingency>
+  gridpack::contingency_analysis::CADriver::generateN1Contingencies(
+      gridpack::powerflow::PFAppModule &pf_app,
+      bool gen_branches, bool gen_generators)
+{
+  std::vector<gridpack::powerflow::Contingency> ret;
+  gridpack::utility::StringUtils utils;
+
+  // Generate N-1 branch contingencies
+  if (gen_branches) {
+    std::vector<std::string> branch_data = pf_app.writeBranchString("flow_str");
+    int branch_count = 0;
+
+    for (size_t i=0; i<branch_data.size(); i++) {
+      std::vector<std::string> tokens = utils.blankTokenizer(branch_data[i]);
+      if (tokens.size()%8 != 0) {
+        continue;  // Skip malformed data
+      }
+
+      int nline = tokens.size()/8;
+      for (int j=0; j<nline; j++) {
+        int from_bus = atoi(tokens[j*8].c_str());
+        int to_bus = atoi(tokens[j*8+1].c_str());
+        std::string ckt_id = tokens[j*8+2];
+
+        // Create contingency for this branch
+        gridpack::powerflow::Contingency contingency;
+        char name_buf[64];
+        sprintf(name_buf, "BR_%d_%d_%s", from_bus, to_bus,
+                utils.clean2Char(ckt_id).c_str());
+        contingency.p_name = name_buf;
+        contingency.p_type = Branch;
+        contingency.p_from.push_back(from_bus);
+        contingency.p_to.push_back(to_bus);
+        contingency.p_ckt.push_back(utils.clean2Char(ckt_id));
+        contingency.p_saveLineStatus.push_back(true);
+
+        ret.push_back(contingency);
+        branch_count++;
+      }
+    }
+
+    printf("Auto-generated %d N-1 branch contingencies\n", branch_count);
+  }
+
+  // Generate N-1 generator contingencies
+  if (gen_generators) {
+    std::vector<std::string> gen_data = pf_app.writeBusString("power");
+    int gen_count = 0;
+
+    for (size_t i=0; i<gen_data.size(); i++) {
+      std::vector<std::string> tokens = utils.blankTokenizer(gen_data[i]);
+      if (tokens.size()%4 != 0) {
+        continue;  // Skip malformed data
+      }
+
+      int ngen = tokens.size()/4;
+      for (int j=0; j<ngen; j++) {
+        int bus_id = atoi(tokens[j*4].c_str());
+        std::string gen_id = tokens[j*4+1];
+
+        // Create contingency for this generator
+        gridpack::powerflow::Contingency contingency;
+        char name_buf[64];
+        sprintf(name_buf, "GN_%d_%s", bus_id,
+                utils.clean2Char(gen_id).c_str());
+        contingency.p_name = name_buf;
+        contingency.p_type = Generator;
+        contingency.p_busid.push_back(bus_id);
+        contingency.p_genid.push_back(utils.clean2Char(gen_id));
+        contingency.p_saveGenStatus.push_back(true);
+
+        ret.push_back(contingency);
+        gen_count++;
+      }
+    }
+
+    printf("Auto-generated %d N-1 generator contingencies\n", gen_count);
+  }
+
+  return ret;
+}
+
+/**
+ * Check if a contingency is a duplicate of any in the existing list
+ * @param contingency the contingency to check
+ * @param existing_list vector of existing contingencies
+ * @return true if duplicate found, false otherwise
+ */
+bool gridpack::contingency_analysis::CADriver::isDuplicateContingency(
+    const gridpack::powerflow::Contingency &contingency,
+    const std::vector<gridpack::powerflow::Contingency> &existing_list)
+{
+  for (size_t i = 0; i < existing_list.size(); i++) {
+    const gridpack::powerflow::Contingency &existing = existing_list[i];
+
+    // Check if same type
+    if (existing.p_type != contingency.p_type) {
+      continue;
+    }
+
+    if (contingency.p_type == Branch) {
+      // For branch contingencies, check if same branches are tripped
+      // A duplicate means all branches match (order doesn't matter)
+      if (existing.p_from.size() != contingency.p_from.size()) {
+        continue;
+      }
+
+      bool all_match = true;
+      for (size_t j = 0; j < contingency.p_from.size(); j++) {
+        bool found = false;
+        for (size_t k = 0; k < existing.p_from.size(); k++) {
+          if (contingency.p_from[j] == existing.p_from[k] &&
+              contingency.p_to[j] == existing.p_to[k] &&
+              contingency.p_ckt[j] == existing.p_ckt[k]) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          all_match = false;
+          break;
+        }
+      }
+
+      if (all_match) {
+        return true;  // Duplicate found
+      }
+
+    } else if (contingency.p_type == Generator) {
+      // For generator contingencies, check if same generators are tripped
+      if (existing.p_busid.size() != contingency.p_busid.size()) {
+        continue;
+      }
+
+      bool all_match = true;
+      for (size_t j = 0; j < contingency.p_busid.size(); j++) {
+        bool found = false;
+        for (size_t k = 0; k < existing.p_busid.size(); k++) {
+          if (contingency.p_busid[j] == existing.p_busid[k] &&
+              contingency.p_genid[j] == existing.p_genid[k]) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          all_match = false;
+          break;
+        }
+      }
+
+      if (all_match) {
+        return true;  // Duplicate found
+      }
+    }
+  }
+
+  return false;  // Not a duplicate
+}
+
+/**
  * Execute application. argc and argv are standard runtime parameters
  */
 void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
@@ -199,11 +372,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   if (!cursor->get("maxVoltage",&Vmax)) {
     Vmax = 1.1;
   }
-  // Check for Q limit violations
-  bool check_Qlim;
-  if (!cursor->get("checkQLimit",&check_Qlim)) {
-    check_Qlim = false;
-  }
+  // Check for Q limit violations (qlim: true=enabled, false=disabled)
+  bool check_Qlim = cursor->get("qlim", true);
+  // Set static flag for PFBus class BEFORE network creation.
+  // This controls how Q values are reported in output functions:
+  // - When check_Qlim = false: output uses calculated Q from p_Qinj
+  // - When check_Qlim = true: output uses p_qg (set by chkQlim())
+  gridpack::powerflow::PFBus::setQlim(check_Qlim);
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations
@@ -213,6 +388,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   gridpack::parallel::GlobalVector<bool> ca_success(world);
   std::vector<int> contingency_violation;
   gridpack::parallel::GlobalVector<int> ca_violation(world);
+  std::vector<bool> contingency_isolated;
+  gridpack::parallel::GlobalVector<bool> ca_isolated(world);
 #endif
 
   // Create powerflow applications on each task communicator
@@ -238,25 +415,123 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // buses to ignore voltage violations on them.
   pf_app.ignoreVoltageViolations();
 
-  // Read in contingency file name
-  std::string contingencyfile;
-  if (!cursor->get("contingencyList",&contingencyfile)) {
-    contingencyfile = "contingencies.xml";
-  }
-  if (world.rank() == 0) printf("Contingency List: %s\n",contingencyfile.c_str());
-  // Open contingency file
-  bool ok = config->open(contingencyfile,world);
+  // Check if auto-generation of N-1 contingencies is enabled
+  // FullBranchN1: generate N-1 contingencies for all branches
+  // FullGeneratorN1: generate N-1 contingencies for all generators
+  cursor = config->getCursor("Configuration.Contingency_analysis");
+  bool full_branch_n1 = false;
+  bool full_generator_n1 = false;
 
-  // Get a list of contingencies. Set cursor so that it points to the
-  // Contingencies block in the contingency file
-  cursor = config->getCursor(
-      "ContingencyList.Contingency_analysis.Contingencies");
-  gridpack::utility::Configuration::ChildCursors contingencies;
-  if (cursor) cursor->children(contingencies);
-  std::vector<gridpack::powerflow::Contingency>
-    events = getContingencies(contingencies);
-  // Contingencies are now available. Print out a list of contingencies from
-  // process 0 (the list is replicated on all processors)
+  if (!cursor->get("FullBranchN1",&tmp_bool)) {
+    full_branch_n1 = false;
+  } else {
+    util.toLower(tmp_bool);
+    full_branch_n1 = (tmp_bool == "true");
+  }
+
+  if (!cursor->get("FullGeneratorN1",&tmp_bool)) {
+    full_generator_n1 = false;
+  } else {
+    util.toLower(tmp_bool);
+    full_generator_n1 = (tmp_bool == "true");
+  }
+
+  bool auto_generate_n1 = full_branch_n1 || full_generator_n1;
+
+  std::vector<gridpack::powerflow::Contingency> events;
+  int auto_generated_count = 0;
+  int file_loaded_count = 0;
+  int duplicates_skipped = 0;
+
+  // Step 1: Auto-generate N-1 contingencies if requested
+  if (auto_generate_n1) {
+    if (world.rank() == 0) {
+      printf("\n==================================================================\n");
+      printf("Auto-generating N-1 contingencies from network\n");
+      printf("  FullBranchN1: %s\n", full_branch_n1 ? "YES" : "NO");
+      printf("  FullGeneratorN1: %s\n", full_generator_n1 ? "YES" : "NO");
+      printf("==================================================================\n\n");
+    }
+    events = generateN1Contingencies(pf_app, full_branch_n1, full_generator_n1);
+    auto_generated_count = events.size();
+  }
+
+  // Step 2: Load contingencies from file if specified
+  // This allows combining auto-generated N-1 with custom N-2+ contingencies
+  std::string contingencyfile;
+  bool has_contingency_file = cursor->get("contingencyList",&contingencyfile);
+
+  if (has_contingency_file || !auto_generate_n1) {
+    // Set default filename if not specified
+    if (!has_contingency_file) {
+      contingencyfile = "contingencies.xml";
+    }
+
+    if (world.rank() == 0) {
+      if (auto_generate_n1) {
+        printf("Loading additional contingencies from file: %s\n", contingencyfile.c_str());
+        printf("(Duplicates of auto-generated contingencies will be skipped)\n\n");
+      } else {
+        printf("Contingency List: %s\n", contingencyfile.c_str());
+      }
+    }
+
+    // Open contingency file
+    bool ok = config->open(contingencyfile,world);
+
+    if (ok) {
+      // Get a list of contingencies from file
+      cursor = config->getCursor(
+          "ContingencyList.Contingency_analysis.Contingencies");
+      gridpack::utility::Configuration::ChildCursors contingencies;
+      if (cursor) cursor->children(contingencies);
+      std::vector<gridpack::powerflow::Contingency> file_contingencies =
+          getContingencies(contingencies);
+
+      // If auto-generation was used, check for duplicates before adding
+      if (auto_generate_n1) {
+        for (size_t i = 0; i < file_contingencies.size(); i++) {
+          if (isDuplicateContingency(file_contingencies[i], events)) {
+            duplicates_skipped++;
+            if (world.rank() == 0) {
+              printf("  Skipping duplicate: %s\n", file_contingencies[i].p_name.c_str());
+            }
+          } else {
+            events.push_back(file_contingencies[i]);
+            file_loaded_count++;
+          }
+        }
+        if (world.rank() == 0 && file_loaded_count > 0) {
+          printf("\nAdded %d unique contingencies from file\n", file_loaded_count);
+          if (duplicates_skipped > 0) {
+            printf("Skipped %d duplicates\n", duplicates_skipped);
+          }
+        }
+      } else {
+        // No auto-generation, just use file contingencies
+        events = file_contingencies;
+        file_loaded_count = events.size();
+      }
+    }
+  }
+
+  // Print summary
+  if (world.rank() == 0) {
+    printf("\n==================================================================\n");
+    printf("Total contingencies to analyze: %d\n", (int)events.size());
+    if (auto_generate_n1) {
+      printf("  Auto-generated: %d\n", auto_generated_count);
+      if (file_loaded_count > 0) {
+        printf("  From file: %d\n", file_loaded_count);
+      }
+      if (duplicates_skipped > 0) {
+        printf("  Duplicates skipped: %d\n", duplicates_skipped);
+      }
+    }
+    printf("==================================================================\n\n");
+  }
+
+  // Print contingency details
   if (world.rank() == 0) {
     int idx;
     for (idx = 0; idx < events.size(); idx++) {
@@ -449,6 +724,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   timer->stop(t_store);
 #endif
   if (check_Qlim) pf_app.clearQlimViolations();
+  // Clear any Q limit warnings from base case before starting contingencies
+  gridpack::powerflow::PFBus::clearQlimWarnings();
 
 
   // Evaluate contingencies using the task manager
@@ -458,7 +735,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // calculation runs out of task, nextTask will return false.
   while (taskmgr.nextTask(task_comm, &task_id)) {
     printf("Executing task %d on process %d\n",task_id,world.rank());
-    sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
+    // Trim trailing spaces from contingency name for filename
+    std::string fname = events[task_id].p_name;
+    size_t end = fname.find_last_not_of(' ');
+    if (end != std::string::npos) fname = fname.substr(0, end + 1);
+    sprintf(sbuf,"%s.out",fname.c_str());
     // Open a new file, based on the contingency name, to store results from
     // this particular contingency calculation
     if (print_calcs) pf_app.open(sbuf);
@@ -492,25 +773,62 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     if (print_calcs) pf_app.writeHeader(sbuf);
     // Reset all voltages back to their original values
     pf_app.resetVoltages();
+    // Sync ghost bus data after voltage reset to ensure branches connected to
+    // ghost buses use the correct reset voltages in power flow calculation
+    pf_network->updateBuses();
     // Set contingency
-    pf_app.setContingency(events[task_id]);
+    bool contingencyFound = pf_app.setContingency(events[task_id]);
+    if (!contingencyFound) {
+      printf("WARNING: Contingency '%s' - elements not found or no valid slack bus\n",
+             events[task_id].p_name.c_str());
+    }
+    // Check for islanding before attempting to solve
+    // Note: lone bus isolation is handled separately as a warning, not a failure
+    int islandCount = pf_app.getIslandCount();
+    bool hasLoneBus = pf_app.hasLoneBus();
+    bool islandDetected = (islandCount > 1);
     // Solve power flow equations for this system
 #ifdef USE_SUCCESS
     contingency_idx.push_back(task_id);
 #endif
-    if (pf_app.solve()) {
-#ifdef USE_SUCCESS
-      contingency_success.push_back(true);
-#endif
+    // Skip power flow if contingency setup failed (no valid slack) or islanding detected
+    bool slackCapacityOk = true;  // Will be checked after solve
+    if (contingencyFound && !islandDetected && pf_app.solve()) {
       if (check_Qlim && !pf_app.checkQlimViolations()) {
         pf_app.solve();
       }
-      // If power flow solution is successful, write out voltages and currents
-      if (print_calcs) pf_app.write();
-      // Check for violations
-      bool ok1 = pf_app.checkVoltageViolations();
-      bool ok2 = pf_app.checkLineOverloadViolations();
-      bool ok = ok1 && ok2;
+      // Write PV->PQ conversion warnings to output file
+      if (print_calcs && check_Qlim) {
+        std::vector<std::string>& warnings = gridpack::powerflow::PFBus::getQlimWarnings();
+        for (size_t w = 0; w < warnings.size(); w++) {
+          pf_app.print(warnings[w].c_str());
+        }
+      }
+      // Check if slack bus generator exceeds capacity
+      slackCapacityOk = pf_app.checkSlackCapacity();
+      if (!slackCapacityOk) {
+        // Slack generator exceeds Pmax - insufficient generation capacity
+        // This is treated as a failure, similar to divergence
+#ifdef USE_SUCCESS
+        contingency_success.push_back(false);
+        contingency_violation.push_back(0);
+        contingency_isolated.push_back(false);
+#endif
+        sprintf(sbuf,"\nInsufficient generation capacity for contingency %s\n",
+            events[task_id].p_name.c_str());
+        if (print_calcs) pf_app.print(sbuf);
+      } else {
+        // Power flow solved and slack within capacity
+#ifdef USE_SUCCESS
+        contingency_success.push_back(true);
+        contingency_isolated.push_back(hasLoneBus);
+#endif
+        // If power flow solution is successful, write out voltages and currents
+        if (print_calcs) pf_app.write();
+        // Check for violations
+        bool ok1 = pf_app.checkVoltageViolations();
+        bool ok2 = pf_app.checkLineOverloadViolations();
+        bool ok = ok1 && ok2;
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
@@ -518,15 +836,23 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 #ifdef USE_SUCCESS
         contingency_violation.push_back(1);
 #endif
-      } 
+      }
+      // Report bus voltage violations
       if (!ok1) {
         sprintf(sbuf,"\nBus Violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else if (!ok) {
+        sprintf(sbuf,"\nNo Bus Violation for contingency %s\n",
             events[task_id].p_name.c_str());
       }
       if (print_calcs) pf_app.print(sbuf);
       if (print_calcs) pf_app.writeCABus();
+      // Report branch overload violations
       if (!ok2) {
         sprintf(sbuf,"\nBranch Violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else if (!ok) {
+        sprintf(sbuf,"\nNo Branch Violation for contingency %s\n",
             events[task_id].p_name.c_str());
       }
 
@@ -539,7 +865,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         contingency_violation.push_back(3);
       }
 #endif
-        
+
       if (print_calcs) pf_app.print(sbuf);
       if (print_calcs) pf_app.writeCABranch();
       // Get strings of data from power flow calculation and parse them to
@@ -637,14 +963,24 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       timer->stop(t_store);
 #endif
-      if (check_Qlim) pf_app.clearQlimViolations();
+        // Note: clearQlimViolations() moved after unSetContingency() below
+      }  // end slackCapacityOk block
     } else {
 #ifdef USE_SUCCESS
       contingency_success.push_back(false);
       contingency_violation.push_back(0);
+      contingency_isolated.push_back(false);
 #endif
-      sprintf(sbuf,"\nDivergent for contingency %s\n",
-          events[task_id].p_name.c_str());
+      if (islandDetected) {
+        sprintf(sbuf,"\nIslanding detected for contingency %s (%d islands)\n",
+            events[task_id].p_name.c_str(), islandCount);
+      } else if (!contingencyFound) {
+        sprintf(sbuf,"\nNo valid slack bus for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else {
+        sprintf(sbuf,"\nDivergent for contingency %s\n",
+            events[task_id].p_name.c_str());
+      }
       if (print_calcs) pf_app.print(sbuf);
       // Add dummy values to StatBlock object. Mask value is set to 0 for all
       // network elements to indicate calculation failure
@@ -732,9 +1068,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       timer->stop(t_store);
 #endif
-    } 
+    }
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
+    // Clear Q limit violations AFTER unSetContingency so generators are restored first.
+    // This ensures clearQlim() sees the correct generator status when deciding
+    // whether to restore p_isPV (PV bus status).
+    if (check_Qlim) pf_app.clearQlimViolations();
+    // Clear Q limit warnings for next contingency
+    gridpack::powerflow::PFBus::clearQlimWarnings();
     // Close output file for this contingency
     if (print_calcs) pf_app.close();
   }
@@ -747,32 +1089,40 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   if (task_comm.rank() == 0) {
     ca_success.addElements(contingency_idx, contingency_success);
     ca_violation.addElements(contingency_idx, contingency_violation);
+    ca_isolated.addElements(contingency_idx, contingency_isolated);
   }
   ca_success.upload();
   ca_violation.upload();
+  ca_isolated.upload();
   // Write out stats on successful calculations
   if (world.rank() == 0) {
     contingency_idx.clear();
     contingency_success.clear();
     contingency_violation.clear();
+    contingency_isolated.clear();
     for (i=0; i<ntasks; i++) contingency_idx.push_back(i);
     ca_success.getData(contingency_idx, contingency_success);
     contingency_success.clear();
     ca_violation.getData(contingency_idx, contingency_violation);
+    ca_isolated.getData(contingency_idx, contingency_isolated);
     std::ofstream fout;
     fout.open("success.txt");
     for (i=0; i<ntasks; i++) {
       if (contingency_success[i]) {
         fout << "contingency: " << i+1 << " success: true";
         if (contingency_violation[i] == 1) {
-          fout << " violation: none" << std::endl;
+          fout << " violation: none";
         } else if (contingency_violation[i] == 2) {
-          fout << " violation: bus" << std::endl;
+          fout << " violation: bus";
         } else if (contingency_violation[i] == 3) {
-          fout << " violation: branch" << std::endl;
+          fout << " violation: branch";
         } else if (contingency_violation[i] == 4) {
-          fout << " violation: bus and branch" << std::endl;
+          fout << " violation: bus and branch";
         }
+        if (contingency_isolated[i]) {
+          fout << " warning: isolated";
+        }
+        fout << std::endl;
       } else {
         fout << "contingency: " << i+1 << " success: false" << std::endl;
       }
@@ -807,7 +1157,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
   // all timing variables)
-  if (contingencies.size()*grp_size >= world.size()) {
+  if (events.size()*grp_size >= world.size()) {
     timer->dump();
   }
 }
