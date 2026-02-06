@@ -374,6 +374,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   // Check for Q limit violations (qlim: true=enabled, false=disabled)
   bool check_Qlim = cursor->get("qlim", true);
+  // Set static flag for PFBus class BEFORE network creation.
+  // This controls how Q values are reported in output functions:
+  // - When check_Qlim = false: output uses calculated Q from p_Qinj
+  // - When check_Qlim = true: output uses p_qg (set by chkQlim())
+  gridpack::powerflow::PFBus::setQlim(check_Qlim);
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations
