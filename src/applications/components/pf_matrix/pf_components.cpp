@@ -51,6 +51,7 @@
 // Static member initialization
 gridpack::powerflow::InitStartMode gridpack::powerflow::PFBus::p_initStartMode = INIT_START_WARM;
 bool gridpack::powerflow::PFBus::p_qlim = true;
+std::vector<std::string> gridpack::powerflow::PFBus::p_qlimWarnings;
 
 /**
  * Set the initial start mode for power flow solver
@@ -66,6 +67,22 @@ void gridpack::powerflow::PFBus::setInitStartMode(InitStartMode mode)
 void gridpack::powerflow::PFBus::setQlim(bool qlim)
 {
   p_qlim = qlim;
+}
+
+/**
+ * Clear accumulated Q limit warning messages
+ */
+void gridpack::powerflow::PFBus::clearQlimWarnings()
+{
+  p_qlimWarnings.clear();
+}
+
+/**
+ * Get accumulated Q limit warning messages
+ */
+std::vector<std::string>& gridpack::powerflow::PFBus::getQlimWarnings()
+{
+  return p_qlimWarnings;
 }
 
 /**
@@ -391,10 +408,14 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
 
   // Check if Q requirement can be met
   bool need_pv_to_pq = false;
+  char warnBuf[256];
   if (Q_required > Q_max_total) {
     // Exceeds total Qmax - need to convert to PQ
-    printf("\nWarning: Bus %d Q requirement (%8.3f) exceeds total QMAX (%8.3f), converting to PQ\n",
-           getOriginalIndex(), Q_required, Q_max_total);
+    snprintf(warnBuf, sizeof(warnBuf),
+             "\nWarning: Bus %d Q requirement (%8.3f) exceeds total QMAX (%8.3f), converting to PQ\n",
+             getOriginalIndex(), Q_required, Q_max_total);
+    printf("%s", warnBuf);  // Keep screen output
+    p_qlimWarnings.push_back(std::string(warnBuf));  // Store for file output
     need_pv_to_pq = true;
     // Clamp all generators to Qmax
     for (int i = 0; i < ngen; i++) {
@@ -404,8 +425,11 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     }
   } else if (Q_required < Q_min_total) {
     // Below total Qmin - need to convert to PQ
-    printf("\nWarning: Bus %d Q requirement (%8.3f) below total QMIN (%8.3f), converting to PQ\n",
-           getOriginalIndex(), Q_required, Q_min_total);
+    snprintf(warnBuf, sizeof(warnBuf),
+             "\nWarning: Bus %d Q requirement (%8.3f) below total QMIN (%8.3f), converting to PQ\n",
+             getOriginalIndex(), Q_required, Q_min_total);
+    printf("%s", warnBuf);  // Keep screen output
+    p_qlimWarnings.push_back(std::string(warnBuf));  // Store for file output
     need_pv_to_pq = true;
     // Clamp all generators to Qmin
     for (int i = 0; i < ngen; i++) {

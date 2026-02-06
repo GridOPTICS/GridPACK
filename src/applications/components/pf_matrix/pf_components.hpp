@@ -496,7 +496,19 @@ class PFBus
     static void setInitStartMode(InitStartMode mode);
     static void setQlim(bool qlim);
 
+    /**
+     * Clear accumulated Q limit warning messages
+     */
+    static void clearQlimWarnings();
+
+    /**
+     * Get accumulated Q limit warning messages
+     * @return reference to vector of warning strings
+     */
+    static std::vector<std::string>& getQlimWarnings();
+
   private:
+    static std::vector<std::string> p_qlimWarnings;
     static InitStartMode p_initStartMode;
     static bool p_qlim;
     double p_shunt_gs;

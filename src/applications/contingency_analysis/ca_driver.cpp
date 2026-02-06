@@ -724,6 +724,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   timer->stop(t_store);
 #endif
   if (check_Qlim) pf_app.clearQlimViolations();
+  // Clear any Q limit warnings from base case before starting contingencies
+  gridpack::powerflow::PFBus::clearQlimWarnings();
 
 
   // Evaluate contingencies using the task manager
@@ -794,6 +796,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     if (contingencyFound && !islandDetected && pf_app.solve()) {
       if (check_Qlim && !pf_app.checkQlimViolations()) {
         pf_app.solve();
+      }
+      // Write PV->PQ conversion warnings to output file
+      if (print_calcs && check_Qlim) {
+        std::vector<std::string>& warnings = gridpack::powerflow::PFBus::getQlimWarnings();
+        for (size_t w = 0; w < warnings.size(); w++) {
+          pf_app.print(warnings[w].c_str());
+        }
       }
       // Check if slack bus generator exceeds capacity
       slackCapacityOk = pf_app.checkSlackCapacity();
@@ -1066,6 +1075,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // This ensures clearQlim() sees the correct generator status when deciding
     // whether to restore p_isPV (PV bus status).
     if (check_Qlim) pf_app.clearQlimViolations();
+    // Clear Q limit warnings for next contingency
+    gridpack::powerflow::PFBus::clearQlimWarnings();
     // Close output file for this contingency
     if (print_calcs) pf_app.close();
   }
