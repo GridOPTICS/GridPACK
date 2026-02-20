@@ -28,6 +28,10 @@
  *   capability (Qmax) to share reactive power among generators
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Implemented voltage-dependent ZIP load model
+ * @date  2026-02-19
+ *
  * @brief Methods used in power flow application
  * 
  * 
@@ -301,13 +305,17 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     return false;
   }
 
-  // Calculate total load Q
+  // Calculate total load Q (constant-power part)
   double ql = 0.0;
   for (int i = 0; i < p_lstatus.size(); i++) {
     if (p_lstatus[i] == 1) {
       ql += p_ql[i];
     }
   }
+  // Add voltage-dependent Q load (IQ*V - YQ*V^2)
+  double pzip, qzip;
+  getZIPLoadPower(p_v, pzip, qzip);
+  ql += qzip;
 
   // Required Q from generators = Q_injection + Q_load
   double Q_required = p_Qinj * p_sbase + ql;
@@ -626,6 +634,14 @@ void gridpack::powerflow::PFBus::load(
   p_pb.clear();
   p_pl.clear();
   p_ql.clear();
+  p_ip.clear();
+  p_iq.clear();
+  p_yp.clear();
+  p_yq.clear();
+  p_saveIp.clear();
+  p_saveIq.clear();
+  p_saveYp.clear();
+  p_saveYq.clear();
   p_lstatus.clear();
   p_lid.clear();
 
@@ -815,14 +831,19 @@ void gridpack::powerflow::PFBus::load(
       p_load = p_load && data->getValue(LOAD_YQ, &yq,i);
       p_load = p_load && data->getValue(LOAD_STATUS, &lstatus,i);
       if (p_load) {
-	/* Combine constant P, constant I, constant Y loads */
-	pl = pl + ip + yp;
-	ql = ql - iq - yq;
-	
+	/* Store constant-power load only; ZIP components stored separately */
         p_pl.push_back(pl);
         p_savePl.push_back(pl);
         p_ql.push_back(ql);
         p_saveQl.push_back(ql);
+        p_ip.push_back(ip);
+        p_iq.push_back(iq);
+        p_yp.push_back(yp);
+        p_yq.push_back(yq);
+        p_saveIp.push_back(ip);
+        p_saveIq.push_back(iq);
+        p_saveYp.push_back(yp);
+        p_saveYq.push_back(yq);
         p_lstatus.push_back(lstatus);
         std::string id("-1");
         data->getValue(LOAD_ID,&id,i);
@@ -1044,6 +1065,10 @@ double gridpack::powerflow::PFBus::getTotalGenOutput()
         pl += p_pl[i];
       }
     }
+    // Add voltage-dependent P load (IP*V + YP*V^2)
+    double pzip, qzip;
+    getZIPLoadPower(p_v, pzip, qzip);
+    pl += pzip;
     totalPgen = p_Pinj * p_sbase + pl;
   } else {
     // For non-slack buses, sum scheduled generator outputs
@@ -1308,6 +1333,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       if (p_lstatus[i]) pl += p_pl[i];
       if (p_lstatus[i]) ql += p_ql[i];
     }
+    // Add voltage-dependent ZIP load at solved voltage
+    {
+      double pzip, qzip;
+      getZIPLoadPower(p_v, pzip, qzip);
+      pl += pzip;
+      ql += qzip;
+    }
     sprintf(sbuf,"%8d, %4d, %16.8f, %16.8f,",getOriginalIndex(),p_type,
            pl/p_sbase,ql/p_sbase);
     int len = strlen(sbuf);
@@ -1415,6 +1447,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
         pl += p_pl[i];
         ql += p_ql[i];
       }
+    }
+    // Add voltage-dependent ZIP load at solved voltage
+    {
+      double pzip, qzip;
+      getZIPLoadPower(p_v, pzip, qzip);
+      pl += pzip;
+      ql += qzip;
     }
     for (i=0; i<ngen; i++) {
       double pval = 0.0;
@@ -1623,6 +1662,13 @@ void gridpack::powerflow::PFBus::saveData(
       ql += p_ql[i];
     }
   }
+  // Add voltage-dependent ZIP load at solved voltage
+  {
+    double pzip, qzip;
+    getZIPLoadPower(p_v, pzip, qzip);
+    pl += pzip;
+    ql += qzip;
+  }
   for (i=0; i<ngen; i++) {
     if(getReferenceBus()) {
       rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
@@ -1744,6 +1790,13 @@ void gridpack::powerflow::PFBus::saveDataAlsotoOrg(
       pl += p_pl[i];
       ql += p_ql[i];
     }
+  }
+  // Add voltage-dependent ZIP load at solved voltage
+  {
+    double pzip, qzip;
+    getZIPLoadPower(p_v, pzip, qzip);
+    pl += pzip;
+    ql += qzip;
   }
   for (i=0; i<ngen; i++) {
     rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
@@ -1913,17 +1966,29 @@ int gridpack::powerflow::PFBus::getZone()
 int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
 {
   if (!isIsolated()) {
+    // Compute ZIP Jacobian contributions: d(pzip)/dV and d(qzip)/dV
+    double dpzip_dV = 0.0, dqzip_dV = 0.0;
+    for (int i = 0; i < p_lstatus.size(); i++) {
+      if (p_lstatus[i] == 1) {
+        dpzip_dV += p_ip[i] + 2.0 * p_yp[i] * p_v;
+        dqzip_dV += p_iq[i] - 2.0 * p_yq[i] * p_v;
+      }
+    }
 #ifdef LARGE_MATRIX
     if (!getReferenceBus()) {
-      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v; 
-      rvals[1] = p_Pinj - p_ybusr * p_v *p_v; 
-      rvals[2] = p_Pinj / p_v + p_ybusr * p_v; 
-      rvals[3] = p_Qinj / p_v - p_ybusi * p_v; 
+      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
+      rvals[1] = p_Pinj - p_ybusr * p_v *p_v;
+      rvals[2] = p_Pinj / p_v + p_ybusr * p_v;
+      rvals[3] = p_Qinj / p_v - p_ybusi * p_v;
       // Fix up matrix elements if bus is PV bus
       if (p_isPV) {
         rvals[1] = 0.0;
         rvals[2] = 0.0;
         rvals[3] = 1.0;
+      } else {
+        // Add ZIP load derivatives for PQ buses
+        rvals[2] += dpzip_dV / p_sbase;
+        rvals[3] += dqzip_dV / p_sbase;
       }
       return 4;
     } else {
@@ -1935,14 +2000,16 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
     }
 #else
     if (!getReferenceBus() && !p_isPV) {
-      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v; 
-      rvals[1] = p_Pinj - p_ybusr * p_v *p_v; 
-      rvals[2] = p_Pinj / p_v + p_ybusr * p_v; 
-      rvals[3] = p_Qinj / p_v - p_ybusi * p_v; 
-      // Fix up matrix elements if bus is PV bus
+      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
+      rvals[1] = p_Pinj - p_ybusr * p_v *p_v;
+      rvals[2] = p_Pinj / p_v + p_ybusr * p_v;
+      rvals[3] = p_Qinj / p_v - p_ybusi * p_v;
+      // Add ZIP load derivatives for PQ buses
+      rvals[2] += dpzip_dV / p_sbase;
+      rvals[3] += dqzip_dV / p_sbase;
       return 4;
     } else if (!getReferenceBus() && p_isPV) {
-      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v; 
+      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
       return 1;
     } else {
       return 0;
@@ -1994,6 +2061,11 @@ int gridpack::powerflow::PFBus::rhsValues(double *rvals)
       p_Qinj = Q;
       P -= p_P0;
       Q -= p_Q0;
+      // Add voltage-dependent ZIP load contribution
+      double pzip, qzip;
+      getZIPLoadPower(p_v, pzip, qzip);
+      P += pzip / p_sbase;
+      Q += qzip / p_sbase;
       rvals[0] = P;
 #ifdef LARGE_MATRIX
       if (!p_isPV) {
@@ -2185,6 +2257,10 @@ void gridpack::powerflow::PFBus::scaleLoadPower(std::string tag, double value)
     if (p_lid[i] == tag && p_lstatus[i] == 1) {
       p_pl[i] = value*p_pl[i];
       p_ql[i] = value*p_ql[i];
+      p_ip[i] = value*p_ip[i];
+      p_iq[i] = value*p_iq[i];
+      p_yp[i] = value*p_yp[i];
+      p_yq[i] = value*p_yq[i];
       break;
     }
   }
@@ -2203,6 +2279,10 @@ void gridpack::powerflow::PFBus::resetPower()
   for (i=0; i<p_nload; i++) {
     p_pl[i] = p_savePl[i];
     p_ql[i] = p_saveQl[i];
+    p_ip[i] = p_saveIp[i];
+    p_iq[i] = p_saveIq[i];
+    p_yp[i] = p_saveYp[i];
+    p_yq[i] = p_saveYq[i];
   }
 }
 
@@ -2283,6 +2363,28 @@ void gridpack::powerflow::PFBus::setSink(bool flag)
 void gridpack::powerflow::PFBus::setScale(double scale)
 {
   p_rtpr_scale = scale;
+}
+
+/**
+ * Compute total voltage-dependent ZIP load power at given voltage
+ * PSS/E convention:
+ *   P_load = PL + IP*V + YP*V^2  (all terms add to real load)
+ *   Q_load = QL + IQ*V - YQ*V^2  (IQ=inductive adds, YQ=capacitive subtracts)
+ * This returns only the voltage-dependent parts:
+ *   pzip = sum(IP*V + YP*V^2)
+ *   qzip = sum(IQ*V - YQ*V^2)
+ */
+void gridpack::powerflow::PFBus::getZIPLoadPower(double V,
+    double &pzip, double &qzip) const
+{
+  pzip = 0.0;
+  qzip = 0.0;
+  for (int i = 0; i < p_lstatus.size(); i++) {
+    if (p_lstatus[i] == 1) {
+      pzip += p_ip[i] * V + p_yp[i] * V * V;
+      qzip += p_iq[i] * V - p_yq[i] * V * V;
+    }
+  }
 }
 
 /**

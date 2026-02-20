@@ -23,6 +23,10 @@
  *   capability (Qmax) to share reactive power among generators
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Added getZIPLoadPower() declaration for voltage-dependent ZIP load model
+ * @date  2026-02-19
+ *
  * @brief
  *
  *
@@ -489,6 +493,15 @@ class PFBus
     void setScale(double scale);
 
     /**
+     * Compute total voltage-dependent ZIP load power at given voltage
+     * P_zip = sum(IP*V + YP*V^2), Q_zip = sum(IQ*V + YQ*V^2) for active loads
+     * @param V voltage magnitude
+     * @param pzip (output) total P contribution from constant-I and constant-Y loads
+     * @param qzip (output) total Q contribution from constant-I and constant-Y loads
+     */
+    void getZIPLoadPower(double V, double &pzip, double &qzip) const;
+
+    /**
      * Set the initial start mode for power flow solver
      * @param mode INIT_START_WARM (default): use voltage values from raw file
      *             INIT_START_FLAT: flat start (PV/Slack use VS, PQ use 1.0 pu, all angles 0)
@@ -542,6 +555,7 @@ class PFBus
     std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
     std::vector<double> p_savePl;
     std::vector<double> p_saveQl;
+    std::vector<double> p_saveIp, p_saveIq, p_saveYp, p_saveYq;
     std::vector<int> p_lstatus;
     std::vector<std::string> p_lid;
     double p_sbase;
@@ -598,6 +612,7 @@ private:
       & p_pt & p_pb
       & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
       & p_savePl & p_saveQl
+      & p_saveIp & p_saveIq & p_saveYp & p_saveYq
       & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
