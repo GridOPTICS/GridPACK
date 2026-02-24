@@ -9,6 +9,8 @@
  *           Author: Bruce Palmer
  *       Updated 3-winding transformer: Nov. 17th, 2025
  *           Author: Yousu Chen
+ *       Fixed CZ parameter handling for impedance conversion: Feb. 19th, 2026
+ *           Author: Yousu Chen
  */
 #include "transformer_parser35.hpp"
 
@@ -467,8 +469,9 @@ void gridpack::parser::TransformerParser35::parse(
        * type: integer
        * TRANSFORMER_CZ
        */
+      int cz = atoi(split_line[5].c_str());
       p_branchData[l_idx]->addValue(TRANSFORMER_CZ,
-          atoi(split_line[5].c_str()),nelems);
+          cz,nelems);
 
       /*
        * type: integer
@@ -603,7 +606,9 @@ void gridpack::parser::TransformerParser35::parse(
       p_branchData[l_idx]->addValue(TRANSFORMER_R1_2,rval,nelems);
       rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio
                                       // to the req of the transformer
-      if (sbase2 == p_case_sbase || sbase2 == 0.0) {
+      // CZ=1: impedance on system base (no conversion needed)
+      // CZ=2: impedance on transformer SBASE (convert to system base)
+      if (cz == 1 || sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
       } else {
         rval = rval*p_case_sbase/sbase2;
@@ -619,7 +624,9 @@ void gridpack::parser::TransformerParser35::parse(
       p_branchData[l_idx]->addValue(TRANSFORMER_X1_2,rval,nelems);
       rval  = rval * windv2 * windv2; // need to consider the wnd2 ratio
                                       // to the xeq of the transformer
-      if (sbase2 == p_case_sbase || sbase2 == 0.0) {
+      // CZ=1: impedance on system base (no conversion needed)
+      // CZ=2: impedance on transformer SBASE (convert to system base)
+      if (cz == 1 || sbase2 == p_case_sbase || sbase2 == 0.0) {
         p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
       } else {
         rval = rval*p_case_sbase/sbase2;
