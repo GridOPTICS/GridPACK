@@ -374,7 +374,7 @@ void gridpack::state_estimation::SEBus::load(
         p_pg.push_back(pg);
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
-        p_qmax.push_back(qmin);
+        p_qmin.push_back(qmin);
         p_qmax.push_back(qmax);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
@@ -1478,8 +1478,20 @@ bool gridpack::state_estimation::SEBus::vectorValues(ComplexType *values)
         
         if (type == "VM") {
           estimated = p_v;
+        } else if (type == "VUL") {
+          if (p_v > measured) {
+            estimated = p_v;
+          } else {
+            estimated = measured;
+          }
+        } else if (type == "VLL") {
+          if (p_v < measured) {
+            estimated = p_v;
+          } else {
+            estimated = measured;
+          }
         } else if (type == "VA") {
-          estimated = p_a;
+          estimated = p_a * 180.0 / M_PI;
         } else if (type == "PI") {
           estimated = Pinj;
         } else if (type == "QI") {
@@ -3000,7 +3012,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
       if (type == "PIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (circuitIDsMatch(p_tag[j], p_meas[i].p_ckt)) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
             gij=real(ret);
@@ -3020,7 +3032,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
       } else if (type == "QIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (circuitIDsMatch(p_tag[j], p_meas[i].p_ckt)) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
             ret = 1.0/ret;
@@ -3041,7 +3053,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
       } else if (type == "IIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (circuitIDsMatch(p_tag[j], p_meas[i].p_ckt)) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
             ret = 1.0/ret;
@@ -3073,7 +3085,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
       } else if (type == "PJI") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (circuitIDsMatch(p_tag[j], p_meas[i].p_ckt)) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
             gij=real(ret);
@@ -3093,7 +3105,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
       } else if (type == "QJI") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (circuitIDsMatch(p_tag[j], p_meas[i].p_ckt)) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double B=0.5*p_charging[j];
             ret = 1.0/ret;
@@ -3114,7 +3126,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
       } else if (type == "IJI") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (circuitIDsMatch(p_tag[j], p_meas[i].p_ckt)) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             double Bch=0.5*p_charging[j];
             ret = 1.0/ret;

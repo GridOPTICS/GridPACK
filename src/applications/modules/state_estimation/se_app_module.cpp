@@ -315,6 +315,10 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   // Sparse matrix optimization control
   p_use_sparse_matrices = secursor->get("useSparseMatrices", true);
   
+  // Create serial IO object to export data from buses or branches
+  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(1024, p_network));
+  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(1024, p_network));
+
   char buf[128];
   snprintf(buf, sizeof(buf), "Tolerance: %12.4e\n", p_tolerance);
   p_busIO->header(buf);
@@ -326,10 +330,6 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   p_busIO->header(buf);
   snprintf(buf, sizeof(buf), "Sparse matrix optimization: %s\n", p_use_sparse_matrices ? "enabled" : "disabled");
   p_busIO->header(buf);
-
-  // Create serial IO object to export data from buses or branches
-  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(1024, p_network));
-  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(1024, p_network));
 }
 
 /**
@@ -687,6 +687,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
                 "\nChi-square below threshold (%.2f < %.2f) and no new bad measurements - converged.\n",
                 currentChiSquare, chiSquareThreshold);
         p_busIO->header(stopBuf);
+        timer->stop(t_baddata);
         break; // Exit bad data loop
       }
 
@@ -699,6 +700,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
         p_busIO->header(stopBuf);
         p_busIO->header("Flagging additional measurements is making solution worse - reverting to previous iteration.\n");
         badIndices.clear();
+        timer->stop(t_baddata);
         break; // Exit bad data loop
       }
     }
@@ -851,7 +853,8 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       timer->stop(t_adjust);
 
       p_factory->setMode(R_inv);
-      
+      Rinv = RinvMap.mapToMatrix();
+
       // Refresh mapping to avoid matrix size issues
       p_busIO->header("Re-running SE with adjusted weights\n");
     }
@@ -883,7 +886,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   for (int i = 0; i < numProcs; i++) {
     totalFinalConverged += finalConvergenceStatus[i];
   }
-  converged = (totalFinalConverged > 0);  // If ANY process converged, consider it converged
+  converged = (totalFinalConverged == numProcs);  // All processes must agree on convergence
   p_converged = converged;
 
 
@@ -1026,9 +1029,10 @@ void gridpack::state_estimation::SEAppModule::write(void)
     }
   }
 
-  // If file couldn't be opened, all processes must sync and return together
-  if (p_network->communicator().rank() == 0 && !fileOpened) {
-    p_network->communicator().sync();  // Sync before early return
+  // Broadcast file open status so all ranks know whether to proceed
+  int fileOpenedInt = fileOpened ? 1 : 0;
+  p_network->communicator().sum(&fileOpenedInt, 1);
+  if (fileOpenedInt == 0) {
     return;
   }
 

@@ -104,7 +104,7 @@ void SEFactoryModule::setMeasurements(
     if (meas_type == "VM" || meas_type == "PI" ||
         meas_type == "PJ" || meas_type == "QI" ||
         meas_type == "QJ" || meas_type == "VA" || 
-        meas_type == "UUL" || meas_type == "VLL") {
+        meas_type == "VUL" || meas_type == "VLL") {
       bus_meas.push_back(measurements[i]);
       bus_keys.push_back(measurements[i].p_busid);
     } else if (meas_type == "PIJ" || meas_type == "PJI" ||
