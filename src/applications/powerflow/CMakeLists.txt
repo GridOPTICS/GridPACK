@@ -11,6 +11,7 @@
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
 # Last Change: 2017-12-07 08:54:26 d3g096
+# Updated Jan. 29, 2026 by Yousu Chen
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -80,91 +81,48 @@ add_custom_command(
   )
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_14_qlim.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_14_qlim.xml"
+  )
+
+# Copy raw files only when source changes (avoids unnecessary copies on every build)
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/IEEE14.raw"
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS "${GRIDPACK_DATA_DIR}/raw/IEEE14.raw"
   )
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/IEEE118.raw"
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS "${GRIDPACK_DATA_DIR}/raw/IEEE118.raw"
   )
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_ieee39_v36.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_ieee39_v36.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/gridpack.petscrc"
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+  ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc"
   )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_240_v36.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_240_v36.xml"
-  )
-
 
 add_custom_target(pf.x.input
- 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE39bus_original_Modified_v36_1_ibr.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_PQLoad_fixedshunt_noremotebus_yuan_v36.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  DEPENDS 
+  DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14_qlim.xml
   ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
-  ${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}/input_european.xml
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}/input_ieee39_v36.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE39bus_original_Modified_v36_1_ibr.raw
-  ${CMAKE_CURRENT_BINARY_DIR}/input_240_v36.xml
-  ${GRIDPACK_DATA_DIR}/raw/240busWECC_2018_PSS_PQLoad_fixedshunt_noremotebus_yuan_v36.raw
-
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/IEEE118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/gridpack.petscrc
 )
 add_dependencies(pf.x pf.x.input)
 
@@ -178,4 +136,5 @@ install(TARGETS pf.x DESTINATION bin)
 # Create simple test that runs powerflow code
 # -------------------------------------------------------------
 gridpack_add_run_test("powerflow" pf.x "input_14.xml")
+gridpack_add_run_test("powerflow_qlim" pf.x "input_14_qlim.xml")
 

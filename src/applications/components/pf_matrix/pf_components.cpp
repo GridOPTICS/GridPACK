@@ -13,7 +13,25 @@
  * Conversion of constant current, constant admittance values from raw file
  * to constant power
  * @date  2022-12-23
-
+ *
+ * @updated Yousu Chen
+ * - Improved Q-limit handling with iterative PV-PQ conversion
+ * - Added island detection function
+ * - Automatic slack bus transfer for contingency analysis
+ * - RMPCT-based reactive power distribution for multi-generator buses
+ * @date  2026-01-31
+ *
+ * @updated Yousu Chen
+ * - Added initStart option for power flow initialization (warm/flat start)
+ * - Treated generators with Qmax == Qmin (zero Q capability) as PQ buses
+ * - Q distribution uses RMPCT when available, otherwise uses relative reactive
+ *   capability (Qmax) to share reactive power among generators
+ * @date  2026-02-02
+ *
+ * @updated Yousu Chen
+ * - Implemented voltage-dependent ZIP load model
+ * @date  2026-02-19
+ *
  * @brief Methods used in power flow application
  * 
  * 
@@ -33,6 +51,43 @@
 #include "gridpack/parser/dictionary.hpp"
 
 //#define LARGE_MATRIX
+
+// Static member initialization
+gridpack::powerflow::InitStartMode gridpack::powerflow::PFBus::p_initStartMode = INIT_START_WARM;
+bool gridpack::powerflow::PFBus::p_qlim = true;
+std::vector<std::string> gridpack::powerflow::PFBus::p_qlimWarnings;
+
+/**
+ * Set the initial start mode for power flow solver
+ */
+void gridpack::powerflow::PFBus::setInitStartMode(InitStartMode mode)
+{
+  p_initStartMode = mode;
+}
+
+/**
+ * Set the qlim flag
+ */
+void gridpack::powerflow::PFBus::setQlim(bool qlim)
+{
+  p_qlim = qlim;
+}
+
+/**
+ * Clear accumulated Q limit warning messages
+ */
+void gridpack::powerflow::PFBus::clearQlimWarnings()
+{
+  p_qlimWarnings.clear();
+}
+
+/**
+ * Get accumulated Q limit warning messages
+ */
+std::vector<std::string>& gridpack::powerflow::PFBus::getQlimWarnings()
+{
+  return p_qlimWarnings;
+}
 
 /**
  *  Simple constructor
@@ -225,111 +280,243 @@ bool gridpack::powerflow::PFBus::vectorValues(RealType *values)
 }
 
 /**
- * Check QLIM
- * @return false: violations exist
- * @return true:  no violations
- * 
+ * Check QLIM with RMPCT-based iterative Q distribution 
+ *
+ * Algorithm:
+ * 1. Calculate required Q for the bus
+ * 2. Distribute Q among generators using RMPCT ratios
+ * 3. Check each generator against its limits
+ * 4. If any generator exceeds limits, clamp it and redistribute to others
+ * 5. Only convert PV->PQ if all generators are at limits and Q_req still not met
+ *
+ * @return false: violations exist (Q limits hit, bus converted to PQ)
+ * @return true:  no violations (all generators within limits)
  */
 bool gridpack::powerflow::PFBus::chkQlim(void)
 {
-  if (p_isPV) {
-    double qmax, qmin, ppl;
-    qmax = 0.0;
-    qmin = 0.0;
-    ppl = 0.0;
-    for (int i=0; i<p_gstatus.size(); i++) {
-      if (p_gstatus[i] == 1) {
-        qmax += p_qmax[i];
-        qmin += p_qmin[i];
-        ppl  += p_pg[i];
-      }
-    }
-    std::vector<boost::shared_ptr<BaseComponent> > branches;
-    getNeighborBranches(branches);
-    int size = branches.size();
-    double P, Q, p, q;
-    int ngen=p_pFac.size();
-    double pl =0.0;
-    double ql =0.0;
-    for (int i=0; i<p_lstatus.size(); i++) {
-      if (p_lstatus[i] == 1) {
-        pl += p_pl[i];
-        ql += p_ql[i];
-      }
-    }
-    p_save2isPV = p_isPV;
-    double pval = p_Pinj*p_sbase+pl;
-    double qval = p_Qinj*p_sbase+ql;
-
-//  If qval exceeds the total generator Q capacity, perform PV->PQ
-//
-    if (qval > qmax ) {
-      printf("\nWarning: Gen(s) at bus %d exceeds the QMAX %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmax);  
-      ql = ql-qmax;
-      p_save2isPV = p_isPV;
-      p_isPV = false;
-      *p_PV_ptr = false;
-      pl -= ppl;
-    //p_gstatus.clear();
-      for (int i=0; i<p_gstatus.size(); i++) {
-        p_gstatus_save.push_back(p_gstatus[i]);
-        p_gstatus[i] = 0;
-        p_qg[i] = p_qmax[i];
-      }
-      for (int i=0; i<p_lstatus.size(); i++) {
-        if (p_lstatus[i] == 1) {
-          p_pl[i] = pl;
-          p_ql[i] = ql;
-        }
-      }
-      if (p_PV_ptr) *p_PV_ptr = p_isPV;
-      return true;
-    } else if (qval < qmin) {
-      printf("\nWarning: Gen(s) at bus %d exceeds the QMIN %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmin);  
-      ql = ql-qmin;
-      p_save2isPV = p_isPV;
-      p_isPV = false;
-      pl -= ppl;
-    //  p_gstatus.clear();
-      for (int i=0; i<p_gstatus.size(); i++) {
-        p_gstatus_save.push_back(p_gstatus[i]);
-        p_gstatus[i] = 0;
-        p_qg[i] = p_qmin[i];
-      }
-      for (int i=0; i<p_lstatus.size(); i++) {
-        if (p_lstatus[i] == 1) {
-          p_pl[i] = pl;
-          p_ql[i] = ql;
-        }
-      }
-
-      if (p_PV_ptr) *p_PV_ptr = p_isPV;
-      return true;
-    } else {
-       if (p_PV_ptr) *p_PV_ptr = p_isPV;
-       return false;
-    }
-  } else {
+  if (!p_isPV) {
     if (p_PV_ptr) *p_PV_ptr = p_isPV;
     return false;
-  } 
+  }
+
+  int ngen = p_gstatus.size();
+  if (ngen == 0) {
+    if (p_PV_ptr) *p_PV_ptr = p_isPV;
+    return false;
+  }
+
+  // Calculate total load Q (constant-power part)
+  double ql = 0.0;
+  for (int i = 0; i < p_lstatus.size(); i++) {
+    if (p_lstatus[i] == 1) {
+      ql += p_ql[i];
+    }
+  }
+  // Add voltage-dependent Q load (IQ*V - YQ*V^2)
+  double pzip, qzip;
+  getZIPLoadPower(p_v, pzip, qzip);
+  ql += qzip;
+
+  // Required Q from generators = Q_injection + Q_load
+  double Q_required = p_Qinj * p_sbase + ql;
+
+  // Track which generators are still active (not at limits)
+  std::vector<bool> at_limit(ngen, false);
+  std::vector<double> q_assigned(ngen, 0.0);
+
+  // Save original state for restoration
+  p_save2isPV = p_isPV;
+
+  // Iterative distribution loop
+  const int MAX_ITER = 20;  // Prevent infinite loops
+  bool converged = false;
+
+  for (int iter = 0; iter < MAX_ITER && !converged; iter++) {
+    // Calculate total RMPCT and Qmax for active (non-limited) generators
+    double total_rmpct = 0.0;
+    double total_qmax = 0.0;
+    int active_count = 0;
+
+    for (int i = 0; i < ngen; i++) {
+      if (p_gstatus[i] == 1 && !at_limit[i]) {
+        total_rmpct += p_rmpct[i];
+        total_qmax += p_qmax[i];
+        active_count++;
+      }
+    }
+
+    // If no active generators left, all are at limits
+    if (active_count == 0) {
+      break;
+    }
+
+    // Calculate remaining Q to distribute (subtract already-assigned Q from limited gens)
+    double Q_remaining = Q_required;
+    for (int i = 0; i < ngen; i++) {
+      if (p_gstatus[i] == 1 && at_limit[i]) {
+        Q_remaining -= q_assigned[i];
+      }
+    }
+
+    // Choose distribution basis:
+    // 1. RMPCT if available (total_rmpct > 0)
+    // 2. Otherwise, use relative reactive capability (Qmax)
+    bool use_rmpct = (total_rmpct > 0.0);
+    double total_basis;
+    if (use_rmpct) {
+      total_basis = total_rmpct;
+    } else {
+      total_basis = total_qmax;
+    }
+
+    if (total_basis <= 0.0) {
+      // No basis for distribution - all generators have zero capability
+      break;
+    }
+
+    // Distribute Q_remaining among active generators
+    converged = true;
+    for (int i = 0; i < ngen; i++) {
+      if (p_gstatus[i] != 1 || at_limit[i]) continue;
+
+      double basis;
+      if (use_rmpct) {
+        basis = p_rmpct[i];
+      } else {
+        basis = p_qmax[i];
+      }
+      double share = (basis / total_basis) * Q_remaining;
+
+      // Check against limits
+      if (share > p_qmax[i]) {
+        q_assigned[i] = p_qmax[i];
+        at_limit[i] = true;
+        converged = false;  // Need another iteration
+      } else if (share < p_qmin[i]) {
+        q_assigned[i] = p_qmin[i];
+        at_limit[i] = true;
+        converged = false;  // Need another iteration
+      } else {
+        q_assigned[i] = share;
+      }
+    }
+  }
+
+  // Calculate total Q that can be supplied
+  double Q_supplied = 0.0;
+  double Q_max_total = 0.0;
+  double Q_min_total = 0.0;
+  for (int i = 0; i < ngen; i++) {
+    if (p_gstatus[i] == 1) {
+      Q_supplied += q_assigned[i];
+      Q_max_total += p_qmax[i];
+      Q_min_total += p_qmin[i];
+    }
+  }
+
+  // Check if Q requirement can be met
+  bool need_pv_to_pq = false;
+  char warnBuf[256];
+  if (Q_required > Q_max_total) {
+    // Exceeds total Qmax - need to convert to PQ
+    snprintf(warnBuf, sizeof(warnBuf),
+             "\nWarning: Bus %d Q requirement (%8.3f) exceeds total QMAX (%8.3f), converting to PQ\n",
+             getOriginalIndex(), Q_required, Q_max_total);
+    printf("%s", warnBuf);  // Keep screen output
+    p_qlimWarnings.push_back(std::string(warnBuf));  // Store for file output
+    need_pv_to_pq = true;
+    // Clamp all generators to Qmax
+    for (int i = 0; i < ngen; i++) {
+      if (p_gstatus[i] == 1) {
+        q_assigned[i] = p_qmax[i];
+      }
+    }
+  } else if (Q_required < Q_min_total) {
+    // Below total Qmin - need to convert to PQ
+    snprintf(warnBuf, sizeof(warnBuf),
+             "\nWarning: Bus %d Q requirement (%8.3f) below total QMIN (%8.3f), converting to PQ\n",
+             getOriginalIndex(), Q_required, Q_min_total);
+    printf("%s", warnBuf);  // Keep screen output
+    p_qlimWarnings.push_back(std::string(warnBuf));  // Store for file output
+    need_pv_to_pq = true;
+    // Clamp all generators to Qmin
+    for (int i = 0; i < ngen; i++) {
+      if (p_gstatus[i] == 1) {
+        q_assigned[i] = p_qmin[i];
+      }
+    }
+  }
+
+  // Apply the Q assignments to generators
+  for (int i = 0; i < ngen; i++) {
+    p_gstatus_save.push_back(p_gstatus[i]);
+    if (p_gstatus[i] == 1) {
+      p_qg[i] = q_assigned[i];
+    }
+  }
+
+  // Convert PV to PQ if needed
+  if (need_pv_to_pq) {
+    p_isPV = false;
+    p_type = 1;  // Change bus type from PV(2) to PQ(1)
+    if (p_PV_ptr) *p_PV_ptr = false;
+    return true;  // Violation found
+  }
+
+  // Bus stays PV - Q was successfully distributed within limits
   if (p_PV_ptr) *p_PV_ptr = p_isPV;
-  return false;
+  return false;  // No violation
 }
 
 /**
  * Clear changes that were made for Q limit violations and reset
  * bus to its original state
+ *
+ * Note: chkQlim() does NOT modify p_gstatus - generators stay online when Q limits
+ * are hit. It only converts PV buses to PQ and clamps Q to limits. Therefore,
+ * clearQlim() should NOT restore p_gstatus. Generator status restoration is handled
+ * by unSetContingency() which uses setGenStatus().
+ *
+ * The p_gstatus_save mechanism was designed for a different Q limit implementation
+ * that turned off generators. In the current implementation, we only need to:
+ * 1. Clear p_gstatus_save to reset the tracking state
+ * 2. Restore p_isPV if there are online generators
  */
 void gridpack::powerflow::PFBus::clearQlim()
 {
-  int size = p_gstatus_save.size();
-  p_gstatus.clear();
-  int i;
-  for (i=0; i<size; i++) {
-    p_gstatus.push_back(p_gstatus_save[i]);
+  // Clear p_gstatus_save to reset Q limit violation tracking for next iteration.
+  // Do NOT restore p_gstatus from p_gstatus_save - that would undo the generator
+  // restoration done by unSetContingency().
+  p_gstatus_save.clear();
+
+  // Only restore p_isPV to true (PV bus) if there's at least one online generator.
+  // This prevents an inconsistent state when a generator contingency tripped a generator
+  // and caused a Q limit violation due to qmax=0. Without this check, the bus would be
+  // restored to PV status but with no online generator, causing subsequent power flows
+  // to immediately hit Q limit violations and potentially diverge.
+  bool hasOnlineGen = false;
+  int ngen = p_gstatus.size();
+  for (int i = 0; i < ngen; i++) {
+    if (p_gstatus[i] == 1) {
+      hasOnlineGen = true;
+      break;
+    }
   }
-  p_isPV = p_save2isPV;
+
+  if (hasOnlineGen) {
+    p_isPV = p_save2isPV;
+    p_type = p_save_type;  // Restore original bus type (e.g., from PQ back to PV)
+  }
+  // If no online generators, keep p_isPV and p_type unchanged
+
+  // Always restore generator Q to original values.
+  // During Q limit handling, p_qg was clamped to limits. This caused setSBus()
+  // to compute a different scheduled Q (p_Q0) than the original base case.
+  // Restoring p_qg ensures contingencies start with the same scheduled power.
+  for (int i = 0; i < ngen; i++) {
+    p_qg[i] = p_saveQg[i];
+  }
+
   if (p_PV_ptr) *p_PV_ptr = p_isPV;
 }
 
@@ -433,28 +620,52 @@ void gridpack::powerflow::PFBus::load(
   p_qg.clear();
   p_pFac.clear();
   p_pFac_orig.clear();
+  p_qFac.clear();
+  p_qFac_orig.clear();
   p_gstatus.clear();
   p_gstatus_save.clear();
   p_qmin.clear();
   p_qmax.clear();
   p_qmin_orig.clear();
   p_qmax_orig.clear();
+  p_rmpct.clear();
   p_gid.clear();
   p_pt.clear();
   p_pb.clear();
   p_pl.clear();
   p_ql.clear();
+  p_ip.clear();
+  p_iq.clear();
+  p_yp.clear();
+  p_yq.clear();
+  p_saveIp.clear();
+  p_saveIq.clear();
+  p_saveYp.clear();
+  p_saveYq.clear();
   p_lstatus.clear();
   p_lid.clear();
 
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
-  data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
-  p_v = p_voltage;
+  data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
   double pi = 4.0*atan(1.0);
-  p_angle = p_angle*pi/180.0;
-  p_a = p_angle;
+
+  // Apply initial start mode
+  if (p_initStartMode == INIT_START_FLAT) {
+    // Flat start: all angles to 0, PQ buses to 1.0 pu
+    // (PV/Slack voltage will be set to VS later when processing generators)
+    p_v = 1.0;       // Default to 1.0 pu for flat start (will be overridden for PV/Slack)
+    p_voltage = 1.0; // Also set p_voltage for resetVoltage()
+    p_angle = 0.0;   // Flat angle
+    p_a = 0.0;
+  } else {
+    // Warm start: use values from raw file
+    p_v = p_voltage;
+    p_angle = p_angle*pi/180.0;
+    p_a = p_angle;
+  }
   data->getValue(BUS_TYPE, &p_type);
+  p_save_type = p_type;  // Save original bus type for restoration after Q limit handling
   if (p_type == 3) {
     setReferenceBus(true);
   }
@@ -480,6 +691,7 @@ void gridpack::powerflow::PFBus::load(
   p_ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
     double pcaptot = 0.0;
+    double qcaptot = 0.0;   // Total Qmax for Q factor calculation
     for (i=0; i<ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
@@ -490,8 +702,12 @@ void gridpack::powerflow::PFBus::load(
       lgen = lgen && data->getValue(GENERATOR_QMIN, &qmin,i);
       double pt = 0.0;
       double pb = 0.0;
+      double rmpct = 100.0;  // Default RMPCT value per PSS/E
       ok =  data->getValue(GENERATOR_PMAX,&pt,i);
       ok =  data->getValue(GENERATOR_PMIN,&pb,i);
+      // Try to get RMPCT, use default 100.0 if not available
+      data->getValue(GENERATOR_RMPCT, &rmpct, i);
+      if (rmpct < 0.0) rmpct = 0.0;  // Treat negative as zero
       if (lgen) {
         p_gstatus.push_back(gstatus);
         // Store original Q limits from input file BEFORE zeroing for offline generators
@@ -506,21 +722,42 @@ void gridpack::powerflow::PFBus::load(
 	p_pg.push_back(pg);
         p_savePg.push_back(pg);
         p_qg.push_back(qg);
+        p_saveQg.push_back(qg);
         p_qmax.push_back(qmax);
         p_qmin.push_back(qmin);
         p_pt.push_back(pt);
         p_pb.push_back(pb);
+        p_rmpct.push_back(gstatus ? rmpct : 0.0);  // Zero RMPCT for offline generators
 	if(gstatus) {
 	  p_pFac.push_back(pt - pb);
 	  pcaptot += pt - pb;
+	  // For p_qFac, use Qmax for generators with reactive capability (Qmax > Qmin)
+	  // Generators with Qmax == Qmin (including Qmax=Qmin=0) get zero p_qFac
+	  if (qmax > qmin) {
+	    p_qFac.push_back(qmax);
+	    qcaptot += qmax;
+	  } else {
+	    p_qFac.push_back(0.0);
+	  }
 	} else {
 	  p_pFac.push_back(0.0);
+	  p_qFac.push_back(0.0);
 	}
 	p_pFac_orig.push_back(pt - pb);
+	p_qFac_orig.push_back(qmax > qmin ? qmax : 0.0);
 
         if (gstatus == 1) {
-          p_v = vs; //reset initial PV voltage to set voltage
-          if (p_type == 2) p_isPV = true;
+          // Use VS for PV/Slack buses when:
+          // - flat start, OR
+          // - warm start with qlim=false
+          if (p_initStartMode == INIT_START_FLAT || !p_qlim) {
+            p_v = vs;        // Set voltage to generator setpoint
+            p_voltage = vs;  // Also update p_voltage so resetVoltage() uses VS
+          }
+          // Only set PV if generator has reactive power capability (Qmax != Qmin)
+          // Generators with Qmax == Qmin cannot regulate voltage and should be
+          // treated as PQ injections with fixed Q output
+          if (p_type == 2 && qmax != qmin) p_isPV = true;
         }
         std::string id("-1");
         data->getValue(GENERATOR_ID,&id,i);
@@ -528,6 +765,7 @@ void gridpack::powerflow::PFBus::load(
         p_ngen++;
       }
     }
+    // Normalize p_pFac (P-based factor for P distribution)
     if (pcaptot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
         p_pFac[i] = p_pFac[i]/pcaptot;
@@ -537,8 +775,39 @@ void gridpack::powerflow::PFBus::load(
       p_pFac[0] = 1.0;
       p_pFac_orig[0] = p_pFac[0];
     }
+    // Normalize p_qFac (Q-based factor for Q distribution when qlim=false)
+    // Uses Qmax to distribute Q among generators with reactive capability
+    // Generators with Qmax == Qmin (zero Q capability) get zero p_qFac
+    if (qcaptot != 0.0 && p_ngen > 1) {
+      for (i=0; i<p_ngen; i++) {
+        p_qFac[i] = p_qFac[i]/qcaptot;
+        p_qFac_orig[i] = p_qFac[i];
+      }
+    } else if (p_ngen > 0) {
+      // If no Q capability (qcaptot=0) or single generator, first gen with
+      // any capability gets all Q, otherwise distribute equally
+      bool found = false;
+      for (i=0; i<p_ngen; i++) {
+        if (p_qFac_orig[i] > 0.0 && !found) {
+          p_qFac[i] = 1.0;
+          p_qFac_orig[i] = 1.0;
+          found = true;
+        } else if (!found && i == p_ngen - 1) {
+          // No generators with Q capability - give to first online gen
+          // (will be clamped to zero anyway if Qmax=Qmin=0)
+          for (int j=0; j<p_ngen; j++) {
+            if (p_gstatus[j] == 1) {
+              p_qFac[j] = 1.0;
+              p_qFac_orig[j] = 1.0;
+              break;
+            }
+          }
+        }
+      }
+    }
   }
   p_saveisPV = p_isPV;
+  p_save2isPV = p_isPV;  // Initialize for Q limit handling - ensures valid value if chkQlim() never called
 
 // Add load
   int lstatus;
@@ -563,14 +832,19 @@ void gridpack::powerflow::PFBus::load(
       p_load = p_load && data->getValue(LOAD_YQ, &yq,i);
       p_load = p_load && data->getValue(LOAD_STATUS, &lstatus,i);
       if (p_load) {
-	/* Combine constant P, constant I, constant Y loads */
-	pl = pl + ip + yp;
-	ql = ql - iq - yq;
-	
+	/* Store constant-power load only; ZIP components stored separately */
         p_pl.push_back(pl);
         p_savePl.push_back(pl);
         p_ql.push_back(ql);
         p_saveQl.push_back(ql);
+        p_ip.push_back(ip);
+        p_iq.push_back(iq);
+        p_yp.push_back(yp);
+        p_yq.push_back(yq);
+        p_saveIp.push_back(ip);
+        p_saveIq.push_back(iq);
+        p_saveYp.push_back(yp);
+        p_saveYq.push_back(yq);
         p_lstatus.push_back(lstatus);
         std::string id("-1");
         data->getValue(LOAD_ID,&id,i);
@@ -712,6 +986,119 @@ bool gridpack::powerflow::PFBus::getGenStatus(std::string gen_id)
 }
 
 /**
+ * Check if bus has any online generator
+ * @return true if at least one generator is online
+ */
+bool gridpack::powerflow::PFBus::hasOnlineGenerator()
+{
+  int gsize = p_gstatus.size();
+  for (int i = 0; i < gsize; i++) {
+    if (p_gstatus[i] == 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Get total capacity (Pmax) of all online generators on this bus
+ * @return total Pmax in MW
+ */
+double gridpack::powerflow::PFBus::getOnlineGenCapacity()
+{
+  double capacity = 0.0;
+  int gsize = p_gstatus.size();
+  for (int i = 0; i < gsize; i++) {
+    if (p_gstatus[i] == 1) {
+      capacity += p_pt[i];
+    }
+  }
+  return capacity;
+}
+
+/**
+ * Calculate power injection at this bus from connected branches.
+ * This updates p_Pinj and p_Qinj for the slack bus.
+ * Should be called after power flow solve before checking generator output.
+ */
+void gridpack::powerflow::PFBus::calculatePowerInjection()
+{
+  if (!getReferenceBus() && !isIsolated()) return;
+
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+  getNeighborBranches(branches);
+  int size = branches.size();
+  double P = 0.0, Q = 0.0, p, q;
+
+  for (int i = 0; i < size; i++) {
+    gridpack::powerflow::PFBranch *branch =
+      dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+    branch->getPQ(this, &p, &q);
+    P += p;
+    Q += q;
+  }
+  // Also add bus's own Pi, Qi (from shunts)
+  P += p_v * p_v * p_ybusr;
+  Q += p_v * p_v * (-p_ybusi);
+
+  p_Pinj = P;
+  p_Qinj = Q;
+}
+
+/**
+ * Get total real power output of all generators on this bus (after PF solve)
+ * For slack bus, this is calculated from power injection.
+ * For PV/PQ buses, this is the sum of scheduled generator outputs.
+ * @return total Pgen in MW
+ */
+double gridpack::powerflow::PFBus::getTotalGenOutput()
+{
+  double totalPgen = 0.0;
+  int gsize = p_gstatus.size();
+
+  if (getReferenceBus()) {
+    // For slack bus, calculate from power injection
+    // First update p_Pinj if needed
+    calculatePowerInjection();
+    double pl = 0.0;
+    for (int i = 0; i < p_pl.size(); i++) {
+      if (p_lstatus[i] == 1) {
+        pl += p_pl[i];
+      }
+    }
+    // Add voltage-dependent P load (IP*V + YP*V^2)
+    double pzip, qzip;
+    getZIPLoadPower(p_v, pzip, qzip);
+    pl += pzip;
+    totalPgen = p_Pinj * p_sbase + pl;
+  } else {
+    // For non-slack buses, sum scheduled generator outputs
+    for (int i = 0; i < gsize; i++) {
+      if (p_gstatus[i] == 1) {
+        totalPgen += p_pg[i];
+      }
+    }
+  }
+  return totalPgen;
+}
+
+/**
+ * Check if generator output exceeds capacity on this bus
+ * @return true if within limits, false if Pgen > Pmax
+ */
+bool gridpack::powerflow::PFBus::checkGenCapacity()
+{
+  double pgen = getTotalGenOutput();
+  double pmax = getOnlineGenCapacity();
+
+  // Allow small tolerance for numerical errors
+  double tolerance = 0.01 * pmax;  // 1% tolerance
+  if (tolerance < 0.1) tolerance = 0.1;  // At least 0.1 MW
+
+  return (pgen <= pmax + tolerance);
+}
+
+/**
  * Get list of generator IDs
  * @return vector of generator IDs
  */
@@ -733,26 +1120,59 @@ std::vector<std::string> gridpack::powerflow::PFBus::getLoads()
  * Set generator status
  * @param gen_id generator ID
  * @param status generator status
+ * @return true if generator ID found, false otherwise
  */
-void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
+bool gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
 {
   int i;
   int gsize = p_gstatus.size();
   for (i=0; i<gsize; i++) {
     if (gen_id == p_gid[i]) {
+      // Only modify values if status is actually changing
+      // For already-offline generators, calling setGenStatus(false) should be a no-op
+      if (p_gstatus[i] == status) {
+        return true;  // Status unchanged, but ID was found
+      }
       p_gstatus[i] = status;
       if (status == 0) {
         p_pFac[i] = 0.0;
+        p_qFac[i] = 0.0;
         p_qmax[i] = 0.0;
         p_qmin[i] = 0.0;
       } else {
         p_pFac[i] = p_pFac_orig[i];
+        p_qFac[i] = p_qFac_orig[i];
         p_qmax[i] = p_qmax_orig[i];
         p_qmin[i] = p_qmin_orig[i];
       }
-      return;
+
+      // Check if any generators are still online on this bus.
+      // If not, convert the bus from PV to PQ to avoid inconsistent state
+      // where the bus is flagged as PV but has no Q capacity.
+      // When turning a generator back on, restore PV status if the bus was originally PV.
+      bool hasOnlineGen = false;
+      for (int j = 0; j < gsize; j++) {
+        if (p_gstatus[j] == 1) {
+          hasOnlineGen = true;
+          break;
+        }
+      }
+
+      if (!hasOnlineGen && p_isPV) {
+        // Save the original PV status before converting to PQ
+        p_saveisPV = p_isPV;
+        p_isPV = false;
+        if (p_PV_ptr) *p_PV_ptr = false;
+      } else if (hasOnlineGen && !p_isPV && p_saveisPV) {
+        // Restore PV status if the bus was originally PV and now has an online generator
+        p_isPV = true;
+        if (p_PV_ptr) *p_PV_ptr = true;
+      }
+
+      return true;
     }
   }
+  return false;
 }
 
 /**
@@ -937,6 +1357,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       if (p_lstatus[i]) pl += p_pl[i];
       if (p_lstatus[i]) ql += p_ql[i];
     }
+    // Add voltage-dependent ZIP load at solved voltage
+    {
+      double pzip, qzip;
+      getZIPLoadPower(p_v, pzip, qzip);
+      pl += pzip;
+      ql += qzip;
+    }
     sprintf(sbuf,"%8d, %4d, %16.8f, %16.8f,",getOriginalIndex(),p_type,
            pl/p_sbase,ql/p_sbase);
     int len = strlen(sbuf);
@@ -1045,21 +1472,45 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
         ql += p_ql[i];
       }
     }
+    // Add voltage-dependent ZIP load at solved voltage
+    {
+      double pzip, qzip;
+      getZIPLoadPower(p_v, pzip, qzip);
+      pl += pzip;
+      ql += qzip;
+    }
     for (i=0; i<ngen; i++) {
       double pval = 0.0;
       double qval = 0.0;
 
       if(getReferenceBus()) {
 	pval = p_pFac[i]*(p_Pinj*p_sbase+pl);
-	qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	// Use p_qFac for Q distribution (based on Qmax capability)
+	qval = p_qFac[i]*(p_Qinj*p_sbase+ql);
       } else if (p_isPV) {
-	pval = p_pg[i];
 	if(p_gstatus[i]) {
-	  qval = p_pFac[i]*(p_Qinj*p_sbase+ql);
+	  pval = p_pg[i];
+	  if (p_qlim) {
+	    // When qlim=true, use p_qg which is set by chkQlim() with RMPCT-based distribution
+	    qval = p_qg[i];
+	  } else {
+	    // When qlim=false, chkQlim() is not called, so calculate Q from p_Qinj
+	    // Use p_qFac (Qmax-based) to distribute Q among generators with reactive capability
+	    // Generators with Qmax=Qmin=0 get p_qFac=0, so they won't be assigned Q they can't provide
+	    qval = p_qFac[i]*(p_Qinj*p_sbase+ql);
+	  }
+	} else {
+	  pval = 0.0;
+	  qval = 0.0;
 	}
       } else {
-	pval = p_pg[i];
-	qval = p_qg[i];
+	if(p_gstatus[i]) {
+	  pval = p_pg[i];
+	  qval = p_qg[i];
+	} else {
+	  pval = 0.0;
+	  qval = 0.0;
+	}
       }
       if (!strcmp(signal,"power")) {
         sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
@@ -1235,31 +1686,67 @@ void gridpack::powerflow::PFBus::saveData(
       ql += p_ql[i];
     }
   }
+  // Add voltage-dependent ZIP load at solved voltage
+  {
+    double pzip, qzip;
+    getZIPLoadPower(p_v, pzip, qzip);
+    pl += pzip;
+    ql += qzip;
+  }
   for (i=0; i<ngen; i++) {
     if(getReferenceBus()) {
       rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
       if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
 	data->addValue("GENERATOR_PF_PGEN",rval,i);
       }
-      rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+      // Use p_qFac for Q distribution (based on Qmax capability)
+      rval = p_qFac[i]*(p_Qinj+ql/p_sbase);
       if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
 	data->addValue("GENERATOR_PF_QGEN",rval,i);
       }
     } else if (p_isPV) {
-      if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
-	data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
-      }
-      rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
-      if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
-	data->addValue("GENERATOR_PF_QGEN",rval,i);
+      if (p_gstatus[i]) {
+        if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+        }
+        if (p_qlim) {
+          // When qlim=true, use p_qg which is set by chkQlim() with RMPCT-based distribution
+          rval = p_qg[i]/p_sbase;
+        } else {
+          // When qlim=false, chkQlim() is not called, so calculate Q from p_Qinj
+          // Use p_qFac (Qmax-based) for generators with reactive capability
+          rval = p_qFac[i]*(p_Qinj+ql/p_sbase);
+        }
+        if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",rval,i);
+        }
+      } else {
+        if (!data->setValue("GENERATOR_PF_PGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",0.0,i);
+        }
+        if (!data->setValue("GENERATOR_PF_QGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",0.0,i);
+        }
       }
     } else {
-      if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
-	data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+      if (p_gstatus[i]) {
+        if (!data->setValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",p_pg[i]/p_sbase,i);
+        }
+      } else {
+        if (!data->setValue("GENERATOR_PF_PGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_PGEN",0.0,i);
+        }
       }
 
-      if (!data->setValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i)) {
-	data->addValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i);
+      if (p_gstatus[i]) {
+        if (!data->setValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",p_qg[i]/p_sbase,i);
+        }
+      } else {
+        if (!data->setValue("GENERATOR_PF_QGEN",0.0,i)) {
+	  data->addValue("GENERATOR_PF_QGEN",0.0,i);
+        }
       }
     }
   }
@@ -1270,7 +1757,7 @@ void gridpack::powerflow::PFBus::saveData(
  * This can be used as a way of moving data in a way that is useful for
  * creating output or for copying state data from one network to another.
  * @param data data collection object into which new values are inserted
- * added by Renke, also modify the original bus mag, ang, 
+ * added by Renke, also modify the original bus mag, ang,
  * and the original generator PG QG in the datacollection
  */
 void gridpack::powerflow::PFBus::saveDataAlsotoOrg(
@@ -1328,19 +1815,27 @@ void gridpack::powerflow::PFBus::saveDataAlsotoOrg(
       ql += p_ql[i];
     }
   }
+  // Add voltage-dependent ZIP load at solved voltage
+  {
+    double pzip, qzip;
+    getZIPLoadPower(p_v, pzip, qzip);
+    pl += pzip;
+    ql += qzip;
+  }
   for (i=0; i<ngen; i++) {
     rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
     if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
       data->addValue("GENERATOR_PF_PGEN",rval,i);
     }
-	data->setValue(GENERATOR_PG,rval*100.0,i); //also modify the original GENERATOR_PG 
-	
-    rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+	data->setValue(GENERATOR_PG,rval*100.0,i); //also modify the original GENERATOR_PG
+
+    // Use p_qFac for Q distribution (based on Qmax capability)
+    rval = p_qFac[i]*(p_Qinj+ql/p_sbase);
     if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
       data->addValue("GENERATOR_PF_QGEN",rval,i);
     }
-	data->setValue(GENERATOR_QG,rval*100.0,i); //also modify the original GENERATOR_QG 
-	
+	data->setValue(GENERATOR_QG,rval*100.0,i); //also modify the original GENERATOR_QG
+
   }
 }
 
@@ -1495,17 +1990,29 @@ int gridpack::powerflow::PFBus::getZone()
 int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
 {
   if (!isIsolated()) {
+    // Compute ZIP Jacobian contributions: d(pzip)/dV and d(qzip)/dV
+    double dpzip_dV = 0.0, dqzip_dV = 0.0;
+    for (int i = 0; i < p_lstatus.size(); i++) {
+      if (p_lstatus[i] == 1) {
+        dpzip_dV += p_ip[i] + 2.0 * p_yp[i] * p_v;
+        dqzip_dV += p_iq[i] - 2.0 * p_yq[i] * p_v;
+      }
+    }
 #ifdef LARGE_MATRIX
     if (!getReferenceBus()) {
-      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v; 
-      rvals[1] = p_Pinj - p_ybusr * p_v *p_v; 
-      rvals[2] = p_Pinj / p_v + p_ybusr * p_v; 
-      rvals[3] = p_Qinj / p_v - p_ybusi * p_v; 
+      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
+      rvals[1] = p_Pinj - p_ybusr * p_v *p_v;
+      rvals[2] = p_Pinj / p_v + p_ybusr * p_v;
+      rvals[3] = p_Qinj / p_v - p_ybusi * p_v;
       // Fix up matrix elements if bus is PV bus
       if (p_isPV) {
         rvals[1] = 0.0;
         rvals[2] = 0.0;
         rvals[3] = 1.0;
+      } else {
+        // Add ZIP load derivatives for PQ buses
+        rvals[2] += dpzip_dV / p_sbase;
+        rvals[3] += dqzip_dV / p_sbase;
       }
       return 4;
     } else {
@@ -1517,14 +2024,16 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
     }
 #else
     if (!getReferenceBus() && !p_isPV) {
-      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v; 
-      rvals[1] = p_Pinj - p_ybusr * p_v *p_v; 
-      rvals[2] = p_Pinj / p_v + p_ybusr * p_v; 
-      rvals[3] = p_Qinj / p_v - p_ybusi * p_v; 
-      // Fix up matrix elements if bus is PV bus
+      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
+      rvals[1] = p_Pinj - p_ybusr * p_v *p_v;
+      rvals[2] = p_Pinj / p_v + p_ybusr * p_v;
+      rvals[3] = p_Qinj / p_v - p_ybusi * p_v;
+      // Add ZIP load derivatives for PQ buses
+      rvals[2] += dpzip_dV / p_sbase;
+      rvals[3] += dqzip_dV / p_sbase;
       return 4;
     } else if (!getReferenceBus() && p_isPV) {
-      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v; 
+      rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
       return 1;
     } else {
       return 0;
@@ -1576,6 +2085,11 @@ int gridpack::powerflow::PFBus::rhsValues(double *rvals)
       p_Qinj = Q;
       P -= p_P0;
       Q -= p_Q0;
+      // Add voltage-dependent ZIP load contribution
+      double pzip, qzip;
+      getZIPLoadPower(p_v, pzip, qzip);
+      P += pzip / p_sbase;
+      Q += qzip / p_sbase;
       rvals[0] = P;
 #ifdef LARGE_MATRIX
       if (!p_isPV) {
@@ -1767,6 +2281,10 @@ void gridpack::powerflow::PFBus::scaleLoadPower(std::string tag, double value)
     if (p_lid[i] == tag && p_lstatus[i] == 1) {
       p_pl[i] = value*p_pl[i];
       p_ql[i] = value*p_ql[i];
+      p_ip[i] = value*p_ip[i];
+      p_iq[i] = value*p_iq[i];
+      p_yp[i] = value*p_yp[i];
+      p_yq[i] = value*p_yq[i];
       break;
     }
   }
@@ -1785,6 +2303,10 @@ void gridpack::powerflow::PFBus::resetPower()
   for (i=0; i<p_nload; i++) {
     p_pl[i] = p_savePl[i];
     p_ql[i] = p_saveQl[i];
+    p_ip[i] = p_saveIp[i];
+    p_iq[i] = p_saveIq[i];
+    p_yp[i] = p_saveYp[i];
+    p_yq[i] = p_saveYq[i];
   }
 }
 
@@ -1865,6 +2387,28 @@ void gridpack::powerflow::PFBus::setSink(bool flag)
 void gridpack::powerflow::PFBus::setScale(double scale)
 {
   p_rtpr_scale = scale;
+}
+
+/**
+ * Compute total voltage-dependent ZIP load power at given voltage
+ * PSS/E convention:
+ *   P_load = PL + IP*V + YP*V^2  (all terms add to real load)
+ *   Q_load = QL + IQ*V - YQ*V^2  (IQ=inductive adds, YQ=capacitive subtracts)
+ * This returns only the voltage-dependent parts:
+ *   pzip = sum(IP*V + YP*V^2)
+ *   qzip = sum(IQ*V - YQ*V^2)
+ */
+void gridpack::powerflow::PFBus::getZIPLoadPower(double V,
+    double &pzip, double &qzip) const
+{
+  pzip = 0.0;
+  qzip = 0.0;
+  for (int i = 0; i < p_lstatus.size(); i++) {
+    if (p_lstatus[i] == 1) {
+      pzip += p_ip[i] * V + p_yp[i] * V * V;
+      qzip += p_iq[i] * V - p_yq[i] * V * V;
+    }
+  }
 }
 
 /**
@@ -2442,8 +2986,9 @@ bool gridpack::powerflow::PFBranch::getBranchStatus(std::string tag)
  * Set the status of the branch element
  * @param tag character string identifying branch element
  * @param status status of branch element
+ * @return true if circuit ID found, false otherwise
  */
-void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status)
+bool gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status)
 {
   int i;
   int bsize = p_branch_status.size();
@@ -2451,9 +2996,10 @@ void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status
     if (tag == p_ckt[i]) {
       p_branch_status[i] = status;
       YMBranch::setLineStatus(tag,status);
-      return;
+      return true;
     }
   }
+  return false;
 }
 
 /**

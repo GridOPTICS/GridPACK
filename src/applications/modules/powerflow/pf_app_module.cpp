@@ -8,10 +8,14 @@
  * @file   pf_app.cpp
  * @author Bruce Palmer
  * @date   2018-06-20 11:07:20 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Added setInitStartMode for power flow initialization (warm/flat start)
+ * @date  2026-02-02
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
@@ -137,8 +141,9 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);
-  p_qlim = cursor->get("qlim",0);
+  p_qlim = cursor->get("qlim",true);
   p_max_iteration = cursor->get("maxIteration",50);
+  p_max_qlim_iterations = cursor->get("maxQlimIterations",3);
   ComplexType tol;
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
@@ -252,7 +257,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   timer->stop(t_pti);
 
   // Create serial IO object to export data from buses
-  p_busIO.reset(new gridpack::serial_io::SerialBusIO<PFNetwork>(512,network));
+  // Increased buffer size from 512 to 2048 to handle buses with many generators
+  p_busIO.reset(new gridpack::serial_io::SerialBusIO<PFNetwork>(2048,network));
 
   // Create serial IO object to export data from branches
   // Increased buffer size from 512 to 2048 to handle branches with many parallel lines
@@ -345,9 +351,11 @@ bool gridpack::powerflow::PFAppModule::solve()
   bool repeat = true;
   int int_repeat = 0;
   while (repeat) {
+    ret = true;  // Reset ret - if this iteration converges, we should return true
     iter = 0;
     tol = 2.0*p_tolerance;
     int_repeat ++;
+    bool qlim_handled_early = false;  // Track if Q limits were handled during stagnation
     char ioBuf[128];
     if (!p_no_print) {
       sprintf (ioBuf," repeat time = %d \n", int_repeat);
@@ -474,7 +482,13 @@ bool gridpack::powerflow::PFAppModule::solve()
     if (!p_no_print) {
       sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
       p_busIO->header(ioBuf);
-    }										
+    }
+
+    // Variables for early stagnation detection
+    gridpack::ComplexType tol_prev = tol;
+    int stagnant_count = 0;
+    const int STAGNANT_THRESHOLD = 5;  // Check Q limits after 5 stagnant iterations
+    const double STAGNANT_TOL = 1.0e-10;  // Tolerance for detecting stagnation
 
     while (real(tol) > p_tolerance && iter < p_max_iteration) {
       // Push current values in X vector back into network components
@@ -541,6 +555,29 @@ bool gridpack::powerflow::PFAppModule::solve()
         p_busIO->header(ioBuf);
       }
       iter++;
+
+      // Early stagnation detection: if tolerance unchanged, check Q limits early
+      if (p_qlim && fabs(real(tol) - real(tol_prev)) < STAGNANT_TOL) {
+        stagnant_count++;
+        if (stagnant_count >= STAGNANT_THRESHOLD) {
+          if (!p_factory->checkQlimViolations()) {
+            // Q limit violations found - break to restart with PV->PQ changes
+            if (!p_no_print) {
+              sprintf(ioBuf,"Stagnation detected at iter %d, Qlim violations found\n", iter);
+              p_busIO->header(ioBuf);
+            }
+            qlim_handled_early = true;
+            break;
+          } else {
+            // No Q limit violations but still stagnant - likely numerical issue
+            stagnant_count = 0;  // Reset and continue trying
+          }
+        }
+      } else {
+        stagnant_count = 0;  // Reset if tolerance is changing
+      }
+      tol_prev = tol;
+
       if (real(tol)> 100.0*real(tol_org)){
         ret = false;
         if (!p_no_print) {
@@ -552,29 +589,55 @@ bool gridpack::powerflow::PFAppModule::solve()
     }
 
     if (iter >= p_max_iteration) ret = false;
-    if (p_qlim == 0) {
+    if (!p_qlim) {
       repeat = false;
+    } else if (qlim_handled_early) {
+      // Q limits were already handled during early stagnation detection
+      // Check if we've reached max Q-limit iterations
+      if (int_repeat >= p_max_qlim_iterations) {
+        if (!p_no_print) {
+          sprintf(ioBuf,"Max Q-limit iterations (%d) reached, accepting current solution\n", p_max_qlim_iterations);
+          p_busIO->header(ioBuf);
+        }
+        repeat = false;
+      }
+      // Otherwise repeat stays true to restart with new PV/PQ configuration
     } else {
       if (p_factory->checkQlimViolations()) {
-        repeat =false;
+        repeat = false;
       } else {
-        if (!p_no_print) {
-          sprintf (ioBuf,"There are Qlim violations at iter =%d\n", iter);
-          p_busIO->header(ioBuf);
+        // Check if we've reached max Q-limit iterations
+        if (int_repeat >= p_max_qlim_iterations) {
+          if (!p_no_print) {
+            sprintf(ioBuf,"Max Q-limit iterations (%d) reached, accepting current solution\n", p_max_qlim_iterations);
+            p_busIO->header(ioBuf);
+          }
+          repeat = false;
+        } else {
+          if (!p_no_print) {
+            sprintf (ioBuf,"There are Qlim violations at iter =%d\n", iter);
+            p_busIO->header(ioBuf);
+          }
         }
       }
     }
-    // Push final result back onto buses
-    timer->start(t_bmap);
-    p_factory->setMode(RHS);
-    vMap.mapToBus(X);
-    timer->stop(t_bmap);
+    // Push final result back onto buses, but ONLY if no Q limit violations.
+    // If there are Q limit violations, p_isPV changed for some buses after vMap
+    // was created. The vMap indexing is based on old dimensions, but setValues()
+    // uses the current p_isPV. This mismatch causes incorrect memory access.
+    // When repeat=true, a new iteration will start with a fresh vMap anyway.
+    if (!repeat) {
+      timer->start(t_bmap);
+      p_factory->setMode(RHS);
+      vMap.mapToBus(X);
+      timer->stop(t_bmap);
 
-    // Make sure that ghost buses have up-to-date values before printing out
-    // results
-    timer->start(t_updt);
-    p_network->updateBuses();
-    timer->stop(t_updt);
+      // Make sure that ghost buses have up-to-date values before printing out
+      // results
+      timer->start(t_updt);
+      p_network->updateBuses();
+      timer->stop(t_updt);
+    }
   }
   timer->stop(t_total);
   return ret;
@@ -842,7 +905,7 @@ void gridpack::powerflow::PFAppModule::saveData()
 
 /**
  * Save results of powerflow calculation to data collection objects
- * added by Renke, also modify the original bus mag, ang, 
+ * added by Renke, also modify the original bus mag, ang,
  * and the original generator PG QG in the datacollection
  */
 void gridpack::powerflow::PFAppModule::saveDataAlsotoOrg()
@@ -870,8 +933,7 @@ bool gridpack::powerflow::PFAppModule::getPFSolutionSingleBus(
 	if (nbus == 0) ret = false;
 	for(ibus=0; ibus<nbus; ibus++){
 		bus = dynamic_cast<gridpack::powerflow::PFBus*>
-		(p_network->getBus(vec_busintidx[ibus]).get());  //->getOriginalIndex()
-		//printf("----renke debug PFAppModule::getPFSolutionSingleBus, \n");
+		(p_network->getBus(vec_busintidx[ibus]).get());
 		bus_mag=bus->getVoltage();
 		double anglerads = bus->getPhase();
 		double pi = 4.0*atan(1.0);
@@ -898,14 +960,25 @@ bool gridpack::powerflow::PFAppModule::setContingency(
       idx = event.p_busid[i];
       std::string tag = event.p_genid[i];
       std::vector<int> lids = p_network->getLocalBusIndices(idx);
-      if (lids.size() == 0) ret = false;
+      if (lids.size() == 0) {
+        printf("WARNING: Bus %d not found for generator contingency\n", idx);
+        ret = false;
+        continue;
+      }
       gridpack::powerflow::PFBus *bus;
+      bool found = false;
       for (j=0; j<lids.size(); j++) {
         jdx = lids[j];
         bus = dynamic_cast<gridpack::powerflow::PFBus*>(
             p_network->getBus(jdx).get());
         event.p_saveGenStatus[i] = bus->getGenStatus(tag);
-        bus->setGenStatus(tag, false);
+        if (bus->setGenStatus(tag, false)) {
+          found = true;
+        }
+      }
+      if (!found) {
+        printf("WARNING: Generator '%s' not found on bus %d\n", tag.c_str(), idx);
+        ret = false;
       }
     }
   } else if (event.p_type == Branch) {
@@ -917,14 +990,25 @@ bool gridpack::powerflow::PFAppModule::setContingency(
       from = event.p_from[i];
       std::string tag = event.p_ckt[i];
       std::vector<int> lids = p_network->getLocalBranchIndices(from,to);
-      if (lids.size() == 0) ret = false;
+      if (lids.size() == 0) {
+        printf("WARNING: Branch %d-%d not found\n", from, to);
+        ret = false;
+        continue;
+      }
       gridpack::powerflow::PFBranch *branch;
+      bool found = false;
       for (j=0; j<lids.size(); j++) {
         jdx = lids[j];
         branch = dynamic_cast<gridpack::powerflow::PFBranch*>(
             p_network->getBranch(jdx).get());
         event.p_saveLineStatus[i] = branch->getBranchStatus(tag);
-        branch->setBranchStatus(tag, false);
+        if (branch->setBranchStatus(tag, false)) {
+          found = true;
+        }
+      }
+      if (!found) {
+        printf("WARNING: Circuit ID '%s' not found on branch %d-%d\n", tag.c_str(), from, to);
+        ret = false;
       }
     }
   } else {
@@ -936,7 +1020,58 @@ bool gridpack::powerflow::PFAppModule::setContingency(
     p_contingency_name.clear();
   }
   p_factory->checkLoneBus();
+  // Check if slack bus still has online generator, transfer if needed
+  bool slackOk = p_factory->checkAndTransferSlack();
+  if (!slackOk) {
+    // No valid slack bus - system cannot be solved
+    ret = false;
+  }
+  p_factory->detectIslands();  // Detect islands after applying contingency
   return ret;
+}
+
+/**
+ * Get the number of islands detected after setting a contingency
+ * @return number of islands (1 = connected network, >1 = islanding)
+ */
+int gridpack::powerflow::PFAppModule::getIslandCount()
+{
+  return p_factory->getIslandCount();
+}
+
+/**
+ * Check if any lone buses were found after setting a contingency
+ * @return true if at least one bus became isolated (no active branches)
+ */
+bool gridpack::powerflow::PFAppModule::hasLoneBus()
+{
+  return p_factory->hasLoneBus();
+}
+
+/**
+ * Check if slack bus has online generator, transfer if needed
+ * @return true if valid slack exists, false if no generation capacity
+ */
+bool gridpack::powerflow::PFAppModule::checkAndTransferSlack()
+{
+  return p_factory->checkAndTransferSlack();
+}
+
+/**
+ * Restore original slack bus after contingency
+ */
+void gridpack::powerflow::PFAppModule::restoreSlack()
+{
+  p_factory->restoreSlack();
+}
+
+/**
+ * Check if slack bus generator output exceeds capacity
+ * @return true if within limits, false if Pgen > Pmax
+ */
+bool gridpack::powerflow::PFAppModule::checkSlackCapacity()
+{
+  return p_factory->checkSlackCapacity();
 }
 
 /**
@@ -948,6 +1083,8 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
     gridpack::powerflow::Contingency &event)
 {
   p_factory->clearLoneBus();
+  p_factory->clearIslands();
+  p_factory->restoreSlack();  // Restore original slack bus if it was transferred
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();
@@ -1090,6 +1227,14 @@ void gridpack::powerflow::PFAppModule::resetVoltages()
 }
 
 /**
+ * Set the initial start mode for power flow solver
+ */
+void gridpack::powerflow::PFAppModule::setInitStartMode(InitStartMode mode)
+{
+  p_factory->setInitStartMode(mode);
+}
+
+/**
  * Scale generator real power. If zone less than 1 then scale all
  * generators in the area.
  * @param scale factor to scale real power generation
@@ -1228,9 +1373,6 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
       sprintf(sbuf,"     Branch overload violation on branch [%d,%d] for line %s",
           violations[i].bus1,violations[i].bus2,violations[i].tag);
       string = sbuf;
-    }
-    if (!p_no_print) {
-      printf("DEBUG VIOLATION: (%s)\n",string.c_str());
     }
     ret.push_back(string);
   }

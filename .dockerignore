@@ -1,0 +1,5 @@
+.idea
+external_dependencies
+/python/build
+/python/dist
+/python/gridpack_hadrec.egg-info

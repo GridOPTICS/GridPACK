@@ -8,10 +8,28 @@
  * @file   pf_components.hpp
  * @author Bruce Palmer
  * @date   2016-07-14 13:27:00 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Improved Q-limit handling with iterative PV-PQ conversion
+ * - Added island detection function
+ * - Automatic slack bus transfer for contingency analysis
+ * - RMPCT-based reactive power distribution for multi-generator buses
+ * @date  2026-01-31
+ *
+ * @updated Yousu Chen
+ * - Added initStart option for power flow initialization (warm/flat start)
+ * - Treated generators with Qmax == Qmin (zero Q capability) as PQ buses
+ * - Q distribution uses RMPCT when available, otherwise uses relative reactive
+ *   capability (Qmax) to share reactive power among generators
+ * @date  2026-02-02
+ *
+ * @updated Yousu Chen
+ * - Added getZIPLoadPower() declaration for voltage-dependent ZIP load model
+ * @date  2026-02-19
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
@@ -28,6 +46,12 @@ namespace gridpack {
 namespace powerflow {
 
 enum PFMode{YBus, Jacobian, RHS, S_Cal, State};
+
+// Initial start mode for power flow solver
+enum InitStartMode {
+  INIT_START_WARM = 0,  // Use voltage values from raw file (default)
+  INIT_START_FLAT = 1   // Flat start: PV/Slack use VS, PQ use 1.0 pu, all angles 0
+};
 
 class PFBus
   : public gridpack::ymatrix::YMBus
@@ -171,6 +195,36 @@ class PFBus
     bool getGenStatus(std::string gen_id);
 
     /**
+     * Check if bus has any online generator
+     * @return true if at least one generator is online
+     */
+    bool hasOnlineGenerator();
+
+    /**
+     * Get total capacity (Pmax) of all online generators on this bus
+     * @return total Pmax in MW
+     */
+    double getOnlineGenCapacity();
+
+    /**
+     * Calculate power injection at this bus from connected branches.
+     * Updates p_Pinj and p_Qinj for slack bus.
+     */
+    void calculatePowerInjection();
+
+    /**
+     * Get total real power output of all generators on this bus (after PF solve)
+     * @return total Pgen in MW
+     */
+    double getTotalGenOutput();
+
+    /**
+     * Check if generator output exceeds capacity on this bus
+     * @return true if within limits, false if Pgen > Pmax
+     */
+    bool checkGenCapacity();
+
+    /**
      * Get list of generator IDs
      * @return vector of generator IDs
      */
@@ -203,8 +257,9 @@ class PFBus
      * Set generator status
      * @param gen_id generator ID
      * @param status generator status
+     * @return true if generator ID found, false otherwise
      */
-    void setGenStatus(std::string gen_id, bool status);
+    bool setGenStatus(std::string gen_id, bool status);
 
     /**
      * Set isPV status
@@ -267,7 +322,7 @@ class PFBus
 	 * This can be used as a way of moving data in a way that is useful for
 	 * creating output or for copying state data from one network to another.
 	 * @param data data collection object into which new values are inserted
-	 * added by Renke, also modify the original bus mag, ang, 
+	 * added by Renke, also modify the original bus mag, ang,
 	 * and the original generator PG QG in the datacollection
 	 */
 	void saveDataAlsotoOrg(boost::shared_ptr<gridpack::component::DataCollection> data);
@@ -437,7 +492,38 @@ class PFBus
      */
     void setScale(double scale);
 
+    /**
+     * Compute total voltage-dependent ZIP load power at given voltage
+     * P_zip = sum(IP*V + YP*V^2), Q_zip = sum(IQ*V + YQ*V^2) for active loads
+     * @param V voltage magnitude
+     * @param pzip (output) total P contribution from constant-I and constant-Y loads
+     * @param qzip (output) total Q contribution from constant-I and constant-Y loads
+     */
+    void getZIPLoadPower(double V, double &pzip, double &qzip) const;
+
+    /**
+     * Set the initial start mode for power flow solver
+     * @param mode INIT_START_WARM (default): use voltage values from raw file
+     *             INIT_START_FLAT: flat start (PV/Slack use VS, PQ use 1.0 pu, all angles 0)
+     */
+    static void setInitStartMode(InitStartMode mode);
+    static void setQlim(bool qlim);
+
+    /**
+     * Clear accumulated Q limit warning messages
+     */
+    static void clearQlimWarnings();
+
+    /**
+     * Get accumulated Q limit warning messages
+     * @return reference to vector of warning strings
+     */
+    static std::vector<std::string>& getQlimWarnings();
+
   private:
+    static std::vector<std::string> p_qlimWarnings;
+    static InitStartMode p_initStartMode;
+    static bool p_qlim;
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
@@ -454,12 +540,14 @@ class PFBus
     double p_angle;   // initial bus angle read from parser
     double p_voltage; // initial bus voltage read from parser
     // newly added priavate variables:
-    std::vector<double> p_pg, p_qg, p_pFac;
+    std::vector<double> p_pg, p_qg, p_pFac, p_qFac;
     std::vector<double> p_savePg;
+    std::vector<double> p_saveQg;  // Save original Q for restoration after Q limit handling
     std::vector<int> p_gstatus;
     std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
-    std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig;
+    std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig, p_qFac_orig;
+    std::vector<double> p_rmpct;  // RMPCT: reactive power participation factor (PSS/E)
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
@@ -467,6 +555,7 @@ class PFBus
     std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
     std::vector<double> p_savePl;
     std::vector<double> p_saveQl;
+    std::vector<double> p_saveIp, p_saveIq, p_saveYp, p_saveYq;
     std::vector<int> p_lstatus;
     std::vector<std::string> p_lid;
     double p_sbase;
@@ -477,6 +566,7 @@ class PFBus
     int p_ngen;
     int p_nload;
     int p_type;
+    int p_save_type;  // Save original bus type for restoration after Q limit handling
     int p_area;
     int p_zone;
     bool p_source;
@@ -515,19 +605,21 @@ private:
       & p_P0 & p_Q0
       & p_angle & p_voltage
       & p_pg & p_qg & p_pFac & p_qmin & p_qmax
-      & p_qmin_orig & p_qmax_orig & p_pFac_orig
+      & p_qmin_orig & p_qmax_orig & p_pFac_orig & p_rmpct
+      & p_saveQg
       & p_gstatus
       & p_vs & p_gid
       & p_pt & p_pb
       & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
       & p_savePl & p_saveQl
+      & p_saveIp & p_saveIq & p_saveYp & p_saveYq
       & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
       & p_vmin & p_vmax
       & p_isPV
       & p_saveisPV
-      & p_ngen & p_type & p_nload
+      & p_ngen & p_type & p_save_type & p_nload
       & p_area & p_zone
       & p_source & p_sink
       & p_rtpr_scale;
@@ -640,8 +732,9 @@ class PFBranch
      * Set the status of the branch element
      * @param tag character string identifying branch element
      * @param status status of branch element
+     * @return true if circuit ID found, false otherwise
      */
-    void setBranchStatus(std::string tag, bool status);
+    bool setBranchStatus(std::string tag, bool status);
 
     /**
      * get branch rating A value

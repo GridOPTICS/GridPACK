@@ -8,10 +8,15 @@
  * @file   ymatrix_components.hpp
  * @author Bruce Palmer
  * @date   2016-07-14 13:27:00 d3g096
- * 
- * @brief  
- * 
- * 
+ *
+ * @updated Yousu Chen
+ * - Fixed switched shunt handling to check SHUNT_SWCH_STAT before applying BINIT
+ * - Fixed fixed shunt handling to check SHUNT_STATUS before applying GL/BL
+ * @date  2026-02-02
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
