@@ -215,10 +215,11 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   p_tolerance = secursor->get("tolerance",1.0e-3);
   p_max_iteration = secursor->get("maxIteration",20);
   p_max_bad_data_iterations = secursor->get("maxBadDataIterations", 5);
-  
+  p_damping_factor = secursor->get("dampingFactor", 1.0);
+
   // Diagnostic output level control
   p_diagnosticLevel = secursor->get("diagnosticOutputLevel", "basic");
-  
+
   // Sparse matrix optimization control
   p_use_sparse_matrices = secursor->get("useSparseMatrices", true);
 
@@ -308,13 +309,14 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   p_tolerance = secursor->get("tolerance",1.0e-3);
   p_max_iteration = secursor->get("maxIteration",20);
   p_max_bad_data_iterations = secursor->get("maxBadDataIterations", 5);
-  
+  p_damping_factor = secursor->get("dampingFactor", 1.0);
+
   // Diagnostic output level control
   p_diagnosticLevel = secursor->get("diagnosticOutputLevel", "basic");
-  
+
   // Sparse matrix optimization control
   p_use_sparse_matrices = secursor->get("useSparseMatrices", true);
-  
+
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(1024, p_network));
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(1024, p_network));
@@ -617,6 +619,11 @@ void gridpack::state_estimation::SEAppModule::solve(void)
       solver.solve(*RHS, *X);
       timer->stop(t_solve);
       
+      // Apply damping factor to state update
+      if (p_damping_factor != 1.0) {
+        X->scale(p_damping_factor);
+      }
+
       tol = X->normInfinity();
       char ioBuf[128];
       snprintf(ioBuf, sizeof(ioBuf), "\nIteration %d Tol: %12.6e\n", iter+1, real(tol));
@@ -2964,29 +2971,29 @@ void gridpack::state_estimation::SEAppModule::handlePVBusVoltages()
             if (bus->getOriginalIndex() == busIdx) {
                 // This is the PV bus we're looking for
                 if (bus->hasMeasurements()) {
-                    std::vector<Measurement> measurements = bus->getMeasurements();
+                    std::vector<Measurement>& measurements = bus->getMeasurementsRef();
                     for (Measurement& meas : measurements) {
                         if (strcmp(meas.p_type, "VM") == 0) {
                             // This is a voltage magnitude measurement on a PV bus
                             // Apply special handling based on whether it's connected to non-PV buses
-                            
+
                             char buf[256];
-                            
+
                             if (isPVConnection) {
-                                // For PV buses connected to non-PV buses, use a very low sigma
-                                // to effectively enforce the voltage constraint
+                                // For PV buses connected to non-PV buses, use a moderately low sigma
+                                // to enforce the voltage constraint without ill-conditioning
                                 double oldDeviation = meas.p_deviation;
-                                meas.p_deviation = 0.00001; // Extremely low deviation = extremely high weight
-                                
-                                snprintf(buf, sizeof(buf), "PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
+                                meas.p_deviation = 0.001;
+
+                                snprintf(buf, sizeof(buf), "PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n",
                                         busIdx, oldDeviation, meas.p_deviation);
                                 p_busIO->header(buf);
                             } else {
-                                // For isolated PV buses, still use a high weight but not as extreme
+                                // For isolated PV buses, use same moderate weight
                                 double oldDeviation = meas.p_deviation;
-                                meas.p_deviation = 0.0001; // Still very high weight
-                                
-                                snprintf(buf, sizeof(buf), "Isolated PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n", 
+                                meas.p_deviation = 0.001;
+
+                                snprintf(buf, sizeof(buf), "Isolated PV Bus %d VM measurement: deviation adjusted %.6f -> %.6f\n",
                                         busIdx, oldDeviation, meas.p_deviation);
                                 p_busIO->header(buf);
                             }
@@ -3057,15 +3064,15 @@ void gridpack::state_estimation::SEAppModule::handleVAMeasurements()
                 bool hasAngleMeasurement = false;
                 
                 if (bus->hasMeasurements()) {
-                    std::vector<Measurement> measurements = bus->getMeasurements();
+                    std::vector<Measurement>& measurements = bus->getMeasurementsRef();
                     for (Measurement& meas : measurements) {
                         if (strcmp(meas.p_type, "VA") == 0) {
                             // Found a VA measurement at slack bus
                             hasAngleMeasurement = true;
-                            
-                            // Set extremely high weight (very low deviation) for slack bus angle
+
+                            // Enforce slack bus angle constraint with moderate weight
                             double oldDeviation = meas.p_deviation;
-                            meas.p_deviation = 0.000001; // Extremely low deviation to enforce the constraint
+                            meas.p_deviation = 0.0001;
                             
                             snprintf(buf, sizeof(buf), "  Slack Bus %d VA measurement: deviation adjusted %.6f -> %.6f\n", 
                                     busIdx, oldDeviation, meas.p_deviation);

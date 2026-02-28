@@ -213,6 +213,9 @@ class SEAppModule
     // convergence tolerance
     double p_tolerance;
 
+    // Newton-Raphson damping factor (1.0 = no damping)
+    double p_damping_factor;
+
     // Structure to return both bad indices and their normalized residuals
     struct BadDataResult {
         std::vector<int> badIndices;

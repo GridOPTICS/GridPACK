@@ -378,6 +378,12 @@ class SEBus
     std::vector<Measurement> getMeasurements() const { return p_meas; }
 
     /**
+     * Get mutable reference to measurements for in-place modification
+     * @return reference to internal measurements vector
+     */
+    std::vector<Measurement>& getMeasurementsRef() { return p_meas; }
+
+    /**
      * Reset performance profiling statistics
      */
     void resetPerformanceCounters();

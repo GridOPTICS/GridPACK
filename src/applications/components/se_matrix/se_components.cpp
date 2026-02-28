@@ -214,11 +214,9 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
       }
     }
     
-    // Invalidate cache only if state variables changed significantly (more tolerant threshold)
-    // This reduces cache rebuilds during convergence
-    if (fabs(vt - p_v) > 1e-3 || fabs(at - p_a) > 1e-3) {
-      invalidateNeighborCache();
-    }
+    // Always invalidate cache when state variables change to ensure
+    // Jacobian/residual use current neighbor data
+    invalidateNeighborCache();
    }
   }
 }
