@@ -18,7 +18,7 @@ import os
 # -- Project information -----------------------------------------------------
 
 project = u'GridPACK'
-copyright = u'2024, GridPACK Team'
+copyright = u'2026, GridPACK Team'
 author = u'GridPACK Development Team'
 
 # Get the version from version.txt
