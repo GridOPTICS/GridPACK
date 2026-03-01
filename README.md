@@ -7,10 +7,11 @@ GridPACK is an open-source high-performance (HPC) package for simulation of larg
 - AC Power Flow
 - Dynamics Simulation
 - Contingency Analysis
+- State Estimation
 
 Other applications under development or not full featured are
 - Dynamic security assessment
-- State estimation
+- Electromagnetic transient (EMT) simulation
 
 In addition, GridPACK is also a framework to simplify the development of new applications on HPC platforms. To ease the development, GridPACK offers several building blocks such as setting up and distributing (partitioning) power grid networks, support for custom components on buses and branches, converting the network models to the corresponding algebraic equations, parallel routines for manipulating and solving large algebraic systems, and input and output modules as well as basic profiling and error management. GridPACK is written in C++ with python wrappers available.
 

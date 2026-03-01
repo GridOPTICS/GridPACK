@@ -11,6 +11,51 @@ model](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workf
 The Unreleased section will be empty for tagged releases. Unreleased
 functionality appears in the develop branch.
 
+## [3.6]
+- Added
+  - Docker Support
+    - Multi-architecture Docker builds (AMD/ARM) with CI/CD pipeline
+    - Complete containerized GridPACK installation (OpenMPI, Boost, GA, PETSc)
+    - Documentation updated to include Docker usage
+  - State Estimation Enhancements
+    - Jacobian optimization and performance profiling for large-scale systems
+    - Bad data detection with chi-square test and configurable
+      diagnosticOutputLevel parameter (basic/standard/detailed)
+    - Sparse matrix support for improved computational efficiency
+    - Added IIJ/IJI measurement types and enhanced voltage constraint options
+    - HPC capability for state estimation
+    - Chi-square convergence criteria in the outer loop
+    - Comprehensive output reporting with convergence warnings
+    - XML-configurable Newton-Raphson damping factor (dampingFactor, default 1.0)
+    - Updated IEEE 14-bus and IEEE 118-bus test inputs
+  - Python interface for state estimation including setMeasurements() API
+    and Sphinx documentation for the Python state estimation interface.
+  - Power Flow Improvements
+    - Q-limit (QLIM) handling with PV-to-PQ bus switching and island detection
+    - RMPCT-based reactive power distribution for multi-generator buses
+    - Fixed shunt status check, Qg distribution when QLIM is reached, and
+      flat/warm start (VM/VA)
+    - Switched shunt support
+    - ZIP load model with voltage-dependent load representation
+    - Added Pinj, Qinj to power flow screen outputs
+  - Contingency Analysis Enhancements
+    - N-1 auto-generation feature for contingency analysis
+    - Automatic slack bus transfer and capacity check
+    - QLIM configuration support in CA input XML files (default: false)
+    - PV->PQ warning messages in contingency output files
+    - Generator ID display in contingency results
+  - Added build trigger when releasing a new version of GridPACK
+- Changed
+  - User manual updated with Python state estimation documentation
+  - Migrated QLIM parameter to bool type in power flow and CA for consistency
+  - Optimized CMake builds
+- Fixed
+  - Fixed 3-winding transformer parsing in PSS/E parsers
+  - Fixed warm start with qlim=false scenario
+  - Fixed incomplete printing of many parallel lines in power flow output
+  - Fixed trailing space in contingency output filenames
+  - Fixed Qmin/Qmax storage
+
 ## [3.5]
 - Added
   - A new application for electromagnetic transient simulation has been added to GridPACK. Its features are as follows:
