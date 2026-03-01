@@ -12,6 +12,8 @@ Contents:
    
    powerflow
 
+   state_estimation
+
    dynamic_simulation
 
    hadrec

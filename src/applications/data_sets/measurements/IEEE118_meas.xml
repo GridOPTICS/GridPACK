@@ -712,7 +712,7 @@
      <Type>PIJ</Type>
      <FromBus>       1</FromBus>
      <ToBus>       2</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1229</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -720,7 +720,7 @@
      <Type>PIJ</Type>
      <FromBus>       1</FromBus>
      <ToBus>       3</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3871</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -728,7 +728,7 @@
      <Type>PIJ</Type>
      <FromBus>       2</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3238</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -736,7 +736,7 @@
      <Type>PIJ</Type>
      <FromBus>       3</FromBus>
      <ToBus>       5</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.6824</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -744,7 +744,7 @@
      <Type>PIJ</Type>
      <FromBus>       3</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0971</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -752,7 +752,7 @@
      <Type>PIJ</Type>
      <FromBus>       4</FromBus>
      <ToBus>       5</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.0336</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -760,7 +760,7 @@
      <Type>PIJ</Type>
      <FromBus>       4</FromBus>
      <ToBus>      11</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6436</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -768,7 +768,7 @@
      <Type>PIJ</Type>
      <FromBus>       5</FromBus>
      <ToBus>       6</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.8826</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -776,7 +776,7 @@
      <Type>PIJ</Type>
      <FromBus>       8</FromBus>
      <ToBus>       5</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    3.3860</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -784,7 +784,7 @@
      <Type>PIJ</Type>
      <FromBus>       5</FromBus>
      <ToBus>      11</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.7731</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -792,7 +792,7 @@
      <Type>PIJ</Type>
      <FromBus>       6</FromBus>
      <ToBus>       7</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3531</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -800,7 +800,7 @@
      <Type>PIJ</Type>
      <FromBus>       7</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1625</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -808,7 +808,7 @@
      <Type>PIJ</Type>
      <FromBus>       8</FromBus>
      <ToBus>       9</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -4.4064</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -816,7 +816,7 @@
      <Type>PIJ</Type>
      <FromBus>       8</FromBus>
      <ToBus>      30</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.7404</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -824,7 +824,7 @@
      <Type>PIJ</Type>
      <FromBus>       9</FromBus>
      <ToBus>      10</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -4.4525</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -832,7 +832,7 @@
      <Type>PIJ</Type>
      <FromBus>      11</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3446</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -840,7 +840,7 @@
      <Type>PIJ</Type>
      <FromBus>      11</FromBus>
      <ToBus>      13</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3513</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -848,7 +848,7 @@
      <Type>PIJ</Type>
      <FromBus>      12</FromBus>
      <ToBus>      14</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1835</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -856,7 +856,7 @@
      <Type>PIJ</Type>
      <FromBus>      12</FromBus>
      <ToBus>      16</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0755</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -864,7 +864,7 @@
      <Type>PIJ</Type>
      <FromBus>      12</FromBus>
      <ToBus>     117</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2015</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -872,7 +872,7 @@
      <Type>PIJ</Type>
      <FromBus>      13</FromBus>
      <ToBus>      15</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0081</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -880,7 +880,7 @@
      <Type>PIJ</Type>
      <FromBus>      14</FromBus>
      <ToBus>      15</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0428</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -888,7 +888,7 @@
      <Type>PIJ</Type>
      <FromBus>      15</FromBus>
      <ToBus>      17</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.0335</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -896,7 +896,7 @@
      <Type>PIJ</Type>
      <FromBus>      15</FromBus>
      <ToBus>      19</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1152</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -904,7 +904,7 @@
      <Type>PIJ</Type>
      <FromBus>      15</FromBus>
      <ToBus>      33</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0688</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -912,7 +912,7 @@
      <Type>PIJ</Type>
      <FromBus>      16</FromBus>
      <ToBus>      17</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1748</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -920,7 +920,7 @@
      <Type>PIJ</Type>
      <FromBus>      17</FromBus>
      <ToBus>      18</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.7993</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -928,7 +928,7 @@
      <Type>PIJ</Type>
      <FromBus>      30</FromBus>
      <ToBus>      17</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    2.2996</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -936,7 +936,7 @@
      <Type>PIJ</Type>
      <FromBus>      17</FromBus>
      <ToBus>      31</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1457</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -944,7 +944,7 @@
      <Type>PIJ</Type>
      <FromBus>      17</FromBus>
      <ToBus>     113</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0190</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -952,7 +952,7 @@
      <Type>PIJ</Type>
      <FromBus>      18</FromBus>
      <ToBus>      19</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1894</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -960,7 +960,7 @@
      <Type>PIJ</Type>
      <FromBus>      19</FromBus>
      <ToBus>      20</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1058</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -968,7 +968,7 @@
      <Type>PIJ</Type>
      <FromBus>      19</FromBus>
      <ToBus>      34</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0405</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -976,7 +976,7 @@
      <Type>PIJ</Type>
      <FromBus>      20</FromBus>
      <ToBus>      21</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2862</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -984,7 +984,7 @@
      <Type>PIJ</Type>
      <FromBus>      21</FromBus>
      <ToBus>      22</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4279</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -992,7 +992,7 @@
      <Type>PIJ</Type>
      <FromBus>      22</FromBus>
      <ToBus>      23</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.5320</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1000,7 +1000,7 @@
      <Type>PIJ</Type>
      <FromBus>      23</FromBus>
      <ToBus>      24</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0841</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1008,7 +1008,7 @@
      <Type>PIJ</Type>
      <FromBus>      23</FromBus>
      <ToBus>      25</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.6292</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1016,7 +1016,7 @@
      <Type>PIJ</Type>
      <FromBus>      23</FromBus>
      <ToBus>      32</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.9327</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1024,7 +1024,7 @@
      <Type>PIJ</Type>
      <FromBus>      24</FromBus>
      <ToBus>      70</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0623</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1032,7 +1032,7 @@
      <Type>PIJ</Type>
      <FromBus>      24</FromBus>
      <ToBus>      72</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0160</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1040,7 +1040,7 @@
      <Type>PIJ</Type>
      <FromBus>      26</FromBus>
      <ToBus>      25</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.9063</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1048,7 +1048,7 @@
      <Type>PIJ</Type>
      <FromBus>      25</FromBus>
      <ToBus>      27</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.4350</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1056,7 +1056,7 @@
      <Type>PIJ</Type>
      <FromBus>      26</FromBus>
      <ToBus>      30</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    2.2337</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1064,7 +1064,7 @@
      <Type>PIJ</Type>
      <FromBus>      27</FromBus>
      <ToBus>      28</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3285</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1072,7 +1072,7 @@
      <Type>PIJ</Type>
      <FromBus>      27</FromBus>
      <ToBus>      32</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1242</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1080,7 +1080,7 @@
      <Type>PIJ</Type>
      <FromBus>      27</FromBus>
      <ToBus>     115</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2084</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1088,7 +1088,7 @@
      <Type>PIJ</Type>
      <FromBus>      28</FromBus>
      <ToBus>      29</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1563</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1096,7 +1096,7 @@
      <Type>PIJ</Type>
      <FromBus>      29</FromBus>
      <ToBus>      31</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0844</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1104,7 +1104,7 @@
      <Type>PIJ</Type>
      <FromBus>      30</FromBus>
      <ToBus>      38</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6313</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1112,7 +1112,7 @@
      <Type>PIJ</Type>
      <FromBus>      31</FromBus>
      <ToBus>      32</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3006</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1120,7 +1120,7 @@
      <Type>PIJ</Type>
      <FromBus>      32</FromBus>
      <ToBus>     113</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0424</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1128,7 +1128,7 @@
      <Type>PIJ</Type>
      <FromBus>      32</FromBus>
      <ToBus>     114</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0925</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1136,7 +1136,7 @@
      <Type>PIJ</Type>
      <FromBus>      33</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1615</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1144,7 +1144,7 @@
      <Type>PIJ</Type>
      <FromBus>      34</FromBus>
      <ToBus>      36</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3038</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1152,7 +1152,7 @@
      <Type>PIJ</Type>
      <FromBus>      34</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.9467</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1160,7 +1160,7 @@
      <Type>PIJ</Type>
      <FromBus>      34</FromBus>
      <ToBus>      43</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0114</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1168,7 +1168,7 @@
      <Type>PIJ</Type>
      <FromBus>      35</FromBus>
      <ToBus>      36</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0071</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1176,7 +1176,7 @@
      <Type>PIJ</Type>
      <FromBus>      35</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3371</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1184,7 +1184,7 @@
      <Type>PIJ</Type>
      <FromBus>      38</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    2.4369</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1192,7 +1192,7 @@
      <Type>PIJ</Type>
      <FromBus>      37</FromBus>
      <ToBus>      39</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.5470</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1200,7 +1200,7 @@
      <Type>PIJ</Type>
      <FromBus>      37</FromBus>
      <ToBus>      40</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4388</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1208,7 +1208,7 @@
      <Type>PIJ</Type>
      <FromBus>      38</FromBus>
      <ToBus>      65</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.8082</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1216,7 +1216,7 @@
      <Type>PIJ</Type>
      <FromBus>      39</FromBus>
      <ToBus>      40</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2672</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1224,7 +1224,7 @@
      <Type>PIJ</Type>
      <FromBus>      40</FromBus>
      <ToBus>      41</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1529</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1232,7 +1232,7 @@
      <Type>PIJ</Type>
      <FromBus>      40</FromBus>
      <ToBus>      42</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1199</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1240,7 +1240,7 @@
      <Type>PIJ</Type>
      <FromBus>      41</FromBus>
      <ToBus>      42</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2174</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1248,7 +1248,7 @@
      <Type>PIJ</Type>
      <FromBus>      42</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.3006</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1256,7 +1256,7 @@
      <Type>PIJ</Type>
      <FromBus>      43</FromBus>
      <ToBus>      44</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1687</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1264,7 +1264,7 @@
      <Type>PIJ</Type>
      <FromBus>      44</FromBus>
      <ToBus>      45</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3305</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1272,7 +1272,7 @@
      <Type>PIJ</Type>
      <FromBus>      45</FromBus>
      <ToBus>      46</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3639</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1280,7 +1280,7 @@
      <Type>PIJ</Type>
      <FromBus>      45</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4992</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1288,7 +1288,7 @@
      <Type>PIJ</Type>
      <FromBus>      46</FromBus>
      <ToBus>      47</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3103</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1296,7 +1296,7 @@
      <Type>PIJ</Type>
      <FromBus>      46</FromBus>
      <ToBus>      48</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1491</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1304,7 +1304,7 @@
      <Type>PIJ</Type>
      <FromBus>      47</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1031</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1312,7 +1312,7 @@
      <Type>PIJ</Type>
      <FromBus>      47</FromBus>
      <ToBus>      69</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.5508</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1320,7 +1320,7 @@
      <Type>PIJ</Type>
      <FromBus>      48</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3505</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1328,7 +1328,7 @@
      <Type>PIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      50</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.5170</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1336,7 +1336,7 @@
      <Type>PIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      51</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6434</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1344,7 +1344,7 @@
      <Type>PIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      54</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.7186</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1352,7 +1352,7 @@
      <Type>PIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      66</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -2.5896</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1360,7 +1360,7 @@
      <Type>PIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      69</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4565</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1368,7 +1368,7 @@
      <Type>PIJ</Type>
      <FromBus>      50</FromBus>
      <ToBus>      57</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3396</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1376,7 +1376,7 @@
      <Type>PIJ</Type>
      <FromBus>      51</FromBus>
      <ToBus>      52</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2800</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1384,7 +1384,7 @@
      <Type>PIJ</Type>
      <FromBus>      51</FromBus>
      <ToBus>      58</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1719</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1392,7 +1392,7 @@
      <Type>PIJ</Type>
      <FromBus>      52</FromBus>
      <ToBus>      53</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0982</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1400,7 +1400,7 @@
      <Type>PIJ</Type>
      <FromBus>      53</FromBus>
      <ToBus>      54</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1323</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1408,7 +1408,7 @@
      <Type>PIJ</Type>
      <FromBus>      54</FromBus>
      <ToBus>      55</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0702</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1416,7 +1416,7 @@
      <Type>PIJ</Type>
      <FromBus>      54</FromBus>
      <ToBus>      56</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0946</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1424,7 +1424,7 @@
      <Type>PIJ</Type>
      <FromBus>      54</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2526</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1432,7 +1432,7 @@
      <Type>PIJ</Type>
      <FromBus>      55</FromBus>
      <ToBus>      56</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2689</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1440,7 +1440,7 @@
      <Type>PIJ</Type>
      <FromBus>      55</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2910</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1448,7 +1448,7 @@
      <Type>PIJ</Type>
      <FromBus>      56</FromBus>
      <ToBus>      57</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2117</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1456,7 +1456,7 @@
      <Type>PIJ</Type>
      <FromBus>      56</FromBus>
      <ToBus>      58</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0509</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1464,7 +1464,7 @@
      <Type>PIJ</Type>
      <FromBus>      56</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.7522</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1472,7 +1472,7 @@
      <Type>PIJ</Type>
      <FromBus>      59</FromBus>
      <ToBus>      60</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4473</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1480,7 +1480,7 @@
      <Type>PIJ</Type>
      <FromBus>      59</FromBus>
      <ToBus>      61</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.5313</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1488,7 +1488,7 @@
      <Type>PIJ</Type>
      <FromBus>      63</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.5595</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1496,7 +1496,7 @@
      <Type>PIJ</Type>
      <FromBus>      60</FromBus>
      <ToBus>      61</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.1259</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1504,7 +1504,7 @@
      <Type>PIJ</Type>
      <FromBus>      60</FromBus>
      <ToBus>      62</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1081</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1512,7 +1512,7 @@
      <Type>PIJ</Type>
      <FromBus>      61</FromBus>
      <ToBus>      62</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2427</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1520,7 +1520,7 @@
      <Type>PIJ</Type>
      <FromBus>      64</FromBus>
      <ToBus>      61</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3131</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1528,7 +1528,7 @@
      <Type>PIJ</Type>
      <FromBus>      62</FromBus>
      <ToBus>      66</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3824</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1536,7 +1536,7 @@
      <Type>PIJ</Type>
      <FromBus>      62</FromBus>
      <ToBus>      67</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2538</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1544,7 +1544,7 @@
      <Type>PIJ</Type>
      <FromBus>      63</FromBus>
      <ToBus>      64</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.5595</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1552,7 +1552,7 @@
      <Type>PIJ</Type>
      <FromBus>      64</FromBus>
      <ToBus>      65</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.8777</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1560,7 +1560,7 @@
      <Type>PIJ</Type>
      <FromBus>      65</FromBus>
      <ToBus>      66</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0503</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1568,7 +1568,7 @@
      <Type>PIJ</Type>
      <FromBus>      65</FromBus>
      <ToBus>      68</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1316</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1576,7 +1576,7 @@
      <Type>PIJ</Type>
      <FromBus>      66</FromBus>
      <ToBus>      67</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.5427</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1584,7 +1584,7 @@
      <Type>PIJ</Type>
      <FromBus>      68</FromBus>
      <ToBus>      69</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.2646</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1592,7 +1592,7 @@
      <Type>PIJ</Type>
      <FromBus>      68</FromBus>
      <ToBus>      81</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4451</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1600,7 +1600,7 @@
      <Type>PIJ</Type>
      <FromBus>      68</FromBus>
      <ToBus>     116</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.8413</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1608,7 +1608,7 @@
      <Type>PIJ</Type>
      <FromBus>      69</FromBus>
      <ToBus>      70</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.0826</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1616,7 +1616,7 @@
      <Type>PIJ</Type>
      <FromBus>      69</FromBus>
      <ToBus>      75</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.1020</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1624,7 +1624,7 @@
      <Type>PIJ</Type>
      <FromBus>      69</FromBus>
      <ToBus>      77</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6215</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1632,7 +1632,7 @@
      <Type>PIJ</Type>
      <FromBus>      70</FromBus>
      <ToBus>      71</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1653</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1640,7 +1640,7 @@
      <Type>PIJ</Type>
      <FromBus>      70</FromBus>
      <ToBus>      74</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1618</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1648,7 +1648,7 @@
      <Type>PIJ</Type>
      <FromBus>      70</FromBus>
      <ToBus>      75</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0014</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1656,7 +1656,7 @@
      <Type>PIJ</Type>
      <FromBus>      71</FromBus>
      <ToBus>      72</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1046</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1664,7 +1664,7 @@
      <Type>PIJ</Type>
      <FromBus>      71</FromBus>
      <ToBus>      73</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0602</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1672,7 +1672,7 @@
      <Type>PIJ</Type>
      <FromBus>      74</FromBus>
      <ToBus>      75</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.5200</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1680,7 +1680,7 @@
      <Type>PIJ</Type>
      <FromBus>      75</FromBus>
      <ToBus>      77</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3463</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1688,7 +1688,7 @@
      <Type>PIJ</Type>
      <FromBus>      75</FromBus>
      <ToBus>     118</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4038</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1696,7 +1696,7 @@
      <Type>PIJ</Type>
      <FromBus>      76</FromBus>
      <ToBus>      77</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.6103</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1704,7 +1704,7 @@
      <Type>PIJ</Type>
      <FromBus>      76</FromBus>
      <ToBus>     118</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0697</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1712,7 +1712,7 @@
      <Type>PIJ</Type>
      <FromBus>      77</FromBus>
      <ToBus>      78</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4557</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1720,7 +1720,7 @@
      <Type>PIJ</Type>
      <FromBus>      77</FromBus>
      <ToBus>      80</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -1.4087</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1728,7 +1728,7 @@
      <Type>PIJ</Type>
      <FromBus>      77</FromBus>
      <ToBus>      82</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0329</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1736,7 +1736,7 @@
      <Type>PIJ</Type>
      <FromBus>      78</FromBus>
      <ToBus>      79</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2551</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1744,7 +1744,7 @@
      <Type>PIJ</Type>
      <FromBus>      79</FromBus>
      <ToBus>      80</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.6457</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1752,7 +1752,7 @@
      <Type>PIJ</Type>
      <FromBus>      81</FromBus>
      <ToBus>      80</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4457</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1760,7 +1760,7 @@
      <Type>PIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1892</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1768,7 +1768,7 @@
      <Type>PIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      97</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2638</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1776,7 +1776,7 @@
      <Type>PIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      98</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2888</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1784,7 +1784,7 @@
      <Type>PIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      99</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1950</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1792,7 +1792,7 @@
      <Type>PIJ</Type>
      <FromBus>      82</FromBus>
      <ToBus>      83</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4736</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1800,7 +1800,7 @@
      <Type>PIJ</Type>
      <FromBus>      82</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1004</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1808,7 +1808,7 @@
      <Type>PIJ</Type>
      <FromBus>      83</FromBus>
      <ToBus>      84</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2492</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1816,7 +1816,7 @@
      <Type>PIJ</Type>
      <FromBus>      83</FromBus>
      <ToBus>      85</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4277</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1824,7 +1824,7 @@
      <Type>PIJ</Type>
      <FromBus>      84</FromBus>
      <ToBus>      85</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3646</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1832,7 +1832,7 @@
      <Type>PIJ</Type>
      <FromBus>      85</FromBus>
      <ToBus>      86</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1716</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1840,7 +1840,7 @@
      <Type>PIJ</Type>
      <FromBus>      85</FromBus>
      <ToBus>      88</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.5038</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1848,7 +1848,7 @@
      <Type>PIJ</Type>
      <FromBus>      85</FromBus>
      <ToBus>      89</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.7134</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1856,7 +1856,7 @@
      <Type>PIJ</Type>
      <FromBus>      86</FromBus>
      <ToBus>      87</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0395</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1864,7 +1864,7 @@
      <Type>PIJ</Type>
      <FromBus>      88</FromBus>
      <ToBus>      89</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.9892</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1872,7 +1872,7 @@
      <Type>PIJ</Type>
      <FromBus>      89</FromBus>
      <ToBus>      90</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.6884</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1880,7 +1880,7 @@
      <Type>PIJ</Type>
      <FromBus>      89</FromBus>
      <ToBus>      92</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    2.6526</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1888,7 +1888,7 @@
      <Type>PIJ</Type>
      <FromBus>      90</FromBus>
      <ToBus>      91</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0124</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1896,7 +1896,7 @@
      <Type>PIJ</Type>
      <FromBus>      91</FromBus>
      <ToBus>      92</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0877</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1904,7 +1904,7 @@
      <Type>PIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>      93</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.5769</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1912,7 +1912,7 @@
      <Type>PIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>      94</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.5223</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1920,7 +1920,7 @@
      <Type>PIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3141</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1928,7 +1928,7 @@
      <Type>PIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>     102</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4459</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1936,7 +1936,7 @@
      <Type>PIJ</Type>
      <FromBus>      93</FromBus>
      <ToBus>      94</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4480</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1944,7 +1944,7 @@
      <Type>PIJ</Type>
      <FromBus>      94</FromBus>
      <ToBus>      95</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4095</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1952,7 +1952,7 @@
      <Type>PIJ</Type>
      <FromBus>      94</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1988</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1960,7 +1960,7 @@
      <Type>PIJ</Type>
      <FromBus>      94</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0429</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1968,7 +1968,7 @@
      <Type>PIJ</Type>
      <FromBus>      95</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0129</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1976,7 +1976,7 @@
      <Type>PIJ</Type>
      <FromBus>      96</FromBus>
      <ToBus>      97</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1106</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1984,7 +1984,7 @@
      <Type>PIJ</Type>
      <FromBus>      98</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0532</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -1992,7 +1992,7 @@
      <Type>PIJ</Type>
      <FromBus>      99</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2272</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2000,7 +2000,7 @@
      <Type>PIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     101</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1671</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2008,7 +2008,7 @@
      <Type>PIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     103</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.2139</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2016,7 +2016,7 @@
      <Type>PIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     104</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.5632</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2024,7 +2024,7 @@
      <Type>PIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     106</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6039</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2032,7 +2032,7 @@
      <Type>PIJ</Type>
      <FromBus>     101</FromBus>
      <ToBus>     102</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3893</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2040,7 +2040,7 @@
      <Type>PIJ</Type>
      <FromBus>     103</FromBus>
      <ToBus>     104</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3245</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2048,7 +2048,7 @@
      <Type>PIJ</Type>
      <FromBus>     103</FromBus>
      <ToBus>     105</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4326</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2056,7 +2056,7 @@
      <Type>PIJ</Type>
      <FromBus>     103</FromBus>
      <ToBus>     110</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6035</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2064,7 +2064,7 @@
      <Type>PIJ</Type>
      <FromBus>     104</FromBus>
      <ToBus>     105</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.4876</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2072,7 +2072,7 @@
      <Type>PIJ</Type>
      <FromBus>     105</FromBus>
      <ToBus>     106</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0879</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2080,7 +2080,7 @@
      <Type>PIJ</Type>
      <FromBus>     105</FromBus>
      <ToBus>     107</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2678</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2088,7 +2088,7 @@
      <Type>PIJ</Type>
      <FromBus>     105</FromBus>
      <ToBus>     108</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2415</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2096,7 +2096,7 @@
      <Type>PIJ</Type>
      <FromBus>     106</FromBus>
      <ToBus>     107</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2396</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2104,7 +2104,7 @@
      <Type>PIJ</Type>
      <FromBus>     108</FromBus>
      <ToBus>     109</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2197</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2112,7 +2112,7 @@
      <Type>PIJ</Type>
      <FromBus>     109</FromBus>
      <ToBus>     110</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1391</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2120,7 +2120,7 @@
      <Type>PIJ</Type>
      <FromBus>     110</FromBus>
      <ToBus>     111</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3570</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2128,7 +2128,7 @@
      <Type>PIJ</Type>
      <FromBus>     110</FromBus>
      <ToBus>     112</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6944</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2136,7 +2136,7 @@
      <Type>PIJ</Type>
      <FromBus>     114</FromBus>
      <ToBus>     115</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0124</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2144,7 +2144,7 @@
      <Type>QIJ</Type>
      <FromBus>       1</FromBus>
      <ToBus>       2</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1191</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2152,7 +2152,7 @@
      <Type>QIJ</Type>
      <FromBus>       1</FromBus>
      <ToBus>       3</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1509</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2160,7 +2160,7 @@
      <Type>QIJ</Type>
      <FromBus>       2</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1883</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2168,7 +2168,7 @@
      <Type>QIJ</Type>
      <FromBus>       3</FromBus>
      <ToBus>       5</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1313</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2176,7 +2176,7 @@
      <Type>QIJ</Type>
      <FromBus>       3</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1176</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2184,7 +2184,7 @@
      <Type>QIJ</Type>
      <FromBus>       4</FromBus>
      <ToBus>       5</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2209</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2192,7 +2192,7 @@
      <Type>QIJ</Type>
      <FromBus>       4</FromBus>
      <ToBus>      11</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0000</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2200,7 +2200,7 @@
      <Type>QIJ</Type>
      <FromBus>       5</FromBus>
      <ToBus>       6</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1191</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2208,7 +2208,7 @@
      <Type>QIJ</Type>
      <FromBus>       8</FromBus>
      <ToBus>       5</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.2618</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2216,7 +2216,7 @@
      <Type>QIJ</Type>
      <FromBus>       5</FromBus>
      <ToBus>      11</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0266</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2224,7 +2224,7 @@
      <Type>QIJ</Type>
      <FromBus>       6</FromBus>
      <ToBus>       7</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1296</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2232,7 +2232,7 @@
      <Type>QIJ</Type>
      <FromBus>       7</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1473</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2240,7 +2240,7 @@
      <Type>QIJ</Type>
      <FromBus>       8</FromBus>
      <ToBus>       9</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.8973</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2248,7 +2248,7 @@
      <Type>QIJ</Type>
      <FromBus>       8</FromBus>
      <ToBus>      30</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2908</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2256,7 +2256,7 @@
      <Type>QIJ</Type>
      <FromBus>       9</FromBus>
      <ToBus>      10</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2443</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2264,7 +2264,7 @@
      <Type>QIJ</Type>
      <FromBus>      11</FromBus>
      <ToBus>      12</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3607</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2272,7 +2272,7 @@
      <Type>QIJ</Type>
      <FromBus>      11</FromBus>
      <ToBus>      13</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1223</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2280,7 +2280,7 @@
      <Type>QIJ</Type>
      <FromBus>      12</FromBus>
      <ToBus>      14</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0367</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2288,7 +2288,7 @@
      <Type>QIJ</Type>
      <FromBus>      12</FromBus>
      <ToBus>      16</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0521</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2296,7 +2296,7 @@
      <Type>QIJ</Type>
      <FromBus>      12</FromBus>
      <ToBus>     117</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0520</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2304,7 +2304,7 @@
      <Type>QIJ</Type>
      <FromBus>      13</FromBus>
      <ToBus>      15</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0304</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2312,7 +2312,7 @@
      <Type>QIJ</Type>
      <FromBus>      14</FromBus>
      <ToBus>      15</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0418</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2320,7 +2320,7 @@
      <Type>QIJ</Type>
      <FromBus>      15</FromBus>
      <ToBus>      17</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2529</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2328,7 +2328,7 @@
      <Type>QIJ</Type>
      <FromBus>      15</FromBus>
      <ToBus>      19</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1342</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2336,7 +2336,7 @@
      <Type>QIJ</Type>
      <FromBus>      15</FromBus>
      <ToBus>      33</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0647</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2344,7 +2344,7 @@
      <Type>QIJ</Type>
      <FromBus>      16</FromBus>
      <ToBus>      17</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0279</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2352,7 +2352,7 @@
      <Type>QIJ</Type>
      <FromBus>      17</FromBus>
      <ToBus>      18</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3870</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2360,7 +2360,7 @@
      <Type>QIJ</Type>
      <FromBus>      30</FromBus>
      <ToBus>      17</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.9790</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2368,7 +2368,7 @@
      <Type>QIJ</Type>
      <FromBus>      17</FromBus>
      <ToBus>      31</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1003</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2376,7 +2376,7 @@
      <Type>QIJ</Type>
      <FromBus>      17</FromBus>
      <ToBus>     113</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0195</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2384,7 +2384,7 @@
      <Type>QIJ</Type>
      <FromBus>      18</FromBus>
      <ToBus>      19</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0187</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2392,7 +2392,7 @@
      <Type>QIJ</Type>
      <FromBus>      19</FromBus>
      <ToBus>      20</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0460</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2400,7 +2400,7 @@
      <Type>QIJ</Type>
      <FromBus>      19</FromBus>
      <ToBus>      34</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1264</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2408,7 +2408,7 @@
      <Type>QIJ</Type>
      <FromBus>      20</FromBus>
      <ToBus>      21</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0415</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2416,7 +2416,7 @@
      <Type>QIJ</Type>
      <FromBus>      21</FromBus>
      <ToBus>      22</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0266</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2424,7 +2424,7 @@
      <Type>QIJ</Type>
      <FromBus>      22</FromBus>
      <ToBus>      23</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0733</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2432,7 +2432,7 @@
      <Type>QIJ</Type>
      <FromBus>      23</FromBus>
      <ToBus>      24</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1179</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2440,7 +2440,7 @@
      <Type>QIJ</Type>
      <FromBus>      23</FromBus>
      <ToBus>      25</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2522</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2448,7 +2448,7 @@
      <Type>QIJ</Type>
      <FromBus>      23</FromBus>
      <ToBus>      32</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0217</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2456,7 +2456,7 @@
      <Type>QIJ</Type>
      <FromBus>      24</FromBus>
      <ToBus>      70</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0228</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2464,7 +2464,7 @@
      <Type>QIJ</Type>
      <FromBus>      24</FromBus>
      <ToBus>      72</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0327</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2472,7 +2472,7 @@
      <Type>QIJ</Type>
      <FromBus>      26</FromBus>
      <ToBus>      25</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2160</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2480,7 +2480,7 @@
      <Type>QIJ</Type>
      <FromBus>      25</FromBus>
      <ToBus>      27</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.3006</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2488,7 +2488,7 @@
      <Type>QIJ</Type>
      <FromBus>      26</FromBus>
      <ToBus>      30</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1095</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2496,7 +2496,7 @@
      <Type>QIJ</Type>
      <FromBus>      27</FromBus>
      <ToBus>      28</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0059</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2504,7 +2504,7 @@
      <Type>QIJ</Type>
      <FromBus>      27</FromBus>
      <ToBus>      32</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0337</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2512,7 +2512,7 @@
      <Type>QIJ</Type>
      <FromBus>      27</FromBus>
      <ToBus>     115</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0234</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2520,7 +2520,7 @@
      <Type>QIJ</Type>
      <FromBus>      28</FromBus>
      <ToBus>      29</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0656</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2528,7 +2528,7 @@
      <Type>QIJ</Type>
      <FromBus>      29</FromBus>
      <ToBus>      31</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0864</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2536,7 +2536,7 @@
      <Type>QIJ</Type>
      <FromBus>      30</FromBus>
      <ToBus>      38</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1554</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2544,7 +2544,7 @@
      <Type>QIJ</Type>
      <FromBus>      31</FromBus>
      <ToBus>      32</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0845</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2552,7 +2552,7 @@
      <Type>QIJ</Type>
      <FromBus>      32</FromBus>
      <ToBus>     113</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1600</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2560,7 +2560,7 @@
      <Type>QIJ</Type>
      <FromBus>      32</FromBus>
      <ToBus>     114</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0448</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2568,7 +2568,7 @@
      <Type>QIJ</Type>
      <FromBus>      33</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1257</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2576,7 +2576,7 @@
      <Type>QIJ</Type>
      <FromBus>      34</FromBus>
      <ToBus>      36</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1124</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2584,7 +2584,7 @@
      <Type>QIJ</Type>
      <FromBus>      34</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3292</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2592,7 +2592,7 @@
      <Type>QIJ</Type>
      <FromBus>      34</FromBus>
      <ToBus>      43</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0241</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2600,7 +2600,7 @@
      <Type>QIJ</Type>
      <FromBus>      35</FromBus>
      <ToBus>      36</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0524</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2608,7 +2608,7 @@
      <Type>QIJ</Type>
      <FromBus>      35</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1424</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2616,7 +2616,7 @@
      <Type>QIJ</Type>
      <FromBus>      38</FromBus>
      <ToBus>      37</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.0919</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2624,7 +2624,7 @@
      <Type>QIJ</Type>
      <FromBus>      37</FromBus>
      <ToBus>      39</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0491</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2632,7 +2632,7 @@
      <Type>QIJ</Type>
      <FromBus>      37</FromBus>
      <ToBus>      40</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0179</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2640,7 +2640,7 @@
      <Type>QIJ</Type>
      <FromBus>      38</FromBus>
      <ToBus>      65</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.5657</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2648,7 +2648,7 @@
      <Type>QIJ</Type>
      <FromBus>      39</FromBus>
      <ToBus>      40</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0674</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2656,7 +2656,7 @@
      <Type>QIJ</Type>
      <FromBus>      40</FromBus>
      <ToBus>      41</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0124</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2664,7 +2664,7 @@
      <Type>QIJ</Type>
      <FromBus>      40</FromBus>
      <ToBus>      42</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0640</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2672,7 +2672,7 @@
      <Type>QIJ</Type>
      <FromBus>      41</FromBus>
      <ToBus>      42</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0774</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2680,7 +2680,7 @@
      <Type>QIJ</Type>
      <FromBus>      42</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1068</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2688,7 +2688,7 @@
      <Type>QIJ</Type>
      <FromBus>      43</FromBus>
      <ToBus>      44</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0053</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2696,7 +2696,7 @@
      <Type>QIJ</Type>
      <FromBus>      44</FromBus>
      <ToBus>      45</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0630</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2704,7 +2704,7 @@
      <Type>QIJ</Type>
      <FromBus>      45</FromBus>
      <ToBus>      46</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0315</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2712,7 +2712,7 @@
      <Type>QIJ</Type>
      <FromBus>      45</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0169</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2720,7 +2720,7 @@
      <Type>QIJ</Type>
      <FromBus>      46</FromBus>
      <ToBus>      47</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0129</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2728,7 +2728,7 @@
      <Type>QIJ</Type>
      <FromBus>      46</FromBus>
      <ToBus>      48</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0578</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2736,7 +2736,7 @@
      <Type>QIJ</Type>
      <FromBus>      47</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1051</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2744,7 +2744,7 @@
      <Type>QIJ</Type>
      <FromBus>      47</FromBus>
      <ToBus>      69</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1123</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2752,7 +2752,7 @@
      <Type>QIJ</Type>
      <FromBus>      48</FromBus>
      <ToBus>      49</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0325</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2760,7 +2760,7 @@
      <Type>QIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      50</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1343</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2768,7 +2768,7 @@
      <Type>QIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      51</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2053</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2776,7 +2776,7 @@
      <Type>QIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      54</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2499</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2784,7 +2784,7 @@
      <Type>QIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      66</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0694</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2792,7 +2792,7 @@
      <Type>QIJ</Type>
      <FromBus>      49</FromBus>
      <ToBus>      69</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1022</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2800,7 +2800,7 @@
      <Type>QIJ</Type>
      <FromBus>      50</FromBus>
      <ToBus>      57</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0929</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2808,7 +2808,7 @@
      <Type>QIJ</Type>
      <FromBus>      51</FromBus>
      <ToBus>      52</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0656</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2816,7 +2816,7 @@
      <Type>QIJ</Type>
      <FromBus>      51</FromBus>
      <ToBus>      58</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0332</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2824,7 +2824,7 @@
      <Type>QIJ</Type>
      <FromBus>      52</FromBus>
      <ToBus>      53</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0233</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2832,7 +2832,7 @@
      <Type>QIJ</Type>
      <FromBus>      53</FromBus>
      <ToBus>      54</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0520</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2840,7 +2840,7 @@
      <Type>QIJ</Type>
      <FromBus>      54</FromBus>
      <ToBus>      55</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0083</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2848,7 +2848,7 @@
      <Type>QIJ</Type>
      <FromBus>      54</FromBus>
      <ToBus>      56</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0676</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2856,7 +2856,7 @@
      <Type>QIJ</Type>
      <FromBus>      54</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0899</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2864,7 +2864,7 @@
      <Type>QIJ</Type>
      <FromBus>      55</FromBus>
      <ToBus>      56</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0972</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2872,7 +2872,7 @@
      <Type>QIJ</Type>
      <FromBus>      55</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0966</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2880,7 +2880,7 @@
      <Type>QIJ</Type>
      <FromBus>      56</FromBus>
      <ToBus>      57</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0952</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2888,7 +2888,7 @@
      <Type>QIJ</Type>
      <FromBus>      56</FromBus>
      <ToBus>      58</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0392</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2896,7 +2896,7 @@
      <Type>QIJ</Type>
      <FromBus>      56</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2019</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2904,7 +2904,7 @@
      <Type>QIJ</Type>
      <FromBus>      59</FromBus>
      <ToBus>      60</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0403</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2912,7 +2912,7 @@
      <Type>QIJ</Type>
      <FromBus>      59</FromBus>
      <ToBus>      61</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0547</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2920,7 +2920,7 @@
      <Type>QIJ</Type>
      <FromBus>      63</FromBus>
      <ToBus>      59</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.6726</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2928,7 +2928,7 @@
      <Type>QIJ</Type>
      <FromBus>      60</FromBus>
      <ToBus>      61</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0817</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2936,7 +2936,7 @@
      <Type>QIJ</Type>
      <FromBus>      60</FromBus>
      <ToBus>      62</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0651</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2944,7 +2944,7 @@
      <Type>QIJ</Type>
      <FromBus>      61</FromBus>
      <ToBus>      62</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1285</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2952,7 +2952,7 @@
      <Type>QIJ</Type>
      <FromBus>      64</FromBus>
      <ToBus>      61</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1357</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2960,7 +2960,7 @@
      <Type>QIJ</Type>
      <FromBus>      62</FromBus>
      <ToBus>      66</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1707</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2968,7 +2968,7 @@
      <Type>QIJ</Type>
      <FromBus>      62</FromBus>
      <ToBus>      67</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1423</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2976,7 +2976,7 @@
      <Type>QIJ</Type>
      <FromBus>      63</FromBus>
      <ToBus>      64</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.6726</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2984,7 +2984,7 @@
      <Type>QIJ</Type>
      <FromBus>      64</FromBus>
      <ToBus>      65</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.6612</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -2992,7 +2992,7 @@
      <Type>QIJ</Type>
      <FromBus>      65</FromBus>
      <ToBus>      66</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.7224</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3000,7 +3000,7 @@
      <Type>QIJ</Type>
      <FromBus>      65</FromBus>
      <ToBus>      68</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2235</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3008,7 +3008,7 @@
      <Type>QIJ</Type>
      <FromBus>      66</FromBus>
      <ToBus>      67</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1926</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3016,7 +3016,7 @@
      <Type>QIJ</Type>
      <FromBus>      68</FromBus>
      <ToBus>      69</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    1.1285</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3024,7 +3024,7 @@
      <Type>QIJ</Type>
      <FromBus>      68</FromBus>
      <ToBus>      81</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0459</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3032,7 +3032,7 @@
      <Type>QIJ</Type>
      <FromBus>      68</FromBus>
      <ToBus>     116</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.6633</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3040,7 +3040,7 @@
      <Type>QIJ</Type>
      <FromBus>      69</FromBus>
      <ToBus>      70</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1839</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3048,7 +3048,7 @@
      <Type>QIJ</Type>
      <FromBus>      69</FromBus>
      <ToBus>      75</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2179</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3056,7 +3056,7 @@
      <Type>QIJ</Type>
      <FromBus>      69</FromBus>
      <ToBus>      77</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0905</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3064,7 +3064,7 @@
      <Type>QIJ</Type>
      <FromBus>      70</FromBus>
      <ToBus>      71</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1625</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3072,7 +3072,7 @@
      <Type>QIJ</Type>
      <FromBus>      70</FromBus>
      <ToBus>      74</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1082</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3080,7 +3080,7 @@
      <Type>QIJ</Type>
      <FromBus>      70</FromBus>
      <ToBus>      75</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0905</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3088,7 +3088,7 @@
      <Type>QIJ</Type>
      <FromBus>      71</FromBus>
      <ToBus>      72</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0170</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3096,7 +3096,7 @@
      <Type>QIJ</Type>
      <FromBus>      71</FromBus>
      <ToBus>      73</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1389</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3104,7 +3104,7 @@
      <Type>QIJ</Type>
      <FromBus>      74</FromBus>
      <ToBus>      75</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0258</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3112,7 +3112,7 @@
      <Type>QIJ</Type>
      <FromBus>      75</FromBus>
      <ToBus>      77</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0921</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3120,7 +3120,7 @@
      <Type>QIJ</Type>
      <FromBus>      75</FromBus>
      <ToBus>     118</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2714</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3128,7 +3128,7 @@
      <Type>QIJ</Type>
      <FromBus>      76</FromBus>
      <ToBus>      77</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2293</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3136,7 +3136,7 @@
      <Type>QIJ</Type>
      <FromBus>      76</FromBus>
      <ToBus>     118</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1307</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3144,7 +3144,7 @@
      <Type>QIJ</Type>
      <FromBus>      77</FromBus>
      <ToBus>      78</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0457</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3152,7 +3152,7 @@
      <Type>QIJ</Type>
      <FromBus>      77</FromBus>
      <ToBus>      80</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.6492</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3160,7 +3160,7 @@
      <Type>QIJ</Type>
      <FromBus>      77</FromBus>
      <ToBus>      82</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1480</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3168,7 +3168,7 @@
      <Type>QIJ</Type>
      <FromBus>      78</FromBus>
      <ToBus>      79</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2042</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3176,7 +3176,7 @@
      <Type>QIJ</Type>
      <FromBus>      79</FromBus>
      <ToBus>      80</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.3171</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3184,7 +3184,7 @@
      <Type>QIJ</Type>
      <FromBus>      81</FromBus>
      <ToBus>      80</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.7556</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3192,7 +3192,7 @@
      <Type>QIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2078</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3200,7 +3200,7 @@
      <Type>QIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      97</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2547</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3208,7 +3208,7 @@
      <Type>QIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      98</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0833</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3216,7 +3216,7 @@
      <Type>QIJ</Type>
      <FromBus>      80</FromBus>
      <ToBus>      99</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0818</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3224,7 +3224,7 @@
      <Type>QIJ</Type>
      <FromBus>      82</FromBus>
      <ToBus>      83</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2235</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3232,7 +3232,7 @@
      <Type>QIJ</Type>
      <FromBus>      82</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0720</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3240,7 +3240,7 @@
      <Type>QIJ</Type>
      <FromBus>      83</FromBus>
      <ToBus>      84</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1387</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3248,7 +3248,7 @@
      <Type>QIJ</Type>
      <FromBus>      83</FromBus>
      <ToBus>      85</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1083</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3256,7 +3256,7 @@
      <Type>QIJ</Type>
      <FromBus>      84</FromBus>
      <ToBus>      85</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0821</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3264,7 +3264,7 @@
      <Type>QIJ</Type>
      <FromBus>      85</FromBus>
      <ToBus>      86</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0661</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3272,7 +3272,7 @@
      <Type>QIJ</Type>
      <FromBus>      85</FromBus>
      <ToBus>      88</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0909</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3280,7 +3280,7 @@
      <Type>QIJ</Type>
      <FromBus>      85</FromBus>
      <ToBus>      89</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0217</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3288,7 +3288,7 @@
      <Type>QIJ</Type>
      <FromBus>      86</FromBus>
      <ToBus>      87</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1432</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3296,7 +3296,7 @@
      <Type>QIJ</Type>
      <FromBus>      88</FromBus>
      <ToBus>      89</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0098</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3304,7 +3304,7 @@
      <Type>QIJ</Type>
      <FromBus>      89</FromBus>
      <ToBus>      90</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0997</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3312,7 +3312,7 @@
      <Type>QIJ</Type>
      <FromBus>      89</FromBus>
      <ToBus>      92</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1520</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3320,7 +3320,7 @@
      <Type>QIJ</Type>
      <FromBus>      90</FromBus>
      <ToBus>      91</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0448</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3328,7 +3328,7 @@
      <Type>QIJ</Type>
      <FromBus>      91</FromBus>
      <ToBus>      92</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0915</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3336,7 +3336,7 @@
      <Type>QIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>      93</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1031</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3344,7 +3344,7 @@
      <Type>QIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>      94</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1387</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3352,7 +3352,7 @@
      <Type>QIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1696</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3360,7 +3360,7 @@
      <Type>QIJ</Type>
      <FromBus>      92</FromBus>
      <ToBus>     102</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0733</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3368,7 +3368,7 @@
      <Type>QIJ</Type>
      <FromBus>      93</FromBus>
      <ToBus>      94</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1810</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3376,7 +3376,7 @@
      <Type>QIJ</Type>
      <FromBus>      94</FromBus>
      <ToBus>      95</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0954</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3384,7 +3384,7 @@
      <Type>QIJ</Type>
      <FromBus>      94</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0923</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3392,7 +3392,7 @@
      <Type>QIJ</Type>
      <FromBus>      94</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.4878</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3400,7 +3400,7 @@
      <Type>QIJ</Type>
      <FromBus>      95</FromBus>
      <ToBus>      96</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2116</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3408,7 +3408,7 @@
      <Type>QIJ</Type>
      <FromBus>      96</FromBus>
      <ToBus>      97</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1990</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3416,7 +3416,7 @@
      <Type>QIJ</Type>
      <FromBus>      98</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0245</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3424,7 +3424,7 @@
      <Type>QIJ</Type>
      <FromBus>      99</FromBus>
      <ToBus>     100</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0458</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3432,7 +3432,7 @@
      <Type>QIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     101</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.2168</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3440,7 +3440,7 @@
      <Type>QIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     103</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2206</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3448,7 +3448,7 @@
      <Type>QIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     104</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0896</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3456,7 +3456,7 @@
      <Type>QIJ</Type>
      <FromBus>     100</FromBus>
      <ToBus>     106</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0782</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3464,7 +3464,7 @@
      <Type>QIJ</Type>
      <FromBus>     101</FromBus>
      <ToBus>     102</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0899</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3472,7 +3472,7 @@
      <Type>QIJ</Type>
      <FromBus>     103</FromBus>
      <ToBus>     104</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.1171</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3480,7 +3480,7 @@
      <Type>QIJ</Type>
      <FromBus>     103</FromBus>
      <ToBus>     105</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0935</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3488,7 +3488,7 @@
      <Type>QIJ</Type>
      <FromBus>     103</FromBus>
      <ToBus>     110</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0795</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3496,7 +3496,7 @@
      <Type>QIJ</Type>
      <FromBus>     104</FromBus>
      <ToBus>     105</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0342</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3504,7 +3504,7 @@
      <Type>QIJ</Type>
      <FromBus>     105</FromBus>
      <ToBus>     106</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0743</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3512,7 +3512,7 @@
      <Type>QIJ</Type>
      <FromBus>     105</FromBus>
      <ToBus>     107</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0065</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3520,7 +3520,7 @@
      <Type>QIJ</Type>
      <FromBus>     105</FromBus>
      <ToBus>     108</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0850</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3528,7 +3528,7 @@
      <Type>QIJ</Type>
      <FromBus>     106</FromBus>
      <ToBus>     107</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0174</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3536,7 +3536,7 @@
      <Type>QIJ</Type>
      <FromBus>     108</FromBus>
      <ToBus>     109</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.0825</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3544,7 +3544,7 @@
      <Type>QIJ</Type>
      <FromBus>     109</FromBus>
      <ToBus>     110</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.1070</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3552,7 +3552,7 @@
      <Type>QIJ</Type>
      <FromBus>     110</FromBus>
      <ToBus>     111</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0195</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3560,7 +3560,7 @@
      <Type>QIJ</Type>
      <FromBus>     110</FromBus>
      <ToBus>     112</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>   -0.2946</Value>
      <Deviation>0.010</Deviation>
    </Measurement>
@@ -3568,7 +3568,7 @@
      <Type>QIJ</Type>
      <FromBus>     114</FromBus>
      <ToBus>     115</ToBus>
-     <CKT>1 </CKT>
+     <CKT>1A</CKT>
      <Value>    0.0292</Value>
      <Deviation>0.010</Deviation>
    </Measurement>

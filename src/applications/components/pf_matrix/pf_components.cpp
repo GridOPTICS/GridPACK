@@ -710,6 +710,9 @@ void gridpack::powerflow::PFBus::load(
       if (rmpct < 0.0) rmpct = 0.0;  // Treat negative as zero
       if (lgen) {
         p_gstatus.push_back(gstatus);
+        // Store original Q limits from input file BEFORE zeroing for offline generators
+        p_qmax_orig.push_back(qmax);
+        p_qmin_orig.push_back(qmin);
         if (gstatus == 0) {
           qmax = 0.0;
           qmin = 0.0;
@@ -722,8 +725,6 @@ void gridpack::powerflow::PFBus::load(
         p_saveQg.push_back(qg);
         p_qmax.push_back(qmax);
         p_qmin.push_back(qmin);
-        p_qmax_orig.push_back(qmax);
-        p_qmin_orig.push_back(qmin);
         p_pt.push_back(pt);
         p_pb.push_back(pb);
         p_rmpct.push_back(gstatus ? rmpct : 0.0);  // Zero RMPCT for offline generators
@@ -1267,16 +1268,39 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
   if (signal == NULL) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    // Also add bus i's own Pi, Qi
+    double P, Q, p, q;
+    P = 0.0;
+    Q = 0.0;
+    int i;
+    for (i=0; i<size; i++) {
+      gridpack::powerflow::PFBranch *branch
+        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+      branch->getPQ(this, &p, &q);
+      P += p;
+      Q += q;
+    }
+    P += p_v*p_v*p_ybusr;
+    Q += p_v*p_v*(-p_ybusi);
+    p_Pinj = P;
+    p_Qinj = Q;
+    if (!isIsolated()) {
+      sprintf(string, "     %6d      %12.6f         %12.6f         %12.6f         %12.6f\n",
+            getOriginalIndex(),angle,p_v,p_Pinj,p_Qinj);
+    }
+/*
+  if (signal == NULL) {
+    double pi = 4.0*atan(1.0);
+    double angle = p_a*180.0/pi;
     if (!isIsolated()) {
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v);
     } else {
       return false;
-      /*
-      sprintf(string, "     %6d      %12.6f         %12.6f\n",
-      getOriginalIndex(),0.0,0.0);
-      */
-    }
+    } */
   } else if (!strcmp(signal,"vr_str")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;

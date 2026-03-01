@@ -78,6 +78,7 @@ setup(
         'src/dsf2.py',
         'src/emt.py',
         'src/pf.py',
+        'src/stes.py',
     ],
     test_suite='nose.collector',
     tests_require=['nose'],

@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2025-05-06 13:10:00 d3g096
+// Last Change: 2025-08-07 13:32:10 d3g096
 // -------------------------------------------------------------
 
 #include "common.hpp"
@@ -119,6 +119,7 @@ extern void init_gridpack_ds(py::module& gpm);
 extern void init_gridpack_hadrec(py::module& gpm);
 extern void init_gridpack_emt(py::module& gpm);
 extern void init_gridpack_pf(py::module& gpm);
+extern void init_gridpack_se(py::module& gpm);
 
 PYBIND11_MODULE(gridpack, gpm) {
   gpm.doc() = "GridPACK Module";
@@ -345,5 +346,11 @@ PYBIND11_MODULE(gridpack, gpm) {
   // powerflow application module
   // -------------------------------------------------------------
   init_gridpack_pf(gpm);
+
+  // -------------------------------------------------------------
+  // state estimation application module
+  // -------------------------------------------------------------
+  init_gridpack_se(gpm);
+
 
 }

@@ -7,10 +7,20 @@
 /**
  * @file   se_app_module.hpp
  * @author Yousu Chen, Bruce Palmer
- * @date   1/23/2015
+ * @date   2025-09-23 11:31:09 d3g096
  * @Last modified 1/23/2015
  *
  * @brief
+ * @update Yousu Chen
+ *         Adding functions of bad data dection, chi-square testing 
+ * @date   2025-03-05
+ *         Adding more functions to handle measurements more efficiently
+ * @date   2025-04-02
+ *         Adding more functions to handle bad data detection and more comprehensive outputs
+ * @date   2025-04-20
+ *         Implemented parallel version
+ *         Added chi-sqrare convergent criteria
+ * @date   2025-11-25
  *
  *
  */
@@ -20,6 +30,7 @@
 #define _se_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
 #include "se_factory_module.hpp"
 
 namespace gridpack {
@@ -46,8 +57,15 @@ class SEAppModule
      * @param cursor pointer to contingencies in input deck
      * @return vector of measurements
      */
-    std::vector<gridpack::state_estimation::Measurement> getMeasurements(
-        gridpack::utility::Configuration::ChildCursors measurements);
+    std::vector<gridpack::state_estimation::Measurement>
+    getMeasurements(gridpack::utility::Configuration::ChildCursors measurements);
+
+  /**
+   * Set the list of measurements.
+   * @param measurements a vector of @c Measurment 
+   */
+  void
+  setMeasurements(std::vector<Measurement>& measurments);
 
     /**
      * Read in and partition the network. The input file is read
@@ -97,6 +115,73 @@ class SEAppModule
      */
     void saveData();
 
+    bool hasConverged() const { return p_converged; }
+
+    /**
+     * Perform pre-check for suspicious measurements
+     */
+    void preCheckMeasurements(void);
+
+    /**
+     * Perform a targeted check for bad measurements on Bus 8
+     */
+    void debugMapper();
+
+    /**
+     * Add virtual measurements to enforce voltage magnitude constraints
+     * @param vmin minimum allowed voltage magnitude
+     * @param vmax maximum allowed voltage magnitude
+     * @param deviation standard deviation for virtual measurements
+     */
+    void addVoltageLimitMeasurements(double vmin = 0.9, double vmax = 1.1, 
+                                    double deviation = 0.001);
+
+    /**
+     * Identify PV buses in the network and their connections
+     * Used to properly handle voltage constraints at generator buses
+     */
+    void identifyPVBusConstraints();
+
+    /**
+     * Check for potential measurement inconsistencies
+     * Identifies cases where measurements may conflict with physical constraints
+     */
+    void checkMeasurementConsistency();
+
+    /**
+     * Apply proper treatment for PV bus voltage measurements
+     * Ensures PV bus voltages are treated as constraints rather than regular measurements
+     */
+    void handlePVBusVoltages();
+    
+    /**
+     * Apply special handling for voltage angle (VA) measurements
+     * Ensures angle measurements at slack buses are treated as constraints
+     */
+    void handleVAMeasurements();
+
+    // Adjust weights of bad measurements by increasing their sigmas
+    void adjustWeights(const std::vector<int>& badIndices);
+
+    void debugPrintMeasurements();
+
+    /**
+     * Report Jacobian optimization performance statistics
+     */
+    void reportJacobianPerformance();
+
+    // Lightweight structure for bad measurement info (for output file)
+    // Must be public for boost serialization
+    struct BadMeasInfo {
+        int index;
+        int busOrFromBus;
+        int toBus;  // -1 for bus measurements
+        char type[8];  // e.g. "PI", "QI", "VM", etc.
+        double value;
+        double deviation;
+        double normRes;
+    };
+
     private:
 
     // pointer to network
@@ -121,9 +206,68 @@ class SEAppModule
 
     // maximum number of iterations
     int p_max_iteration;
+    
+    // maximum number of bad data iterations
+    int p_max_bad_data_iterations;
 
     // convergence tolerance
     double p_tolerance;
+
+    // Newton-Raphson damping factor (1.0 = no damping)
+    double p_damping_factor;
+
+    // Structure to return both bad indices and their normalized residuals
+    struct BadDataResult {
+        std::vector<int> badIndices;
+        std::map<int, double> normalizedResiduals;
+        double chiSquareValue;
+        double chiSquareThreshold;
+        int degreesOfFreedom;
+    };
+    
+    // void detectBadData(void);
+    BadDataResult detectBadData(void);
+
+    double p_bad_data_threshold;
+    double p_lastChiSquareValue; // Store last chi-square value for reporting
+    
+    // Diagnostic output level control
+    std::string p_diagnosticLevel; // "basic", "standard", "detailed"
+    
+    // Sparse matrix optimization control
+    bool p_use_sparse_matrices; // Enable sparse matrix storage
+
+    double getChiSquareThreshold(int dof, double confidence, int numBuses);
+    bool p_converged;
+
+    // Helper function to access and modify the sigma of a measurement by index
+    double& getMeasurementSigma(int idx);
+
+    // Structure to store information about each bad data iteration
+    struct BadDataIterationInfo {
+        std::vector<int> badIndices;                   // Newly identified bad measurements in this iteration
+        std::vector<int> allBadIndices;                // All bad measurements identified so far
+        std::map<int, double> normalizedResiduals;     // Normalized residual values for all measurements
+        std::vector<BadMeasInfo> badMeasDetails;       // Lightweight measurement details for output
+        double chiSquareValue;                         // Chi-square value for this iteration
+        int iterationNumber;                           // Iteration number
+        int degreesOfFreedom;                          // Degrees of freedom for this iteration
+    };
+    
+    // Structure to store PV/Slack bus constraint information
+    struct PVBusConstraint {
+        int busIndex;          // Original bus index
+        double voltageValue;   // Fixed voltage value
+        bool isPVConnection;   // Whether this bus has connections to non-PV buses
+        bool isSlackBus;       // Whether this is a slack bus (vs. PV bus)
+    };
+    
+    // Member variables to store measurement sigmas and bad measurement indices
+    std::vector<double> p_measurementSigmas;
+    std::vector<int> p_badMeasurementIndices;  // Current bad measurement indices
+    std::vector<int> p_allBadMeasurementIndices; // All bad measurement indices across iterations
+    std::vector<BadDataIterationInfo> p_badDataIterationInfo; // Store information about bad data iterations
+    std::vector<PVBusConstraint> p_pvBusConstraints; // Store information about PV bus constraints
 };
 
 } // state estimation

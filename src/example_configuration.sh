@@ -116,7 +116,6 @@ elif [ $host == "WE39945" ]; then
     # Need to make sure the compiler set and MPI are selected, i.e.
     #   sudo port select --set mpi mpich-clang16-fortran
     #   sudo port select clang mp-clang-6.0
-    # Cannot use PETSc < 3.20.0
 
     CC=clang
     export CC
@@ -129,7 +128,7 @@ elif [ $host == "WE39945" ]; then
         --graphviz=GridPACK.dot \
         -D GA_DIR:STRING="$prefix" \
         -D Boost_ROOT:STRING="/opt/local/libexec/boost/1.81" \
-        -D PETSC_DIR:PATH="/Users/d3g096/Projects/GridPACK/src/petsc-3.20.6" \
+        -D PETSC_DIR:PATH="/Users/d3g096/Projects/GridPACK/src/petsc-3.23.6" \
         -D PETSC_ARCH:STRING="mpich-clang-real-shared" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \

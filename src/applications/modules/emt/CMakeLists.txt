@@ -117,6 +117,7 @@ install(FILES
 )
 
 install(FILES 
+  base_classes/base_mechanical_model.hpp
   base_classes/base_gen_model.hpp
   base_classes/base_exc_model.hpp
   base_classes/base_gov_model.hpp

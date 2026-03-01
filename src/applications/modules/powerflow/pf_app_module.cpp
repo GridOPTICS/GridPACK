@@ -729,7 +729,7 @@ void gridpack::powerflow::PFAppModule::write()
   p_busIO->header("\n   Bus Number  GenID        Pgen              Qgen\n");
   p_busIO->write("power");
   p_busIO->header("\n   Bus Voltages and Phase Angles\n");
-  p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+  p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude            Pinj                 Qinj\n");
   p_busIO->write();
   //p_busIO->write("record");
   timer->stop(t_write);

@@ -10,8 +10,15 @@
  * @date   2016-07-14 13:37:55 d3g096
  * 
  * @brief  
- * 
- * 
+ * @update Yousu Chen
+ *         Adding functions of bad data dection, chi-square testing 
+ * @date   2025-03-05
+ *         Adding more functions to handle measurements more efficiently
+ * @date   2025-04-02
+ *         Adding two more functions to get bi-directional line current
+ * @date   2025-11-19
+ *         Implemented parallel version
+ * @date   2025-11-25
  */
 // -------------------------------------------------------------
 
@@ -28,7 +35,11 @@
 namespace gridpack {
 namespace state_estimation{
 
-enum SEMode{YBus,Jacobian_H, R_inv, Ez, Voltage};
+// Forward declarations
+class SEBus;
+class SEBranch;
+
+enum SEMode{YBus,Jacobian_H, R_inv, Ez, Voltage,Residual};
 
 struct Measurement
 {
@@ -197,6 +208,12 @@ class SEBus
      * @return true if bus is PV bus
      */
     bool isPV(void);
+    
+    /**
+     * Return whether or not the bus is a slack bus (V and angle held fixed)
+     * @return true if bus is slack bus
+     */
+    bool isSlack(void);
 
     /**
      * Return whether or not a bus is isolated
@@ -307,6 +324,80 @@ class SEBus
      */
     void getShuntGsBs(double *gs, double *bs);
 
+    /**
+     * Check if residual index matches this bus and report bad data
+     * @param idx: index to check
+     * @param report: if true, print information about the bad data
+     * @return: true if index found on this bus
+     */
+    bool checkResidualIndex(int idx, bool report);
+    bool getResidualDetails(int idx, char* buffer);
+
+    /**
+     * Pre-check measurements for suspicious values
+     * @param string buffer for output (not used in this implementation)
+     * @param bufsize size of buffer
+     * @return true if suspicious measurements found
+     */
+    bool serialWritePreCheck(char *string, const int bufsize);
+
+    /**
+     * Calculate real and reactive power injections at this bus
+     * Used for residual calculations
+     */
+    void calculatePowerInjections(void);
+
+    /**
+     * Set voltage magnitude limits
+     * @param v_min minimum voltage limit
+     * @param v_max maximum voltage limit
+     * @param enforce whether to enforce limits
+     */
+    void setVoltageLimits(double v_min, double v_max, bool enforce);
+    
+    /**
+     * Adjust the weight of a measurement by modifying its deviation
+     * @param idx measurement index to adjust
+     * @param factor factor to multiply deviation by
+     * @param oldDeviation returns the old deviation value
+     * @param newDeviation returns the new deviation value
+     * @return true if measurement was found and adjusted, false otherwise
+     */
+    bool adjustMeasurementWeight(int idx, double factor, double& oldDeviation, double& newDeviation);
+
+    /**
+     * Check if this bus has any measurements
+     * @return true if bus has measurements
+     */
+    bool hasMeasurements() const { return !p_meas.empty(); }
+    
+    /**
+     * Get all measurements associated with this bus
+     * @return vector of measurements
+     */
+    std::vector<Measurement> getMeasurements() const { return p_meas; }
+
+    /**
+     * Get mutable reference to measurements for in-place modification
+     * @return reference to internal measurements vector
+     */
+    std::vector<Measurement>& getMeasurementsRef() { return p_meas; }
+
+    /**
+     * Reset performance profiling statistics
+     */
+    void resetPerformanceCounters();
+
+    /**
+     * Get performance profiling statistics
+     */
+    void getPerformanceStats(int& cache_hits, int& cache_misses, 
+                           double& cache_time, double& jacobian_time, int& jacobian_calls) const;
+
+    /**
+     * Invalidate the neighbor branch cache (call when network topology changes)
+     */
+    void invalidateNeighborCache();
 
   private:
     double p_shunt_gs;
@@ -334,6 +425,7 @@ class SEBus
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV;
+    bool p_isSlack;
     int p_numElements;
     std::vector<int> p_colJidx;
     std::vector<int> p_rowJidx;
@@ -347,6 +439,39 @@ class SEBus
      */
     double* p_vMag_ptr;
     double* p_vAng_ptr;
+
+    // Voltage limits for projection
+    double p_v_min;  // Minimum voltage limit
+    double p_v_max;  // Maximum voltage limit
+    bool p_enforce_v_limits;  // Flag to enable/disable enforcement
+
+    // Optimization: Cache neighbor branch data to avoid repeated getNeighborBranches() calls
+    struct NeighborBranchData {
+        SEBranch* branch;
+        SEBus* otherBus;
+        double yfbusr;     // Real part of admittance
+        double yfbusi;     // Imaginary part of admittance
+        double v;          // Voltage at other bus
+        double theta;      // Angle difference
+        bool isForward;    // True if this bus is Bus1, false if Bus2
+        bool isValid;      // True if both buses are not isolated
+    };
+    
+    mutable std::vector<NeighborBranchData> p_cached_neighbors;
+    mutable bool p_cache_valid;
+    mutable int p_last_jacobian_update;
+    
+    // Performance profiling variables
+    mutable int p_cache_hits;
+    mutable int p_cache_misses;
+    mutable double p_total_cache_time;
+    mutable double p_total_jacobian_time;
+    mutable int p_jacobian_calls;
+
+    /**
+     * Cache neighbor branch data for efficient Jacobian computation
+     */
+    void cacheNeighborBranchData() const;
 
 private:
 
@@ -379,7 +504,11 @@ private:
       & p_rowJidx
       & p_colRidx
       & p_rowRidx
-      & p_vecZidx;
+      & p_vecZidx
+      & p_cache_valid
+      & p_last_jacobian_update
+      & p_cache_hits
+      & p_cache_misses;
   }  
 
 };
@@ -487,6 +616,20 @@ class SEBranch
      ** @return complex power
      **/
     gridpack::ComplexType getRvrsComplexPower(std::string tag);
+
+    /**
+     ** Return complex current for line element
+     ** @param tag describing line element on branch
+     ** @return complex current
+     **/
+    gridpack::ComplexType getComplexCurrent(std::string tag);
+
+    /**
+     ** Return complex current for line element at to end
+     ** @param tag describing line element on branch
+     ** @return complex current
+     **/
+    gridpack::ComplexType getRvrsComplexCurrent(std::string tag);
 
     /**
      * Add a measurement to the branch
@@ -623,6 +766,79 @@ class SEBranch
      * other methods
      */
     void configureSE(void);
+
+    /**
+     * Check if residual index matches this branch and report bad data
+     * @param idx: index to check
+     * @param report: if true, print information about the bad data
+     * @return: true if index found on this branch
+     */
+    bool checkResidualIndex(int idx, bool report);
+    bool getResidualDetails(int idx, char* buffer);
+
+    bool vectorValues(ComplexType *values); 
+    
+    /**
+     * Adjust the weight of a measurement by modifying its deviation
+     * @param idx measurement index to adjust
+     * @param factor factor to multiply deviation by
+     * @param oldDeviation returns the old deviation value
+     * @param newDeviation returns the new deviation value
+     * @return true if measurement was found and adjusted, false otherwise
+     */
+    bool adjustMeasurementWeight(int idx, double factor, double& oldDeviation, double& newDeviation);
+    
+    /**
+     * Check if this branch has any measurements
+     * @return true if branch has measurements
+     */
+    bool hasMeasurements() const { return !p_meas.empty(); }
+    
+    /**
+     * Get all measurements associated with this branch
+     * @return vector of measurements
+     */
+    std::vector<Measurement> getMeasurements() const { return p_meas; }
+    
+    /**
+     * Get reactance data for this branch
+     * @param reactance vector to store reactance values
+     */
+    void getReactanceData(std::vector<double>& reactance) const { 
+        reactance = p_reactance; 
+    }
+    
+    /**
+     * Get resistance data for this branch
+     * @param resistance vector to store resistance values
+     */
+    void getResistanceData(std::vector<double>& resistance) const {
+        resistance = p_resistance;
+    }
+
+    /**
+     * Get circuit IDs (tags) for this branch
+     * @return vector of circuit ID strings
+     */
+    std::vector<std::string> getCircuitIDs() const {
+        return p_tag;
+    }
+
+    /**
+     * Helper method to get SEBus pointer from Bus1
+     * @return pointer to SEBus for first bus
+     */
+    SEBus* getSEBus1() const {
+        return dynamic_cast<SEBus*>(this->getBus1().get());
+    }
+    
+    /**
+     * Helper method to get SEBus pointer from Bus2
+     * @return pointer to SEBus for second bus
+     */
+    SEBus* getSEBus2() const {
+        return dynamic_cast<SEBus*>(this->getBus2().get());
+    }
 
   private:
     std::vector<double> p_reactance;
