@@ -46,7 +46,8 @@ functionality appears in the develop branch.
     - Generator ID display in contingency results
   - Added build trigger when releasing a new version of GridPACK
 - Changed
-  - User manual updated with Python state estimation documentation
+  - User manual updated for v3.6 including power flow, state estimation,
+    dynamic simulation, and Python interface documentation
   - Migrated QLIM parameter to bool type in power flow and CA for consistency
   - Optimized CMake builds
 - Fixed

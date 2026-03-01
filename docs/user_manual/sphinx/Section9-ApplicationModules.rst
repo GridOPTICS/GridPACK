@@ -71,6 +71,8 @@ shown below:
       <networkConfiguration> IEEE14.raw </networkConfiguration>
       <maxIteration>50</maxIteration>
       <tolerance>1.0e-6</tolerance>
+      <qlim>true</qlim>
+      <maxQlimIterations>3</maxQlimIterations>
       <LinearSolver>
         <PETScOptions>
           -ksp_view
@@ -85,9 +87,15 @@ shown below:
 
 This example specifies the input network configuration, the maximum number of
 iterations in the non-linear Newton-Raphson solver, the solution tolerance
-and the properties of the linear solver. This is a minimal example and  more
-options for the solver can be used. Readers are encouraged to look at the
-examples that are copied into the powerflow directory as part of the build.
+and the properties of the linear solver. The ``qlim`` parameter enables
+reactive power limit enforcement (default ``true``). When enabled, PV
+buses whose generator reactive power output exceeds the specified
+``Qmax`` or ``Qmin`` limits are switched to PQ buses and the power
+flow is re-solved. The ``maxQlimIterations`` parameter (default 3)
+controls the maximum number of outer PV-to-PQ switching iterations. This
+is a minimal example and more options for the solver can be used.
+Readers are encouraged to look at the examples that are copied into the
+powerflow directory as part of the build.
 
 The network configuration file
 is read directly from the input deck by the
@@ -186,6 +194,32 @@ are stored in the indexed variables ``GENERATOR_PF_PGEN[i]`` and
 ``GENERATOR_PF_QGEN[i]``, where the index ``i`` runs over all
 generators on the bus.
 
+The power flow module supports ZIP loads, where the total load power is
+modeled as a combination of constant power (P), constant current (I),
+and constant admittance (Y) components. The load power at voltage
+``V`` is computed as ``P_load = PL + IP*V + YP*V^2`` and
+``Q_load = QL + IQ*V - YQ*V^2``, following PSS/E sign conventions.
+The ZIP load coefficients are read automatically from PSS/E network
+files when present.
+
+Switched shunt devices specified in PSS/E input files are supported.
+The initial susceptance value (``BINIT``) is absorbed into the fixed
+bus shunt admittance during network setup, consistent with the behavior
+of commercial power system tools.
+
+The power flow module includes island detection capabilities. The
+function ``getIslandCount()`` returns the number of electrical
+islands found in the network after calling ``solve()``. The function
+``hasLoneBus()`` identifies isolated buses with no active connections.
+The function ``checkAndTransferSlack()`` automatically transfers the
+slack bus role to the bus with the largest online generator capacity if
+the original slack bus generator goes offline.
+
+The output from ``write()`` includes per-bus power injection values
+(``Pinj`` and ``Qinj``) in addition to voltage magnitude and phase
+angle. These values reflect the net power injection at each bus
+including all ZIP load contributions at the solved voltage.
+
 The remaining methods in the PFAppModule class support different kinds
 of contingency applications. Contingencies are defined using the data
 structure
@@ -233,38 +267,88 @@ Two calls
 
    bool setContingency(Contingency &event)
 
-   bool unsetContingency(Contingency &event)
+   bool unSetContingency(Contingency &event)
 
-can be used to set or unset a contingency. The call
-``unsetContingency`` should only be called after calling
+can be used to set or unset a contingency. Both functions return
+``true`` if the contingency was successfully applied or removed. The
+call ``unSetContingency`` should only be called after calling
 ``setContingency`` and it should use the same ``event``
-argument. After calling the ``unsetContingency`` method, the network
+argument. After calling the ``unSetContingency`` method, the network
 should have the same configuration as before calling the
 ``setContingency`` method.
 
+After applying a contingency, the network topology should be checked
+before attempting to solve. The function
+
+::
+
+   int getIslandCount()
+
+returns the number of electrical islands in the network. A value greater
+than 1 indicates that the contingency has split the network and the
+power flow solve should be skipped. The function
+
+::
+
+   bool hasLoneBus()
+
+returns ``true`` if any bus has become completely isolated with no
+active branch connections.
+
+If a contingency takes the slack bus generator offline, the slack
+designation can be transferred using
+
+::
+
+   bool checkAndTransferSlack()
+
+This function transfers the slack bus role to the bus with the largest
+online generator capacity. It returns ``false`` if no valid slack bus
+can be found, indicating the system is unsolvable. After unSetting a
+contingency, the original slack bus can be restored by calling
+
+::
+
+   void restoreSlack()
+
+After solving the post-contingency power flow, the slack bus generation
+can be validated using
+
+::
+
+   bool checkSlackCapacity()
+
+This returns ``false`` if the slack bus generator output exceeds its
+``Pmax`` limit, indicating insufficient generation capacity.
+
 The remaining calls in ``PFAppModule`` can be used to determine the
 status of a network after solving a configuration with a contingency.
-The functions
+Voltage limits for violation checking are set using
 
 ::
 
-   bool checkVoltageViolations(double Vmin, double Vmax)
+   void setVoltageLimits(double Vmin, double Vmax)
 
-   bool checkVoltageViolations(int area, double Vmin, double Vmax)
-
-can be used to check for a voltage violation anywhere in the system
-where ``Vmin`` and ``Vmax`` are the minimum and maximum
-allowable voltage excursions (per unit). The second function only checks
-for violations on buses with the specified value of ``area``. These
-functions are true if there are no voltage violations and return false
-if a violation is found on one or more buses. It frequently turns out
-that many networks have voltage violations even in the absence of any
-contingencies and it is often desirable to ignore these violations. This
-can be accomplished using the function
+where ``Vmin`` and ``Vmax`` are the minimum and maximum allowable
+voltage excursions (per unit). The functions
 
 ::
 
-   void ignoreVoltageViolations(double Vmin, double Vmax)
+   bool checkVoltageViolations()
+
+   bool checkVoltageViolations(int area)
+
+can then be used to check for voltage violations anywhere in the system
+or only on buses with the specified value of ``area``. These
+functions return ``true`` if there are no voltage violations and
+``false`` if a violation is found on one or more buses. It frequently
+turns out that many networks have voltage violations even in the absence
+of any contingencies and it is often desirable to ignore these
+violations. This can be accomplished using the function
+
+::
+
+   void ignoreVoltageViolations()
 
 If this function is called after solving the power flow system in the
 absence of any contingencies, then buses that contain violations will be
@@ -283,13 +367,19 @@ Line overload violations can be checked by calling one of the functions
 
    bool checkLineOverloadViolations(int area)
 
+   bool checkLineOverloadViolations(std::vector<int> &bus1,
+       std::vector<int> &bus2, std::vector<std::string> &tags,
+       std::vector<bool> &violations)
+
 The limits on the line are contained in parameters read in from the
-network configuration file so these functions have no arguments
-describing the line limits. The second function will only check for
-violations on lines with the specified value of ``area``. Like
-voltage violations, branches that display line overload violations that
-are present even without contingencies can be ignored in the checks by
-calling the function
+network configuration file so the first two functions have no arguments
+describing the line limits. The second function only checks for
+violations on lines with the specified value of ``area``. The third
+overload checks a specific set of branches identified by their endpoint
+buses and circuit tags, and populates a per-branch ``violations``
+vector. Like voltage violations, branches that display line overload
+violations that are present even without contingencies can be ignored in
+the checks by calling the function
 
 ::
 
@@ -301,6 +391,22 @@ settings can be cleared using the function
 ::
 
    void clearLineOverloadViolations()
+
+Reactive power limit violations on PV buses can be checked using
+
+::
+
+   bool checkQlimViolations()
+
+   bool checkQlimViolations(int area)
+
+When a PV bus generator exceeds its reactive power limits, the bus is
+converted to a PQ bus. After unsetting a contingency, these conversions
+can be reversed by calling
+
+::
+
+   void clearQlimViolations()
 
 Finally, the internal voltage variables that are used as the solution
 variables in the power flow calculation can be reset to their original
@@ -347,7 +453,7 @@ consisting of measurements. This file has the format
            <FromBus>1</FromBus>
            <ToBus>2</ToBus>
            <CKT>BL</CKT>
-           <Values>-0.2040</Value>
+           <Value>-0.2040</Value>
            <Deviation>0.0100</Deviation>
          </Measurement>
          <Measurement>
@@ -362,15 +468,80 @@ consisting of measurements. This file has the format
            <Value>-0.1690</Value>
            <Deviation>0.0100</Deviation>
          </Measurement>
+         <Measurement>
+           <Type>VA</Type>
+           <Bus>1</Bus>
+           <Value>0.0000</Value>
+           <Deviation>0.0100</Deviation>
+         </Measurement>
+         <Measurement>
+           <Type>IIJ</Type>
+           <FromBus>1</FromBus>
+           <ToBus>2</ToBus>
+           <CKT>BL</CKT>
+           <Value>1.5920</Value>
+           <Deviation>0.0100</Deviation>
+         </Measurement>
+         <Measurement>
+           <Type>IJI</Type>
+           <FromBus>2</FromBus>
+           <ToBus>1</ToBus>
+           <CKT>BL</CKT>
+           <Value>1.5915</Value>
+           <Deviation>0.0100</Deviation>
+         </Measurement>
        </Measurements>
 
-for the five types of measurements ``VM``, ``PIJ``, ``QIJ``,
-``PI``, and ``PJ``. Measurements can appear on any element of
+The supported measurement types are ``VM`` (voltage magnitude),
+``VA`` (voltage angle), ``PI`` (real power injection),
+``QI`` (reactive power injection), ``PIJ`` (real power flow),
+``QIJ`` (reactive power flow), ``IIJ`` (current magnitude,
+from-bus direction), and ``IJI`` (current magnitude, to-bus
+direction). Measurements can appear on any element of
 the network and multiple measurements are allowed on each element. The
 state estimation module does not have any error checking ability to
 determine if there are sufficient measurements to guarantee solvability,
 if not enough measurements are available then the calculation will
-simply crash or fail to converge. The state estimation module is
+simply crash or fail to converge. An example ``State_estimation`` input block is shown below:
+
+::
+
+   <?xml version="1.0" encoding="utf-8"?>
+   <Configuration>
+     <State_estimation>
+       <networkConfiguration> IEEE14.raw </networkConfiguration>
+       <measurementList> IEEE14_meas.xml </measurementList>
+       <maxIteration>20</maxIteration>
+       <tolerance>1.0e-6</tolerance>
+       <dampingFactor>1.0</dampingFactor>
+       <maxBadDataIterations>5</maxBadDataIterations>
+       <badDataThreshold>3.0</badDataThreshold>
+       <diagnosticOutputLevel>standard</diagnosticOutputLevel>
+       <useVoltageConstraints>false</useVoltageConstraints>
+       <minVoltage>0.9</minVoltage>
+       <maxVoltage>1.1</maxVoltage>
+       <LinearSolver>
+         <PETScOptions>
+           -ksp_type richardson
+           -pc_type lu
+           -pc_factor_mat_solver_type superlu_dist
+           -ksp_max_it 1
+         </PETScOptions>
+       </LinearSolver>
+     </State_estimation>
+   </Configuration>
+
+The ``dampingFactor`` parameter (default 1.0) scales the Newton-Raphson
+update step to improve convergence stability. The
+``maxBadDataIterations`` and ``badDataThreshold`` parameters control
+automatic bad data detection and elimination. The
+``diagnosticOutputLevel`` can be set to ``basic``, ``standard``, or
+``detailed`` to control the verbosity of solver output. The
+``useVoltageConstraints`` flag enables virtual voltage limit
+measurements that constrain bus voltages between ``minVoltage``
+(default 0.9) and ``maxVoltage`` (default 1.1) per unit.
+
+The state estimation module is
 represented by the ``SEAppModule`` class which is in the
 ``gridpack::state_estimation`` namespace. The ``gridpack.hpp``
 file contains a definition for the state estimation network
@@ -420,6 +591,17 @@ when the network was assigned. The measurement file name is stored in
 the ``measurementList`` field within the ``State_estimation``
 block.
 
+Alternatively, measurements can be provided programmatically using
+
+::
+
+   void setMeasurements(std::vector<Measurement> &measurements)
+
+where each ``Measurement`` struct contains the type, bus or branch
+indices, measured value, and standard deviation. This is useful when
+measurements are generated by another module or read from a non-XML
+source.
+
 The network object can be initialized and the exchange buffers set up by
 calling the
 
@@ -433,8 +615,16 @@ method followed by
 
    void solve()
 
-to obtain the solution to the system. Results can be written out to
-standard out using the method
+to obtain the solution to the system. The solver includes automatic bad
+data detection. After each Newton-Raphson convergence, a chi-square test
+is performed on the weighted residuals. If the chi-square test fails,
+the measurement with the largest normalized residual is identified
+and removed. The solver then re-converges with the remaining
+measurements. This process repeats up to ``maxBadDataIterations``
+times (default 5). Measurements with normalized residuals exceeding
+``badDataThreshold`` (default 3.0) are flagged as bad data.
+
+Results can be written out to standard out using the method
 
 ::
 
@@ -458,6 +648,15 @@ parameters are stored as the indexed variables
 ``GENERATOR_SE_PGEN[i]`` and ``GENERATOR_SE_QGEN[i]``, where
 ``i`` runs over the set of generators on the bus.
 
+The convergence status of the most recent solve can be queried using
+
+::
+
+   bool hasConverged() const
+
+This returns ``true`` if the Newton-Raphson iteration converged within
+the specified tolerance before reaching the maximum number of iterations.
+
 Dynamic Simulation Module using Full Y-Matrix
 ---------------------------------------------
 
@@ -465,8 +664,9 @@ GridPACK supplies a dynamic simulation module that integrates the
 equations of motion using an algorithm based on inversion of the full
 Y-matrix. This module has been designed to enable the addition of
 generator models that extend beyond the classical generator. It also
-supports exciters, governors, relays and dynamic loads. Models that are
-currently available include Generators:
+supports exciters, governors, power system stabilizers (PSS), relays,
+dynamic loads, and inverter-based resource (IBR) / renewable energy models.
+Models that are currently available include Generators:
 
 ::
 
@@ -474,12 +674,29 @@ currently available include Generators:
    GENSAL
    GENROU
 
+IBR/Renewable Models:
+
+::
+
+   REGCA1
+   REGCB1
+   REGCC1
+   GDFORM
+   REECA1
+   REPCA1
+
+The ``EPRIA1`` model is also available when GridPACK is built with
+``ENABLE_EPRI_IBR_MODEL``.
+
 Exciters:
 
 ::
 
    EXDC1
    ESST1A
+   IEEET1
+   SEXS
+   ESST4B
 
 Governors:
 
@@ -487,6 +704,24 @@ Governors:
 
    WSIEG1
    WSHYGP
+   TGOV1
+   GAST
+   HYGOV
+
+Power System Stabilizers:
+
+::
+
+   PSSSIM
+
+Wind Turbine Models:
+
+::
+
+   WTARA1
+   WTDTA1
+   WTPTA1
+   WTTQA1
 
 Relays:
 
