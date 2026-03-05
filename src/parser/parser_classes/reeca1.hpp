@@ -644,7 +644,7 @@ template <class _data_struct> class Reeca1Parser
         if (!data->getValue(GENERATOR_REECA_TIQ,&rval,g_id)) {
           data->addValue(GENERATOR_REECA_TIQ, atof(split_line[ 31].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REECA_TIQ, atof(split_line[ 32].c_str()), g_id);
+          data->setValue(GENERATOR_REECA_TIQ, atof(split_line[ 31].c_str()), g_id);
         }
       } 
 	  
