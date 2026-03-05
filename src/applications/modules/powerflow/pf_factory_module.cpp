@@ -1011,6 +1011,60 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations(int area)
 }
 
 /**
+ * Adjust voltage setpoints for remote bus voltage regulation (IREG).
+ * For each PV bus with generators that have IREG != 0 and IREG != own bus,
+ * adjust the local bus voltage so that the remote bus voltage matches VS.
+ * @param tol tolerance for remote voltage error (default 1e-4 pu)
+ * @return true if all remote regulations are satisfied within tolerance
+ */
+bool gridpack::powerflow::PFFactoryModule::adjustRemoteRegulation(double tol)
+{
+  int numBus = p_network->numBuses();
+  bool all_ok = true;
+
+  for (int i = 0; i < numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(
+        p_network->getBus(i).get());
+    if (!bus->isPV()) continue;
+
+    int orig_idx = bus->getOriginalIndex();
+    int ngen = bus->getNumGenerators();
+
+    // Find first online generator with remote regulation
+    int ireg_bus = 0;
+    double vs_target = 0.0;
+    for (int j = 0; j < ngen; j++) {
+      int ireg = bus->getIREG(j);
+      if (bus->getGenStatusByIdx(j) == 1 && ireg != 0 && ireg != orig_idx) {
+        ireg_bus = ireg;
+        vs_target = bus->getVSByIdx(j);
+        break;
+      }
+    }
+    if (ireg_bus == 0) continue;  // No remote regulation on this bus
+
+    // Look up remote bus voltage
+    std::vector<int> remote_indices = p_network->getLocalBusIndices(ireg_bus);
+    if (remote_indices.empty()) continue;  // Remote bus not in local partition
+
+    gridpack::powerflow::PFBus *remote_bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(
+        p_network->getBus(remote_indices[0]).get());
+    double v_remote = remote_bus->getVoltage();
+
+    double dv = vs_target - v_remote;
+    if (fabs(dv) > tol) {
+      bus->adjustVoltageForRemoteReg(dv);
+      all_ok = false;
+    }
+  }
+
+  return checkTrue(all_ok);
+}
+
+/**
  * Clear changes that were made for Q limit violations and reset
  * system to its original state
  */

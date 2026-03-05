@@ -448,7 +448,7 @@ At this point, the contingency application is essentially complete. The remainin
 \end{Verbatim}
 }
 
-are used to print out a list of how many tasks were evaluated on each processor and to stop the timing of the ``\texttt{\textbf{Total Application}}'' category. The timer \texttt{\textbf{dump}} method will print statistics on the amount of time spent in the total application as well as reporting timings inside the power flow application. The check on the \texttt{\textbf{dump}} call is to verify that all processors have participated in at least one power flow calculation.
+are used to print out a list of how many tasks were evaluated on each processor and to stop the timing of the ``\texttt{\textbf{Total Application}}'' category. Results can optionally be exported to JSON or CSV by setting \texttt{\textbf{outputFormat}} and \texttt{\textbf{outputFile}} in the \texttt{\textbf{Contingency\_analysis}} block (see the power flow module documentation for output format details). The timer \texttt{\textbf{dump}} method will print statistics on the amount of time spent in the total application as well as reporting timings inside the power flow application. The check on the \texttt{\textbf{dump}} call is to verify that all processors have participated in at least one power flow calculation.
 If this condition is not met, then the timing statistics will not be valid (note
 that if this condition is not fulfilled, then it indicates that too many
 processors were requested for the calculation).

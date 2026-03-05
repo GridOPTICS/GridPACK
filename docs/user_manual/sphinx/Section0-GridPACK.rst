@@ -2,8 +2,8 @@
 GridPACK\ :math:`\mathrm{{}^{TM}}` User Manual
 ==============================================
 
-:Author: B. Palmer, W. Perkins, S. Abhyankar
-:Date: 2025-01-10
+:Author: B. Palmer, W. Perkins, S. Abhyankar, Y. Chen
+:Date: 2026-03-01
 
 **Abstract**: This document is designed to provide an in-depth
 description of the GridPACK\ :math:`\mathrm{{}^{TM}}` framework and the

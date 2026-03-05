@@ -727,6 +727,10 @@ void gridpack::powerflow::PFBus::load(
         p_qmin.push_back(qmin);
         p_pt.push_back(pt);
         p_pb.push_back(pb);
+        p_vs.push_back(vs);
+        int ireg = 0;
+        data->getValue(GENERATOR_IREG, &ireg, i);
+        p_ireg.push_back(ireg);
         p_rmpct.push_back(gstatus ? rmpct : 0.0);  // Zero RMPCT for offline generators
 	if(gstatus) {
 	  p_pFac.push_back(pt - pb);
@@ -1114,6 +1118,138 @@ std::vector<std::string> gridpack::powerflow::PFBus::getGenerators()
 std::vector<std::string> gridpack::powerflow::PFBus::getLoads()
 {
   return p_lid;
+}
+
+/**
+ * Get total reactive power output of all online generators
+ * @return total Qgen in MW (system base units)
+ */
+double gridpack::powerflow::PFBus::getTotalReactiveOutput()
+{
+  double totalQgen = 0.0;
+  for (int i = 0; i < p_ngen; i++) {
+    if (p_gstatus[i] == 1) {
+      totalQgen += p_qg[i];
+    }
+  }
+  return totalQgen;
+}
+
+/**
+ * Get real power output for a specific generator
+ * @param genId generator ID
+ * @return Pgen in MW
+ */
+double gridpack::powerflow::PFBus::getGenPOutput(const std::string& genId)
+{
+  for (int i = 0; i < p_ngen; i++) {
+    if (p_gid[i] == genId) return p_pg[i];
+  }
+  return 0.0;
+}
+
+/**
+ * Get reactive power output for a specific generator
+ * @param genId generator ID
+ * @return Qgen in MVAr
+ */
+double gridpack::powerflow::PFBus::getGenQOutput(const std::string& genId)
+{
+  for (int i = 0; i < p_ngen; i++) {
+    if (p_gid[i] == genId) return p_qg[i];
+  }
+  return 0.0;
+}
+
+/**
+ * Get maximum reactive power for a specific generator
+ * @param genId generator ID
+ * @return Qmax in MVAr
+ */
+double gridpack::powerflow::PFBus::getGenQMax(const std::string& genId)
+{
+  for (int i = 0; i < p_ngen; i++) {
+    if (p_gid[i] == genId) return p_qmax[i];
+  }
+  return 0.0;
+}
+
+/**
+ * Get minimum reactive power for a specific generator
+ * @param genId generator ID
+ * @return Qmin in MVAr
+ */
+double gridpack::powerflow::PFBus::getGenQMin(const std::string& genId)
+{
+  for (int i = 0; i < p_ngen; i++) {
+    if (p_gid[i] == genId) return p_qmin[i];
+  }
+  return 0.0;
+}
+
+/**
+ * Get voltage setpoint for a specific generator
+ * @param genId generator ID
+ * @return voltage setpoint in pu
+ */
+double gridpack::powerflow::PFBus::getGenVSetpoint(const std::string& genId)
+{
+  for (int i = 0; i < p_ngen; i++) {
+    if (p_gid[i] == genId) return p_vs[i];
+  }
+  return 0.0;
+}
+
+/**
+ * Get IREG (remote regulated bus number) for a generator by index
+ * @param idx generator index (0-based)
+ * @return IREG bus number (0 = local regulation)
+ */
+int gridpack::powerflow::PFBus::getIREG(int idx) const
+{
+  if (idx >= 0 && idx < static_cast<int>(p_ireg.size())) {
+    return p_ireg[idx];
+  }
+  return 0;
+}
+
+/**
+ * Get generator status by index
+ * @param idx generator index (0-based)
+ * @return generator status (1 = online, 0 = offline)
+ */
+int gridpack::powerflow::PFBus::getGenStatusByIdx(int idx) const
+{
+  if (idx >= 0 && idx < static_cast<int>(p_gstatus.size())) {
+    return p_gstatus[idx];
+  }
+  return 0;
+}
+
+/**
+ * Get voltage setpoint for a generator by index
+ * @param idx generator index (0-based)
+ * @return voltage setpoint in pu
+ */
+double gridpack::powerflow::PFBus::getVSByIdx(int idx) const
+{
+  if (idx >= 0 && idx < static_cast<int>(p_vs.size())) {
+    return p_vs[idx];
+  }
+  return 1.0;
+}
+
+/**
+ * Adjust the bus voltage magnitude for remote voltage regulation.
+ * Updates both p_v and p_voltage so the adjustment persists across
+ * outer iterations.
+ * @param dv voltage adjustment in pu
+ */
+void gridpack::powerflow::PFBus::adjustVoltageForRemoteReg(double dv)
+{
+  p_v += dv;
+  p_voltage += dv;
+  if (p_vMag_ptr) *p_vMag_ptr = p_v;
 }
 
 /**
@@ -2815,6 +2951,27 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
   vj = bus2->getComplexVoltage();
   getLineElements(tag,&Yii,&Yij);
   s = vi*conj(Yii*vi+Yij*vj)*p_sbase;
+  return s;
+}
+
+/**
+ * Return complex power at the "to" end of line element
+ * @param tag describing line element on branch
+ * @return complex power at receiving end
+ */
+gridpack::ComplexType gridpack::powerflow::PFBranch::getReversePower(
+        std::string tag)
+{
+  gridpack::ComplexType vi, vj, Yjj, Yji, s;
+  s = ComplexType(0.0,0.0);
+  gridpack::powerflow::PFBus *bus1 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+  vi = bus1->getComplexVoltage();
+  gridpack::powerflow::PFBus *bus2 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+  vj = bus2->getComplexVoltage();
+  getRvrsLineElements(tag,&Yjj,&Yji);
+  s = vj*conj(Yjj*vj+Yji*vi)*p_sbase;
   return s;
 }
 

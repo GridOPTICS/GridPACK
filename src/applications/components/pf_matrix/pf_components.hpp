@@ -27,6 +27,11 @@
  * - Added getZIPLoadPower() declaration for voltage-dependent ZIP load model
  * @date  2026-02-19
  *
+ * @updated Yousu Chen
+ * - Added IREG (remote bus voltage regulation) support
+ * - Generators with IREG != 0 regulate voltage at a remote bus
+ * @date  2026-03-03
+ *
  * @brief
  *
  *
@@ -186,6 +191,71 @@ class PFBus
      * @return: phase angle
      */
     double getPhase(void);
+
+    /**
+     * Get system base MVA
+     * @return system base in MVA
+     */
+    double getSBase() const { return p_sbase; }
+
+    /**
+     * Get bus type (1=PQ, 2=PV, 3=Slack, 4=Isolated)
+     * @return bus type code
+     */
+    int getBusType() const { return p_type; }
+
+    /**
+     * Get real power injection at this bus
+     * @return P injection in per unit
+     */
+    double getPInjection() const { return p_Pinj; }
+
+    /**
+     * Get reactive power injection at this bus
+     * @return Q injection in per unit
+     */
+    double getQInjection() const { return p_Qinj; }
+
+    /**
+     * Get total reactive power output of all online generators
+     * @return total Qgen in MW (system base units)
+     */
+    double getTotalReactiveOutput();
+
+    /**
+     * Get real power output for a specific generator
+     * @param genId generator ID
+     * @return Pgen in MW
+     */
+    double getGenPOutput(const std::string& genId);
+
+    /**
+     * Get reactive power output for a specific generator
+     * @param genId generator ID
+     * @return Qgen in MVAr
+     */
+    double getGenQOutput(const std::string& genId);
+
+    /**
+     * Get maximum reactive power for a specific generator
+     * @param genId generator ID
+     * @return Qmax in MVAr
+     */
+    double getGenQMax(const std::string& genId);
+
+    /**
+     * Get minimum reactive power for a specific generator
+     * @param genId generator ID
+     * @return Qmin in MVAr
+     */
+    double getGenQMin(const std::string& genId);
+
+    /**
+     * Get voltage setpoint for a specific generator
+     * @param genId generator ID
+     * @return voltage setpoint in pu
+     */
+    double getGenVSetpoint(const std::string& genId);
 
     /**
      * Get generator status
@@ -520,6 +590,41 @@ class PFBus
      */
     static std::vector<std::string>& getQlimWarnings();
 
+    /**
+     * Get number of generators on this bus
+     * @return number of generators
+     */
+    int getNumGenerators() const { return p_ngen; }
+
+    /**
+     * Get IREG (remote regulated bus number) for a generator by index
+     * @param idx generator index (0-based)
+     * @return IREG bus number (0 = local regulation)
+     */
+    int getIREG(int idx) const;
+
+    /**
+     * Get generator status by index
+     * @param idx generator index (0-based)
+     * @return generator status (1 = online, 0 = offline)
+     */
+    int getGenStatusByIdx(int idx) const;
+
+    /**
+     * Get voltage setpoint for a generator by index
+     * @param idx generator index (0-based)
+     * @return voltage setpoint in pu
+     */
+    double getVSByIdx(int idx) const;
+
+    /**
+     * Adjust the bus voltage magnitude for remote voltage regulation.
+     * Updates both p_v and p_voltage so the adjustment persists across
+     * outer iterations.
+     * @param dv voltage adjustment in pu
+     */
+    void adjustVoltageForRemoteReg(double dv);
+
   private:
     static std::vector<std::string> p_qlimWarnings;
     static InitStartMode p_initStartMode;
@@ -549,6 +654,7 @@ class PFBus
     std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig, p_qFac_orig;
     std::vector<double> p_rmpct;  // RMPCT: reactive power participation factor (PSS/E)
     std::vector<double> p_vs;
+    std::vector<int> p_ireg;          // IREG: remote regulated bus number per generator
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
     std::vector<double> p_pb;
@@ -608,7 +714,7 @@ private:
       & p_qmin_orig & p_qmax_orig & p_pFac_orig & p_rmpct
       & p_saveQg
       & p_gstatus
-      & p_vs & p_gid
+      & p_vs & p_ireg & p_gid
       & p_pt & p_pb
       & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
       & p_savePl & p_saveQl
@@ -710,6 +816,13 @@ class PFBranch
      * @return complex power
      */
     gridpack::ComplexType getComplexPower(std::string tag);
+
+    /**
+     * Return complex power at the "to" end of line element
+     * @param tag describing line element on branch
+     * @return complex power at receiving end
+     */
+    gridpack::ComplexType getReversePower(std::string tag);
 
     /**
      * Write output from branches to standard out

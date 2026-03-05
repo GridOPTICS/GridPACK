@@ -26,7 +26,10 @@
 
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
+#include "gridpack/utilities/results_exporter.hpp"
 #include "ca_driver.hpp"
+
+#include <sstream>
 
 #define USE_SUCCESS
 #define USE_STATBLOCK
@@ -374,6 +377,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   // Check for Q limit violations (qlim: true=enabled, false=disabled)
   bool check_Qlim = cursor->get("qlim", true);
+  // Output format: "json", "csv", or "text" (default)
+  std::string outputFormat = "text";
+  cursor->get("outputFormat", &outputFormat);
+  std::string outputFile = "ca_results";
+  cursor->get("outputFile", &outputFile);
   // Set static flag for PFBus class BEFORE network creation.
   // This controls how Q values are reported in output functions:
   // - When check_Qlim = false: output uses calculated Q from p_Qinj
@@ -414,6 +422,12 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   pf_app.ignoreVoltageViolations();
+
+  // Collect base case results for export
+  gridpack::utility::PowerFlowResults baseCaseResults;
+  if (outputFormat != "text") {
+    baseCaseResults = pf_app.collectResults();
+  }
 
   // Check if auto-generation of N-1 contingencies is enabled
   // FullBranchN1: generate N-1 contingencies for all branches
@@ -727,6 +741,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Clear any Q limit warnings from base case before starting contingencies
   gridpack::powerflow::PFBus::clearQlimWarnings();
 
+  // Local contingency results storage for JSON/CSV export
+  std::vector<gridpack::utility::ContingencyResult> localContingencies;
 
   // Evaluate contingencies using the task manager
   int task_id;
@@ -814,6 +830,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         contingency_violation.push_back(0);
         contingency_isolated.push_back(false);
 #endif
+        if (outputFormat != "text") {
+          gridpack::utility::ContingencyResult ctResult;
+          ctResult.name = events[task_id].p_name;
+          ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
+          ctResult.hasVoltageViolation = false;
+          ctResult.hasBranchViolation = false;
+          ctResult.solution.convergence.converged = false;
+          localContingencies.push_back(ctResult);
+        }
         sprintf(sbuf,"\nInsufficient generation capacity for contingency %s\n",
             events[task_id].p_name.c_str());
         if (print_calcs) pf_app.print(sbuf);
@@ -829,6 +854,16 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         bool ok1 = pf_app.checkVoltageViolations();
         bool ok2 = pf_app.checkLineOverloadViolations();
         bool ok = ok1 && ok2;
+        // Collect results for JSON/CSV export
+        if (outputFormat != "text") {
+          gridpack::utility::ContingencyResult ctResult;
+          ctResult.name = events[task_id].p_name;
+          ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
+          ctResult.hasVoltageViolation = !ok1;
+          ctResult.hasBranchViolation = !ok2;
+          ctResult.solution = pf_app.collectResults();
+          localContingencies.push_back(ctResult);
+        }
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
@@ -971,6 +1006,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       contingency_violation.push_back(0);
       contingency_isolated.push_back(false);
 #endif
+      if (outputFormat != "text") {
+        gridpack::utility::ContingencyResult ctResult;
+        ctResult.name = events[task_id].p_name;
+        ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
+        ctResult.hasVoltageViolation = false;
+        ctResult.hasBranchViolation = false;
+        ctResult.solution.convergence.converged = false;
+        localContingencies.push_back(ctResult);
+      }
       if (islandDetected) {
         sprintf(sbuf,"\nIslanding detected for contingency %s (%d islands)\n",
             events[task_id].p_name.c_str(), islandCount);
@@ -1094,17 +1138,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   ca_success.upload();
   ca_violation.upload();
   ca_isolated.upload();
+  // All processes call getData to ensure GA progress (NGA_Gather requires
+  // remote process participation for one-sided communication).
+  contingency_idx.clear();
+  contingency_success.clear();
+  contingency_violation.clear();
+  contingency_isolated.clear();
+  for (i=0; i<ntasks; i++) contingency_idx.push_back(i);
+  ca_success.getData(contingency_idx, contingency_success);
+  contingency_success.clear();
+  ca_violation.getData(contingency_idx, contingency_violation);
+  ca_isolated.getData(contingency_idx, contingency_isolated);
   // Write out stats on successful calculations
   if (world.rank() == 0) {
-    contingency_idx.clear();
-    contingency_success.clear();
-    contingency_violation.clear();
-    contingency_isolated.clear();
-    for (i=0; i<ntasks; i++) contingency_idx.push_back(i);
-    ca_success.getData(contingency_idx, contingency_success);
-    contingency_success.clear();
-    ca_violation.getData(contingency_idx, contingency_violation);
-    ca_isolated.getData(contingency_idx, contingency_isolated);
     std::ofstream fout;
     fout.open("success.txt");
     for (i=0; i<ntasks; i++) {
@@ -1130,6 +1176,102 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     fout.close();
   }
 #endif
+
+  // Export CA results to JSON or CSV
+  if (outputFormat == "csv") {
+    // Rank 0 writes base case (creates files with headers)
+    if (world.rank() == 0) {
+      gridpack::utility::ResultsExporter::writePFCSV(outputFile,
+          baseCaseResults, "base_case");
+    }
+    world.barrier();
+    // Each process writes its contingencies in order (files opened in append mode)
+    for (int p = 0; p < world.size(); p++) {
+      if (world.rank() == p) {
+        for (size_t ci = 0; ci < localContingencies.size(); ci++) {
+          gridpack::utility::ResultsExporter::writePFCSV(
+              outputFile, localContingencies[ci].solution,
+              localContingencies[ci].name);
+        }
+      }
+      world.barrier();
+    }
+    // Rank 0 writes summary CSV using gathered data
+#ifdef USE_SUCCESS
+    if (world.rank() == 0) {
+      std::string summaryFile = outputFile + "_summary.csv";
+      std::ofstream sout(summaryFile.c_str());
+      sout << "contingency,type,converged,has_voltage_violation,has_branch_violation\n";
+      for (int ci = 0; ci < ntasks; ci++) {
+        bool converged = (contingency_violation[ci] > 0);
+        sout << events[ci].p_name << ","
+             << (events[ci].p_type == Branch ? "branch" : "generator") << ","
+             << (converged ? "true" : "false") << ","
+             << ((contingency_violation[ci] == 2 || contingency_violation[ci] == 4)
+                 ? "true" : "false") << ","
+             << ((contingency_violation[ci] == 3 || contingency_violation[ci] == 4)
+                 ? "true" : "false") << "\n";
+      }
+      sout.close();
+    }
+#endif
+  }
+
+  if (outputFormat == "json") {
+    // Each process serializes its contingency results as JSON text
+    std::ostringstream localJsonStream;
+    for (size_t ci = 0; ci < localContingencies.size(); ci++) {
+      gridpack::utility::ResultsExporter::writeContingencyResultJSON(
+          localJsonStream, localContingencies[ci]);
+      if (ci + 1 < localContingencies.size()) {
+        localJsonStream << ",\n";
+      }
+    }
+    std::string localJson = localJsonStream.str();
+
+    // Gather JSON fragment sizes
+    int localLen = static_cast<int>(localJson.size());
+    std::vector<int> allLens(world.size());
+    MPI_Allgather(&localLen, 1, MPI_INT, &allLens[0], 1, MPI_INT,
+                  static_cast<MPI_Comm>(world));
+
+    // Compute displacements
+    std::vector<int> displs(world.size());
+    int totalLen = 0;
+    for (int p = 0; p < world.size(); p++) {
+      displs[p] = totalLen;
+      totalLen += allLens[p];
+    }
+
+    // Gather all JSON fragments on rank 0
+    std::vector<char> allJsonBuf;
+    if (world.rank() == 0) allJsonBuf.resize(totalLen);
+    MPI_Gatherv(localJson.c_str(), localLen, MPI_CHAR,
+                world.rank() == 0 ? &allJsonBuf[0] : NULL,
+                &allLens[0], &displs[0], MPI_CHAR,
+                0, static_cast<MPI_Comm>(world));
+
+    // Rank 0 writes the final JSON file
+    if (world.rank() == 0) {
+      std::string jsonFile = outputFile + ".json";
+      std::ofstream jout(jsonFile.c_str());
+      // Write base case and open contingencies array
+      gridpack::utility::ResultsExporter::writeCAJSONHeader(jout,
+          baseCaseResults);
+      // Write contingencies from gathered fragments
+      bool firstFragment = true;
+      for (int p = 0; p < world.size(); p++) {
+        if (allLens[p] > 0) {
+          if (!firstFragment) jout << ",\n";
+          jout.write(&allJsonBuf[displs[p]], allLens[p]);
+          firstFragment = false;
+        }
+      }
+      jout << "\n";
+      gridpack::utility::ResultsExporter::writeCAJSONFooter(jout);
+      jout.close();
+    }
+  }
 
   // Print out statistics on contingencies
 #ifdef USE_STATBLOCK

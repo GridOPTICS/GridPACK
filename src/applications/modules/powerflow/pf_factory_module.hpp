@@ -172,6 +172,15 @@ class PFFactoryModule
     bool checkQlimViolations(int area);
 
     /**
+     * Adjust voltage setpoints for remote bus voltage regulation (IREG).
+     * For each PV bus with generators that have IREG != 0 and IREG != own bus,
+     * adjust the local bus voltage so that the remote bus voltage matches VS.
+     * @param tol tolerance for remote voltage error (default 1e-4 pu)
+     * @return true if all remote regulations are satisfied within tolerance
+     */
+    bool adjustRemoteRegulation(double tol = 1.0e-4);
+
+    /**
      * Clear changes that were made for Q limit violations and reset
      * system to its original state
      */
