@@ -136,32 +136,28 @@ void gridpack::dynamic_simulation::PsssimModel::predictor(double t_inc, bool fla
 		addwidearea = 0.0;
 	}
 	
-	var1 = (genspd + addwidearea - x1pss)/tw;
-	dx1pss = var1;
-	
+	// Washout: sTw/(1+sTw). State derivative is (u - x)/Tw, output is (u - x).
+	dx1pss = (genspd + addwidearea - x1pss)/tw;
+	var1 = genspd + addwidearea - x1pss;  // washout output (NOT divided by Tw)
+
 	var2 = psscon1*gaink*var1 + x2pss;
 	dx2pss = ( (1.0-psscon1)*gaink*var1 - x2pss )/t2;
-	
+
 	var3 = psscon2*var2 + x3pss;
     dx3pss = ( (1.0-psscon2)*var2 - x3pss )/t4;
-	
+
 	x1pss_1 = x1pss + dx1pss * t_inc;
 	x2pss_1 = x2pss + dx2pss * t_inc;
 	x3pss_1 = x3pss + dx3pss * t_inc;
 
-	//pssout_vstab = min(maxout,  max(var3,-minout));
-	double tmp;
-	if (var3 > (-maxout)){
-		tmp = var3;
-	}else {
-		tmp = -maxout;
-	}
-	
-	if (tmp < maxout){
-		pssout_vstab = tmp;
-	}else {
+	// Clamp output to [minout, maxout]
+	if (var3 < minout) {
+		pssout_vstab = minout;
+	} else if (var3 > maxout) {
 		pssout_vstab = maxout;
-	} 
+	} else {
+		pssout_vstab = var3;
+	}
 
   //printf("----renke debug: psssim predictor:  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", x1pss_1, x2pss_1, x3pss_1, dx1pss, dx2pss, dx3pss, pssout_vstab, var1, var2, var3); 
 }
@@ -186,32 +182,28 @@ void gridpack::dynamic_simulation::PsssimModel::corrector(double t_inc, bool fla
 		addwidearea = 0.0;
 	}
 
-	var1 = (genspd + addwidearea - x1pss_1)/tw;
-	dx1pss_1 = var1;
-	
+	// Washout: sTw/(1+sTw). State derivative is (u - x)/Tw, output is (u - x).
+	dx1pss_1 = (genspd + addwidearea - x1pss_1)/tw;
+	var1 = genspd + addwidearea - x1pss_1;  // washout output (NOT divided by Tw)
+
 	var2 = psscon1*gaink*var1 + x2pss_1;
 	dx2pss_1 = ( (1.0-psscon1)*gaink*var1 - x2pss_1 )/t2;
-	
+
 	var3 = psscon2*var2 + x3pss_1;
     dx3pss_1 = ( (1.0-psscon2)*var2 - x3pss_1 )/t4;
-	
+
 	x1pss_1 = x1pss + (dx1pss + dx1pss_1) / 2.0 * t_inc;
 	x2pss_1 = x2pss + (dx2pss + dx2pss_1) / 2.0 * t_inc;
 	x3pss_1 = x3pss + (dx3pss + dx3pss_1) / 2.0 * t_inc;
-	
-	//pssout_vstab = min(maxout,  max(var3,-minout));
-	double tmp;
-	if (var3 > (-maxout)){
-		tmp = var3;
-	}else {
-		tmp = -maxout;
-	}
-	
-	if (tmp < maxout){
-		pssout_vstab = tmp;
-	}else {
+
+	// Clamp output to [minout, maxout]
+	if (var3 < minout) {
+		pssout_vstab = minout;
+	} else if (var3 > maxout) {
 		pssout_vstab = maxout;
-	} 
+	} else {
+		pssout_vstab = var3;
+	}
 
   //printf("psssim pssout_vstab: %f\n", pssout_vstab);
 }

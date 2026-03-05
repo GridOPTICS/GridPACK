@@ -182,6 +182,8 @@ class DSFullBus
     void initDSVect(double ts);
 	
 	void setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase);
+	void setEquilLoadComp(bool flag) { p_equil_load_comp = flag; }
+	void saveEquilPFVoltage() { p_vpf_equil_mag = p_voltage; }
 
     /**
      * Update values for vectors in each integration time step (Predictor)
@@ -294,7 +296,20 @@ class DSFullBus
      * Set the value of the phase angle on this bus
      */
     void setPhase(double ang);
-	
+
+    /**
+     * Update PF reference voltage (p_voltage, p_angle) from the
+     * network-solved complex voltage (p_volt_full). Used during
+     * equilibrium initialization to ensure generators are initialized
+     * with actual Norton-equivalent bus voltages.
+     */
+    void updatePFVoltFromNetworkSolve();
+
+    /**
+     * Rebalance generator equilibrium after network init solve.
+     */
+    void rebalanceEquilibrium();
+
 	/**
      * Set the point of the related extended transformer branch of this bus, due to composite load model
      */
@@ -755,6 +770,8 @@ class DSFullBus
 	double p_scatterinjload_p, p_scatterinjload_q; //renke add, the value of the static load of the bus modified at each time step
 	bool p_bscatterinjloadconstcur_flag; //renke add, whether the static load of the bus could be modified at each time step as constant current load
 	double p_scatterinjload_constcur_r, p_scatterinjload_constcur_i; //renke add, the value of the static load of the bus modified at each time step as constant current load
+	bool p_equil_load_comp; // Enable constant-PQ load compensation during equilibrium init
+	double p_vpf_equil_mag; // Saved PF voltage magnitude for equilibrium load compensation
     double p_sbase;
     bool p_isGen;
     int p_area;

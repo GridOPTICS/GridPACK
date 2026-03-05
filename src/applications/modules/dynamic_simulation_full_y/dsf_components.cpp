@@ -40,6 +40,8 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_bscatterinjload_flag = false;
   p_bscatterinjload_flag_compensateY = false;
   p_bscatterinjloadconstcur_flag = false;
+  p_equil_load_comp = false;
+  p_vpf_equil_mag = 0.0;
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
   p_branchrelay_to_flag = false;
@@ -478,6 +480,26 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 	//printf("DSFullBus::vectorValues, bus %d, dynamic load Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
       }
       
+	  // Equilibrium load compensation: inject current to make constant-Z
+	  // loads behave as constant-PQ during equilibrium iterations.
+	  // I_comp = conj(S_load/V) - Y_load_CI * V
+	  // This is zero when V = V_pf, corrective when V deviates.
+	  if (p_equil_load_comp && p_vpf_equil_mag > 0.01
+	      && (p_pl != 0.0 || p_ql != 0.0)) {
+		  gridpack::ComplexType S_load(p_pl, p_ql);
+		  // Current that constant-PQ load would draw: I_pq = conj(S/V)
+		  gridpack::ComplexType I_pq = conj(S_load / p_volt_full);
+		  // Current that constant-Z load draws: I_ci = Y_load * V
+		  // where Y_load = conj(S)/|V_pf|^2 is already in Y-bus
+		  // Use saved PF voltage (p_vpf_equil_mag), NOT p_voltage which
+		  // gets overwritten by setVolt() each iteration
+		  double Vpf2 = p_vpf_equil_mag * p_vpf_equil_mag;
+		  gridpack::ComplexType Y_load = conj(S_load) / Vpf2;
+		  gridpack::ComplexType I_ci = Y_load * p_volt_full;
+		  // Compensation = difference (PQ current - CI current)
+		  values[0] += (I_pq - I_ci);
+	  }
+
 	  // INorton contribution from the sheded constant Y load
 	  if (p_bconstYLoadSheddingFlag){
 		  
@@ -635,7 +657,7 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorObPowerBaseFlag(bool g
 }
 
 /**
- * Set initial values of vectors for integration. 
+ * Set initial values of vectors for integration.
  * These can then be used in subsequent calculations
  * @param ts time step
  */
@@ -1094,18 +1116,21 @@ void gridpack::dynamic_simulation::DSFullBus::load(
               }
             }
           }
+          p_generators[icnt]->load(data,i);
+          if (has_gov) p_generators[icnt]->getGovernor()->load(data,i);
+          if (has_ex) p_generators[icnt]->getExciter()->load(data,i);
+          if (has_pss) p_generators[icnt]->getPss()->load(data,i);
+          if (has_plantcontroller) p_generators[icnt]->getPlantController()->load(data,i);
+          if (has_wind_tc) p_generators[icnt]->getTorqueController()->load(data,i);
+          if (has_wind_pc) p_generators[icnt]->getPitchController()->load(data,i);
+          if (has_wind_dt) p_generators[icnt]->getDriveTrainModel()->load(data,i);
+          if (has_wind_aero) p_generators[icnt]->getAeroDynamicModel()->load(data,i);
+        } else {
+          printf("Warning: Unrecognized generator model '%s' on bus %d\n",
+              model.c_str(), idx);
         }
-        p_generators[icnt]->load(data,i);
-        if (has_gov) p_generators[icnt]->getGovernor()->load(data,i);
-        if (has_ex) p_generators[icnt]->getExciter()->load(data,i);	
-	if (has_pss) p_generators[icnt]->getPss()->load(data,i);	
-	if (has_plantcontroller) p_generators[icnt]->getPlantController()->load(data,i);
-	if (has_wind_tc) p_generators[icnt]->getTorqueController()->load(data,i);
-	if (has_wind_pc) p_generators[icnt]->getPitchController()->load(data,i);
-	if (has_wind_dt) p_generators[icnt]->getDriveTrainModel()->load(data,i);
-	if (has_wind_aero) p_generators[icnt]->getAeroDynamicModel()->load(data,i);
 
-      } else if (!data->getValue(GENERATOR_MODEL, &model, i) && pg >= 0.0){ 
+      } else if (!data->getValue(GENERATOR_MODEL, &model, i) && pg >= 0.0){
 	// handle the generators having no dynamic model, need to convert to negative load
 	BaseGeneratorModel *generator = new gridpack::dynamic_simulation::BaseGeneratorModel;
 	boost::shared_ptr<BaseGeneratorModel> basegen;
@@ -1911,6 +1936,27 @@ void gridpack::dynamic_simulation::DSFullBus::setVoltage(double mag)
 void gridpack::dynamic_simulation::DSFullBus::setPhase(double ang)
 {
 	p_angle = ang;
+}
+
+/**
+ * Update PF reference voltage from network-solved complex voltage.
+ * This copies the magnitude and angle of p_volt_full into
+ * p_voltage and p_angle so that a subsequent initDSVect() call
+ * re-initializes generators at the actual Norton-equivalent
+ * operating point, eliminating the Pmech != Telec mismatch.
+ */
+void gridpack::dynamic_simulation::DSFullBus::updatePFVoltFromNetworkSolve()
+{
+  p_voltage = abs(p_volt_full);
+  p_angle = arg(p_volt_full);
+}
+
+void gridpack::dynamic_simulation::DSFullBus::rebalanceEquilibrium()
+{
+  for (int i = 0; i < p_ngen; i++) {
+    if (!p_gstatus[i] || !p_generators.size()) continue;
+    p_generators[i]->rebalanceEquilibrium();
+  }
 }
 
 /**

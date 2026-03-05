@@ -121,6 +121,8 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::predictor(double t_inc,
 void gridpack::dynamic_simulation::BaseGeneratorModel::corrector(double t_inc,
                                                                  bool flag) {}
 
+void gridpack::dynamic_simulation::BaseGeneratorModel::rebalanceEquilibrium() {}
+
 void gridpack::dynamic_simulation::BaseGeneratorModel::setWideAreaFreqforPSS(
     double freq) {
   p_wideareafreq = freq;

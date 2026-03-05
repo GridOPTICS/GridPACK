@@ -192,7 +192,6 @@ class Cblock
   **/
   void setdxlimits(double dxmin, double dxmax);
 
-
   /**
      INIT - Initializes the control block - calculates x[0]
 

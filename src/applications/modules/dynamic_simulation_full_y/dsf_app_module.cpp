@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 #include "gridpack/utilities/string_utils.hpp"
 
 using namespace std;
@@ -57,13 +58,14 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_report_dummy_obs = false;
   p_biterative_solve_network = false;
   p_iterative_network_debug = false;
+  p_equilibrium_init = false;
   p_generator_observationpower_systembase = true;
   ITER_TOL = 1.0e-7;
   MAX_ITR_NO = 8;
 
   p_current_time = 0.0;
   p_time_step = 0.005;
-  
+
 }
 
 /**
@@ -89,9 +91,10 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_report_dummy_obs = false;
   p_biterative_solve_network = false;
   p_iterative_network_debug = false;
+  p_equilibrium_init = false;
   ITER_TOL = 1.0e-7;
   MAX_ITR_NO = 8;
-  
+
 }
 
 /**
@@ -212,7 +215,8 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   
   ITER_TOL = cursor->get("iterativeNetworkInterfaceTol", 1.0e-7);
   MAX_ITR_NO = cursor->get("iterativeNetworkInterfaceMaxItrNo", 8);
-  
+  p_equilibrium_init = cursor->get("equilibriumInit", false);
+
   //printf ("-----rk debug in gridpack::dynamic_simulation::DSFullApp::readNetwork( ): ITER_TOL: %15.12f, MAX_ITR_NO: %d \n\n", ITER_TOL, MAX_ITR_NO);
 
   // Monitor generators for frequency violations
@@ -289,7 +293,8 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   
   ITER_TOL = cursor->get("iterativeNetworkInterfaceTol", 1.0e-7);
   MAX_ITR_NO =  cursor->get("iterativeNetworkInterfaceMaxItrNo", 8);
-  
+  p_equilibrium_init = cursor->get("equilibriumInit", false);
+
   //printf ("-----rk debug in gridpack::dynamic_simulation::DSFullApp::setNetwork( ): ITER_TOL: %15.12f, MAX_ITR_NO: %d \n\n", ITER_TOL, MAX_ITR_NO);
 
   // Monitor generators for frequency violations
@@ -597,8 +602,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   h_sol2 = h_sol1;
   flagP = 0;
   flagC = 0;
-  S_Steps = 1;
-  last_S_Steps = -1;
+  S_Steps = 0;
+  last_S_Steps = 0;
 
   p_insecureAt = -1;
 
@@ -609,6 +614,105 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   INorton_full_chk = nbusMap_sptr->mapToVector();
   max_INorton_full = 0.0;
   volt_full.reset(INorton_full->clone());
+
+  // Iterative equilibrium initialization: repeatedly solve Norton network
+  // and rebalance generator states until bus voltages converge.
+  // This eliminates the Pmech != Telec mismatch that causes pre-fault drift.
+  if (p_equilibrium_init) {
+    const int MAX_EQUIL_ITER = 100;
+    const double EQUIL_TOL = 1.0e-6;  // pu voltage convergence tolerance
+
+    // Save PF voltages for first-iteration diagnostic
+    int numBus_diag = p_network->numBuses();
+    std::vector<double> vpf_mag(numBus_diag), vpf_ang(numBus_diag);
+    std::vector<int> vpf_origIdx(numBus_diag);
+    for (int i = 0; i < numBus_diag; i++) {
+      gridpack::dynamic_simulation::DSFullBus *bus =
+        dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(
+          p_network->getBus(i).get());
+      vpf_mag[i] = bus->getVoltage();
+      vpf_ang[i] = bus->getPhase();
+      vpf_origIdx[i] = bus->getOriginalIndex();
+    }
+
+    printf("\n=== Iterative Equilibrium Initialization ===\n");
+
+    for (int eqiter = 0; eqiter < MAX_EQUIL_ITER; eqiter++) {
+
+      // Compute Norton currents from current generator states
+      p_factory->predictor_currentInjection(true);
+      p_factory->setMode(make_INorton_full);
+      nbusMap_sptr->mapToVector(INorton_full);
+
+      // Save previous voltage for convergence check
+      if (eqiter > 0) {
+        INorton_full_chk->equate(*volt_full);
+      }
+
+      // Solve augmented Y-bus: Y_aug * V = I_norton
+      volt_full->zero();
+      solver_sptr->solve(*INorton_full, *volt_full);
+
+      // Map voltages to buses and update generator terminal voltages
+      nbusMap_sptr->mapToBus(volt_full);
+      p_factory->setVolt(false);
+
+      // First iteration: print Norton identity diagnostic
+      if (eqiter == 0) {
+        printf("%-8s %12s %12s %12s %12s %12s %12s\n",
+               "Bus", "V_PF_mag", "V_Nor_mag", "dV_mag",
+               "V_PF_ang", "V_Nor_ang", "dAng(deg)");
+        double max_dv = 0.0, max_dang = 0.0;
+        int max_dv_bus = 0, max_dang_bus = 0;
+        int count_sig = 0;
+        for (int i = 0; i < numBus_diag; i++) {
+          if (!p_network->getActiveBus(i)) continue;
+          gridpack::dynamic_simulation::DSFullBus *bus =
+            dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(
+              p_network->getBus(i).get());
+          gridpack::ComplexType vc = bus->getComplexVoltage();
+          double vnm = std::abs(vc), vna = std::arg(vc);
+          double dv = vnm - vpf_mag[i];
+          double da = (vna - vpf_ang[i]) * 180.0 / M_PI;
+          if (fabs(dv) > fabs(max_dv)) { max_dv = dv; max_dv_bus = vpf_origIdx[i]; }
+          if (fabs(da) > fabs(max_dang)) { max_dang = da; max_dang_bus = vpf_origIdx[i]; }
+          if (fabs(dv) > 0.001) {
+            count_sig++;
+            printf("%-8d %12.6f %12.6f %12.6f %12.6f %12.6f %12.6f\n",
+                   vpf_origIdx[i], vpf_mag[i], vnm, dv,
+                   vpf_ang[i]*180.0/M_PI, vna*180.0/M_PI, da);
+          }
+        }
+        printf("Norton identity: max|dV|=%.6f pu (bus %d), max|dAng|=%.4f deg (bus %d), "
+               "%d buses with |dV|>0.001\n",
+               fabs(max_dv), max_dv_bus, fabs(max_dang), max_dang_bus, count_sig);
+      }
+
+      // Rebalance: set Pmech = Telec and Efd = LadIfd at current voltage
+      p_factory->rebalanceEquilibrium();
+
+      // Check convergence (skip first iteration — no previous voltage)
+      if (eqiter > 0) {
+        INorton_full_chk->add(*volt_full, -1.0);  // dV = V_prev - V_curr
+        double dv_norm = std::abs(INorton_full_chk->normInfinity());
+
+        if (eqiter <= 5 || eqiter % 10 == 0 || dv_norm < EQUIL_TOL) {
+          printf("  Equil iter %3d: ||dV||_inf = %.2e\n", eqiter + 1, dv_norm);
+        }
+
+        if (dv_norm < EQUIL_TOL) {
+          printf("Equilibrium initialization converged in %d iterations "
+                 "(tol=%.1e).\n", eqiter + 1, EQUIL_TOL);
+          break;
+        }
+        if (eqiter == MAX_EQUIL_ITER - 1) {
+          printf("WARNING: Equilibrium init did NOT converge after %d iterations "
+                 "(||dV||=%.2e, tol=%.1e).\n", MAX_EQUIL_ITER, dv_norm, EQUIL_TOL);
+        }
+      }
+    }
+    printf("=== End Iterative Equilibrium Initialization ===\n\n");
+  }
 
   timer->stop(t_init);
   if (!p_suppress_watch_files) {
@@ -3093,8 +3197,8 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   h_sol2 = h_sol1;
   flagP = 0;
   flagC = 0;
-  S_Steps = 1;
-  last_S_Steps = -1;
+  S_Steps = 0;
+  last_S_Steps = 0;
 
   p_insecureAt = -1;
 
@@ -3105,6 +3209,105 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   INorton_full_chk = nbusMap_sptr->mapToVector();
   max_INorton_full = 0.0;
   volt_full.reset(INorton_full->clone());
+
+  // Iterative equilibrium initialization: repeatedly solve Norton network
+  // and rebalance generator states until bus voltages converge.
+  // This eliminates the Pmech != Telec mismatch that causes pre-fault drift.
+  if (p_equilibrium_init) {
+    const int MAX_EQUIL_ITER = 100;
+    const double EQUIL_TOL = 1.0e-6;  // pu voltage convergence tolerance
+
+    // Save PF voltages for first-iteration diagnostic
+    int numBus_diag = p_network->numBuses();
+    std::vector<double> vpf_mag(numBus_diag), vpf_ang(numBus_diag);
+    std::vector<int> vpf_origIdx(numBus_diag);
+    for (int i = 0; i < numBus_diag; i++) {
+      gridpack::dynamic_simulation::DSFullBus *bus =
+        dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(
+          p_network->getBus(i).get());
+      vpf_mag[i] = bus->getVoltage();
+      vpf_ang[i] = bus->getPhase();
+      vpf_origIdx[i] = bus->getOriginalIndex();
+    }
+
+    printf("\n=== Iterative Equilibrium Initialization ===\n");
+
+    for (int eqiter = 0; eqiter < MAX_EQUIL_ITER; eqiter++) {
+
+      // Compute Norton currents from current generator states
+      p_factory->predictor_currentInjection(true);
+      p_factory->setMode(make_INorton_full);
+      nbusMap_sptr->mapToVector(INorton_full);
+
+      // Save previous voltage for convergence check
+      if (eqiter > 0) {
+        INorton_full_chk->equate(*volt_full);
+      }
+
+      // Solve augmented Y-bus: Y_aug * V = I_norton
+      volt_full->zero();
+      solver_sptr->solve(*INorton_full, *volt_full);
+
+      // Map voltages to buses and update generator terminal voltages
+      nbusMap_sptr->mapToBus(volt_full);
+      p_factory->setVolt(false);
+
+      // First iteration: print Norton identity diagnostic
+      if (eqiter == 0) {
+        printf("%-8s %12s %12s %12s %12s %12s %12s\n",
+               "Bus", "V_PF_mag", "V_Nor_mag", "dV_mag",
+               "V_PF_ang", "V_Nor_ang", "dAng(deg)");
+        double max_dv = 0.0, max_dang = 0.0;
+        int max_dv_bus = 0, max_dang_bus = 0;
+        int count_sig = 0;
+        for (int i = 0; i < numBus_diag; i++) {
+          if (!p_network->getActiveBus(i)) continue;
+          gridpack::dynamic_simulation::DSFullBus *bus =
+            dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(
+              p_network->getBus(i).get());
+          gridpack::ComplexType vc = bus->getComplexVoltage();
+          double vnm = std::abs(vc), vna = std::arg(vc);
+          double dv = vnm - vpf_mag[i];
+          double da = (vna - vpf_ang[i]) * 180.0 / M_PI;
+          if (fabs(dv) > fabs(max_dv)) { max_dv = dv; max_dv_bus = vpf_origIdx[i]; }
+          if (fabs(da) > fabs(max_dang)) { max_dang = da; max_dang_bus = vpf_origIdx[i]; }
+          if (fabs(dv) > 0.001) {
+            count_sig++;
+            printf("%-8d %12.6f %12.6f %12.6f %12.6f %12.6f %12.6f\n",
+                   vpf_origIdx[i], vpf_mag[i], vnm, dv,
+                   vpf_ang[i]*180.0/M_PI, vna*180.0/M_PI, da);
+          }
+        }
+        printf("Norton identity: max|dV|=%.6f pu (bus %d), max|dAng|=%.4f deg (bus %d), "
+               "%d buses with |dV|>0.001\n",
+               fabs(max_dv), max_dv_bus, fabs(max_dang), max_dang_bus, count_sig);
+      }
+
+      // Rebalance: set Pmech = Telec and Efd = LadIfd at current voltage
+      p_factory->rebalanceEquilibrium();
+
+      // Check convergence (skip first iteration — no previous voltage)
+      if (eqiter > 0) {
+        INorton_full_chk->add(*volt_full, -1.0);  // dV = V_prev - V_curr
+        double dv_norm = std::abs(INorton_full_chk->normInfinity());
+
+        if (eqiter <= 5 || eqiter % 10 == 0 || dv_norm < EQUIL_TOL) {
+          printf("  Equil iter %3d: ||dV||_inf = %.2e\n", eqiter + 1, dv_norm);
+        }
+
+        if (dv_norm < EQUIL_TOL) {
+          printf("Equilibrium initialization converged in %d iterations "
+                 "(tol=%.1e).\n", eqiter + 1, EQUIL_TOL);
+          break;
+        }
+        if (eqiter == MAX_EQUIL_ITER - 1) {
+          printf("WARNING: Equilibrium init did NOT converge after %d iterations "
+                 "(||dV||=%.2e, tol=%.1e).\n", MAX_EQUIL_ITER, dv_norm, EQUIL_TOL);
+        }
+      }
+    }
+    printf("=== End Iterative Equilibrium Initialization ===\n\n");
+  }
 
   timer->stop(t_init);
   if (!p_suppress_watch_files) {
@@ -3134,13 +3337,13 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   p_frequencyOK = true;
   // Save initial time step
   //saveTimeStep();
-	
+
   Simu_Current_Step = 0;
   p_bDynSimuDone = false;
-  
+
   timer->stop(t_presolve);
   //printf (" In function solvePreInitialize end, simu_total_steps: %d \n", simu_total_steps);
-  
+
 }
 
 /**

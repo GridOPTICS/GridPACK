@@ -24,8 +24,16 @@ Cblock::~Cblock(void)
 void Cblock::setcoeffs(double *a,double *b)
 {
   if(a[0] == 0) {
-    printf("a[0] = 0.0\n");
-    throw std::runtime_error("Cblock is not a transfer function\nCheck the value of the parameters\n");
+    // Degenerate case: no dynamics, pure static gain
+    // Y(s)/U(s) = b[1]/a[1] (assuming b[0] = 0 for proper TF)
+    if(a[1] == 0) {
+      throw std::runtime_error("Cblock: both a[0] and a[1] are zero\n");
+    }
+    p_A[0] = 0.0;
+    p_B[0] = 0.0;
+    p_C[0] = 0.0;
+    p_D[0] = b[1]/a[1];
+    return;
   }
   p_A[0] = -a[1]/a[0];
   p_B[0] = b[1]/a[0] - a[1]*b[0]/(a[0]*a[0]);
