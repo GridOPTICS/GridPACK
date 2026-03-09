@@ -39,12 +39,15 @@ functionality appears in the develop branch.
     - ZIP load model with voltage-dependent load representation
     - Added Pinj, Qinj to power flow screen outputs
     - Per-iteration max mismatch reporting in Newton-Raphson solve
+    - IREG remote voltage regulation support from PSS/E generator data
+    - JSON and CSV export of power flow results via ResultsExporter
   - Contingency Analysis Enhancements
     - N-1 auto-generation feature for contingency analysis
     - Automatic slack bus transfer and capacity check
     - QLIM configuration support in CA input XML files (default: false)
     - PV->PQ warning messages in contingency output files
     - Generator ID display in contingency results
+    - JSON and CSV export of contingency analysis results
   - Dynamic Simulation Enhancements
     - GENROU PSS (power system stabilizer) integration
     - Iterative equilibrium initialization (XML: equilibriumInit, default false)
