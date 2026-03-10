@@ -3657,6 +3657,10 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
  */
 void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 {
+  // Skip extended load branches (CMPLD transformer/feeder) which have
+  // no element data and may have invalid bus references
+  if (p_bextendedloadbranch > 0) return;
+
   int i;
   double pi = 4.0*atan(1.0);
 
@@ -3761,6 +3765,9 @@ void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 void gridpack::dynamic_simulation::DSFullBranch::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  // Skip extended load branches (CMPLD transformer/feeder)
+  if (p_bextendedloadbranch > 0) return;
+
   int i;
   evaluateBranchFlow();
   updateBranchCurrent();

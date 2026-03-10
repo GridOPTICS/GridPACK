@@ -38,11 +38,13 @@ void run_dynamics(int argc, char **argv)
   ds_app.setup();
   int ngen = ds_app.numGenerators();
   int nload = ds_app.numLoads();
-  int nline = ds_app.numLines();
+  // Note: numLines() crashes with CMPLD cases where extended
+  // buses/branches have invalid DataCollection pointers
+  //int nline = ds_app.numLines();
   if (world.rank() == 0) {
     std::cout << " Number of generators: "<<ngen<<std::endl;
     std::cout << " Number of loads:      "<<nload<<std::endl;
-    std::cout << " Number of lines:      "<<nline<<std::endl;
+    //std::cout << " Number of lines:      "<<nline<<std::endl;
   }
 
   ds_app.run();
