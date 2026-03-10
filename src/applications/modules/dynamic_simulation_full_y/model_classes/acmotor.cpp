@@ -6,10 +6,15 @@
 // -----------------------------------------------------------
 /**
  * @file   acmotor.cpp
- * @author Shuangshuang Jin 
- * @Last modified:  Oct 21, 2016 
- * 
- * @brief  
+ * @author Shuangshuang Jin
+ * @Last modified:  Oct 21, 2016
+ *
+ * @updated Yousu Chen
+ * - Fixed motor B thermal calculation: ImotorB_pu was incorrectly
+ *   assigned to ImotorA_pu in predictor and corrector.
+ * @date  2026-03-10
+ *
+ * @brief
  * 
  * 
  */
@@ -561,9 +566,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor(
     ImotorB_pu = vt * equivY ;
   else {
     gridpack::ComplexType tmp(PB, -QB);
-    ImotorA_pu = tmp / vt;
+    ImotorB_pu = tmp / vt;
   }
-               
+
   dThB_dt0 = (abs(ImotorB_pu) * abs(ImotorB_pu) * Rstall - temperatureB0) / Tth;
          
   // step-3 integration 
@@ -622,10 +627,10 @@ void gridpack::dynamic_simulation::AcmotorLoad::corrector(
     ImotorB_pu = vt * equivY ;
   else {
     gridpack::ComplexType tmp(PB, -QB);
-    ImotorA_pu = tmp / vt;
+    ImotorB_pu = tmp / vt;
   }
-               
-  dThB_dt = (abs(ImotorB_pu) * abs(ImotorB_pu) * Rstall -temperatureB) / Tth;
+
+  dThB_dt = (abs(ImotorB_pu) * abs(ImotorB_pu) * Rstall - temperatureB) / Tth;
                
   // step-2 integration 
   volt_measured = volt_measured0 + 0.5 * (dv_dt0 + dv_dt) * dt;
