@@ -6,8 +6,15 @@
 // -----------------------------------------------------------
 /**
  * @file   gensal.cpp
- * 
- * @brief: Salient pole generator model - no saturation  
+ *
+ * @updated Yousu Chen
+ * - Fixed predictor: use predicted x2w_1 for governor speed deviation
+ *   instead of pre-prediction x2w_0 (consistent with GENROU and PSS).
+ * - Fixed Sat(): handle zero saturation (S10=S12=0) to avoid NaN from
+ *   division by zero, which caused KSP divergence on initialization.
+ * @date  2026-03-10
+ *
+ * @brief: Salient pole generator model - no saturation
  * 
  * 
  */
@@ -118,19 +125,24 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
  */
 double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 {
+  // No saturation when S10 and S12 are both zero
+  if (S10 == 0.0 && S12 == 0.0) return 0.0;
+  // Guard against S10 = 0 with S12 != 0 (degenerate)
+  if (S10 == 0.0) return 0.0;
+
   double a_ = S12 / S10 - 1.0;
   double b_ = -2 * S12 / S10 + 2.4;
   double c_ = S12 / S10 - 1.44;
   double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
   double B = S10 / ((1.0 - A) * (1.0 - A));
-  
+
   double tmp = x-A;
 
   if (tmp<0.0) {
     tmp = 0.0;
   }
   double result = B * tmp * tmp;
-  
+
   return result; // Scaled Quadratic with 1.7.1 equations
 }
 
@@ -408,7 +420,7 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
   }
 
   if (p_hasGovernor){
-    p_governor->setRotorSpeedDeviation(x2w_0);
+    p_governor->setRotorSpeedDeviation(x2w_1);
     p_governor->predictor(t_inc, flag);
   }
 

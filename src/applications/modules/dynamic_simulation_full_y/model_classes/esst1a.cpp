@@ -7,6 +7,13 @@
 /**
  * @file   esst1a.cpp
  *
+ * @updated Yousu Chen
+ * - Fixed regulator input: use VLL1 (after 2nd lead-lag) instead of
+ *   VLL when TA != 0.
+ * - Fixed computeModel: bypass lead-lag blocks when TB or TB1 is zero,
+ *   matching init() logic. Uninitialized blocks produced zero output.
+ * @date  2026-03-10
+ *
  * @brief  ESST1A model
  * 
  * 
@@ -248,14 +255,22 @@ void gridpack::dynamic_simulation::Esst1aModel::computeModel(double t_inc,Integr
 
   if (UEL == 2.0) leadlag_blk_in = HVGate_blk1.getoutput(leadlag_blk_in);
 
-  VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
-  
-  VLL1 = Leadlag_blkBC1.getoutput(VLL, t_inc, int_flag, true); 
+  if (!zero_TB) {
+    VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
+  } else {
+    VLL = leadlag_blk_in;
+  }
+
+  if (!zero_TB1) {
+    VLL1 = Leadlag_blkBC1.getoutput(VLL, t_inc, int_flag, true);
+  } else {
+    VLL1 = VLL;
+  }
 
   if (zero_TA) {
     VA = Regulator_gain_blk.getoutput(VLL1);
   } else {
-    VA = Regulator_blk.getoutput(VLL, t_inc, int_flag, true);
+    VA = Regulator_blk.getoutput(VLL1, t_inc, int_flag, true);
   }
 
   double u1 = 0.0;
