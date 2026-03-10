@@ -468,16 +468,13 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
       if (p_ngen > 0) {
         for (int i = 0; i < p_ngen; i++) {
 	  if(!p_gstatus[i] || !p_generators.size()) continue;
-	  values[0] += p_generators[i]->INorton(); 
+	  values[0] += p_generators[i]->INorton();
         } // generator for loop
       }  // if p_ngen>0
 	  
       //INorton contribution from dynamic load
       for (int i =0; i<p_ndyn_load; i++){
-	values[0] += p_loadmodels[i]->INorton(); 
-	
-	ComplexType tmp = p_loadmodels[i]->INorton();
-	//printf("DSFullBus::vectorValues, bus %d, dynamic load Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
+	values[0] += p_loadmodels[i]->INorton();
       }
       
 	  // Equilibrium load compensation: inject current to make constant-Z

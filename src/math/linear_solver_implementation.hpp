@@ -10,8 +10,14 @@
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
  * @date   2022-10-05 08:52:17 d3g096
- * 
- * @brief  
+ *
+ * @updated Yousu Chen
+ * - Fixed off-by-one in p_serialSolvePrep(): setElementRange() uses
+ *   half-open [lo,hi), so hi must be size() not size()-1. Last element
+ *   of RHS/solution was stale on ForceSerial path with np>1.
+ * @date  2026-03-10
+ *
+ * @brief
  * 
  * 
  */
@@ -199,7 +205,7 @@ protected:
       p_serialRHS.reset(b.localClone());
     } else {
       b.getAllElements(&p_valueBuffer[0]);
-      p_serialRHS->setElementRange(0, b.size() - 1, &p_valueBuffer[0]);
+      p_serialRHS->setElementRange(0, b.size(), &p_valueBuffer[0]);
     }
 
     // Collect the initial guess, if it's not zero
@@ -212,7 +218,7 @@ protected:
     } else {
       if (!p_guessZero) {
         x.getAllElements(&p_valueBuffer[0]);
-        p_serialSolution->setElementRange(0, x.size() - 1, &p_valueBuffer[0]);
+        p_serialSolution->setElementRange(0, x.size(), &p_valueBuffer[0]);
       }
     }
   }

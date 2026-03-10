@@ -57,7 +57,7 @@
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
     <!--generatorParameters> 300bus_detail_model_cmpld_motorW.dyr </generatorParameters-->
     <generatorParameters> 300bus_detail_model_cmpld_combine.dyr </generatorParameters>
-    <simulationTime>10</simulationTime>
+    <simulationTime>5</simulationTime>
     <timeStep>0.001</timeStep>
     <Events>
       <faultEvent>
@@ -85,9 +85,10 @@
         <!--
                      -ksp_type richardson
         -->
-        -ksp_type preonly
+        -ksp_type richardson
         -pc_type lu
-        -pc_factor_mat_ordering_type amd
+        -pc_factor_mat_solver_type superlu_dist
+        -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
     <LinearMatrixSolver>
