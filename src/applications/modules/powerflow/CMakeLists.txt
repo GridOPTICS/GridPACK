@@ -38,6 +38,7 @@ endif()
 add_library(gridpack_powerflow_module
   pf_app_module.cpp
   pf_factory_module.cpp
+  ${CMAKE_SOURCE_DIR}/utilities/results_exporter.cpp
   )
 
 gridpack_set_library_version(gridpack_powerflow_module)

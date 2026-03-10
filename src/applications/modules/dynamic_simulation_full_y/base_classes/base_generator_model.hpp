@@ -108,6 +108,15 @@ public:
   virtual void corrector(double t_inc, bool flag);
 
   /**
+   * Rebalance equilibrium after network initialization solve.
+   * Recomputes Telec and LadIfd at the current (network-solved) voltage
+   * using existing internal states, then sets Pmech = Telec and Efd = LadIfd.
+   * This eliminates the Pmech != Telec mismatch without changing the
+   * generator operating point.
+   */
+  virtual void rebalanceEquilibrium();
+
+  /**
    * Set voltage on each generator
    */
   virtual void setVoltage(gridpack::ComplexType voltage);

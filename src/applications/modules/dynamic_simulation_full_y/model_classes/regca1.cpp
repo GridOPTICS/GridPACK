@@ -158,9 +158,9 @@ void gridpack::dynamic_simulation::Regca1Generator::updateData(
   Qg = -Vt*Iqout*p_mbase/p_sbase;
 
   if (!data->setValue(GENERATOR_PG_CURRENT, Pg, idx)) {
-    data->addValue(GENERATOR_PG_CURRENT, Qg, idx);
+    data->addValue(GENERATOR_PG_CURRENT, Pg, idx);
   }
-  if (!data->setValue(GENERATOR_QG_CURRENT, Pg, idx)) {
+  if (!data->setValue(GENERATOR_QG_CURRENT, Qg, idx)) {
     data->addValue(GENERATOR_QG_CURRENT, Qg, idx);
   }
 }

@@ -19,6 +19,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_generator_model.hpp"
+#include "base_pss_model.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -94,6 +95,11 @@ class GenrouGenerator : public BaseGeneratorModel
     void corrector(double t_inc, bool flag);
 
     /**
+     * Rebalance equilibrium after network init solve.
+     */
+    void rebalanceEquilibrium();
+
+    /**
      * Predict part calculate current injections
      * @param flag initial step if true
      */
@@ -107,9 +113,14 @@ class GenrouGenerator : public BaseGeneratorModel
 
 	/**
 	* return true if trip generator successfully
-	* 
+	*
 	*/
     bool tripGenerator();
+
+    /**
+     * Set wide area frequency for PSS
+     */
+    void setWideAreaFreqforPSS(double freq);
 	
     /**
      * Set voltage on each generator
@@ -182,7 +193,7 @@ class GenrouGenerator : public BaseGeneratorModel
     double dx1d_1, dx2w_1, dx3Eqp_1, dx4Psidp_1, dx5Psiqp_1, dx6Edp_1;
     double Id, Iq;
     
-    double Efd, LadIfd, Pmech;
+    double Efd, LadIfd, Pmech, Vstab;
     
     double B, G;
 

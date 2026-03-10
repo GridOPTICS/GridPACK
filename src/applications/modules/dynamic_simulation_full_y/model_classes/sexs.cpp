@@ -57,11 +57,14 @@ void gridpack::dynamic_simulation::SexsModel::load(
   if (!data->getValue(EXCITER_TA_OVER_TB, &TA_OVER_TB, idx)) TA_OVER_TB = 0.0; // TA_OVER_TB
   if (!data->getValue(EXCITER_TB, &TB, idx)) TB = 0.0; // TB
   if (!data->getValue(EXCITER_K, &K, idx))   K  = 0.0; // K
-  if (!data->getValue(EXCITER_EMAX, &EMAX, idx)) EMAX = 0.0; // EMAX
+  if (!data->getValue(EXCITER_EMAX, &EMAX, idx)) EMAX = 999.0; // EMAX (effectively unlimited)
   if (!data->getValue(EXCITER_EMIN, &EMIN, idx)) EMIN = 0.0; // EMIN
   if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
 
   TA = TA_OVER_TB*TB;
+
+  printf("SEXS Bus %d Gen %s: K=%f TE=%f EMIN=%f EMAX=%f TA/TB=%f TB=%f\n",
+         p_bus_id, p_ckt.c_str(), K, TE, EMIN, EMAX, TA_OVER_TB, TB);
 
   // Set parameters for the first block
   leadlagblock.setparams(TA,TB);

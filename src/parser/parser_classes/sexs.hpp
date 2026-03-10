@@ -195,7 +195,20 @@ template <class _data_struct> class SexsParser
           data->setValue(EXCITER_EMAX,
               atof(split_line[8].c_str()), g_id);
         }
-      } 
+      }
+
+      // Default EMIN when missing from dyr (non-negative Efd)
+      if (nstr <= 7) {
+        if (!data->getValue(EXCITER_EMIN,&rval,g_id)) {
+          data->addValue(EXCITER_EMIN, 0.0, g_id);
+        }
+      }
+      // Default EMAX when missing from dyr (effectively unlimited)
+      if (nstr <= 8) {
+        if (!data->getValue(EXCITER_EMAX,&rval,g_id)) {
+          data->addValue(EXCITER_EMAX, 999.0, g_id);
+        }
+      }
     }
 
     /**
@@ -249,11 +262,15 @@ template <class _data_struct> class SexsParser
       // EXCITER_EMIN
       if (nstr > 7) {
         data.ex_emin = atof(split_line[7].c_str());
+      } else {
+        data.ex_emin = 0.0;
       }
 
       // EXCITER_EMAX
       if (nstr > 8) {
         data.ex_emax = atof(split_line[8].c_str());
+      } else {
+        data.ex_emax = 999.0;
       }
     }
 };

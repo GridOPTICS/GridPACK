@@ -57,6 +57,7 @@ gridpack::dynamic_simulation::GenrouGenerator::GenrouGenerator(void)
     dx5Psiqp_1 = 0;;
     dx6Edp_1 = 0;
 
+    Vstab = 0.0;
     p_tripped = false;
 }
 
@@ -269,8 +270,14 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setMechanicalPower(Pmech);
-    p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
+    p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1
     p_governor->init(mag, ang, ts);
+  }
+
+  if (p_hasPss) {
+    boost::shared_ptr<BasePssModel> pss = getPss();
+    pss->setOmega(x2w);
+    pss->init(mag, ang, ts);
   }
 
   // Norton impedance
@@ -282,6 +289,116 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   x4Psidp_1 = x4Psidp;
   x5Psiqp_1 = x5Psiqp;
   x6Edp_1   = x6Edp;
+}
+
+/**
+ * Rebalance equilibrium after network initialization solve.
+ *
+ * At t=0 the Norton-augmented Y-bus produces a bus voltage that differs
+ * from the power-flow voltage.  The generator states (x4,x5,x6) were
+ * initialized at the PF voltage and are NOT at equilibrium for the
+ * Norton voltage.  This function solves for the exact equilibrium
+ * Id,Iq at the Norton voltage (a 2x2 linear system), then sets ALL
+ * damper winding states (x4,x5,x6), Pmech, and Efd to their
+ * equilibrium values so that every state derivative is zero.
+ *
+ * Derivation:  At steady state the GENROU ODEs give
+ *   x4 = x3 - (Xdp-Xl)*Id,   x5 = x6 + (Xqp-Xl)*Iq,
+ *   x6 = (Xq-Xqp)*Iq,        TempD = TempQ = 0.
+ * Substituting into the subtransient flux expressions yields
+ *   Psidpp = x3 - (Xdp-Xdpp)*Id,   Psiqpp = -(Xq-Xdpp)*Iq,
+ * whence the internal voltage is Vd = (Xq-Xdpp)*Iq, Vq = x3-(Xdp-Xdpp)*Id.
+ * Combined with the stator algebraic equations this gives a 2x2 linear
+ * system in (Id, Iq).
+ */
+void gridpack::dynamic_simulation::GenrouGenerator::rebalanceEquilibrium()
+{
+  if (!getGenStatus()) return;
+
+  // Norton admittance components (machine base)
+  B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
+  G = Ra / (Ra * Ra + Xdpp * Xdpp);
+
+  // Terminal voltage from network solve (already set by setVolt)
+  Vterm = presentMag;
+  Theta = presentAng;
+  double Vrterm = Vterm * cos(Theta);
+  double Viterm = Vterm * sin(Theta);
+  double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
+  double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
+
+  // --- Solve for equilibrium Id, Iq at the Norton voltage ---
+  // At equilibrium, the internal voltages become:
+  //   Vd = gamma*Iq,  Vq = x3 - alpha*Id
+  // where alpha = Xdp - Xdpp, gamma = Xq - Xdpp (since Xqpp = Xdpp).
+  // Substituting into the stator algebraic equations
+  //   Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B
+  //   Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G
+  // gives the 2x2 system  A * [Id, Iq]^T = rhs.
+  double alpha = Xdp - Xdpp;
+  double gamma = Xq  - Xdpp;  // = Xq - Xqpp since Xqpp = Xdpp
+
+  double a11 = 1.0 - alpha * B;
+  double a12 = -gamma * G;
+  double a21 = alpha * G;
+  double a22 = 1.0 - gamma * B;
+
+  double rhs1 = -Vdterm * G - (x3Eqp - Vqterm) * B;
+  double rhs2 = -Vdterm * B + (x3Eqp - Vqterm) * G;
+
+  double det = a11 * a22 - a12 * a21;
+  Id = (rhs1 * a22 - rhs2 * a12) / det;
+  Iq = (a11 * rhs2 - a21 * rhs1) / det;
+
+  // --- Update flux states to equilibrium ---
+  x4Psidp = x3Eqp - (Xdp - Xl) * Id;
+  x6Edp   = (Xq - Xqp) * Iq;
+  x5Psiqp = x6Edp + (Xqp - Xl) * Iq;
+
+  // Recompute subtransient fluxes (for Telec and watch output)
+  double Psidpp = x3Eqp - (Xdp - Xdpp) * Id;   // = x3 - alpha*Id
+  double Psiqpp = -(Xq - Xdpp) * Iq;            // = -gamma*Iq
+
+  // Electrical torque and field current (TempD = 0 at equilibrium)
+  double Telec = Psidpp * Iq - Psiqpp * Id;
+  LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * Id;
+
+  // Set Pmech = Telec so dx2w = 0
+  Pmech = Telec;
+  Pmechinit = Pmech;
+
+  // Set Efd = LadIfd so dx3Eqp = 0
+  Efd = LadIfd;
+  Efdinit = Efd;
+
+  // Update _1 copies to match
+  x4Psidp_1 = x4Psidp;
+  x5Psiqp_1 = x5Psiqp;
+  x6Edp_1   = x6Edp;
+
+  // Update network currents for watch output
+  Ir = +Id * sin(x1d) + Iq * cos(x1d);
+  Ii = -Id * cos(x1d) + Iq * sin(x1d);
+  genP = Vrterm * Ir + Viterm * Ii;
+  genQ = Viterm * Ir - Vrterm * Ii;
+
+  // Re-initialize exciter with updated Efd
+  if (p_hasExciter) {
+    p_exciter = getExciter();
+    p_exciter->setVterminal(Vterm);
+    p_exciter->setVcomp(Vterm);
+    p_exciter->setFieldVoltage(Efd);
+    p_exciter->setFieldCurrent(LadIfd);
+    p_exciter->init(Vterm, Theta, 0.0);
+  }
+
+  // Re-initialize governor with updated Pmech
+  if (p_hasGovernor) {
+    p_governor = getGovernor();
+    p_governor->setMechanicalPower(Pmech);
+    p_governor->setRotorSpeedDeviation(x2w);
+    p_governor->init(Vterm, Theta, 0.0);
+  }
 }
 
 /**
@@ -385,12 +502,12 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
       p_exciter->setVterminal(presentMag);
       p_exciter->setVcomp(presentMag);
       p_exciter->setFieldCurrent(LadIfd);
-      
+
       Efd = p_exciter->getFieldVoltage();
     } else {
       Efd = Efdinit;
     }
-    
+
     if (p_hasGovernor) {
       p_governor = getGovernor();
       p_governor->setRotorSpeedDeviation(x2w);
@@ -398,62 +515,69 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     } else {
       Pmech = Pmechinit;
     }
-    
+
     double pi = 4.0*atan(1.0);
-    double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
+    double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl);
     double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
-    
+
     double Vd = - Psiqpp;
     double Vq = + Psidpp;
-    
+
     Vterm = presentMag;
     Theta = presentAng;
     double Vrterm = Vterm * cos(Theta);
     double Viterm = Vterm * sin(Theta);
     double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
     double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
-    
+
     //DQ Axis currents
     Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
     Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
-    
-    
+
+
     double Telec = Psidpp * Iq - Psiqpp * Id;
     double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
       * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
     LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
-    //printf("Psiqpp=%f,Psidpp=%f,Telec=%f,TempD=%f,LadIfd=%f\n",Psiqpp,Psidpp,Telec,TempD,LadIfd);
-    //printf("Id=%f, Iq=%f\n", Id, Iq);
-    
+
     dx1d = x2w * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
-    //printf("H = %f, Pmech = %f, D = %f, x2w = %f, Telec = %f\n", H, Pmech, D, x2w, Telec);
-    dx2w = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec); //TBD: call Governor for Pmech (Done)
-    dx3Eqp = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
+    dx2w = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec);
+    dx3Eqp = (Efd - LadIfd) / Tdop;
     dx4Psidp = (-x4Psidp - (Xdp - Xl) * Id + x3Eqp) / Tdopp;
     dx5Psiqp = (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp) / Tqopp;
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl))
       * (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp);
-    //dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqopp;  // SJin: in pdf, its Tqop, I use Tqopp?
-    // Yuan modified below 20201002
-    dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop;  // SJin: in pdf, its Tqop, I use Tqopp?
-    // Yuan modified end
-    
+    dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop;
+
     x1d_1 = x1d + dx1d * t_inc;
     x2w_1 = x2w + dx2w * t_inc;
     x3Eqp_1 = x3Eqp + dx3Eqp * t_inc;
     x4Psidp_1 = x4Psidp + dx4Psidp * t_inc;
     x5Psiqp_1 = x5Psiqp + dx5Psiqp * t_inc;
     x6Edp_1 = x6Edp + dx6Edp * t_inc;
-    
+
     if (printFlag) {
       printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, x6Edp);
       printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
     }
-    
+
+    // PSS: run before exciter predictor so Vstab is available
+    if (p_hasPss) {
+      boost::shared_ptr<BasePssModel> pss = getPss();
+      pss->setOmega(x2w_1);
+      pss->predictor(t_inc, flag);
+      Vstab = pss->getVstab();
+    } else {
+      Vstab = 0.0;
+    }
+
     if (p_hasExciter) {
+      if (p_hasPss) {
+        p_exciter->setVstab(Vstab);
+      }
       p_exciter->predictor(t_inc, flag);
     }
-    
+
     if (p_hasGovernor) {
       p_governor->predictor(t_inc, flag);
     }
@@ -612,14 +736,27 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     x5Psiqp = x5Psiqp + (dx5Psiqp + dx5Psiqp_1) / 2.0 * t_inc;
     x6Edp = x6Edp + (dx6Edp + dx6Edp_1) / 2.0 * t_inc;
     
+    // PSS: run before exciter corrector so Vstab is available
+    if (p_hasPss) {
+      boost::shared_ptr<BasePssModel> pss = getPss();
+      pss->setOmega(x2w_1);
+      pss->corrector(t_inc, flag);
+      Vstab = pss->getVstab();
+    } else {
+      Vstab = 0.0;
+    }
+
     if (p_hasExciter) {
+      if (p_hasPss) {
+        p_exciter->setVstab(Vstab);
+      }
       p_exciter->corrector(t_inc, flag);
     }
-    
+
     if (p_hasGovernor) {
       p_governor->corrector(t_inc, flag);
     }
-    
+
     if (p_tripped){
       x1d = 0.0;
       x2w = -1.0;
@@ -659,8 +796,17 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
 bool gridpack::dynamic_simulation::GenrouGenerator::tripGenerator()
 {
   p_tripped = true;
-  
+
   return true;
+}
+
+void gridpack::dynamic_simulation::GenrouGenerator::setWideAreaFreqforPSS(double freq)
+{
+  p_wideareafreq = freq;
+  if (p_hasPss) {
+    boost::shared_ptr<BasePssModel> pss = getPss();
+    pss->setWideAreaFreqforPSS(freq);
+  }
 }
 
 /**

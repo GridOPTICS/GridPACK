@@ -28,6 +28,7 @@
 #include "pf_factory_module.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"
+#include "gridpack/utilities/results_exporter.hpp"
 
 namespace gridpack {
 namespace powerflow {
@@ -141,6 +142,22 @@ class PFAppModule
     void writeHeader(const char *msg);
     std::vector<std::string> writeBusString(const char *signal = NULL);
     std::vector<std::string> writeBranchString(const char *signal = NULL);
+
+    /**
+     * Get convergence summary from last solve
+     */
+    gridpack::utility::ConvergenceSummary getConvergence() const;
+
+    /**
+     * Collect power flow results into structured format for export
+     */
+    gridpack::utility::PowerFlowResults collectResults();
+
+    /**
+     * Export results to JSON or CSV file
+     */
+    void exportResults(const std::string& filename,
+                       gridpack::utility::ResultsExporter::Format format);
 
     /**
      * Redirect output from standard out
@@ -932,6 +949,9 @@ class PFAppModule
 
     // Flag to suppress all printing to standard out
     bool p_no_print;
+
+    // Convergence tracking for mismatch reporting and export
+    gridpack::utility::ConvergenceSummary p_convergence;
 
 #ifdef USE_GOSS
     gridpack::goss::GOSSClient p_goss_client;

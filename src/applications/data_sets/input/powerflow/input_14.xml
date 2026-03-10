@@ -4,6 +4,9 @@
     <networkConfiguration> IEEE14.raw </networkConfiguration>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
+    <qlim>true</qlime>
+    <outputFormat>csv</outputFormat> <!-- Another option: json -->
+    <outputFile>pf_IEEE14</outputFile>
     <!--
     <LinearSolver>
       <PETScPrefix>nrs</PETScPrefix>

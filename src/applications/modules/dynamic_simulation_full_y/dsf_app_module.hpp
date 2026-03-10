@@ -977,8 +977,10 @@ class DSFullApp
     // pointer to factory
     boost::shared_ptr<DSFullFactory> p_factory;
 	
-	// whether iteratively solve the network interface 
+	// whether iteratively solve the network interface
 	bool p_biterative_solve_network;
+	// whether to perform equilibrium initialization (re-init after network solve)
+	bool p_equilibrium_init;
 	double ITER_TOL;  // iteratively solve the network interface tolerance, defined in xml file
 	int MAX_ITR_NO;   // iteratively solve the network interface max iteration number, defined in xml file
 	
@@ -987,7 +989,6 @@ class DSFullApp
 	
 	//for the generator observations, output the generator power based on system base or generator base
 	bool p_generator_observationpower_systembase;
-
 
     // Current step count?
     int p_S_Steps;

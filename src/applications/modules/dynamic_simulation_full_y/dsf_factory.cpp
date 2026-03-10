@@ -360,11 +360,50 @@ bool gridpack::dynamic_simulation::DSFullFactory::updateBranchRelay(bool flag,do
 void gridpack::dynamic_simulation::DSFullFactory::updateoldbusvoltage()
 {
 	int i;
-	
+
 	for (i=0; i<p_numBus; i++) {
     p_buses[i]->updateoldbusvoltage();
-	
+
     }
+}
+
+/**
+ * Update PF reference voltages from network-solved voltages on all buses
+ */
+void gridpack::dynamic_simulation::DSFullFactory::updatePFVoltFromNetworkSolve()
+{
+  int i;
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->updatePFVoltFromNetworkSolve();
+  }
+}
+
+void gridpack::dynamic_simulation::DSFullFactory::rebalanceEquilibrium()
+{
+  int i;
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->rebalanceEquilibrium();
+  }
+}
+
+/**
+ * Enable or disable equilibrium load compensation on all buses
+ */
+void gridpack::dynamic_simulation::DSFullFactory::setEquilLoadComp(bool flag)
+{
+  for (int i = 0; i < p_numBus; i++) {
+    p_buses[i]->setEquilLoadComp(flag);
+  }
+}
+
+/**
+ * Save PF voltage magnitude on all buses for equilibrium load compensation
+ */
+void gridpack::dynamic_simulation::DSFullFactory::saveEquilPFVoltage()
+{
+  for (int i = 0; i < p_numBus; i++) {
+    p_buses[i]->saveEquilPFVoltage();
+  }
 }
 
 /**

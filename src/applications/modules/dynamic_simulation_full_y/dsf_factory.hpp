@@ -76,7 +76,6 @@ class DSFullFactory
     void initDSVect(double ts);
 	
 	void setGeneratorObPowerBaseFlag(bool generator_observationpower_systembase);
-
     /**
      * Update vectors in each integration time step (Predictor)
      */
@@ -139,6 +138,14 @@ class DSFullFactory
      * update old bus voltage
      */
 	void updateoldbusvoltage();
+
+    /**
+     * Update PF reference voltages from network-solved voltages on all buses
+     */
+    void updatePFVoltFromNetworkSolve();
+    void rebalanceEquilibrium();
+    void setEquilLoadComp(bool flag);
+    void saveEquilPFVoltage();
 	void printallbusvoltage();
 
     /**

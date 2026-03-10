@@ -38,12 +38,19 @@ functionality appears in the develop branch.
     - Switched shunt support
     - ZIP load model with voltage-dependent load representation
     - Added Pinj, Qinj to power flow screen outputs
+    - Per-iteration max mismatch reporting in Newton-Raphson solve
+    - IREG remote voltage regulation support from PSS/E generator data
+    - JSON and CSV export of power flow results via ResultsExporter
   - Contingency Analysis Enhancements
     - N-1 auto-generation feature for contingency analysis
     - Automatic slack bus transfer and capacity check
     - QLIM configuration support in CA input XML files (default: false)
     - PV->PQ warning messages in contingency output files
     - Generator ID display in contingency results
+    - JSON and CSV export of contingency analysis results
+  - Dynamic Simulation Enhancements
+    - GENROU PSS (power system stabilizer) integration
+    - Iterative equilibrium initialization (XML: equilibriumInit, default false)
   - Added build trigger when releasing a new version of GridPACK
 - Changed
   - User manual updated for v3.6 including power flow, state estimation,
@@ -51,6 +58,16 @@ functionality appears in the develop branch.
   - Migrated QLIM parameter to bool type in power flow and CA for consistency
   - Optimized CMake builds
 - Fixed
+  - Fixed PSSSIM washout output divided by Tw, reducing PSS gain by 10x
+  - Fixed HYGOV fallback setting R instead of r when parameter missing
+  - Fixed Cblock crash when model time constant is zero (e.g., REECA1 with TP=0)
+  - Fixed SEXS exciter EMAX default from 0.0 to 999.0
+  - Fixed REGCA1 P and Q swapped in output reporting
+  - Fixed null pointer crash on unrecognized generator model in dsf_components
+  - Fixed REECA1 parser reading TIQ parameter from wrong dyr column
+  - Fixed incomplete REGCA1 data for bus 3433 in 240-bus WECC dyr file
+  - Fixed contingency analysis multi-process deadlock in GA one-sided operations
+    during result export (getData must be collective for GA progress)
   - Fixed 3-winding transformer parsing in PSS/E parsers
   - Fixed warm start with qlim=false scenario
   - Fixed incomplete printing of many parallel lines in power flow output

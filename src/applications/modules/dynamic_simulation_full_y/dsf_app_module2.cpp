@@ -213,7 +213,107 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
   solver_sptr.reset(new gridpack::math::LinearSolver (*ybus));
   solver_sptr->configure(cursor);
 
-  
+  // Equilibrium initialization: iteratively solve the Norton network and
+  // rebalance generator states until the voltage and states are self-consistent.
+  // Each iteration: (1) compute Norton current from current states,
+  // (2) solve Y_aug * V = I_Norton, (3) rebalance flux states + Pmech/Efd
+  // at the solved voltage. This converges because the flux state adjustment
+  // is a contraction in the Norton current space.
+  if (p_equilibrium_init) {
+    const int MAX_EQUIL_ITER = 100;
+    const double EQUIL_TOL = 1.0e-6;  // Voltage convergence tolerance (pu)
+
+    // Save PF voltage vector for Norton identity diagnostic
+    boost::shared_ptr<gridpack::math::Vector> v_pf(volt_full->clone());
+    v_pf->zero();
+    // Get PF voltages from buses into a vector (buses still have PF voltage at this point)
+    // Use INorton_full_chk as temp storage for PF voltage
+    // Actually, just save the first Norton-solved voltage for comparison
+    bool first_solve_done = false;
+
+    for (int eqiter = 0; eqiter < MAX_EQUIL_ITER; eqiter++) {
+      // Compute Norton currents from current generator states
+      p_factory->predictor_currentInjection(true);
+      p_factory->setMode(make_INorton_full);
+      nbusMap_sptr->mapToVector(INorton_full);
+
+      // Save previous voltage for convergence check
+      if (eqiter > 0) {
+        INorton_full_chk->equate(*volt_full);
+      }
+
+      // Solve augmented Y-bus for bus voltages
+      volt_full->zero();
+      solver_sptr->solve(*INorton_full, *volt_full);
+
+      // Norton identity diagnostic: after first solve, compare V_norton with V_pf
+      if (!first_solve_done) {
+        first_solve_done = true;
+        // volt_full now has the Norton-solved voltage V_0 = Y_aug^{-1} * I_norton
+        // Check how far this is from the PF voltage (stored in bus objects)
+        // Print a few specific bus voltages for comparison
+        nbusMap_sptr->mapToBus(volt_full);
+        p_factory->setVolt(false);
+
+        // Print diagnostic for key buses
+        int diag_buses[] = {1032, 1002, 3933, 2434};
+        for (int db = 0; db < 4; db++) {
+          std::vector<int> lidx = p_network->getLocalBusIndices(diag_buses[db]);
+          if (!lidx.empty()) {
+            gridpack::dynamic_simulation::DSFullBus *dbus =
+              dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(
+                p_network->getBus(lidx[0]).get());
+            // Get PF voltage from data collection
+            double v_pf_mag = 0.0, v_pf_ang = 0.0;
+            gridpack::component::DataCollection *busdata =
+              p_network->getBusData(lidx[0]).get();
+            busdata->getValue(BUS_VOLTAGE_MAG, &v_pf_mag);
+            busdata->getValue(BUS_VOLTAGE_ANG, &v_pf_ang);
+            // Get Norton-solved voltage (now on the bus after mapToBus)
+            gridpack::ComplexType v_norton = dbus->getComplexVoltage();
+            double v_n_mag = abs(v_norton);
+            double v_n_ang = arg(v_norton) * 180.0 / M_PI;
+            printf("Norton identity check bus %d: V_PF=%.6f/%.2f, V_Norton=%.6f/%.2f, dV_mag=%.2e\n",
+                   diag_buses[db], v_pf_mag, v_pf_ang, v_n_mag, v_n_ang,
+                   v_n_mag - v_pf_mag);
+          }
+        }
+
+        // Also compute overall voltage error norm
+        // (save Norton voltage, will compare at iteration 0 output)
+        v_pf->equate(*volt_full);  // Save V_norton_0 for reference
+      } else {
+        // Normal path: map voltage to buses after solve
+        nbusMap_sptr->mapToBus(volt_full);
+        p_factory->setVolt(false);
+      }
+
+      // Rebalance all generator states (flux, Pmech, Efd) at solved voltage
+      p_factory->rebalanceEquilibrium();
+
+      // Check convergence (voltage change between iterations)
+      if (eqiter > 0) {
+        INorton_full_chk->add(*volt_full, -1.0);
+        double dv_norm = abs(INorton_full_chk->normInfinity());
+        if (eqiter <= 5 || eqiter % 10 == 0 || dv_norm < EQUIL_TOL) {
+          printf("Equilibrium init iteration %d: dV_inf = %.2e\n",
+                 eqiter, dv_norm);
+        }
+        if (dv_norm < EQUIL_TOL) {
+          printf("Equilibrium initialization converged in %d iterations.\n",
+                 eqiter + 1);
+          break;
+        }
+        if (eqiter == MAX_EQUIL_ITER - 1) {
+          printf("Warning: equilibrium init did not converge after %d iterations"
+                 " (dV=%.2e, tol=%.2e)\n", MAX_EQUIL_ITER, dv_norm, EQUIL_TOL);
+        }
+      } else {
+        printf("Equilibrium init iteration 0: initial solve\n");
+      }
+    }
+  }
+
   if (!p_suppress_watch_files) {
     /* Create CSV file header */
     if (p_generatorWatch) p_generatorIO->header("t");

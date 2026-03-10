@@ -131,7 +131,7 @@ class SexsModel : public BaseExciterModel
      */
     bool setState(std::string name, double value);
 
-    /** 
+    /**
      * Get internal state parameter in exciter
      * @param name character string corresponding to state variable
      * @param value current value for state parameter

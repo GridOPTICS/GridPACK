@@ -54,7 +54,7 @@ void gridpack::dynamic_simulation::HygovModel::load(
     data, int idx)
 {
   if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.05;
-  if (!data->getValue(GOVERNOR_r, &r, idx)) R = 0.05; 
+  if (!data->getValue(GOVERNOR_r, &r, idx)) r = 0.05;
   if (!data->getValue(GOVERNOR_TR, &TR, idx)) TR = 0.5;
   if (!data->getValue(GOVERNOR_TF, &TF, idx)) TF = 3.0; 
   if (!data->getValue(GOVERNOR_TG, &TG, idx)) TG = 10.0;
@@ -166,9 +166,9 @@ void gridpack::dynamic_simulation::HygovModel::setMechanicalPower(double pmech)
  * Set the rotor speed deviation inside the governor
  * @param delta_o value of the rotor speed deviation
  */
-void gridpack::dynamic_simulation::HygovModel::setRotorSpeedDeviation(double delta_w)
+void gridpack::dynamic_simulation::HygovModel::setRotorSpeedDeviation(double delta_w_in)
 {
-  delta_w = delta_w;
+  delta_w = delta_w_in;
 }
 
 /** 

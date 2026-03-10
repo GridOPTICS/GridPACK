@@ -36,6 +36,7 @@
 #include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
 #include "gridpack/utilities/string_utils.hpp"
+#include <algorithm>
 
 #define USE_REAL_VALUES
 
@@ -412,6 +413,12 @@ bool gridpack::powerflow::PFAppModule::solve()
       sprintf (ioBuf,"\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
       p_busIO->header(ioBuf);
     }
+
+    // Initialize convergence tracking
+    p_convergence.perIteration.clear();
+    p_convergence.converged = false;
+    p_convergence.iterations = 0;
+
     //  PQ->print();
     timer->start(t_cmap);
     p_factory->setMode(Jacobian);
@@ -556,6 +563,70 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
       iter++;
 
+      // Track per-iteration max mismatch
+      {
+        gridpack::utility::MismatchInfo minfo;
+        minfo.maxPBus = 0;
+        minfo.maxPMismatch = 0.0;
+        minfo.maxQBus = 0;
+        minfo.maxQMismatch = 0.0;
+        int nbus = p_network->numBuses();
+        for (int bi = 0; bi < nbus; bi++) {
+          if (p_network->getActiveBus(bi)) {
+            gridpack::powerflow::PFBus *bus =
+              dynamic_cast<gridpack::powerflow::PFBus*>(
+                p_network->getBus(bi).get());
+            if (bus->isIsolated() || bus->getReferenceBus()) continue;
+            double rvals[2];
+            int nvals = bus->rhsValues(rvals);
+            double absP = fabs(rvals[0]) * bus->getSBase();
+            if (absP > minfo.maxPMismatch) {
+              minfo.maxPMismatch = absP;
+              minfo.maxPBus = bus->getOriginalIndex();
+            }
+            if (nvals > 1) {
+              double absQ = fabs(rvals[1]) * bus->getSBase();
+              if (absQ > minfo.maxQMismatch) {
+                minfo.maxQMismatch = absQ;
+                minfo.maxQBus = bus->getOriginalIndex();
+              }
+            }
+          }
+        }
+        // MPI reduce to find global max P mismatch
+        struct { double val; int rank; } localMaxP, globalMaxP;
+        localMaxP.val = minfo.maxPMismatch;
+        localMaxP.rank = p_comm.rank();
+        MPI_Allreduce(&localMaxP, &globalMaxP, 1, MPI_DOUBLE_INT, MPI_MAXLOC,
+                       static_cast<MPI_Comm>(p_comm));
+        int globalPBus = minfo.maxPBus;
+        MPI_Bcast(&globalPBus, 1, MPI_INT, globalMaxP.rank,
+                   static_cast<MPI_Comm>(p_comm));
+        minfo.maxPMismatch = globalMaxP.val;
+        minfo.maxPBus = globalPBus;
+
+        // MPI reduce to find global max Q mismatch
+        struct { double val; int rank; } localMaxQ, globalMaxQ;
+        localMaxQ.val = minfo.maxQMismatch;
+        localMaxQ.rank = p_comm.rank();
+        MPI_Allreduce(&localMaxQ, &globalMaxQ, 1, MPI_DOUBLE_INT, MPI_MAXLOC,
+                       static_cast<MPI_Comm>(p_comm));
+        int globalQBus = minfo.maxQBus;
+        MPI_Bcast(&globalQBus, 1, MPI_INT, globalMaxQ.rank,
+                   static_cast<MPI_Comm>(p_comm));
+        minfo.maxQMismatch = globalMaxQ.val;
+        minfo.maxQBus = globalQBus;
+
+        p_convergence.perIteration.push_back(minfo);
+
+        if (!p_no_print) {
+          sprintf(ioBuf, "  max dP = %12.6f MW at bus %d, max dQ = %12.6f MVAr at bus %d\n",
+                  minfo.maxPMismatch, minfo.maxPBus,
+                  minfo.maxQMismatch, minfo.maxQBus);
+          p_busIO->header(ioBuf);
+        }
+      }
+
       // Early stagnation detection: if tolerance unchanged, check Q limits early
       if (p_qlim && fabs(real(tol) - real(tol_prev)) < STAGNANT_TOL) {
         stagnant_count++;
@@ -589,32 +660,83 @@ bool gridpack::powerflow::PFAppModule::solve()
     }
 
     if (iter >= p_max_iteration) ret = false;
+
+    // Record convergence summary
+    p_convergence.converged = ret;
+    p_convergence.iterations = iter;
+    p_convergence.finalTolerance = real(tol);
+    if (!p_convergence.perIteration.empty()) {
+      p_convergence.finalMismatch = p_convergence.perIteration.back();
+    }
+    if (!p_no_print) {
+      if (ret) {
+        sprintf(ioBuf, "\nPower flow converged in %d iterations\n", iter);
+      } else {
+        sprintf(ioBuf, "\nPower flow did NOT converge after %d iterations\n", iter);
+      }
+      p_busIO->header(ioBuf);
+      if (!p_convergence.perIteration.empty()) {
+        sprintf(ioBuf, "Largest P mismatch: %12.6f MW   at bus %d\n",
+                p_convergence.finalMismatch.maxPMismatch,
+                p_convergence.finalMismatch.maxPBus);
+        p_busIO->header(ioBuf);
+        sprintf(ioBuf, "Largest Q mismatch: %12.6f MVAr at bus %d\n",
+                p_convergence.finalMismatch.maxQMismatch,
+                p_convergence.finalMismatch.maxQBus);
+        p_busIO->header(ioBuf);
+      }
+    }
+
+    // IREG: Adjust local bus voltage for remote bus voltage regulation.
+    // Must be done before Q-limit check since voltage adjustments affect Q.
+    bool ireg_ok = p_factory->adjustRemoteRegulation();
+    if (!ireg_ok && !p_no_print) {
+      sprintf(ioBuf, "IREG: remote voltage regulation adjustments applied (outer iter %d)\n",
+              int_repeat);
+      p_busIO->header(ioBuf);
+    }
+
+    // Use larger iteration limit when IREG is active (needs more outer iterations)
+    int max_outer = std::max(p_max_qlim_iterations, 10);
+
     if (!p_qlim) {
-      repeat = false;
+      // No Q-limit enforcement; only IREG can cause repeat
+      if (ireg_ok || int_repeat >= max_outer) {
+        repeat = false;
+        if (!ireg_ok && !p_no_print) {
+          sprintf(ioBuf, "IREG: max outer iterations (%d) reached, accepting solution\n",
+                  max_outer);
+          p_busIO->header(ioBuf);
+        }
+      }
+      // else repeat stays true for IREG convergence
     } else if (qlim_handled_early) {
       // Q limits were already handled during early stagnation detection
-      // Check if we've reached max Q-limit iterations
-      if (int_repeat >= p_max_qlim_iterations) {
+      // Check if we've reached max outer iterations
+      if (int_repeat >= max_outer) {
         if (!p_no_print) {
-          sprintf(ioBuf,"Max Q-limit iterations (%d) reached, accepting current solution\n", p_max_qlim_iterations);
+          sprintf(ioBuf,"Max outer iterations (%d) reached, accepting current solution\n",
+                  max_outer);
           p_busIO->header(ioBuf);
         }
         repeat = false;
       }
       // Otherwise repeat stays true to restart with new PV/PQ configuration
     } else {
-      if (p_factory->checkQlimViolations()) {
+      bool qlim_ok = p_factory->checkQlimViolations();
+      if (qlim_ok && ireg_ok) {
         repeat = false;
       } else {
-        // Check if we've reached max Q-limit iterations
-        if (int_repeat >= p_max_qlim_iterations) {
+        // Check if we've reached max outer iterations
+        if (int_repeat >= max_outer) {
           if (!p_no_print) {
-            sprintf(ioBuf,"Max Q-limit iterations (%d) reached, accepting current solution\n", p_max_qlim_iterations);
+            sprintf(ioBuf,"Max outer iterations (%d) reached, accepting current solution\n",
+                    max_outer);
             p_busIO->header(ioBuf);
           }
           repeat = false;
         } else {
-          if (!p_no_print) {
+          if (!qlim_ok && !p_no_print) {
             sprintf (ioBuf,"There are Qlim violations at iter =%d\n", iter);
             p_busIO->header(ioBuf);
           }
@@ -734,6 +856,155 @@ void gridpack::powerflow::PFAppModule::write()
   //p_busIO->write("record");
   timer->stop(t_write);
   timer->stop(t_total);
+}
+
+/**
+ * Get convergence summary from last solve
+ */
+gridpack::utility::ConvergenceSummary
+gridpack::powerflow::PFAppModule::getConvergence() const
+{
+  return p_convergence;
+}
+
+/**
+ * Collect power flow results into structured format for export
+ */
+gridpack::utility::PowerFlowResults
+gridpack::powerflow::PFAppModule::collectResults()
+{
+  gridpack::utility::PowerFlowResults results;
+  results.convergence = p_convergence;
+
+  int nbus = p_network->numBuses();
+  int nbranch = p_network->numBranches();
+
+  for (int i = 0; i < nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(
+          p_network->getBus(i).get());
+
+      gridpack::utility::BusResult br;
+      br.busId = bus->getOriginalIndex();
+      br.type = bus->getBusType();
+      br.area = bus->getArea();
+      br.zone = bus->getZone();
+
+      // Get baseKV from DataCollection
+      gridpack::component::DataCollection *data = p_network->getBusData(i).get();
+      double baseKV = 0.0;
+      data->getValue(BUS_BASEKV, &baseKV);
+      br.baseKV = baseKV;
+
+      br.voltage = bus->getVoltage();
+      br.angle = bus->getPhase() * 180.0 / M_PI;
+
+      // Total load at bus
+      std::vector<std::string> ltag;
+      std::vector<double> lp, lq;
+      std::vector<int> lstatus;
+      bus->getLoadPower(ltag, lp, lq, lstatus);
+      br.pLoad = 0.0;
+      br.qLoad = 0.0;
+      for (size_t k = 0; k < ltag.size(); k++) {
+        if (lstatus[k] == 1) {
+          br.pLoad += lp[k];
+          br.qLoad += lq[k];
+        }
+      }
+
+      // Total generation at bus
+      br.pGen = bus->getTotalGenOutput();
+      br.qGen = bus->getTotalReactiveOutput();
+
+      // Power injection = Generation - Load (in MW)
+      br.pInjection = br.pGen - br.pLoad;
+      br.qInjection = br.qGen - br.qLoad;
+
+      // Shunt from YMBus base
+      double bl = 0.0, gl = 0.0;
+      bus->getShuntValues(&bl, &gl);
+      br.shuntMvar = bl * bus->getSBase();
+
+      results.buses.push_back(br);
+
+      // Generator results
+      std::vector<std::string> gids = bus->getGenerators();
+      for (size_t g = 0; g < gids.size(); g++) {
+        gridpack::utility::GeneratorResult gr;
+        gr.busId = br.busId;
+        gr.genId = gids[g];
+        gr.pGen = bus->getGenPOutput(gids[g]);
+        gr.qGen = bus->getGenQOutput(gids[g]);
+        gr.qMax = bus->getGenQMax(gids[g]);
+        gr.qMin = bus->getGenQMin(gids[g]);
+        gr.voltageSetpoint = bus->getGenVSetpoint(gids[g]);
+        gr.status = bus->getGenStatus(gids[g]) ? 1 : 0;
+        results.generators.push_back(gr);
+      }
+    }
+  }
+
+  // Collect branch results
+  for (int i = 0; i < nbranch; i++) {
+    if (p_network->getActiveBranch(i)) {
+      gridpack::powerflow::PFBranch *branch =
+        dynamic_cast<gridpack::powerflow::PFBranch*>(
+          p_network->getBranch(i).get());
+
+      std::vector<std::string> cktIds = branch->getLineIDs();
+      int bus1Id, bus2Id;
+      p_network->getOriginalBranchEndpoints(i, &bus1Id, &bus2Id);
+
+      for (size_t k = 0; k < cktIds.size(); k++) {
+        if (!branch->getBranchStatus(cktIds[k])) continue;
+
+        gridpack::utility::BranchResult bres;
+        bres.fromBus = bus1Id;
+        bres.toBus = bus2Id;
+        bres.circuitId = cktIds[k];
+
+        gridpack::ComplexType sFrom = branch->getComplexPower(cktIds[k]);
+        bres.pFrom = real(sFrom);
+        bres.qFrom = imag(sFrom);
+        bres.mvaFrom = abs(sFrom);
+
+        gridpack::ComplexType sTo = branch->getReversePower(cktIds[k]);
+        bres.pTo = real(sTo);
+        bres.qTo = imag(sTo);
+        bres.mvaTo = abs(sTo);
+
+        bres.pLoss = bres.pFrom + bres.pTo;
+        bres.qLoss = bres.qFrom + bres.qTo;
+
+        bres.rateA = branch->getBranchRatingA(cktIds[k]);
+        if (bres.rateA > 0.0) {
+          double maxMVA = (bres.mvaFrom > bres.mvaTo) ? bres.mvaFrom : bres.mvaTo;
+          bres.loadingPercent = maxMVA / bres.rateA * 100.0;
+        } else {
+          bres.loadingPercent = 0.0;
+        }
+
+        results.branches.push_back(bres);
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Export results to JSON or CSV file
+ */
+void gridpack::powerflow::PFAppModule::exportResults(
+    const std::string& filename,
+    gridpack::utility::ResultsExporter::Format format)
+{
+  gridpack::utility::PowerFlowResults results = collectResults();
+  if (p_comm.rank() == 0) {
+    gridpack::utility::ResultsExporter::writePowerFlow(filename, results, format);
+  }
 }
 
 void gridpack::powerflow::PFAppModule::writeBus(const char *signal)

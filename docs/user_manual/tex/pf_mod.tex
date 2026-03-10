@@ -83,6 +83,40 @@ void saveData()
 
 If the network is then copied to a new type of network, this information is carried over to the new network. The voltage magnitude and phase angle is stored in the \texttt{\textbf{DataCollection}} variables \texttt{\textbf{BUS\_PF\_VMAG}} and \texttt{\textbf{BUS\_PF\_VANG}} and the generator parameters are stored in the indexed variables \texttt{\textbf{GENERATOR\_PF\_PGEN[i]}} and \texttt{\textbf{GENERATOR\_PF\_QGEN[i]}}, where the index \texttt{\textbf{i}} runs over all generators on the bus.
 
+Power flow results can also be exported to JSON or CSV format using the call
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void exportResults(const std::string& filename,
+      ResultsExporter::Format format)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{format}} parameter is either \texttt{\textbf{ResultsExporter::JSON}} or \texttt{\textbf{ResultsExporter::CSV}}. For JSON, a single file \texttt{\textbf{filename.json}} is created containing convergence information, bus results (voltage, angle, injections, loads, generation), branch results (power flow at both ends, losses, MVA loading), and generator results (P, Q, Qmax, Qmin, voltage setpoint, status). For CSV, four files are created: \texttt{\textbf{filename\_buses.csv}}, \texttt{\textbf{filename\_branches.csv}}, \texttt{\textbf{filename\_generators.csv}}, and \texttt{\textbf{filename\_convergence.csv}}.
+
+These options can be configured in the XML input file under the \texttt{\textbf{Powerflow}} block:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+<outputFormat>json</outputFormat>
+<outputFile>pf_results</outputFile>
+\end{Verbatim}
+}
+
+Valid values for \texttt{\textbf{outputFormat}} are ``\texttt{\textbf{json}}'', ``\texttt{\textbf{csv}}'', or ``\texttt{\textbf{text}}'' (default). If \texttt{\textbf{outputFormat}} is ``\texttt{\textbf{text}}'', no export file is generated and only the standard text output is produced.
+
+During the Newton-Raphson solve, per-iteration mismatch information is printed showing the largest active and reactive power mismatches and the corresponding bus numbers. After convergence, a summary is printed with the final mismatch values.
+
+\subsection*{Remote Voltage Regulation (IREG)}
+
+GridPACK supports remote bus voltage regulation through the PSS/E \texttt{\textbf{IREG}} field in the generator data. When a generator has a nonzero \texttt{\textbf{IREG}} value that differs from its own bus number, it regulates the voltage at the remote bus specified by \texttt{\textbf{IREG}} rather than at its own terminal bus.
+
+Remote voltage regulation is handled automatically as part of the outer-loop iteration in the power flow solve. After each Newton-Raphson convergence, the solver checks whether the voltage at each remote regulated bus matches the generator's voltage setpoint (\texttt{\textbf{VS}}). If the error exceeds a tolerance of $10^{-4}$ per unit, the local PV bus voltage is adjusted by the difference and the Newton-Raphson solve is repeated. This process iterates until all remote voltage targets are satisfied or the maximum number of outer iterations is reached.
+
+No additional XML configuration is required to enable remote voltage regulation. The feature is activated automatically when generators with nonzero \texttt{\textbf{IREG}} values are present in the PSS/E input file. Diagnostic messages are printed when remote regulation adjustments are applied.
+
 The remaining methods in the PFAppModule class support different kinds of contingency applications. Contingencies are defined using the data structure
 
 {

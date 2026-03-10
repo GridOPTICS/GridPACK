@@ -64,6 +64,12 @@ int main(int argc, char **argv)
     bool noPrint = false;
     cursor->get("suppressOutput",&noPrint);
 
+    // Output format: "json", "csv", or "text" (default)
+    std::string outputFormat = "text";
+    cursor->get("outputFormat", &outputFormat);
+    std::string outputFile = "pf_results";
+    cursor->get("outputFile", &outputFile);
+
     // Parse initial start mode: "warm" (default) or "flat"
     std::string initStart = "warm";
     cursor->get("initStart", &initStart);
@@ -110,6 +116,13 @@ int main(int argc, char **argv)
     }
     pf_app.write();
     pf_app.saveData();
+    if (outputFormat == "json") {
+      pf_app.exportResults(outputFile,
+          gridpack::utility::ResultsExporter::JSON);
+    } else if (outputFormat == "csv") {
+      pf_app.exportResults(outputFile,
+          gridpack::utility::ResultsExporter::CSV);
+    }
     if (exportPSSE23) {
       pf_app.exportPSSE23(filename23);
     }
