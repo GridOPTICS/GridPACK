@@ -6,6 +6,8 @@
 /*
  *  Created on: May 10, 2021
  *      Author: Renke Huang
+ *  Modified: Mar 2026, Yousu Chen 
+ *  - Fixed FEMIN parser index.
  */
 #ifndef REPCA1_HPP	
 #define REPCA1_HPP
@@ -551,7 +553,7 @@ template <class _data_struct> class Repca1Parser
         if (!data->getValue(GENERATOR_REPCA_FEMIN,&rval,g_id)) {
           data->addValue(GENERATOR_REPCA_FEMIN, atof(split_line[ 31].c_str()), g_id);
         } else {
-          data->setValue(GENERATOR_REPCA_FEMIN, atof(split_line[ 32].c_str()), g_id);
+          data->setValue(GENERATOR_REPCA_FEMIN, atof(split_line[ 31].c_str()), g_id);
         }
       } 
 	  

@@ -34,7 +34,7 @@ functionality appears in the develop branch.
     - Q-limit (QLIM) handling with PV-to-PQ bus switching and island detection
     - RMPCT-based reactive power distribution for multi-generator buses
     - Fixed shunt status check, Qg distribution when QLIM is reached, and
-      flat/warm start (VM/VA)
+      flat/warm start 
     - Switched shunt support
     - ZIP load model with voltage-dependent load representation
     - Added Pinj, Qinj to power flow screen outputs
@@ -49,7 +49,7 @@ functionality appears in the develop branch.
     - Generator ID display in contingency results
     - JSON and CSV export of contingency analysis results
   - Dynamic Simulation Enhancements
-    - GENROU PSS (power system stabilizer) integration
+    - GENROU PSS integration
     - Iterative equilibrium initialization (XML: equilibriumInit, default false)
   - Added build trigger when releasing a new version of GridPACK
 - Changed
@@ -58,16 +58,29 @@ functionality appears in the develop branch.
   - Migrated QLIM parameter to bool type in power flow and CA for consistency
   - Optimized CMake builds
 - Fixed
-  - Fixed PSSSIM washout output divided by Tw, reducing PSS gain by 10x
+  - Fixed GENROU saturation: use scaled quadratic Se=B*(x-A)^2/x per PowerWorld
+    standard, evaluate at air-gap flux magnitude, iterative q-axis saturation
+    in initialization, and corrected LadIfd Se*Psidpp term
+  - Fixed ESST1A regulator limits from Vrmin/Vrmax to Vamin/Vamax (IEEE 421.5)
+  - Fixed ESST1A second lead-lag stage bypassed when TA != 0
+  - Fixed WSIEG1 parser T3 parameter read from wrong field
+  - Fixed WSIEG1 NGV lookup table yin[] index
+  - Fixed REECA1 CurrentLimitLogic VDL1/VDL2 table assignment swapped
+  - Fixed REPCA1 parser FEMIN read from wrong dyr column
+  - Fixed REGCA1 Iq_olim sign inconsistency in display functions
+  - Fixed GENSAL predictor using stale speed deviation for governor
+  - Fixed GENSAL saturation initialization
+  - Fixed ForceSerial off-by-one in math library setElementRange half-open range,
+    causing stale values on multi-process runs with composite load models
+  - Fixed PSSSIM washout output divided by Tw
   - Fixed HYGOV fallback setting R instead of r when parameter missing
   - Fixed Cblock crash when model time constant is zero (e.g., REECA1 with TP=0)
   - Fixed SEXS exciter EMAX default from 0.0 to 999.0
   - Fixed REGCA1 P and Q swapped in output reporting
   - Fixed null pointer crash on unrecognized generator model in dsf_components
   - Fixed REECA1 parser reading TIQ parameter from wrong dyr column
-  - Fixed incomplete REGCA1 data for bus 3433 in 240-bus WECC dyr file
   - Fixed contingency analysis multi-process deadlock in GA one-sided operations
-    during result export (getData must be collective for GA progress)
+    during result export
   - Fixed 3-winding transformer parsing in PSS/E parsers
   - Fixed warm start with qlim=false scenario
   - Fixed incomplete printing of many parallel lines in power flow output

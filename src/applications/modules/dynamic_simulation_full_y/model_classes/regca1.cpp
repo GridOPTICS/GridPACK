@@ -10,8 +10,10 @@
  * @Added: November 14, 2022
  * 
  * @brief  WECC generic generator/converter model
- * 
- * 
+ *
+ * @Modified: Mar 2026, Yousu Chen
+ * - Fixed Iq_olim sign 
+ *
  */
 
 #include <vector>
@@ -151,10 +153,10 @@ void gridpack::dynamic_simulation::Regca1Generator::updateData(
 
   Iq_olim = std::max(0.0,khv*(Vt - volim));
 
-  Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
+  Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
   // Pg, Qg on machine MVAbase
-  Pg = Vt*Ipout*p_mbase/p_sbase; 
+  Pg = Vt*Ipout*p_mbase/p_sbase;
   Qg = -Vt*Iqout*p_mbase/p_sbase;
 
   if (!data->setValue(GENERATOR_PG_CURRENT, Pg, idx)) {
@@ -569,10 +571,10 @@ bool gridpack::dynamic_simulation::Regca1Generator::serialWrite(
 
       Iq_olim = std::max(0.0,khv*(Vt - volim));
 
-      Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
+      Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
       // Pg, Qg on machine MVAbase
-      Pg = Vt*Ipout*p_mbase/p_sbase; 
+      Pg = Vt*Ipout*p_mbase/p_sbase;
       Qg = -Vt*Iqout*p_mbase/p_sbase;
 
       sprintf(string,",%12.6f,%12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f ",
@@ -645,12 +647,12 @@ void gridpack::dynamic_simulation::Regca1Generator::getWatchValues(
       
   Iq_olim = std::max(0.0,khv*(Vt - volim));
       
-  Iqout = Iqlowlim_blk.getoutput(Iq + Iq_olim);
+  Iqout = Iqlowlim_blk.getoutput(Iq - Iq_olim);
 
   // Pg, Qg on system MVAbase
   Pg = Vt*Ipout*p_mbase/p_sbase;
   Qg = -Vt*Iqout*p_mbase/p_sbase;
-  
+
   if (p_generatorObservationPowerSystemBase){
     vals.push_back(Pg);  //output at system mva base
     vals.push_back(Qg);  //output at system mva base

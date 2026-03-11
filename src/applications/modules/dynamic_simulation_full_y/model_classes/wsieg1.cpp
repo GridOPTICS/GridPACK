@@ -7,9 +7,11 @@
 /**
  * @file   wsieg1.cpp
  * 
- * @brief: WSIEG1 governor model implementation  
- * 
- * 
+ * @brief: WSIEG1 governor model implementation
+ *
+ * @Modified: Mar 2026, Yousu Chen
+ * - Fixed NGV lookup table.
+ *
  */
 
 #include <vector>
@@ -98,10 +100,10 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   // Initialize NGV 
   double uin[5], yin[5];
   uin[0] = Gv1; yin[0] = PGv1;
-  uin[1] = Gv2; yin[0] = PGv2;
-  uin[2] = Gv3; yin[0] = PGv3;
-  uin[3] = Gv4; yin[0] = PGv4;
-  uin[4] = Gv5; yin[0] = PGv5;
+  uin[1] = Gv2; yin[1] = PGv2;
+  uin[2] = Gv3; yin[2] = PGv3;
+  uin[3] = Gv4; yin[3] = PGv4;
+  uin[4] = Gv5; yin[4] = PGv5;
   NGV_blk.setparams(5, uin, yin);
 
   if(T4 != 0) {

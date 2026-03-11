@@ -57,7 +57,7 @@
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
     <!--generatorParameters> 300bus_detail_model_cmpld_motorW.dyr </generatorParameters-->
     <generatorParameters> 300bus_detail_model_cmpld_combine.dyr </generatorParameters>
-    <simulationTime>5</simulationTime>
+    <simulationTime>10</simulationTime>
     <timeStep>0.001</timeStep>
     <Events>
       <faultEvent>
@@ -75,7 +75,7 @@
       </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
-    <generatorWatchFileName> 300bus_cmpld_gridpack_test_gen10063.csv </generatorWatchFileName>
+    <generatorWatchFileName> gen_watch_300_cmpld.csv </generatorWatchFileName>
     <LinearSolver>
       <SolutionTolerance>1.0E-12 </SolutionTolerance> 
       <ForceSerial>true</ForceSerial>

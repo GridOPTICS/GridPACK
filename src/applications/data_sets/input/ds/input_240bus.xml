@@ -76,7 +76,7 @@
       </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
-    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
+    <generatorWatchFileName> gen_watch_240bus.csv </generatorWatchFileName>
     <LinearSolver>
       <PETScOptions>
         <!-ksp_view>

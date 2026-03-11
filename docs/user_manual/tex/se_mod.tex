@@ -25,7 +25,7 @@ The state estimation module can be used to set up and run a state estimation cal
         <FromBus>1</FromBus>
         <ToBus>2</ToBus>
         <CKT>BL</CKT>
-        <Values>-0.2040</Value>
+        <Value>-0.2040</Value>
         <Deviation>0.0100</Deviation>
       </Measurement>
       <Measurement>
@@ -44,7 +44,7 @@ The state estimation module can be used to set up and run a state estimation cal
 \end{Verbatim}
 }
 
-for the five types of measurements \texttt{\textbf{VM}}, \texttt{\textbf{PIJ}}, \texttt{\textbf{QIJ}}, \texttt{\textbf{PI}}, and \texttt{\textbf{PJ}}. Measurements can appear on any element of the network and multiple measurements are allowed on each element. The state estimation module does not have any error checking ability to determine if there are sufficient measurements to guarantee solvability, if not enough measurements are available then the calculation will simply crash or fail to converge.
+The supported measurement types are: \texttt{\textbf{VM}} (voltage magnitude), \texttt{\textbf{VA}} (voltage angle), \texttt{\textbf{PI}} (bus real power injection), \texttt{\textbf{QI}} (bus reactive power injection), \texttt{\textbf{PJ}} (bus real power injection at receiving end), \texttt{\textbf{QJ}} (bus reactive power injection at receiving end), \texttt{\textbf{PIJ}} (branch real power flow from-to), \texttt{\textbf{QIJ}} (branch reactive power flow from-to), \texttt{\textbf{PJI}} (branch real power flow to-from), and \texttt{\textbf{QJI}} (branch reactive power flow to-from). Measurements can appear on any element of the network and multiple measurements are allowed on each element. The state estimation module does not have any error checking ability to determine if there are sufficient measurements to guarantee solvability, if not enough measurements are available then the calculation will simply crash or fail to converge.
 The state estimation module is represented by the \texttt{\textbf{SEAppModule}} class which is in the \texttt{\textbf{gridpack::state\_estimation}} namespace. The \texttt{\textbf{gridpack.hpp}} file contains a definition for the state estimation network \texttt{\textbf{SENetwork}}. After instantiating an \texttt{\textbf{SEAppModule}} object and a shared pointer to an \texttt{\textbf{SENetwork}}, the state estimation calculation can read in an external network configuration file using the command
 
 {
@@ -78,6 +78,26 @@ void readMeasurements()
 }
 
 The name of the measurement file is in the input deck and a pointer to this file has already been internally cached in the \texttt{\textbf{SEAppModule}} when the network was assigned. The measurement file name is stored in the \texttt{\textbf{measurementList}} field within the \texttt{\textbf{State\_estimation}} block.
+
+The \texttt{\textbf{State\_estimation}} block supports the following optional configuration parameters:
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+  <State_estimation>
+    <networkConfiguration>ieee14.raw</networkConfiguration>
+    <measurementList>measurements.xml</measurementList>
+    <tolerance>1.0e-3</tolerance>
+    <maxIteration>20</maxIteration>
+    <dampingFactor>1.0</dampingFactor>
+    <badDataThreshold>3.0</badDataThreshold>
+    <maxBadDataIterations>5</maxBadDataIterations>
+    <diagnosticOutputLevel>basic</diagnosticOutputLevel>
+  </State_estimation>
+\end{Verbatim}
+}
+
+The \texttt{\textbf{tolerance}} parameter sets the convergence threshold (default 1.0e-3). The \texttt{\textbf{maxIteration}} parameter limits the number of Newton-Raphson iterations (default 20). The \texttt{\textbf{dampingFactor}} scales the Newton update step (default 1.0). The \texttt{\textbf{badDataThreshold}} sets the normalized residual threshold for bad data detection (default 3.0), and \texttt{\textbf{maxBadDataIterations}} limits the number of bad data elimination passes (default 5). The \texttt{\textbf{diagnosticOutputLevel}} controls the verbosity of diagnostic output (default ``basic'').
 
 The network object can be initialized and the exchange buffers set up by calling the
 

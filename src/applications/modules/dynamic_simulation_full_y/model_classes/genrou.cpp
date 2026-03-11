@@ -13,6 +13,11 @@
  * @Modified: November 27, 2022, Fixed the model to validate against PSSE
  *
  * @Modified: Dec 9, 2022, print voltage and generator power
+ *
+ * @Modified: Mar 2026, Yousu Chen
+ * - Fixed saturation: unscaled quadratic Se=B*(x-A)^2, Sat at Psi_ag,
+ *   iterative q-axis saturation in init/predictor/corrector.
+ *
  * @brief  : Round rotor generator model
  * 
  * 
@@ -149,22 +154,23 @@ void gridpack::dynamic_simulation::GenrouGenerator::updateData(
  */
 double gridpack::dynamic_simulation::GenrouGenerator::Sat(double x)
 {
-  if (enableSat) {
-    // the following is another method for saturation computation, add by renke
-    double a_ = S12 / S10 - 1.0;
-    double b_ = -2 * S12 / S10 + 2.4;
-    double c_ = S12 / S10 - 1.44;
-    double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
+  if (enableSat && x > 1e-6) {
+    // PowerWorld standard scaled saturation: Se(x) = B*(x-A)^2 / x
+    // Fitted from: Se(1.0)=S10, Se(1.2)=S12:
+    //   B*(1-A)^2/1.0 = S10,  B*(1.2-A)^2/1.2 = S12
+    // => R = 1.2*S12/S10 = (1.2-A)^2/(1-A)^2
+    double R = 1.2 * S12 / S10;
+    double sqrtR = sqrt(R);
+    double A = (1.2 - sqrtR) / (1.0 - sqrtR);
     double B = S10 / ((1.0 - A) * (1.0 - A));
-    
-    double tmp = x-A;
-    //double tmpin = tmp;
-    if (tmp<0.0) {
+
+    double tmp = x - A;
+    if (tmp < 0.0) {
       tmp = 0.0;
     }
-    double result = B * tmp * tmp;
-    
-    return result; // Scaled Quadratic with 1.7.1 equations
+    double result = B * tmp * tmp / x;
+
+    return result;
   } else {
     return 0.0;
   }
@@ -206,33 +212,49 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   // Speed deviation
   x2w = 0;
 
-  // Machine angle
-  x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
-
-  // axis of rotation is q-axis (lagging behind d-axis by 90 degrees)
-  double theta = pi/2.0 - x1d;
-  
-  // Generator currents in machine dq axis reference frame
-  rotate(Ir,Ii,theta, &Id, &Iq);
-
-  // Generator internal voltage in network reference frame
-  double Vr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
-  double Vi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
-
-  // Generator internal voltage in machine reference frame
+  // Iterative angle initialization with q-axis saturation.
+  // At steady state, iron saturation reduces the effective q-axis
+  // synchronous reactance.  Saturation reduces the mutual inductance
+  // but not the leakage, so:  Xq_eff = Xl + (Xq - Xl) / (1 + Sq)
+  // where Sq = Se(Psi_ag) * (Xq - Xl) / (Xd - Xl).
+  // We iterate until the angle converges.
+  double Xq_eff = Xq;
   double Vd, Vq;
-  rotate(Vr,Vi,theta, &Vd, &Vq);
-  
-  Vd = Vr * sin(x1d) - Vi * cos(x1d); // convert to dq reference
-  Vq = Vr * cos(x1d) + Vi * sin(x1d); // convert to dq reference
-  
-  double Psiqpp = -Vd;
-  double Psidpp = + Vq;
+  double Psiqpp, Psidpp, Psi_ag;
+
+  for (int sat_iter = 0; sat_iter < 10; sat_iter++) {
+    // Machine angle from voltage behind (Ra + j*Xq_eff)
+    x1d = atan2(Viterm + Ir * Xq_eff + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq_eff);
+
+    double theta = pi/2.0 - x1d;
+    rotate(Ir, Ii, theta, &Id, &Iq);
+
+    // Norton internal voltage (behind Ra + jXdpp) in network frame
+    double Vr = Vrterm + Ra * Ir - Xdpp * Ii;
+    double Vi = Viterm + Ra * Ii + Xdpp * Ir;
+
+    // Rotate to machine dq reference frame
+    Vd = Vr * sin(x1d) - Vi * cos(x1d);
+    Vq = Vr * cos(x1d) + Vi * sin(x1d);
+
+    Psiqpp = -Vd;
+    Psidpp = +Vq;
+    Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
+
+    double Se = Sat(Psi_ag);
+    if (Se < 1e-10) break;  // no saturation, angle is exact
+
+    double Sq = Se * (Xq - Xl) / (Xd - Xl);
+    double Xq_eff_new = Xl + (Xq - Xl) / (1.0 + Sq);
+
+    if (fabs(Xq_eff_new - Xq_eff) < 1e-8) break;  // converged
+    Xq_eff = Xq_eff_new;
+  }
 
   // q-axis transient voltage
   x3Eqp = Vq + (Xdp - Xdpp)*Id;
 
-  // d-axis transient voltage
+  // d-axis transient voltage (consistent with saturated angle)
   x6Edp = Vd - (Xqp - Xqpp)*Iq;
 
   // d-axis flux
@@ -240,10 +262,11 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
 
   // q-axis flux
   x5Psiqp = x6Edp + (Xqp - Xl)*Iq;
-  
-  // Field voltage
-  Efd = x3Eqp * (1 + Sat(x3Eqp)) + Id * (Xd - Xdp);
-  
+
+  // Field voltage — evaluate saturation at air-gap flux magnitude
+  // Standard: LadIfd = E'q + Se(Psi_ag)*Psidpp + (Xd-Xdp)*Id  (TempD=0 at SS)
+  Efd = x3Eqp + Sat(Psi_ag) * Psidpp + Id * (Xd - Xdp);
+
   // Field current
   LadIfd = Efd;
 
@@ -252,6 +275,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
 
   Efdinit = Efd;
   Pmechinit = Pmech;
+
   // printf("print: yuan debug here, inside genrou model, Ir=%f, Ii=%f\n", Ir, Ii);
   // Initialize exciter
   if (p_hasExciter) {
@@ -330,38 +354,50 @@ void gridpack::dynamic_simulation::GenrouGenerator::rebalanceEquilibrium()
   // --- Solve for equilibrium Id, Iq at the Norton voltage ---
   // At equilibrium, the internal voltages become:
   //   Vd = gamma*Iq,  Vq = x3 - alpha*Id
-  // where alpha = Xdp - Xdpp, gamma = Xq - Xdpp (since Xqpp = Xdpp).
-  // Substituting into the stator algebraic equations
-  //   Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B
-  //   Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G
-  // gives the 2x2 system  A * [Id, Iq]^T = rhs.
+  // where alpha = Xdp - Xdpp, gamma = Xq_eff - Xdpp.
+  // With q-axis saturation: Xq_eff = Xl + (Xq-Xl)/(1+Sq),
+  // so gamma depends on saturation which depends on Id,Iq.
+  // We iterate until gamma converges.
   double alpha = Xdp - Xdpp;
-  double gamma = Xq  - Xdpp;  // = Xq - Xqpp since Xqpp = Xdpp
+  double gamma = Xq  - Xdpp;  // initial unsaturated value
+  double Psidpp, Psiqpp, Psi_ag;
 
-  double a11 = 1.0 - alpha * B;
-  double a12 = -gamma * G;
-  double a21 = alpha * G;
-  double a22 = 1.0 - gamma * B;
+  for (int sat_iter = 0; sat_iter < 10; sat_iter++) {
+    double a11 = 1.0 - alpha * B;
+    double a12 = -gamma * G;
+    double a21 = alpha * G;
+    double a22 = 1.0 - gamma * B;
 
-  double rhs1 = -Vdterm * G - (x3Eqp - Vqterm) * B;
-  double rhs2 = -Vdterm * B + (x3Eqp - Vqterm) * G;
+    double rhs1 = -Vdterm * G - (x3Eqp - Vqterm) * B;
+    double rhs2 = -Vdterm * B + (x3Eqp - Vqterm) * G;
 
-  double det = a11 * a22 - a12 * a21;
-  Id = (rhs1 * a22 - rhs2 * a12) / det;
-  Iq = (a11 * rhs2 - a21 * rhs1) / det;
+    double det = a11 * a22 - a12 * a21;
+    Id = (rhs1 * a22 - rhs2 * a12) / det;
+    Iq = (a11 * rhs2 - a21 * rhs1) / det;
+
+    Psidpp = x3Eqp - (Xdp - Xdpp) * Id;
+    Psiqpp = -gamma * Iq;
+    Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
+
+    double Se = Sat(Psi_ag);
+    if (Se < 1e-10) break;
+
+    double Sq = Se * (Xq - Xl) / (Xd - Xl);
+    double gamma_new = Xl + (Xq - Xl) / (1.0 + Sq) - Xdpp;
+
+    if (fabs(gamma_new - gamma) < 1e-8) break;
+    gamma = gamma_new;
+  }
 
   // --- Update flux states to equilibrium ---
   x4Psidp = x3Eqp - (Xdp - Xl) * Id;
-  x6Edp   = (Xq - Xqp) * Iq;
+  // E'd from circuit (Vd = gamma*Iq, x6Edp = Vd - (Xqp-Xqpp)*Iq)
+  x6Edp   = gamma * Iq - (Xqp - Xqpp) * Iq;
   x5Psiqp = x6Edp + (Xqp - Xl) * Iq;
-
-  // Recompute subtransient fluxes (for Telec and watch output)
-  double Psidpp = x3Eqp - (Xdp - Xdpp) * Id;   // = x3 - alpha*Id
-  double Psiqpp = -(Xq - Xdpp) * Iq;            // = -gamma*Iq
 
   // Electrical torque and field current (TempD = 0 at equilibrium)
   double Telec = Psidpp * Iq - Psiqpp * Id;
-  LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * Id;
+  LadIfd = x3Eqp + Sat(Psi_ag) * Psidpp + (Xd - Xdp) * Id;
 
   // Set Pmech = Telec so dx2w = 0
   Pmech = Telec;
@@ -445,8 +481,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
   double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
 
-  double Vd = - Psiqpp; //* (1 + x2w);
-  double Vq = + Psidpp; //* (1 + x2w);
+  double Vd = - Psiqpp;
+  double Vq = + Psidpp;
 
   Vterm = presentMag;
   Theta = presentAng;
@@ -538,7 +574,11 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     double Telec = Psidpp * Iq - Psiqpp * Id;
     double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
       * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
-    LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
+
+    double Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
+    double Se = Sat(Psi_ag);
+    // Standard: LadIfd = E'q + Se*Psidpp + (Xd-Xdp)*(Id+TempD)
+    LadIfd = x3Eqp + Se * Psidpp + (Xd - Xdp) * (Id + TempD);
 
     dx1d = x2w * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
     dx2w = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec);
@@ -547,7 +587,10 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     dx5Psiqp = (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp) / Tqopp;
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl))
       * (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp);
-    dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop;
+    // Standard: q-axis saturation with gamma_qd = (Xq-Xl)/(Xd-Xl)
+    // Note: our Psiqpp = -psi_q'' (NREL), so sign is +
+    dx6Edp = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)
+      + Se * Psiqpp * (Xq - Xl) / (Xd - Xl)) / Tqop;
 
     x1d_1 = x1d + dx1d * t_inc;
     x2w_1 = x2w + dx2w * t_inc;
@@ -630,21 +673,21 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   G = Ra / (Ra * Ra + Xdpp * Xdpp);
   //printf("B = %f, G = %f\n", B, G);
   // Setup
-  double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
+  double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl);
   double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
-  
+
   double Vd = -Psiqpp;
   double Vq = +Psidpp;
-  
+
   Vterm = presentMag;
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
   double Vdterm = Vrterm * sin(x1d_1) - Viterm * cos(x1d_1);
   double Vqterm = Vrterm * cos(x1d_1) + Viterm * sin(x1d_1);
-  
-  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm); 
-  
+
+  gridpack::ComplexType vt_complex_tmp = gridpack::ComplexType(Vrterm, Viterm);
+
   double Idnorton = Vd * G - Vq * B;
   double Iqnorton = Vd * B + Vq * G;
 
@@ -697,12 +740,12 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     }
     
     double pi = 4.0*atan(1.0);
-    double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
+    double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl);
     double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
-    
+
     double Vd = - Psiqpp;
     double Vq = + Psidpp;
-    
+
     Vterm = presentMag;
     Theta = presentAng;
     double Vrterm = Vterm * cos(Theta);
@@ -717,18 +760,22 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     double Telec = Psidpp * Iq - Psiqpp * Id;
     double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
       * (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1);
-    LadIfd = x3Eqp_1 * (1 + Sat(x3Eqp_1)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
+
+    double Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
+    double Se = Sat(Psi_ag);
+    // Standard: LadIfd = E'q + Se*Psidpp + (Xd-Xdp)*(Id+TempD)
+    LadIfd = x3Eqp_1 + Se * Psidpp + (Xd - Xdp) * (Id + TempD);
     dx1d_1 = x2w_1 * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
-    //printf("H = %f, Pmech = %f, D = %f, x2w_1 = %f, Telec = %f\n", H, Pmech, D, x2w_1, Telec);
-    dx2w_1 = 1 / (2 * H) * ((Pmech - D * x2w_1) / (1 + x2w_1) - Telec); //TBD: call Governor for Pmech (Done)
-    dx3Eqp_1 = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
+    dx2w_1 = 1 / (2 * H) * ((Pmech - D * x2w_1) / (1 + x2w_1) - Telec);
+    dx3Eqp_1 = (Efd - LadIfd) / Tdop;
     dx4Psidp_1 = (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1) / Tdopp;
     dx5Psiqp_1 = (-x5Psiqp_1 + (Xqp - Xl) * Iq + x6Edp_1) / Tqopp;
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl))
       * (-x5Psiqp_1 + (Xqp - Xl) * Iq + x6Edp_1);
-    
-    dx6Edp_1 = (-x6Edp_1 + (Xq - Xqp) * (Iq - TempQ)) / Tqop;
-    
+    // Standard: q-axis saturation with gamma_qd = (Xq-Xl)/(Xd-Xl)
+    dx6Edp_1 = (-x6Edp_1 + (Xq - Xqp) * (Iq - TempQ)
+      + Se * Psiqpp * (Xq - Xl) / (Xd - Xl)) / Tqop;
+
     x1d = x1d + (dx1d + dx1d_1) / 2.0 * t_inc;
     x2w = x2w + (dx2w + dx2w_1) / 2.0 * t_inc;
     x3Eqp = x3Eqp + (dx3Eqp + dx3Eqp_1) / 2.0 * t_inc;

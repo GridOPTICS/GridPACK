@@ -12,6 +12,9 @@
  * @brief
  * Renewable Energy Electrical Controller Model REECA1
  *
+ * @Modified: Mar 2026, Yousu Chen
+ * - Fixed CurrentLimitLogic
+ *
  */
 
 #include <cstdio>
@@ -464,10 +467,9 @@ void gridpack::dynamic_simulation::Reeca1Model::CurrentLimitLogic(int PQFLAG,dou
 
   *Ipmin_out = 0.0;
   
-  // Iqmax look up from VDL1
-  Iqmax_temp = VDL1.getoutput(Vt_filter);
-  // Ipmax look up from VDL2
-  Ipmax_temp = VDL2.getoutput(Vt_filter);
+  // VDL1 = V-P table (active current limit), VDL2 = V-Q table (reactive current limit)
+  Ipmax_temp = VDL1.getoutput(Vt_filter);
+  Iqmax_temp = VDL2.getoutput(Vt_filter);
 
   if(!PQFLAG) { // Q priority
     if (Imax < Iqmax_temp) Iqmax_temp = Imax;

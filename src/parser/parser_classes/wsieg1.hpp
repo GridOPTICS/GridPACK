@@ -6,6 +6,8 @@
 /*
  *  Created on: June 16, 2016
  *      Author: Bruce Palmer
+ *  Modified: Mar 2026, Yousu Chen
+ *  - Fixed T3 parameter.
  */
 #ifndef WSIEG1_HPP
 #define WSIEG1_HPP
@@ -95,7 +97,7 @@ template <class _data_struct> class Wsieg1Parser
 
       // GOVERNOR_T3
       if (!data->getValue(GOVERNOR_T3,&rval,g_id)) {
-        data->addValue(GOVERNOR_T3, data_struct.gv_t2, g_id);
+        data->addValue(GOVERNOR_T3, data_struct.gv_t3, g_id);
       } else {
         data->setValue(GOVERNOR_T3, data_struct.gv_t3, g_id);
       }
