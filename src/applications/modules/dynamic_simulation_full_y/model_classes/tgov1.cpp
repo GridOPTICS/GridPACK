@@ -51,13 +51,18 @@ void gridpack::dynamic_simulation::Tgov1Model::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
-  if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.05; 
-  if (!data->getValue(GOVERNOR_T1, &T1, idx)) T1 = 0.5; 
-  if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) Vmax = 1.0; 
-  if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) Vmin = 0.0; 
-  if (!data->getValue(GOVERNOR_T2, &T2, idx)) T2 = 3.0; 
-  if (!data->getValue(GOVERNOR_T3, &T3, idx)) T3 = 10.0; 
+  if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.05;
+  if (!data->getValue(GOVERNOR_T1, &T1, idx)) T1 = 0.5;
+  if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) Vmax = 1.0;
+  if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) Vmin = 0.0;
+  if (!data->getValue(GOVERNOR_T2, &T2, idx)) T2 = 3.0;
+  if (!data->getValue(GOVERNOR_T3, &T3, idx)) T3 = 10.0;
   if (!data->getValue(GOVERNOR_DT, &Dt, idx)) Dt = 0.0;
+
+  // Swap limits if inverted
+  if (Vmax < Vmin) {
+    double tmp = Vmax; Vmax = Vmin; Vmin = tmp;
+  }
 
   // Set up transfer function blocks
   leadlag_blk.setparams(T2,T3);
@@ -72,6 +77,33 @@ void gridpack::dynamic_simulation::Tgov1Model::load(
  */
 void gridpack::dynamic_simulation::Tgov1Model::init(double mag, double ang, double ts)
 {
+  // Minimum time constant checks
+  double mult_ts = TS_THRESHOLD * ts;
+  if (T1 > 0.0 && T1 < 0.25 * mult_ts) {
+    T1 = 0.0;
+    delay_blk.setparams(1.0, T1, Vmin, Vmax, -1000.0, 1000.0);
+  } else if (T1 > 0.25 * mult_ts && T1 < 0.5 * mult_ts) {
+    T1 = 0.5 * mult_ts;
+    delay_blk.setparams(1.0, T1, Vmin, Vmax, -1000.0, 1000.0);
+  }
+  if (T3 > 0.0 && T3 < 0.25 * mult_ts) {
+    T3 = 0.0;
+    leadlag_blk.setparams(T2, T3);
+  } else if (T3 > 0.25 * mult_ts && T3 < 0.5 * mult_ts) {
+    T3 = 0.5 * mult_ts;
+    leadlag_blk.setparams(T2, T3);
+  }
+
+  // Adjust valve limits to accommodate initial operating point
+  if (Pmech > Vmax) {
+    Vmax = Pmech;
+    delay_blk.setparams(1.0, T1, Vmin, Vmax, -1000.0, 1000.0);
+  }
+  if (Pmech < Vmin) {
+    Vmin = Pmech;
+    delay_blk.setparams(1.0, T1, Vmin, Vmax, -1000.0, 1000.0);
+  }
+
   // Initialize leadlag block
   delay_blk_out = leadlag_blk.init_given_y(Pmech+Dt*delta_w);
 

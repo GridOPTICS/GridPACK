@@ -989,7 +989,6 @@ class DSFullApp
 	
 	//for the generator observations, output the generator power based on system base or generator base
 	bool p_generator_observationpower_systembase;
-
     // Current step count?
     int p_S_Steps;
 

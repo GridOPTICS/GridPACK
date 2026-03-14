@@ -78,8 +78,11 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
 
   if(fabs(SE1*SE2) < 1e-6) has_Sat = false;
   if(fabs(TB*TC) < 1e-6)   has_leadlag = false;
-  if(fabs(TA) < 1e-6) zero_TA = true;
-  if(fabs(TR) < 1e-6) zero_TR = true;
+
+  // Swap Vrmax/Vrmin if inverted
+  if (Vrmax < Vrmin) {
+    double tmp = Vrmax; Vrmax = Vrmin; Vrmin = tmp;
+  }
 
   if(has_Sat) {
     /* Calculate saturation function constants */
@@ -137,6 +140,54 @@ double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
  */
 void gridpack::dynamic_simulation::Exdc1Model::init(double Vm, double Va, double ts)
 {
+  // Time constant minimum checks
+  double mult_ts = TS_THRESHOLD * ts;
+
+  // Tr uses 0.25/0.5 pattern (filter type)
+  if (TR > 0.0 && TR < 0.25 * mult_ts) {
+    TR = 0.0;
+    zero_TR = true;
+    // Vmeas_blk already not set up when zero_TR
+  } else if (TR > 0.25 * mult_ts && TR < 0.5 * mult_ts) {
+    TR = 0.5 * mult_ts;
+    Vmeas_blk.setparams(1.0, TR);
+  } else if (fabs(TR) < 1e-6) {
+    zero_TR = true;
+  }
+
+  // Tb uses 0.5/1.0 pattern (lead-lag denominator)
+  if (TB > 0.0 && TB < 0.5 * mult_ts) {
+    TB = 0.0;
+    has_leadlag = false;
+  } else if (TB > 0.5 * mult_ts && TB < mult_ts) {
+    TB = mult_ts;
+    if (has_leadlag) Leadlag_blk.setparams(TA, TB);
+  }
+
+  // Te: If 0 < Te < mult_ts then Te = mult_ts
+  if (TE > 0.0 && TE < mult_ts) {
+    TE = mult_ts;
+    Output_blk.setparams(TE);
+  }
+
+  // Tf1: If 0 < Tf1 < mult_ts then Tf1 = mult_ts
+  if (TF1 > 0.0 && TF1 < mult_ts) {
+    TF1 = mult_ts;
+    double a[2], b[2];
+    a[0] = TF1; a[1] = 1.0;
+    b[0] = KF;  b[1] = 0.0;
+    Feedback_blk.setcoeffs(a, b);
+  }
+
+  // Ta: If 0 < Ta < mult_ts then Ta = mult_ts
+  if (TA > 0.0 && TA < mult_ts) {
+    TA = mult_ts;
+    zero_TA = false;
+    Regulator_blk.setparams(KA, TA, Vrmin, Vrmax, -1000.0, 1000.0);
+  } else if (fabs(TA) < 1e-6) {
+    zero_TA = true;
+  }
+
   VF = Feedback_blk.init_given_u(Efd);
 
   double output_blk_in;
@@ -148,6 +199,18 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double Vm, double Va, double
   }
 
   VR = output_blk_in + sat_signal;
+
+  // Adjust Vrmax/Vrmin for initial operating point
+  if (VR > Vrmax) {
+    Vrmax = VR;
+    if (!zero_TA) Regulator_blk.setparams(KA, TA, Vrmin, Vrmax, -1000.0, 1000.0);
+    else Regulator_gain_blk.setparams(KA, Vrmin, Vrmax);
+  }
+  if (VR < Vrmin) {
+    Vrmin = VR;
+    if (!zero_TA) Regulator_blk.setparams(KA, TA, Vrmin, Vrmax, -1000.0, 1000.0);
+    else Regulator_gain_blk.setparams(KA, Vrmin, Vrmax);
+  }
 
   if(zero_TA) {
     VLL = VR/KA;

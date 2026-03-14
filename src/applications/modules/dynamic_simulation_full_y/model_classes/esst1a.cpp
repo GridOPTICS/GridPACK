@@ -22,6 +22,7 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <cmath>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -90,6 +91,17 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
   Vuel = 0.0;
   Voel = 1000.0;
 
+  // Swap limits if inverted
+  if (Vrmax < Vrmin) {
+    double tmp = Vrmax; Vrmax = Vrmin; Vrmin = tmp;
+  }
+  if (Vamax < Vamin) {
+    double tmp = Vamax; Vamax = Vamin; Vamin = tmp;
+  }
+  if (Vimax < Vimin) {
+    double tmp = Vimax; Vimax = Vimin; Vimin = tmp;
+  }
+
 }
 
 /**
@@ -124,12 +136,59 @@ double gridpack::dynamic_simulation::Esst1aModel::sqr(double x)
  */
 void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, double ts)
 {
-  if (Tf < TS_THRESHOLD * ts) zero_TF = true;
-  if (Tb < TS_THRESHOLD * ts) zero_TB = true;
-  if (Tb1 < TS_THRESHOLD * ts) zero_TB1 = true;
-  if (Ta < TS_THRESHOLD * ts) zero_TA = true;
-  if (Tr < TS_THRESHOLD * ts) zero_TR = true;
-  
+  // Time constant minimum checks
+  double mult_ts = TS_THRESHOLD * ts;
+
+  // Tf uses 0.5/1.0 pattern (lead-lag denominator type)
+  if (Tf > 0.0 && Tf < 0.5 * mult_ts) {
+    Tf = 0.0;
+    zero_TF = true;
+  } else if (Tf > 0.5 * mult_ts && Tf < mult_ts) {
+    Tf = mult_ts;
+  } else if (Tf <= 0.0) {
+    zero_TF = true;
+  }
+
+  // Tb uses 0.5/1.0 pattern
+  if (Tb > 0.0 && Tb < 0.5 * mult_ts) {
+    Tb = 0.0;
+    zero_TB = true;
+  } else if (Tb > 0.5 * mult_ts && Tb < mult_ts) {
+    Tb = mult_ts;
+  } else if (Tb <= 0.0) {
+    zero_TB = true;
+  }
+
+  // Tb1 uses 0.5/1.0 pattern
+  if (Tb1 > 0.0 && Tb1 < 0.5 * mult_ts) {
+    Tb1 = 0.0;
+    zero_TB1 = true;
+  } else if (Tb1 > 0.5 * mult_ts && Tb1 < mult_ts) {
+    Tb1 = mult_ts;
+  } else if (Tb1 <= 0.0) {
+    zero_TB1 = true;
+  }
+
+  // Tr uses 0.25/0.5 pattern (filter type)
+  if (Tr > 0.0 && Tr < 0.25 * mult_ts) {
+    Tr = 0.0;
+    zero_TR = true;
+  } else if (Tr > 0.25 * mult_ts && Tr < 0.5 * mult_ts) {
+    Tr = 0.5 * mult_ts;
+  } else if (Tr <= 0.0) {
+    zero_TR = true;
+  }
+
+  // Ka: if Ka == 0 then set to mult_ts
+  if (fabs(Ka) < 1e-6) {
+    Ka = mult_ts;
+  }
+
+  // Ta (regulator time constant) - if zero, use gain block
+  if (fabs(Ta) < 1e-6) {
+    zero_TA = true;
+  }
+
   // For lead lag block, force time constant of numerator to zero if time constant of denominator is zero
   if (zero_TB1) Tc1 = 0.0;
   if (zero_TB) Tc = 0.0;

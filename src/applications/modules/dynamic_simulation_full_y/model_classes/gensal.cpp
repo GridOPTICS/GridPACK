@@ -90,9 +90,29 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
   if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 TBD: check parser
   
-  double tmp = sqrt(p_pg*p_pg +p_qg*p_qg);
-  if ( tmp > MBase) {
-    MBase = tmp*1.2;
+  // Note: MBASE from RAW file is the per-unit base for DYR parameters.
+  // Do not auto-adjust MBASE when |Sgen| > MBASE; this is valid operation.
+
+  // GENSAL machine parameter auto-correction (matches PowerWorld rules)
+  if (Xdp > Xd) {
+    printf("GENSAL bus %d: Auto-correct Xd'=%.6f > Xd=%.6f -> Xd'=%.6f\n",
+           p_bus_id, Xdp, Xd, 0.8*Xd);
+    Xdp = 0.8 * Xd;
+  }
+  if (Xdpp > Xdp) {
+    printf("GENSAL bus %d: Auto-correct Xd''=%.6f > Xd'=%.6f -> Xd''=%.6f\n",
+           p_bus_id, Xdpp, Xdp, 0.8*Xdp);
+    Xdpp = 0.8 * Xdp;
+  }
+  if (Xdpp < 0.05) {
+    printf("GENSAL bus %d: Auto-correct Xd''=%.6f < 0.05 -> Xd''=0.05\n",
+           p_bus_id, Xdpp);
+    Xdpp = 0.05;
+  }
+  if (Xl > Xdpp) {
+    printf("GENSAL bus %d: Auto-correct Xl=%.6f > Xd''=%.6f -> Xl=%.6f\n",
+           p_bus_id, Xl, Xdpp, 0.8*Xdpp);
+    Xl = 0.8 * Xdpp;
   }
 }
 
@@ -675,15 +695,15 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
     ret = true;
   } else if(!strcmp(signal,"watch_header")) {
     if(getWatch()) {
-      char buf[128];
+      char buf[256];
       std::string tag;
       if(p_ckt[1] != ' ') {
 	tag = p_ckt;
       } else {
 	tag = p_ckt[0];
       }
-      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
-	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
+      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm, %d_%s_PowerAngle",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
+	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
@@ -696,8 +716,9 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f",
-	      Vterm,genP*MBase/p_sbase,genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech);
+      double powerAngle = (x1d_1 - presentAng) * 180.0 / 3.14159265358979323846;
+      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f, %f",
+	      Vterm,genP*MBase/p_sbase,genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech,powerAngle);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

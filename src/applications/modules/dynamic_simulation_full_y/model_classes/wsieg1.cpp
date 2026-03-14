@@ -89,6 +89,28 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
+  // Adjust Uo/Uc sign and ordering
+  if (Uo < Uc) {
+    double tmp = Uo; Uo = Uc; Uc = tmp;
+  }
+  if (Uo < 0) Uo = -Uo;
+  if (Uc > 0) Uc = -Uc;
+
+  // Pmax/Pmin swap
+  if (Pmax < Pmin) {
+    double tmp = Pmax; Pmax = Pmin; Pmin = tmp;
+  }
+
+  // K normalization
+  double Ksum_odd = K1 + K3 + K5 + K7;
+  double Ksum_even = K2 + K4 + K6 + K8;
+  if (Ksum_odd > 1.0) {
+    K1 /= Ksum_odd; K3 /= Ksum_odd; K5 /= Ksum_odd; K7 /= Ksum_odd;
+  }
+  if (Ksum_even > 1.0) {
+    K2 /= Ksum_even; K4 /= Ksum_even; K6 /= Ksum_even; K8 /= Ksum_even;
+  }
+
   Db1_blk.setparams(Db1, Err);
   if(T1 != 0 && T2 != 0) {
     Leadlag_blk.setparams(T2, T1);
@@ -130,9 +152,17 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
  */
 void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, double ts)
 {
-  double u1, u2, u3, u4, u5, u6, u7, u8, u9; 
- 
-  // Backword initialization 
+  // T3 time constant check
+  double mult_ts = 4.0 * ts;  // TS_THRESHOLD * ts
+  if (T3 > 0.0 && T3 < 0.25 * mult_ts) {
+    T3 = 0.0;
+  } else if (T3 > 0.25 * mult_ts && T3 < 0.5 * mult_ts) {
+    T3 = 0.5 * mult_ts;
+  }
+
+  double u1, u2, u3, u4, u5, u6, u7, u8, u9;
+
+  // Backword initialization
   if (K1 + K3 + K5 + K7 > 0) {
      u9 = Pmech1 / (K1 + K3 + K5 + K7);
      if(T7 == 0) {

@@ -326,7 +326,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
 	  double tmp1 = p_ybusr;
       double tmp2 = p_ybusi - 1.0e9;
       gridpack::ComplexType ret(tmp1, tmp2);
-	  
+
       values[0] = ret;
       return true;
     } else {
@@ -3394,11 +3394,11 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType
       printf("matrix off diag forward element changes due to branch relay trip!\n");
       values[0] = -getBranchRelayTripUpdateFactor();
 	  printf("changed value: %f + j*%f\n", real(values[0]), imag(values[0]));
-	      
+
       return true;
     } else {
       return false;
-    } 
+    }
   }else if (p_mode == branch_trip_action) {
 		if (p_branchactiontripflag) {
 			//printf("matrix off diag forward element changes due to branch relay trip!\n");
@@ -3458,7 +3458,7 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseValues(ComplexType
       return true;
     } else {
       return false;
-    } 
+    }
   }else if (p_mode == branch_trip_action) {
 		if (p_branchactiontripflag) {
 			//printf("matrix off diag forward element changes due to branch relay trip!\n");

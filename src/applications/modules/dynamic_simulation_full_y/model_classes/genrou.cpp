@@ -117,12 +117,48 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
   } else enableSat = true;
   printFlag = false;
 
-  double tmp = sqrt(p_pg*p_pg +p_qg*p_qg);
-  // Increase Machine base to 1.2*Sgen if Sgen > MBase
-  if ( tmp > MBase) {
-    MBase = tmp*1.2;
+  // Note: MBASE from RAW file is the per-unit base for DYR parameters.
+  // Do not auto-adjust MBASE when |Sgen| > MBASE; this is valid operation.
+
+  // GENROU machine parameter auto-correction (matches PowerWorld rules)
+  // 1. Transient reactances
+  if (Xdp > Xd) {
+    printf("GENROU bus %d: Auto-correct Xd'=%.6f > Xd=%.6f -> Xd'=%.6f\n",
+           p_bus_id, Xdp, Xd, 0.8*Xd);
+    Xdp = 0.8 * Xd;
   }
-  
+  if (Xqp > Xq) {
+    printf("GENROU bus %d: Auto-correct Xq'=%.6f > Xq=%.6f -> Xq'=%.6f\n",
+           p_bus_id, Xqp, Xq, Xq);
+    Xqp = Xq;
+  }
+  // 2. Subtransient reactances (Xdpp = Xqpp for GENROU)
+  double Xmin = (Xdp < Xqp) ? Xdp : Xqp;
+  if (Xdpp > Xmin) {
+    printf("GENROU bus %d: Auto-correct Xd''=%.6f > min(Xd',Xq')=%.6f -> Xd''=%.6f\n",
+           p_bus_id, Xdpp, Xmin, 0.8*Xmin);
+    Xdpp = 0.8 * Xmin;
+    Xqpp = Xdpp;
+  }
+  if (Xdpp < 0.05) {
+    printf("GENROU bus %d: Auto-correct Xd''=%.6f < 0.05 -> Xd''=0.05\n",
+           p_bus_id, Xdpp);
+    Xdpp = 0.05;
+    Xqpp = Xdpp;
+  }
+  // 3. Leakage reactance
+  if (Xl > Xdpp) {
+    printf("GENROU bus %d: Auto-correct Xl=%.6f > Xd''=%.6f -> Xl=%.6f\n",
+           p_bus_id, Xl, Xdpp, 0.8*Xdpp);
+    Xl = 0.8 * Xdpp;
+  }
+  // 4. Inertia
+  if (H < 0.1) {
+    printf("GENROU bus %d: Auto-correct H=%.6f < 0.1 -> H=0.1\n",
+           p_bus_id, H);
+    H = 0.1;
+  }
+
 }
 
 /**
@@ -537,7 +573,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
       p_exciter->setOmega(x2w);
       p_exciter->setVterminal(presentMag);
       p_exciter->setVcomp(presentMag);
-      p_exciter->setFieldCurrent(LadIfd);
 
       Efd = p_exciter->getFieldVoltage();
     } else {
@@ -618,6 +653,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
       if (p_hasPss) {
         p_exciter->setVstab(Vstab);
       }
+      p_exciter->setFieldCurrent(LadIfd);
       p_exciter->predictor(t_inc, flag);
     }
 
@@ -724,13 +760,12 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
       p_exciter->setOmega(x2w_1);
       p_exciter->setVterminal(presentMag);
       p_exciter->setVcomp(presentMag);
-      p_exciter->setFieldCurrent(LadIfd);
-      
+
       Efd = p_exciter->getFieldVoltage();
     } else {
       Efd = Efdinit;
     }
-    
+
     if (p_hasGovernor) {
       p_governor = getGovernor();
       p_governor->setRotorSpeedDeviation(x2w_1);
@@ -738,7 +773,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     } else {
       Pmech = Pmechinit;
     }
-    
+
     double pi = 4.0*atan(1.0);
     double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl);
     double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
@@ -756,7 +791,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     //DQ Axis
     Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
     Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
-    
+
     double Telec = Psidpp * Iq - Psiqpp * Id;
     double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
       * (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1);
@@ -782,7 +817,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     x4Psidp = x4Psidp + (dx4Psidp + dx4Psidp_1) / 2.0 * t_inc;
     x5Psiqp = x5Psiqp + (dx5Psiqp + dx5Psiqp_1) / 2.0 * t_inc;
     x6Edp = x6Edp + (dx6Edp + dx6Edp_1) / 2.0 * t_inc;
-    
+
     // PSS: run before exciter corrector so Vstab is available
     if (p_hasPss) {
       boost::shared_ptr<BasePssModel> pss = getPss();
@@ -797,6 +832,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
       if (p_hasPss) {
         p_exciter->setVstab(Vstab);
       }
+      p_exciter->setFieldCurrent(LadIfd);
       p_exciter->corrector(t_inc, flag);
     }
 
@@ -898,7 +934,7 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
     ret = true;
   } else if(!strcmp(signal,"watch_header")) {
     if(getWatch()) {
-      char buf[128];
+      char buf[256];
       std::string tag;
       if(p_ckt[1] != ' ') {
         tag = p_ckt;
@@ -906,9 +942,9 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
         tag = p_ckt[0];
       }
       sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed,"
-          " %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
+          " %d_%s_Efd, %d_%s_Pm, %d_%s_PowerAngle",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
           p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
-          p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
+          p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
@@ -921,8 +957,9 @@ bool gridpack::dynamic_simulation::GenrouGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f",Vterm,genP*MBase/p_sbase,
-          genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech);
+      double powerAngle = (x1d_1 - presentAng) * 180.0 / 3.14159265358979323846;
+      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f, %f",Vterm,genP*MBase/p_sbase,
+          genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech,powerAngle);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

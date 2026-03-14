@@ -290,7 +290,6 @@ void gridpack::dynamic_simulation::DSFullApp::setNetwork(
   p_biterative_solve_network = cursor->get("iterativeNetworkInterface",false);
   p_iterative_network_debug = cursor->get("iterativeNetworkInterfaceDebugPrint",false);
   p_generator_observationpower_systembase = cursor->get("generatorObservationPowerSystemBase",true);
-  
   ITER_TOL = cursor->get("iterativeNetworkInterfaceTol", 1.0e-7);
   MAX_ITR_NO =  cursor->get("iterativeNetworkInterfaceMaxItrNo", 8);
   p_equilibrium_init = cursor->get("equilibriumInit", false);
@@ -3136,7 +3135,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   // Simulation related variables
   t_init = timer->createCategory("DS Solve: Initialization");
   timer->start(t_init);
-  
+
   int t_step[20];
   double t_width[20];
 

@@ -73,6 +73,18 @@ void gridpack::dynamic_simulation::ClassicalGenerator::load(
   if (!data->getValue(GENERATOR_ZSOURCE, &zsrc, idx))
     zsrc=gridpack::ComplexType(0.0,0.0); // dtr
   p_dtr = imag(zsrc);
+
+  // Read Xdp from DYR file (GENERATOR_TRANSIENT_REACTANCE)
+  // This is the correct reactance for GENCLS, not ZSOURCE from RAW file
+  if (!data->getValue(GENERATOR_TRANSIENT_REACTANCE, &p_Xdp, idx)) {
+    // Fall back to ZSOURCE if DYR Xdp not available
+    p_Xdp = p_dtr;
+  }
+
+  // Xdp bounds
+  if (p_Xdp < 0.00001) p_Xdp = 0.00001;
+  if (p_Xdp > 999.0) p_Xdp = 999.0;
+
   if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &p_h, idx)) p_h = 0.0; // h
   if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &p_d0, idx)) p_d0 = 0.0; // d0
   
@@ -135,7 +147,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
   gridpack::ComplexType jay(0.0, 1.0);
   //printf("v: (%f, %f)\n", real(v), imag(v));
   //gridpack::ComplexType temp = v + jay * (p_dtr * p_mva) * curr;
-  gridpack::ComplexType temp = v + jay * p_dtr * curr;
+  gridpack::ComplexType temp = v + jay * p_Xdp * curr;
   //printf("dtr = %f, mva = %f\n", p_dtr, p_mva);
   //printf("eprime_s0: (%f, %f)\n", real(temp), imag(temp));
   p_eprime_s0 = temp;
@@ -194,12 +206,8 @@ gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::INorton(
  */
 gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::NortonImpedence()
 {
-  double ra = p_r * p_sbase / p_mva; // * p_sbase / p_mva;
-  double xd;
-  if (p_dstr == 0.0) {
-    xd = p_dtr * p_sbase / p_mva; // * p_sbase / p_mva;
-  }
-  //printf("---------classical generator model :: NortonImpedence() p_r = %f, ra = %f, xd = %f, p_dstr = %f, p_dtr = %f \n", p_r, ra, xd, p_dstr, p_dtr);
+  double ra = p_r * p_sbase / p_mva;
+  double xd = p_Xdp * p_sbase / p_mva;
   gridpack::ComplexType Y_a(ra, xd);
   
   Y_a = 1.0 / Y_a;
@@ -220,8 +228,8 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor_currentInjectio
   
   gridpack::ComplexType jay(0.0, 1.0);
   // Calculate INorton_full
-  p_INorton = p_eprime_s0 / (p_dtr * jay);
-  
+  p_INorton = p_eprime_s0 / (p_Xdp * jay);
+
   p_INorton = p_INorton * p_mva / p_sbase; 
  
   /*double Idnorton = real(p_INorton);
@@ -254,10 +262,10 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor(
   jay = gridpack::ComplexType(0.0,1.0);
   //p_INorton = gridpack::ComplexType(0.0,0.0);
 
-  // terminal curr: curr = (eprime - volt) / GEN_dtr) -----------
+  // terminal curr: curr = (eprime - volt) / (j*Xdp) -----------
   curr = p_eprime_s0;
   curr -= p_volt;
-  curr = curr/(jay*p_dtr);
+  curr = curr/(jay*p_Xdp);
   //imag(curr) = -imag(curr);
   curr = conj(curr);
   p_pelect = real(p_eprime_s0 * curr);
@@ -287,8 +295,8 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor(
 void gridpack::dynamic_simulation::ClassicalGenerator::corrector_currentInjection(bool flag)
 {
   gridpack::ComplexType jay(0.0, 1.0);
-  p_INorton = p_eprime_s1 / (p_dtr * jay);
-  
+  p_INorton = p_eprime_s1 / (p_Xdp * jay);
+
   p_INorton = p_INorton * p_mva / p_sbase; 
 
   /*double Idnorton = real(p_INorton);
@@ -314,10 +322,10 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector(
   // Evaluate updated values of machine parameters for integration
   jay = gridpack::ComplexType(0.0,1.0);
   p_INorton = gridpack::ComplexType(0.0,0.0);
-  // terminal curr: curr = (eprime - volt) / GEN_dtr) -----------
+  // terminal curr: curr = (eprime - volt) / (j*Xdp) -----------
   curr = p_eprime_s1;
   curr -= p_volt;
-  curr = curr/(jay*p_dtr);
+  curr = curr/(jay*p_Xdp);
   //imag(curr) = -imag(curr);
   curr = conj(curr);
   p_pelect = real(p_eprime_s1 * curr);
@@ -387,15 +395,18 @@ serialWrite(char *string, const int bufsize, const char *signal)
   bool ret = false;
   if (!strcmp(signal,"watch_header")) {
     if (getWatch()) {
-      char buf[128];
+      char buf[256];
       std::string tag;
       if (p_ckt[1] != ' ') {
         tag = p_ckt;
       } else {
         tag = p_ckt[0];
       }
-      sprintf(buf,", %d_%s_angle, %d_%s_speed",p_bus_id,tag.c_str(),
-          p_bus_id,tag.c_str());
+      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg, %d_%s_angle, %d_%s_speed,"
+          " %d_%s_Efd, %d_%s_Pm, %d_%s_PowerAngle",
+          p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
+          p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
+          p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
@@ -410,7 +421,15 @@ serialWrite(char *string, const int bufsize, const char *signal)
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
+      double Vterm = abs(p_volt);
+      double VtermAng = atan2(imag(p_volt), real(p_volt));
+      double rotor_ang = real(p_mac_ang_s1);
+      double powerAngle = (rotor_ang - VtermAng) * 180.0 / 3.14159265358979323846;
+      double Efd = real(p_eqprime);  // constant E' magnitude for classical model
+      double Pmech_out = real(p_pmech) * p_mva / p_sbase;
+      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f, %f",
+          Vterm, genP*p_mva/p_sbase, genQ*p_mva/p_sbase,
+          rotor_ang, real(p_mac_spd_s1), Efd, Pmech_out, powerAngle);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

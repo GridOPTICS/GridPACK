@@ -155,6 +155,7 @@ class ClassicalGenerator : public BaseGeneratorModel
     double p_pg, p_qg;
     int p_status;
     double p_mva, p_r, p_dstr, p_dtr;
+    double p_Xdp; // Transient reactance from DYR file (used for all calculations)
     double p_d0, p_h;
     double p_PI;
 	double genP, genQ;
@@ -183,6 +184,7 @@ class ClassicalGenerator : public BaseGeneratorModel
           & p_status
           & p_mva & p_r
           & p_dstr & p_dtr
+          & p_Xdp
           & p_d0 & p_h
           & p_pelect & p_volt
           & p_mac_ang_s0 & p_mac_spd_s0
