@@ -11,6 +11,8 @@
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
 # Last Change: 2025-08-11 12:30:14 d3g096
+# Added gridpack_cli.py + MPI include    
+# Updated in March 2026, by Yousu Chen
 # -------------------------------------------------------------
 
 pybind11_add_module(gridpack
@@ -21,13 +23,14 @@ pybind11_add_module(gridpack
   gridpack_se.cpp
   )
 
-set(parallel_scripts 
+set(parallel_scripts
   ${CMAKE_CURRENT_SOURCE_DIR}/hello.py
   ${CMAKE_CURRENT_SOURCE_DIR}/task_manager.py
   ${CMAKE_CURRENT_SOURCE_DIR}/hadrec.py
   ${CMAKE_CURRENT_SOURCE_DIR}/emt.py
   ${CMAKE_CURRENT_SOURCE_DIR}/pf.py
   ${CMAKE_CURRENT_SOURCE_DIR}/stes.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack_cli.py
 )
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)
@@ -35,6 +38,7 @@ if (ENABLE_ENVIRONMENT_FROM_COMM)
 endif()
 
 add_definitions(${GRIDPACK_DEFINITIONS})
+target_include_directories(gridpack PRIVATE ${MPI_CXX_INCLUDE_DIRS})
 target_link_libraries(gridpack PRIVATE ${GRIDPACK_LIBS})
 
 install(FILES

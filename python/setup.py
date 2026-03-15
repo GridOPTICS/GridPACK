@@ -5,6 +5,8 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
+# Added console_scripts entry point
+# March, 2026 by Yousu Chen
 # -------------------------------------------------------------
 
 import os
@@ -76,7 +78,13 @@ setup(
         'src/emt.py',
         'src/pf.py',
         'src/stes.py',
+        'src/gridpack_cli.py',
     ],
+    entry_points={
+        'console_scripts': [
+            'gridpack=gridpack_cli:main',
+        ],
+    },
     test_suite='nose.collector',
     tests_require=['nose'],
 )
