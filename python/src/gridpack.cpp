@@ -149,7 +149,7 @@ PYBIND11_MODULE(gridpack, gpm) {
                     { return boost::shared_ptr<gp::Environment>
                         (new gp::Environment(0, NULL)); }),
       "Create a parallel environment with default MPI communicator")
-    
+
     .def(py::init<>([](py::object py_comm)
                     { MPI_Comm *c = get_mpi_comm(py_comm);
                       return boost::shared_ptr<gp::Environment>

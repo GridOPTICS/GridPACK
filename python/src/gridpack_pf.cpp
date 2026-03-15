@@ -10,6 +10,8 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created February 10, 2025 by Perkins
+// Added CA pybind11 bindings
+// Updated March, 2026 by Yousu Chen 
 // -------------------------------------------------------------
 
 #include "common.hpp"
@@ -26,6 +28,50 @@ init_gridpack_pf(py::module& gpm)
 {
   py::module pfm =
     gpm.def_submodule("powerflow", "GridPACK power flow module");
+
+  // Contingency type enum
+  pfm.attr("Branch") = py::int_(static_cast<int>(gpf::Branch));
+  pfm.attr("Generator") = py::int_(static_cast<int>(gpf::Generator));
+
+  // Contingency struct for contingency analysis
+  py::class_<gpf::Contingency>(pfm, "Contingency",
+      "Container for contingency definition (line or generator)")
+    .def(py::init<>())
+    .def_readwrite("p_type", &gpf::Contingency::p_type,
+        "Contingency type: 0=Generator, 1=Branch")
+    .def_readwrite("p_name", &gpf::Contingency::p_name,
+        "Contingency name")
+    .def_readwrite("p_from", &gpf::Contingency::p_from,
+        "From bus IDs for line contingencies")
+    .def_readwrite("p_to", &gpf::Contingency::p_to,
+        "To bus IDs for line contingencies")
+    .def_readwrite("p_ckt", &gpf::Contingency::p_ckt,
+        "Circuit IDs for line contingencies")
+    // std::vector<bool> cannot use def_readwrite in pybind11 (proxy issue),
+    // so use def_property with conversion to/from std::vector<int>.
+    .def_property("p_saveLineStatus",
+        [](const gpf::Contingency& self) {
+          std::vector<int> v(self.p_saveLineStatus.begin(), self.p_saveLineStatus.end());
+          return v;
+        },
+        [](gpf::Contingency& self, const std::vector<int>& v) {
+          self.p_saveLineStatus.assign(v.begin(), v.end());
+        },
+        "Saved line status before contingency (as list of int: 1=true, 0=false)")
+    .def_property("p_saveGenStatus",
+        [](const gpf::Contingency& self) {
+          std::vector<int> v(self.p_saveGenStatus.begin(), self.p_saveGenStatus.end());
+          return v;
+        },
+        [](gpf::Contingency& self, const std::vector<int>& v) {
+          self.p_saveGenStatus.assign(v.begin(), v.end());
+        },
+        "Saved generator status before contingency (as list of int: 1=true, 0=false)")
+    .def_readwrite("p_busid", &gpf::Contingency::p_busid,
+        "Bus IDs for generator contingencies")
+    .def_readwrite("p_genid", &gpf::Contingency::p_genid,
+        "Generator IDs for generator contingencies")
+    ;
 
   py::class_<gpf::PFAppModule> pfapp(pfm, "Powerflow");
   
@@ -314,7 +360,39 @@ Parameters:
          "Write real time path rating diagnostics")
     .def("useRateB", &gpf::PFAppModule::useRateB,
          "Use rate B parameter for line overload violations")
-         
+
+    // Contingency analysis methods
+    .def("setContingency", &gpf::PFAppModule::setContingency,
+         R"eof(
+Apply a contingency to the network (trip lines or generators).
+
+Parameters:
+    event (Contingency): contingency definition
+
+Returns:
+    True if contingency elements were found in network
+)eof")
+    .def("unSetContingency", &gpf::PFAppModule::unSetContingency,
+         R"eof(
+Restore network to pre-contingency state.
+
+Parameters:
+    event (Contingency): contingency to undo
+
+Returns:
+    True if restoration was successful
+)eof")
+    .def("writeCABus", &gpf::PFAppModule::writeCABus,
+         "Write bus results for contingency analysis output")
+    .def("writeCABranch", &gpf::PFAppModule::writeCABranch,
+         "Write branch results for contingency analysis output")
+    .def("checkSlackCapacity", &gpf::PFAppModule::checkSlackCapacity,
+         "Check if slack bus generator is within capacity limits")
+    .def("getIslandCount", &gpf::PFAppModule::getIslandCount,
+         "Get number of islands in the network after contingency")
+    .def("hasLoneBus", &gpf::PFAppModule::hasLoneBus,
+         "Check if network has any isolated (lone) buses")
+
     ;
 
   // These query and modify the network's data collection objects
