@@ -18,6 +18,7 @@
 #include "common.hpp"
 
 #include <gridpack/applications/modules/hadrec/hadrec_app_module.hpp>
+#include <gridpack/applications/modules/powerflow/pf_app_module.hpp>
 
 namespace gph = gridpack::hadrec;
 namespace gpds = gridpack::dynamic_simulation;
@@ -71,6 +72,40 @@ init_gridpack_ds(py::module& gpm)
          [](gpds::DSFullApp& self, const std::string& inputfile, const int& pf_idx) {
            self.solvePowerFlowBeforeDynSimu(inputfile.c_str(), pf_idx);
          })
+    // Alternative init that uses existing Configuration singleton and
+    // communicator, avoiding MPI_Comm_dup conflicts when Environment
+    // is already initialized (e.g., after power flow or CA).
+    .def("initFromConfig",
+         [](gpds::DSFullApp& self, gpu::Configuration& config, const int& pf_idx) {
+           gpp::Communicator world;
+
+           // Run power flow
+           boost::shared_ptr<gridpack::powerflow::PFNetwork>
+             pf_network(new gridpack::powerflow::PFNetwork(world));
+           gridpack::powerflow::PFAppModule pf_app;
+           pf_app.readNetwork(pf_network, &config, pf_idx);
+           pf_app.initialize();
+           pf_app.solve();
+           pf_app.saveData();
+
+           // Create DS network and transfer PF results
+           boost::shared_ptr<gpds::DSFullNetwork>
+             ds_network(new gpds::DSFullNetwork(world));
+           pf_network->clone<gpds::DSFullBus, gpds::DSFullBranch>(ds_network);
+           self.transferPFtoDS(pf_network, ds_network);
+           self.setNetwork(ds_network, &config);
+         },
+         R"eof(
+Initialize dynamic simulation from an already-open Configuration.
+
+Uses the existing MPI communicator instead of creating a new one,
+avoiding MPI_Comm_dup conflicts when gridpack.Environment() is
+already initialized.
+
+Parameters:
+    config (gridpack.Configuration): Already-open configuration
+    pf_idx (int): Power flow configuration index (-1 for default)
+)eof")
     .def("readGenerators", &gpds::DSFullApp::readGenerators,
          py::arg("ds_idx") = -1)
     .def("readSequenceData", &gpds::DSFullApp::readSequenceData)
