@@ -29,6 +29,7 @@ install(FILES
   indexed.hpp
   sanity_interface.hpp
   string_utils.hpp
+  results_exporter.hpp
   DESTINATION include/gridpack/utilities
 )
 
