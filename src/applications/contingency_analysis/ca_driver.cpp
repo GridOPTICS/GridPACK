@@ -1177,28 +1177,204 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
 #endif
 
-  // Export CA results to JSON or CSV
-  if (outputFormat == "csv") {
-    // Rank 0 writes base case (creates files with headers)
-    if (world.rank() == 0) {
-      gridpack::utility::ResultsExporter::writePFCSV(outputFile,
-          baseCaseResults, "base_case");
+  // Sync GA before MPI collectives to flush any pending one-sided operations
+  world.sync();
+
+  // Export CA results to JSON or CSV.
+  // Only rank 0 writes output files. Non-zero ranks send their serialized
+  // data to rank 0 using point-to-point MPI send/recv.
+  if (outputFormat == "json") {
+    // Each process serializes its contingency results as JSON text
+    std::ostringstream localJsonStream;
+    for (size_t ci = 0; ci < localContingencies.size(); ci++) {
+      gridpack::utility::ResultsExporter::writeContingencyResultJSON(
+          localJsonStream, localContingencies[ci]);
+      if (ci + 1 < localContingencies.size()) {
+        localJsonStream << ",\n";
+      }
     }
-    world.barrier();
-    // Each process writes its contingencies in order (files opened in append mode)
-    for (int p = 0; p < world.size(); p++) {
-      if (world.rank() == p) {
-        for (size_t ci = 0; ci < localContingencies.size(); ci++) {
-          gridpack::utility::ResultsExporter::writePFCSV(
-              outputFile, localContingencies[ci].solution,
-              localContingencies[ci].name);
+    std::string localJson = localJsonStream.str();
+
+    // Gather all JSON fragments on rank 0 using point-to-point send/recv
+    MPI_Comm mpi_comm = static_cast<MPI_Comm>(world);
+    std::vector<std::string> allFragments(world.size());
+    allFragments[0] = localJson;  // rank 0's own data
+    if (world.rank() == 0) {
+      for (int p = 1; p < world.size(); p++) {
+        int len;
+        MPI_Recv(&len, 1, MPI_INT, p, 0, mpi_comm, MPI_STATUS_IGNORE);
+        allFragments[p].resize(len);
+        if (len > 0) {
+          MPI_Recv(&allFragments[p][0], len, MPI_CHAR, p, 1, mpi_comm,
+                   MPI_STATUS_IGNORE);
         }
       }
-      world.barrier();
+    } else {
+      int len = static_cast<int>(localJson.size());
+      MPI_Send(&len, 1, MPI_INT, 0, 0, mpi_comm);
+      if (len > 0) {
+        MPI_Send(const_cast<char*>(localJson.c_str()), len, MPI_CHAR, 0, 1,
+                 mpi_comm);
+      }
     }
-    // Rank 0 writes summary CSV using gathered data
-#ifdef USE_SUCCESS
+
+    // Rank 0 writes the final JSON file
     if (world.rank() == 0) {
+      std::string jsonFile = outputFile + ".json";
+      std::ofstream jout(jsonFile.c_str());
+      gridpack::utility::ResultsExporter::writeCAJSONHeader(jout,
+          baseCaseResults);
+      bool firstFragment = true;
+      for (int p = 0; p < world.size(); p++) {
+        if (!allFragments[p].empty()) {
+          if (!firstFragment) jout << ",\n";
+          jout << allFragments[p];
+          firstFragment = false;
+        }
+      }
+      jout << "\n";
+      gridpack::utility::ResultsExporter::writeCAJSONFooter(jout);
+      jout.close();
+    }
+  }
+
+  if (outputFormat == "csv") {
+    // Each process serializes its contingency CSV data into 4 strings
+    // (buses, branches, generators, convergence rows without headers)
+    std::ostringstream localBus, localBranch, localGen, localConv;
+    localBus << std::fixed;
+    localBranch << std::fixed;
+    localGen << std::fixed;
+    for (size_t ci = 0; ci < localContingencies.size(); ci++) {
+      const gridpack::utility::ContingencyResult& ct = localContingencies[ci];
+      const gridpack::utility::PowerFlowResults& r = ct.solution;
+      for (size_t bi = 0; bi < r.buses.size(); bi++) {
+        const gridpack::utility::BusResult& b = r.buses[bi];
+        localBus << ct.name << ","
+           << b.busId << "," << b.type << ","
+           << b.area << "," << b.zone << ","
+           << std::setprecision(2) << b.baseKV << ","
+           << std::setprecision(6) << b.voltage << ","
+           << std::setprecision(6) << b.angle << ","
+           << std::setprecision(4) << b.pInjection << ","
+           << std::setprecision(4) << b.qInjection << ","
+           << std::setprecision(4) << b.pLoad << ","
+           << std::setprecision(4) << b.qLoad << ","
+           << std::setprecision(4) << b.pGen << ","
+           << std::setprecision(4) << b.qGen << ","
+           << std::setprecision(4) << b.shuntMvar << "\n";
+      }
+      for (size_t bi = 0; bi < r.branches.size(); bi++) {
+        const gridpack::utility::BranchResult& br = r.branches[bi];
+        localBranch << ct.name << ","
+           << br.fromBus << "," << br.toBus << ","
+           << br.circuitId << ","
+           << std::setprecision(4) << br.pFrom << ","
+           << std::setprecision(4) << br.qFrom << ","
+           << std::setprecision(4) << br.pTo << ","
+           << std::setprecision(4) << br.qTo << ","
+           << std::setprecision(4) << br.pLoss << ","
+           << std::setprecision(4) << br.qLoss << ","
+           << std::setprecision(4) << br.mvaFrom << ","
+           << std::setprecision(4) << br.mvaTo << ","
+           << std::setprecision(4) << br.rateA << ","
+           << std::setprecision(2) << br.loadingPercent << "\n";
+      }
+      for (size_t gi = 0; gi < r.generators.size(); gi++) {
+        const gridpack::utility::GeneratorResult& g = r.generators[gi];
+        localGen << ct.name << ","
+           << g.busId << "," << g.genId << ","
+           << std::setprecision(4) << g.pGen << ","
+           << std::setprecision(4) << g.qGen << ","
+           << std::setprecision(4) << g.qMax << ","
+           << std::setprecision(4) << g.qMin << ","
+           << std::setprecision(6) << g.voltageSetpoint << ","
+           << g.status << "\n";
+      }
+      localConv << ct.name << ","
+         << (r.convergence.converged ? "true" : "false") << ","
+         << r.convergence.iterations << ","
+         << std::scientific << r.convergence.finalTolerance << ","
+         << std::fixed
+         << r.convergence.finalMismatch.maxPBus << ","
+         << std::setprecision(4) << r.convergence.finalMismatch.maxPMismatch << ","
+         << r.convergence.finalMismatch.maxQBus << ","
+         << std::setprecision(4) << r.convergence.finalMismatch.maxQMismatch << "\n";
+    }
+
+    // Gather all CSV fragments on rank 0 using point-to-point send/recv
+    MPI_Comm mpi_comm = static_cast<MPI_Comm>(world);
+    std::vector<std::string> allBus(world.size()), allBranch(world.size());
+    std::vector<std::string> allGen(world.size()), allConv(world.size());
+    allBus[0] = localBus.str();
+    allBranch[0] = localBranch.str();
+    allGen[0] = localGen.str();
+    allConv[0] = localConv.str();
+    if (world.rank() == 0) {
+      for (int p = 1; p < world.size(); p++) {
+        int lens[4];
+        MPI_Recv(lens, 4, MPI_INT, p, 0, mpi_comm, MPI_STATUS_IGNORE);
+        allBus[p].resize(lens[0]);
+        allBranch[p].resize(lens[1]);
+        allGen[p].resize(lens[2]);
+        allConv[p].resize(lens[3]);
+        if (lens[0] > 0)
+          MPI_Recv(&allBus[p][0], lens[0], MPI_CHAR, p, 1, mpi_comm,
+                   MPI_STATUS_IGNORE);
+        if (lens[1] > 0)
+          MPI_Recv(&allBranch[p][0], lens[1], MPI_CHAR, p, 2, mpi_comm,
+                   MPI_STATUS_IGNORE);
+        if (lens[2] > 0)
+          MPI_Recv(&allGen[p][0], lens[2], MPI_CHAR, p, 3, mpi_comm,
+                   MPI_STATUS_IGNORE);
+        if (lens[3] > 0)
+          MPI_Recv(&allConv[p][0], lens[3], MPI_CHAR, p, 4, mpi_comm,
+                   MPI_STATUS_IGNORE);
+      }
+    } else {
+      std::string sBus = localBus.str(), sBranch = localBranch.str();
+      std::string sGen = localGen.str(), sConv = localConv.str();
+      int lens[4] = {(int)sBus.size(), (int)sBranch.size(),
+                     (int)sGen.size(), (int)sConv.size()};
+      MPI_Send(lens, 4, MPI_INT, 0, 0, mpi_comm);
+      if (lens[0] > 0)
+        MPI_Send(const_cast<char*>(sBus.c_str()), lens[0], MPI_CHAR, 0, 1,
+                 mpi_comm);
+      if (lens[1] > 0)
+        MPI_Send(const_cast<char*>(sBranch.c_str()), lens[1], MPI_CHAR, 0, 2,
+                 mpi_comm);
+      if (lens[2] > 0)
+        MPI_Send(const_cast<char*>(sGen.c_str()), lens[2], MPI_CHAR, 0, 3,
+                 mpi_comm);
+      if (lens[3] > 0)
+        MPI_Send(const_cast<char*>(sConv.c_str()), lens[3], MPI_CHAR, 0, 4,
+                 mpi_comm);
+    }
+
+    // Rank 0 writes the CSV files
+    if (world.rank() == 0) {
+      // Write base case first (creates files with headers)
+      gridpack::utility::ResultsExporter::writePFCSV(outputFile,
+          baseCaseResults, "base_case");
+      // Append contingency data from all processes
+      {
+        std::ofstream out((outputFile + "_buses.csv").c_str(), std::ios::app);
+        for (size_t p = 0; p < allBus.size(); p++) out << allBus[p];
+      }
+      {
+        std::ofstream out((outputFile + "_branches.csv").c_str(), std::ios::app);
+        for (size_t p = 0; p < allBranch.size(); p++) out << allBranch[p];
+      }
+      {
+        std::ofstream out((outputFile + "_generators.csv").c_str(), std::ios::app);
+        for (size_t p = 0; p < allGen.size(); p++) out << allGen[p];
+      }
+      {
+        std::ofstream out((outputFile + "_convergence.csv").c_str(), std::ios::app);
+        for (size_t p = 0; p < allConv.size(); p++) out << allConv[p];
+      }
+#ifdef USE_SUCCESS
+      // Write summary CSV
       std::string summaryFile = outputFile + "_summary.csv";
       std::ofstream sout(summaryFile.c_str());
       sout << "contingency,type,converged,has_voltage_violation,has_branch_violation\n";
@@ -1213,63 +1389,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                  ? "true" : "false") << "\n";
       }
       sout.close();
-    }
 #endif
-  }
-
-  if (outputFormat == "json") {
-    // Each process serializes its contingency results as JSON text
-    std::ostringstream localJsonStream;
-    for (size_t ci = 0; ci < localContingencies.size(); ci++) {
-      gridpack::utility::ResultsExporter::writeContingencyResultJSON(
-          localJsonStream, localContingencies[ci]);
-      if (ci + 1 < localContingencies.size()) {
-        localJsonStream << ",\n";
-      }
-    }
-    std::string localJson = localJsonStream.str();
-
-    // Gather JSON fragment sizes
-    int localLen = static_cast<int>(localJson.size());
-    std::vector<int> allLens(world.size());
-    MPI_Allgather(&localLen, 1, MPI_INT, &allLens[0], 1, MPI_INT,
-                  static_cast<MPI_Comm>(world));
-
-    // Compute displacements
-    std::vector<int> displs(world.size());
-    int totalLen = 0;
-    for (int p = 0; p < world.size(); p++) {
-      displs[p] = totalLen;
-      totalLen += allLens[p];
-    }
-
-    // Gather all JSON fragments on rank 0
-    std::vector<char> allJsonBuf;
-    if (world.rank() == 0) allJsonBuf.resize(totalLen);
-    MPI_Gatherv(localJson.c_str(), localLen, MPI_CHAR,
-                world.rank() == 0 ? &allJsonBuf[0] : NULL,
-                &allLens[0], &displs[0], MPI_CHAR,
-                0, static_cast<MPI_Comm>(world));
-
-    // Rank 0 writes the final JSON file
-    if (world.rank() == 0) {
-      std::string jsonFile = outputFile + ".json";
-      std::ofstream jout(jsonFile.c_str());
-      // Write base case and open contingencies array
-      gridpack::utility::ResultsExporter::writeCAJSONHeader(jout,
-          baseCaseResults);
-      // Write contingencies from gathered fragments
-      bool firstFragment = true;
-      for (int p = 0; p < world.size(); p++) {
-        if (allLens[p] > 0) {
-          if (!firstFragment) jout << ",\n";
-          jout.write(&allJsonBuf[displs[p]], allLens[p]);
-          firstFragment = false;
-        }
-      }
-      jout << "\n";
-      gridpack::utility::ResultsExporter::writeCAJSONFooter(jout);
-      jout.close();
     }
   }
 
