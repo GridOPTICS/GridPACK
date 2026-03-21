@@ -716,7 +716,8 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      double powerAngle = (x1d_1 - presentAng) * 180.0 / 3.14159265358979323846;
+      double powerAngle = fmod((x1d_1 - presentAng) * 180.0 / 3.14159265358979323846 + 180.0, 360.0) - 180.0;
+      if (powerAngle < -180.0) powerAngle += 360.0;
       sprintf(buf,",%f,%f,%f,%f, %f, %f, %f, %f",
 	      Vterm,genP*MBase/p_sbase,genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech,powerAngle);
       if (strlen(buf) <= bufsize) {

@@ -424,7 +424,8 @@ serialWrite(char *string, const int bufsize, const char *signal)
       double Vterm = abs(p_volt);
       double VtermAng = atan2(imag(p_volt), real(p_volt));
       double rotor_ang = real(p_mac_ang_s1);
-      double powerAngle = (rotor_ang - VtermAng) * 180.0 / 3.14159265358979323846;
+      double powerAngle = fmod((rotor_ang - VtermAng) * 180.0 / 3.14159265358979323846 + 180.0, 360.0) - 180.0;
+      if (powerAngle < -180.0) powerAngle += 360.0;
       double Efd = real(p_eqprime);  // constant E' magnitude for classical model
       double Pmech_out = real(p_pmech) * p_mva / p_sbase;
       sprintf(buf,",%f,%f,%f,%f, %f, %f, %f, %f",
