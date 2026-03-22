@@ -149,21 +149,24 @@ double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
   if (S10 == 0.0 && S12 == 0.0) return 0.0;
   // Guard against S10 = 0 with S12 != 0 (degenerate)
   if (S10 == 0.0) return 0.0;
+  if (x < 1e-6) return 0.0;
 
-  double a_ = S12 / S10 - 1.0;
-  double b_ = -2 * S12 / S10 + 2.4;
-  double c_ = S12 / S10 - 1.44;
-  double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
+  // PSS/E scaled quadratic: Se(x) = B*(x-A)^2 / x
+  // Fitted from: Se(1.0)=S10, Se(1.2)=S12:
+  //   B*(1-A)^2/1.0 = S10,  B*(1.2-A)^2/1.2 = S12
+  //   => R = 1.2*S12/S10 = (1.2-A)^2/(1-A)^2
+  double R = 1.2 * S12 / S10;
+  double sqrtR = sqrt(R);
+  double A = (1.2 - sqrtR) / (1.0 - sqrtR);
   double B = S10 / ((1.0 - A) * (1.0 - A));
 
-  double tmp = x-A;
-
-  if (tmp<0.0) {
+  double tmp = x - A;
+  if (tmp < 0.0) {
     tmp = 0.0;
   }
-  double result = B * tmp * tmp;
+  double result = B * tmp * tmp / x;
 
-  return result; // Scaled Quadratic with 1.7.1 equations
+  return result;
 }
 
 /**
