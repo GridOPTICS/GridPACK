@@ -235,7 +235,7 @@ void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,Integr
   if(FreqFLAG) {
     ferr = Freq_ref - Freq;
     ferr = Freqerr_deadband.getoutput(ferr);
-    dP = std::max(0.0,Ddn*ferr) + std::min(0.0,Dup*ferr);
+    dP = std::max(0.0,fabs(Ddn)*ferr) + std::min(0.0,-fabs(Dup)*ferr);
     // ***********
     // Need to use Pbranch if given, using Pg
     // ***********

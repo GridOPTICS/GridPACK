@@ -77,7 +77,7 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
   if (!data->getValue(EXCITER_SE2, &SE2, idx)) SE2 = 0.0; // SE2
 
   if(fabs(SE1*SE2) < 1e-6) has_Sat = false;
-  if(fabs(TB*TC) < 1e-6)   has_leadlag = false;
+  if(fabs(TB) < 1e-6)      has_leadlag = false;
 
   // Swap Vrmax/Vrmin if inverted
   if (Vrmax < Vrmin) {
@@ -98,7 +98,7 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
   }
 
   if(has_leadlag) {
-    Leadlag_blk.setparams(TA,TB);
+    Leadlag_blk.setparams(TC,TB);
   }
 
   if(!zero_TA) {
@@ -161,7 +161,7 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double Vm, double Va, double
     has_leadlag = false;
   } else if (TB > 0.5 * mult_ts && TB < mult_ts) {
     TB = mult_ts;
-    if (has_leadlag) Leadlag_blk.setparams(TA, TB);
+    if (has_leadlag) Leadlag_blk.setparams(TC, TB);
   }
 
   // Te: If 0 < Te < mult_ts then Te = mult_ts

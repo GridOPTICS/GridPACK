@@ -213,8 +213,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   } else 
      u5 = 0;
 
-  // u4 = NGV_blk.init_given_y(u5); // Implemented a .int_given_y method for PiecewiseSlope in dblock
-  u4 = u5;
+  u4 = NGV_blk.init_given_y(u5);
   GV = u4; // GV can be used in the next time step, not a local variable like u1-u9
   
   u3 = u4; // Deadband Db2_blk's input equals the output
@@ -243,8 +242,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
   double u1, y1, u2, y2, u3, y3, u4, y4, u5, y5, u6, y6, u7, y7, u8, y8, u9, y9; 
   u1 = w;
 
-  // y1 = Db1_blk.getoutput(u1);
-  y1 = u1;
+  y1 = Db1_blk.getoutput(u1);
 
   u2 = y1 * K;
   if(T1 == 0 || T2 == 0) {
@@ -271,8 +269,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
   GV = y4;
   u5 = y4;
   
-  // y5 = NGV_blk.getoutput(u5);
-  y5 = u5;
+  y5 = NGV_blk.getoutput(u5);
   
   if(T4 == 0) {
     u6 = u5;

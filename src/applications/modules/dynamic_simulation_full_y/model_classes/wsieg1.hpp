@@ -126,10 +126,10 @@ class Wsieg1Model : public BaseGovernorModel
     double Pref;
     double w;
 
-    Deadband Db1_blk; // is DBInt (Intentional Deadband) implemented in Deadband block?
+    Deadband_dbint Db1_blk;
     LeadLag Leadlag_blk;
     Integrator P_blk;
-    Deadband Db2_blk; // is BackLash (Unintentional Deadband) implemented in Deadband block?
+    Deadband_backlash Db2_blk;
     PiecewiseSlope NGV_blk; // is GainBlock a PiecewiseSlope block? yes
     Filter Filter_blk1;
     Filter Filter_blk2;
