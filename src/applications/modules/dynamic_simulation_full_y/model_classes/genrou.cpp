@@ -514,11 +514,11 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   G = Ra / (Ra * Ra + Xdpp * Xdpp);
 
   // Setup
-  double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
+  double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl);
   double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
 
-  double Vd = - Psiqpp;
-  double Vq = + Psidpp;
+  double Vd = - Psiqpp * (1 + x2w);
+  double Vq = + Psidpp * (1 + x2w);
 
   Vterm = presentMag;
   Theta = presentAng;
@@ -591,8 +591,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl);
     double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
 
-    double Vd = - Psiqpp;
-    double Vq = + Psidpp;
+    double Vd = - Psiqpp * (1 + x2w);
+    double Vq = + Psidpp * (1 + x2w);
 
     Vterm = presentMag;
     Theta = presentAng;
@@ -712,8 +712,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
   double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl);
   double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
 
-  double Vd = -Psiqpp;
-  double Vq = +Psidpp;
+  double Vd = -Psiqpp * (1 + x2w_1);
+  double Vq = +Psidpp * (1 + x2w_1);
 
   Vterm = presentMag;
   Theta = presentAng;
@@ -778,8 +778,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl);
     double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
 
-    double Vd = - Psiqpp;
-    double Vq = + Psidpp;
+    double Vd = - Psiqpp * (1 + x2w_1);
+    double Vq = + Psidpp * (1 + x2w_1);
 
     Vterm = presentMag;
     Theta = presentAng;

@@ -180,23 +180,15 @@ void gridpack::dynamic_simulation::IeelLoad::init(double mag,
       a1 = a1/ (a1 + a2 + a3);
       a2 = a2/ (a1 + a2 + a3);
       a3 = a3/ (a1 + a2 + a3);
-    } else {
-      a1 = 1.0;
-      a2 = 0.0;
-      a3 = 0.0;
     }
   }
-          
-  // check the data to make sure a4+a5+a6 = 1 
+
+  // check the data to make sure a4+a5+a6 = 1
   if (a4 + a5 + a6  > 0.0) {
     if (abs(a4 + a5 + a6 - 1.0) >1.0E-6) {
       a4 = a4/ (a4 + a5 + a6);
       a5 = a5/ (a4 + a5 + a6);
       a6 = a6/ (a4 + a5 + a6);
-    } else {
-      a4 = 1.0;
-      a5 = 0.0;
-      a6 = 0.0;
     }
   }
 }

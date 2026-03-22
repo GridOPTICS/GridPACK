@@ -137,6 +137,8 @@ class Wsieg1Model : public BaseGovernorModel
     Filter Filter_blk4;
 
     double GV;
+    bool has_NGV;   // true if NGV lookup table has non-trivial data
+    bool has_Db1;   // true if Db1 deadband is nonzero
 
     void computeModel(double t_inc, IntegrationStage int_flag);
 

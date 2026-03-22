@@ -111,7 +111,8 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
     K2 /= Ksum_even; K4 /= Ksum_even; K6 /= Ksum_even; K8 /= Ksum_even;
   }
 
-  Db1_blk.setparams(Db1, Err);
+  has_Db1 = (fabs(Db1) > 1e-6);
+  if (has_Db1) Db1_blk.setparams(Db1, Err);
   if(T1 != 0 && T2 != 0) {
     Leadlag_blk.setparams(T2, T1);
   }
@@ -119,14 +120,15 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   P_blk.setparams(1.0, Pmin, Pmax); // need another method to take Pmax and Pmin
   Db2_blk.setparams(Db2, Db2);
 
-  // Initialize NGV 
+  // Initialize NGV — only enable if GV/PGV data is non-trivial
   double uin[5], yin[5];
   uin[0] = Gv1; yin[0] = PGv1;
   uin[1] = Gv2; yin[1] = PGv2;
   uin[2] = Gv3; yin[2] = PGv3;
   uin[3] = Gv4; yin[3] = PGv4;
   uin[4] = Gv5; yin[4] = PGv5;
-  NGV_blk.setparams(5, uin, yin);
+  has_NGV = (fabs(Gv1) + fabs(Gv2) + fabs(Gv3) + fabs(Gv4) + fabs(Gv5) > 1e-6);
+  if (has_NGV) NGV_blk.setparams(5, uin, yin);
 
   if(T4 != 0) {
     Filter_blk1.setparams(1.0, T4);
@@ -213,7 +215,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   } else 
      u5 = 0;
 
-  u4 = NGV_blk.init_given_y(u5);
+  u4 = has_NGV ? NGV_blk.init_given_y(u5) : u5;
   GV = u4; // GV can be used in the next time step, not a local variable like u1-u9
   
   u3 = u4; // Deadband Db2_blk's input equals the output
@@ -242,7 +244,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
   double u1, y1, u2, y2, u3, y3, u4, y4, u5, y5, u6, y6, u7, y7, u8, y8, u9, y9; 
   u1 = w;
 
-  y1 = Db1_blk.getoutput(u1);
+  y1 = has_Db1 ? Db1_blk.getoutput(u1) : u1;
 
   u2 = y1 * K;
   if(T1 == 0 || T2 == 0) {
@@ -269,10 +271,10 @@ void gridpack::dynamic_simulation::Wsieg1Model::computeModel(double t_inc,Integr
   GV = y4;
   u5 = y4;
   
-  y5 = NGV_blk.getoutput(u5);
-  
+  y5 = has_NGV ? NGV_blk.getoutput(u5) : u5;
+
   if(T4 == 0) {
-    u6 = u5;
+    u6 = y5;
   } else {
     u6 = Filter_blk1.getoutput(u5, t_inc, int_flag, true);
   }

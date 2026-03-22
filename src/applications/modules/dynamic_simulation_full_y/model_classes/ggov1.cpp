@@ -73,76 +73,41 @@ void gridpack::dynamic_simulation::Ggov1Model::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
-  //if (!data->getValue(GOVERNOR_RSELECT, &Rselect, idx)) 
-  Rselect = 0.0;
-  //if (!data->getValue(GOVERNOR_FLAG, &Flag, idx)) 
-  Flag = 0.0;
-  //if (!data->getValue(GOVERNOR_R, &R, idx)) 
-  R = 0.0; 
-  //if (!data->getValue(GOVERNOR_TPELEC, &Tpelec, idx)) 
-  Tpelec = 0.0;
-  //if (!data->getValue(GOVERNOR_MAXERR, &MaxErr, idx)) 
-  MaxErr = 0.0;
-  //if (!data->getValue(GOVERNOR_MINERR, &MinErr, idx)) 
-  MinErr = 0.0;
-  //if (!data->getValue(GOVERNOR_KPGOV, &Kpgov, idx)) 
-  Kpgov = 0.0;
-  //if (!data->getValue(GOVERNOR_KIGOV, &Kigov, idx)) 
-  Kigov = 0.0;
-  //if (!data->getValue(GOVERNOR_KDGOV, &Kdgov, idx)) 
-  Kdgov = 0.0;
-  //if (!data->getValue(GOVERNOR_TDGOV, &Tdgov, idx)) 
-  Tdgov = 0.0;
-  //if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) 
-  Vmax = 0.0;
-  //if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) 
-  Vmin = 0.0;
-  //if (!data->getValue(GOVERNOR_TACT, &Tact, idx)) 
-  Tact = 0.0;
-  //if (!data->getValue(GOVERNOR_KTURB, &Kturb, idx)) 
-  Kturb = 0.0;
-  //if (!data->getValue(GOVERNOR_WFNL, &Wfnl, idx)) 
-  Wfnl = 0.0;
-  //if (!data->getValue(GOVERNOR_TB, &Tb, idx)) 
-  Tb = 0.0; 
-  //if (!data->getValue(GOVERNOR_TC, &Tc, idx)) 
-  Tc = 0.0; 
-  //if (!data->getValue(GOVERNOR_TENG, &Teng, idx)) 
-  Teng = 0.0; 
-  //if (!data->getValue(GOVERNOR_TFLOAD, &Tfload, idx)) 
-  Tfload = 0.0;
-  //if (!data->getValue(GOVERNOR_KPLOAD, &Kpload, idx)) 
-  Kpload = 0.0;
-  //if (!data->getValue(GOVERNOR_KILOAD, &Kiload, idx)) 
-  Kiload = 0.0;
-  //if (!data->getValue(GOVERNOR_LDREF, &Ldref, idx)) 
-  Ldref = 0.0;
-  //if (!data->getValue(GOVERNOR_DM, &Dm, idx)) 
-  Dm = 0.0;
-  //if (!data->getValue(GOVERNOR_ROPEN, &Ropen, idx)) 
-  Ropen = 0.0;
-  //if (!data->getValue(GOVERNOR_RCLOSE, &Rclose, idx)) 
-  Rclose = 0.0;
-  //if (!data->getValue(GOVERNOR_KIMW, &Kimw, idx)) 
-  Kimw = 0.0;
-  //if (!data->getValue(GOVERNOR_ASET, &Aset, idx)) 
-  Aset = 0.0;
-  //if (!data->getValue(GOVERNOR_KA, &Ka, idx)) 
-  Ka = 0.0; 
-  //if (!data->getValue(GOVERNOR_TA, &Ta, idx)) 
-  Ta = 0.0; 
-  //if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) 
-  Trate = 0.0; 
-  //if (!data->getValue(GOVERNOR_DB, &Db, idx)) 
-  Db = 0.0;
-  //if (!data->getValue(GOVERNOR_TSA, &Tsa, idx)) 
-  Tsa = 0.0; 
-  //if (!data->getValue(GOVERNOR_TSB, &Tsb, idx)) 
-  Tsb = 0.0; 
-  //if (!data->getValue(GOVERNOR_RUP, &Rup, idx)) 
-  Rup = 0.0;
-  //if (!data->getValue(GOVERNOR_RDOWN, &Rdown, idx)) 
-  Rdown = 0.0;
+  if (!data->getValue(GOVERNOR_RSELECT, &Rselect, idx)) Rselect = 0.0;
+  if (!data->getValue(GOVERNOR_FLAGSWITCH, &Flag, idx)) Flag = 0.0;
+  if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.0;
+  if (!data->getValue(GOVERNOR_TPELEC, &Tpelec, idx)) Tpelec = 0.0;
+  if (!data->getValue(GOVERNOR_MAXERR, &MaxErr, idx)) MaxErr = 0.0;
+  if (!data->getValue(GOVERNOR_MINERR, &MinErr, idx)) MinErr = 0.0;
+  if (!data->getValue(GOVERNOR_KPGOV, &Kpgov, idx)) Kpgov = 0.0;
+  if (!data->getValue(GOVERNOR_KIGOV, &Kigov, idx)) Kigov = 0.0;
+  if (!data->getValue(GOVERNOR_KDGOV, &Kdgov, idx)) Kdgov = 0.0;
+  if (!data->getValue(GOVERNOR_TDGOV, &Tdgov, idx)) Tdgov = 0.0;
+  if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) Vmax = 0.0;
+  if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) Vmin = 0.0;
+  if (!data->getValue(GOVERNOR_TACT, &Tact, idx)) Tact = 0.0;
+  if (!data->getValue(GOVERNOR_KTURB, &Kturb, idx)) Kturb = 0.0;
+  if (!data->getValue(GOVERNOR_WFNL, &Wfnl, idx)) Wfnl = 0.0;
+  if (!data->getValue(GOVERNOR_TB, &Tb, idx)) Tb = 0.0;
+  if (!data->getValue(GOVERNOR_TC, &Tc, idx)) Tc = 0.0;
+  if (!data->getValue(GOVERNOR_TENG, &Teng, idx)) Teng = 0.0;
+  if (!data->getValue(GOVERNOR_TFLOAD, &Tfload, idx)) Tfload = 0.0;
+  if (!data->getValue(GOVERNOR_KPLOAD, &Kpload, idx)) Kpload = 0.0;
+  if (!data->getValue(GOVERNOR_KILOAD, &Kiload, idx)) Kiload = 0.0;
+  if (!data->getValue(GOVERNOR_LDREF, &Ldref, idx)) Ldref = 0.0;
+  if (!data->getValue(GOVERNOR_DM, &Dm, idx)) Dm = 0.0;
+  if (!data->getValue(GOVERNOR_ROPEN, &Ropen, idx)) Ropen = 0.0;
+  if (!data->getValue(GOVERNOR_RCLOSE, &Rclose, idx)) Rclose = 0.0;
+  if (!data->getValue(GOVERNOR_KIMW, &Kimw, idx)) Kimw = 0.0;
+  if (!data->getValue(GOVERNOR_ASET, &Aset, idx)) Aset = 0.0;
+  if (!data->getValue(GOVERNOR_KA, &Ka, idx)) Ka = 0.0;
+  if (!data->getValue(GOVERNOR_TA, &Ta, idx)) Ta = 0.0;
+  if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) Trate = 0.0;
+  if (!data->getValue(GOVERNOR_DB, &Db, idx)) Db = 0.0;
+  if (!data->getValue(GOVERNOR_TSA, &Tsa, idx)) Tsa = 0.0;
+  if (!data->getValue(GOVERNOR_TSB, &Tsb, idx)) Tsb = 0.0;
+  if (!data->getValue(GOVERNOR_RUP, &Rup, idx)) Rup = 0.0;
+  if (!data->getValue(GOVERNOR_RDOWN, &Rdown, idx)) Rdown = 0.0;
 
   if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
   if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; // Err
@@ -256,7 +221,7 @@ void gridpack::dynamic_simulation::Ggov1Model::predictor(double t_inc, bool flag
   if (dx8LoadCtrl > 0 && x8LoadCtrl >= 1.1 * R) dx8LoadCtrl = 0;
   if (dx8LoadCtrl < 0 && x8LoadCtrl <= -1.1 * R) dx8LoadCtrl = 0;
   // State 9
-  if (Ka > 0) dx9Accel = w * Ta + x9Accel;
+  if (Ka > 0 && Ta > 0) dx9Accel = (Ka * w - x9Accel) / Ta;
   else dx9Accel = 0;
   // State 10 and State 6
   // Note: if Tact = 0, then we are really using the previous timestep
@@ -281,7 +246,7 @@ void gridpack::dynamic_simulation::Ggov1Model::predictor(double t_inc, bool flag
   // Find the input to PID controller
   // Note: feedback of x4Act and LastLowValueSelect is really
   // the previous time step here
-  double PIDIn = Pref + x8LoadCtrl - w - PIDIn;
+  double PIDIn = Pref + x8LoadCtrl - w;
   if (Rselect == +1) PIDIn = PIDIn - R * x1Pelec;
   else if (Rselect == -1) PIDIn = PIDIn - R * x4Act;
   else if (Rselect == -2) PIDIn = PIDIn - R * LastLowValueSelect;
@@ -335,12 +300,12 @@ void gridpack::dynamic_simulation::Ggov1Model::predictor(double t_inc, bool flag
   if (Flag == 1) TempIn = TempIn * (1 + w);
   TempIn = (TempIn - Wfnl) * Kturb;
   // Note: We are ignoring the Engine Delay here
-  if (Tb > TS_THRESHOLD) {
+  if (Tb < TS_THRESHOLD * t_inc) {
     dx5LL = 0;
     LeadLagOut = TempIn;
   } else {
-    dx5LL = (TempIn * (1 - Ta / Tb) - x5LL) / Tb;
-    LeadLagOut = TempIn * Ta / Tb + x5LL;
+    dx5LL = (TempIn * (1 - Tc / Tb) - x5LL) / Tb;
+    LeadLagOut = TempIn * Tc / Tb + x5LL;
   }
 
   x1Pelec_1 = x1Pelec + dx1Pelec * t_inc;
@@ -386,7 +351,7 @@ void gridpack::dynamic_simulation::Ggov1Model::corrector(double t_inc, bool flag
   if (dx8LoadCtrl_1 > 0 && x8LoadCtrl_1 >= 1.1 * R) dx8LoadCtrl_1 = 0;
   if (dx8LoadCtrl_1 < 0 && x8LoadCtrl_1 <= -1.1 * R) dx8LoadCtrl_1 = 0;
   // State 9
-  if (Ka > 0) dx9Accel_1 = w * Ta + x9Accel_1;
+  if (Ka > 0 && Ta > 0) dx9Accel_1 = (Ka * w - x9Accel_1) / Ta;
   else dx9Accel_1 = 0;
   // State 10 and State 6
   // Note: if Tact = 0, then we are really using the previous timestep
@@ -411,7 +376,7 @@ void gridpack::dynamic_simulation::Ggov1Model::corrector(double t_inc, bool flag
   // Find the input to PID controller
   // Note: feedback of x4Act and LastLowValueSelect is really
   // the previous time step here
-  double PIDIn = Pref + x8LoadCtrl_1 - w - PIDIn;
+  double PIDIn = Pref + x8LoadCtrl_1 - w;
   if (Rselect == +1) PIDIn = PIDIn - R * x1Pelec_1;
   else if (Rselect == -1) PIDIn = PIDIn - R * x4Act_1;
   else if (Rselect == -2) PIDIn = PIDIn - R * LastLowValueSelect;
@@ -458,19 +423,19 @@ void gridpack::dynamic_simulation::Ggov1Model::corrector(double t_inc, bool flag
   } else {
     dx4Act_1 = (LastLowValueSelect - x4Act_1) / Tact;
     if (dx4Act_1 > Ropen) dx4Act_1 = Ropen;
-    if (dx4Act_1 < Rclose) dx4Act = Rclose;
+    if (dx4Act_1 < Rclose) dx4Act_1 = Rclose;
   }
   // State 5
   TempIn = x4Act_1;
   if (Flag == 1) TempIn = TempIn * (1 + w);
   TempIn = (TempIn - Wfnl) * Kturb;
   // Note: We are ignoring the Engine Delay here
-  if (Tb > TS_THRESHOLD) {
+  if (Tb < TS_THRESHOLD * t_inc) {
     dx5LL_1 = 0;
     LeadLagOut = TempIn;
   } else {
-    dx5LL_1 = (TempIn * (1 - Ta / Tb) - x5LL_1) / Tb;
-    LeadLagOut = TempIn * Ta / Tb + x5LL_1;
+    dx5LL_1 = (TempIn * (1 - Tc / Tb) - x5LL_1) / Tb;
+    LeadLagOut = TempIn * Tc / Tb + x5LL_1;
   }
 
   x1Pelec_1 = x1Pelec + (dx1Pelec + dx1Pelec_1) / 2.0 * t_inc;

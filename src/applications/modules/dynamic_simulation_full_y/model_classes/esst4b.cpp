@@ -57,7 +57,7 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
   if (!data->getValue(EXCITER_VRMIN, &Vrmin, idx)) Vrmin = 0.0; // Vrmin
   if (!data->getValue(EXCITER_TA, &Ta, idx)) Ta = 0.0; // Ta
   if (!data->getValue(EXCITER_KPM, &Kpm, idx)) Kpm = 0.0; // Kpm
-  if (!data->getValue(EXCITER_KPM, &Kim, idx)) Kim = 0.0; // Kim
+  if (!data->getValue(EXCITER_KIM, &Kim, idx)) Kim = 0.0; // Kim
   if (!data->getValue(EXCITER_VMMAX, &Vmmax, idx)) Vmmax = 0.0; // Vmmax
   if (!data->getValue(EXCITER_VMMIN, &Vmmin, idx)) Vmmin = 0.0; // Vmax
   if (!data->getValue(EXCITER_KG, &Kg, idx)) Kg = 0.0; // Kg

@@ -187,9 +187,6 @@ void gridpack::dynamic_simulation::MotorwLoad::load(
 	
 	if (motorwload_perc< 0.01) motorwload_perc = 1.0; //if the LOAD_DYN_PERC is not defined in the dyr file, as the normal PSS/E dyr file
 	
-	//tmp code please remove this
-	llr1 = 0.08;
-	
 	data->getValue(LOAD_ID,&p_loadid,idx);
 	setDynLoadP(p_pl);
     setDynLoadID(p_loadid);
@@ -619,7 +616,7 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
       TL = p * eppd * Id + q * eppq * Iq ;
 
       w = 1.0 - slip ; // rotor speed, pu
-      C0 = 1,0 - A*w*w - B*w - D*(pow(w,E));
+      C0 = 1.0 - A*w*w - B*w - D*(pow(w,E));
       Tm0 = TL;
 
       gridpack::ComplexType tmp2(Id, Iq);
