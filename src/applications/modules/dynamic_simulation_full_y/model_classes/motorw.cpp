@@ -327,11 +327,13 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
 	//printf("    MotorwLoad::init(), Pe[%d]: %12.6f, Sl[%d]: %12.6f, \n", k, Pe[k], k, sl[k]);
   }
 
-  // find specific slip for initial power (Pint)
-  double sl0;
-  for (int m = 1; m < 1000; m++) {
+  // find specific slip for initial power (Pini) with linear interpolation
+  double sl0 = 0.01;  // default
+  for (int m = 1; m < 999; m++) {
     if (Pe[m] <= Pini && Pe[m+1] > Pini) {
-      sl0 = sl[m] ; // found slip0
+      // Linear interpolation for precise slip
+      double frac = (Pini - Pe[m]) / (Pe[m+1] - Pe[m]);
+      sl0 = sl[m] + frac * (sl[m+1] - sl[m]);
       break;
     }
   }
@@ -631,11 +633,11 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   if (bdebugprint) printf(" MotorwLoad::init(), bus %d, after slightly adjust, C0: %f, Tm0: %f, Pmotor: %f, Qmotor: %f, \n", p_bus_id, C0, Tm0, Pmotor, Qmotor);
     
   epq0  = epq;
-  epd0  = epd; 
+  epd0  = epd;
   eppq0 = eppq;
   eppd0 = eppd;
   slip0 = slip;
-  
+
   setDynLoadP(Pini); // need to reset Dynamic load P here, as we applied the motorwload_perc during initialization
   
   Qmotor_init = Qmotor; 
