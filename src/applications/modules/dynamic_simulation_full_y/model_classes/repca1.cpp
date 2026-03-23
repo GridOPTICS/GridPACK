@@ -17,6 +17,7 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <cmath>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -87,9 +88,23 @@ void gridpack::dynamic_simulation::Repca1Model::load(
   if (!data->getValue(GENERATOR_REPCA_PMIN,  &Pmin   , idx))  Pmin   =  -1.5;
   if (!data->getValue(GENERATOR_REPCA_TG,    &Tg     , idx))  Tg     = 0.1;
 
+  // Femax/Femin swap and sign
+  if (femax < femin) {
+    double tmp = femax; femax = femin; femin = tmp;
+  }
+  if (femax < 0) femax = -femax;
+  if (femin > 0) femin = -femin;
+
+  // Emax/Emin swap and sign
+  if (Emax < Emin) {
+    double tmp = Emax; Emax = Emin; Emin = tmp;
+  }
+  if (Emax < 0) Emax = -Emax;
+  if (Emin > 0) Emin = -Emin;
+
   // Set constants
   Freq_ref = 1.0;
-  
+
   // Set up model blocks
   // V filter block
   V_filter_blk.setparams(1.0,Tfltr);
@@ -132,6 +147,39 @@ void gridpack::dynamic_simulation::Repca1Model::load(
  */
 void gridpack::dynamic_simulation::Repca1Model::init(double Vm, double Va, double ts)
 {
+  // Time constant minimum checks
+  double mult_ts = 4.0 * ts;  // TS_THRESHOLD * ts
+
+  // Ddn: If 0 < Ddn < mult_ts then Ddn = mult_ts
+  if (Ddn > 0.0 && Ddn < mult_ts) {
+    Ddn = mult_ts;
+  }
+
+  // Dup: If 0 < Dup < mult_ts then Dup = mult_ts (note: Dup is typically negative)
+  if (fabs(Dup) > 0.0 && fabs(Dup) < mult_ts) {
+    Dup = (Dup < 0) ? -mult_ts : mult_ts;
+  }
+
+  // Tfltr (called Tflr in PW docs): 0.5/1.0 pattern
+  if (Tfltr > 0.0 && Tfltr < 0.5 * mult_ts) {
+    Tfltr = 0.0;
+    V_filter_blk.setparams(1.0, Tfltr);
+    Qbranch_filter_blk.setparams(1.0, Tfltr);
+  } else if (Tfltr > 0.5 * mult_ts && Tfltr < mult_ts) {
+    Tfltr = mult_ts;
+    V_filter_blk.setparams(1.0, Tfltr);
+    Qbranch_filter_blk.setparams(1.0, Tfltr);
+  }
+
+  // Tp: 0.5/1.0 pattern
+  if (Tp > 0.0 && Tp < 0.5 * mult_ts) {
+    Tp = 0.0;
+    Pbranch_filter_blk.setparams(1.0, Tp);
+  } else if (Tp > 0.5 * mult_ts && Tp < mult_ts) {
+    Tp = mult_ts;
+    Pbranch_filter_blk.setparams(1.0, Tp);
+  }
+
   if(FreqFLAG) {
     double ferr;
     Pref_PI_blk_out = Pref_filter_blk.init_given_y(Pref);
@@ -187,7 +235,7 @@ void gridpack::dynamic_simulation::Repca1Model::computeModel(double t_inc,Integr
   if(FreqFLAG) {
     ferr = Freq_ref - Freq;
     ferr = Freqerr_deadband.getoutput(ferr);
-    dP = std::max(0.0,Ddn*ferr) + std::min(0.0,Dup*ferr);
+    dP = std::max(0.0,fabs(Ddn)*ferr) + std::min(0.0,-fabs(Dup)*ferr);
     // ***********
     // Need to use Pbranch if given, using Pg
     // ***********

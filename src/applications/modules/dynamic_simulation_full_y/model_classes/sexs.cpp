@@ -8,8 +8,13 @@
  * @file   sexs.cpp
  * @author Shrirang Abhyankar
  * @Added:   Nov 6, 2022
- * 
- * @brief  
+ *
+ * @updated Yousu Chen
+ * - Changed EMAX default from 0.0 to 999.0 when not specified in
+ *   .dyr file, preventing exciter output from being clamped at zero.
+ * @date  2026-03-10
+ *
+ * @brief
  * 
  * 
  */
@@ -62,9 +67,6 @@ void gridpack::dynamic_simulation::SexsModel::load(
   if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
 
   TA = TA_OVER_TB*TB;
-
-  printf("SEXS Bus %d Gen %s: K=%f TE=%f EMIN=%f EMAX=%f TA/TB=%f TB=%f\n",
-         p_bus_id, p_ckt.c_str(), K, TE, EMIN, EMAX, TA_OVER_TB, TB);
 
   // Set parameters for the first block
   leadlagblock.setparams(TA,TB);

@@ -1,3 +1,20 @@
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
+/**
+ * @file   dsf_app_module2.cpp
+ * @author Yousu Chen
+ *
+ * @brief  Dynamic simulation application module — setup, time
+ *         stepping, and network solve routines. Implements the
+ *         modified Euler predictor-corrector loop (runonestep),
+ *         Y-bus construction, event handling, and generator/load
+ *         watch file output.
+ */
+
 #include "dsf_app_module.hpp"
 #include <iostream>
 #include <string>
@@ -77,7 +94,7 @@ bool gridpack::dynamic_simulation::DSFullApp::solveNetwork(int predcorrflag)
 {
   bool converged = false;
   
-  //  volt_full->zero();
+  //volt_full->zero();
 
   int its=0;
   //bool p_iterative_network_debug = false;
@@ -164,10 +181,10 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
   p_events = getEvents();
 
   p_factory->setMode(YBUS);
-  
+
   ybusMap_sptr.reset(new gridpack::mapper::FullMatrixMap<DSFullNetwork> (p_network));
   orgYbus = ybusMap_sptr->mapToMatrix();
-  
+
   // Form constant impedance load admittance yl for all buses and add it to
   // system Y matrix: ybus = ybus + yl
   p_factory->setMode(YL);
@@ -180,19 +197,19 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
   // Extract appropriate xdprime and xdpprime from machine data
   p_factory->setMode(jxd);
   ybus_jxd = ybusMap_sptr->mapToMatrix();
-  
+
   // Add dynamic load impedance to system Y matrix:
   p_factory->setMode(YDYNLOAD);
   ybus = ybusMap_sptr->mapToMatrix();
 
-  // Initialize vectors for integration 
+  // Initialize vectors for integration
   p_factory->initDSVect(p_time_step);
-  
+
   p_factory->setGeneratorObPowerBaseFlag(p_generator_observationpower_systembase);
 
   /* Create mapper and vectors */
   ngenMap_sptr.reset(new gridpack::mapper::BusVectorMap<DSFullNetwork> (p_network));
-  
+
   p_insecureAt = -1;
 
   p_factory->setMode(make_INorton_full);
@@ -325,7 +342,6 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
     if (p_loadWatch) p_loadIO->header("\n");
   }
 
-
   p_frequencyOK = true;
 }
 
@@ -335,7 +351,7 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
 void gridpack::dynamic_simulation::DSFullApp::runonestep()
 {
   bool converged;
-  
+
   S_Steps = Simu_Current_Step;
 
   /* Predictor current injection */
@@ -343,7 +359,7 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
 
   /* Solve Network equations */
   converged = solveNetwork(0);
-  
+
   if ( Simu_Current_Step==0 ) {
     //printf("enter the initial update oldbusvoltage, Timestep: %d \n", Simu_Current_Step);
     p_factory->updateoldbusvoltage(); //renke add, first timestep, copy volt_full to volt_full_old
@@ -354,7 +370,7 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
 
   /* yuan add: update branch power*/
   p_factory->updateData();
-	
+
   std::vector <double> vwideareafreqs;
   vwideareafreqs = p_factory->grabWideAreaFreq();
   int tmp = vwideareafreqs.size();
@@ -362,7 +378,7 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
 
   bool flagBus = p_factory->updateBusRelay(false, p_time_step);
   bool flagBranch = p_factory->updateBranchRelay(false, p_time_step);
-	
+
   // update dynamic load internal relay functions here
   p_factory->dynamicload_post_process(p_time_step, false);
     
@@ -378,13 +394,13 @@ void gridpack::dynamic_simulation::DSFullApp::runonestep()
     ybusMap_sptr->incrementMatrix(ybus);
   }
 	
-  // Update old voltage (??)
+  // Update old voltage
   p_factory->updateoldbusvoltage();
 
   /* Predictor */
   if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
     p_factory->predictor(p_time_step, false);
-  } else { 
+  } else {
     p_factory->predictor(p_time_step, true);
   }
 

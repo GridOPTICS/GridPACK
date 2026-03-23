@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -99,8 +100,11 @@ void gridpack::dynamic_simulation::WshygpModel::load(
   zero_TT = false;
   zero_TP = false;
   zero_TTURB_BTURB = false;
-  Tt = 0.0; // hard coded because there is no setPelec method in this and base_governor class
-  Pelec = 0.0; // the same reason
+  // TODO: Tt is forced to 0 because base_governor_model lacks setPelec().
+  // When Tt > 0, the droop should use filtered Pelec instead of CV*R.
+  // To fix: add setPelec() to BaseGovernorModel and call from generator model.
+  Tt = 0.0;
+  Pelec = 0.0; // the same reason as above
   
   OptionToModifyLimitsForInitialStateLimitViolation = true;
 }
@@ -119,7 +123,7 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
   if (Tf < TS_THRESHOLD * ts) zero_TF = true;
   if (Tt < TS_THRESHOLD * ts) zero_TT = true;
   if (Tp < TS_THRESHOLD * ts) zero_TP = true;
-  if (abs(Tturb * Bturb) < TS_THRESHOLD * ts) zero_TTURB_BTURB = true;
+  if (fabs(Tturb * Bturb) < TS_THRESHOLD * ts) zero_TTURB_BTURB = true;
   
   if (zero_TD) printf("Warning: Td=%f is less than %d times timestep=%f.\n", Td, TS_THRESHOLD, ts);
   if (zero_KI) printf("Warning: KI=%f is less than %f.\n", KI, KI_THRESHOLD);
@@ -165,10 +169,10 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
 
   double uin[5], yin[5];
   uin[0] = Gv1; yin[0] = PGv1;
-  uin[1] = Gv2; yin[0] = PGv2;
-  uin[2] = Gv3; yin[0] = PGv3;
-  uin[3] = Gv4; yin[0] = PGv4;
-  uin[4] = Gv5; yin[0] = PGv5;
+  uin[1] = Gv2; yin[1] = PGv2;
+  uin[2] = Gv3; yin[2] = PGv3;
+  uin[3] = Gv4; yin[3] = PGv4;
+  uin[4] = Gv5; yin[4] = PGv5;
   NGV_blk.setparams(5, uin, yin);
 
   if (!zero_TTURB_BTURB) Leadlag_blk.setparams(Aturb*Tturb, Bturb*Tturb); // else {Aturb*Tturb=0, a gain=1 block}
@@ -260,6 +264,7 @@ void gridpack::dynamic_simulation::WshygpModel::computeModel(double t_inc,Integr
   else u6 = u5 * KG;  // a gain=KG block
 
   u7 = Integrator_blk.getoutput(u6, t_inc, int_flag, true);
+  GV = u7; // update gate position feedback for next timestep
 
   u8 = Db2_blk.getoutput(u7);
 

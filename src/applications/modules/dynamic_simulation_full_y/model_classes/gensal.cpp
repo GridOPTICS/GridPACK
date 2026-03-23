@@ -6,8 +6,15 @@
 // -----------------------------------------------------------
 /**
  * @file   gensal.cpp
- * 
- * @brief: Salient pole generator model - no saturation  
+ *
+ * @updated Yousu Chen
+ * - Fixed predictor: use predicted x2w_1 for governor speed deviation
+ *   instead of pre-prediction x2w_0 (consistent with GENROU and PSS).
+ * - Fixed Sat(): handle zero saturation (S10=S12=0) to avoid NaN from
+ *   division by zero, which caused KSP divergence on initialization.
+ * @date  2026-03-10
+ *
+ * @brief: Salient pole generator model - no saturation
  * 
  * 
  */
@@ -83,9 +90,29 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
   if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 TBD: check parser
   
-  double tmp = sqrt(p_pg*p_pg +p_qg*p_qg);
-  if ( tmp > MBase) {
-    MBase = tmp*1.2;
+  // Note: MBASE from RAW file is the per-unit base for DYR parameters.
+  // Do not auto-adjust MBASE when |Sgen| > MBASE; this is valid operation.
+
+  // GENSAL machine parameter auto-correction (matches PowerWorld rules)
+  if (Xdp > Xd) {
+    printf("GENSAL bus %d: Auto-correct Xd'=%.6f > Xd=%.6f -> Xd'=%.6f\n",
+           p_bus_id, Xdp, Xd, 0.8*Xd);
+    Xdp = 0.8 * Xd;
+  }
+  if (Xdpp > Xdp) {
+    printf("GENSAL bus %d: Auto-correct Xd''=%.6f > Xd'=%.6f -> Xd''=%.6f\n",
+           p_bus_id, Xdpp, Xdp, 0.8*Xdp);
+    Xdpp = 0.8 * Xdp;
+  }
+  if (Xdpp < 0.05) {
+    printf("GENSAL bus %d: Auto-correct Xd''=%.6f < 0.05 -> Xd''=0.05\n",
+           p_bus_id, Xdpp);
+    Xdpp = 0.05;
+  }
+  if (Xl > Xdpp) {
+    printf("GENSAL bus %d: Auto-correct Xl=%.6f > Xd''=%.6f -> Xl=%.6f\n",
+           p_bus_id, Xl, Xdpp, 0.8*Xdpp);
+    Xl = 0.8 * Xdpp;
   }
 }
 
@@ -118,20 +145,28 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
  */
 double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 {
-  double a_ = S12 / S10 - 1.0;
-  double b_ = -2 * S12 / S10 + 2.4;
-  double c_ = S12 / S10 - 1.44;
-  double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
-  double B = S10 / ((1.0 - A) * (1.0 - A));
-  
-  double tmp = x-A;
+  // No saturation when S10 and S12 are both zero
+  if (S10 == 0.0 && S12 == 0.0) return 0.0;
+  // Guard against S10 = 0 with S12 != 0 (degenerate)
+  if (S10 == 0.0) return 0.0;
+  if (x < 1e-6) return 0.0;
 
-  if (tmp<0.0) {
+  // PSS/E scaled quadratic: Se(x) = B*(x-A)^2 / x
+  // Fitted from: Se(1.0)=S10, Se(1.2)=S12:
+  //   B*(1-A)^2/1.0 = S10,  B*(1.2-A)^2/1.2 = S12
+  //   => R = 1.2*S12/S10 = (1.2-A)^2/(1-A)^2
+  double R = 1.2 * S12 / S10;
+  double sqrtR = sqrt(R);
+  double A = (1.2 - sqrtR) / (1.0 - sqrtR);
+  double B = S10 / ((1.0 - A) * (1.0 - A));
+
+  double tmp = x - A;
+  if (tmp < 0.0) {
     tmp = 0.0;
   }
-  double result = B * tmp * tmp;
-  
-  return result; // Scaled Quadratic with 1.7.1 equations
+  double result = B * tmp * tmp / x;
+
+  return result;
 }
 
 /**
@@ -255,8 +290,8 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor_currentInjection(b
   double Psiqpp = x5Psiqpp_0; // this will be different for GENROU
   double Psidpp = + x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl)
     + x4Psidp_0* (Xdp - Xdpp) / (Xdp - Xl);
-  double Vd = -Psiqpp;// * (1 + x2w_0);
-  double Vq = +Psidpp;// * (1 + x2w_0);
+  double Vd = -Psiqpp * (1 + x2w_0);
+  double Vq = +Psidpp * (1 + x2w_0);
   Vterm = presentMag;
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
@@ -349,8 +384,8 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
   double Psiqpp = x5Psiqpp_0; // this will be different for GENROU
   double Psidpp = + x3Eqp_0 * (Xdpp - Xl) / (Xdp - Xl)
     + x4Psidp_0* (Xdp - Xdpp) / (Xdp - Xl);
-  double Vd = -Psiqpp;// * (1 + x2w_0);
-  double Vq = +Psidpp;// * (1 + x2w_0);
+  double Vd = -Psiqpp * (1 + x2w_0);
+  double Vq = +Psidpp * (1 + x2w_0);
   Vterm = presentMag;
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
@@ -408,7 +443,7 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
   }
 
   if (p_hasGovernor){
-    p_governor->setRotorSpeedDeviation(x2w_0);
+    p_governor->setRotorSpeedDeviation(x2w_1);
     p_governor->predictor(t_inc, flag);
   }
 
@@ -443,8 +478,8 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector_currentInjection(b
   double Psiqpp = x5Psiqpp_1; // this will be different for GENROU
   double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl)
     + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
-  double Vd = -Psiqpp;// * (1 + x2w_1);
-  double Vq = +Psidpp;// * (1 + x2w_1);
+  double Vd = -Psiqpp * (1 + x2w_1);
+  double Vq = +Psidpp * (1 + x2w_1);
   Vterm = presentMag;
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
@@ -530,8 +565,8 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
   double Psiqpp = x5Psiqpp_1; // this will be different for GENROU
   double Psidpp = + x3Eqp_1 * (Xdpp - Xl) / (Xdp - Xl)
     + x4Psidp_1 * (Xdp - Xdpp) / (Xdp - Xl);
-  double Vd = -Psiqpp;// * (1 + x2w_1);
-  double Vq = +Psidpp;// * (1 + x2w_1);
+  double Vd = -Psiqpp * (1 + x2w_1);
+  double Vq = +Psidpp * (1 + x2w_1);
   Vterm = presentMag;
   Theta = presentAng;
   double Vrterm = Vterm * cos(Theta);
@@ -663,15 +698,15 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
     ret = true;
   } else if(!strcmp(signal,"watch_header")) {
     if(getWatch()) {
-      char buf[128];
+      char buf[256];
       std::string tag;
       if(p_ckt[1] != ' ') {
 	tag = p_ckt;
       } else {
 	tag = p_ckt[0];
       }
-      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
-	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
+      sprintf(buf,", %d_%s_V, %d_%s_Pg, %d_%s_Qg,%d_%s_angle, %d_%s_speed, %d_%s_Efd, %d_%s_Pm, %d_%s_PowerAngle",p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),
+	      p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str(),p_bus_id,tag.c_str());
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;
@@ -684,8 +719,10 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
   } else if (!strcmp(signal,"watch")) {
     if (getWatch()) {
       char buf[256];
-      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f",
-	      Vterm,genP*MBase/p_sbase,genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech);
+      double powerAngle = fmod((x1d_1 - presentAng) * 180.0 / 3.14159265358979323846 + 180.0, 360.0) - 180.0;
+      if (powerAngle < -180.0) powerAngle += 360.0;
+      sprintf(buf,",%f,%f,%f,%f, %f, %f, %f, %f",
+	      Vterm,genP*MBase/p_sbase,genQ*MBase/p_sbase,x1d_1, x2w_1+1.0, Efd,Pmech,powerAngle);
       if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);
         ret = true;

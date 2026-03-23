@@ -7,6 +7,13 @@
 /**
  * @file   esst1a.cpp
  *
+ * @updated Yousu Chen
+ * - Fixed regulator input
+ * - Fixed computeModel: bypass lead-lag blocks when TB or TB1 is zero,
+ *   matching init() logic. Uninitialized blocks produced zero output.
+ * - Fixed regulator limits
+ * @date  2026-03-11
+ *
  * @brief  ESST1A model
  * 
  * 
@@ -15,6 +22,7 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <cmath>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -83,6 +91,17 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
   Vuel = 0.0;
   Voel = 1000.0;
 
+  // Swap limits if inverted
+  if (Vrmax < Vrmin) {
+    double tmp = Vrmax; Vrmax = Vrmin; Vrmin = tmp;
+  }
+  if (Vamax < Vamin) {
+    double tmp = Vamax; Vamax = Vamin; Vamin = tmp;
+  }
+  if (Vimax < Vimin) {
+    double tmp = Vimax; Vimax = Vimin; Vimin = tmp;
+  }
+
 }
 
 /**
@@ -117,12 +136,59 @@ double gridpack::dynamic_simulation::Esst1aModel::sqr(double x)
  */
 void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, double ts)
 {
-  if (Tf < TS_THRESHOLD * ts) zero_TF = true;
-  if (Tb < TS_THRESHOLD * ts) zero_TB = true;
-  if (Tb1 < TS_THRESHOLD * ts) zero_TB1 = true;
-  if (Ta < TS_THRESHOLD * ts) zero_TA = true;
-  if (Tr < TS_THRESHOLD * ts) zero_TR = true;
-  
+  // Time constant minimum checks
+  double mult_ts = TS_THRESHOLD * ts;
+
+  // Tf uses 0.5/1.0 pattern (lead-lag denominator type)
+  if (Tf > 0.0 && Tf < 0.5 * mult_ts) {
+    Tf = 0.0;
+    zero_TF = true;
+  } else if (Tf > 0.5 * mult_ts && Tf < mult_ts) {
+    Tf = mult_ts;
+  } else if (Tf <= 0.0) {
+    zero_TF = true;
+  }
+
+  // Tb uses 0.5/1.0 pattern
+  if (Tb > 0.0 && Tb < 0.5 * mult_ts) {
+    Tb = 0.0;
+    zero_TB = true;
+  } else if (Tb > 0.5 * mult_ts && Tb < mult_ts) {
+    Tb = mult_ts;
+  } else if (Tb <= 0.0) {
+    zero_TB = true;
+  }
+
+  // Tb1 uses 0.5/1.0 pattern
+  if (Tb1 > 0.0 && Tb1 < 0.5 * mult_ts) {
+    Tb1 = 0.0;
+    zero_TB1 = true;
+  } else if (Tb1 > 0.5 * mult_ts && Tb1 < mult_ts) {
+    Tb1 = mult_ts;
+  } else if (Tb1 <= 0.0) {
+    zero_TB1 = true;
+  }
+
+  // Tr uses 0.25/0.5 pattern (filter type)
+  if (Tr > 0.0 && Tr < 0.25 * mult_ts) {
+    Tr = 0.0;
+    zero_TR = true;
+  } else if (Tr > 0.25 * mult_ts && Tr < 0.5 * mult_ts) {
+    Tr = 0.5 * mult_ts;
+  } else if (Tr <= 0.0) {
+    zero_TR = true;
+  }
+
+  // Ka: if Ka == 0 then set to mult_ts
+  if (fabs(Ka) < 1e-6) {
+    Ka = mult_ts;
+  }
+
+  // Ta (regulator time constant) - if zero, use gain block
+  if (fabs(Ta) < 1e-6) {
+    zero_TA = true;
+  }
+
   // For lead lag block, force time constant of numerator to zero if time constant of denominator is zero
   if (zero_TB1) Tc1 = 0.0;
   if (zero_TB) Tc = 0.0;
@@ -137,9 +203,9 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   if (!zero_TB1) Leadlag_blkBC1.setparams(Tc1, Tb1);
 
   if(!zero_TA) {
-    Regulator_blk.setparams(Ka,Ta,Vrmin,Vrmax,-1000.0,1000.0);
+    Regulator_blk.setparams(Ka,Ta,Vamin,Vamax,-1000.0,1000.0);
   } else {
-    Regulator_gain_blk.setparams(Ka,Vrmin,Vrmax);
+    Regulator_gain_blk.setparams(Ka,Vamin,Vamax);
   }
 
   HVGate_blk2.setparams(Vuel); // UEL is Vuel?
@@ -248,14 +314,22 @@ void gridpack::dynamic_simulation::Esst1aModel::computeModel(double t_inc,Integr
 
   if (UEL == 2.0) leadlag_blk_in = HVGate_blk1.getoutput(leadlag_blk_in);
 
-  VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
-  
-  VLL1 = Leadlag_blkBC1.getoutput(VLL, t_inc, int_flag, true); 
+  if (!zero_TB) {
+    VLL = Leadlag_blkBC.getoutput(leadlag_blk_in, t_inc, int_flag, true);
+  } else {
+    VLL = leadlag_blk_in;
+  }
+
+  if (!zero_TB1) {
+    VLL1 = Leadlag_blkBC1.getoutput(VLL, t_inc, int_flag, true);
+  } else {
+    VLL1 = VLL;
+  }
 
   if (zero_TA) {
     VA = Regulator_gain_blk.getoutput(VLL1);
   } else {
-    VA = Regulator_blk.getoutput(VLL, t_inc, int_flag, true);
+    VA = Regulator_blk.getoutput(VLL1, t_inc, int_flag, true);
   }
 
   double u1 = 0.0;

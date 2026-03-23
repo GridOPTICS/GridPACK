@@ -43,6 +43,8 @@ This document describes the variables, equations, inputs, and outputs for the di
 The document assumes the bus voltage is expressed in cartesian form, i.e. $\bar{V} = V_R + iV_I$, where
 $V_R$ and $V_I$ are the real and imaginary components of the complex bus voltage $V$.
 
+\textbf{Note:} This document covers the GENCLS, GENROU, and GENSAL generator models, the EXDC1 and ESST1A exciter models, and the WSIEG1 turbine governor model. Additional models implemented in GridPACK (including REGCA1/REGCB1/REGCC1, GDFORM, SEXS, ESST4B, IEEET1, REECA1, REPCA1, TGOV1, GAST, HYGOV, WSHYGP, PSSSIM, and dynamic load models) are documented in their respective source files and PSS/E model references.
+
 \section{Generator models}
 The inputs and outputs for the generator models are given below. These inputs/outputs representing
 the coupling with the bus and the generator controls such as exciters, turbine-governors.
@@ -105,7 +107,7 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 &\frac{1}{\omega_s}\frac{d{\delta}}{dt}={\Delta\omega}&\\
 &\frac{1}{2H}\frac{d{\Delta\omega}}{dt} = \frac{\Pm-D*{\Delta\omega}}{1+{\Delta\omega}}-T_{elec}&\\
 &T^{'}_{do}\frac{dE^{'}_q}{dt}= \Efd - L_{ad}\Ifd&\\
-\nonumber  &T^{'}_{qo}\frac{dE^{'}_d}{dt}= (X_q - X^{'}_q)\left( I_q -\frac{X^{'}_q - X^{''}_q}{(X^{'}_q - X_l)^2}(E^{'}_d +(X^{'}_q - X_l)I_q - \psi^{'}_q)\right) -&\\ &\qquad E^{'}_d + \frac{X_q - X_l}{X_d - X_l}\psi^{''}_q\frac{Sat(\sqrt{\psi^{''}_d + \psi^{''2}_q})}{\sqrt{\psi^{''}_d + \psi^{''2}_q}}
+\nonumber  &T^{'}_{qo}\frac{dE^{'}_d}{dt}= (X_q - X^{'}_q)\left( I_q -\frac{X^{'}_q - X^{''}_q}{(X^{'}_q - X_l)^2}(E^{'}_d +(X^{'}_q - X_l)I_q - \psi^{'}_q)\right) -&\\ &\qquad E^{'}_d + \frac{X_q - X_l}{X_d - X_l}\psi^{''}_q\frac{Sat(\sqrt{\psi^{''2}_d + \psi^{''2}_q})}{\sqrt{\psi^{''2}_d + \psi^{''2}_q}}
 &\\
 &T^{''}_{do}\frac{d\psi^{'}_d}{dt} = E^{'}_q   - \psi^{'}_d  - (X^{'}_{d}-X_{l})I_d&\\
 &{T^{''}_{qo}}\frac{d\psi^{'}_q}{dt} = E^{'}_d - \psi^{'}_q  + (X^{'}_q-X_{l})I_q&
@@ -121,7 +123,7 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 	\item Field current
 \begin{flalign*}
 L_{ad}\Ifd = &E^{'}_q + (X_d-X^{'}_{d})\left(I_d + \dfrac{X^{'}_d - X^{"}_d}{(X^{'}_d-X_{l})^2}\left(E^{'}_q - \psi^{'}_d - (X^{'}_d - X_l)I_d\right)\right) + \\ 
-&\psi^{''}_d\frac{Sat(\sqrt{\psi^{''}_d + \psi^{''2}_q})}{\sqrt{\psi^{''}_d + \psi^{''2}_q}}
+&\psi^{''}_d\frac{Sat(\sqrt{\psi^{''2}_d + \psi^{''2}_q})}{\sqrt{\psi^{''2}_d + \psi^{''2}_q}}
  %L_{ad}\Ifd = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left[ \dfrac{X_d - X^{"}_d}{X_d-X_{l}^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right]
  % L_{ad}\Ifd=E^{'}_q+(X_d-X_{d})*(I_d+T_{empD})&\\
 \end{flalign*}
@@ -360,7 +362,7 @@ This is a simplified representation of WSIEG1 that ignores the two intentional d
  Here, the intermediate variables used in the calculations are as follows:
 \begin{align*}
  &\begin{cases}
-    y_{LL} = x_{LL} + \dfrac{T_2}{T_1}K\dw,&\text{if}~~T_1 > 0 \& T_2 >  \\
+    y_{LL} = x_{LL} + \dfrac{T_2}{T_1}K\dw,&\text{if}~~T_1 > 0 \& T_2 > 0 \\
     y_{LL} = x_{LL},&\text{if}~~T_1 = T_2 = 0
   \end{cases}& \\
 &u_{GV} = \max(\min(\dfrac{1}{T_3}\left(P_{ref} - x_{GV} - y_{LL}\right),U_o),U_c)&

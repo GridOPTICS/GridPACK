@@ -326,7 +326,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
 	  double tmp1 = p_ybusr;
       double tmp2 = p_ybusi - 1.0e9;
       gridpack::ComplexType ret(tmp1, tmp2);
-	  
+
       values[0] = ret;
       return true;
     } else {
@@ -468,16 +468,13 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
       if (p_ngen > 0) {
         for (int i = 0; i < p_ngen; i++) {
 	  if(!p_gstatus[i] || !p_generators.size()) continue;
-	  values[0] += p_generators[i]->INorton(); 
+	  values[0] += p_generators[i]->INorton();
         } // generator for loop
       }  // if p_ngen>0
 	  
       //INorton contribution from dynamic load
       for (int i =0; i<p_ndyn_load; i++){
-	values[0] += p_loadmodels[i]->INorton(); 
-	
-	ComplexType tmp = p_loadmodels[i]->INorton();
-	//printf("DSFullBus::vectorValues, bus %d, dynamic load Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
+	values[0] += p_loadmodels[i]->INorton();
       }
       
 	  // Equilibrium load compensation: inject current to make constant-Z
@@ -3397,11 +3394,11 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType
       printf("matrix off diag forward element changes due to branch relay trip!\n");
       values[0] = -getBranchRelayTripUpdateFactor();
 	  printf("changed value: %f + j*%f\n", real(values[0]), imag(values[0]));
-	      
+
       return true;
     } else {
       return false;
-    } 
+    }
   }else if (p_mode == branch_trip_action) {
 		if (p_branchactiontripflag) {
 			//printf("matrix off diag forward element changes due to branch relay trip!\n");
@@ -3461,7 +3458,7 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseValues(ComplexType
       return true;
     } else {
       return false;
-    } 
+    }
   }else if (p_mode == branch_trip_action) {
 		if (p_branchactiontripflag) {
 			//printf("matrix off diag forward element changes due to branch relay trip!\n");
@@ -3660,6 +3657,10 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
  */
 void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 {
+  // Skip extended load branches (CMPLD transformer/feeder) which have
+  // no element data and may have invalid bus references
+  if (p_bextendedloadbranch > 0) return;
+
   int i;
   double pi = 4.0*atan(1.0);
 
@@ -3764,6 +3765,9 @@ void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
 void gridpack::dynamic_simulation::DSFullBranch::updateData(
     boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  // Skip extended load branches (CMPLD transformer/feeder)
+  if (p_bextendedloadbranch > 0) return;
+
   int i;
   evaluateBranchFlow();
   updateBranchCurrent();

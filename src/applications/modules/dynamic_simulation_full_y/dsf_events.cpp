@@ -3,6 +3,13 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
+// -------------------------------------------------------------
+/**
+ * @updated Yousu Chen
+ * - Rebuild LinearSolver after Y-bus changes (fault on/off, line
+ *   status, generator status) to avoid stale preconditioner.
+ * @date  2026-03-10
+ */
 
 #include "dsf_app_module.hpp"
 #include <iostream>
@@ -134,6 +141,7 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
 {
   int nevents = p_events.size();
   int i;
+  bool ybus_changed = false;
 
   for(i = 0; i < nevents; i++) {
     gridpack::dynamic_simulation::Event event = p_events[i];
@@ -152,7 +160,8 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
 	// Update Ybus
 	p_factory->setMode(BUSFAULTON);
 	ybusMap_sptr->incrementMatrix(ybus);
-	
+	ybus_changed = true;
+
       } else if(fabs(event.end - p_current_time) < 1e-6) {
 	/* Fault end */
 	std::vector<int> bus_internal_idx;
@@ -161,16 +170,18 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
 	if(bus_internal_idx.size()) {
 	  bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_network->getBus(bus_internal_idx[0]).get());
 	}
-	
+
 	// Update Ybus
 	p_factory->setMode(BUSFAULTOFF);
 	ybusMap_sptr->incrementMatrix(ybus);
+	ybus_changed = true;
       }
     } else if(event.isLineStatus) {
       if(fabs(event.time - p_current_time) < 1e-6) {
 	setLineStatus(event.from_idx,event.to_idx,event.tag,event.status);
 	p_factory->setMode(LINESTATUSCHANGE);
 	ybusMap_sptr->incrementMatrix(ybus);
+	ybus_changed = true;
       }
     } else if(event.isGenStatus) {
       if(fabs(event.time - p_current_time) < 1e-6) {
@@ -178,8 +189,17 @@ void gridpack::dynamic_simulation::DSFullApp::handleEvents()
 	setGenStatus(event.bus_idx,event.tag,event.status);
 	p_factory->setMode(GENSTATUSCHANGE);
 	ybusMap_sptr->incrementMatrix(ybus);
+	ybus_changed = true;
       }
     }
+  }
+
+  // Rebuild the linear solver if the Y-bus matrix was modified
+  if (ybus_changed) {
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+    solver_sptr.reset(new gridpack::math::LinearSolver(*ybus));
+    solver_sptr->configure(cursor);
   }
 }
 

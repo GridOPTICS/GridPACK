@@ -59,9 +59,14 @@ void gridpack::dynamic_simulation::GastModel::load(
   if (!data->getValue(GOVERNOR_T3, &T3, idx)) T3 = 10.0;
   if (!data->getValue(GOVERNOR_AT, &AT, idx)) AT = 0.0;
   if (!data->getValue(GOVERNOR_KT, &KT, idx))  KT = 0.0;
-  if (!data->getValue(GOVERNOR_VMAX, &VMAX, idx)) VMAX = 1.0; 
-  if (!data->getValue(GOVERNOR_VMIN, &VMIN, idx)) VMIN = 0.0; 
+  if (!data->getValue(GOVERNOR_VMAX, &VMAX, idx)) VMAX = 1.0;
+  if (!data->getValue(GOVERNOR_VMIN, &VMIN, idx)) VMIN = 0.0;
   if (!data->getValue(GOVERNOR_DT, &Dt, idx)) Dt = 0.0;
+
+  // Swap limits if inverted
+  if (VMAX < VMIN) {
+    double tmp = VMAX; VMAX = VMIN; VMIN = tmp;
+  }
 
   fuel_valve_block.setparams(1.0,T1,VMIN,VMAX,-10000,10000);
   fuel_flow_block.setparams(1.0,T2);
@@ -76,6 +81,47 @@ void gridpack::dynamic_simulation::GastModel::load(
  */
 void gridpack::dynamic_simulation::GastModel::init(double mag, double ang, double ts)
 {
+  // Minimum time constant checks
+  double mult_ts = TS_THRESHOLD * ts;
+  if (T1 > 0.0 && T1 < 0.25 * mult_ts) {
+    T1 = 0.0;
+    fuel_valve_block.setparams(1.0, T1, VMIN, VMAX, -10000, 10000);
+  } else if (T1 > 0.25 * mult_ts && T1 < 0.5 * mult_ts) {
+    T1 = 0.5 * mult_ts;
+    fuel_valve_block.setparams(1.0, T1, VMIN, VMAX, -10000, 10000);
+  }
+  if (T2 > 0.0 && T2 < 0.25 * mult_ts) {
+    T2 = 0.0;
+    fuel_flow_block.setparams(1.0, T2);
+  } else if (T2 > 0.25 * mult_ts && T2 < 0.5 * mult_ts) {
+    T2 = 0.5 * mult_ts;
+    fuel_flow_block.setparams(1.0, T2);
+  }
+  if (T3 > 0.0 && T3 < 0.25 * mult_ts) {
+    T3 = 0.0;
+    exh_temp_block.setparams(1.0, T3);
+  } else if (T3 > 0.25 * mult_ts && T3 < 0.5 * mult_ts) {
+    T3 = 0.5 * mult_ts;
+    exh_temp_block.setparams(1.0, T3);
+  }
+
+  // Adjust AT to accommodate initial operating point
+  // Without this, generators with Pmech > AT would create an unstable
+  // initial condition inconsistent with the power flow solution.
+  if (Pmech > AT && AT > 0) {
+    AT = Pmech;
+  }
+
+  // Adjust valve limits to accommodate initial operating point
+  if (Pmech > VMAX) {
+    VMAX = Pmech;
+    fuel_valve_block.setparams(1.0, T1, VMIN, VMAX, -10000, 10000);
+  }
+  if (Pmech < VMIN) {
+    VMIN = Pmech;
+    fuel_valve_block.setparams(1.0, T1, VMIN, VMAX, -10000, 10000);
+  }
+
   //  Work backwards from Pmech
   double fuel_flow_block_out = Pmech + Dt*delta_w;
   
@@ -95,6 +141,11 @@ void gridpack::dynamic_simulation::GastModel::init(double mag, double ang, doubl
 
   Pref = fuel_valve_block_in + delta_w/R; // Here the assumption is lv_gate_in1 > fuel_valve_block_in.
   // If this condition is not satisfied then Pref value is indeterminate.
+
+  // Clamp Pref to AT
+  if (AT > 0 && Pref > AT) {
+    Pref = AT;
+  }
 }
 
 /**

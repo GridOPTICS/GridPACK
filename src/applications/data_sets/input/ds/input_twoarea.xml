@@ -54,7 +54,7 @@
   <Dynamic_simulation>
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
     <generatorParameters> kundur-twoarea.dyr </generatorParameters>
-    <simulationTime>30</simulationTime>
+    <simulationTime>10</simulationTime>
     <timeStep>0.005</timeStep>
     <Events>
       <faultEvent>
@@ -77,9 +77,13 @@
         <busID> 3 </busID>
         <generatorID> 1 </generatorID>
       </generator>
+      <generator>
+        <busID> 4 </busID>
+        <generatorID> 1 </generatorID>
+      </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
-    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
+    <generatorWatchFileName> gen_watch_twoarea.csv </generatorWatchFileName>
     <LinearSolver>
       <PETScOptions>
         <!-ksp_view>

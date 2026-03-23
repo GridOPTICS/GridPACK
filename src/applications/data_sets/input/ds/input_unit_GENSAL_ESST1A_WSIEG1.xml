@@ -48,7 +48,7 @@
   <Dynamic_simulation>
     <generatorParameters>case9_GENSAL_ESST1A_WSIEG1.dyr</generatorParameters>
     <simulationTime>1.0</simulationTime>
-    <timeStep>0.01</timeStep>
+    <timeStep>0.001</timeStep>
     <Events>
       <faultEvent>
         <beginFault> 0.03</beginFault>
@@ -62,9 +62,17 @@
        <busID> 1 </busID>
        <generatorID> 1 </generatorID>
       </generator>
+      <generator>
+       <busID> 2 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+      <generator>
+       <busID> 3 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
-    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
+    <generatorWatchFileName>gen_watch_GENSAL_ESST1A_WSIEG1.csv</generatorWatchFileName>
       <LinearSolver>
         <PETScOptions>
           -ksp_type richardson

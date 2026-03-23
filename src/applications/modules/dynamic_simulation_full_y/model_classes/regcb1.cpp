@@ -313,7 +313,7 @@ void gridpack::dynamic_simulation::Regcb1Generator::computeModel(double t_inc, I
   bool Vdip; // Voltage dip flag for electrical controller
   
   double domega_t = 0.0;
-  double Pord = 0.0,Preal;
+  double Pord = 0.0,Preal = 0.0;
   double Pref_plant;
   double Ip_blk_in;
 

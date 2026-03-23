@@ -12,6 +12,9 @@
  * @brief
  * Renewable Energy Electrical Controller Model REECA1
  *
+ * @Modified: Mar 2026, Yousu Chen
+ * - Fixed CurrentLimitLogic
+ *
  */
 
 #include <cstdio>
@@ -324,7 +327,7 @@ void gridpack::dynamic_simulation::Reeca1Model::predictor(double t_inc,
       // Check if thld == 0, in this case there is
       // no transition to state 2
       if(fabs(Thld) < 1e-6) Iqinj_sw = 0;
-      else if(fabs(Thld) > 1e-6) {
+      else if(Thld > 1e-6) {
 	// Thld is positive, transition to state 2,
 	// Set timer
 	thld_timer = 0.0;
@@ -337,7 +340,7 @@ void gridpack::dynamic_simulation::Reeca1Model::predictor(double t_inc,
     } else {
       if(Iqinj_sw == 1) {
 	thld_timer += t_inc;
-	if(thld_timer > 1 - Thld) Iqinj_sw = 0;
+	if(thld_timer > -Thld) Iqinj_sw = 0;
       } else if(Iqinj_sw == 2) {
 	thld_timer += t_inc;
 	if(thld_timer > Thld) Iqinj_sw = 0;
@@ -372,7 +375,7 @@ void gridpack::dynamic_simulation::Reeca1Model::corrector(double t_inc,
 
 void gridpack::dynamic_simulation::Reeca1Model::computeModel(bool Voltage_dip,int Iqinj_sw,double t_inc,IntegrationStage int_flag)
 {
-  bool updateState = !Voltage_dip; // freezestate logic : updateState = 0 when no voltage dip, otherwise 1
+  bool updateState = !Voltage_dip; // freezestate logic : updateState = 1 when no voltage dip, 0 during voltage dip (freeze states)
   
   // Get terminal voltage measurement
   Vt_filter = Vt_filter_blk.getoutput(Vt,t_inc,int_flag,true);
@@ -464,10 +467,9 @@ void gridpack::dynamic_simulation::Reeca1Model::CurrentLimitLogic(int PQFLAG,dou
 
   *Ipmin_out = 0.0;
   
-  // Iqmax look up from VDL1
-  Iqmax_temp = VDL1.getoutput(Vt_filter);
-  // Ipmax look up from VDL2
-  Ipmax_temp = VDL2.getoutput(Vt_filter);
+  // VDL1 = V-P table (active current limit), VDL2 = V-Q table (reactive current limit)
+  Ipmax_temp = VDL1.getoutput(Vt_filter);
+  Iqmax_temp = VDL2.getoutput(Vt_filter);
 
   if(!PQFLAG) { // Q priority
     if (Imax < Iqmax_temp) Iqmax_temp = Imax;

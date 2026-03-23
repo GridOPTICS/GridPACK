@@ -258,7 +258,6 @@ public:
 
   bool p_generatorObservationPowerSystemBase;
   double p_wideareafreq;
-
 private:
   boost::shared_ptr<BaseGovernorModel> p_governor;     // governor
   boost::shared_ptr<BaseExciterModel> p_exciter;       // exciter
