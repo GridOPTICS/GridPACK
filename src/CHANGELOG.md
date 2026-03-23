@@ -51,6 +51,8 @@ functionality appears in the develop branch.
   - Dynamic Simulation Enhancements
     - GENROU PSS integration
     - Iterative equilibrium initialization (XML: equilibriumInit, default false)
+    - Support dynamic models (GENROU, GENSAL, Classical) for generators with
+      negative PG.
   - Added build trigger when releasing a new version of GridPACK
 - Changed
   - User manual updated for v3.6 including power flow, state estimation,
