@@ -73,6 +73,17 @@ functionality appears in the develop branch.
   - Fixed incomplete printing of many parallel lines in power flow output
   - Fixed trailing space in contingency output filenames
   - Fixed Qmin/Qmax storage
+  - Unified GENSAL saturation to PSS/E scaled quadratic convention (matching GENROU)
+  - Enabled (1+omega) speed factor on GENROU/GENSAL internal voltage per IEEE standard
+  - Fixed PowerAngle output wrapping to [-180,180] in all generator models
+  - Fixed EXDC1 lead-lag using TA instead of TC
+  - Fixed WSIEG1 NGV/Db1/Db2 block types and conditional bypass for zero data
+  - Fixed REECA1 Thld state machine (negative branch unreachable) and timer formula
+  - Fixed REPCA1 over-frequency droop sign handling
+  - Fixed GGOV1: re-enabled parameter parsing, PIDIn UB, State 9 ODE, lead-lag, corrector typo
+  - Fixed WSHYGP NGV indices, gate servo feedback, abs/fabs
+  - Fixed ESST4B Kim parser key, MOTORW comma operator and hardcoded llr1
+  - Fixed IEEL normalization, REGCB1/REGCC1 uninitialized Preal
 
 ## [3.5]
 - Added

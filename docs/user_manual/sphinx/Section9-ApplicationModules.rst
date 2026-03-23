@@ -707,6 +707,7 @@ Governors:
    TGOV1
    GAST
    HYGOV
+   GGOV1
 
 Power System Stabilizers:
 
@@ -754,6 +755,7 @@ dynamic simulation module uses an input deck of the form
        <generatorParameters>IEEE_145.dyr</generatorParameters>
        <simulationTime>30</simulationTime>
        <timeStep>0.005</timeStep>
+       <equilibriumInit>true</equilibriumInit>
        <Events>
          <faultEvent>
            <beginFault> 2.00</beginFault>
@@ -787,7 +789,13 @@ dynamic simulation module uses an input deck of the form
    </Configuration>
 
 The input for dynamic simulation module is contained in the
-``Dynamic_simulation`` block. Two features are important, the blocks
+``Dynamic_simulation`` block. The optional ``equilibriumInit`` parameter
+(default false) enables iterative Norton-equivalent initialization, which
+eliminates pre-fault drift by rebalancing generator states (Pmech=Telec,
+Efd=LadIfd) at the network-solved voltage. This is recommended for all
+simulations.
+
+Two features are important, the blocks
 describing faults and the blocks describing monitored generators. Faults
 are described in the ``Event``\ s block. The code currently only
 handles faults on branches. Inside the ``Events`` block are
