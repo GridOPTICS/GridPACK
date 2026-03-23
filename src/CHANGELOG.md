@@ -58,45 +58,45 @@ functionality appears in the develop branch.
   - Migrated QLIM parameter to bool type in power flow and CA for consistency
   - Optimized CMake builds
 - Fixed
-  - Fixed GENROU saturation: use scaled quadratic Se=B*(x-A)^2/x per PowerWorld
-    standard, evaluate at air-gap flux magnitude, iterative q-axis saturation
-    in initialization, and corrected LadIfd Se*Psidpp term
-  - Fixed ESST1A regulator limits from Vrmin/Vrmax to Vamin/Vamax (IEEE 421.5)
-  - Fixed ESST1A second lead-lag stage bypassed when TA != 0
-  - Fixed WSIEG1 parser T3 parameter read from wrong field
-  - Fixed WSIEG1 NGV lookup table yin[] index
-  - Fixed REECA1 CurrentLimitLogic VDL1/VDL2 table assignment swapped
-  - Fixed REPCA1 parser FEMIN read from wrong dyr column
-  - Fixed REGCA1 Iq_olim sign inconsistency in display functions
-  - Fixed GENSAL predictor using stale speed deviation for governor
-  - Fixed GENSAL saturation initialization
-  - Fixed ForceSerial off-by-one in math library setElementRange half-open range,
-    causing stale values on multi-process runs with composite load models
-  - Fixed PSSSIM washout output divided by Tw
-  - Fixed HYGOV fallback setting R instead of r when parameter missing
-  - Fixed Cblock crash when model time constant is zero (e.g., REECA1 with TP=0)
-  - Fixed SEXS exciter EMAX default from 0.0 to 999.0
-  - Fixed REGCA1 P and Q swapped in output reporting
-  - Fixed null pointer crash on unrecognized generator model in dsf_components
-  - Fixed REECA1 parser reading TIQ parameter from wrong dyr column
-  - Fixed contingency analysis multi-process deadlock in GA one-sided operations
-    during result export
-  - Fixed 3-winding transformer parsing in PSS/E parsers
-  - Fixed warm start with qlim=false scenario
-  - Fixed incomplete printing of many parallel lines in power flow output
-  - Fixed trailing space in contingency output filenames
-  - Fixed Qmin/Qmax storage
-  - Unified GENSAL saturation to PSS/E scaled quadratic convention (matching GENROU)
-  - Enabled (1+omega) speed factor on GENROU/GENSAL internal voltage per IEEE standard
-  - Fixed PowerAngle output wrapping to [-180,180] in all generator models
-  - Fixed EXDC1 lead-lag using TA instead of TC
-  - Fixed WSIEG1 NGV/Db1/Db2 block types and conditional bypass for zero data
-  - Fixed REECA1 Thld state machine (negative branch unreachable) and timer formula
-  - Fixed REPCA1 over-frequency droop sign handling
-  - Fixed GGOV1: re-enabled parameter parsing, PIDIn UB, State 9 ODE, lead-lag, corrector typo
-  - Fixed WSHYGP NGV indices, gate servo feedback, abs/fabs
-  - Fixed ESST4B Kim parser key, MOTORW comma operator and hardcoded llr1
-  - Fixed IEEL normalization, REGCB1/REGCC1 uninitialized Preal
+  - Generator Models
+    - GENROU: scaled quadratic saturation, iterative q-axis saturation init,
+      LadIfd Se*Psidpp term, (1+omega) speed factor on internal voltage
+    - GENSAL: unified saturation to PSS/E scaled quadratic, (1+omega) speed
+      factor, predictor speed deviation, saturation initialization
+    - PowerAngle output wrapping to [-180,180] in all generator models
+    - Null pointer crash on unrecognized generator model in dsf_components
+  - Exciter Models
+    - ESST1A: regulator limits Vrmin/Vrmax to Vamin/Vamax, lead-lag bypass
+    - ESST4B: Kim parser key from EXCITER_KPM to EXCITER_KIM
+    - EXDC1: lead-lag using TA instead of TC
+    - SEXS: EMAX default from 0.0 to 999.0
+  - Governor Models
+    - GGOV1: re-enabled parameter parsing, PIDIn undefined behavior, State 9
+      ODE, lead-lag bypass/coefficients, corrector rate limit variable
+    - WSIEG1: parser T3 field, NGV yin[] index, NGV/Db1/Db2 block types and
+      conditional bypass for zero data
+    - WSHYGP: NGV yin[] indices, gate servo feedback, abs/fabs
+    - HYGOV: fallback setting R instead of r
+    - PSSSIM: washout output divided by Tw
+  - Renewable Energy Models
+    - REECA1: VDL1/VDL2 swap, Thld state machine, timer formula, TIQ parser
+    - REPCA1: FEMIN parser column, over-frequency droop sign handling
+    - REGCA1: Iq_olim sign, P/Q swap in output
+    - REGCB1/REGCC1: uninitialized Preal variable
+  - Load Models
+    - MOTORW: comma operator (C0=1,0 -> 1.0), hardcoded llr1 removed, slip
+      interpolation
+    - IEEL: normalization destroying valid coefficients
+  - Framework / Infrastructure
+    - ForceSerial off-by-one in setElementRange half-open range
+    - Cblock crash when model time constant is zero
+    - Contingency analysis multi-process deadlock in GA operations
+    - 3-winding transformer parsing in PSS/E parsers
+  - Power Flow
+    - Warm start with qlim=false scenario
+    - Incomplete printing of parallel lines in output
+    - Trailing space in contingency output filenames
+    - Qmin/Qmax storage
 
 ## [3.5]
 - Added

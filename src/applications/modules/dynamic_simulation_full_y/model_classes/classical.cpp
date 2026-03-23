@@ -163,7 +163,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
   p_eqprime = gridpack::ComplexType(abs(p_eprime_s0),0.0);
   //printf("eqprime = %f\n", p_eqprime);
   // pmech
-  p_pmech = gridpack::ComplexType(abs(p_pelect),0.0);
+  p_pmech = gridpack::ComplexType(real(p_pelect),0.0);
   //printf("mech = %f\n", p_pmech);
   //printf("mva = %f\n", p_mva);
   //printf("d0 = %f\n", p_d0);
