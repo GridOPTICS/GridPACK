@@ -226,8 +226,12 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
 	if(!p_gstatus[i]) continue;
-	
-	if (p_pg[i] < 0) {
+
+	// Only convert PG<0 generators to impedance load if they
+	// do NOT have a dynamic model. Generators with dynamic models
+	// (including motoring generators with PG<0) contribute via
+	// Norton current injection, not as impedance loads.
+	if (p_pg[i] < 0 && p_gen_nodynmodel[i]) {
            p_ybusr = p_ybusr+(-p_pg[i])/(p_voltage*p_voltage);
            p_ybusi = p_ybusi+p_qg[i]/(p_voltage*p_voltage);
            gridpack::ComplexType ret(p_ybusr, p_ybusi);
@@ -240,14 +244,6 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     } else {
       gridpack::ComplexType u(p_ybusr, p_ybusi);
       values[0] = u;
-    }
-    if (p_negngen > 0) {
-      for (int i = 0; i < p_negngen; i++) {
-        p_ybusr = p_ybusr+(-p_negpg[i])/(p_voltage*p_voltage);
-        p_ybusi = p_ybusi+p_negqg[i]/(p_voltage*p_voltage);
-        gridpack::ComplexType ret(p_ybusr, p_ybusi);
-        values[0] = ret;
-      }
     }
     for (int i = 0; i < p_ngen; i++) {
       if(p_gen_nodynmodel[i]) {
@@ -978,7 +974,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       p_gpmax.push_back(pmax);
       
       std::string model;
-      if (data->getValue(GENERATOR_MODEL, &model, i) && pg >= 0.0) {
+      if (data->getValue(GENERATOR_MODEL, &model, i)) {
 
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
@@ -1127,7 +1123,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
               model.c_str(), idx);
         }
 
-      } else if (!data->getValue(GENERATOR_MODEL, &model, i) && pg >= 0.0){
+      } else if (!data->getValue(GENERATOR_MODEL, &model, i)){
 	// handle the generators having no dynamic model, need to convert to negative load
 	BaseGeneratorModel *generator = new gridpack::dynamic_simulation::BaseGeneratorModel;
 	boost::shared_ptr<BaseGeneratorModel> basegen;
@@ -1138,10 +1134,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 	p_genpg_nodynmodel[i] = pg;
 	p_genqg_nodynmodel[i] = qg;
 	p_ngen_nodynmodel++;
-      } else if (pg < 0.0) {
-        p_negpg.push_back(pg);
-        p_negqg.push_back(qg);
-        p_negngen++;
       }
       icnt++;
     }
