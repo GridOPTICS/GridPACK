@@ -29,6 +29,7 @@
 #include "repca1.hpp"
 #include "wsieg1.hpp"
 #include "exdc1.hpp"
+#include "exdc2.hpp"
 #include "ieeet1.hpp"
 #include "esst1a.hpp"
 #include "wshygp.hpp"
@@ -141,7 +142,12 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     tmp =  new gridpack::dynamic_simulation::Exdc1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
-  }  else if (type == "IEEET1") {
+  } else if (type == "EXDC2") {
+    gridpack::dynamic_simulation::Exdc2Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Exdc2Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "IEEET1") {
     gridpack::dynamic_simulation::Ieeet1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Ieeet1Model;
     ret =
