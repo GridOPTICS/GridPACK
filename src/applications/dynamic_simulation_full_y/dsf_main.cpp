@@ -41,13 +41,13 @@ main(int argc, char **argv)
 
     gridpack::parallel::Communicator world;
 
-    // read configuration file 
+    // read configuration file
     int t_config = timer->createCategory("Dynamic Simulation: Config");
     timer->start(t_config);
     gridpack::utility::Configuration *config =
       gridpack::utility::Configuration::configuration();
-    if (argc >= 2 && argv[1] != NULL) { 
-      char inputfile[256]; 
+    if (argc >= 2 && argv[1] != NULL) {
+      char inputfile[256];
       sprintf(inputfile,"%s",argv[1]);
       config->open(inputfile,world);
     } else {
@@ -55,58 +55,30 @@ main(int argc, char **argv)
     }
     timer->stop(t_config);
 
-    // setup and run powerflow calculation
-    gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = config->getCursor("Configuration.Powerflow");
-    bool useNonLinear = false;
-    useNonLinear = cursor->get("UseNonLinear", useNonLinear);
-
-    boost::shared_ptr<gridpack::powerflow::PFNetwork>
-      pf_network(new gridpack::powerflow::PFNetwork(world));
-
-    gridpack::powerflow::PFAppModule pf_app;
-    pf_app.readNetwork(pf_network, config);
-    pf_app.initialize();
-    if (useNonLinear) {
-      pf_app.nl_solve();
-    } else {
-      pf_app.solve();
-    }
-    pf_app.write();
-    pf_app.saveData();
-   
-    // setup and run dynamic simulation calculation
-    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
-      ds_network(new gridpack::dynamic_simulation::DSFullNetwork(world));
     gridpack::dynamic_simulation::DSFullApp ds_app;
-    pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
-      gridpack::dynamic_simulation::DSFullBranch>(ds_network);
 
-    // transfer results from PF calculation to DS calculation
-    ds_app.transferPFtoDS(pf_network, ds_network); 
+    // Run powerflow and initialize DS network. Using solvePowerFlowBeforeDynSimu
+    // encapsulates pf_network inside its own scope so it is destroyed cleanly
+    // before DS simulation begins, avoiding GA handle lifecycle issues.
+    if (argc >= 2 && argv[1] != NULL) {
+      ds_app.solvePowerFlowBeforeDynSimu(argv[1]);
+    } else {
+      ds_app.solvePowerFlowBeforeDynSimu("input.xml");
+    }
 
-    // run dynamic simulation
-    ds_app.setNetwork(ds_network, config);
-    //ds_app.readNetwork(ds_network,config);
     ds_app.readGenerators();
     ds_app.readSequenceData();
-    //printf("ds_app.initialize:\n");
     ds_app.initialize();
     ds_app.setGeneratorWatch();
-    //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
-    //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
-    //printf("ds_app.solve:\n");
-    //ds_app.solve(faults[0]);
 
     // read in faults from input file
-    //gridpack::utility::Configuration::CursorPtr cursor;
+    gridpack::utility::Configuration::CursorPtr cursor;
     cursor = config->getCursor("Configuration.Dynamic_simulation");
     std::vector<gridpack::dynamic_simulation::Event> faults;
     faults = ds_app.getEvents(cursor);
 
-	
     ds_app.solvePreInitialize(faults[0]);
-	
+
     while(!ds_app.isDynSimuDone()){
       ds_app.executeOneSimuStep( );
     }
@@ -117,4 +89,6 @@ main(int argc, char **argv)
   }
 
 }
+
+
 

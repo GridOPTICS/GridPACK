@@ -69,8 +69,9 @@ class BasePssModel
     virtual double getVstab();
 
     virtual void setOmega(double omega);
+    virtual void setVterminal(double mag);
 	virtual double getBusFreq(int busnum);
-	virtual void setWideAreaFreqforPSS(double freq);	
+	virtual void setWideAreaFreqforPSS(double freq);
 
 
   private:

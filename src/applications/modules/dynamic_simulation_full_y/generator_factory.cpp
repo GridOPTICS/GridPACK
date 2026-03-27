@@ -30,10 +30,13 @@
 #include "wsieg1.hpp"
 #include "exdc1.hpp"
 #include "exdc2.hpp"
+#include "exst1.hpp"
 #include "ieeet1.hpp"
 #include "esst1a.hpp"
 #include "wshygp.hpp"
 #include "psssim.hpp"
+#include "ieeest.hpp"
+#include "st2cut.hpp"
 #include "tgov1.hpp"
 #include "sexs.hpp"
 #include "gast.hpp"
@@ -142,9 +145,14 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     tmp =  new gridpack::dynamic_simulation::Exdc1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
-  } else if (type == "EXDC2") {
+  } else if (type == "EXDC2" || type == "IEEEX1") {
     gridpack::dynamic_simulation::Exdc2Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Exdc2Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "EXST1") {
+    gridpack::dynamic_simulation::Exst1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Exst1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else if (type == "IEEET1") {
@@ -196,7 +204,7 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
   p_util.toUpper(type);
 
   gridpack::dynamic_simulation::BaseGovernorModel* ret;
-  if (type == "WSIEG1") {
+  if (type == "WSIEG1" || type == "IEEEG1") {
     gridpack::dynamic_simulation::Wsieg1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Wsieg1Model;
     ret =
@@ -247,6 +255,14 @@ gridpack::dynamic_simulation::GeneratorFactory::createPssModel(
     tmp =  new gridpack::dynamic_simulation::PsssimModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else if (type == "IEEEST") {
+    gridpack::dynamic_simulation::IeeeStModel *tmp;
+    tmp = new gridpack::dynamic_simulation::IeeeStModel;
+    ret = dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else if (type == "ST2CUT") {
+    gridpack::dynamic_simulation::St2cutModel *tmp;
+    tmp = new gridpack::dynamic_simulation::St2cutModel;
+    ret = dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
   } else {
     ret = NULL;
   }

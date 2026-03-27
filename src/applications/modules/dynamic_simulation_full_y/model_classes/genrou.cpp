@@ -643,6 +643,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     if (p_hasPss) {
       boost::shared_ptr<BasePssModel> pss = getPss();
       pss->setOmega(x2w_1);
+      pss->setVterminal(presentMag);
       pss->predictor(t_inc, flag);
       Vstab = pss->getVstab();
     } else {
@@ -822,6 +823,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     if (p_hasPss) {
       boost::shared_ptr<BasePssModel> pss = getPss();
       pss->setOmega(x2w_1);
+      pss->setVterminal(presentMag);
       pss->corrector(t_inc, flag);
       Vstab = pss->getVstab();
     } else {
