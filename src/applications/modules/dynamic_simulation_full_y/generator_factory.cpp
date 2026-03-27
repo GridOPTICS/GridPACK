@@ -8,10 +8,13 @@
  * @file   generator_factory.cpp
  * @author Bruce Palmer
  * @Last modified:   May 18, 2015
- * 
- * @brief  
- * 
- * 
+ *
+ * @Modified: 2026-03-27, Yousu Chen
+ * - Added ESST3A,ESDC2A, exciter model registration
+ *
+ * @brief
+ *
+ *
  */
 
 #include "generator_factory.hpp"
@@ -48,6 +51,8 @@
 /*---yuan add below---*/
 #include "esst4b.hpp"
 /*---yuan add above---*/
+#include "esst3a.hpp"
+#include "esdc2a.hpp"
 
 #include <stdio.h>
 
@@ -168,6 +173,16 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
   } else if (type == "ESST1A") {
     gridpack::dynamic_simulation::Esst1aModel *tmp;
     tmp =  new gridpack::dynamic_simulation::Esst1aModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "ESST3A") {
+    gridpack::dynamic_simulation::Esst3aModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::Esst3aModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "ESDC2A") {
+    gridpack::dynamic_simulation::Esdc2aModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::Esdc2aModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   }

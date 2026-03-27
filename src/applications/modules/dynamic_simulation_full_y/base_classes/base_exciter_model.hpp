@@ -132,6 +132,13 @@ class BaseExciterModel
 	virtual void setIri(double vIr, double vIi);
 	//---yuan add above 20231024---//
 
+    /**
+     * Set d-q frame terminal voltage and stator current components.
+     * Used by models that need Vd, Vq, Id, Iq (e.g. ESST3A).
+     * Default implementation is a no-op.
+     */
+    virtual void setVdqIdq(double Vd, double Vq, double Id, double Iq) {}
+
   
 	// Yuan added below 2020-6-23
 	/** 
