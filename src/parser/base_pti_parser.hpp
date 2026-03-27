@@ -15,6 +15,10 @@
  *  Renamed REGCA1/regca1 parameters to regc
  *  Added REGCB1
  *  Added REGCC1
+ *
+ *  2026-03-27, Yousu Chen
+ *  - Added ESST3A parser: ex_km, ex_tm, vgmax fields in gen_params;
+ *    extract/parse/store blocks for ESST3A DYR format
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -59,6 +63,7 @@
 #include "parser_classes/exst1.hpp"
 #include "parser_classes/ieeet1.hpp"
 #include "parser_classes/esst1a.hpp"
+#include "parser_classes/esst3a.hpp"
 #include "parser_classes/esst4b.hpp"
 #include "parser_classes/ggov1.hpp"
 #include "parser_classes/tgov1.hpp"
@@ -537,7 +542,10 @@ class BasePTIParser : public BaseParser<_network>
       double vbmax;
       double ex_xl;
       double thetap;
-	  
+      double ex_km;
+      double ex_tm;
+      double vgmax;
+
       int reeca1_ireg;
       int reeca1_pfflag;
       int reeca1_vflag;
@@ -1162,6 +1170,7 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"EXDC1") ||
               !strcmp(gen_data[i].model,"EXDC2") ||
+              !strcmp(gen_data[i].model,"ESDC2A") ||
               !strcmp(gen_data[i].model,"IEEEX1")) {
             Exdc1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
@@ -1173,6 +1182,9 @@ class BasePTIParser : public BaseParser<_network>
 	    parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"ESST1A")) {
             Esst1aParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"ESST3A")) {
+            Esst3aParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"ESST4B")) {
             Esst4bParser<gen_params> parser;
@@ -1513,10 +1525,10 @@ class BasePTIParser : public BaseParser<_network>
 #endif
           device == "WSIEG1" || device == "IEEEG1" ||
           device == "EXDC1"   || device == "EXDC2" ||
-          device == "IEEEX1" || device == "EXST1"  ||
+          device == "ESDC2A" || device == "IEEEX1" || device == "EXST1"  ||
 	  device == "IEEET1" ||
 	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
-          device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
+          device == "ESST1A" || device == "ESST3A" || device == "ESST4B" || device == "GGOV1" ||
           device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM" ||
           device == "IEEEST" || device == "ST2CUT" ||
           device == "WTDTA1" || device == "WTARA1" || device == "WTPTA1" ||
@@ -1695,7 +1707,7 @@ class BasePTIParser : public BaseParser<_network>
             } else if (sval == "IEEEG1") {
               Ieeeg1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
-            } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "IEEEX1") {
+            } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "ESDC2A" || sval == "IEEEX1") {
               Exdc1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "EXST1") {
@@ -1709,6 +1721,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "ESST1A") {
               Esst1aParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "ESST3A") {
+              Esst3aParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "ESST4A") {
               Esst4bParser<gen_params> parser;
@@ -1948,7 +1963,7 @@ class BasePTIParser : public BaseParser<_network>
           } else if (sval == "IEEEG1") {
             Ieeeg1Parser<gen_params> parser;
             parser.store(split_line,data);
-          } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "IEEEX1") {
+          } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "ESDC2A" || sval == "IEEEX1") {
             Exdc1Parser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "EXST1") {
@@ -1962,6 +1977,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "ESST1A") {
             Esst1aParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "ESST3A") {
+            Esst3aParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "ESST4B") {
             Esst4bParser<gen_params> parser;
