@@ -31,6 +31,7 @@
 #include "reeca1.hpp"
 #include "repca1.hpp"
 #include "wsieg1.hpp"
+#include "ieesgo.hpp"
 #include "exdc1.hpp"
 #include "exdc2.hpp"
 #include "exst1.hpp"
@@ -222,6 +223,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
   if (type == "WSIEG1" || type == "IEEEG1") {
     gridpack::dynamic_simulation::Wsieg1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Wsieg1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "IEESGO") {
+    gridpack::dynamic_simulation::IeesgoModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::IeesgoModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "TGOV1") {
