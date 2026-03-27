@@ -59,6 +59,7 @@
 #include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
 #include "parser_classes/ieeeg1.hpp"
+#include "parser_classes/ieesgo.hpp"
 #include "parser_classes/exdc1.hpp"
 #include "parser_classes/exst1.hpp"
 #include "parser_classes/ieeet1.hpp"
@@ -1168,6 +1169,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"IEEEG1")) {
             Ieeeg1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"IEESGO")) {
+            IeesgoParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"EXDC1") ||
               !strcmp(gen_data[i].model,"EXDC2") ||
               !strcmp(gen_data[i].model,"ESDC2A") ||
@@ -1523,7 +1527,7 @@ class BasePTIParser : public BaseParser<_network>
 #ifdef ENABLE_EPRI_IBR_MODEL
 	  device == "EPRIA1" ||
 #endif
-          device == "WSIEG1" || device == "IEEEG1" ||
+          device == "WSIEG1" || device == "IEEEG1" || device == "IEESGO" ||
           device == "EXDC1"   || device == "EXDC2" ||
           device == "ESDC2A" || device == "IEEEX1" || device == "EXST1"  ||
 	  device == "IEEET1" ||
@@ -1706,6 +1710,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "IEEEG1") {
               Ieeeg1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "IEESGO") {
+              IeesgoParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "ESDC2A" || sval == "IEEEX1") {
               Exdc1Parser<gen_params> parser;
@@ -1962,6 +1969,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "IEEEG1") {
             Ieeeg1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "IEESGO") {
+            IeesgoParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "ESDC2A" || sval == "IEEEX1") {
             Exdc1Parser<gen_params> parser;
