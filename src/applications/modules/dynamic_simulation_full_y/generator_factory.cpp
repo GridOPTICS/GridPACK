@@ -43,6 +43,7 @@
 #include "st2cut.hpp"
 #include "tgov1.hpp"
 #include "sexs.hpp"
+#include "scrx.hpp"
 #include "gast.hpp"
 #include "hygov.hpp"
 #include "wtara1.hpp"
@@ -169,6 +170,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
   } else if (type == "SEXS") {
       gridpack::dynamic_simulation::SexsModel *tmp;
       tmp =  new gridpack::dynamic_simulation::SexsModel;
+      ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "SCRX") {
+      gridpack::dynamic_simulation::ScrxModel *tmp;
+      tmp =  new gridpack::dynamic_simulation::ScrxModel;
       ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else if (type == "ESST1A") {

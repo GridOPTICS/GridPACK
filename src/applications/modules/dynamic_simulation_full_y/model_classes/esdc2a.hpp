@@ -11,15 +11,6 @@
  *
  * @brief ESDC2A exciter model (IEEE DC2A with terminal-voltage-scaled limits).
  *
- * Block diagram:
- *
- *           TR              TC/TB             KA/(1+sTA)
- *   Vt --[1/(1+sTR)]--> [lead-lag] --> [anti-windup lag] --> VR
- *                                                               |
- *   Vref + Vs - Vmeas + ----<----[washout KF*s/(1+sTF1)]<------+
- *                                                               |
- *                       VR - (KE + Se(Efd))*Efd --> [1/(sTE)] --> Efd
- *
  * Key difference from EXDC2:
  *   VRMAX/VRMIN scale with terminal voltage Vt at every time step:
  *     VRmax_eff = (VRMAX == 0 ? 999 : VRMAX) * Vt

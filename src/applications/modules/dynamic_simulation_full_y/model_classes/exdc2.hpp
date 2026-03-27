@@ -11,15 +11,6 @@
  *
  * @brief EXDC2 exciter model (IEEE DC2A / PSS/E EXDC2).
  *
- * Block diagram (same topology as EXDC1, with anti-windup amplifier):
- *
- *          TR            TC/TB           KA/(1+sTA)
- *  Vt --[1/(1+sTR)]--> [leadlag] --> [anti-windup lag] --> VR
- *                                                              |
- *  Vref + Vs - Vmeas + ----<---------------------------[washout KF1*s/(1+sTF1)]<--+
- *                                                              |                   |
- *                          VR - (KE + Se(Efd))*Efd --> [1/(sTE)] --> Efd ----------+
- *
  * PSS/E DYR parameter order (identical to EXDC1):
  *   TR  KA  TA  TB  TC  VRMAX  VRMIN  KE  TE  KF1  TF1  SWITCH  E1  SE1  E2  SE2
  */

@@ -11,13 +11,6 @@
  *
  * @brief  IEESGO steam turbine governor model.
  *
- * Block diagram:
- *   w → [F1: K1/(1+T1*s)] → [F2: (1+T2*s)/(1+T3*s)]
- *     → Pref0 - F2_y → [clip PMIN..PMAX] = y_HL
- *     → [F3: 1/(1+T4*s)] → y_F3
- *     → [F4: K2/(1+T5*s)] → y_F4
- *     → [F5: K3/(1+T6*s)] → y_F5
- *   Pmech = (1-K2)*y_F3 + (1-K3)*y_F4 + y_F5
  */
 
 #ifndef _ieesgo_h_
