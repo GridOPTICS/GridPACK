@@ -92,6 +92,10 @@ void gridpack::dynamic_simulation::BasePssModel::setOmega(double omega)
 {
 }
 
+void gridpack::dynamic_simulation::BasePssModel::setVterminal(double mag)
+{
+}
+
 double gridpack::dynamic_simulation::BasePssModel::getBusFreq(int busnum)
 {
 	return 0.0;

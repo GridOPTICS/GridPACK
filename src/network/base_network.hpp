@@ -2004,6 +2004,7 @@ void initBusUpdate(void)
   if (p_busXCBufSize > 0) {
     // Clean up old GA, if it exists
     if (p_busGASet) {
+      printf("DEBUG initBusUpdate: destroying busGA=%d\n",(int)p_busGA); fflush(stdout);
       GA_Destroy(p_busGA);
       NGA_Deregister_type(p_busXCBufType);
     }
@@ -2070,6 +2071,7 @@ void initBusUpdate(void)
     GA_Set_pgroup(p_busGA, grp);
     GA_Allocate(p_busGA);
     p_busGASet = true;
+    printf("DEBUG initBusUpdate: created busGA=%d\n",(int)p_busGA); fflush(stdout);
 
     if (lcnt > 0) {
       p_activeBusIndices = new int*[lcnt];

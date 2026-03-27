@@ -563,13 +563,13 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   sw7[3] = p_time_step;
   simu_total_steps = 0;
   for (int i = 0; i < nswtch-1; i++) {
-    t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);
+    t_step[i] = (int)round((sw1[i+1] -sw1[i]) / sw7[i]);
     t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i];
     simu_total_steps += t_step[i];
   }
   simu_total_steps++;
-  
-  // Initialize vectors for integration 
+
+  // Initialize vectors for integration
   p_factory->initDSVect(p_time_step);
   
   p_factory->setGeneratorObPowerBaseFlag(p_generator_observationpower_systembase);
@@ -3158,13 +3158,13 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
   sw7[3] = p_time_step;
   simu_total_steps = 0;
   for (int i = 0; i < nswtch-1; i++) {
-    t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);
+    t_step[i] = (int)round((sw1[i+1] -sw1[i]) / sw7[i]);
     t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i];
     simu_total_steps += t_step[i];
   }
   simu_total_steps++;
-  
-  // Initialize vectors for integration 
+
+  // Initialize vectors for integration
   p_factory->initDSVect(p_time_step);
   
   p_factory->setGeneratorObPowerBaseFlag(p_generator_observationpower_systembase);
