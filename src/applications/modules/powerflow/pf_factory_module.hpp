@@ -17,6 +17,10 @@
  * - Added checkSwitchedShuntViolations() and clearSwitchedShunts()
  * @date  2026-02-24
  *
+ * @updated Yousu Chen
+ * - Added checkLTCViolations() and clearLTCControls()
+ * @date  2026-03-28
+ *
  * @brief
  *
  *

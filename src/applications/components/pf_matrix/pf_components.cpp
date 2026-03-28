@@ -36,6 +36,10 @@
  * - Added switched shunt control (MODSW=1 discrete, MODSW=2 continuous)
  * @date  2026-02-24
  *
+ * @updated Yousu Chen
+ * - Added LTC (load tap changer) control on PFBranch
+ * @date  2026-03-28
+ *
  * @brief Methods used in power flow application
  * 
  * 

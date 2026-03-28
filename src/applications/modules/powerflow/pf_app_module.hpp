@@ -17,6 +17,10 @@
  * - Added switched shunt control configuration and 3-loop solve architecture
  * @date  2026-02-24
  *
+ * @updated Yousu Chen
+ * - Added LTC (load tap changer) control configuration
+ * @date  2026-03-28
+ *
  * @brief
  *
  *

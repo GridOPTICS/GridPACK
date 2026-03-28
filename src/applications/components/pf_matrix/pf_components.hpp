@@ -37,6 +37,10 @@
  * - Member variables, control methods, and serialize support
  * @date  2026-02-24
  *
+ * @updated Yousu Chen
+ * - Added LTC (load tap changer) control on PFBranch
+ * @date  2026-03-28
+ *
  * @brief
  *
  *

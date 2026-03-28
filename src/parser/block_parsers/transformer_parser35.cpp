@@ -11,6 +11,8 @@
  *           Author: Yousu Chen
  *       Fixed CZ parameter handling for impedance conversion: Feb. 19th, 2026
  *           Author: Yousu Chen
+ *       Added TRANSFORMER_CONT1 parsing for LTC control: Mar. 28th, 2026
+ *           Author: Yousu Chen
  */
 #include "transformer_parser35.hpp"
 
