@@ -2840,6 +2840,21 @@ gridpack::powerflow::PFBranch::PFBranch(void)
   p_theta = 0.0;
   p_sbase = 0.0;
   p_mode = YBus;
+  // LTC defaults
+  p_hasLTC = false;
+  p_ltc_elem = -1;
+  p_ltc_code = 0;
+  p_ltc_cont = 0;
+  p_ltc_rma = 1.1;
+  p_ltc_rmi = 0.9;
+  p_ltc_vma = 1.1;
+  p_ltc_vmi = 0.9;
+  p_ltc_ntp = 33;
+  p_ltc_step = 0.0;
+  p_ltc_tap_init = 0.0;
+  p_ltc_tap_prev = 0.0;
+  p_ltc_locked = false;
+  p_ltc_adj_count = 0;
 }
 
 /**
@@ -3120,6 +3135,62 @@ void gridpack::powerflow::PFBranch::load(
     p_rateC.push_back(rvar);
     p_ignore.push_back(false);
   }
+
+  // Load LTC control data — scan elements for COD1=1 (voltage control)
+  p_hasLTC = false;
+  p_ltc_elem = -1;
+  p_ltc_locked = false;
+  p_ltc_adj_count = 0;
+  for (int idx = 0; idx < p_elems; idx++) {
+    int code1 = 0;
+    int cont1 = 0;
+    // v33+: TRANSFORMER_CODE1 and TRANSFORMER_CONT1
+    // v23: TRANSFORMER_CONTROL stores controlled bus (nonzero implies voltage control)
+    bool has_ltc_data = false;
+    if (data->getValue(TRANSFORMER_CODE1, &code1, idx) && code1 == 1) {
+      if (!data->getValue(TRANSFORMER_CONT1, &cont1, idx)) {
+        data->getValue(TRANSFORMER_CONTROL, &cont1, idx);
+      }
+      has_ltc_data = (cont1 != 0);
+    } else if (data->getValue(TRANSFORMER_CONTROL, &cont1, idx) && cont1 != 0) {
+      // v23 format: TRANSFORMER_CONTROL present with nonzero bus implies voltage control
+      code1 = 1;
+      has_ltc_data = true;
+    }
+    if (has_ltc_data) {
+
+      double rma = 1.1, rmi = 0.9, vma = 1.1, vmi = 0.9;
+      int ntp = 33;
+      data->getValue(TRANSFORMER_RMA, &rma, idx);
+      data->getValue(TRANSFORMER_RMI, &rmi, idx);
+      data->getValue(TRANSFORMER_VMA, &vma, idx);
+      data->getValue(TRANSFORMER_VMI, &vmi, idx);
+      data->getValue(TRANSFORMER_NTP, &ntp, idx);
+
+      // Compute step size: use TRANSFORMER_STEP if available (v23), else from tap range
+      double step = 0.0;
+      if (!data->getValue(TRANSFORMER_STEP, &step, idx) || step < 1.0e-6) {
+        if (ntp > 1) {
+          step = (rma - rmi) / (ntp - 1);
+        }
+      }
+      if (step < 1.0e-6) step = 0.00625;  // Default 0.625% step
+
+      p_hasLTC = true;
+      p_ltc_elem = idx;
+      p_ltc_code = code1;
+      p_ltc_cont = cont1;
+      p_ltc_rma = rma;
+      p_ltc_rmi = rmi;
+      p_ltc_vma = vma;
+      p_ltc_vmi = vmi;
+      p_ltc_ntp = ntp;
+      p_ltc_step = step;
+      p_ltc_tap_init = p_tap_ratio[idx];
+      p_ltc_tap_prev = p_tap_ratio[idx];
+      break;  // Only support one LTC per branch
+    }
+  }
 }
 
 /**
@@ -3127,6 +3198,106 @@ void gridpack::powerflow::PFBranch::load(
  * the mapper
  * @param mode: enumerated constant for different modes
  */
+/**
+ * Adjust LTC tap ratio to bring controlled voltage within deadband.
+ * @param v_controlled voltage at controlled bus
+ * @return true if a tap adjustment was made
+ */
+bool gridpack::powerflow::PFBranch::adjustLTC(double v_controlled)
+{
+  if (!p_hasLTC || p_ltc_locked) return false;
+  int idx = p_ltc_elem;
+
+  // Check if voltage is within deadband
+  double vmi = p_ltc_vmi;
+  double vma = p_ltc_vma;
+  if (vma - vmi < 0.002) {
+    double vmid = (vma + vmi) / 2.0;
+    vmi = vmid - 0.001;
+    vma = vmid + 0.001;
+  }
+  if (v_controlled >= vmi && v_controlled <= vma) {
+    return false;  // No action needed
+  }
+
+  double tap_current = p_tap_ratio[idx];
+  double tap_new = tap_current;
+
+  if (v_controlled < p_ltc_vmi) {
+    // Voltage too low — increase tap ratio (more turns on primary → higher secondary V)
+    tap_new = tap_current + p_ltc_step;
+  } else {
+    // Voltage too high — decrease tap ratio
+    tap_new = tap_current - p_ltc_step;
+  }
+
+  // Clamp to [RMI, RMA]
+  if (tap_new > p_ltc_rma) tap_new = p_ltc_rma;
+  if (tap_new < p_ltc_rmi) tap_new = p_ltc_rmi;
+
+  // No change possible (already at limit)
+  if (fabs(tap_new - tap_current) < 1.0e-8) {
+    p_ltc_locked = true;
+    return false;
+  }
+
+  // Cycle detection: if this adjustment would return to previous tap, lock
+  if (p_ltc_adj_count > 0 && fabs(tap_new - p_ltc_tap_prev) < 1.0e-8) {
+    p_ltc_locked = true;
+    return false;
+  }
+
+  // Apply the tap change to both PFBranch and YMBranch tap ratio vectors
+  p_ltc_tap_prev = tap_current;
+  p_tap_ratio[idx] = tap_new;
+  YMBranch::setParam(BRANCH_TAP, tap_new, idx);
+
+  p_ltc_adj_count++;
+  if (p_ltc_adj_count >= 10) {
+    p_ltc_locked = true;
+  }
+
+  return true;
+}
+
+/**
+ * Reset LTC to initial tap ratio
+ */
+void gridpack::powerflow::PFBranch::resetLTC()
+{
+  if (!p_hasLTC) return;
+  int idx = p_ltc_elem;
+  p_tap_ratio[idx] = p_ltc_tap_init;
+  YMBranch::setParam(BRANCH_TAP, p_ltc_tap_init, idx);
+  p_ltc_tap_prev = p_ltc_tap_init;
+  p_ltc_locked = false;
+  p_ltc_adj_count = 0;
+}
+
+/**
+ * Check if branch has LTC control
+ */
+bool gridpack::powerflow::PFBranch::hasLTC() const
+{
+  return p_hasLTC;
+}
+
+/**
+ * Get controlled bus number for LTC
+ */
+int gridpack::powerflow::PFBranch::getLTCControlledBus() const
+{
+  return p_ltc_cont;
+}
+
+/**
+ * Get index of the LTC-controlled element within this branch
+ */
+int gridpack::powerflow::PFBranch::getLTCElementIndex() const
+{
+  return p_ltc_elem;
+}
+
 void gridpack::powerflow::PFBranch::setMode(int mode)
 {
   if (mode == YBus) {

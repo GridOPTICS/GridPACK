@@ -73,6 +73,9 @@ shown below:
       <tolerance>1.0e-6</tolerance>
       <qlim>true</qlim>
       <maxQlimIterations>3</maxQlimIterations>
+      <SwitchedShunt>false</SwitchedShunt>
+      <LTC>false</LTC>
+      <maxControllerIterations>10</maxControllerIterations>
       <LinearSolver>
         <PETScOptions>
           -ksp_view
@@ -92,8 +95,36 @@ reactive power limit enforcement (default ``true``). When enabled, PV
 buses whose generator reactive power output exceeds the specified
 ``Qmax`` or ``Qmin`` limits are switched to PQ buses and the power
 flow is re-solved. The ``maxQlimIterations`` parameter (default 3)
-controls the maximum number of outer PV-to-PQ switching iterations. This
-is a minimal example and more options for the solver can be used.
+controls the maximum number of outer PV-to-PQ switching iterations.
+
+The ``SwitchedShunt`` parameter (default ``false``) enables automatic
+switched shunt voltage control. When enabled, buses with switched shunt
+data (MODSW=1 for discrete or MODSW=2 for continuous control) are
+monitored after each Newton-Raphson convergence. If the controlled bus
+voltage falls outside the ``[VSWLO, VSWHI]`` deadband, the shunt
+susceptance is adjusted: discrete mode switches one capacitor or reactor
+bank step per iteration, while continuous mode adjusts B smoothly toward
+the deadband midpoint. Cycle detection locks shunts that oscillate
+between two states. Shunts with ``SWREM`` set to a nonzero bus number
+regulate voltage at that remote bus instead of the local bus.
+
+The ``LTC`` parameter (default ``false``) enables load tap changer
+(LTC) control on transformers. Transformers with COD1=1 in their PSS/E
+data (or a nonzero CONT bus in v23 transformer adjustment records)
+automatically adjust their tap ratios to regulate voltage at the
+controlled bus within the ``[VMI, VMA]`` deadband. Tap ratios are
+adjusted by one discrete step per controller iteration, bounded by
+``[RMI, RMA]``. The step size is computed from the tap range and
+number of tap positions (NTP), or read directly from the STEP field
+when available. Cycle detection prevents tap hunting.
+
+The ``maxControllerIterations`` parameter (default 10) sets the maximum
+number of outer controller iterations. This limit is shared by all
+active controls (Q-limits, switched shunts, LTC, and IREG remote
+voltage regulation). When only Q-limits are active, the
+``maxQlimIterations`` parameter is used for backward compatibility.
+
+This is a minimal example and more options for the solver can be used.
 Readers are encouraged to look at the examples that are copied into the
 powerflow directory as part of the build.
 
@@ -407,6 +438,34 @@ can be reversed by calling
 ::
 
    void clearQlimViolations()
+
+Switched shunt voltage violations can be checked and adjusted using
+
+::
+
+   bool checkSwitchedShuntViolations()
+
+This adjusts shunt susceptance on buses where the controlled voltage is
+outside the deadband. After unsetting a contingency, shunt adjustments can
+be reset to their initial BINIT values by calling
+
+::
+
+   void clearSwitchedShunts()
+
+LTC transformer tap ratio violations can be checked and adjusted using
+
+::
+
+   bool checkLTCViolations()
+
+This adjusts tap ratios on LTC-controlled transformers where the controlled
+bus voltage is outside the deadband. After unsetting a contingency, tap
+ratios can be reset to their initial values by calling
+
+::
+
+   void clearLTCControls()
 
 Finally, the internal voltage variables that are used as the solution
 variables in the power flow calculation can be reset to their original

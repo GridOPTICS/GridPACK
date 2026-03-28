@@ -680,6 +680,13 @@ void gridpack::parser::TransformerParser34::parse(
           atoi(split_line3[15].c_str()),nelems);
 
       /*
+       * type: integer
+       * TRANSFORMER_CONT1 - controlled bus number
+       */
+      p_branchData[l_idx]->addValue(TRANSFORMER_CONT1,
+          atoi(split_line3[16].c_str()),nelems);
+
+      /*
        * type: float
        * TRANSFORMER_RMA
        */

@@ -965,6 +965,36 @@ class PFBranch
     int forwardJacobianValues(double *rvals);
     int reverseJacobianValues(double *rvals);
 
+    /**
+     * Check if this branch has LTC control and adjust tap if needed
+     * @param v_controlled voltage at controlled bus
+     * @return true if a tap adjustment was made
+     */
+    bool adjustLTC(double v_controlled);
+
+    /**
+     * Reset LTC to initial tap ratio
+     */
+    void resetLTC();
+
+    /**
+     * Check if branch has LTC control
+     * @return true if branch has an LTC-controlled transformer
+     */
+    bool hasLTC() const;
+
+    /**
+     * Get controlled bus number for LTC
+     * @return CONT1 bus number (0 if not LTC-controlled)
+     */
+    int getLTCControlledBus() const;
+
+    /**
+     * Get index of the LTC-controlled element within this branch
+     * @return element index, or -1 if no LTC
+     */
+    int getLTCElementIndex() const;
+
   private:
     std::vector<bool> p_ignore;
     std::vector<double> p_reactance;
@@ -989,6 +1019,22 @@ class PFBranch
     double p_sbase;
     int p_elems;
     bool p_active;
+
+    // LTC (Load Tap Changer) control variables
+    bool p_hasLTC;              // true if this branch has an LTC-controlled transformer
+    int p_ltc_elem;             // index of the LTC element within this branch
+    int p_ltc_code;             // control mode (1=voltage, 0=off)
+    int p_ltc_cont;             // controlled bus number
+    double p_ltc_rma;           // upper tap limit
+    double p_ltc_rmi;           // lower tap limit
+    double p_ltc_vma;           // controlled voltage upper limit (pu)
+    double p_ltc_vmi;           // controlled voltage lower limit (pu)
+    int p_ltc_ntp;              // number of tap positions
+    double p_ltc_step;          // tap step size (computed from RMA, RMI, NTP)
+    double p_ltc_tap_init;      // initial tap ratio
+    double p_ltc_tap_prev;      // previous tap for cycle detection
+    bool p_ltc_locked;          // lock out after cycling or max adjustments
+    int p_ltc_adj_count;        // number of adjustments made
 
 private:
 
@@ -1019,8 +1065,13 @@ private:
       & p_theta
       & p_sbase
       & p_elems
-      & p_active;
-  }  
+      & p_active
+      & p_hasLTC & p_ltc_elem & p_ltc_code & p_ltc_cont
+      & p_ltc_rma & p_ltc_rmi & p_ltc_vma & p_ltc_vmi
+      & p_ltc_ntp & p_ltc_step
+      & p_ltc_tap_init & p_ltc_tap_prev
+      & p_ltc_locked & p_ltc_adj_count;
+  }
 
 };
 

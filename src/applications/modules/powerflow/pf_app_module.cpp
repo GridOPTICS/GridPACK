@@ -150,6 +150,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_max_iteration = cursor->get("maxIteration",50);
   p_max_qlim_iterations = cursor->get("maxQlimIterations",3);
   p_switchedShunt = cursor->get("SwitchedShunt",false);
+  p_ltc = cursor->get("LTC",false);
   p_max_controller_iterations = cursor->get("maxControllerIterations",10);
   ComplexType tol;
   // Phase shift sign
@@ -359,7 +360,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   // When only qlim is active, use the existing p_max_qlim_iterations for backward compat
   // When switched shunt or IREG is also active, use p_max_controller_iterations
   int max_ctrl_iter = p_qlim ? p_max_qlim_iterations : 1;
-  if (p_switchedShunt) {
+  if (p_switchedShunt || p_ltc) {
     max_ctrl_iter = p_max_controller_iterations;
   }
   // Use larger iteration limit when IREG is active (needs more outer iterations)
@@ -724,7 +725,18 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
     }
 
-    // 4. (future: LTC tap adjustments would go here)
+    // 4. LTC tap adjustment check
+    if (p_ltc) {
+      if (!p_factory->checkLTCViolations()) {
+        if (!p_no_print) {
+          sprintf(ioBuf,"LTC tap adjustments made at controller iter %d\n", ctrl_iter);
+          p_busIO->header(ioBuf);
+        }
+        if (ctrl_iter < max_ctrl_iter) {
+          ctrl_repeat = true;
+        }
+      }
+    }
 
     // Check if max controller iterations reached
     if (ctrl_repeat && ctrl_iter >= max_ctrl_iter) {
@@ -1345,6 +1357,7 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
   p_factory->clearIslands();
   p_factory->restoreSlack();  // Restore original slack bus if it was transferred
   p_factory->clearSwitchedShunts();  // Reset switched shunts to BINIT state
+  p_factory->clearLTCControls();     // Reset LTC taps to initial values
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();
@@ -1493,6 +1506,23 @@ bool gridpack::powerflow::PFAppModule::checkSwitchedShuntViolations()
 void gridpack::powerflow::PFAppModule::clearSwitchedShunts()
 {
   p_factory->clearSwitchedShunts();
+}
+
+/**
+ * Check LTC violations and adjust transformer tap ratios
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkLTCViolations()
+{
+  return p_factory->checkLTCViolations();
+}
+
+/**
+ * Clear LTC adjustments and reset taps to initial values
+ */
+void gridpack::powerflow::PFAppModule::clearLTCControls()
+{
+  p_factory->clearLTCControls();
 }
 
 /**

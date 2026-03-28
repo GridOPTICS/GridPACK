@@ -1419,5 +1419,53 @@ void PFFactoryModule::clearSwitchedShunts()
   }
 }
 
+/**
+ * Check LTC violations and adjust transformer tap ratios.
+ * Iterates over branches, finds LTC-controlled transformers,
+ * looks up controlled bus voltage, and adjusts tap if outside deadband.
+ * @return true if no violations found
+ */
+bool PFFactoryModule::checkLTCViolations()
+{
+  int numBranch = p_network->numBranches();
+  bool branch_ok = true;
+  for (int i = 0; i < numBranch; i++) {
+    if (!p_network->getActiveBranch(i)) continue;
+    gridpack::powerflow::PFBranch *branch =
+      dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
+    if (!branch->hasLTC()) continue;
+
+    // Look up voltage at controlled bus
+    int cont = branch->getLTCControlledBus();
+    double v_controlled = 1.0;
+    std::vector<int> rindices = p_network->getLocalBusIndices(cont);
+    if (rindices.size() > 0) {
+      gridpack::powerflow::PFBus *cbus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(
+            p_network->getBus(rindices[0]).get());
+      v_controlled = cbus->getVoltage();
+    }
+
+    if (branch->adjustLTC(v_controlled)) {
+      branch_ok = false;
+    }
+  }
+  return checkTrue(branch_ok);
+}
+
+/**
+ * Clear LTC adjustments and reset taps to initial values
+ */
+void PFFactoryModule::clearLTCControls()
+{
+  int numBranch = p_network->numBranches();
+  for (int i = 0; i < numBranch; i++) {
+    if (!p_network->getActiveBranch(i)) continue;
+    gridpack::powerflow::PFBranch *branch =
+      dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
+    branch->resetLTC();
+  }
+}
+
 } // namespace powerflow
 } // namespace gridpack

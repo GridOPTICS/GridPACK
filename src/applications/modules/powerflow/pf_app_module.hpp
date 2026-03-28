@@ -338,6 +338,17 @@ class PFAppModule
     void clearSwitchedShunts();
 
     /**
+     * Check LTC violations and adjust transformer tap ratios
+     * @return true if no violations found
+     */
+    bool checkLTCViolations();
+
+    /**
+     * Clear LTC adjustments and reset taps to initial values
+     */
+    void clearLTCControls();
+
+    /**
      * Reset voltages to values in network configuration file
      */
     void resetVoltages();
@@ -952,6 +963,9 @@ class PFAppModule
 
     // switched shunt control enable flag
     bool p_switchedShunt;
+
+    // LTC (load tap changer) control enable flag
+    bool p_ltc;
 
     // maximum number of controller loop iterations
     int p_max_controller_iterations;

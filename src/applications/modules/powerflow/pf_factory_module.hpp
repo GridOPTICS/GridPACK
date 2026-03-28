@@ -203,6 +203,17 @@ class PFFactoryModule
     void clearSwitchedShunts();
 
     /**
+     * Check LTC violations and adjust transformer tap ratios.
+     * @return true if no violations found (all controlled voltages within deadband)
+     */
+    bool checkLTCViolations();
+
+    /**
+     * Clear LTC adjustments and reset taps to initial values
+     */
+    void clearLTCControls();
+
+    /**
      * Set "ignore" parameter on all buses with violations so that subsequent
      * checks are not counted as violations
      */
