@@ -144,6 +144,13 @@
 #define EXCITER_TF1 "EXCITER_TF1"
 
 /**
+ * Exciter TF2 (IEEET2 second rate-feedback lag time constant)
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TF2 "EXCITER_TF2"
+
+/**
  * Exciter SWITCH
  * type: real float
  * indexed

@@ -36,11 +36,13 @@
 #include "exdc2.hpp"
 #include "exst1.hpp"
 #include "ieeet1.hpp"
+#include "ieeet2.hpp"
 #include "esst1a.hpp"
 #include "wshygp.hpp"
 #include "psssim.hpp"
 #include "ieeest.hpp"
 #include "st2cut.hpp"
+#include "stab2a.hpp"
 #include "tgov1.hpp"
 #include "sexs.hpp"
 #include "scrx.hpp"
@@ -167,6 +169,11 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     tmp =  new gridpack::dynamic_simulation::Ieeet1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "IEEET2") {
+    gridpack::dynamic_simulation::Ieeet2Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Ieeet2Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else if (type == "SEXS") {
       gridpack::dynamic_simulation::SexsModel *tmp;
       tmp =  new gridpack::dynamic_simulation::SexsModel;
@@ -289,6 +296,10 @@ gridpack::dynamic_simulation::GeneratorFactory::createPssModel(
   } else if (type == "ST2CUT") {
     gridpack::dynamic_simulation::St2cutModel *tmp;
     tmp = new gridpack::dynamic_simulation::St2cutModel;
+    ret = dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else if (type == "STAB2A") {
+    gridpack::dynamic_simulation::Stab2aModel *tmp;
+    tmp = new gridpack::dynamic_simulation::Stab2aModel;
     ret = dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
   } else {
     ret = NULL;
