@@ -197,7 +197,10 @@ private:
   
   // Load reference
   double Loadref;
-  
+
+  // Flag for one-time time constant correction in preStep
+  bool p_ts_corrected;
+
 };
 
 // Class for defining events for ESST1a model

@@ -7,7 +7,10 @@
 /**
  * @file   wsieg1.cpp
  *  
- * @brief WSIEG1 governor model implementation 
+ * @brief WSIEG1 governor model implementation
+ *
+ * @Modified: 2026-03-28 - Port DS fixes: Uo/Uc sign correction,
+ *   Pmax/Pmin swap, K normalization. NGV lookup still missing (TODO).
  *
  * Model assumes there is no second generator
  * So only Pmech1 is active
@@ -101,6 +104,35 @@ void Wsieg1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; // Err
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
+
+  // --- Auto-corrections (ported from DS version) ---
+
+  // Adjust Uo/Uc sign and ordering
+  if (Uo < Uc) {
+    double tmp = Uo; Uo = Uc; Uc = tmp;
+  }
+  if (Uo < 0) Uo = -Uo;
+  if (Uc > 0) Uc = -Uc;
+
+  // Pmax/Pmin swap
+  if (Pmax < Pmin) {
+    double tmp = Pmax; Pmax = Pmin; Pmin = tmp;
+  }
+
+  // K normalization
+  double Ksum_odd = K1 + K3 + K5 + K7;
+  double Ksum_even = K2 + K4 + K6 + K8;
+  if (Ksum_odd > 1.0) {
+    K1 /= Ksum_odd; K3 /= Ksum_odd; K5 /= Ksum_odd; K7 /= Ksum_odd;
+  }
+  if (Ksum_even > 1.0) {
+    K2 /= Ksum_even; K4 /= Ksum_even; K6 /= Ksum_even; K8 /= Ksum_even;
+  }
+
+  // TODO: Add NGV (nonlinear gate valve) lookup support.
+  // The DS version uses GV1..GV5/PGV1..PGV5 with an NGV_blk for
+  // piecewise-linear gate-power mapping. The EMT version does not
+  // yet load these parameters or implement the NGV block.
 
   //Set flags for differential or algebraic equations
   iseq_diff[0] = (T1 == 0 || T2 == 0)?0:1;

@@ -7,8 +7,10 @@
 /**
  * @file   esst1a.cpp
  *  
- * @brief ESST1A exciter model implementation 
+ * @brief ESST1A exciter model implementation
  *
+ * @Modified: 2026-03-28 - Port DS fixes: Vrmax/Vrmin, Vamax/Vamin,
+ *   Vimax/Vimin swap guards in load().
  *
  */
 
@@ -96,6 +98,17 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   if(fabs(Klr) >= 1e-6) {
     printf("ESST1A model does not support non-zero Klr yet\n");
     exit(1);
+  }
+
+  // Swap limits if inverted
+  if (Vrmax < Vrmin) {
+    double tmp = Vrmax; Vrmax = Vrmin; Vrmin = tmp;
+  }
+  if (Vamax < Vamin) {
+    double tmp = Vamax; Vamax = Vamin; Vamin = tmp;
+  }
+  if (Vimax < Vimin) {
+    double tmp = Vimax; Vimax = Vimin; Vimin = tmp;
   }
 
   // Set flags for differential or algebraic equations
