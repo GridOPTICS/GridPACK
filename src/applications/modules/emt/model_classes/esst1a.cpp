@@ -10,7 +10,8 @@
  * @brief ESST1A exciter model implementation
  *
  * @Modified: 2026-03-28 - Port DS fixes: Vrmax/Vrmin, Vamax/Vamin,
- *   Vimax/Vimin swap guards in load().
+ *   Vimax/Vimin swap guards in load(). Fix Tf=0 div-by-zero in
+ *   feedback block (Kf/Tf) — treat as algebraic xf=0 when Tf<=0.
  *
  */
 
@@ -116,7 +117,8 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   iseq_diff[1] = (Tb == 0 || Tc == 0)?0:1;
   iseq_diff[2] = (Tb1 == 0 || Tc1 == 0)?0:1;
   iseq_diff[3] = (Ta == 0)?0:1;
-  iseq_diff[4] = 1; // Tf is always > 0
+  // Tf=0 means no feedback: Vf=0, xf=0 (algebraic)
+  iseq_diff[4] = (Tf > 0)?1:0;
 }
 
 
@@ -138,7 +140,7 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   Ec = sqrt(VD*VD + VQ*VQ);
   Vfd = Klr*(LadIfd - Ilr); 
   Vmeas    = Ec;
-  xf       = -Kf/Tf*Efd0;
+  xf       = (Tf > 0) ? -Kf/Tf*Efd0 : 0.0;
   Va       = Efd0 + Vfd;
   yLL2     = Va/Ka;
   yLL1     = yLL2;
@@ -245,7 +247,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     else values[0] = -Vmeas + Ec;
 
     // xLL1 equation
-    Vf = xf + Kf/Tf*Efd;
+    Vf = (Tf > 0) ? xf + Kf/Tf*Efd : 0.0;
     Vi = Vref - Vmeas - Vf;
     if(Vi_at_max) {
       Vi = Vimax;
@@ -290,7 +292,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     else values[0] = -Vmeas + Ec;
 
     // xLL1 equation
-    Vf = xf + Kf/Tf*Efd;
+    Vf = (Tf > 0) ? xf + Kf/Tf*Efd : 0.0;
     Vi = Vref - Vmeas - Vf;
     if(Vi_at_max) {
       Vi = Vimax;
@@ -326,7 +328,11 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     }
 
     // xf equation
-    values[4] = (-xf - Kf/Tf*Efd)/Tf - dxf;
+    if(iseq_diff[4]) {
+      values[4] = (-xf - Kf/Tf*Efd)/Tf - dxf;
+    } else {
+      values[4] = -xf; // Tf=0: xf held at 0 (no feedback)
+    }
   }
 
   return true;
@@ -349,8 +355,8 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
   double dyLL2_dVmeas=0.0,dyLL2_dxLL1=0.0;
   double dyLL2_dxLL2=0.0,dyLL2_dVa=0.0;
   double dyLL2_dxf=0.0;
-  double dVf_dxf = 1.0;
-  double dVf_dEfd = Kf/Tf;
+  double dVf_dxf = (Tf > 0) ? 1.0 : 0.0;
+  double dVf_dEfd = (Tf > 0) ? Kf/Tf : 0.0;
   double dyLL1_dxLL1=0.0,dyLL1_dVmeas=0.0;
   double dyLL1_dxLL2=0.0,dyLL1_dVa=0.0;
   double dyLL1_dxf=0.0, dyLL1_dEfd=0.0;
@@ -516,8 +522,12 @@ bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
     }
 
     // Partial derivatives of xf equation
-    values[Va_idx][xf_idx] = -Kf/(Tf*Tf);
-    values[xf_idx][xf_idx] = -1.0/Tf - shift;
+    if(iseq_diff[4]) {
+      values[Va_idx][xf_idx] = -Kf/(Tf*Tf);
+      values[xf_idx][xf_idx] = -1.0/Tf - shift;
+    } else {
+      values[xf_idx][xf_idx] = -1.0; // Tf=0: algebraic xf=0
+    }
   }
 
   return true;
