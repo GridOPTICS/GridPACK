@@ -32,6 +32,10 @@
  * - Implemented voltage-dependent ZIP load model
  * @date  2026-02-19
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control (MODSW=1 discrete, MODSW=2 continuous)
+ * @date  2026-02-24
+ *
  * @brief Methods used in power flow application
  * 
  * 
@@ -116,6 +120,21 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_vMag_ptr = NULL;
   p_vAng_ptr = NULL;
   p_PV_ptr = NULL;
+  // Switched shunt defaults
+  p_hasSwitchedShunt = false;
+  p_swshunt_modsw = 0;
+  p_swshunt_vswhi = 1.0;
+  p_swshunt_vswlo = 1.0;
+  p_swshunt_swrem = 0;
+  p_swshunt_binit = 0.0;
+  p_swshunt_adjm = 0;
+  p_swshunt_nblocks = 0;
+  p_swshunt_bcurrent = 0.0;
+  p_swshunt_bmin = 0.0;
+  p_swshunt_bmax = 0.0;
+  p_swshunt_locked = false;
+  p_swshunt_adj_count = 0;
+  p_swshunt_bprev = 0.0;
 }
 
 /**
@@ -520,10 +539,181 @@ void gridpack::powerflow::PFBus::clearQlim()
   if (p_PV_ptr) *p_PV_ptr = p_isPV;
 }
 
+/**
+ * Adjust switched shunt B to bring controlled voltage within deadband.
+ * @param v_controlled voltage at controlled bus (local or remote)
+ * @return true if an adjustment was made
+ */
+bool gridpack::powerflow::PFBus::adjustSwitchedShunt(double v_controlled)
+{
+  if (!p_hasSwitchedShunt || p_swshunt_locked) return false;
+
+  // Skip adjustment for generator buses
+  // Shunt control only becomes active after PV->PQ conversion
+  if (p_isPV || getReferenceBus()) return false;
+
+  // Check if voltage is within deadband.
+  // When VSWHI == VSWLO (zero-width deadband), add a minimum tolerance to
+  // prevent cycling due to floating-point representation.
+  double vswlo = p_swshunt_vswlo;
+  double vswhi = p_swshunt_vswhi;
+  if (vswhi - vswlo < 0.002) {
+    double vmid = (vswhi + vswlo) / 2.0;
+    vswlo = vmid - 0.001;
+    vswhi = vmid + 0.001;
+  }
+  if (v_controlled >= vswlo && v_controlled <= vswhi) {
+    return false;  // No action needed
+  }
+
+  double delta_b = 0.0;
+
+  if (p_swshunt_modsw == 1) {
+    // MODSW=1: Discrete adjustment - one step per controller iteration
+    if (v_controlled < p_swshunt_vswlo) {
+      // Voltage too low - increase B (add capacitor step or remove reactor step)
+      bool adjusted = false;
+      // Try adding a capacitor step (positive B blocks, left to right)
+      for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+        if (p_swshunt_b[ib] > 0.0 && p_swshunt_steps_on[ib] < p_swshunt_n[ib]) {
+          p_swshunt_steps_on[ib]++;
+          delta_b = p_swshunt_b[ib];
+          adjusted = true;
+          break;
+        }
+      }
+      // If no capacitor step available, try removing a reactor step (negative B blocks)
+      if (!adjusted) {
+        for (int ib = p_swshunt_nblocks - 1; ib >= 0; ib--) {
+          if (p_swshunt_b[ib] < 0.0 && p_swshunt_steps_on[ib] > 0) {
+            p_swshunt_steps_on[ib]--;
+            delta_b = -p_swshunt_b[ib];  // Removing reactor increases B
+            adjusted = true;
+            break;
+          }
+        }
+      }
+      if (!adjusted) return false;
+    } else {
+      // Voltage too high - decrease B (remove capacitor step or add reactor step)
+      bool adjusted = false;
+      // Try removing a capacitor step (positive B blocks, right to left)
+      for (int ib = p_swshunt_nblocks - 1; ib >= 0; ib--) {
+        if (p_swshunt_b[ib] > 0.0 && p_swshunt_steps_on[ib] > 0) {
+          p_swshunt_steps_on[ib]--;
+          delta_b = -p_swshunt_b[ib];
+          adjusted = true;
+          break;
+        }
+      }
+      // If no capacitor step to remove, try adding a reactor step (negative B blocks)
+      if (!adjusted) {
+        for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+          if (p_swshunt_b[ib] < 0.0 && p_swshunt_steps_on[ib] < p_swshunt_n[ib]) {
+            p_swshunt_steps_on[ib]++;
+            delta_b = p_swshunt_b[ib];  // Adding reactor decreases B
+            adjusted = true;
+            break;
+          }
+        }
+      }
+      if (!adjusted) return false;
+    }
+  } else if (p_swshunt_modsw == 2) {
+    // MODSW=2: Continuous adjustment toward deadband midpoint
+    double v_target = (p_swshunt_vswhi + p_swshunt_vswlo) / 2.0;
+    double k = p_swshunt_bmax - p_swshunt_bmin;
+    if (k <= 0.0) k = 1.0;  // Fallback
+    double b_target = p_swshunt_bcurrent + k * (v_target - v_controlled);
+    // Clamp to [Bmin, Bmax]
+    if (b_target < p_swshunt_bmin) b_target = p_swshunt_bmin;
+    if (b_target > p_swshunt_bmax) b_target = p_swshunt_bmax;
+    delta_b = b_target - p_swshunt_bcurrent;
+    if (fabs(delta_b) < 1.0e-6) return false;  // No meaningful change
+  } else {
+    return false;
+  }
+
+  // Cycle detection: if this adjustment would return to previous B, lock the shunt
+  double b_new = p_swshunt_bcurrent + delta_b;
+  if (p_swshunt_adj_count > 0 && fabs(b_new - p_swshunt_bprev) < 1.0e-6) {
+    p_swshunt_locked = true;
+    return false;
+  }
+
+  // Apply the change to YMBus::p_shunt_bs via addShuntValues()
+  p_swshunt_bprev = p_swshunt_bcurrent;
+  p_swshunt_bcurrent = b_new;
+  addShuntValues(0.0, delta_b / p_sbase);
+
+  // Increment adjustment count and lock out after 10 adjustments
+  p_swshunt_adj_count++;
+  if (p_swshunt_adj_count >= 10) {
+    p_swshunt_locked = true;
+  }
+
+  return true;
+}
+
+/**
+ * Reset switched shunt to BINIT state
+ */
+void gridpack::powerflow::PFBus::resetSwitchedShunt()
+{
+  if (!p_hasSwitchedShunt) return;
+
+  // Remove current B from shunt, restore to BINIT
+  double delta = p_swshunt_binit - p_swshunt_bcurrent;
+  addShuntValues(0.0, delta / p_sbase);
+  p_swshunt_bcurrent = p_swshunt_binit;
+
+  // Re-decompose BINIT into step counts
+  double b_remaining = p_swshunt_binit;
+  for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+    if (p_swshunt_b[ib] == 0.0) {
+      p_swshunt_steps_on[ib] = 0;
+      continue;
+    }
+    int steps = static_cast<int>(b_remaining / p_swshunt_b[ib]);
+    if (steps < 0) steps = 0;
+    if (steps > p_swshunt_n[ib]) steps = p_swshunt_n[ib];
+    p_swshunt_steps_on[ib] = steps;
+    b_remaining -= steps * p_swshunt_b[ib];
+  }
+
+  p_swshunt_locked = false;
+  p_swshunt_adj_count = 0;
+  p_swshunt_bprev = p_swshunt_binit;
+}
+
+/**
+ * Check if bus has a switched shunt
+ */
+bool gridpack::powerflow::PFBus::hasSwitchedShunt() const
+{
+  return p_hasSwitchedShunt;
+}
+
+/**
+ * Get remote bus number for switched shunt control
+ */
+int gridpack::powerflow::PFBus::getSwitchedShuntRemoteBus() const
+{
+  return p_swshunt_swrem;
+}
+
+/**
+ * Get current switched shunt susceptance
+ */
+double gridpack::powerflow::PFBus::getSwitchedShuntB() const
+{
+  return p_swshunt_bcurrent;
+}
+
 
 /**
  * Set the internal values of the voltage magnitude and phase angle. Need this
- * function to push values from vectors back onto buses 
+ * function to push values from vectors back onto buses
  * @param values array containing voltage magnitude and angle
  */
 void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
@@ -857,6 +1047,80 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
+  // Load switched shunt data
+  p_hasSwitchedShunt = false;
+  p_swshunt_n.clear();
+  p_swshunt_b.clear();
+  p_swshunt_steps_on.clear();
+  p_swshunt_nblocks = 0;
+  p_swshunt_locked = false;
+  p_swshunt_adj_count = 0;
+
+  int swshunt_modsw = 0;
+  int swshunt_stat = 1;  // Default in-service (v23 format has no STATUS field)
+  if (data->getValue(SHUNT_MODSW, &swshunt_modsw)) {
+    data->getValue(SHUNT_SWCH_STAT, &swshunt_stat);  // Override if present (v33+)
+    if (swshunt_stat == 1 && (swshunt_modsw == 1 || swshunt_modsw == 2)) {
+      p_swshunt_modsw = swshunt_modsw;
+      p_swshunt_vswhi = 1.0;
+      p_swshunt_vswlo = 1.0;
+      p_swshunt_swrem = 0;
+      p_swshunt_binit = 0.0;
+      p_swshunt_adjm = 0;
+      data->getValue(SHUNT_VSWHI, &p_swshunt_vswhi);
+      data->getValue(SHUNT_VSWLO, &p_swshunt_vswlo);
+      data->getValue(SHUNT_SWREM, &p_swshunt_swrem);
+      data->getValue(SHUNT_BINIT, &p_swshunt_binit);
+      data->getValue(SHUNT_ADJM, &p_swshunt_adjm);
+
+      // Read N1-N8, B1-B8 block data
+      const char *n_keys[] = {SHUNT_N1, SHUNT_N2, SHUNT_N3, SHUNT_N4,
+                               SHUNT_N5, SHUNT_N6, SHUNT_N7, SHUNT_N8};
+      const char *b_keys[] = {SHUNT_B1, SHUNT_B2, SHUNT_B3, SHUNT_B4,
+                               SHUNT_B5, SHUNT_B6, SHUNT_B7, SHUNT_B8};
+      for (int ib = 0; ib < 8; ib++) {
+        int ni = 0;
+        double bi = 0.0;
+        data->getValue(n_keys[ib], &ni);
+        data->getValue(b_keys[ib], &bi);
+        if (ni == 0 && bi == 0.0) break;  // End of blocks
+        p_swshunt_n.push_back(ni);
+        p_swshunt_b.push_back(bi);
+        p_swshunt_nblocks++;
+      }
+
+      if (p_swshunt_nblocks > 0) {
+        // Compute Bmin and Bmax from block data
+        p_swshunt_bmin = 0.0;
+        p_swshunt_bmax = 0.0;
+        for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+          double block_b = p_swshunt_n[ib] * p_swshunt_b[ib];
+          if (block_b > 0.0) {
+            p_swshunt_bmax += block_b;  // Capacitor block
+          } else {
+            p_swshunt_bmin += block_b;  // Reactor block
+          }
+        }
+
+        // Decompose BINIT into initial step counts per block
+        p_swshunt_steps_on.resize(p_swshunt_nblocks, 0);
+        double b_remaining = p_swshunt_binit;
+        for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+          if (p_swshunt_b[ib] == 0.0) continue;
+          int steps = static_cast<int>(b_remaining / p_swshunt_b[ib]);
+          if (steps < 0) steps = 0;
+          if (steps > p_swshunt_n[ib]) steps = p_swshunt_n[ib];
+          p_swshunt_steps_on[ib] = steps;
+          b_remaining -= steps * p_swshunt_b[ib];
+        }
+
+        p_swshunt_bcurrent = p_swshunt_binit;
+        p_swshunt_bprev = p_swshunt_binit;
+        p_hasSwitchedShunt = true;
+      }
+    }
+  }
+
   // If this is being called a second time, then update pointers
   if (p_vMag_ptr) *p_vMag_ptr = p_v;
   if (p_vAng_ptr) {
@@ -1749,6 +2013,15 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     } else {
       return false;
     }
+  } else if (!strcmp(signal,"swshunt")) {
+    if (p_hasSwitchedShunt) {
+      sprintf(string, "     %6d  MODSW=%d  Binit=%8.2f  Bcurrent=%8.2f  V=%8.4f  [%6.4f, %6.4f]\n",
+              getOriginalIndex(), p_swshunt_modsw,
+              p_swshunt_binit, p_swshunt_bcurrent,
+              p_v, p_swshunt_vswlo, p_swshunt_vswhi);
+      return true;
+    }
+    return false;
   }
   return true;
 }

@@ -13,6 +13,10 @@
  * - Added setInitStartMode for power flow initialization (warm/flat start)
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Added checkSwitchedShuntViolations() and clearSwitchedShunts()
+ * @date  2026-02-24
+ *
  * @brief
  *
  *
@@ -185,6 +189,18 @@ class PFFactoryModule
      * system to its original state
      */
     void clearQlimViolations();
+
+    /**
+     * Check switched shunt violations and adjust shunt B values.
+     * For buses with SWREM != 0, resolves remote bus voltage.
+     * @return true if no violations found (all voltages within deadband)
+     */
+    bool checkSwitchedShuntViolations();
+
+    /**
+     * Clear switched shunt adjustments and reset to BINIT state
+     */
+    void clearSwitchedShunts();
 
     /**
      * Set "ignore" parameter on all buses with violations so that subsequent

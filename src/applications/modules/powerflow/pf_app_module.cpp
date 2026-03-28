@@ -13,6 +13,10 @@
  * - Added setInitStartMode for power flow initialization (warm/flat start)
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control configuration and controller loop solve architecture
+ * @date  2026-02-24
+ *
  * @brief
  *
  *
@@ -145,6 +149,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_qlim = cursor->get("qlim",true);
   p_max_iteration = cursor->get("maxIteration",50);
   p_max_qlim_iterations = cursor->get("maxQlimIterations",3);
+  p_switchedShunt = cursor->get("SwitchedShunt",false);
+  p_max_controller_iterations = cursor->get("maxControllerIterations",10);
   ComplexType tol;
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
@@ -347,23 +353,41 @@ bool gridpack::powerflow::PFAppModule::solve()
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
   p_factory->clearViolations();
-  gridpack::ComplexType tol = 2.0*p_tolerance;
-  int iter = 0;
-  bool repeat = true;
-  int int_repeat = 0;
-  while (repeat) {
+  char ioBuf[128];
+
+  // Determine max controller iterations based on configuration
+  // When only qlim is active, use the existing p_max_qlim_iterations for backward compat
+  // When switched shunt or IREG is also active, use p_max_controller_iterations
+  int max_ctrl_iter = p_qlim ? p_max_qlim_iterations : 1;
+  if (p_switchedShunt) {
+    max_ctrl_iter = p_max_controller_iterations;
+  }
+  // Use larger iteration limit when IREG is active (needs more outer iterations)
+  max_ctrl_iter = std::max(max_ctrl_iter, 10);
+
+  // =========================================================================
+  // Controller Loop — handles qlim, switched shunts, IREG, future LTC
+  // =========================================================================
+  int ctrl_iter = 0;
+  bool ctrl_repeat = true;
+
+  while (ctrl_repeat) {
     ret = true;  // Reset ret - if this iteration converges, we should return true
-    iter = 0;
-    tol = 2.0*p_tolerance;
-    int_repeat ++;
+    ctrl_repeat = false;
+    ctrl_iter++;
     bool qlim_handled_early = false;  // Track if Q limits were handled during stagnation
-    char ioBuf[128];
+
     if (!p_no_print) {
-      sprintf (ioBuf," repeat time = %d \n", int_repeat);
+      sprintf(ioBuf," Controller iteration = %d \n", ctrl_iter);
       p_busIO->header(ioBuf);
     }
 
+    // =====================================================================
+    // Inner NR Loop — solve power flow equations
+    // =====================================================================
+
     // set YBus components so that you can create Y matrix
+    // (picks up modified p_shunt_bs from switched shunt adjustments)
     int t_fact = timer->createCategory("Powerflow: Factory Operations");
     timer->start(t_fact);
     p_factory->setYBus();
@@ -371,32 +395,18 @@ bool gridpack::powerflow::PFAppModule::solve()
 
     int t_cmap = timer->createCategory("Powerflow: Create Mappers");
     timer->start(t_cmap);
-    p_factory->setMode(YBus); 
-
-#if 0
-    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-#endif
+    p_factory->setMode(YBus);
     timer->stop(t_cmap);
     int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
-    timer->start(t_mmap);
-#if 0
-    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-    boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-    p_busIO->header("\nY-matrix values\n");
-    //  Y->print();
-    Y->save("Ybus.m");
-#endif
-    timer->stop(t_mmap);
 
     // make Sbus components to create S vector
     timer->start(t_fact);
     p_factory->setSBus();
     timer->stop(t_fact);
-    //  p_busIO->header("\nIteration 0\n");
 
     // Set PQ
     timer->start(t_cmap);
-    p_factory->setMode(RHS); 
+    p_factory->setMode(RHS);
     gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
     timer->stop(t_cmap);
     int t_vmap = timer->createCategory("Powerflow: Map to Vector");
@@ -408,9 +418,9 @@ bool gridpack::powerflow::PFAppModule::solve()
     boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
 #endif
     timer->stop(t_vmap);
-    gridpack::ComplexType  tol_org = PQ->normInfinity();
+    gridpack::ComplexType tol_org = PQ->normInfinity();
     if (!p_no_print) {
-      sprintf (ioBuf,"\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
+      sprintf(ioBuf,"\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
       p_busIO->header(ioBuf);
     }
 
@@ -419,7 +429,6 @@ bool gridpack::powerflow::PFAppModule::solve()
     p_convergence.converged = false;
     p_convergence.iterations = 0;
 
-    //  PQ->print();
     timer->start(t_cmap);
     p_factory->setMode(Jacobian);
     gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
@@ -432,8 +441,6 @@ bool gridpack::powerflow::PFAppModule::solve()
     boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
 #endif
     timer->stop(t_mmap);
-    //  p_busIO->header("\nJacobian values\n");
-    //  J->print();
 
     // Create X vector by cloning PQ
 #ifdef USE_REAL_VALUES
@@ -455,16 +462,10 @@ bool gridpack::powerflow::PFAppModule::solve()
     solver.configure(cursor);
     timer->stop(t_csolv);
 
-    // First iteration
-    X->zero(); //might not need to do this
-    //p_busIO->header("\nCalling solver\n");
+    // First NR iteration
+    X->zero();
     int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
     timer->start(t_lsolv);
-    //    char dbgfile[32];
-    //    sprintf(dbgfile,"j0.bin");
-    //    J->saveBinary(dbgfile);
-    //    sprintf(dbgfile,"pq0.bin");
-    //    PQ->saveBinary(dbgfile);
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
@@ -478,14 +479,14 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
       timer->stop(t_lsolv);
       timer->stop(t_total);
-
       return false;
     }
     timer->stop(t_lsolv);
-    tol = PQ->normInfinity();
-    // Create timer for map to bus
+
+    gridpack::ComplexType tol = PQ->normInfinity();
     int t_bmap = timer->createCategory("Powerflow: Map to Bus");
     int t_updt = timer->createCategory("Powerflow: Bus Update");
+    int iter = 0;
     if (!p_no_print) {
       sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
       p_busIO->header(ioBuf);
@@ -494,22 +495,18 @@ bool gridpack::powerflow::PFAppModule::solve()
     // Variables for early stagnation detection
     gridpack::ComplexType tol_prev = tol;
     int stagnant_count = 0;
-    const int STAGNANT_THRESHOLD = 5;  // Check Q limits after 5 stagnant iterations
-    const double STAGNANT_TOL = 1.0e-10;  // Tolerance for detecting stagnation
+    const int STAGNANT_THRESHOLD = 5;
+    const double STAGNANT_TOL = 1.0e-10;
 
     while (real(tol) > p_tolerance && iter < p_max_iteration) {
       // Push current values in X vector back into network components
-      // Need to implement setValues method in PFBus class in order for this to
-      // work
       timer->start(t_bmap);
       p_factory->setMode(RHS);
       vMap.mapToBus(X);
       timer->stop(t_bmap);
 
-      // Exchange data between ghost buses (I don't think we need to exchange data
-      // between branches)
+      // Exchange data between ghost buses
       timer->start(t_updt);
-      //  p_factory->checkQlimViolations();
       p_network->updateBuses();
       timer->stop(t_updt);
 
@@ -520,8 +517,6 @@ bool gridpack::powerflow::PFAppModule::solve()
 #else
       vMap.mapToVector(PQ);
 #endif
-      //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
-      //   PQ->print();
       timer->stop(t_vmap);
       timer->start(t_mmap);
       p_factory->setMode(Jacobian);
@@ -532,13 +527,9 @@ bool gridpack::powerflow::PFAppModule::solve()
 #endif
       timer->stop(t_mmap);
 
-      // Create linear solver
+      // Solve linear system
       timer->start(t_lsolv);
-      X->zero(); //might not need to do this
-      //    sprintf(dbgfile,"j%d.bin",iter+1);
-      //    J->saveBinary(dbgfile);
-      //    sprintf(dbgfile,"pq%d.bin",iter+1);
-      //    PQ->saveBinary(dbgfile);
+      X->zero();
       try {
         solver.solve(*PQ, *X);
       } catch (const gridpack::Exception e) {
@@ -632,7 +623,6 @@ bool gridpack::powerflow::PFAppModule::solve()
         stagnant_count++;
         if (stagnant_count >= STAGNANT_THRESHOLD) {
           if (!p_factory->checkQlimViolations()) {
-            // Q limit violations found - break to restart with PV->PQ changes
             if (!p_no_print) {
               sprintf(ioBuf,"Stagnation detected at iter %d, Qlim violations found\n", iter);
               p_busIO->header(ioBuf);
@@ -640,19 +630,18 @@ bool gridpack::powerflow::PFAppModule::solve()
             qlim_handled_early = true;
             break;
           } else {
-            // No Q limit violations but still stagnant - likely numerical issue
-            stagnant_count = 0;  // Reset and continue trying
+            stagnant_count = 0;
           }
         }
       } else {
-        stagnant_count = 0;  // Reset if tolerance is changing
+        stagnant_count = 0;
       }
       tol_prev = tol;
 
-      if (real(tol)> 100.0*real(tol_org)){
+      if (real(tol) > 100.0*real(tol_org)) {
         ret = false;
         if (!p_no_print) {
-          sprintf (ioBuf,"\n-------------current iteration tol bigger than 100 times of original tol, power flow diverge\n");
+          sprintf(ioBuf,"\n-------------current iteration tol bigger than 100 times of original tol, power flow diverge\n");
           p_busIO->header(ioBuf);
         }
         break;
@@ -687,75 +676,75 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
     }
 
-    // IREG: Adjust local bus voltage for remote bus voltage regulation.
+    // =====================================================================
+    // Controller checks (after NR converges or exits)
+    // =====================================================================
+
+    // 1. IREG: Adjust local bus voltage for remote bus voltage regulation.
     // Must be done before Q-limit check since voltage adjustments affect Q.
     bool ireg_ok = p_factory->adjustRemoteRegulation();
     if (!ireg_ok && !p_no_print) {
-      sprintf(ioBuf, "IREG: remote voltage regulation adjustments applied (outer iter %d)\n",
-              int_repeat);
+      sprintf(ioBuf, "IREG: remote voltage regulation adjustments applied (ctrl iter %d)\n",
+              ctrl_iter);
       p_busIO->header(ioBuf);
     }
+    if (!ireg_ok && ctrl_iter < max_ctrl_iter) {
+      ctrl_repeat = true;
+    }
 
-    // Use larger iteration limit when IREG is active (needs more outer iterations)
-    int max_outer = std::max(p_max_qlim_iterations, 10);
-
-    if (!p_qlim) {
-      // No Q-limit enforcement; only IREG can cause repeat
-      if (ireg_ok || int_repeat >= max_outer) {
-        repeat = false;
-        if (!ireg_ok && !p_no_print) {
-          sprintf(ioBuf, "IREG: max outer iterations (%d) reached, accepting solution\n",
-                  max_outer);
-          p_busIO->header(ioBuf);
-        }
-      }
-      // else repeat stays true for IREG convergence
-    } else if (qlim_handled_early) {
-      // Q limits were already handled during early stagnation detection
-      // Check if we've reached max outer iterations
-      if (int_repeat >= max_outer) {
+    // 2. Q-limit check (existing PV->PQ conversion)
+    if (p_qlim && !qlim_handled_early) {
+      if (!p_factory->checkQlimViolations()) {
+        // Violations found, PV->PQ changes made — need to re-solve
         if (!p_no_print) {
-          sprintf(ioBuf,"Max outer iterations (%d) reached, accepting current solution\n",
-                  max_outer);
+          sprintf(ioBuf,"Qlim violations found at controller iter %d\n", ctrl_iter);
           p_busIO->header(ioBuf);
         }
-        repeat = false;
+        if (ctrl_iter < max_ctrl_iter) {
+          ctrl_repeat = true;
+        }
       }
-      // Otherwise repeat stays true to restart with new PV/PQ configuration
-    } else {
-      bool qlim_ok = p_factory->checkQlimViolations();
-      if (qlim_ok && ireg_ok) {
-        repeat = false;
-      } else {
-        // Check if we've reached max outer iterations
-        if (int_repeat >= max_outer) {
-          if (!p_no_print) {
-            sprintf(ioBuf,"Max outer iterations (%d) reached, accepting current solution\n",
-                    max_outer);
-            p_busIO->header(ioBuf);
-          }
-          repeat = false;
-        } else {
-          if (!qlim_ok && !p_no_print) {
-            sprintf (ioBuf,"There are Qlim violations at iter =%d\n", iter);
-            p_busIO->header(ioBuf);
-          }
+    } else if (qlim_handled_early) {
+      // Q limits were already handled during stagnation detection
+      if (ctrl_iter < max_ctrl_iter) {
+        ctrl_repeat = true;
+      }
+    }
+
+    // 3. Switched shunt check (NEW)
+    if (p_switchedShunt) {
+      if (!p_factory->checkSwitchedShuntViolations()) {
+        if (!p_no_print) {
+          sprintf(ioBuf,"Switched shunt adjustments made at controller iter %d\n", ctrl_iter);
+          p_busIO->header(ioBuf);
+        }
+        if (ctrl_iter < max_ctrl_iter) {
+          ctrl_repeat = true;
         }
       }
     }
-    // Push final result back onto buses, but ONLY if no Q limit violations.
-    // If there are Q limit violations, p_isPV changed for some buses after vMap
-    // was created. The vMap indexing is based on old dimensions, but setValues()
-    // uses the current p_isPV. This mismatch causes incorrect memory access.
-    // When repeat=true, a new iteration will start with a fresh vMap anyway.
-    if (!repeat) {
+
+    // 4. (future: LTC tap adjustments would go here)
+
+    // Check if max controller iterations reached
+    if (ctrl_repeat && ctrl_iter >= max_ctrl_iter) {
+      if (!p_no_print) {
+        sprintf(ioBuf,"Max controller iterations (%d) reached, accepting current solution\n", max_ctrl_iter);
+        p_busIO->header(ioBuf);
+      }
+      ctrl_repeat = false;
+    }
+
+    // Push final result back onto buses, but ONLY if no controller changes.
+    // If qlim changed PV->PQ, vMap dimensions are stale — a new iteration
+    // will start with a fresh vMap. Shunt changes are safe (same dimensions)
+    // but we re-solve anyway for consistency.
+    if (!ctrl_repeat) {
       timer->start(t_bmap);
       p_factory->setMode(RHS);
       vMap.mapToBus(X);
       timer->stop(t_bmap);
 
-      // Make sure that ghost buses have up-to-date values before printing out
-      // results
       timer->start(t_updt);
       p_network->updateBuses();
       timer->stop(t_updt);
@@ -763,7 +752,6 @@ bool gridpack::powerflow::PFAppModule::solve()
   }
   timer->stop(t_total);
   return ret;
-
 }
 /**
  * Execute the iterative solve portion of the application using a library
@@ -1356,6 +1344,7 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
   p_factory->clearLoneBus();
   p_factory->clearIslands();
   p_factory->restoreSlack();  // Restore original slack bus if it was transferred
+  p_factory->clearSwitchedShunts();  // Reset switched shunts to BINIT state
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();
@@ -1487,6 +1476,23 @@ bool gridpack::powerflow::PFAppModule::checkQlimViolations(int area)
 void gridpack::powerflow::PFAppModule::clearQlimViolations()
 {
   p_factory->clearQlimViolations();
+}
+
+/**
+ * Check switched shunt violations and adjust B values
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkSwitchedShuntViolations()
+{
+  return p_factory->checkSwitchedShuntViolations();
+}
+
+/**
+ * Clear switched shunt adjustments and reset to BINIT state
+ */
+void gridpack::powerflow::PFAppModule::clearSwitchedShunts()
+{
+  p_factory->clearSwitchedShunts();
 }
 
 /**

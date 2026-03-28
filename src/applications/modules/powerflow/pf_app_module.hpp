@@ -13,6 +13,10 @@
  * - Added setInitStartMode for power flow initialization (warm/flat start)
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control configuration and 3-loop solve architecture
+ * @date  2026-02-24
+ *
  * @brief
  *
  *
@@ -321,6 +325,17 @@ class PFAppModule
      * system to its original state
      */
     void clearQlimViolations();
+
+    /**
+     * Check switched shunt violations and adjust B values
+     * @return true if no violations found
+     */
+    bool checkSwitchedShuntViolations();
+
+    /**
+     * Clear switched shunt adjustments and reset to BINIT state
+     */
+    void clearSwitchedShunts();
 
     /**
      * Reset voltages to values in network configuration file
@@ -934,6 +949,12 @@ class PFAppModule
 
     // maximum number of Q-limit iterations
     int p_max_qlim_iterations;
+
+    // switched shunt control enable flag
+    bool p_switchedShunt;
+
+    // maximum number of controller loop iterations
+    int p_max_controller_iterations;
 
     // pointer to bus IO module
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<PFNetwork> > p_busIO;

@@ -32,6 +32,11 @@
  * - Generators with IREG != 0 regulate voltage at a remote bus
  * @date  2026-03-03
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control (MODSW=1 discrete, MODSW=2 continuous)
+ * - Member variables, control methods, and serialize support
+ * @date  2026-02-24
+ *
  * @brief
  *
  *
@@ -625,6 +630,36 @@ class PFBus
      */
     void adjustVoltageForRemoteReg(double dv);
 
+    /**
+     * Check if this bus has a switched shunt and adjust if needed
+     * @param v_controlled voltage at controlled bus (local or remote)
+     * @return true if an adjustment was made
+     */
+    bool adjustSwitchedShunt(double v_controlled);
+
+    /**
+     * Reset switched shunt to BINIT state
+     */
+    void resetSwitchedShunt();
+
+    /**
+     * Check if bus has a switched shunt
+     * @return true if bus has a switched shunt
+     */
+    bool hasSwitchedShunt() const;
+
+    /**
+     * Get remote bus number for switched shunt control (SWREM)
+     * @return SWREM bus number, or 0 if locally controlled
+     */
+    int getSwitchedShuntRemoteBus() const;
+
+    /**
+     * Get current switched shunt susceptance
+     * @return current B value in Mvar at unity voltage
+     */
+    double getSwitchedShuntB() const;
+
   private:
     static std::vector<std::string> p_qlimWarnings;
     static InitStartMode p_initStartMode;
@@ -680,6 +715,25 @@ class PFBus
     double p_rtpr_scale;
     bool p_original_isolated;
 
+    // Switched shunt control variables
+    bool p_hasSwitchedShunt;      // true if this bus has an active switched shunt
+    int p_swshunt_modsw;          // control mode (1=discrete, 2=continuous)
+    double p_swshunt_vswhi;       // controlled voltage upper limit (pu)
+    double p_swshunt_vswlo;       // controlled voltage lower limit (pu)
+    int p_swshunt_swrem;          // remote controlled bus number (0=local)
+    double p_swshunt_binit;       // initial B value (Mvar at 1.0 pu V)
+    int p_swshunt_adjm;           // adjustment method (0=input order, 1=optimal)
+    std::vector<int> p_swshunt_n; // number of steps per block (up to 8 blocks)
+    std::vector<double> p_swshunt_b; // B increment per step per block (Mvar)
+    int p_swshunt_nblocks;        // number of valid blocks
+    std::vector<int> p_swshunt_steps_on; // current steps switched on per block
+    double p_swshunt_bcurrent;    // current total B (Mvar)
+    double p_swshunt_bmin;        // minimum achievable B
+    double p_swshunt_bmax;        // maximum achievable B
+    bool p_swshunt_locked;        // lock out after max adjustments
+    int p_swshunt_adj_count;      // number of adjustments made
+    double p_swshunt_bprev;       // previous B value for cycle detection
+
     /**
      * Variables that are exchanged between buses
      */
@@ -728,8 +782,20 @@ private:
       & p_ngen & p_type & p_save_type & p_nload
       & p_area & p_zone
       & p_source & p_sink
-      & p_rtpr_scale;
-  }  
+      & p_rtpr_scale
+      & p_hasSwitchedShunt
+      & p_swshunt_modsw
+      & p_swshunt_vswhi & p_swshunt_vswlo
+      & p_swshunt_swrem
+      & p_swshunt_binit & p_swshunt_adjm
+      & p_swshunt_n & p_swshunt_b
+      & p_swshunt_nblocks
+      & p_swshunt_steps_on
+      & p_swshunt_bcurrent
+      & p_swshunt_bmin & p_swshunt_bmax
+      & p_swshunt_locked & p_swshunt_adj_count
+      & p_swshunt_bprev;
+  }
 
 };
 
