@@ -182,4 +182,14 @@
 #define ST2CUT_VCU    "ST2CUT_VCU"
 #define ST2CUT_VCL    "ST2CUT_VCL"
 
+// STAB2A PSS DATA
+#define STAB2A_KT   "STAB2A_KT"
+#define STAB2A_T    "STAB2A_T"
+#define STAB2A_T1   "STAB2A_T1"
+#define STAB2A_T2   "STAB2A_T2"
+#define STAB2A_T3   "STAB2A_T3"
+#define STAB2A_T4   "STAB2A_T4"
+#define STAB2A_H1   "STAB2A_H1"
+#define STAB2A_H2   "STAB2A_H2"
+
 #endif /* _PSSSIM_VAR_HPP_ */
