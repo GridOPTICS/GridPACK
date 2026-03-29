@@ -20,6 +20,7 @@
  * @updated Yousu Chen
  * - Added LTC (load tap changer) control configuration
  * - Added area interchange MW control
+ * - Auto-detect PSS/E version from RAW file header
  * @date  2026-03-28
  *
  * @brief
@@ -46,6 +47,7 @@
 #include "pf_helper.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 #include <algorithm>
+#include <fstream>
 
 #define USE_REAL_VALUES
 
@@ -148,6 +150,51 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   } else {
     printf("No network configuration file specified\n");
     return;
+  }
+
+  // Auto-detect PSS/E version from RAW file header when using networkConfiguration
+  // PSS/E v30+ files have: IC, SBASE, REV, ... on line 1 (comma-delimited).
+  // PSS/E v23 files have: IC  SBASE (space-delimited, no version field).
+  if (filetype == PTI23) {
+    gridpack::utility::StringUtils util;
+    std::string fname = util.trimQuotes(filename);
+    util.trim(fname);
+    std::ifstream testFile(fname.c_str());
+    if (testFile.good()) {
+      std::string line1;
+      std::getline(testFile, line1);
+      testFile.close();
+      // Check if line contains commas (v30+ format)
+      if (line1.find(',') != std::string::npos) {
+        // Extract 3rd comma-delimited field (version number)
+        // Line format: IC, SBASE, REV, ...
+        size_t pos1 = line1.find(',');
+        size_t pos2 = (pos1 != std::string::npos) ? line1.find(',', pos1+1) : std::string::npos;
+        if (pos2 != std::string::npos) {
+          size_t pos3 = line1.find(',', pos2+1);
+          std::string verStr = line1.substr(pos2+1,
+              (pos3 != std::string::npos) ? pos3-pos2-1 : std::string::npos);
+          util.trim(verStr);
+          int ver = atoi(verStr.c_str());
+          if (ver == 33) {
+            filetype = PTI33;
+          } else if (ver == 34) {
+            filetype = PTI34;
+          } else if (ver == 35) {
+            filetype = PTI35;
+          } else if (ver >= 36) {
+            filetype = PTI36;
+          } else if (ver >= 30) {
+            filetype = PTI33;  // Fallback: treat v30-v32 as v33
+          }
+          if (filetype != PTI23 && !p_no_print) {
+            char ioBuf2[128];
+            sprintf(ioBuf2, "Auto-detected PSS/E v%d format from RAW file header\n", ver);
+            printf("%s", ioBuf2);
+          }
+        }
+      }
+    }
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);

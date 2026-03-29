@@ -89,6 +89,15 @@ shown below:
     </Powerflow>
   </Configuration>
 
+The ``networkConfiguration`` field accepts PSS/E RAW files in any
+supported version (v23, v33, v34, v35, v36). For v30+ files, the parser
+automatically detects the version from the third field of the first line
+in the RAW file header. Version-specific tags
+(``networkConfiguration_v33``, ``networkConfiguration_v34``, etc.) are
+still supported for backward compatibility and take precedence over
+auto-detection. PSS/E v23 files (which lack the version field) are
+handled as the default when auto-detection finds no version indicator.
+
 This example specifies the input network configuration, the maximum number of
 iterations in the non-linear Newton-Raphson solver, the solution tolerance
 and the properties of the linear solver. The ``qlim`` parameter enables
