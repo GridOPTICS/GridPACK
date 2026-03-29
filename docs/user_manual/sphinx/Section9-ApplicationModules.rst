@@ -75,6 +75,7 @@ shown below:
       <maxQlimIterations>3</maxQlimIterations>
       <SwitchedShunt>false</SwitchedShunt>
       <LTC>false</LTC>
+      <AreaInterchange>false</AreaInterchange>
       <maxControllerIterations>10</maxControllerIterations>
       <LinearSolver>
         <PETScOptions>
@@ -118,8 +119,17 @@ adjusted by one discrete step per controller iteration, bounded by
 number of tap positions (NTP), or read directly from the STEP field
 when available. Cycle detection prevents tap hunting.
 
+The ``AreaInterchange`` parameter (default ``false``) enables area
+interchange control. When enabled, after the inner controller loop
+converges, the solver computes actual MW exports for each area by
+summing tie-line flows (branches crossing area boundaries). If the
+export deviates from the desired value (``PDES`` from the area
+interchange data) by more than the tolerance (``PTOL``), the solver
+adjusts real power generation at the area slack bus (``ISW``) and
+re-solves. This outer loop runs up to 10 iterations.
+
 The ``maxControllerIterations`` parameter (default 10) sets the maximum
-number of outer controller iterations. This limit is shared by all
+number of inner controller iterations. This limit is shared by all
 active controls (Q-limits, switched shunts, LTC, and IREG remote
 voltage regulation). When only Q-limits are active, the
 ``maxQlimIterations`` parameter is used for backward compatibility.

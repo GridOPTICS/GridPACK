@@ -19,6 +19,7 @@
  *
  * @updated Yousu Chen
  * - Added LTC (load tap changer) control configuration
+ * - Added area interchange MW control
  * @date  2026-03-28
  *
  * @brief
@@ -970,6 +971,9 @@ class PFAppModule
 
     // LTC (load tap changer) control enable flag
     bool p_ltc;
+
+    // area interchange control enable flag
+    bool p_areaInterchange;
 
     // maximum number of controller loop iterations
     int p_max_controller_iterations;

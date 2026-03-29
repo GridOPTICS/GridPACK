@@ -19,6 +19,7 @@
  *
  * @updated Yousu Chen
  * - Added checkLTCViolations() and clearLTCControls()
+ * - Added computeAreaExport() for area interchange control
  * @date  2026-03-28
  *
  * @brief
@@ -216,6 +217,12 @@ class PFFactoryModule
      * Clear LTC adjustments and reset taps to initial values
      */
     void clearLTCControls();
+
+    /**
+     * Compute net MW export for each area via tie-line flows.
+     * @param areaExport map from area number to net MW export (positive = export)
+     */
+    void computeAreaExport(std::map<int,double> &areaExport);
 
     /**
      * Set "ignore" parameter on all buses with violations so that subsequent

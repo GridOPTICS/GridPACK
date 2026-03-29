@@ -19,6 +19,7 @@
  *
  * @updated Yousu Chen
  * - Added checkLTCViolations() and clearLTCControls()
+ * - Added computeAreaExport() for area interchange control
  * @date  2026-03-28
  *
  * @brief
@@ -1468,6 +1469,45 @@ void PFFactoryModule::clearLTCControls()
     gridpack::powerflow::PFBranch *branch =
       dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
     branch->resetLTC();
+  }
+}
+
+/**
+ * Compute net MW export for each area via tie-line flows.
+ * For each branch connecting buses in different areas, the real power
+ * flow from the "from" bus side is counted as export for that bus's area.
+ * @param areaExport map from area number to net MW export (positive = export)
+ */
+void PFFactoryModule::computeAreaExport(std::map<int,double> &areaExport)
+{
+  areaExport.clear();
+  int numBranch = p_network->numBranches();
+  for (int i = 0; i < numBranch; i++) {
+    if (!p_network->getActiveBranch(i)) continue;
+    gridpack::powerflow::PFBranch *branch =
+      dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
+
+    // Get endpoint buses
+    int idx1, idx2;
+    p_network->getBranchEndpoints(i, &idx1, &idx2);
+    gridpack::powerflow::PFBus *bus1 =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(idx1).get());
+    gridpack::powerflow::PFBus *bus2 =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(idx2).get());
+
+    int area1 = bus1->getArea();
+    int area2 = bus2->getArea();
+    if (area1 == area2) continue;  // Not a tie-line
+
+    // Sum power flow for each line element on this branch
+    std::vector<std::string> tags = branch->getLineIDs();
+    for (size_t j = 0; j < tags.size(); j++) {
+      if (!branch->getBranchStatus(tags[j])) continue;
+      gridpack::ComplexType s = branch->getComplexPower(tags[j]);
+      double p_mw = real(s);  // MW flowing from bus1 to bus2
+      areaExport[area1] += p_mw;   // Export from area1
+      areaExport[area2] -= p_mw;   // Import to area2
+    }
   }
 }
 

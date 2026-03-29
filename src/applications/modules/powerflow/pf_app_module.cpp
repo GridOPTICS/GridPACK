@@ -19,6 +19,7 @@
  *
  * @updated Yousu Chen
  * - Added LTC (load tap changer) control configuration
+ * - Added area interchange MW control
  * @date  2026-03-28
  *
  * @brief
@@ -155,6 +156,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_max_qlim_iterations = cursor->get("maxQlimIterations",3);
   p_switchedShunt = cursor->get("SwitchedShunt",false);
   p_ltc = cursor->get("LTC",false);
+  p_areaInterchange = cursor->get("AreaInterchange",false);
   p_max_controller_iterations = cursor->get("maxControllerIterations",10);
   ComplexType tol;
   // Phase shift sign
@@ -361,17 +363,47 @@ bool gridpack::powerflow::PFAppModule::solve()
   char ioBuf[128];
 
   // Determine max controller iterations based on configuration
-  // When only qlim is active, use the existing p_max_qlim_iterations for backward compat
-  // When switched shunt or IREG is also active, use p_max_controller_iterations
   int max_ctrl_iter = p_qlim ? p_max_qlim_iterations : 1;
   if (p_switchedShunt || p_ltc) {
     max_ctrl_iter = p_max_controller_iterations;
   }
-  // Use larger iteration limit when IREG is active (needs more outer iterations)
   max_ctrl_iter = std::max(max_ctrl_iter, 10);
 
+  // Load area interchange data if enabled
+  int numAreas = 0;
+  std::vector<int> area_num, area_isw;
+  std::vector<double> area_pdes, area_ptol;
+  if (p_areaInterchange) {
+    boost::shared_ptr<gridpack::component::DataCollection> netdata =
+      p_network->getNetworkData();
+    netdata->getValue(AREA_TOTAL, &numAreas);
+    for (int ia = 0; ia < numAreas; ia++) {
+      int anum = 0, aisw = 0;
+      double pdes = 0.0, ptol = 10.0;
+      netdata->getValue(AREAINTG_NUMBER, &anum, ia);
+      netdata->getValue(AREAINTG_ISW, &aisw, ia);
+      netdata->getValue(AREAINTG_PDES, &pdes, ia);
+      netdata->getValue(AREAINTG_PTOL, &ptol, ia);
+      area_num.push_back(anum);
+      area_isw.push_back(aisw);
+      area_pdes.push_back(pdes);
+      area_ptol.push_back(ptol);
+    }
+  }
+
   // =========================================================================
-  // Controller Loop — handles qlim, switched shunts, IREG, future LTC
+  // Area Interchange Loop (outer) — adjusts area slack bus generation
+  // =========================================================================
+  int ai_iter = 0;
+  int max_ai_iter = p_areaInterchange ? 10 : 1;
+  bool ai_repeat = true;
+
+  while (ai_repeat) {
+    ai_repeat = false;
+    ai_iter++;
+
+  // =========================================================================
+  // Controller Loop — handles qlim, switched shunts, IREG, LTC
   // =========================================================================
   int ctrl_iter = 0;
   bool ctrl_repeat = true;
@@ -765,7 +797,60 @@ bool gridpack::powerflow::PFAppModule::solve()
       p_network->updateBuses();
       timer->stop(t_updt);
     }
+  }  // end controller loop
+
+  // =========================================================================
+  // Area Interchange check (after controller loop converges)
+  // =========================================================================
+  if (p_areaInterchange && ret && numAreas > 0) {
+    std::map<int,double> areaExport;
+    p_factory->computeAreaExport(areaExport);
+
+    bool ai_ok = true;
+    for (int ia = 0; ia < numAreas; ia++) {
+      double actual = areaExport[area_num[ia]];
+      double error = actual - area_pdes[ia];
+      if (fabs(error) > area_ptol[ia]) {
+        ai_ok = false;
+        if (!p_no_print) {
+          sprintf(ioBuf, "Area %d: export=%.2f MW, desired=%.2f MW, error=%.2f MW (tol=%.2f)\n",
+                  area_num[ia], actual, area_pdes[ia], error, area_ptol[ia]);
+          p_busIO->header(ioBuf);
+        }
+        // Adjust generation at area slack bus (ISW)
+        // Decrease Pg by the export error to bring actual export toward PDES
+        int isw = area_isw[ia];
+        std::vector<int> lids = p_network->getLocalBusIndices(isw);
+        if (lids.size() > 0) {
+          gridpack::powerflow::PFBus *sbus =
+            dynamic_cast<gridpack::powerflow::PFBus*>(
+                p_network->getBus(lids[0]).get());
+          // Adjust the first generator's Pg on the area slack bus
+          std::vector<std::string> gens = sbus->getGenerators();
+          if (gens.size() > 0) {
+            double pg_old = sbus->getGenPOutput(gens[0]);
+            double pg_new = pg_old - error;
+            sbus->setGeneratorRealPower(gens[0], pg_new,
+                p_network->getBusData(lids[0]).get());
+            if (!p_no_print) {
+              sprintf(ioBuf, "  Adjusting bus %d gen %s: Pg %.2f -> %.2f MW\n",
+                      isw, gens[0].c_str(), pg_old, pg_new);
+              p_busIO->header(ioBuf);
+            }
+          }
+        }
+      }
+    }
+    if (!ai_ok && ai_iter < max_ai_iter) {
+      ai_repeat = true;
+      ctrl_iter = 0;  // Reset controller iteration count for next pass
+    } else if (!ai_ok && !p_no_print) {
+      sprintf(ioBuf, "Max area interchange iterations (%d) reached\n", max_ai_iter);
+      p_busIO->header(ioBuf);
+    }
   }
+
+  }  // end area interchange loop
   timer->stop(t_total);
   return ret;
 }
