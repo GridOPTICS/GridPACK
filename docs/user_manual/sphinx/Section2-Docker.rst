@@ -40,7 +40,7 @@ Run a Specific Command
 
    # Run a GridPACK application directly
    docker run --rm -v $(pwd):/app/workspace pnnl/gridpack:latest \
-     powerflow.x input.xml
+     pf.x input_14.xml
 
 Python Scripts
 ~~~~~~~~~~~~~~
