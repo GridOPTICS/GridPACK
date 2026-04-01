@@ -101,7 +101,17 @@ template <class _data_struct> class Stab2aParser
       S2PRS( 7, STAB2A_T3)
       S2PRS( 8, STAB2A_T4)
       S2PRS( 9, STAB2A_H1)
-      S2PRS(10, STAB2A_H2)
+      if (nstr > 10) {
+        S2PRS(10, STAB2A_H2)
+      } else if (nstr > 9) {
+        // PSS/E uses single HLIM; derive H2 = -H1
+        double h1 = atof(split_line[9].c_str());
+        if (!data->getValue(STAB2A_H2,&rval,g_id)) {
+          data->addValue(STAB2A_H2, -h1, g_id);
+        } else {
+          data->setValue(STAB2A_H2, -h1, g_id);
+        }
+      }
 #undef S2PRS
     }
 
@@ -124,7 +134,11 @@ template <class _data_struct> class Stab2aParser
       if (nstr >  7) data.stab2a_t3 = atof(split_line[7].c_str());
       if (nstr >  8) data.stab2a_t4 = atof(split_line[8].c_str());
       if (nstr >  9) data.stab2a_h1 = atof(split_line[9].c_str());
-      if (nstr > 10) data.stab2a_h2 = atof(split_line[10].c_str());
+      if (nstr > 10) {
+        data.stab2a_h2 = atof(split_line[10].c_str());
+      } else {
+        data.stab2a_h2 = -data.stab2a_h1;  // PSS/E uses single HLIM; H2 = -HLIM
+      }
     }
 };
 }  // parser
