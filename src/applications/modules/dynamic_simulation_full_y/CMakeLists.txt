@@ -118,6 +118,7 @@ set(target_source
   model_classes/psssim.cpp
   model_classes/ieeest.cpp
   model_classes/st2cut.cpp
+  model_classes/stab2a.cpp
   model_classes/tgov1.cpp
   model_classes/gdform.cpp
   model_classes/regca1.cpp
@@ -126,6 +127,8 @@ set(target_source
   model_classes/reeca1.cpp
   model_classes/repca1.cpp
   model_classes/sexs.cpp
+  model_classes/scrx.cpp
+  model_classes/ieeet2.cpp
   model_classes/gast.cpp
   model_classes/hygov.cpp
   model_classes/wtara1.cpp
@@ -217,6 +220,7 @@ install(FILES
   model_classes/psssim.hpp
   model_classes/ieeest.hpp
   model_classes/st2cut.hpp
+  model_classes/stab2a.hpp
   model_classes/tgov1.hpp
   model_classes/gdform.hpp
   model_classes/regca1.hpp
@@ -225,6 +229,8 @@ install(FILES
   model_classes/reeca1.hpp
   model_classes/repca1.hpp
   model_classes/sexs.hpp
+  model_classes/scrx.hpp
+  model_classes/ieeet2.hpp
   model_classes/gast.hpp
   model_classes/hygov.hpp
   model_classes/wtara1.hpp
