@@ -10,7 +10,7 @@
  *  SCRX — Simple Controllable Rectifier Exciter
  *
  *  DYR format:
- *    I, 'SCRX', ID, TATB, TB, K, TE, EMIN, EMAX, CSWITCH
+ *    I, 'SCRX', ID, TATB, TB, K, TE, EMIN, EMAX, CSWITCH, RC_RFD
  *
  *  Indices:
  *    [3] = TATB (= TA/TB)
@@ -20,6 +20,7 @@
  *    [7] = EMIN
  *    [8] = EMAX
  *    [9] = CSWITCH  (0=bus-fed, 1=solid-fed)
+ *    [10] = RC_RFD   (Rc/Rfd ratio, >=0; 0=no field current limit)
  */
 #ifndef SCRX_HPP
 #define SCRX_HPP
@@ -222,6 +223,19 @@ template <class _data_struct> class ScrxParser
           data->addValue(EXCITER_SWITCH, 1.0, g_id);
         }
       }
+
+      // EXCITER_RC_RFD (Rc/Rfd) [10]
+      if (nstr > 10) {
+        if (!data->getValue(EXCITER_RC_RFD,&rval,g_id)) {
+          data->addValue(EXCITER_RC_RFD, atof(split_line[10].c_str()), g_id);
+        } else {
+          data->setValue(EXCITER_RC_RFD, atof(split_line[10].c_str()), g_id);
+        }
+      } else {
+        if (!data->getValue(EXCITER_RC_RFD,&rval,g_id)) {
+          data->addValue(EXCITER_RC_RFD, 0.0, g_id);
+        }
+      }
     }
 
     /**
@@ -273,6 +287,13 @@ template <class _data_struct> class ScrxParser
         data.rswitch = atof(split_line[9].c_str());
       } else {
         data.rswitch = 1.0;
+      }
+
+      // RC_RFD [10] → ex_kc (Rc/Rfd ratio, 0=no limit)
+      if (nstr > 10) {
+        data.ex_kc = atof(split_line[10].c_str());
+      } else {
+        data.ex_kc = 0.0;
       }
     }
 };

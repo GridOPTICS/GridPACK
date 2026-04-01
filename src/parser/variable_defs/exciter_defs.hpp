@@ -158,6 +158,13 @@
 #define EXCITER_SWITCH "EXCITER_SWITCH"
 
 /**
+ * Exciter Rc/Rfd ratio (SCRX field current limit)
+ * type: real float
+ * indexed
+ */
+#define EXCITER_RC_RFD "EXCITER_RC_RFD"
+
+/**
  * Exciter E1
  * type: real float
  * indexed
