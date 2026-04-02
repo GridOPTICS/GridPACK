@@ -1492,4 +1492,144 @@
  */
 #define GENERATOR_NOM_POWER_CURRENT "GENERATOR_NOM_POWER_CURRENT"
 
+/**
+ * Generator REGFMA1: Vflag
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REGFMA1_VFLAG "GENERATOR_REGFMA1_VFLAG"
+
+/**
+ * Generator REGFMA1: QVflag
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_REGFMA1_QVFLAG "GENERATOR_REGFMA1_QVFLAG"
+
+/**
+ * Generator REGFMA1: Tpf, active power filter time constant, s
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_TPF "GENERATOR_REGFMA1_TPF"
+
+/**
+ * Generator REGFMA1: Tqf, reactive power filter time constant, s
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_TQF "GENERATOR_REGFMA1_TQF"
+
+/**
+ * Generator REGFMA1: Tvf, terminal voltage filter time constant, s
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_TVF "GENERATOR_REGFMA1_TVF"
+
+/**
+ * Generator REGFMA1: Imax, maximum transient converter current, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_IMAX "GENERATOR_REGFMA1_IMAX"
+
+/**
+ * Generator REGFMA1: Emax, Maximum inverter internal voltage, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_EMAX "GENERATOR_REGFMA1_EMAX"
+
+/**
+ * Generator REGFMA1: Emin, Minimum inverter internal voltage, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_EMIN "GENERATOR_REGFMA1_EMIN"
+
+/**
+ * Generator REGFMA1: Pmax, Maximum inverter active power output, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_PMAX "GENERATOR_REGFMA1_PMAX"
+
+/**
+ * Generator REGFMA1: Pmin, Minimum inverter active power output, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_PMIN "GENERATOR_REGFMA1_PMIN"
+
+/**
+ * Generator REGFMA1: Qmax, Maximum inverter reactive power output, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_QMAX "GENERATOR_REGFMA1_QMAX"
+
+/**
+ * Generator REGFMA1: Qmin, Minimum inverter reactive power output, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_QMIN "GENERATOR_REGFMA1_QMIN"
+
+/**
+ * Generator REGFMA1: mp, P-f droop (>0), pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_MP "GENERATOR_REGFMA1_MP"
+
+/**
+ * Generator REGFMA1: mq, Q-V droop (>0), pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_MQ "GENERATOR_REGFMA1_MQ"
+
+/**
+ * Generator REGFMA1: Kppmax, Power controller limiter proportional gain, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_KPPMAX "GENERATOR_REGFMA1_KPPMAX"
+
+/**
+ * Generator REGFMA1: Kipmax, Power controller limiter integral gain (>0), pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_KIPMAX "GENERATOR_REGFMA1_KIPMAX"
+
+/**
+ * Generator REGFMA1: Kpqmax, Reactive power controller limiter proportional gain, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_KPQMAX "GENERATOR_REGFMA1_KPQMAX"
+
+/**
+ * Generator REGFMA1: Kiqmax, Reactive power controller limiter integral gain (>0), pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_KIQMAX "GENERATOR_REGFMA1_KIQMAX"
+
+/**
+ * Generator REGFMA1: Kpv, Voltage controller proportional gain, pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_KPV "GENERATOR_REGFMA1_KPV"
+
+/**
+ * Generator REGFMA1: Kiv, Voltage controller integral gain (>0), pu
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_REGFMA1_KIV "GENERATOR_REGFMA1_KIV"
+
 #endif /* _GENERATOR_VAR_HPP_ */

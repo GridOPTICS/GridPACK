@@ -158,6 +158,7 @@ install(FILES
   parser_classes/gensal.hpp
   parser_classes/genrou.hpp
   parser_classes/gdform.hpp
+  parser_classes/regfma1.hpp
   parser_classes/regca1.hpp
   parser_classes/regcb1.hpp
   parser_classes/regcc1.hpp

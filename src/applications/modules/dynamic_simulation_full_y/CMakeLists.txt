@@ -12,6 +12,7 @@
 # Created May  6, 2013 by William A. Perkins
 # Last Change: 2019-08-16 13:45:12 d3g096
 # Last Change: 2022-11-07 Shrirang Abhyankar - added sexs, gast, and hygov models
+# Last Change: 2026-03-12 Yuan Liu - added regfma1 model
 # -------------------------------------------------------------
 
 if(ENABLE_EPRI_IBR_MODEL)
@@ -108,6 +109,7 @@ set(target_source
   model_classes/psssim.cpp
   model_classes/tgov1.cpp
   model_classes/gdform.cpp
+  model_classes/regfma1.cpp
   model_classes/regca1.cpp
   model_classes/regcb1.cpp
   model_classes/regcc1.cpp
@@ -201,6 +203,7 @@ install(FILES
   model_classes/psssim.hpp
   model_classes/tgov1.hpp
   model_classes/gdform.hpp
+  model_classes/regfma1.hpp
   model_classes/regca1.hpp
   model_classes/regcb1.hpp
   model_classes/regcc1.hpp
