@@ -2,7 +2,11 @@
 
 # GridPACK<sup>TM</sup>-->
 # GridPACK: High-Performance Electric Grid Simulation
+* Repo: https://github.com/gridoptics/gridpack
+* Issues: https://github.com/GridOPTICS/GridPACK/issues
+* Releases: https://github.com/GridOPTICS/GridPACK/releases
 
+## About
 GridPACK is an open-source high-performance (HPC) package for simulation of large-scale electrical grids. Powered by distributed (parallel) computing and high-performance numerical solvers, GridPACK offers several applications forfast simulation of electrical transmission systems. GridPACK includes a number of prebuilt applications that can be directly used. The most commonly used and well-developed are:
 - AC Power Flow
 - Dynamics Simulation
@@ -28,6 +32,9 @@ docker pull pnnl/gridpack:latest
 
 # Run with your files (container starts in /app/workspace)
 docker run -it --rm -v $(pwd):/app/workspace pnnl/gridpack:latest bash
+
+# Run a specific semantic version
+docker run -it --rm -v $(pwd):/app/workspace pnnl/gridpack:v3.6 bash
 ```
 
 The Docker image supports both AMD64 and ARM64 architectures. See the [Docker usage guide](https://gridpack.readthedocs.io/en/latest/Section2-Docker.html) for more examples.
