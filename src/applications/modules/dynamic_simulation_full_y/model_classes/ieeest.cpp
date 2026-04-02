@@ -38,6 +38,7 @@
 gridpack::dynamic_simulation::IeeeStModel::IeeeStModel(void)
 {
   omega = 1.0;
+  Vt = 1.0;
   Vstab = 0.0;
   zero_A1 = false;
   zero_A2 = false;
@@ -70,6 +71,8 @@ void gridpack::dynamic_simulation::IeeeStModel::load(
   if (!data->getValue(IEEEST_KS,    &KS,    idx)) KS    = 0.0;
   if (!data->getValue(IEEEST_LSMAX, &LSMAX, idx)) LSMAX =  0.1;
   if (!data->getValue(IEEEST_LSMIN, &LSMIN, idx)) LSMIN = -0.1;
+  if (!data->getValue(IEEEST_VCU,   &VCU,   idx)) VCU   =  0.0;
+  if (!data->getValue(IEEEST_VCL,   &VCL,   idx)) VCL   =  0.0;
 
   if (fabs(A1) < 1e-6) zero_A1 = true;
   if (fabs(A2) < 1e-6) zero_A2 = true;
@@ -193,12 +196,23 @@ void gridpack::dynamic_simulation::IeeeStModel::computeModel(
   double WO_out = WO_blk.getoutput(LL2, t_inc, int_flag, true);
 
   // Clamp to [LSMIN, LSMAX]
+  double Vss;
   if (WO_out > LSMAX) {
-    Vstab = LSMAX;
+    Vss = LSMAX;
   } else if (WO_out < LSMIN) {
-    Vstab = LSMIN;
+    Vss = LSMIN;
   } else {
-    Vstab = WO_out;
+    Vss = WO_out;
+  }
+
+  // VCU/VCL output gating (PW IEEEST): zero PSS output when Vt outside range
+  // VCU=0 or VCL=0 means the respective cutoff is disabled
+  if (VCU > 0.0 && Vt > VCU) {
+    Vstab = 0.0;
+  } else if (VCL > 0.0 && Vt < VCL) {
+    Vstab = 0.0;
+  } else {
+    Vstab = Vss;
   }
 }
 
@@ -223,4 +237,9 @@ void gridpack::dynamic_simulation::IeeeStModel::setOmega(double om)
 {
   // om is speed deviation (x2w from GENROU); convert to absolute speed
   omega = om + 1.0;
+}
+
+void gridpack::dynamic_simulation::IeeeStModel::setVterminal(double mag)
+{
+  Vt = mag;
 }

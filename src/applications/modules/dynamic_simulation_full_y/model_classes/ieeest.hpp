@@ -20,7 +20,8 @@
  *   LL1 = (1+sT1)/(1+sT2) * F2b
  *   LL2 = (1+sT3)/(1+sT4) * LL1
  *   WO  = KS * sT5/(1+sT6) * LL2    [washout: T5 num, T6 denom]
- *   Vstab = clamp(WO, LSMIN, LSMAX)
+ *   Vss = clamp(WO, LSMIN, LSMAX)
+ *   Vstab = Vss if VCL < Vt < VCU, else 0  [VCU/VCL gating]
  *
  * Note: F1 approximated as cascade of two first-order lags (standard
  * practice in time-domain simulation; exact form is 2nd-order
@@ -52,15 +53,18 @@ class IeeeStModel : public BasePssModel
 
     double getVstab();
     void setOmega(double omega);
+    void setVterminal(double mag);
 
   private:
     // Parameters
     double A1, A2, A3, A4, A5, A6;
     double T1, T2, T3, T4, T5, T6;
     double KS, LSMAX, LSMIN;
+    double VCU, VCL;  // terminal voltage cutoffs for PSS output
 
     // Input
     double omega;  // rotor speed (pu)
+    double Vt;     // terminal voltage (pu)
 
     // Output
     double Vstab;
