@@ -205,6 +205,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_ltc = cursor->get("LTC",false);
   p_areaInterchange = cursor->get("AreaInterchange",false);
   p_max_controller_iterations = cursor->get("maxControllerIterations",10);
+  p_dampingFactor = cursor->get("dampingFactor",1.0);
   ComplexType tol;
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
@@ -565,6 +566,7 @@ bool gridpack::powerflow::PFAppModule::solve()
       timer->stop(t_total);
       return false;
     }
+    if (p_dampingFactor < 1.0) X->scale(p_dampingFactor);
     timer->stop(t_lsolv);
 
     gridpack::ComplexType tol = PQ->normInfinity();
@@ -629,6 +631,7 @@ bool gridpack::powerflow::PFAppModule::solve()
         timer->stop(t_total);
         return false;
       }
+      if (p_dampingFactor < 1.0) X->scale(p_dampingFactor);
       timer->stop(t_lsolv);
 
       tol = PQ->normInfinity();

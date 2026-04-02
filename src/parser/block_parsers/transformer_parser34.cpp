@@ -147,26 +147,10 @@ void gridpack::parser::TransformerParser34::parse(
         data->addValue(BUS_AREA,ival);
         p_busData[l_idx1]->getValue(BUS_OWNER,&ival);
         data->addValue(BUS_OWNER, ival);
-        double rval = 0.0;
-        double rvol;
-        p_busData[l_idx1]->getValue(BUS_VOLTAGE_MAG,&rvol);
-        rval += rvol;
-        p_busData[l_idx2]->getValue(BUS_VOLTAGE_MAG,&rvol);
-        rval += rvol;
-        p_busData[l_idx3]->getValue(BUS_VOLTAGE_MAG,&rvol);
-        rval += rvol;
-        rval = rval/3.0;
-        rval = 1.0;
+        // Use VMSTAR/ANSTAR from RAW line 2 (fields [9],[10]) for star bus init
+        double rval = (split_line2.size() > 9) ? atof(split_line2[9].c_str()) : 1.0;
         data->addValue(BUS_VOLTAGE_MAG,rval);
-        rval = 0.0;
-        p_busData[l_idx1]->getValue(BUS_VOLTAGE_ANG,&rvol);
-        rval += rvol;
-        p_busData[l_idx2]->getValue(BUS_VOLTAGE_ANG,&rvol);
-        rval += rvol;
-        p_busData[l_idx3]->getValue(BUS_VOLTAGE_ANG,&rvol);
-        rval += rvol;
-        rval = rval/3.0;
-        rval = 0.0;
+        rval = (split_line2.size() > 10) ? atof(split_line2[10].c_str()) : 0.0;
         data->addValue(BUS_VOLTAGE_ANG,rval);
 
         // parse remainder of line 1

@@ -960,6 +960,9 @@ class PFAppModule
     // convergence tolerance
     double p_tolerance;
 
+    // Newton step damping factor (0 < omega <= 1.0; default 1.0 = no damping)
+    double p_dampingFactor;
+
     // qlim enforce flag (true=enabled, false=disabled)
     bool p_qlim;
 
