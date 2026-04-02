@@ -170,7 +170,7 @@ public:
       ntok1 = tag.find_first_not_of('\'',ntok1);
       ntok2 = tag.find('\'',ntok1);
     } else if (no_qt) {
-      ntok2 = tag.find_last_not_of(' ',ntok1)+1;
+      ntok2 = tag.find_last_not_of(' ')+1;
     } else {
       ntok1 = tag.find_first_not_of('\"',ntok1);
       ntok2 = tag.find('\"',ntok1);

@@ -109,6 +109,8 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_theta = 0.0;
   p_angle = 0.0;
   p_voltage = 0.0;
+  p_vmin = 0.0;
+  p_vmax = 0.0;
   /*p_pl = 0.0;
   p_ql = 0.0;
   p_ip = 0.0;
@@ -315,7 +317,7 @@ bool gridpack::powerflow::PFBus::vectorValues(RealType *values)
  * @return false: violations exist (Q limits hit, bus converted to PQ)
  * @return true:  no violations (all generators within limits)
  */
-bool gridpack::powerflow::PFBus::chkQlim(void)
+bool gridpack::powerflow::PFBus::chkQlim(double q_deadband)
 {
   if (!p_isPV) {
     if (p_PV_ptr) *p_PV_ptr = p_isPV;
@@ -437,10 +439,13 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     }
   }
 
-  // Check if Q requirement can be met
+  // Check if Q requirement can be met.
+  // q_deadband avoids switching buses that are only marginally over their Q
+  // limit due to floating-point differences. Configurable via XML qlimDeadband
+  // (default 0.1 Mvar, matching PW's 0.1 MVA convergence tolerance).
   bool need_pv_to_pq = false;
   char warnBuf[256];
-  if (Q_required > Q_max_total) {
+  if (Q_required > Q_max_total + q_deadband) {
     // Exceeds total Qmax - need to convert to PQ
     snprintf(warnBuf, sizeof(warnBuf),
              "\nWarning: Bus %d Q requirement (%8.3f) exceeds total QMAX (%8.3f), converting to PQ\n",
@@ -454,7 +459,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
         q_assigned[i] = p_qmax[i];
       }
     }
-  } else if (Q_required < Q_min_total) {
+  } else if (Q_required < Q_min_total - q_deadband) {
     // Below total Qmin - need to convert to PQ
     snprintf(warnBuf, sizeof(warnBuf),
              "\nWarning: Bus %d Q requirement (%8.3f) below total QMIN (%8.3f), converting to PQ\n",
@@ -638,9 +643,24 @@ bool gridpack::powerflow::PFBus::adjustSwitchedShunt(double v_controlled)
     return false;
   }
 
-  // Cycle detection: if this adjustment would return to previous B, lock the shunt
+  // Cycle detection: if this adjustment would return to previous B, we are
+  // oscillating between two discrete steps that straddle the deadband.
+  // Choose the better of the two states (less deviated from the deadband)
+  // before locking.  If the current voltage is noticeably outside the deadband,
+  // apply the reverting step so we lock at the less-deviated setting.
   double b_new = p_swshunt_bcurrent + delta_b;
   if (p_swshunt_adj_count > 0 && fabs(b_new - p_swshunt_bprev) < 1.0e-6) {
+    double outside = (v_controlled > vswhi) ? (v_controlled - vswhi)
+                                             : (vswlo - v_controlled);
+    if (outside > 0.01) {
+      // Current state is far outside deadband; accept the reverting step
+      // (which moves toward the deadband) and then lock.
+      p_swshunt_bprev = p_swshunt_bcurrent;
+      p_swshunt_bcurrent = b_new;
+      addShuntValues(0.0, delta_b / p_sbase);
+      p_swshunt_locked = true;
+      return true;
+    }
     p_swshunt_locked = true;
     return false;
   }
@@ -842,6 +862,11 @@ void gridpack::powerflow::PFBus::load(
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
+  // Load bus voltage limits (NVHI/NVLO from RAW) for IREG clamping
+  p_vmax = 1.1;  // default
+  p_vmin = 0.9;  // default
+  data->getValue(BUS_VOLTAGE_MAX, &p_vmax);
+  data->getValue(BUS_VOLTAGE_MIN, &p_vmin);
   double pi = 4.0*atan(1.0);
 
   // Apply initial start mode
@@ -1004,6 +1029,26 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
+  // Warm-start Q-limit pre-saturation: if scheduled QG is already at QMAX or QMIN
+  // (within 0.1 Mvar), start this bus as PQ immediately.  This matches PW behavior
+  // where generators already at their limits in the input data are treated as PQ,
+  // preventing IREG from driving them to impossible Q requirements.
+  // Only applies for warm start with qlim enabled.
+  if (p_isPV && p_qlim && p_initStartMode != INIT_START_FLAT) {
+    double total_qg = 0.0, total_qmax = 0.0, total_qmin = 0.0;
+    for (i = 0; i < p_ngen; i++) {
+      if (p_gstatus[i] == 1) {
+        total_qg   += p_qg[i];
+        total_qmax += p_qmax[i];
+        total_qmin += p_qmin[i];
+      }
+    }
+    const double Q_init_tol = 0.1;  // Mvar — matches PW convergence tolerance
+    if (total_qg >= total_qmax - Q_init_tol || total_qg <= total_qmin + Q_init_tol) {
+      p_isPV = false;
+    }
+  }
+
   p_saveisPV = p_isPV;
   p_save2isPV = p_isPV;  // Initialize for Q limit handling - ensures valid value if chkQlim() never called
 
@@ -1517,6 +1562,11 @@ void gridpack::powerflow::PFBus::adjustVoltageForRemoteReg(double dv)
 {
   p_v += dv;
   p_voltage += dv;
+  // Clamp to bus voltage limits to prevent unbounded accumulation over many
+  // outer iterations (each call adds dv; without clamping p_voltage drifts
+  // to multi-pu values causing impossible Q requirements)
+  if (p_vmax > 0.0 && p_voltage > p_vmax) { p_v = p_vmax; p_voltage = p_vmax; }
+  if (p_vmin > 0.0 && p_voltage < p_vmin) { p_v = p_vmin; p_voltage = p_vmin; }
   if (p_vMag_ptr) *p_vMag_ptr = p_v;
 }
 

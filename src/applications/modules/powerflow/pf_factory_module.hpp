@@ -173,6 +173,12 @@ class PFFactoryModule
     bool checkVoltageViolations(int area);
 
     /**
+     * Set Q limit deadband (Mvar). PV->PQ switch only occurs when Q exceeds
+     * limit by more than this amount.
+     */
+    void setQlimDeadband(double db) { p_qlim_deadband = db; }
+
+    /**
      * Check to see if there are any Q limit violations in the network
      * @param area only check for Q limit violations in this area
      * @return true if no violations found
@@ -364,6 +370,7 @@ class PFFactoryModule
     std::vector<Violation> p_violations;
 
     bool p_rateB;
+    double p_qlim_deadband;  // Q deadband (Mvar) for PV->PQ switch
 };
 
 } // powerflow

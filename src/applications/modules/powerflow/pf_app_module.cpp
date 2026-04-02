@@ -205,6 +205,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_ltc = cursor->get("LTC",false);
   p_areaInterchange = cursor->get("AreaInterchange",false);
   p_max_controller_iterations = cursor->get("maxControllerIterations",10);
+  p_qlim_deadband = cursor->get("qlimDeadband",0.1);
   p_dampingFactor = cursor->get("dampingFactor",1.0);
   ComplexType tol;
   // Phase shift sign
@@ -709,6 +710,7 @@ bool gridpack::powerflow::PFAppModule::solve()
       if (p_qlim && fabs(real(tol) - real(tol_prev)) < STAGNANT_TOL) {
         stagnant_count++;
         if (stagnant_count >= STAGNANT_THRESHOLD) {
+          p_factory->setQlimDeadband(p_qlim_deadband);
           if (!p_factory->checkQlimViolations()) {
             if (!p_no_print) {
               sprintf(ioBuf,"Stagnation detected at iter %d, Qlim violations found\n", iter);
@@ -767,6 +769,12 @@ bool gridpack::powerflow::PFAppModule::solve()
     // Controller checks (after NR converges or exits)
     // =====================================================================
 
+    // Skip controller adjustments if inner NR failed — voltages are invalid
+    // and adjustments based on bad voltages will make the next solve worse.
+    if (!ret) {
+      ctrl_repeat = false;
+    } else {
+
     // 1. IREG: Adjust local bus voltage for remote bus voltage regulation.
     // Must be done before Q-limit check since voltage adjustments affect Q.
     bool ireg_ok = p_factory->adjustRemoteRegulation();
@@ -781,6 +789,7 @@ bool gridpack::powerflow::PFAppModule::solve()
 
     // 2. Q-limit check (existing PV->PQ conversion)
     if (p_qlim && !qlim_handled_early) {
+      p_factory->setQlimDeadband(p_qlim_deadband);
       if (!p_factory->checkQlimViolations()) {
         // Violations found, PV->PQ changes made — need to re-solve
         if (!p_no_print) {
@@ -823,6 +832,8 @@ bool gridpack::powerflow::PFAppModule::solve()
         }
       }
     }
+
+    } // end if (ret) — controller checks only run when NR converged
 
     // Check if max controller iterations reached
     if (ctrl_repeat && ctrl_iter >= max_ctrl_iter) {

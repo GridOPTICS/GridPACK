@@ -53,6 +53,7 @@ PFFactoryModule::PFFactoryModule(PFFactoryModule::NetworkPtr network)
   p_rateB = false;
   p_islandCount = 0;
   p_hasLoneBus = false;
+  p_qlim_deadband = 0.1;
   p_originalSlackBusIdx = -1;
   p_currentSlackBusIdx = -1;
   p_slackTransferred = false;
@@ -972,7 +973,9 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations()
       gridpack::powerflow::PFBus *bus =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
-      if (bus->chkQlim()) bus_ok = false;
+      if (bus->chkQlim(p_qlim_deadband)) {
+        bus_ok = false;
+      }
     }
   }
   p_network->updateBuses();
@@ -1041,6 +1044,19 @@ bool gridpack::powerflow::PFFactoryModule::adjustRemoteRegulation(double tol)
     int orig_idx = bus->getOriginalIndex();
     int ngen = bus->getNumGenerators();
 
+    // If any online generator has local regulation (IREG=0), local voltage
+    // control takes precedence.  Do not override the bus terminal voltage via
+    // the remote-regulation outer loop; the remote-reg generator's Q
+    // contribution is handled implicitly by the NR Jacobian.
+    bool has_local_reg = false;
+    for (int j = 0; j < ngen; j++) {
+      if (bus->getGenStatusByIdx(j) == 1 && bus->getIREG(j) == 0) {
+        has_local_reg = true;
+        break;
+      }
+    }
+    if (has_local_reg) continue;
+
     // Find first online generator with remote regulation
     int ireg_bus = 0;
     double vs_target = 0.0;
@@ -1065,6 +1081,11 @@ bool gridpack::powerflow::PFFactoryModule::adjustRemoteRegulation(double tol)
 
     double dv = vs_target - v_remote;
     if (fabs(dv) > tol) {
+      // Limit step to 0.05 pu per iteration to prevent Q explosion when
+      // multiple PV buses lose voltage control and cause large voltage deviations
+      const double MAX_DV = 0.05;
+      if (dv > MAX_DV) dv = MAX_DV;
+      else if (dv < -MAX_DV) dv = -MAX_DV;
       bus->adjustVoltageForRemoteReg(dv);
       all_ok = false;
     }

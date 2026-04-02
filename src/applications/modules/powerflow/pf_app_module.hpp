@@ -981,6 +981,9 @@ class PFAppModule
     // maximum number of controller loop iterations
     int p_max_controller_iterations;
 
+    // Q deadband (Mvar) for PV->PQ switch
+    double p_qlim_deadband;
+
     // pointer to bus IO module
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<PFNetwork> > p_busIO;
 

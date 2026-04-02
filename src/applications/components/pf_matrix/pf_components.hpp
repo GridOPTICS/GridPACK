@@ -379,7 +379,7 @@ class PFBus
      * chkQlim
      check QLIM violations
     */
-    bool chkQlim(void);
+    bool chkQlim(double q_deadband = 0.1);
 
     /**
      * Clear changes that were made for Q limit violations and reset

@@ -71,19 +71,22 @@ shown below:
       <networkConfiguration> IEEE14.raw </networkConfiguration>
       <maxIteration>50</maxIteration>
       <tolerance>1.0e-6</tolerance>
+      <dampingFactor>1.0</dampingFactor>
+      <initStart>warm</initStart>
       <qlim>true</qlim>
       <maxQlimIterations>3</maxQlimIterations>
+      <qlimDeadband>0.1</qlimDeadband>
       <SwitchedShunt>false</SwitchedShunt>
       <LTC>false</LTC>
       <AreaInterchange>false</AreaInterchange>
       <maxControllerIterations>10</maxControllerIterations>
+      <outputFormat>json</outputFormat>
+      <outputFile>pf_result</outputFile>
       <LinearSolver>
         <PETScOptions>
-          -ksp_view
-          -ksp_type richardson
+          -ksp_type preonly
           -pc_type lu
           -pc_factor_mat_solver_type superlu_dist
-          -ksp_max_it 1
         </PETScOptions>
       </LinearSolver>
     </Powerflow>
@@ -106,6 +109,10 @@ buses whose generator reactive power output exceeds the specified
 ``Qmax`` or ``Qmin`` limits are switched to PQ buses and the power
 flow is re-solved. The ``maxQlimIterations`` parameter (default 3)
 controls the maximum number of outer PV-to-PQ switching iterations.
+The ``qlimDeadband`` parameter (default 0.1 Mvar) sets a tolerance around
+the reactive power limits: a PV bus is only converted to PQ when its
+required Q exceeds a limit by more than this amount, preventing spurious
+switching due to small numerical imbalances near the limit.
 
 The ``SwitchedShunt`` parameter (default ``false``) enables automatic
 switched shunt voltage control. When enabled, buses with switched shunt
@@ -142,6 +149,37 @@ number of inner controller iterations. This limit is shared by all
 active controls (Q-limits, switched shunts, LTC, and IREG remote
 voltage regulation). When only Q-limits are active, the
 ``maxQlimIterations`` parameter is used for backward compatibility.
+
+The ``dampingFactor`` parameter (default 1.0) scales each Newton-Raphson
+correction vector before it is applied to the bus voltages and angles.
+A value of 1.0 gives standard (undamped) Newton-Raphson. Values between
+0 and 1 reduce the step size, which can improve convergence stability for
+ill-conditioned systems such as heavily loaded networks or cases where the
+warm-start initialization is far from the solution. For well-initialized
+cases (RAW files with converged VM/VA stored) a value of 1.0 is
+recommended.
+
+The ``initStart`` parameter (default ``warm``) controls how bus voltages
+and angles are initialized before the first Newton-Raphson iteration.
+``warm`` reads voltage magnitude and angle from the PSS/E RAW file bus
+section (columns VM and VA), placing all buses at the operating point
+stored in the network file. ``flat`` initializes all buses to 1.0 pu and
+0 degrees regardless of the RAW file values, which can be useful for
+cases where the stored voltages are unreliable or absent.
+
+The ``outputFormat`` and ``outputFile`` parameters control structured
+output after a successful solve. When ``outputFormat`` is set to
+``json``, the solver writes per-bus voltages, angles, and power
+injections to ``<outputFile>_buses.json`` and per-branch flows to
+``<outputFile>_branches.json``. When set to ``csv``, the results are
+written to ``<outputFile>_buses.csv`` and ``<outputFile>_branches.csv``.
+If these parameters are omitted no structured output file is written.
+
+The recommended ``LinearSolver`` configuration for the hand-coded
+Newton-Raphson ``solve()`` routine is ``-ksp_type preonly`` with direct
+LU factorization (``-pc_type lu``). This applies the factorization once
+per iteration without an iterative Krylov loop and avoids spurious
+divergence checks that can terminate otherwise-converging solutions.
 
 This is a minimal example and more options for the solver can be used.
 Readers are encouraged to look at the examples that are copied into the
