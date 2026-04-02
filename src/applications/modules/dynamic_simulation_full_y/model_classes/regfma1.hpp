@@ -165,7 +165,7 @@ class Regfma1Generator : public BaseGeneratorModel
   int    Vflag, QVflag;
 
   // Inputs set at steady-state (t=0)
-  double Vset,Pset;
+  double Vset,Pset,Qset;
   gridpack::ComplexType Zsource;
 
   // Constants

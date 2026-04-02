@@ -202,7 +202,18 @@ void gridpack::dynamic_simulation::Regfma1Generator::init(double Vm,
     V_filter_blk.init_given_u(Vm);
   }
   
-  Vset = Vref + p_qg*mq;
+  // Vset = Vref + p_qg*mq;
+  // Pset = p_pg; // Here's Pset is Pref in PowerWorld model spec.
+
+  if (QVflag == 0) {
+    Vset = Vref;
+    Qset = p_qg; // Here's Qset is Qref in PowerWorld model spec.
+  } else {
+    // Vset = Vref + Qinv*mq;
+    Vset = Vref + p_qg*mq;
+    Qset = 0.0; // Here's Qset is Qref in PowerWorld model spec.
+  }
+
   Pset = p_pg; // Here's Pset is Pref in PowerWorld model spec.
   
   p_Norton_Ya = NortonImpedence();
@@ -318,7 +329,7 @@ void gridpack::dynamic_simulation::Regfma1Generator::computeModel(double t_inc, 
   Qmin_PI_blk_out = Qmin_PI_blk.getoutput(Qmin-Qinv,t_inc,int_flag,true);
 
   double Vref;
-  Vref = Vset - Qinv*mq + Qmax_PI_blk_out + Qmin_PI_blk_out;
+  Vref = Vset + (Qset - Qinv)*mq + Qmax_PI_blk_out + Qmin_PI_blk_out;
 
   // Yuan: the below works though we see spikes
   // if(Vflag == 0) {
