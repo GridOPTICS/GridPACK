@@ -447,7 +447,7 @@ void Reeca1::preStep(double time ,double timestep)
       // Check if thld == 0, in this case there is
       // no transition to state 2
       if(fabs(Thld) <= 1e-6) Iqinj_sw = 0;
-      else if(fabs(Thld) >= 1e-6) {
+      else if(Thld > 1e-6) {
 	// Thld is positive, transition to state 2,
 	// Set timer
 	thld_timer = 0.0;
@@ -460,7 +460,7 @@ void Reeca1::preStep(double time ,double timestep)
     } else {
       if(Iqinj_sw == 1) {
 	thld_timer += timestep;
-	if(thld_timer > 1 - Thld) Iqinj_sw = 0;
+	if(thld_timer > -Thld) Iqinj_sw = 0;
       } else if(Iqinj_sw == 2) {
 	thld_timer += timestep;
 	if(thld_timer > Thld) Iqinj_sw = 0;
