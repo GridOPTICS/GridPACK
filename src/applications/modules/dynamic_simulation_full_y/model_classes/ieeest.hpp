@@ -19,9 +19,8 @@
  *   F2b = (1+sA5)/(1+sA6) * F2a
  *   LL1 = (1+sT1)/(1+sT2) * F2b
  *   LL2 = (1+sT3)/(1+sT4) * LL1
- *   WO  = KS * T5*s/(1+sT5) * LL2   [washout: T5 in both num and denom]
- *   F3  = 1/(1+sT6) * WO             [output lag filter]
- *   Vstab = clamp(F3, LSMIN, LSMAX)
+ *   WO  = KS * sT5/(1+sT6) * LL2    [washout: T5 num, T6 denom]
+ *   Vstab = clamp(WO, LSMIN, LSMAX)
  *
  * Note: F1 approximated as cascade of two first-order lags (standard
  * practice in time-domain simulation; exact form is 2nd-order
@@ -73,8 +72,7 @@ class IeeeStModel : public BasePssModel
     LeadLag  F2b_blk; double F2b;  // (1+sA5)/(1+sA6)
     LeadLag  LL1_blk; double LL1;  // (1+sT1)/(1+sT2)
     LeadLag  LL2_blk; double LL2;  // (1+sT3)/(1+sT4)
-    Cblock   WO_blk;               // KS*T5*s/(1+sT5)   [washout]
-    Filter   F3_blk;  double F3;   // 1/(1+sT6)         [output lag]
+    Cblock   WO_blk;               // KS*sT5/(1+sT6)    [washout]
 
     // Flags for bypassing near-zero time constants
     bool zero_A1, zero_A2, zero_A4, zero_A6;

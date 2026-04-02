@@ -87,14 +87,11 @@ void gridpack::dynamic_simulation::IeeeStModel::load(
   if (!zero_T2) LL1_blk.setparams(T1, T2);
   if (!zero_T4) LL2_blk.setparams(T3, T4);
 
-  // Washout: KS * T5*s/(1+sT5)  → Cblock with K=KS*T5, T=T5
+  // Washout: KS * sT5/(1+sT6) — T5 numerator, T6 denominator (IEEE 421.5 / PW)
   double wo_a[2], wo_b[2];
-  wo_a[0] = T5;  wo_a[1] = 1.0;
+  wo_a[0] = T6;  wo_a[1] = 1.0;
   wo_b[0] = KS * T5; wo_b[1] = 0.0;
   WO_blk.setcoeffs(wo_a, wo_b);
-
-  // Output lag: 1/(1+sT6)
-  if (!zero_T6) F3_blk.setparams(1.0, T6);
 }
 
 void gridpack::dynamic_simulation::IeeeStModel::init(
@@ -129,15 +126,15 @@ void gridpack::dynamic_simulation::IeeeStModel::init(
   }
   if (!zero_T6 && T6 > 0.0 && T6 < mult_ts) {
     T6 = mult_ts;
-    F3_blk.setparams(1.0, T6);
+    // Re-set washout coefficients with corrected T6
+    double wo_a2[2], wo_b2[2];
+    wo_a2[0] = T6;  wo_a2[1] = 1.0;
+    wo_b2[0] = KS * T5; wo_b2[1] = 0.0;
+    WO_blk.setcoeffs(wo_a2, wo_b2);
   }
 
   // At steady state Vstab = 0, so all block outputs are 0.
-  // Init each block with output = 0.
-  double dw = omega - 1.0;  // steady-state: omega=1, dw=0
-
   // All block states are zero at steady state (speed deviation = 0 at equilibrium).
-  if (!zero_T6) F3_blk.init_given_u(0.0);
   WO_blk.init_given_u(0.0);
   if (!zero_T4) LL2_blk.init_given_u(0.0);
   if (!zero_T2) LL1_blk.init_given_u(0.0);
@@ -192,24 +189,16 @@ void gridpack::dynamic_simulation::IeeeStModel::computeModel(
     LL2 = (fabs(T4) < 1e-6 && fabs(T3) > 1e-6) ? T3 * LL1 : LL1;
   }
 
-  // Washout: KS*T5*s/(1+sT5) — gain KS is already baked into Cblock coefficients
+  // Washout: KS*sT5/(1+sT6) — T5 numerator, T6 denominator
   double WO_out = WO_blk.getoutput(LL2, t_inc, int_flag, true);
 
-  // Output lag: 1/(1+sT6)
-  double F3_out;
-  if (!zero_T6) {
-    F3_out = F3_blk.getoutput(WO_out, t_inc, int_flag, true);
-  } else {
-    F3_out = WO_out;
-  }
-
   // Clamp to [LSMIN, LSMAX]
-  if (F3_out > LSMAX) {
+  if (WO_out > LSMAX) {
     Vstab = LSMAX;
-  } else if (F3_out < LSMIN) {
+  } else if (WO_out < LSMIN) {
     Vstab = LSMIN;
   } else {
-    Vstab = F3_out;
+    Vstab = WO_out;
   }
 }
 
