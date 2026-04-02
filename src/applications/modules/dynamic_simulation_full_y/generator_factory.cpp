@@ -43,6 +43,7 @@
 #include "wttqa1.hpp"
 /*---yuan add below---*/
 #include "esst4b.hpp"
+#include "regfma1.hpp"
 /*---yuan add above---*/
 
 #include <stdio.h>
@@ -94,6 +95,11 @@ gridpack::dynamic_simulation::BaseGeneratorModel*
     tmp =  new gridpack::dynamic_simulation::GridFormingGenerator;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+  } else if (type == "REGFMA1") {
+    gridpack::dynamic_simulation::Regfma1Generator *tmp;
+    tmp =  new gridpack::dynamic_simulation::Regfma1Generator;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp); 
   } else if (type == "REGCA1") {
     gridpack::dynamic_simulation::Regca1Generator *tmp;
     tmp =  new gridpack::dynamic_simulation::Regca1Generator;
