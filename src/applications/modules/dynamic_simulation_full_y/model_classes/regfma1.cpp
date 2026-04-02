@@ -286,7 +286,10 @@ void gridpack::dynamic_simulation::Regfma1Generator::predictor_currentInjection(
 
 void gridpack::dynamic_simulation::Regfma1Generator::computeModel(double t_inc, IntegrationStage int_flag, bool flag)
 {
-    
+  // try
+  I = (E - V)/Zsource; // total output current
+  I = CurrentLimitLogic(I);
+
   S = V*conj(I);
   
   p_pg = real(S);
