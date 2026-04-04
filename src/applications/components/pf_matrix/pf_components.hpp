@@ -41,6 +41,12 @@
  * - Added LTC (load tap changer) control on PFBranch
  * @date  2026-03-28
  *
+ * @updated Yousu Chen
+ * - IREG augmented via PV bus swap (remote bus becomes PV at VS)
+ * - Star bus filtering for 3-winding transformer output
+ * - LTC tap direction fix for to-bus controlled transformers
+ * @date  2026-04-04
+ *
  * @brief
  *
  *
@@ -321,6 +327,18 @@ class PFBus
      * @return true if bus is PV bus
      */
     bool isPV(void);
+
+    bool isIREG_PV() const { return p_isIREG_PV; }
+    int getIREGRemoteBus() const { return p_ireg_remote_bus; }
+    double getIREGVS() const { return p_ireg_vs; }
+    void setIREGRemoteVoltagePtr(double *ptr) { p_ireg_remote_v_ptr = ptr; }
+    double* getVoltagePtr() { return p_vMag_ptr; }
+    void saveIsPVState() { p_saveisPV = p_isPV; p_save2isPV = p_isPV; }
+    void setVoltageForIREG(double v) {
+      p_v = v; p_voltage = v;
+      p_type = 2; p_save_type = 2;  // Mark as PV bus
+      if (p_vMag_ptr) *p_vMag_ptr = v;
+    }
 
     /**
      * Set voltage value
@@ -718,6 +736,13 @@ class PFBus
     bool p_sink;
     double p_rtpr_scale;
     bool p_original_isolated;
+    bool p_isStarBus;  // true for synthetic star buses from 3-winding transformers
+
+    // IREG augmented Jacobian variables
+    bool p_isIREG_PV;            // true if PV bus with all gens remote-regulating
+    double p_ireg_vs;            // VS target for the remote bus
+    int p_ireg_remote_bus;       // remote bus number (for factory to set up pointer)
+    double *p_ireg_remote_v_ptr; // pointer to remote bus voltage magnitude
 
     // Switched shunt control variables
     bool p_hasSwitchedShunt;      // true if this bus has an active switched shunt
@@ -1029,6 +1054,7 @@ class PFBranch
     int p_ltc_elem;             // index of the LTC element within this branch
     int p_ltc_code;             // control mode (1=voltage, 0=off)
     int p_ltc_cont;             // controlled bus number
+    bool p_ltc_cont_is_to;      // true if controlled bus is the to-bus (tap direction reversal)
     double p_ltc_rma;           // upper tap limit
     double p_ltc_rmi;           // lower tap limit
     double p_ltc_vma;           // controlled voltage upper limit (pu)

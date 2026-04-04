@@ -22,6 +22,11 @@
  * - Added computeAreaExport() for area interchange control
  * @date  2026-03-28
  *
+ * @updated Yousu Chen
+ * - Added setupIREGPointers() for IREG PV bus swap
+ * - Skip IREG outer loop for buses handled by PV swap
+ * @date  2026-04-04
+ *
  * @brief
  *
  *
@@ -1041,6 +1046,9 @@ bool gridpack::powerflow::PFFactoryModule::adjustRemoteRegulation(double tol)
         p_network->getBus(i).get());
     if (!bus->isPV()) continue;
 
+    // Skip IREG PV buses — voltage regulation handled in augmented Jacobian
+    if (bus->isIREG_PV()) continue;
+
     int orig_idx = bus->getOriginalIndex();
     int ngen = bus->getNumGenerators();
 
@@ -1081,7 +1089,9 @@ bool gridpack::powerflow::PFFactoryModule::adjustRemoteRegulation(double tol)
 
     double dv = vs_target - v_remote;
     if (fabs(dv) > tol) {
-      // Limit step to 0.05 pu per iteration to prevent Q explosion when
+      // Apply damping to prevent NR divergence when Q-limits interact
+      // with voltage adjustments at multiple generators simultaneously
+      // Limit step to prevent Q explosion when
       // multiple PV buses lose voltage control and cause large voltage deviations
       const double MAX_DV = 0.05;
       if (dv > MAX_DV) dv = MAX_DV;
@@ -1092,6 +1102,45 @@ bool gridpack::powerflow::PFFactoryModule::adjustRemoteRegulation(double tol)
   }
 
   return checkTrue(all_ok);
+}
+
+/**
+ * Set up IREG remote voltage regulation via PV swap.
+ * For each generator bus with IREG, make the remote bus PV (V=VS)
+ * and the generator bus PQ (V free, Q from initial dispatch).
+ * Must be called after load() and setExchange().
+ */
+void gridpack::powerflow::PFFactoryModule::setupIREGPointers()
+{
+  int numBus = p_network->numBuses();
+  for (int i = 0; i < numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+    if (!bus->isPV()) continue;
+    int remote_bus_num = bus->getIREGRemoteBus();
+    if (remote_bus_num == 0) continue;
+
+    // Find the remote bus
+    std::vector<int> rindices = p_network->getLocalBusIndices(remote_bus_num);
+    if (rindices.empty()) continue;
+
+    gridpack::powerflow::PFBus *rbus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(
+          p_network->getBus(rindices[0]).get());
+
+    // Skip if remote bus is already PV (e.g., has its own local-reg generator)
+    if (rbus->isPV()) continue;
+
+    double vs = bus->getIREGVS();
+
+    // Swap: make remote bus PV at VS, make generator bus PQ
+    rbus->setIsPV(true);
+    rbus->saveIsPVState();        // Persist swap for clearQlim() restoration
+    rbus->setVoltageForIREG(vs);  // Set V = VS at remote bus
+    bus->setIsPV(false);          // Generator bus becomes PQ (V free)
+    bus->saveIsPVState();         // Persist swap for clearQlim() restoration
+  }
 }
 
 /**

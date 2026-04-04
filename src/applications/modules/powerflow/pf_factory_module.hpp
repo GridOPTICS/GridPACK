@@ -22,6 +22,10 @@
  * - Added computeAreaExport() for area interchange control
  * @date  2026-03-28
  *
+ * @updated Yousu Chen
+ * - Added setupIREGPointers() for IREG PV bus swap
+ * @date  2026-04-04
+ *
  * @brief
  *
  *
@@ -194,6 +198,12 @@ class PFFactoryModule
      * @return true if all remote regulations are satisfied within tolerance
      */
     bool adjustRemoteRegulation(double tol = 1.0e-4);
+
+    /**
+     * Set up pointers for IREG PV buses to read remote bus voltage.
+     * Must be called after setExchange() and initBusUpdate().
+     */
+    void setupIREGPointers();
 
     /**
      * Clear changes that were made for Q limit violations and reset

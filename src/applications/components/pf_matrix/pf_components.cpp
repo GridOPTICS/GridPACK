@@ -40,6 +40,12 @@
  * - Added LTC (load tap changer) control on PFBranch
  * @date  2026-03-28
  *
+ * @updated Yousu Chen
+ * - IREG PV bus swap for remote voltage regulation
+ * - Star bus filtering for 3-winding transformer output
+ * - LTC tap direction fix for to-bus controlled transformers
+ * @date  2026-04-04
+ *
  * @brief Methods used in power flow application
  * 
  * 
@@ -123,6 +129,11 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_ngen = 0;
   p_data = NULL;
   p_ignore = false;
+  p_isStarBus = false;
+  p_isIREG_PV = false;
+  p_ireg_vs = 0.0;
+  p_ireg_remote_bus = 0;
+  p_ireg_remote_v_ptr = NULL;
   p_vMag_ptr = NULL;
   p_vAng_ptr = NULL;
   p_PV_ptr = NULL;
@@ -166,7 +177,7 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 #else
       if (getReferenceBus()) {
         return false;
-      } else if (p_isPV) {
+      } else if (p_isPV && !p_isIREG_PV) {
         *isize = 1;
         *jsize = 1;
         return true;
@@ -237,7 +248,7 @@ bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 #else
       if (getReferenceBus()) {
         return false;
-      } else if (p_isPV) {
+      } else if (p_isPV && !p_isIREG_PV) {
         *size = 1;
       } else {
         *size = 2;
@@ -748,7 +759,7 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 #ifdef LARGE_MATRIX
   p_v -= real(values[1]);
 #else
-  if (!p_isPV) {
+  if (!p_isPV || p_isIREG_PV) {
     p_v -= real(values[1]);
   }
 #endif
@@ -893,6 +904,14 @@ void gridpack::powerflow::PFBus::load(
   } else {
     p_original_isolated = false;
   }
+  // Detect synthetic star buses from 3-winding transformers
+  std::string busName;
+  p_isStarBus = false;
+  if (data->getValue(BUS_NAME, &busName)) {
+    if (busName.substr(0, 9) == "DUMMY_BUS") {
+      p_isStarBus = true;
+    }
+  }
   p_area = 1;
   data->getValue(BUS_AREA, &p_area);
   p_zone = 1;
@@ -988,6 +1007,35 @@ void gridpack::powerflow::PFBus::load(
         p_ngen++;
       }
     }
+    // Detect IREG PV buses: if ALL online generators have remote IREG,
+    // use augmented Jacobian (control V at remote bus instead of local bus)
+    if (p_isPV && p_ngen > 0) {
+      bool all_remote = true;
+      int ireg_bus_found = 0;
+      double ireg_vs_found = 0.0;
+      int orig_idx = getOriginalIndex();
+      for (int ig = 0; ig < p_ngen; ig++) {
+        if (p_gstatus[ig] == 1) {
+          int ireg = p_ireg[ig];
+          if (ireg == 0 || ireg == orig_idx) {
+            all_remote = false;
+            break;
+          }
+          if (ireg_bus_found == 0) {
+            ireg_bus_found = ireg;
+            ireg_vs_found = p_vs[ig];
+          }
+        }
+      }
+      if (all_remote && ireg_bus_found != 0) {
+        // Store IREG info but don't enable augmented Jacobian yet
+        // The factory will handle PV swap after all buses are loaded
+        p_ireg_remote_bus = ireg_bus_found;
+        p_ireg_vs = ireg_vs_found;
+        // p_isIREG_PV is set by factory after PV swap setup
+      }
+    }
+
     // Normalize p_pFac (P-based factor for P distribution)
     if (pcaptot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
@@ -1118,7 +1166,9 @@ void gridpack::powerflow::PFBus::load(
       p_swshunt_adjm = 0;
       data->getValue(SHUNT_VSWHI, &p_swshunt_vswhi);
       data->getValue(SHUNT_VSWLO, &p_swshunt_vswlo);
-      data->getValue(SHUNT_SWREM, &p_swshunt_swrem);
+      if (!data->getValue(SHUNT_SWREM, &p_swshunt_swrem)) {
+        data->getValue(SHUNT_SWREG, &p_swshunt_swrem);  // v34+ uses SWREG
+      }
       data->getValue(SHUNT_BINIT, &p_swshunt_binit);
       data->getValue(SHUNT_ADJM, &p_swshunt_adjm);
 
@@ -1741,7 +1791,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     Q += p_v*p_v*(-p_ybusi);
     p_Pinj = P;
     p_Qinj = Q;
-    if (!isIsolated()) {
+    if (!isIsolated() && !p_isStarBus) {
       sprintf(string, "     %6d      %12.6f         %12.6f         %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v,p_Pinj,p_Qinj);
     }
@@ -1800,6 +1850,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
             static_cast<int>(branches.size()));
     }
   } else if (!strcmp(signal,"record")) {
+    if (p_isStarBus) return false;
     char sbuf[128];
     char *cptr = string;
     int slen = 0;
@@ -2487,6 +2538,7 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
     }
 #else
     if (!getReferenceBus() && !p_isPV) {
+      // Standard PQ
       rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
       rvals[1] = p_Pinj - p_ybusr * p_v *p_v;
       rvals[2] = p_Pinj / p_v + p_ybusr * p_v;
@@ -2495,7 +2547,16 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
       rvals[2] += dpzip_dV / p_sbase;
       rvals[3] += dqzip_dV / p_sbase;
       return 4;
+    } else if (!getReferenceBus() && p_isPV && p_isIREG_PV) {
+      // IREG PV: equations [ΔP, V_remote-VS], variables [θ, V]
+      rvals[0] = -p_Qinj - p_ybusi * p_v * p_v;  // ∂ΔP/∂θ
+      rvals[1] = 0.0;                              // ∂(V_remote-VS)/∂θ
+      rvals[2] = p_Pinj / p_v + p_ybusr * p_v;    // ∂ΔP/∂V
+      rvals[2] += dpzip_dV / p_sbase;
+      rvals[3] = 1.0e-10;                            // small pivot helper
+      return 4;
     } else if (!getReferenceBus() && p_isPV) {
+      // Standard PV
       rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
       return 1;
     } else {
@@ -2565,6 +2626,11 @@ int gridpack::powerflow::PFBus::rhsValues(double *rvals)
       nvals = 1;
       if (!p_isPV) {
         rvals[1] = Q;
+        nvals = 2;
+      } else if (p_isIREG_PV) {
+        // V_remote - VS constraint
+        double v_remote = (p_ireg_remote_v_ptr) ? *p_ireg_remote_v_ptr : p_ireg_vs;
+        rvals[1] = v_remote - p_ireg_vs;
         nvals = 2;
       }
 #endif
@@ -2899,6 +2965,7 @@ gridpack::powerflow::PFBranch::PFBranch(void)
   p_ltc_elem = -1;
   p_ltc_code = 0;
   p_ltc_cont = 0;
+  p_ltc_cont_is_to = false;
   p_ltc_rma = 1.1;
   p_ltc_rmi = 0.9;
   p_ltc_vma = 1.1;
@@ -2942,8 +3009,9 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       *jsize = 2;
       return true;
 #else
-      bool bus1PV = bus1->isPV();
-      bool bus2PV = bus2->isPV();
+      // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+      bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+      bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
       if (bus1PV && bus2PV) {
         *isize = 1;
         *jsize = 1;
@@ -2988,8 +3056,9 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       *jsize = 2;
       return true;
 #else
-      bool bus1PV = bus1->isPV();
-      bool bus2PV = bus2->isPV();
+      // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+      bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+      bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
       if (bus1PV && bus2PV) {
         *isize = 1;
         *jsize = 1;
@@ -3234,6 +3303,11 @@ void gridpack::powerflow::PFBranch::load(
       p_ltc_elem = idx;
       p_ltc_code = code1;
       p_ltc_cont = cont1;
+      // Determine if controlled bus is the to-bus (tap direction reversal needed)
+      int frombus = 0, tobus = 0;
+      data->getValue(BRANCH_FROMBUS, &frombus);
+      data->getValue(BRANCH_TOBUS, &tobus);
+      p_ltc_cont_is_to = (cont1 == tobus);
       p_ltc_rma = rma;
       p_ltc_rmi = rmi;
       p_ltc_vma = vma;
@@ -3277,12 +3351,19 @@ bool gridpack::powerflow::PFBranch::adjustLTC(double v_controlled)
   double tap_current = p_tap_ratio[idx];
   double tap_new = tap_current;
 
+  // Tap direction depends on which bus is controlled:
+  // - Tap on from-bus side: increasing tap INCREASES from-bus V, DECREASES to-bus V
+  // - If controlling to-bus: low V → decrease tap; high V → increase tap
+  // - If controlling from-bus: low V → increase tap; high V → decrease tap
+  double step = p_ltc_step;
+  if (p_ltc_cont_is_to) step = -step;  // Reverse direction for to-bus control
+
   if (v_controlled < p_ltc_vmi) {
-    // Voltage too low — increase tap ratio (more turns on primary → higher secondary V)
-    tap_new = tap_current + p_ltc_step;
+    // Voltage too low
+    tap_new = tap_current + step;
   } else {
-    // Voltage too high — decrease tap ratio
-    tap_new = tap_current - p_ltc_step;
+    // Voltage too high
+    tap_new = tap_current - step;
   }
 
   // Clamp to [RMI, RMA]
@@ -3777,8 +3858,9 @@ int gridpack::powerflow::PFBranch::forwardJacobianValues(double *rvals)
     double t11, t12, t21, t22;
     double cs = cos(p_theta);
     double sn = sin(p_theta);
-    bool bus1PV = bus1->isPV();
-    bool bus2PV = bus2->isPV();
+    // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+    bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+    bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
 #ifdef LARGE_MATRIX
     rvals[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
     rvals[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
@@ -3828,8 +3910,17 @@ int gridpack::powerflow::PFBranch::forwardJacobianValues(double *rvals)
       rvals[2] *= bus1->getVoltage();
       rvals[3] *= bus1->getVoltage();
       nvals = 4;
-    }  
+    }
 #endif
+    // For IREG PV bus1: replace Q-row with V_remote constraint
+    if (bus1->isIREG_PV()) {
+      int remote = bus1->getIREGRemoteBus();
+      int bus2_idx = bus2->getOriginalIndex();
+      if (nvals >= 2) rvals[1] = 0.0;  // ∂(V_remote)/∂θ_bus2 = 0
+      if (nvals >= 4) {
+        rvals[3] = (bus2_idx == remote) ? 1.0 : 0.0;
+      }
+    }
     return nvals;
   } else {
     return 0;
@@ -3852,8 +3943,9 @@ int gridpack::powerflow::PFBranch::reverseJacobianValues(double *rvals)
     double t11, t12, t21, t22;
     double cs = cos(-p_theta);
     double sn = sin(-p_theta);
-    bool bus1PV = bus1->isPV();
-    bool bus2PV = bus2->isPV();
+    // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+    bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+    bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
 #ifdef LARGE_MATRIX
     rvals[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
     rvals[1] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);

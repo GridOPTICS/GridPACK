@@ -380,6 +380,10 @@ void gridpack::powerflow::PFAppModule::initialize()
   timer->start(t_updt);
   p_network->initBusUpdate();
   timer->stop(t_updt);
+
+  // Set up IREG augmented Jacobian pointers (must be after setExchange)
+  p_factory->setupIREGPointers();
+
   timer->stop(t_total);
 }
 

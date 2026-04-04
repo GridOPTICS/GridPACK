@@ -13,6 +13,8 @@
  *           Author: Yousu Chen
  *       Added TRANSFORMER_CONT1 parsing for LTC control: Mar. 28th, 2026
  *           Author: Yousu Chen
+ *       Fixed 3-winding ratings data1->data2/data3: Apr. 4th, 2026
+ *           Author: Yousu Chen
  */
 #include "transformer_parser34.hpp"
 #include "ga.h"
@@ -270,21 +272,21 @@ void gridpack::parser::TransformerParser34::parse(
         data2->addValue(BRANCH_R,r2,0);
         data2->addValue(BRANCH_X,x2,0);
         data2->addValue(BRANCH_B,b2,0);
-        data1->addValue(BRANCH_RATING_A,rate[0],0);
-        data1->addValue(BRANCH_RATING_B,rate[1],0);
-        data1->addValue(BRANCH_RATING_C,rate[2],0);
-        data1->addValue(BRANCH_RATE1,rate[0],0);
-        data1->addValue(BRANCH_RATE2,rate[1],0);
-        data1->addValue(BRANCH_RATE3,rate[2],0);
-        data1->addValue(BRANCH_RATE4,rate[3],0);
-        data1->addValue(BRANCH_RATE5,rate[4],0);
-        data1->addValue(BRANCH_RATE6,rate[5],0);
-        data1->addValue(BRANCH_RATE7,rate[6],0);
-        data1->addValue(BRANCH_RATE8,rate[7],0);
-        data1->addValue(BRANCH_RATE9,rate[8],0);
-        data1->addValue(BRANCH_RATE10,rate[9],0);
-        data1->addValue(BRANCH_RATE11,rate[10],0);
-        data1->addValue(BRANCH_RATE12,rate[11],0);
+        data2->addValue(BRANCH_RATING_A,rate[0],0);
+        data2->addValue(BRANCH_RATING_B,rate[1],0);
+        data2->addValue(BRANCH_RATING_C,rate[2],0);
+        data2->addValue(BRANCH_RATE1,rate[0],0);
+        data2->addValue(BRANCH_RATE2,rate[1],0);
+        data2->addValue(BRANCH_RATE3,rate[2],0);
+        data2->addValue(BRANCH_RATE4,rate[3],0);
+        data2->addValue(BRANCH_RATE5,rate[4],0);
+        data2->addValue(BRANCH_RATE6,rate[5],0);
+        data2->addValue(BRANCH_RATE7,rate[6],0);
+        data2->addValue(BRANCH_RATE8,rate[7],0);
+        data2->addValue(BRANCH_RATE9,rate[8],0);
+        data2->addValue(BRANCH_RATE10,rate[9],0);
+        data2->addValue(BRANCH_RATE11,rate[10],0);
+        data2->addValue(BRANCH_RATE12,rate[11],0);
         data2->addValue(BRANCH_TAP,windv,0);
         data2->addValue(BRANCH_SHIFT,ang,0);
         data2->addValue(BRANCH_SWITCHED,false,0);
@@ -320,21 +322,21 @@ void gridpack::parser::TransformerParser34::parse(
         data3->addValue(BRANCH_R,r3,0);
         data3->addValue(BRANCH_X,x3,0);
         data3->addValue(BRANCH_B,b3,0);
-        data1->addValue(BRANCH_RATING_A,rate[0],0);
-        data1->addValue(BRANCH_RATING_B,rate[1],0);
-        data1->addValue(BRANCH_RATING_C,rate[2],0);
-        data1->addValue(BRANCH_RATE1,rate[0],0);
-        data1->addValue(BRANCH_RATE2,rate[1],0);
-        data1->addValue(BRANCH_RATE3,rate[2],0);
-        data1->addValue(BRANCH_RATE4,rate[3],0);
-        data1->addValue(BRANCH_RATE5,rate[4],0);
-        data1->addValue(BRANCH_RATE6,rate[5],0);
-        data1->addValue(BRANCH_RATE7,rate[6],0);
-        data1->addValue(BRANCH_RATE8,rate[7],0);
-        data1->addValue(BRANCH_RATE9,rate[8],0);
-        data1->addValue(BRANCH_RATE10,rate[9],0);
-        data1->addValue(BRANCH_RATE11,rate[10],0);
-        data1->addValue(BRANCH_RATE12,rate[11],0);
+        data3->addValue(BRANCH_RATING_A,rate[0],0);
+        data3->addValue(BRANCH_RATING_B,rate[1],0);
+        data3->addValue(BRANCH_RATING_C,rate[2],0);
+        data3->addValue(BRANCH_RATE1,rate[0],0);
+        data3->addValue(BRANCH_RATE2,rate[1],0);
+        data3->addValue(BRANCH_RATE3,rate[2],0);
+        data3->addValue(BRANCH_RATE4,rate[3],0);
+        data3->addValue(BRANCH_RATE5,rate[4],0);
+        data3->addValue(BRANCH_RATE6,rate[5],0);
+        data3->addValue(BRANCH_RATE7,rate[6],0);
+        data3->addValue(BRANCH_RATE8,rate[7],0);
+        data3->addValue(BRANCH_RATE9,rate[8],0);
+        data3->addValue(BRANCH_RATE10,rate[9],0);
+        data3->addValue(BRANCH_RATE11,rate[10],0);
+        data3->addValue(BRANCH_RATE12,rate[11],0);
         data3->addValue(BRANCH_TAP,windv,0);
         data3->addValue(BRANCH_SHIFT,ang,0);
         data3->addValue(BRANCH_SWITCHED,false,0);
