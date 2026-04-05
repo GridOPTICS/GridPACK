@@ -23,8 +23,8 @@
  * @date  2026-03-28
  *
  * @updated Yousu Chen
- * - Added setupIREGPointers() for IREG PV bus swap
- * @date  2026-04-04
+ * - Added setupIREGPointers() for IREG PV bus swap with MPI support
+ * @date  2026-04-05
  *
  * @brief
  *

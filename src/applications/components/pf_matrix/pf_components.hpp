@@ -334,6 +334,10 @@ class PFBus
     double getIREGVS() const { return p_ireg_vs; }
     void setIREGRemoteVoltagePtr(double *ptr) { p_ireg_remote_v_ptr = ptr; }
     double* getVoltagePtr() { return p_vMag_ptr; }
+    void setVoltageMag(double v) {
+      p_v = v; p_voltage = v;
+      if (p_vMag_ptr) *p_vMag_ptr = v;
+    }
     void saveIsPVState() { p_saveisPV = p_isPV; p_save2isPV = p_isPV; }
     void setVoltageForIREG(double v) {
       p_v = v; p_voltage = v;

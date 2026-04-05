@@ -23,6 +23,12 @@
  * - Auto-detect PSS/E version from RAW file header
  * @date  2026-03-28
  *
+ * @updated Yousu Chen
+ * - Auto-detect: skip @! comment lines in v35/v36 RAW headers
+ * - IREG PV swap
+ * - 3-winding transformer star bus filtering for bus and branch output
+ * @date  2026-04-05
+ *
  * @brief
  *
  *
@@ -384,8 +390,10 @@ void gridpack::powerflow::PFAppModule::initialize()
   p_network->initBusUpdate();
   timer->stop(t_updt);
 
-  // Set up IREG augmented Jacobian pointers (must be after setExchange)
+  // Set up IREG PV bus swap (must be after setExchange and initBusUpdate)
   p_factory->setupIREGPointers();
+  // Sync PV status changes to ghost buses across processes
+  p_network->updateBuses();
 
   timer->stop(t_total);
 }

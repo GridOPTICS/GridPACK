@@ -23,7 +23,9 @@
  * @date  2026-03-28
  *
  * @updated Yousu Chen
- * - Added setupIREGPointers() for IREG PV bus swap
+ * - Added setupIREGPointers() for IREG PV bus swap with MPI Allgatherv
+ *   for multi-process consistency (active + ghost bus copies)
+ * - Slack bus remote IREG auto-correction with warning
  * - Skip IREG outer loop for buses handled by PV swap
  * @date  2026-04-04
  *
@@ -1113,33 +1115,92 @@ bool gridpack::powerflow::PFFactoryModule::adjustRemoteRegulation(double tol)
 void gridpack::powerflow::PFFactoryModule::setupIREGPointers()
 {
   int numBus = p_network->numBuses();
+  MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+  int nprocs = p_network->communicator().size();
+
+  // Pass 1: Collect IREG swap requests from local active buses.
+  // Also handle slack bus auto-correction.
+  std::vector<int> swap_gen, swap_remote;
+  std::vector<double> swap_vs;
+
   for (int i = 0; i < numBus; i++) {
     if (!p_network->getActiveBus(i)) continue;
     gridpack::powerflow::PFBus *bus =
       dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+
+    // Slack bus cannot regulate a remote bus — auto-correct to local
+    if (bus->getReferenceBus()) {
+      int ngen = bus->getNumGenerators();
+      int orig_idx = bus->getOriginalIndex();
+      for (int j = 0; j < ngen; j++) {
+        int ireg = bus->getIREG(j);
+        if (bus->getGenStatusByIdx(j) == 1 && ireg != 0 && ireg != orig_idx) {
+          printf("Warning: Slack bus %d has remote regulation of bus %d. "
+                 "Slack bus can regulate itself only. Setting local regulation.\n",
+                 orig_idx, ireg);
+          gridpack::component::DataCollection *data = p_network->getBusData(i).get();
+          double v_init = 1.0;
+          data->getValue(BUS_VOLTAGE_MAG, &v_init);
+          bus->setVoltageMag(v_init);
+          break;
+        }
+      }
+      continue;
+    }
+
     if (!bus->isPV()) continue;
     int remote_bus_num = bus->getIREGRemoteBus();
     if (remote_bus_num == 0) continue;
 
-    // Find the remote bus
-    std::vector<int> rindices = p_network->getLocalBusIndices(remote_bus_num);
-    if (rindices.empty()) continue;
+    swap_gen.push_back(bus->getOriginalIndex());
+    swap_remote.push_back(remote_bus_num);
+    swap_vs.push_back(bus->getIREGVS());
+  }
 
-    gridpack::powerflow::PFBus *rbus =
-      dynamic_cast<gridpack::powerflow::PFBus*>(
-          p_network->getBus(rindices[0]).get());
+  // Gather all swap requests across processes
+  int nlocal = swap_gen.size();
+  int ntotal = 0;
+  MPI_Allreduce(&nlocal, &ntotal, 1, MPI_INT, MPI_SUM, comm);
 
-    // Skip if remote bus is already PV (e.g., has its own local-reg generator)
-    if (rbus->isPV()) continue;
+  if (ntotal == 0) return;
 
-    double vs = bus->getIREGVS();
+  std::vector<int> all_gen(ntotal), all_remote(ntotal);
+  std::vector<double> all_vs(ntotal);
+  std::vector<int> counts(nprocs), displs(nprocs);
+  MPI_Allgather(&nlocal, 1, MPI_INT, counts.data(), 1, MPI_INT, comm);
+  displs[0] = 0;
+  for (int p = 1; p < nprocs; p++) displs[p] = displs[p-1] + counts[p-1];
 
-    // Swap: make remote bus PV at VS, make generator bus PQ
-    rbus->setIsPV(true);
-    rbus->saveIsPVState();        // Persist swap for clearQlim() restoration
-    rbus->setVoltageForIREG(vs);  // Set V = VS at remote bus
-    bus->setIsPV(false);          // Generator bus becomes PQ (V free)
-    bus->saveIsPVState();         // Persist swap for clearQlim() restoration
+  MPI_Allgatherv(swap_gen.data(), nlocal, MPI_INT,
+                 all_gen.data(), counts.data(), displs.data(), MPI_INT, comm);
+  MPI_Allgatherv(swap_remote.data(), nlocal, MPI_INT,
+                 all_remote.data(), counts.data(), displs.data(), MPI_INT, comm);
+  MPI_Allgatherv(swap_vs.data(), nlocal, MPI_DOUBLE,
+                 all_vs.data(), counts.data(), displs.data(), MPI_DOUBLE, comm);
+
+  // Pass 2: Apply swaps — each process handles buses it owns
+  for (int s = 0; s < ntotal; s++) {
+    // Set generator bus to PQ (active and ghost copies)
+    std::vector<int> gindices = p_network->getLocalBusIndices(all_gen[s]);
+    for (size_t g = 0; g < gindices.size(); g++) {
+      gridpack::powerflow::PFBus *gbus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(
+            p_network->getBus(gindices[g]).get());
+      gbus->setIsPV(false);
+      gbus->saveIsPVState();
+    }
+
+    // Set remote bus to PV at VS (active and ghost copies)
+    std::vector<int> rindices = p_network->getLocalBusIndices(all_remote[s]);
+    for (size_t r = 0; r < rindices.size(); r++) {
+      gridpack::powerflow::PFBus *rbus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(
+            p_network->getBus(rindices[r]).get());
+      if (rbus->isPV() || rbus->getReferenceBus()) continue;
+      rbus->setIsPV(true);
+      rbus->saveIsPVState();
+      rbus->setVoltageForIREG(all_vs[s]);
+    }
   }
 }
 
