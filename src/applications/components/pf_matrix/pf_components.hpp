@@ -328,6 +328,7 @@ class PFBus
      */
     bool isPV(void);
 
+    bool isStarBus() const { return p_isStarBus; }
     bool isIREG_PV() const { return p_isIREG_PV; }
     int getIREGRemoteBus() const { return p_ireg_remote_bus; }
     double getIREGVS() const { return p_ireg_vs; }

@@ -162,7 +162,10 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     std::ifstream testFile(fname.c_str());
     if (testFile.good()) {
       std::string line1;
-      std::getline(testFile, line1);
+      // Skip comment lines (@! prefix) used in v35/v36 RAW files
+      do {
+        std::getline(testFile, line1);
+      } while (testFile.good() && line1.size() > 1 && line1[0] == '@');
       testFile.close();
       // Check if line contains commas (v30+ format)
       if (line1.find(',') != std::string::npos) {
@@ -1039,6 +1042,9 @@ gridpack::powerflow::PFAppModule::collectResults()
         dynamic_cast<gridpack::powerflow::PFBus*>(
           p_network->getBus(i).get());
 
+      // Skip synthetic star buses from 3-winding transformers
+      if (bus->isStarBus()) continue;
+
       gridpack::utility::BusResult br;
       br.busId = bus->getOriginalIndex();
       br.type = bus->getBusType();
@@ -1106,6 +1112,15 @@ gridpack::powerflow::PFAppModule::collectResults()
       gridpack::powerflow::PFBranch *branch =
         dynamic_cast<gridpack::powerflow::PFBranch*>(
           p_network->getBranch(i).get());
+
+      // Skip branches connected to star buses (3-winding transformer internals)
+      int idx1, idx2;
+      p_network->getBranchEndpoints(i, &idx1, &idx2);
+      gridpack::powerflow::PFBus *bbus1 =
+        dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(idx1).get());
+      gridpack::powerflow::PFBus *bbus2 =
+        dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(idx2).get());
+      if (bbus1->isStarBus() || bbus2->isStarBus()) continue;
 
       std::vector<std::string> cktIds = branch->getLineIDs();
       int bus1Id, bus2Id;
