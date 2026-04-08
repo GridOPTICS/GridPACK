@@ -1,3 +1,12 @@
+/**
+ * @file   genrou.cpp
+ * @brief  GENROU round rotor generator model (EMT)
+ *
+ * @Modified: 2026-03-28 - Port DS fixes: auto-corrections, Sat() function,
+ *   iterative q-axis saturation in init, saturation in residual equations,
+ *   LadIfd with Se*Psidpp term.
+ */
+
 #include <genrou.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
@@ -62,8 +71,77 @@ void Genrou::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(GENERATOR_XDPP, &Xqpp, idx)) Xqpp=Xdpp; // Xqpp 
   if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
 
+  // Saturation enable/disable
+  if(fabs(S10*S12) < 1e-6) {
+    enableSat = false;
+  } else enableSat = true;
+
+  // GENROU machine parameter auto-correction (matches PowerWorld rules)
+  // 1. Transient reactances
+  if (Xdp > Xd) {
+    printf("GENROU bus %d: Auto-correct Xd'=%.6f > Xd=%.6f -> Xd'=%.6f\n",
+           bid, Xdp, Xd, 0.8*Xd);
+    Xdp = 0.8 * Xd;
+  }
+  if (Xqp > Xq) {
+    printf("GENROU bus %d: Auto-correct Xq'=%.6f > Xq=%.6f -> Xq'=%.6f\n",
+           bid, Xqp, Xq, Xq);
+    Xqp = Xq;
+  }
+  // 2. Subtransient reactances (Xdpp = Xqpp for GENROU)
+  double Xmin = (Xdp < Xqp) ? Xdp : Xqp;
+  if (Xdpp > Xmin) {
+    printf("GENROU bus %d: Auto-correct Xd''=%.6f > min(Xd',Xq')=%.6f -> Xd''=%.6f\n",
+           bid, Xdpp, Xmin, 0.8*Xmin);
+    Xdpp = 0.8 * Xmin;
+    Xqpp = Xdpp;
+  }
+  if (Xdpp < 0.05) {
+    printf("GENROU bus %d: Auto-correct Xd''=%.6f < 0.05 -> Xd''=0.05\n",
+           bid, Xdpp);
+    Xdpp = 0.05;
+    Xqpp = Xdpp;
+  }
+  // 3. Leakage reactance
+  if (Xl > Xdpp) {
+    printf("GENROU bus %d: Auto-correct Xl=%.6f > Xd''=%.6f -> Xl=%.6f\n",
+           bid, Xl, Xdpp, 0.8*Xdpp);
+    Xl = 0.8 * Xdpp;
+  }
+  // 4. Inertia
+  if (H < 0.1) {
+    printf("GENROU bus %d: Auto-correct H=%.6f < 0.1 -> H=0.1\n",
+           bid, H);
+    H = 0.1;
+  }
+
   L = Xdpp/OMEGA_S;
 
+}
+
+/**
+ * Saturation function
+ * @ param x air-gap flux magnitude
+ */
+double Genrou::Sat(double x)
+{
+  if (enableSat && x > 1e-6) {
+    // PowerWorld standard scaled saturation: Se(x) = B*(x-A)^2 / x
+    // Fitted from: Se(1.0)=S10, Se(1.2)=S12
+    double R = 1.2 * S12 / S10;
+    double sqrtR = sqrt(R);
+    double A = (1.2 - sqrtR) / (1.0 - sqrtR);
+    double B = S10 / ((1.0 - A) * (1.0 - A));
+
+    double tmp = x - A;
+    if (tmp < 0.0) {
+      tmp = 0.0;
+    }
+    double result = B * tmp * tmp / x;
+    return result;
+  } else {
+    return 0.0;
+  }
 }
 
 /**
@@ -108,23 +186,56 @@ void Genrou::init(gridpack::RealType* xin)
   vabc[1] = p_vb;
   vabc[2] = p_vc;
   
-  // Calculation of machine angle delta and coordinate transformation
-  // angle theta
-  E1 = V + I*Z1;
-  delta = arg(E1);
+  // Iterative angle initialization with q-axis saturation.
+  // At steady state, iron saturation reduces the effective q-axis
+  // synchronous reactance: Xq_eff = Xl + (Xq - Xl) / (1 + Sq)
+  double Xq_eff = Xq;
+  double Vd, Vq, V0, Id, Iq, I0;
+  double Psidpp, Psiqpp, Psi_ag;
+
+  // Network (DQ) frame currents and voltages for initial angle computation
+  double IGr = real(I);  // real part of I in network frame
+  double IGi = imag(I);  // imag part of I in network frame
+  double Vrterm = real(V);
+  double Viterm = imag(V);
+
+  for (int sat_iter = 0; sat_iter < 10; sat_iter++) {
+    // Machine angle from voltage behind (Ra + j*Xq_eff)
+    delta = atan2(Viterm + IGr * Xq_eff + IGi * Ra,
+                  Vrterm + IGr * Ra - IGi * Xq_eff);
+
+    double theta = delta - PI/2.0;
+
+    // Network to machine reference frame transformation
+    abc2dq0(vabc,p_time,theta,vdq0);
+    abc2dq0(iabc,p_time,theta,idq0);
+
+    Vd = vdq0[0];
+    Vq = vdq0[1];
+    Id = idq0[0];
+    Iq = idq0[1];
+
+    Psidpp = Vq;   // +Vq at no-load
+    Psiqpp = -Vd;  // -Vd at no-load
+
+    Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
+
+    double Se = Sat(Psi_ag);
+    if (Se < 1e-10) break;  // no saturation, angle is exact
+
+    double Sq = Se * (Xq - Xl) / (Xd - Xl);
+    double Xq_eff_new = Xl + (Xq - Xl) / (1.0 + Sq);
+
+    if (fabs(Xq_eff_new - Xq_eff) < 1e-8) break;  // converged
+    Xq_eff = Xq_eff_new;
+  }
+
   // theta is behind delta by 90 degrees
   double theta = delta - PI/2.0;
 
-  // Generator internal voltage on network reference frame
-  E = V + I*Z;
-  double Em = abs(E);
-  double Eang = arg(E);
-
-  // Network to machine reference frame transformation
+  // Final dq0 transformation with converged angle
   abc2dq0(vabc,p_time,theta,vdq0);
   abc2dq0(iabc,p_time,theta,idq0);
-  
-  double Vd, Vq, V0, Id, Iq, I0;
 
   Vd = vdq0[0];
   Vq = vdq0[1];
@@ -148,16 +259,14 @@ void Genrou::init(gridpack::RealType* xin)
 
   TM = psid*Iq - psiq*Id;
 
-  double param, LadIfd;
-  double dpsi1ddt;
+  // Field voltage with saturation at air-gap flux magnitude
+  Psidpp = Eqp * (Xdpp - Xl) / (Xdp - Xl) + psi1d * (Xdp - Xdpp) / (Xdp - Xl);
+  Psiqpp = -Edp * (Xdpp - Xl) / (Xqp - Xl) - psi2q * (Xqp - Xdpp) / (Xqp - Xl);
+  Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
 
-  param = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
-  
-  dpsi1ddt = psi1d + (Xdp - Xl)*Id - Eqp;
-
-  LadIfd = -Eqp - (Xd - Xdp)*(Id - param*dpsi1ddt);
-
-  Efd = -LadIfd;
+  // Standard: LadIfd = E'q + Se(Psi_ag)*Psidpp + (Xd-Xdp)*Id (TempD=0 at SS)
+  LadIfd = Eqp + Sat(Psi_ag) * Psidpp + Id * (Xd - Xdp);
+  Efd = LadIfd;
 
   if(integrationtype != EXPLICIT) {
     // Initialized state variables
@@ -340,6 +449,15 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
       TM = getGovernor()->getMechanicalPower();
     }
 
+    // Saturation at air-gap flux magnitude
+    double Psidpp_r = tempd1*Eqp + tempd2*psi1d;
+    double Psiqpp_r = -tempq1*Edp + tempq2*psi2q;
+    double Psi_ag = sqrt(Psidpp_r*Psidpp_r + Psiqpp_r*Psiqpp_r);
+    double Se = Sat(Psi_ag);
+
+    // Field current (for exciter feedback)
+    LadIfd = Eqp + Se*Psidpp_r + (Xd - Xdp)*(Id + param1*dpsi1ddt);
+
     double igen[3];
     dq02abc(idq0,p_time,theta,igen);
 
@@ -347,9 +465,12 @@ void Genrou::vectorGetValues(gridpack::RealType *values)
       f[0] = OMEGA_S*(Ra*Id + (1 + flux_speed_sensitivity*dw)*psiq + Vd) - dpsid;
       f[1] = OMEGA_S*(Ra*Iq - (1 + flux_speed_sensitivity*dw)*psid + Vq) - dpsiq;
       f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
-      f[3] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop - dEqp;
+      // d-axis: includes saturation term Se*Psidpp
+      f[3] = (-Eqp - Se*Psidpp_r - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop - dEqp;
       f[4] = dpsi1ddt/Tdopp - dpsi1d;
-      f[5] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop - dEdp;
+      // q-axis: includes saturation term Se*Psiqpp*(Xq-Xl)/(Xd-Xl)
+      f[5] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt)
+        + Se*Psiqpp_r*(Xq - Xl)/(Xd - Xl))/Tqop - dEdp;
       f[6] = dpsi2qdt/Tqopp - dpsi2q;
       f[7] = dw*OMEGA_S - ddelta;
       f[8] = 1 / (2 *H) * ((TM - D*dw)/(1+dw) - (psid*Iq - psiq*Id)) - ddw;
@@ -1061,22 +1182,31 @@ void Genrou::preStep(double time ,double timestep)
   if(hasExciter()) {
     Efd = getExciter()->getFieldVoltage();
   }
-		    
+
   double dpsi1ddt;
   double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
 
   dpsi1ddt = -psi1d + Eqp - (Xdp - Xl)*Id;
 
-  f[0] = (-Eqp - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop;
+  // Saturation at air-gap flux magnitude
+  double Psidpp_r = tempd1*Eqp + tempd2*psi1d;
+  double Psiqpp_r = -tempq1*Edp + tempq2*psi2q;
+  double Psi_ag = sqrt(Psidpp_r*Psidpp_r + Psiqpp_r*Psiqpp_r);
+  double Se = Sat(Psi_ag);
+
+  // d-axis: includes saturation term Se*Psidpp
+  f[0] = (-Eqp - Se*Psidpp_r - (Xd - Xdp)*(Id - param1*-dpsi1ddt) + Efd)/Tdop;
 
   f[1] = dpsi1ddt/Tdopp;
 
   double dpsi2qdt;
   double param2 = (Xqp - Xdpp)/((Xqp - Xl)*(Xqp - Xl));
-  
+
   dpsi2qdt = -psi2q - Edp - (Xqp - Xl)*Iq;
 
-  f[2] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt))/Tqop;
+  // q-axis: includes saturation term Se*Psiqpp*(Xq-Xl)/(Xd-Xl)
+  f[2] = (-Edp + (Xq - Xqp)*(Iq - param2*-dpsi2qdt)
+    + Se*Psiqpp_r*(Xq - Xl)/(Xd - Xl))/Tqop;
 
   f[3] = dpsi2qdt/Tqopp;
 

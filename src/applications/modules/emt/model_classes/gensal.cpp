@@ -7,7 +7,10 @@
 /**
  * @file   genrou.cpp
  *  
- * @brief GENSAL model implementation 
+ * @brief GENSAL model implementation
+ *
+ * @Modified: 2026-03-28 - Port DS fixes: auto-corrections (4 rules),
+ *   re-enable Sat() with proper guards, enableSat flag. 
  *
  *
  */
@@ -102,10 +105,32 @@ void GensalGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   Xdpp /= mult;
   Xl   /= mult;
 
-  // Saturation constants
-  double temp = sqrt(S10/(1.2*S12));
-  sat_A = (1.0 - temp*1.2)/(1-temp);
-  sat_B = S10/((1.0 - sat_A)*(1.0 - sat_A));
+  // Saturation enable/disable
+  if(fabs(S10*S12) < 1e-6) {
+    enableSat = false;
+  } else enableSat = true;
+
+  // GENSAL machine parameter auto-correction (matches PowerWorld rules)
+  if (Xdp > Xd) {
+    printf("GENSAL bus %d: Auto-correct Xd'=%.6f > Xd=%.6f -> Xd'=%.6f\n",
+           busnum, Xdp, Xd, 0.8*Xd);
+    Xdp = 0.8 * Xd;
+  }
+  if (Xdpp > Xdp) {
+    printf("GENSAL bus %d: Auto-correct Xd''=%.6f > Xd'=%.6f -> Xd''=%.6f\n",
+           busnum, Xdpp, Xdp, 0.8*Xdp);
+    Xdpp = 0.8 * Xdp;
+  }
+  if (Xdpp < 0.05) {
+    printf("GENSAL bus %d: Auto-correct Xd''=%.6f < 0.05 -> Xd''=0.05\n",
+           busnum, Xdpp);
+    Xdpp = 0.05;
+  }
+  if (Xl > Xdpp) {
+    printf("GENSAL bus %d: Auto-correct Xl=%.6f > Xd''=%.6f -> Xl=%.6f\n",
+           busnum, Xl, Xdpp, 0.8*Xdpp);
+    Xl = 0.8 * Xdpp;
+  }
 
   // Set up arrays for generator exciter Jacobian coupling
   if(p_hasExciter) {
@@ -130,13 +155,24 @@ void GensalGen::load(const boost::shared_ptr<gridpack::component::DataCollection
  * Saturation function
  * @ param x
  */
-double GensalGen::Sat(double Eqp)
+double GensalGen::Sat(double x)
 {
-    double result = sat_B * (Eqp - sat_A) * (Eqp - sat_A) /Eqp;
-    if(Eqp < sat_A) result = 0.0;
-    //    return result; // Scaled Quadratic with 1.7.1 equations\
-    result = 0.0;
-    return result; // disabled saturation effect
+  if (enableSat && x > 1e-6) {
+    // PowerWorld standard scaled saturation: Se(x) = B*(x-A)^2 / x
+    double R = 1.2 * S12 / S10;
+    double sqrtR = sqrt(R);
+    double A = (1.2 - sqrtR) / (1.0 - sqrtR);
+    double B_sat = S10 / ((1.0 - A) * (1.0 - A));
+
+    double tmp = x - A;
+    if (tmp < 0.0) {
+      tmp = 0.0;
+    }
+    double result = B_sat * tmp * tmp / x;
+    return result;
+  } else {
+    return 0.0;
+  }
 }
 
 /**

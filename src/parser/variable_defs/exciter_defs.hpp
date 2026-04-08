@@ -144,6 +144,13 @@
 #define EXCITER_TF1 "EXCITER_TF1"
 
 /**
+ * Exciter TF2 (IEEET2 second rate-feedback lag time constant)
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TF2 "EXCITER_TF2"
+
+/**
  * Exciter SWITCH
  * type: real float
  * indexed
@@ -333,13 +340,6 @@
 #define EXCITER_VBMAX "EXCITER_VBMAX"
 
 /**
- * Exciter KC
- * type: real float
- * indexed
- */
-#define EXCITER_KC "EXCITER_KC"
-
-/**
  * Exciter XL
  * type: real float
  * indexed
@@ -352,5 +352,26 @@
  * indexed
  */
 #define EXCITER_THETAP "EXCITER_THETAP"
+
+/**
+ * Exciter KM (ESST3A inner field regulator gain)
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KM "EXCITER_KM"
+
+/**
+ * Exciter TM (ESST3A inner field regulator time constant)
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TM "EXCITER_TM"
+
+/**
+ * Exciter VGMAX (ESST3A VG upper limit)
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VGMAX "EXCITER_VGMAX"
 
 #endif /* _EXCITER_VAR_HPP_ */

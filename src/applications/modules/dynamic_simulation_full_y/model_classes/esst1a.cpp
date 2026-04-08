@@ -447,6 +447,7 @@ void gridpack::dynamic_simulation::Esst1aModel::setVcomp(double vtmp)
 void gridpack::dynamic_simulation::Esst1aModel::setVstab(double vtmp)
 {
   Vstab = vtmp;
+  Vothsg = vtmp;
 }
 
 void gridpack::dynamic_simulation::Esst1aModel::setVothsg(double vtmp)

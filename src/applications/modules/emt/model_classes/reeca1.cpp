@@ -7,8 +7,9 @@
 /**
  * @file   reeca1.cpp
  *  
- * @brief REECA1 model implementation 
+ * @brief REECA1 model implementation
  *
+ * @Modified: 2026-03-28 - Port DS fix: VDL1/VDL2 swap in CurrentLimitLogic.
  *
  */
 
@@ -391,10 +392,10 @@ void Reeca1::CurrentLimitLogic(int PQFLAG,double Vt_filter, double Ipcmd, double
 
   *Ipmin_out = 0.0;
   
-  // Iqmax look up from VDL1
-  Iqmax_temp = VDL1.getoutput(Vt_filter);
-  // Ipmax look up from VDL2
-  Ipmax_temp = VDL2.getoutput(Vt_filter);
+  // Ipmax look up from VDL1
+  Ipmax_temp = VDL1.getoutput(Vt_filter);
+  // Iqmax look up from VDL2
+  Iqmax_temp = VDL2.getoutput(Vt_filter);
 
   if(!PQFLAG) { // Q priority
     if (Imax < Iqmax_temp) Iqmax_temp = Imax;
@@ -446,7 +447,7 @@ void Reeca1::preStep(double time ,double timestep)
       // Check if thld == 0, in this case there is
       // no transition to state 2
       if(fabs(Thld) <= 1e-6) Iqinj_sw = 0;
-      else if(fabs(Thld) >= 1e-6) {
+      else if(Thld > 1e-6) {
 	// Thld is positive, transition to state 2,
 	// Set timer
 	thld_timer = 0.0;
@@ -459,7 +460,7 @@ void Reeca1::preStep(double time ,double timestep)
     } else {
       if(Iqinj_sw == 1) {
 	thld_timer += timestep;
-	if(thld_timer > 1 - Thld) Iqinj_sw = 0;
+	if(thld_timer > -Thld) Iqinj_sw = 0;
       } else if(Iqinj_sw == 2) {
 	thld_timer += timestep;
 	if(thld_timer > Thld) Iqinj_sw = 0;

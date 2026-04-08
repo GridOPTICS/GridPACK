@@ -7,7 +7,10 @@
 /**
  * @file   gast.cpp
  *  
- * @brief GAST governor model implementation 
+ * @brief GAST governor model implementation
+ *
+ * @Modified: 2026-03-28 - Port DS fixes: VMAX/VMIN swap, time constant
+ *   minimums, Pmech>VMAX/AT auto-corrections, Loadref clamping.
  *
  */
 
@@ -15,6 +18,8 @@
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
 #include <algorithm>
+
+#define TS_THRESHOLD 4
 
 Gast::Gast(void)
 {
@@ -39,6 +44,7 @@ Gast::Gast(void)
   
   Loadref = 0.0;
   x1_at_min = x1_at_max = false;
+  p_ts_corrected = false;
 
   nxgov = 4; // Number of variables
 }
@@ -67,7 +73,11 @@ void Gast::load(const boost::shared_ptr<gridpack::component::DataCollection> dat
   if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) Vmax = 1.0; 
   if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) Vmin = 0.0; 
   if (!data->getValue(GOVERNOR_DT, &Dt, idx)) Dt = 0.0;
-  
+
+  // Swap limits if inverted
+  if (Vmax < Vmin) {
+    double tmp = Vmax; Vmax = Vmin; Vmin = tmp;
+  }
 }
 
 /**
@@ -86,6 +96,45 @@ void Gast::getnvar(int *nvar)
 void Gast::preStep(double time ,double timestep)
 {
   if(integrationtype != EXPLICIT) return;
+
+  // One-time time constant minimum checks (needs timestep, not available in init)
+  if (!p_ts_corrected) {
+    p_ts_corrected = true;
+    double mult_ts = TS_THRESHOLD * timestep;
+    bool reconfig = false;
+    if (T1 > 0.0 && T1 < 0.25 * mult_ts) {
+      T1 = 0.0;
+      reconfig = true;
+    } else if (T1 > 0.25 * mult_ts && T1 < 0.5 * mult_ts) {
+      T1 = 0.5 * mult_ts;
+      reconfig = true;
+    }
+    if (reconfig) {
+      delay_blk_T1.setparams(1.0, T1, Vmin, Vmax, -1000.0, 1000.0);
+      reconfig = false;
+    }
+    if (T2 > 0.0 && T2 < 0.25 * mult_ts) {
+      T2 = 0.0;
+      reconfig = true;
+    } else if (T2 > 0.25 * mult_ts && T2 < 0.5 * mult_ts) {
+      T2 = 0.5 * mult_ts;
+      reconfig = true;
+    }
+    if (reconfig) {
+      delay_blk_T2.setparams(1.0, T2);
+      reconfig = false;
+    }
+    if (T3 > 0.0 && T3 < 0.25 * mult_ts) {
+      T3 = 0.0;
+      reconfig = true;
+    } else if (T3 > 0.25 * mult_ts && T3 < 0.5 * mult_ts) {
+      T3 = 0.5 * mult_ts;
+      reconfig = true;
+    }
+    if (reconfig) {
+      delay_blk_T3.setparams(1.0, T3);
+    }
+  }
 
   BaseEMTGenModel* gen=getGenerator();
   double dw = gen->getSpeedDeviation();
@@ -133,6 +182,21 @@ void Gast::init(gridpack::RealType* xin)
   double dw = gen->getSpeedDeviation();
   double Pmech = gen->getInitialMechanicalPower();
 
+  // Adjust AT to accommodate initial operating point
+  // Without this, generators with Pmech > AT would create an unstable
+  // initial condition inconsistent with the power flow solution.
+  if (Pmech > AT && AT > 0) {
+    AT = Pmech;
+  }
+
+  // Adjust valve limits to accommodate initial operating point
+  if (Pmech > Vmax) {
+    Vmax = Pmech;
+  }
+  if (Pmech < Vmin) {
+    Vmin = Pmech;
+  }
+
   if(integrationtype != IMPLICIT) {
 
     // Set up transfer function blocks
@@ -160,6 +224,11 @@ void Gast::init(gridpack::RealType* xin)
     // Load reference signal
     Loadref = delay_blk_T1_in + dw/R;
 
+    // Clamp Loadref to AT
+    if (AT > 0 && Loadref > AT) {
+      Loadref = AT;
+    }
+
     xout = Pmech;
 
     return;
@@ -171,7 +240,12 @@ void Gast::init(gridpack::RealType* xin)
   xout = Pmech;
 
   Loadref = Pmech + dw/R;
-  
+
+  // Clamp Loadref to AT
+  if (AT > 0 && Loadref > AT) {
+    Loadref = AT;
+  }
+
   x[0] = x1;
   x[1] = x2;
   x[2] = x3;

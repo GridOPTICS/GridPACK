@@ -8,10 +8,13 @@
  * @file   generator_factory.cpp
  * @author Bruce Palmer
  * @Last modified:   May 18, 2015
- * 
- * @brief  
- * 
- * 
+ *
+ * @Modified: 2026-03-27, Yousu Chen
+ * - Added ESST3A,ESDC2A, exciter model registration
+ *
+ * @brief
+ *
+ *
  */
 
 #include "generator_factory.hpp"
@@ -28,13 +31,21 @@
 #include "reeca1.hpp"
 #include "repca1.hpp"
 #include "wsieg1.hpp"
+#include "ieesgo.hpp"
 #include "exdc1.hpp"
+#include "exdc2.hpp"
+#include "exst1.hpp"
 #include "ieeet1.hpp"
+#include "ieeet2.hpp"
 #include "esst1a.hpp"
 #include "wshygp.hpp"
 #include "psssim.hpp"
+#include "ieeest.hpp"
+#include "st2cut.hpp"
+#include "stab2a.hpp"
 #include "tgov1.hpp"
 #include "sexs.hpp"
+#include "scrx.hpp"
 #include "gast.hpp"
 #include "hygov.hpp"
 #include "wtara1.hpp"
@@ -45,6 +56,8 @@
 #include "esst4b.hpp"
 #include "regfma1.hpp"
 /*---yuan add above---*/
+#include "esst3a.hpp"
+#include "esdc2a.hpp"
 
 #include <stdio.h>
 
@@ -147,9 +160,24 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
     tmp =  new gridpack::dynamic_simulation::Exdc1Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
-  }  else if (type == "IEEET1") {
+  } else if (type == "EXDC2" || type == "IEEEX1") {
+    gridpack::dynamic_simulation::Exdc2Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Exdc2Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "EXST1") {
+    gridpack::dynamic_simulation::Exst1Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Exst1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "IEEET1") {
     gridpack::dynamic_simulation::Ieeet1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Ieeet1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "IEEET2") {
+    gridpack::dynamic_simulation::Ieeet2Model *tmp;
+    tmp =  new gridpack::dynamic_simulation::Ieeet2Model;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else if (type == "SEXS") {
@@ -157,9 +185,24 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
       tmp =  new gridpack::dynamic_simulation::SexsModel;
       ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "SCRX") {
+      gridpack::dynamic_simulation::ScrxModel *tmp;
+      tmp =  new gridpack::dynamic_simulation::ScrxModel;
+      ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   } else if (type == "ESST1A") {
     gridpack::dynamic_simulation::Esst1aModel *tmp;
     tmp =  new gridpack::dynamic_simulation::Esst1aModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "ESST3A") {
+    gridpack::dynamic_simulation::Esst3aModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::Esst3aModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
+  } else if (type == "ESDC2A") {
+    gridpack::dynamic_simulation::Esdc2aModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::Esdc2aModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseExciterModel*>(tmp);
   }
@@ -196,9 +239,14 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
   p_util.toUpper(type);
 
   gridpack::dynamic_simulation::BaseGovernorModel* ret;
-  if (type == "WSIEG1") {
+  if (type == "WSIEG1" || type == "IEEEG1") {
     gridpack::dynamic_simulation::Wsieg1Model *tmp;
     tmp =  new gridpack::dynamic_simulation::Wsieg1Model;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else if (type == "IEESGO") {
+    gridpack::dynamic_simulation::IeesgoModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::IeesgoModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
   } else if (type == "TGOV1") {
@@ -247,6 +295,18 @@ gridpack::dynamic_simulation::GeneratorFactory::createPssModel(
     tmp =  new gridpack::dynamic_simulation::PsssimModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else if (type == "IEEEST") {
+    gridpack::dynamic_simulation::IeeeStModel *tmp;
+    tmp = new gridpack::dynamic_simulation::IeeeStModel;
+    ret = dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else if (type == "ST2CUT") {
+    gridpack::dynamic_simulation::St2cutModel *tmp;
+    tmp = new gridpack::dynamic_simulation::St2cutModel;
+    ret = dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
+  } else if (type == "STAB2A") {
+    gridpack::dynamic_simulation::Stab2aModel *tmp;
+    tmp = new gridpack::dynamic_simulation::Stab2aModel;
+    ret = dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
   } else {
     ret = NULL;
   }

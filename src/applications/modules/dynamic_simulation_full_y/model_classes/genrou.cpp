@@ -14,9 +14,12 @@
  *
  * @Modified: Dec 9, 2022, print voltage and generator power
  *
- * @Modified: Mar 2026, Yousu Chen
+ * @Modified: 2026-03-27, Yousu Chen
  * - Fixed saturation: unscaled quadratic Se=B*(x-A)^2, Sat at Psi_ag,
  *   iterative q-axis saturation in init/predictor/corrector.
+ * - Added setVdqIdq() call before exciter init() in first init block
+ *   so exciters using terminal d-q quantities (e.g., ESST3A) receive
+ *   correct Vd/Vq/Id/Iq at initialization.
  *
  * @brief  : Round rotor generator model
  * 
@@ -317,12 +320,16 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setVterminal(Vterm);
-    p_exciter->setVcomp(mag); 
+    p_exciter->setVcomp(mag);
     p_exciter->setFieldVoltage(Efd);
     p_exciter->setFieldCurrent(LadIfd);
     //---yuan add below 20231024---//
-    p_exciter->setIri(Ir, Ii); 
+    p_exciter->setIri(Ir, Ii);
     //---yuan add above 20231024---//
+    // Provide terminal-voltage d-q components for exciters that use them (e.g., ESST3A)
+    double Vdterm_init = Vrterm * sin(x1d) - Viterm * cos(x1d);
+    double Vqterm_init = Vrterm * cos(x1d) + Viterm * sin(x1d);
+    p_exciter->setVdqIdq(Vdterm_init, Vqterm_init, Id, Iq);
     p_exciter->init(mag, ang, ts);
   }
 
@@ -461,6 +468,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::rebalanceEquilibrium()
     p_exciter->setVcomp(Vterm);
     p_exciter->setFieldVoltage(Efd);
     p_exciter->setFieldCurrent(LadIfd);
+    p_exciter->setVdqIdq(Vdterm, Vqterm, Id, Iq);
     p_exciter->init(Vterm, Theta, 0.0);
   }
 
@@ -643,6 +651,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     if (p_hasPss) {
       boost::shared_ptr<BasePssModel> pss = getPss();
       pss->setOmega(x2w_1);
+      pss->setVterminal(presentMag);
       pss->predictor(t_inc, flag);
       Vstab = pss->getVstab();
     } else {
@@ -653,6 +662,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
       if (p_hasPss) {
         p_exciter->setVstab(Vstab);
       }
+      p_exciter->setVdqIdq(Vdterm, Vqterm, Id, Iq);
       p_exciter->setFieldCurrent(LadIfd);
       p_exciter->predictor(t_inc, flag);
     }
@@ -822,6 +832,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     if (p_hasPss) {
       boost::shared_ptr<BasePssModel> pss = getPss();
       pss->setOmega(x2w_1);
+      pss->setVterminal(presentMag);
       pss->corrector(t_inc, flag);
       Vstab = pss->getVstab();
     } else {
@@ -832,6 +843,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
       if (p_hasPss) {
         p_exciter->setVstab(Vstab);
       }
+      p_exciter->setVdqIdq(Vdterm, Vqterm, Id, Iq);
       p_exciter->setFieldCurrent(LadIfd);
       p_exciter->corrector(t_inc, flag);
     }

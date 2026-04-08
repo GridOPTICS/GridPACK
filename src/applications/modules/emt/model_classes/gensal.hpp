@@ -139,7 +139,8 @@ private:
   // previous step values of the variables
   double deltaprev, dwprev, Eqpprev, Psidpprev, Psiqppprev; 
   
-  double sat_A,sat_B; // Saturation function coefficients
+  double sat_A,sat_B; // Saturation function coefficients (unused — Sat() now computes inline)
+  bool enableSat; // Flag to enable/disable saturation
 };
 
 #endif

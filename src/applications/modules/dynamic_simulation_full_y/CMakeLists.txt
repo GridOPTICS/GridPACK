@@ -34,11 +34,16 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
+    ${PARMETIS_LIBRARY} ${METIS_LIBRARY}
     ${Boost_LIBRARIES}
-    ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
     ${PETSC_LIBRARIES})
+
+# In shared builds, GA is linked transitively through gridpack_parallel.
+# Adding it explicitly causes duplicate static/dynamic GA symbols.
+if (NOT BUILD_SHARED_LIBS)
+  list(APPEND target_libraries ${GA_LIBRARIES})
+endif()
 
 if (GOSS_DIR)
   set(target_libraries
@@ -86,8 +91,12 @@ set(target_source
   model_classes/classical.cpp
   model_classes/gensal.cpp
   model_classes/exdc1.cpp
+  model_classes/exdc2.cpp
+  model_classes/esdc2a.cpp
+  model_classes/exst1.cpp
   model_classes/ieeet1.cpp
   model_classes/wsieg1.cpp
+  model_classes/ieesgo.cpp
   model_classes/GainBlockClass.cpp
   model_classes/BackLashClass.cpp
   model_classes/DBIntClass.cpp
@@ -98,6 +107,7 @@ set(target_source
   model_classes/genrou.cpp
   model_classes/esst4b.cpp
   model_classes/esst1a.cpp
+  model_classes/esst3a.cpp
   model_classes/wshygp.cpp
   model_classes/ggov1.cpp
   model_classes/lvshbl.cpp
@@ -107,6 +117,8 @@ set(target_source
   model_classes/ieel.cpp
   model_classes/motorw.cpp
   model_classes/psssim.cpp
+  model_classes/ieeest.cpp
+  model_classes/st2cut.cpp
   model_classes/tgov1.cpp
   model_classes/gdform.cpp
   model_classes/regfma1.cpp
@@ -122,6 +134,9 @@ set(target_source
   model_classes/wtdta1.cpp
   model_classes/wtpta1.cpp
   model_classes/wttqa1.cpp
+  model_classes/scrx.cpp
+  model_classes/stab2a.cpp
+  model_classes/ieeet2.cpp
 )
 
 if(ENABLE_EPRI_IBR_MODEL)
@@ -181,6 +196,8 @@ install(FILES
   model_classes/classical.hpp
   model_classes/DBIntClass.hpp
   model_classes/exdc1.hpp
+  model_classes/esdc2a.hpp
+  model_classes/exst1.hpp
   model_classes/ieeet1.hpp
   model_classes/GainBlockClass.hpp
   model_classes/PIBlockwithLimit.hpp
@@ -189,9 +206,11 @@ install(FILES
   model_classes/DelayBlock.hpp
   model_classes/gensal.hpp
   model_classes/wsieg1.hpp
+  model_classes/ieesgo.hpp
   model_classes/genrou.hpp
   model_classes/esst4b.hpp
   model_classes/esst1a.hpp
+  model_classes/esst3a.hpp
   model_classes/wshygp.hpp
   model_classes/ggov1.hpp
   model_classes/lvshbl.hpp
@@ -201,6 +220,8 @@ install(FILES
   model_classes/ieel.hpp
   model_classes/motorw.hpp
   model_classes/psssim.hpp
+  model_classes/ieeest.hpp
+  model_classes/st2cut.hpp
   model_classes/tgov1.hpp
   model_classes/gdform.hpp
   model_classes/regfma1.hpp
@@ -216,6 +237,9 @@ install(FILES
   model_classes/wtdta1.hpp
   model_classes/wtpta1.hpp
   model_classes/wttqa1.hpp
+  model_classes/scrx.hpp
+  model_classes/stab2a.hpp
+  model_classes/ieeet2.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 )
 

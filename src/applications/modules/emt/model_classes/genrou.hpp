@@ -90,6 +90,13 @@ class Genrou: public BaseEMTGenModel
    * Return the rotor speed deviation
    * @param 
    */
+  /**
+   * Saturation function
+   * @param x air-gap flux magnitude
+   * @return Se(x) = B*(x-A)^2/x (unscaled)
+   */
+  double Sat(double x);
+
   double getSpeedDeviation() { return dw; }
 
   /**
@@ -212,6 +219,7 @@ class Genrou: public BaseEMTGenModel
   
   double dpsid, dpsiq, dpsi0,ddelta, ddw, dEqp, dpsi1d, dpsi2q, dEdp, diabc[3];
 
+  bool enableSat;
   int bid;
 };
 

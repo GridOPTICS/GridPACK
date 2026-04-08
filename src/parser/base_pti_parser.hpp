@@ -15,6 +15,10 @@
  *  Renamed REGCA1/regca1 parameters to regc
  *  Added REGCB1
  *  Added REGCC1
+ *
+ *  2026-03-27, Yousu Chen
+ *  - Added ESST3A parser: ex_km, ex_tm, vgmax fields in gen_params;
+ *    extract/parse/store blocks for ESST3A DYR format
  */
 
 #ifndef BASEPTIPARSER_HPP_
@@ -55,9 +59,13 @@
 #include "parser_classes/reeca1.hpp"
 #include "parser_classes/repca1.hpp"
 #include "parser_classes/wsieg1.hpp"
+#include "parser_classes/ieeeg1.hpp"
+#include "parser_classes/ieesgo.hpp"
 #include "parser_classes/exdc1.hpp"
+#include "parser_classes/exst1.hpp"
 #include "parser_classes/ieeet1.hpp"
 #include "parser_classes/esst1a.hpp"
+#include "parser_classes/esst3a.hpp"
 #include "parser_classes/esst4b.hpp"
 #include "parser_classes/ggov1.hpp"
 #include "parser_classes/tgov1.hpp"
@@ -70,7 +78,12 @@
 #include "parser_classes/ieelbl.hpp"
 #include "parser_classes/cmldblu1.hpp"
 #include "parser_classes/psssim.hpp"
+#include "parser_classes/ieeest.hpp"
+#include "parser_classes/st2cut.hpp"
 #include "parser_classes/sexs.hpp"
+#include "parser_classes/scrx.hpp"
+#include "parser_classes/ieeet2.hpp"
+#include "parser_classes/stab2a.hpp"
 #include "parser_classes/gast.hpp"
 #include "parser_classes/hygov.hpp"
 #include "parser_classes/wtdta1.hpp"
@@ -537,7 +550,10 @@ class BasePTIParser : public BaseParser<_network>
       double vbmax;
       double ex_xl;
       double thetap;
-	  
+      double ex_km;
+      double ex_tm;
+      double vgmax;
+
       int reeca1_ireg;
       int reeca1_pfflag;
       int reeca1_vflag;
@@ -704,6 +720,27 @@ class BasePTIParser : public BaseParser<_network>
       double psssim_t4;
       double psssim_maxout;
       double psssim_minout;
+
+      // IEEEST PSS parameters
+      int    ieeest_mode;
+      double ieeest_a1, ieeest_a2, ieeest_a3, ieeest_a4, ieeest_a5, ieeest_a6;
+      double ieeest_t1, ieeest_t2, ieeest_t3, ieeest_t4, ieeest_t5, ieeest_t6;
+      double ieeest_ks, ieeest_lsmax, ieeest_lsmin, ieeest_vcu, ieeest_vcl;
+
+      // ST2CUT PSS parameters
+      int    st2cut_mode, st2cut_mode2;
+      double st2cut_k1, st2cut_k2;
+      double st2cut_t1, st2cut_t2, st2cut_t3, st2cut_t4, st2cut_t5;
+      double st2cut_t6, st2cut_t7, st2cut_t8, st2cut_t9, st2cut_t10;
+      double st2cut_lsmax, st2cut_lsmin, st2cut_vcu, st2cut_vcl;
+
+      // STAB2A PSS parameters
+      double stab2a_kt, stab2a_t;
+      double stab2a_t1, stab2a_t2, stab2a_t3, stab2a_t4;
+      double stab2a_h1, stab2a_h2;
+
+      // IEEET2 exciter — tf2 field (TF1 reuses existing tf1 field)
+      double tf2;
 
       // plant controller parameters
       int repca1_ireg;
@@ -1147,9 +1184,20 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"WSIEG1")) {
             Wsieg1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"IEEEG1")) {
+            Ieeeg1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"IEESGO")) {
+            IeesgoParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"EXDC1") ||
-              !strcmp(gen_data[i].model,"EXDC2")) {
+              !strcmp(gen_data[i].model,"EXDC2") ||
+              !strcmp(gen_data[i].model,"ESDC2A") ||
+              !strcmp(gen_data[i].model,"IEEEX1")) {
             Exdc1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"EXST1")) {
+            Exst1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
 	  } else if (!strcmp(gen_data[i].model,"IEEET1")) {
             Ieeet1Parser<gen_params> parser;
@@ -1157,11 +1205,20 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"ESST1A")) {
             Esst1aParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"ESST3A")) {
+            Esst3aParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"ESST4B")) {
             Esst4bParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
 	  } else if (!strcmp(gen_data[i].model,"SEXS")) {
             SexsParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"SCRX")) {
+            ScrxParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"IEEET2")) {
+            Ieeet2Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"GGOV1")) {
             Ggov1Parser<gen_params> parser;
@@ -1180,6 +1237,15 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"PSSSIM")) {
             PsssimParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"IEEEST")) {
+            IeeeStParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"ST2CUT")) {
+            St2cutParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"STAB2A")) {
+            Stab2aParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
           } else if (!strcmp(gen_data[i].model,"WTDTA1")) {
             Wtdta1Parser<gen_params> parser;
@@ -1488,11 +1554,14 @@ class BasePTIParser : public BaseParser<_network>
 #ifdef ENABLE_EPRI_IBR_MODEL
 	  device == "EPRIA1" ||
 #endif
-          device == "WSIEG1" || device == "EXDC1"   || device == "EXDC2" ||
-	  device == "IEEET1" ||
-	  device == "SEXS"   || device == "GAST"    || device == "HYGOV" ||
-          device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
+          device == "WSIEG1" || device == "IEEEG1" || device == "IEESGO" ||
+          device == "EXDC1"   || device == "EXDC2" ||
+          device == "ESDC2A" || device == "IEEEX1" || device == "EXST1"  ||
+	  device == "IEEET1" || device == "IEEET2" ||
+	  device == "SEXS"   || device == "SCRX"    || device == "GAST"    || device == "HYGOV" ||
+          device == "ESST1A" || device == "ESST3A" || device == "ESST4B" || device == "GGOV1" ||
           device == "WSHYGP" || device == "TGOV1" || device == "PSSSIM" ||
+          device == "IEEEST" || device == "ST2CUT" || device == "STAB2A" ||
           device == "WTDTA1" || device == "WTARA1" || device == "WTPTA1" ||
           device == "WTTQA1") {
         ret = true;
@@ -1669,8 +1738,17 @@ class BasePTIParser : public BaseParser<_network>
             } else if (sval == "WSIEG1") {
               Wsieg1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
-            } else if (sval == "EXDC1" || sval == "EXDC2") {
+            } else if (sval == "IEEEG1") {
+              Ieeeg1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "IEESGO") {
+              IeesgoParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "ESDC2A" || sval == "IEEEX1") {
               Exdc1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "EXST1") {
+              Exst1Parser<gen_params> parser;
               parser.parse(split_line, data, g_id);
 	    } else if (sval == "IEEET1") {
               Ieeet1Parser<gen_params> parser;
@@ -1678,8 +1756,17 @@ class BasePTIParser : public BaseParser<_network>
 	    } else if (sval == "SEXS") {
               SexsParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
+	    } else if (sval == "SCRX") {
+              ScrxParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "IEEET2") {
+              Ieeet2Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
             } else if (sval == "ESST1A") {
               Esst1aParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "ESST3A") {
+              Esst3aParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "ESST4A") {
               Esst4bParser<gen_params> parser;
@@ -1701,6 +1788,15 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "PSSSIM") {
               PsssimParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "IEEEST") {
+              IeeeStParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "ST2CUT") {
+              St2cutParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "STAB2A") {
+              Stab2aParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             } else if (sval == "WTDTA1") {
               Wtdta1Parser<gen_params> parser;
@@ -1850,7 +1946,6 @@ class BasePTIParser : public BaseParser<_network>
         gridpack::utility::StringUtils util;
         sval = util.trimQuotes(split_line[1]);
         util.toUpper(sval);
-
         if (onGenerator(sval)) {
           gen_params data;
 
@@ -1914,17 +2009,35 @@ class BasePTIParser : public BaseParser<_network>
           } else if (sval == "WSIEG1") {
             Wsieg1Parser<gen_params> parser;
             parser.store(split_line,data);
-          } else if (sval == "EXDC1" || sval == "EXDC2") {
+          } else if (sval == "IEEEG1") {
+            Ieeeg1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "IEESGO") {
+            IeesgoParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "EXDC1" || sval == "EXDC2" || sval == "ESDC2A" || sval == "IEEEX1") {
             Exdc1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "EXST1") {
+            Exst1Parser<gen_params> parser;
             parser.store(split_line,data);
 	  } else if (sval == "IEEET1") {
             Ieeet1Parser<gen_params> parser;
             parser.store(split_line,data);
+          } else if (sval == "IEEET2") {
+            Ieeet2Parser<gen_params> parser;
+            parser.store(split_line,data);
 	  } else if (sval == "SEXS") {
             SexsParser<gen_params> parser;
             parser.store(split_line,data);
+          } else if (sval == "SCRX") {
+            ScrxParser<gen_params> parser;
+            parser.store(split_line,data);
           } else if (sval == "ESST1A") {
             Esst1aParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "ESST3A") {
+            Esst3aParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "ESST4B") {
             Esst4bParser<gen_params> parser;
@@ -1946,6 +2059,15 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "PSSSIM") {
             PsssimParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "IEEEST") {
+            IeeeStParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "ST2CUT") {
+            St2cutParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "STAB2A") {
+            Stab2aParser<gen_params> parser;
             parser.store(split_line,data);
           } else if (sval == "WTDTA1") {
             Wtdta1Parser<gen_params> parser;

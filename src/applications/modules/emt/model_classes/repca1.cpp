@@ -7,8 +7,10 @@
 /**
  * @file   repca1.cpp
  *  
- * @brief REPCA1 model implementation 
+ * @brief REPCA1 model implementation
  *
+ * @Modified: 2026-03-28 - Port DS fixes: femax/femin and Emax/Emin
+ *   swap+sign guards, time constant minimums.
  *
  */
 
@@ -92,6 +94,20 @@ void Repca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   if (!data->getValue(GENERATOR_REPCA_PMIN,  &Pmin   , idx))  Pmin   =  -1.5;
   if (!data->getValue(GENERATOR_REPCA_TG,    &Tg     , idx))  Tg     = 0.1;
 
+  // Femax/Femin swap and sign
+  if (femax < femin) {
+    double tmp = femax; femax = femin; femin = tmp;
+  }
+  if (femax < 0) femax = -femax;
+  if (femin > 0) femin = -femin;
+
+  // Emax/Emin swap and sign
+  if (Emax < Emin) {
+    double tmp = Emax; Emax = Emin; Emin = tmp;
+  }
+  if (Emax < 0) Emax = -Emax;
+  if (Emin > 0) Emin = -Emin;
+
   // Set constants
   Freq_ref = 1.0;
 
@@ -101,10 +117,40 @@ void Repca1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
  * Initialize exciter model before calculation
  * @param [output] values - array where initialized exciter variables should be set
  */
-void Repca1::init(gridpack::RealType* xin) 
+void Repca1::init(gridpack::RealType* xin)
 {
   gridpack::RealType *x = xin+offsetb; // exciter array starts from this location
   double Vt = sqrt(VD*VD + VQ*VQ);
+
+  // Time constant minimum checks
+  // Use conservative default ts = 0.005s (matches typical DS timestep);
+  // EMT timesteps are typically much smaller, so this is a safe upper bound.
+  double ts = 0.005;
+  double mult_ts = 4.0 * ts;
+
+  // Ddn: If 0 < Ddn < mult_ts then Ddn = mult_ts
+  if (Ddn > 0.0 && Ddn < mult_ts) {
+    Ddn = mult_ts;
+  }
+
+  // Dup: If 0 < |Dup| < mult_ts then |Dup| = mult_ts (Dup is typically negative)
+  if (fabs(Dup) > 0.0 && fabs(Dup) < mult_ts) {
+    Dup = (Dup < 0) ? -mult_ts : mult_ts;
+  }
+
+  // Tfltr: 0.5/1.0 pattern
+  if (Tfltr > 0.0 && Tfltr < 0.5 * mult_ts) {
+    Tfltr = 0.0;
+  } else if (Tfltr > 0.5 * mult_ts && Tfltr < mult_ts) {
+    Tfltr = mult_ts;
+  }
+
+  // Tp: 0.5/1.0 pattern
+  if (Tp > 0.0 && Tp < 0.5 * mult_ts) {
+    Tp = 0.0;
+  } else if (Tp > 0.5 * mult_ts && Tp < mult_ts) {
+    Tp = mult_ts;
+  }
 
     /* Create string for setting name */
   std::string blkhead = std::to_string(busnum) + "_" + id + "REPCA1_";
