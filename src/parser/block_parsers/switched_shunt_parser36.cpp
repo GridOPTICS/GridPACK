@@ -176,7 +176,7 @@ void gridpack::parser::SwitchedShuntParser36::parse(
       gridpack::utility::StringUtils util;
       util.trim(split_line[12]);
       std::string tmp = util.trimQuotes(split_line[12]);
-      p_busData[l_idx]->addValue(SHUNT_NAME, tmp.c_str());
+      p_busData[o_idx]->addValue(SHUNT_NAME, tmp.c_str());
     }
 
     /*
