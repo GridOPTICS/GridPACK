@@ -32,6 +32,21 @@
  * - Generators with IREG != 0 regulate voltage at a remote bus
  * @date  2026-03-03
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control (MODSW=1 discrete, MODSW=2 continuous)
+ * - Member variables, control methods, and serialize support
+ * @date  2026-02-24
+ *
+ * @updated Yousu Chen
+ * - Added LTC (load tap changer) control on PFBranch
+ * @date  2026-03-28
+ *
+ * @updated Yousu Chen
+ * - IREG augmented via PV bus swap (remote bus becomes PV at VS)
+ * - Star bus filtering for 3-winding transformer output
+ * - LTC tap direction fix for to-bus controlled transformers
+ * @date  2026-04-04
+ *
  * @brief
  *
  *
@@ -313,6 +328,23 @@ class PFBus
      */
     bool isPV(void);
 
+    bool isStarBus() const { return p_isStarBus; }
+    bool isIREG_PV() const { return p_isIREG_PV; }
+    int getIREGRemoteBus() const { return p_ireg_remote_bus; }
+    double getIREGVS() const { return p_ireg_vs; }
+    void setIREGRemoteVoltagePtr(double *ptr) { p_ireg_remote_v_ptr = ptr; }
+    double* getVoltagePtr() { return p_vMag_ptr; }
+    void setVoltageMag(double v) {
+      p_v = v; p_voltage = v;
+      if (p_vMag_ptr) *p_vMag_ptr = v;
+    }
+    void saveIsPVState() { p_saveisPV = p_isPV; p_save2isPV = p_isPV; }
+    void setVoltageForIREG(double v) {
+      p_v = v; p_voltage = v;
+      p_type = 2; p_save_type = 2;  // Mark as PV bus
+      if (p_vMag_ptr) *p_vMag_ptr = v;
+    }
+
     /**
      * Set voltage value
      */
@@ -370,7 +402,7 @@ class PFBus
      * chkQlim
      check QLIM violations
     */
-    bool chkQlim(void);
+    bool chkQlim(double q_deadband = 0.1);
 
     /**
      * Clear changes that were made for Q limit violations and reset
@@ -625,6 +657,36 @@ class PFBus
      */
     void adjustVoltageForRemoteReg(double dv);
 
+    /**
+     * Check if this bus has a switched shunt and adjust if needed
+     * @param v_controlled voltage at controlled bus (local or remote)
+     * @return true if an adjustment was made
+     */
+    bool adjustSwitchedShunt(double v_controlled);
+
+    /**
+     * Reset switched shunt to BINIT state
+     */
+    void resetSwitchedShunt();
+
+    /**
+     * Check if bus has a switched shunt
+     * @return true if bus has a switched shunt
+     */
+    bool hasSwitchedShunt() const;
+
+    /**
+     * Get remote bus number for switched shunt control (SWREM)
+     * @return SWREM bus number, or 0 if locally controlled
+     */
+    int getSwitchedShuntRemoteBus() const;
+
+    /**
+     * Get current switched shunt susceptance
+     * @return current B value in Mvar at unity voltage
+     */
+    double getSwitchedShuntB() const;
+
   private:
     static std::vector<std::string> p_qlimWarnings;
     static InitStartMode p_initStartMode;
@@ -679,6 +741,32 @@ class PFBus
     bool p_sink;
     double p_rtpr_scale;
     bool p_original_isolated;
+    bool p_isStarBus;  // true for synthetic star buses from 3-winding transformers
+
+    // IREG augmented Jacobian variables
+    bool p_isIREG_PV;            // true if PV bus with all gens remote-regulating
+    double p_ireg_vs;            // VS target for the remote bus
+    int p_ireg_remote_bus;       // remote bus number (for factory to set up pointer)
+    double *p_ireg_remote_v_ptr; // pointer to remote bus voltage magnitude
+
+    // Switched shunt control variables
+    bool p_hasSwitchedShunt;      // true if this bus has an active switched shunt
+    int p_swshunt_modsw;          // control mode (1=discrete, 2=continuous)
+    double p_swshunt_vswhi;       // controlled voltage upper limit (pu)
+    double p_swshunt_vswlo;       // controlled voltage lower limit (pu)
+    int p_swshunt_swrem;          // remote controlled bus number (0=local)
+    double p_swshunt_binit;       // initial B value (Mvar at 1.0 pu V)
+    int p_swshunt_adjm;           // adjustment method (0=input order, 1=optimal)
+    std::vector<int> p_swshunt_n; // number of steps per block (up to 8 blocks)
+    std::vector<double> p_swshunt_b; // B increment per step per block (Mvar)
+    int p_swshunt_nblocks;        // number of valid blocks
+    std::vector<int> p_swshunt_steps_on; // current steps switched on per block
+    double p_swshunt_bcurrent;    // current total B (Mvar)
+    double p_swshunt_bmin;        // minimum achievable B
+    double p_swshunt_bmax;        // maximum achievable B
+    bool p_swshunt_locked;        // lock out after max adjustments
+    int p_swshunt_adj_count;      // number of adjustments made
+    double p_swshunt_bprev;       // previous B value for cycle detection
 
     /**
      * Variables that are exchanged between buses
@@ -728,8 +816,20 @@ private:
       & p_ngen & p_type & p_save_type & p_nload
       & p_area & p_zone
       & p_source & p_sink
-      & p_rtpr_scale;
-  }  
+      & p_rtpr_scale
+      & p_hasSwitchedShunt
+      & p_swshunt_modsw
+      & p_swshunt_vswhi & p_swshunt_vswlo
+      & p_swshunt_swrem
+      & p_swshunt_binit & p_swshunt_adjm
+      & p_swshunt_n & p_swshunt_b
+      & p_swshunt_nblocks
+      & p_swshunt_steps_on
+      & p_swshunt_bcurrent
+      & p_swshunt_bmin & p_swshunt_bmax
+      & p_swshunt_locked & p_swshunt_adj_count
+      & p_swshunt_bprev;
+  }
 
 };
 
@@ -899,6 +999,36 @@ class PFBranch
     int forwardJacobianValues(double *rvals);
     int reverseJacobianValues(double *rvals);
 
+    /**
+     * Check if this branch has LTC control and adjust tap if needed
+     * @param v_controlled voltage at controlled bus
+     * @return true if a tap adjustment was made
+     */
+    bool adjustLTC(double v_controlled);
+
+    /**
+     * Reset LTC to initial tap ratio
+     */
+    void resetLTC();
+
+    /**
+     * Check if branch has LTC control
+     * @return true if branch has an LTC-controlled transformer
+     */
+    bool hasLTC() const;
+
+    /**
+     * Get controlled bus number for LTC
+     * @return CONT1 bus number (0 if not LTC-controlled)
+     */
+    int getLTCControlledBus() const;
+
+    /**
+     * Get index of the LTC-controlled element within this branch
+     * @return element index, or -1 if no LTC
+     */
+    int getLTCElementIndex() const;
+
   private:
     std::vector<bool> p_ignore;
     std::vector<double> p_reactance;
@@ -923,6 +1053,23 @@ class PFBranch
     double p_sbase;
     int p_elems;
     bool p_active;
+
+    // LTC (Load Tap Changer) control variables
+    bool p_hasLTC;              // true if this branch has an LTC-controlled transformer
+    int p_ltc_elem;             // index of the LTC element within this branch
+    int p_ltc_code;             // control mode (1=voltage, 0=off)
+    int p_ltc_cont;             // controlled bus number
+    bool p_ltc_cont_is_to;      // true if controlled bus is the to-bus (tap direction reversal)
+    double p_ltc_rma;           // upper tap limit
+    double p_ltc_rmi;           // lower tap limit
+    double p_ltc_vma;           // controlled voltage upper limit (pu)
+    double p_ltc_vmi;           // controlled voltage lower limit (pu)
+    int p_ltc_ntp;              // number of tap positions
+    double p_ltc_step;          // tap step size (computed from RMA, RMI, NTP)
+    double p_ltc_tap_init;      // initial tap ratio
+    double p_ltc_tap_prev;      // previous tap for cycle detection
+    bool p_ltc_locked;          // lock out after cycling or max adjustments
+    int p_ltc_adj_count;        // number of adjustments made
 
 private:
 
@@ -953,8 +1100,13 @@ private:
       & p_theta
       & p_sbase
       & p_elems
-      & p_active;
-  }  
+      & p_active
+      & p_hasLTC & p_ltc_elem & p_ltc_code & p_ltc_cont
+      & p_ltc_rma & p_ltc_rmi & p_ltc_vma & p_ltc_vmi
+      & p_ltc_ntp & p_ltc_step
+      & p_ltc_tap_init & p_ltc_tap_prev
+      & p_ltc_locked & p_ltc_adj_count;
+  }
 
 };
 

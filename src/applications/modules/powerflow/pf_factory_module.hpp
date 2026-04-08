@@ -13,6 +13,19 @@
  * - Added setInitStartMode for power flow initialization (warm/flat start)
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Added checkSwitchedShuntViolations() and clearSwitchedShunts()
+ * @date  2026-02-24
+ *
+ * @updated Yousu Chen
+ * - Added checkLTCViolations() and clearLTCControls()
+ * - Added computeAreaExport() for area interchange control
+ * @date  2026-03-28
+ *
+ * @updated Yousu Chen
+ * - Added setupIREGPointers() for IREG PV bus swap with MPI support
+ * @date  2026-04-05
+ *
  * @brief
  *
  *
@@ -164,6 +177,12 @@ class PFFactoryModule
     bool checkVoltageViolations(int area);
 
     /**
+     * Set Q limit deadband (Mvar). PV->PQ switch only occurs when Q exceeds
+     * limit by more than this amount.
+     */
+    void setQlimDeadband(double db) { p_qlim_deadband = db; }
+
+    /**
      * Check to see if there are any Q limit violations in the network
      * @param area only check for Q limit violations in this area
      * @return true if no violations found
@@ -181,10 +200,45 @@ class PFFactoryModule
     bool adjustRemoteRegulation(double tol = 1.0e-4);
 
     /**
+     * Set up pointers for IREG PV buses to read remote bus voltage.
+     * Must be called after setExchange() and initBusUpdate().
+     */
+    void setupIREGPointers();
+
+    /**
      * Clear changes that were made for Q limit violations and reset
      * system to its original state
      */
     void clearQlimViolations();
+
+    /**
+     * Check switched shunt violations and adjust shunt B values.
+     * For buses with SWREM != 0, resolves remote bus voltage.
+     * @return true if no violations found (all voltages within deadband)
+     */
+    bool checkSwitchedShuntViolations();
+
+    /**
+     * Clear switched shunt adjustments and reset to BINIT state
+     */
+    void clearSwitchedShunts();
+
+    /**
+     * Check LTC violations and adjust transformer tap ratios.
+     * @return true if no violations found (all controlled voltages within deadband)
+     */
+    bool checkLTCViolations();
+
+    /**
+     * Clear LTC adjustments and reset taps to initial values
+     */
+    void clearLTCControls();
+
+    /**
+     * Compute net MW export for each area via tie-line flows.
+     * @param areaExport map from area number to net MW export (positive = export)
+     */
+    void computeAreaExport(std::map<int,double> &areaExport);
 
     /**
      * Set "ignore" parameter on all buses with violations so that subsequent
@@ -326,6 +380,7 @@ class PFFactoryModule
     std::vector<Violation> p_violations;
 
     bool p_rateB;
+    double p_qlim_deadband;  // Q deadband (Mvar) for PV->PQ switch
 };
 
 } // powerflow

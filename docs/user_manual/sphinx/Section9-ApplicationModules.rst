@@ -71,19 +71,35 @@ shown below:
       <networkConfiguration> IEEE14.raw </networkConfiguration>
       <maxIteration>50</maxIteration>
       <tolerance>1.0e-6</tolerance>
+      <dampingFactor>1.0</dampingFactor>
+      <initStart>warm</initStart>
       <qlim>true</qlim>
       <maxQlimIterations>3</maxQlimIterations>
+      <qlimDeadband>0.1</qlimDeadband>
+      <SwitchedShunt>false</SwitchedShunt>
+      <LTC>false</LTC>
+      <AreaInterchange>false</AreaInterchange>
+      <maxControllerIterations>10</maxControllerIterations>
+      <outputFormat>json</outputFormat>
+      <outputFile>pf_result</outputFile>
       <LinearSolver>
         <PETScOptions>
-          -ksp_view
-          -ksp_type richardson
+          -ksp_type preonly
           -pc_type lu
           -pc_factor_mat_solver_type superlu_dist
-          -ksp_max_it 1
         </PETScOptions>
       </LinearSolver>
     </Powerflow>
   </Configuration>
+
+The ``networkConfiguration`` field accepts PSS/E RAW files in any
+supported version (v23, v33, v34, v35, v36). For v30+ files, the parser
+automatically detects the version from the third field of the first line
+in the RAW file header. Version-specific tags
+(``networkConfiguration_v33``, ``networkConfiguration_v34``, etc.) are
+still supported for backward compatibility and take precedence over
+auto-detection. PSS/E v23 files (which lack the version field) are
+handled as the default when auto-detection finds no version indicator.
 
 This example specifies the input network configuration, the maximum number of
 iterations in the non-linear Newton-Raphson solver, the solution tolerance
@@ -92,8 +108,80 @@ reactive power limit enforcement (default ``true``). When enabled, PV
 buses whose generator reactive power output exceeds the specified
 ``Qmax`` or ``Qmin`` limits are switched to PQ buses and the power
 flow is re-solved. The ``maxQlimIterations`` parameter (default 3)
-controls the maximum number of outer PV-to-PQ switching iterations. This
-is a minimal example and more options for the solver can be used.
+controls the maximum number of outer PV-to-PQ switching iterations.
+The ``qlimDeadband`` parameter (default 0.1 Mvar) sets a tolerance around
+the reactive power limits: a PV bus is only converted to PQ when its
+required Q exceeds a limit by more than this amount, preventing spurious
+switching due to small numerical imbalances near the limit.
+
+The ``SwitchedShunt`` parameter (default ``false``) enables automatic
+switched shunt voltage control. When enabled, buses with switched shunt
+data (MODSW=1 for discrete or MODSW=2 for continuous control) are
+monitored after each Newton-Raphson convergence. If the controlled bus
+voltage falls outside the ``[VSWLO, VSWHI]`` deadband, the shunt
+susceptance is adjusted: discrete mode switches one capacitor or reactor
+bank step per iteration, while continuous mode adjusts B smoothly toward
+the deadband midpoint. Cycle detection locks shunts that oscillate
+between two states. Shunts with ``SWREM`` set to a nonzero bus number
+regulate voltage at that remote bus instead of the local bus.
+
+The ``LTC`` parameter (default ``false``) enables load tap changer
+(LTC) control on transformers. Transformers with COD1=1 in their PSS/E
+data (or a nonzero CONT bus in v23 transformer adjustment records)
+automatically adjust their tap ratios to regulate voltage at the
+controlled bus within the ``[VMI, VMA]`` deadband. Tap ratios are
+adjusted by one discrete step per controller iteration, bounded by
+``[RMI, RMA]``. The step size is computed from the tap range and
+number of tap positions (NTP), or read directly from the STEP field
+when available. Cycle detection prevents tap hunting.
+
+The ``AreaInterchange`` parameter (default ``false``) enables area
+interchange control. When enabled, after the inner controller loop
+converges, the solver computes actual MW exports for each area by
+summing tie-line flows (branches crossing area boundaries). If the
+export deviates from the desired value (``PDES`` from the area
+interchange data) by more than the tolerance (``PTOL``), the solver
+adjusts real power generation at the area slack bus (``ISW``) and
+re-solves. This outer loop runs up to 10 iterations.
+
+The ``maxControllerIterations`` parameter (default 10) sets the maximum
+number of inner controller iterations. This limit is shared by all
+active controls (Q-limits, switched shunts, LTC, and IREG remote
+voltage regulation). When only Q-limits are active, the
+``maxQlimIterations`` parameter is used for backward compatibility.
+
+The ``dampingFactor`` parameter (default 1.0) scales each Newton-Raphson
+correction vector before it is applied to the bus voltages and angles.
+A value of 1.0 gives standard (undamped) Newton-Raphson. Values between
+0 and 1 reduce the step size, which can improve convergence stability for
+ill-conditioned systems such as heavily loaded networks or cases where the
+warm-start initialization is far from the solution. For well-initialized
+cases (RAW files with converged VM/VA stored) a value of 1.0 is
+recommended.
+
+The ``initStart`` parameter (default ``warm``) controls how bus voltages
+and angles are initialized before the first Newton-Raphson iteration.
+``warm`` reads voltage magnitude and angle from the PSS/E RAW file bus
+section (columns VM and VA), placing all buses at the operating point
+stored in the network file. ``flat`` initializes all buses to 1.0 pu and
+0 degrees regardless of the RAW file values, which can be useful for
+cases where the stored voltages are unreliable or absent.
+
+The ``outputFormat`` and ``outputFile`` parameters control structured
+output after a successful solve. When ``outputFormat`` is set to
+``json``, the solver writes per-bus voltages, angles, and power
+injections to ``<outputFile>_buses.json`` and per-branch flows to
+``<outputFile>_branches.json``. When set to ``csv``, the results are
+written to ``<outputFile>_buses.csv`` and ``<outputFile>_branches.csv``.
+If these parameters are omitted no structured output file is written.
+
+The recommended ``LinearSolver`` configuration for the hand-coded
+Newton-Raphson ``solve()`` routine is ``-ksp_type preonly`` with direct
+LU factorization (``-pc_type lu``). This applies the factorization once
+per iteration without an iterative Krylov loop and avoids spurious
+divergence checks that can terminate otherwise-converging solutions.
+
+This is a minimal example and more options for the solver can be used.
 Readers are encouraged to look at the examples that are copied into the
 powerflow directory as part of the build.
 
@@ -407,6 +495,34 @@ can be reversed by calling
 ::
 
    void clearQlimViolations()
+
+Switched shunt voltage violations can be checked and adjusted using
+
+::
+
+   bool checkSwitchedShuntViolations()
+
+This adjusts shunt susceptance on buses where the controlled voltage is
+outside the deadband. After unsetting a contingency, shunt adjustments can
+be reset to their initial BINIT values by calling
+
+::
+
+   void clearSwitchedShunts()
+
+LTC transformer tap ratio violations can be checked and adjusted using
+
+::
+
+   bool checkLTCViolations()
+
+This adjusts tap ratios on LTC-controlled transformers where the controlled
+bus voltage is outside the deadband. After unsetting a contingency, tap
+ratios can be reset to their initial values by calling
+
+::
+
+   void clearLTCControls()
 
 Finally, the internal voltage variables that are used as the solution
 variables in the power flow calculation can be reset to their original

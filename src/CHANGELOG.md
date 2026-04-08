@@ -11,6 +11,41 @@ model](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workf
 The Unreleased section will be empty for tagged releases. Unreleased
 functionality appears in the develop branch.
 
+- Added
+  - Power Flow
+    - Switched shunt control (discrete MODSW=1 and continuous MODSW=2 modes)
+      with per-block N/B stepping, cycle detection, and lockout
+    - LTC (load tap changer) transformer control with tap direction
+      dependent on controlled bus side (from-bus vs to-bus)
+    - Area interchange control for power flow
+    - Auto-detect PSS/E version from RAW file header
+    - IREG remote voltage regulation via PV bus swap: for generators with
+      IREG != 0, the remote bus becomes PV (V = VS) and the generator bus
+      becomes PQ, matching PSS/E and PowerWorld behavior
+    - Q-limit deadband (qlimDeadband XML parameter) to prevent PV/PQ
+      cycling at marginal Q violations
+    - NR step damping for improved convergence robustness
+    - Test cases for switched shunt, LTC, and area interchange controls
+  - Documentation
+    - User manual updated with switched shunt and LTC control sections
+- Fixed
+  - Power Flow
+    - Star bus output filtering: synthetic buses from 3-winding transformers
+      are excluded from power flow output
+    - SHUNT_SWREM/SWREG name mismatch: v34 parser stored remote regulation
+      bus under SWREG but PF component read SWREM; added fallback
+    - LTC tap direction: reversed tap adjustment for to-bus controlled
+      transformers (COD1=1, CONT1=to-bus)
+    - 3-winding transformer ratings in v34/v35 parsers: winding 2 and 3
+      ratings were written to data1 instead of data2/data3
+    - 3-winding transformer star bus voltage initialization from
+      VMSTAR/ANSTAR fields
+  - Parser
+    - PSS/E v34 switched shunt parser: PTI34 incorrectly used v35 parser
+      (SwitchedShuntParser35) which assumed ID and NREG fields not present
+      in v34 format, causing BINIT to read B1 instead (e.g., 100 vs 400
+      Mvar), producing large voltage errors at switched shunt buses
+
 ## [3.6]
 - Added
   - Docker Support
@@ -39,7 +74,6 @@ functionality appears in the develop branch.
     - ZIP load model with voltage-dependent load representation
     - Added Pinj, Qinj to power flow screen outputs
     - Per-iteration max mismatch reporting in Newton-Raphson solve
-    - IREG remote voltage regulation support from PSS/E generator data
     - JSON and CSV export of power flow results via ResultsExporter
   - Contingency Analysis Enhancements
     - N-1 auto-generation feature for contingency analysis
@@ -51,6 +85,8 @@ functionality appears in the develop branch.
   - Dynamic Simulation Enhancements
     - GENROU PSS integration
     - Iterative equilibrium initialization (XML: equilibriumInit, default false)
+    - Support dynamic models (GENROU, GENSAL, Classical) for generators with
+      negative PG.
   - Added build trigger when releasing a new version of GridPACK
 - Changed
   - User manual updated for v3.6 including power flow, state estimation,

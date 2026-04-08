@@ -13,6 +13,15 @@
  * - Added setInitStartMode for power flow initialization (warm/flat start)
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control configuration and 3-loop solve architecture
+ * @date  2026-02-24
+ *
+ * @updated Yousu Chen
+ * - Added LTC (load tap changer) control configuration
+ * - Added area interchange MW control
+ * @date  2026-03-28
+ *
  * @brief
  *
  *
@@ -321,6 +330,28 @@ class PFAppModule
      * system to its original state
      */
     void clearQlimViolations();
+
+    /**
+     * Check switched shunt violations and adjust B values
+     * @return true if no violations found
+     */
+    bool checkSwitchedShuntViolations();
+
+    /**
+     * Clear switched shunt adjustments and reset to BINIT state
+     */
+    void clearSwitchedShunts();
+
+    /**
+     * Check LTC violations and adjust transformer tap ratios
+     * @return true if no violations found
+     */
+    bool checkLTCViolations();
+
+    /**
+     * Clear LTC adjustments and reset taps to initial values
+     */
+    void clearLTCControls();
 
     /**
      * Reset voltages to values in network configuration file
@@ -929,11 +960,29 @@ class PFAppModule
     // convergence tolerance
     double p_tolerance;
 
+    // Newton step damping factor (0 < omega <= 1.0; default 1.0 = no damping)
+    double p_dampingFactor;
+
     // qlim enforce flag (true=enabled, false=disabled)
     bool p_qlim;
 
     // maximum number of Q-limit iterations
     int p_max_qlim_iterations;
+
+    // switched shunt control enable flag
+    bool p_switchedShunt;
+
+    // LTC (load tap changer) control enable flag
+    bool p_ltc;
+
+    // area interchange control enable flag
+    bool p_areaInterchange;
+
+    // maximum number of controller loop iterations
+    int p_max_controller_iterations;
+
+    // Q deadband (Mvar) for PV->PQ switch
+    double p_qlim_deadband;
 
     // pointer to bus IO module
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<PFNetwork> > p_busIO;

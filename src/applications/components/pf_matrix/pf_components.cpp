@@ -32,6 +32,20 @@
  * - Implemented voltage-dependent ZIP load model
  * @date  2026-02-19
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control (MODSW=1 discrete, MODSW=2 continuous)
+ * @date  2026-02-24
+ *
+ * @updated Yousu Chen
+ * - Added LTC (load tap changer) control on PFBranch
+ * @date  2026-03-28
+ *
+ * @updated Yousu Chen
+ * - IREG PV bus swap for remote voltage regulation
+ * - Star bus filtering for 3-winding transformer output
+ * - LTC tap direction fix for to-bus controlled transformers
+ * @date  2026-04-04
+ *
  * @brief Methods used in power flow application
  * 
  * 
@@ -101,6 +115,8 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_theta = 0.0;
   p_angle = 0.0;
   p_voltage = 0.0;
+  p_vmin = 0.0;
+  p_vmax = 0.0;
   /*p_pl = 0.0;
   p_ql = 0.0;
   p_ip = 0.0;
@@ -113,9 +129,29 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_ngen = 0;
   p_data = NULL;
   p_ignore = false;
+  p_isStarBus = false;
+  p_isIREG_PV = false;
+  p_ireg_vs = 0.0;
+  p_ireg_remote_bus = 0;
+  p_ireg_remote_v_ptr = NULL;
   p_vMag_ptr = NULL;
   p_vAng_ptr = NULL;
   p_PV_ptr = NULL;
+  // Switched shunt defaults
+  p_hasSwitchedShunt = false;
+  p_swshunt_modsw = 0;
+  p_swshunt_vswhi = 1.0;
+  p_swshunt_vswlo = 1.0;
+  p_swshunt_swrem = 0;
+  p_swshunt_binit = 0.0;
+  p_swshunt_adjm = 0;
+  p_swshunt_nblocks = 0;
+  p_swshunt_bcurrent = 0.0;
+  p_swshunt_bmin = 0.0;
+  p_swshunt_bmax = 0.0;
+  p_swshunt_locked = false;
+  p_swshunt_adj_count = 0;
+  p_swshunt_bprev = 0.0;
 }
 
 /**
@@ -141,7 +177,7 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 #else
       if (getReferenceBus()) {
         return false;
-      } else if (p_isPV) {
+      } else if (p_isPV && !p_isIREG_PV) {
         *isize = 1;
         *jsize = 1;
         return true;
@@ -212,7 +248,7 @@ bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 #else
       if (getReferenceBus()) {
         return false;
-      } else if (p_isPV) {
+      } else if (p_isPV && !p_isIREG_PV) {
         *size = 1;
       } else {
         *size = 2;
@@ -292,7 +328,7 @@ bool gridpack::powerflow::PFBus::vectorValues(RealType *values)
  * @return false: violations exist (Q limits hit, bus converted to PQ)
  * @return true:  no violations (all generators within limits)
  */
-bool gridpack::powerflow::PFBus::chkQlim(void)
+bool gridpack::powerflow::PFBus::chkQlim(double q_deadband)
 {
   if (!p_isPV) {
     if (p_PV_ptr) *p_PV_ptr = p_isPV;
@@ -414,10 +450,13 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     }
   }
 
-  // Check if Q requirement can be met
+  // Check if Q requirement can be met.
+  // q_deadband avoids switching buses that are only marginally over their Q
+  // limit due to floating-point differences. Configurable via XML qlimDeadband
+  // (default 0.1 Mvar, matching PW's 0.1 MVA convergence tolerance).
   bool need_pv_to_pq = false;
   char warnBuf[256];
-  if (Q_required > Q_max_total) {
+  if (Q_required > Q_max_total + q_deadband) {
     // Exceeds total Qmax - need to convert to PQ
     snprintf(warnBuf, sizeof(warnBuf),
              "\nWarning: Bus %d Q requirement (%8.3f) exceeds total QMAX (%8.3f), converting to PQ\n",
@@ -431,7 +470,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
         q_assigned[i] = p_qmax[i];
       }
     }
-  } else if (Q_required < Q_min_total) {
+  } else if (Q_required < Q_min_total - q_deadband) {
     // Below total Qmin - need to convert to PQ
     snprintf(warnBuf, sizeof(warnBuf),
              "\nWarning: Bus %d Q requirement (%8.3f) below total QMIN (%8.3f), converting to PQ\n",
@@ -520,10 +559,196 @@ void gridpack::powerflow::PFBus::clearQlim()
   if (p_PV_ptr) *p_PV_ptr = p_isPV;
 }
 
+/**
+ * Adjust switched shunt B to bring controlled voltage within deadband.
+ * @param v_controlled voltage at controlled bus (local or remote)
+ * @return true if an adjustment was made
+ */
+bool gridpack::powerflow::PFBus::adjustSwitchedShunt(double v_controlled)
+{
+  if (!p_hasSwitchedShunt || p_swshunt_locked) return false;
+
+  // Skip adjustment for generator buses
+  // Shunt control only becomes active after PV->PQ conversion
+  if (p_isPV || getReferenceBus()) return false;
+
+  // Check if voltage is within deadband.
+  // When VSWHI == VSWLO (zero-width deadband), add a minimum tolerance to
+  // prevent cycling due to floating-point representation.
+  double vswlo = p_swshunt_vswlo;
+  double vswhi = p_swshunt_vswhi;
+  if (vswhi - vswlo < 0.002) {
+    double vmid = (vswhi + vswlo) / 2.0;
+    vswlo = vmid - 0.001;
+    vswhi = vmid + 0.001;
+  }
+  if (v_controlled >= vswlo && v_controlled <= vswhi) {
+    return false;  // No action needed
+  }
+
+  double delta_b = 0.0;
+
+  if (p_swshunt_modsw == 1) {
+    // MODSW=1: Discrete adjustment - one step per controller iteration
+    if (v_controlled < p_swshunt_vswlo) {
+      // Voltage too low - increase B (add capacitor step or remove reactor step)
+      bool adjusted = false;
+      // Try adding a capacitor step (positive B blocks, left to right)
+      for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+        if (p_swshunt_b[ib] > 0.0 && p_swshunt_steps_on[ib] < p_swshunt_n[ib]) {
+          p_swshunt_steps_on[ib]++;
+          delta_b = p_swshunt_b[ib];
+          adjusted = true;
+          break;
+        }
+      }
+      // If no capacitor step available, try removing a reactor step (negative B blocks)
+      if (!adjusted) {
+        for (int ib = p_swshunt_nblocks - 1; ib >= 0; ib--) {
+          if (p_swshunt_b[ib] < 0.0 && p_swshunt_steps_on[ib] > 0) {
+            p_swshunt_steps_on[ib]--;
+            delta_b = -p_swshunt_b[ib];  // Removing reactor increases B
+            adjusted = true;
+            break;
+          }
+        }
+      }
+      if (!adjusted) return false;
+    } else {
+      // Voltage too high - decrease B (remove capacitor step or add reactor step)
+      bool adjusted = false;
+      // Try removing a capacitor step (positive B blocks, right to left)
+      for (int ib = p_swshunt_nblocks - 1; ib >= 0; ib--) {
+        if (p_swshunt_b[ib] > 0.0 && p_swshunt_steps_on[ib] > 0) {
+          p_swshunt_steps_on[ib]--;
+          delta_b = -p_swshunt_b[ib];
+          adjusted = true;
+          break;
+        }
+      }
+      // If no capacitor step to remove, try adding a reactor step (negative B blocks)
+      if (!adjusted) {
+        for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+          if (p_swshunt_b[ib] < 0.0 && p_swshunt_steps_on[ib] < p_swshunt_n[ib]) {
+            p_swshunt_steps_on[ib]++;
+            delta_b = p_swshunt_b[ib];  // Adding reactor decreases B
+            adjusted = true;
+            break;
+          }
+        }
+      }
+      if (!adjusted) return false;
+    }
+  } else if (p_swshunt_modsw == 2) {
+    // MODSW=2: Continuous adjustment toward deadband midpoint
+    double v_target = (p_swshunt_vswhi + p_swshunt_vswlo) / 2.0;
+    double k = p_swshunt_bmax - p_swshunt_bmin;
+    if (k <= 0.0) k = 1.0;  // Fallback
+    double b_target = p_swshunt_bcurrent + k * (v_target - v_controlled);
+    // Clamp to [Bmin, Bmax]
+    if (b_target < p_swshunt_bmin) b_target = p_swshunt_bmin;
+    if (b_target > p_swshunt_bmax) b_target = p_swshunt_bmax;
+    delta_b = b_target - p_swshunt_bcurrent;
+    if (fabs(delta_b) < 1.0e-6) return false;  // No meaningful change
+  } else {
+    return false;
+  }
+
+  // Cycle detection: if this adjustment would return to previous B, we are
+  // oscillating between two discrete steps that straddle the deadband.
+  // Choose the better of the two states (less deviated from the deadband)
+  // before locking.  If the current voltage is noticeably outside the deadband,
+  // apply the reverting step so we lock at the less-deviated setting.
+  double b_new = p_swshunt_bcurrent + delta_b;
+  if (p_swshunt_adj_count > 0 && fabs(b_new - p_swshunt_bprev) < 1.0e-6) {
+    double outside = (v_controlled > vswhi) ? (v_controlled - vswhi)
+                                             : (vswlo - v_controlled);
+    if (outside > 0.01) {
+      // Current state is far outside deadband; accept the reverting step
+      // (which moves toward the deadband) and then lock.
+      p_swshunt_bprev = p_swshunt_bcurrent;
+      p_swshunt_bcurrent = b_new;
+      addShuntValues(0.0, delta_b / p_sbase);
+      p_swshunt_locked = true;
+      return true;
+    }
+    p_swshunt_locked = true;
+    return false;
+  }
+
+  // Apply the change to YMBus::p_shunt_bs via addShuntValues()
+  p_swshunt_bprev = p_swshunt_bcurrent;
+  p_swshunt_bcurrent = b_new;
+  addShuntValues(0.0, delta_b / p_sbase);
+
+  // Increment adjustment count and lock out after 10 adjustments
+  p_swshunt_adj_count++;
+  if (p_swshunt_adj_count >= 10) {
+    p_swshunt_locked = true;
+  }
+
+  return true;
+}
+
+/**
+ * Reset switched shunt to BINIT state
+ */
+void gridpack::powerflow::PFBus::resetSwitchedShunt()
+{
+  if (!p_hasSwitchedShunt) return;
+
+  // Remove current B from shunt, restore to BINIT
+  double delta = p_swshunt_binit - p_swshunt_bcurrent;
+  addShuntValues(0.0, delta / p_sbase);
+  p_swshunt_bcurrent = p_swshunt_binit;
+
+  // Re-decompose BINIT into step counts
+  double b_remaining = p_swshunt_binit;
+  for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+    if (p_swshunt_b[ib] == 0.0) {
+      p_swshunt_steps_on[ib] = 0;
+      continue;
+    }
+    int steps = static_cast<int>(b_remaining / p_swshunt_b[ib]);
+    if (steps < 0) steps = 0;
+    if (steps > p_swshunt_n[ib]) steps = p_swshunt_n[ib];
+    p_swshunt_steps_on[ib] = steps;
+    b_remaining -= steps * p_swshunt_b[ib];
+  }
+
+  p_swshunt_locked = false;
+  p_swshunt_adj_count = 0;
+  p_swshunt_bprev = p_swshunt_binit;
+}
+
+/**
+ * Check if bus has a switched shunt
+ */
+bool gridpack::powerflow::PFBus::hasSwitchedShunt() const
+{
+  return p_hasSwitchedShunt;
+}
+
+/**
+ * Get remote bus number for switched shunt control
+ */
+int gridpack::powerflow::PFBus::getSwitchedShuntRemoteBus() const
+{
+  return p_swshunt_swrem;
+}
+
+/**
+ * Get current switched shunt susceptance
+ */
+double gridpack::powerflow::PFBus::getSwitchedShuntB() const
+{
+  return p_swshunt_bcurrent;
+}
+
 
 /**
  * Set the internal values of the voltage magnitude and phase angle. Need this
- * function to push values from vectors back onto buses 
+ * function to push values from vectors back onto buses
  * @param values array containing voltage magnitude and angle
  */
 void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
@@ -534,7 +759,7 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 #ifdef LARGE_MATRIX
   p_v -= real(values[1]);
 #else
-  if (!p_isPV) {
+  if (!p_isPV || p_isIREG_PV) {
     p_v -= real(values[1]);
   }
 #endif
@@ -648,6 +873,11 @@ void gridpack::powerflow::PFBus::load(
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
+  // Load bus voltage limits (NVHI/NVLO from RAW) for IREG clamping
+  p_vmax = 1.1;  // default
+  p_vmin = 0.9;  // default
+  data->getValue(BUS_VOLTAGE_MAX, &p_vmax);
+  data->getValue(BUS_VOLTAGE_MIN, &p_vmin);
   double pi = 4.0*atan(1.0);
 
   // Apply initial start mode
@@ -673,6 +903,14 @@ void gridpack::powerflow::PFBus::load(
     p_original_isolated = true;
   } else {
     p_original_isolated = false;
+  }
+  // Detect synthetic star buses from 3-winding transformers
+  std::string busName;
+  p_isStarBus = false;
+  if (data->getValue(BUS_NAME, &busName)) {
+    if (busName.substr(0, 9) == "DUMMY_BUS") {
+      p_isStarBus = true;
+    }
   }
   p_area = 1;
   data->getValue(BUS_AREA, &p_area);
@@ -769,6 +1007,35 @@ void gridpack::powerflow::PFBus::load(
         p_ngen++;
       }
     }
+    // Detect IREG PV buses: if ALL online generators have remote IREG,
+    // use augmented Jacobian (control V at remote bus instead of local bus)
+    if (p_isPV && p_ngen > 0) {
+      bool all_remote = true;
+      int ireg_bus_found = 0;
+      double ireg_vs_found = 0.0;
+      int orig_idx = getOriginalIndex();
+      for (int ig = 0; ig < p_ngen; ig++) {
+        if (p_gstatus[ig] == 1) {
+          int ireg = p_ireg[ig];
+          if (ireg == 0 || ireg == orig_idx) {
+            all_remote = false;
+            break;
+          }
+          if (ireg_bus_found == 0) {
+            ireg_bus_found = ireg;
+            ireg_vs_found = p_vs[ig];
+          }
+        }
+      }
+      if (all_remote && ireg_bus_found != 0) {
+        // Store IREG info but don't enable augmented Jacobian yet
+        // The factory will handle PV swap after all buses are loaded
+        p_ireg_remote_bus = ireg_bus_found;
+        p_ireg_vs = ireg_vs_found;
+        // p_isIREG_PV is set by factory after PV swap setup
+      }
+    }
+
     // Normalize p_pFac (P-based factor for P distribution)
     if (pcaptot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
@@ -810,6 +1077,26 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
+  // Warm-start Q-limit pre-saturation: if scheduled QG is already at QMAX or QMIN
+  // (within 0.1 Mvar), start this bus as PQ immediately.  This matches PW behavior
+  // where generators already at their limits in the input data are treated as PQ,
+  // preventing IREG from driving them to impossible Q requirements.
+  // Only applies for warm start with qlim enabled.
+  if (p_isPV && p_qlim && p_initStartMode != INIT_START_FLAT) {
+    double total_qg = 0.0, total_qmax = 0.0, total_qmin = 0.0;
+    for (i = 0; i < p_ngen; i++) {
+      if (p_gstatus[i] == 1) {
+        total_qg   += p_qg[i];
+        total_qmax += p_qmax[i];
+        total_qmin += p_qmin[i];
+      }
+    }
+    const double Q_init_tol = 0.1;  // Mvar — matches PW convergence tolerance
+    if (total_qg >= total_qmax - Q_init_tol || total_qg <= total_qmin + Q_init_tol) {
+      p_isPV = false;
+    }
+  }
+
   p_saveisPV = p_isPV;
   p_save2isPV = p_isPV;  // Initialize for Q limit handling - ensures valid value if chkQlim() never called
 
@@ -857,6 +1144,82 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
+  // Load switched shunt data
+  p_hasSwitchedShunt = false;
+  p_swshunt_n.clear();
+  p_swshunt_b.clear();
+  p_swshunt_steps_on.clear();
+  p_swshunt_nblocks = 0;
+  p_swshunt_locked = false;
+  p_swshunt_adj_count = 0;
+
+  int swshunt_modsw = 0;
+  int swshunt_stat = 1;  // Default in-service (v23 format has no STATUS field)
+  if (data->getValue(SHUNT_MODSW, &swshunt_modsw)) {
+    data->getValue(SHUNT_SWCH_STAT, &swshunt_stat);  // Override if present (v33+)
+    if (swshunt_stat == 1 && (swshunt_modsw == 1 || swshunt_modsw == 2)) {
+      p_swshunt_modsw = swshunt_modsw;
+      p_swshunt_vswhi = 1.0;
+      p_swshunt_vswlo = 1.0;
+      p_swshunt_swrem = 0;
+      p_swshunt_binit = 0.0;
+      p_swshunt_adjm = 0;
+      data->getValue(SHUNT_VSWHI, &p_swshunt_vswhi);
+      data->getValue(SHUNT_VSWLO, &p_swshunt_vswlo);
+      if (!data->getValue(SHUNT_SWREM, &p_swshunt_swrem)) {
+        data->getValue(SHUNT_SWREG, &p_swshunt_swrem);  // v34+ uses SWREG
+      }
+      data->getValue(SHUNT_BINIT, &p_swshunt_binit);
+      data->getValue(SHUNT_ADJM, &p_swshunt_adjm);
+
+      // Read N1-N8, B1-B8 block data
+      const char *n_keys[] = {SHUNT_N1, SHUNT_N2, SHUNT_N3, SHUNT_N4,
+                               SHUNT_N5, SHUNT_N6, SHUNT_N7, SHUNT_N8};
+      const char *b_keys[] = {SHUNT_B1, SHUNT_B2, SHUNT_B3, SHUNT_B4,
+                               SHUNT_B5, SHUNT_B6, SHUNT_B7, SHUNT_B8};
+      for (int ib = 0; ib < 8; ib++) {
+        int ni = 0;
+        double bi = 0.0;
+        data->getValue(n_keys[ib], &ni);
+        data->getValue(b_keys[ib], &bi);
+        if (ni == 0 && bi == 0.0) break;  // End of blocks
+        p_swshunt_n.push_back(ni);
+        p_swshunt_b.push_back(bi);
+        p_swshunt_nblocks++;
+      }
+
+      if (p_swshunt_nblocks > 0) {
+        // Compute Bmin and Bmax from block data
+        p_swshunt_bmin = 0.0;
+        p_swshunt_bmax = 0.0;
+        for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+          double block_b = p_swshunt_n[ib] * p_swshunt_b[ib];
+          if (block_b > 0.0) {
+            p_swshunt_bmax += block_b;  // Capacitor block
+          } else {
+            p_swshunt_bmin += block_b;  // Reactor block
+          }
+        }
+
+        // Decompose BINIT into initial step counts per block
+        p_swshunt_steps_on.resize(p_swshunt_nblocks, 0);
+        double b_remaining = p_swshunt_binit;
+        for (int ib = 0; ib < p_swshunt_nblocks; ib++) {
+          if (p_swshunt_b[ib] == 0.0) continue;
+          int steps = static_cast<int>(b_remaining / p_swshunt_b[ib]);
+          if (steps < 0) steps = 0;
+          if (steps > p_swshunt_n[ib]) steps = p_swshunt_n[ib];
+          p_swshunt_steps_on[ib] = steps;
+          b_remaining -= steps * p_swshunt_b[ib];
+        }
+
+        p_swshunt_bcurrent = p_swshunt_binit;
+        p_swshunt_bprev = p_swshunt_binit;
+        p_hasSwitchedShunt = true;
+      }
+    }
+  }
+
   // If this is being called a second time, then update pointers
   if (p_vMag_ptr) *p_vMag_ptr = p_v;
   if (p_vAng_ptr) {
@@ -1249,6 +1612,11 @@ void gridpack::powerflow::PFBus::adjustVoltageForRemoteReg(double dv)
 {
   p_v += dv;
   p_voltage += dv;
+  // Clamp to bus voltage limits to prevent unbounded accumulation over many
+  // outer iterations (each call adds dv; without clamping p_voltage drifts
+  // to multi-pu values causing impossible Q requirements)
+  if (p_vmax > 0.0 && p_voltage > p_vmax) { p_v = p_vmax; p_voltage = p_vmax; }
+  if (p_vmin > 0.0 && p_voltage < p_vmin) { p_v = p_vmin; p_voltage = p_vmin; }
   if (p_vMag_ptr) *p_vMag_ptr = p_v;
 }
 
@@ -1423,7 +1791,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     Q += p_v*p_v*(-p_ybusi);
     p_Pinj = P;
     p_Qinj = Q;
-    if (!isIsolated()) {
+    if (!isIsolated() && !p_isStarBus) {
       sprintf(string, "     %6d      %12.6f         %12.6f         %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v,p_Pinj,p_Qinj);
     }
@@ -1482,6 +1850,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
             static_cast<int>(branches.size()));
     }
   } else if (!strcmp(signal,"record")) {
+    if (p_isStarBus) return false;
     char sbuf[128];
     char *cptr = string;
     int slen = 0;
@@ -1749,6 +2118,15 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     } else {
       return false;
     }
+  } else if (!strcmp(signal,"swshunt")) {
+    if (p_hasSwitchedShunt) {
+      sprintf(string, "     %6d  MODSW=%d  Binit=%8.2f  Bcurrent=%8.2f  V=%8.4f  [%6.4f, %6.4f]\n",
+              getOriginalIndex(), p_swshunt_modsw,
+              p_swshunt_binit, p_swshunt_bcurrent,
+              p_v, p_swshunt_vswlo, p_swshunt_vswhi);
+      return true;
+    }
+    return false;
   }
   return true;
 }
@@ -2160,6 +2538,7 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
     }
 #else
     if (!getReferenceBus() && !p_isPV) {
+      // Standard PQ
       rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
       rvals[1] = p_Pinj - p_ybusr * p_v *p_v;
       rvals[2] = p_Pinj / p_v + p_ybusr * p_v;
@@ -2168,7 +2547,16 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
       rvals[2] += dpzip_dV / p_sbase;
       rvals[3] += dqzip_dV / p_sbase;
       return 4;
+    } else if (!getReferenceBus() && p_isPV && p_isIREG_PV) {
+      // IREG PV: equations [ΔP, V_remote-VS], variables [θ, V]
+      rvals[0] = -p_Qinj - p_ybusi * p_v * p_v;  // ∂ΔP/∂θ
+      rvals[1] = 0.0;                              // ∂(V_remote-VS)/∂θ
+      rvals[2] = p_Pinj / p_v + p_ybusr * p_v;    // ∂ΔP/∂V
+      rvals[2] += dpzip_dV / p_sbase;
+      rvals[3] = 1.0e-10;                            // small pivot helper
+      return 4;
     } else if (!getReferenceBus() && p_isPV) {
+      // Standard PV
       rvals[0] = -p_Qinj - p_ybusi * p_v *p_v;
       return 1;
     } else {
@@ -2238,6 +2626,11 @@ int gridpack::powerflow::PFBus::rhsValues(double *rvals)
       nvals = 1;
       if (!p_isPV) {
         rvals[1] = Q;
+        nvals = 2;
+      } else if (p_isIREG_PV) {
+        // V_remote - VS constraint
+        double v_remote = (p_ireg_remote_v_ptr) ? *p_ireg_remote_v_ptr : p_ireg_vs;
+        rvals[1] = v_remote - p_ireg_vs;
         nvals = 2;
       }
 #endif
@@ -2567,6 +2960,22 @@ gridpack::powerflow::PFBranch::PFBranch(void)
   p_theta = 0.0;
   p_sbase = 0.0;
   p_mode = YBus;
+  // LTC defaults
+  p_hasLTC = false;
+  p_ltc_elem = -1;
+  p_ltc_code = 0;
+  p_ltc_cont = 0;
+  p_ltc_cont_is_to = false;
+  p_ltc_rma = 1.1;
+  p_ltc_rmi = 0.9;
+  p_ltc_vma = 1.1;
+  p_ltc_vmi = 0.9;
+  p_ltc_ntp = 33;
+  p_ltc_step = 0.0;
+  p_ltc_tap_init = 0.0;
+  p_ltc_tap_prev = 0.0;
+  p_ltc_locked = false;
+  p_ltc_adj_count = 0;
 }
 
 /**
@@ -2600,8 +3009,9 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       *jsize = 2;
       return true;
 #else
-      bool bus1PV = bus1->isPV();
-      bool bus2PV = bus2->isPV();
+      // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+      bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+      bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
       if (bus1PV && bus2PV) {
         *isize = 1;
         *jsize = 1;
@@ -2646,8 +3056,9 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       *jsize = 2;
       return true;
 #else
-      bool bus1PV = bus1->isPV();
-      bool bus2PV = bus2->isPV();
+      // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+      bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+      bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
       if (bus1PV && bus2PV) {
         *isize = 1;
         *jsize = 1;
@@ -2847,6 +3258,67 @@ void gridpack::powerflow::PFBranch::load(
     p_rateC.push_back(rvar);
     p_ignore.push_back(false);
   }
+
+  // Load LTC control data — scan elements for COD1=1 (voltage control)
+  p_hasLTC = false;
+  p_ltc_elem = -1;
+  p_ltc_locked = false;
+  p_ltc_adj_count = 0;
+  for (int idx = 0; idx < p_elems; idx++) {
+    int code1 = 0;
+    int cont1 = 0;
+    // v33+: TRANSFORMER_CODE1 and TRANSFORMER_CONT1
+    // v23: TRANSFORMER_CONTROL stores controlled bus (nonzero implies voltage control)
+    bool has_ltc_data = false;
+    if (data->getValue(TRANSFORMER_CODE1, &code1, idx) && code1 == 1) {
+      if (!data->getValue(TRANSFORMER_CONT1, &cont1, idx)) {
+        data->getValue(TRANSFORMER_CONTROL, &cont1, idx);
+      }
+      has_ltc_data = (cont1 != 0);
+    } else if (data->getValue(TRANSFORMER_CONTROL, &cont1, idx) && cont1 != 0) {
+      // v23 format: TRANSFORMER_CONTROL present with nonzero bus implies voltage control
+      code1 = 1;
+      has_ltc_data = true;
+    }
+    if (has_ltc_data) {
+
+      double rma = 1.1, rmi = 0.9, vma = 1.1, vmi = 0.9;
+      int ntp = 33;
+      data->getValue(TRANSFORMER_RMA, &rma, idx);
+      data->getValue(TRANSFORMER_RMI, &rmi, idx);
+      data->getValue(TRANSFORMER_VMA, &vma, idx);
+      data->getValue(TRANSFORMER_VMI, &vmi, idx);
+      data->getValue(TRANSFORMER_NTP, &ntp, idx);
+
+      // Compute step size: use TRANSFORMER_STEP if available (v23), else from tap range
+      double step = 0.0;
+      if (!data->getValue(TRANSFORMER_STEP, &step, idx) || step < 1.0e-6) {
+        if (ntp > 1) {
+          step = (rma - rmi) / (ntp - 1);
+        }
+      }
+      if (step < 1.0e-6) step = 0.00625;  // Default 0.625% step
+
+      p_hasLTC = true;
+      p_ltc_elem = idx;
+      p_ltc_code = code1;
+      p_ltc_cont = cont1;
+      // Determine if controlled bus is the to-bus (tap direction reversal needed)
+      int frombus = 0, tobus = 0;
+      data->getValue(BRANCH_FROMBUS, &frombus);
+      data->getValue(BRANCH_TOBUS, &tobus);
+      p_ltc_cont_is_to = (cont1 == tobus);
+      p_ltc_rma = rma;
+      p_ltc_rmi = rmi;
+      p_ltc_vma = vma;
+      p_ltc_vmi = vmi;
+      p_ltc_ntp = ntp;
+      p_ltc_step = step;
+      p_ltc_tap_init = p_tap_ratio[idx];
+      p_ltc_tap_prev = p_tap_ratio[idx];
+      break;  // Only support one LTC per branch
+    }
+  }
 }
 
 /**
@@ -2854,6 +3326,113 @@ void gridpack::powerflow::PFBranch::load(
  * the mapper
  * @param mode: enumerated constant for different modes
  */
+/**
+ * Adjust LTC tap ratio to bring controlled voltage within deadband.
+ * @param v_controlled voltage at controlled bus
+ * @return true if a tap adjustment was made
+ */
+bool gridpack::powerflow::PFBranch::adjustLTC(double v_controlled)
+{
+  if (!p_hasLTC || p_ltc_locked) return false;
+  int idx = p_ltc_elem;
+
+  // Check if voltage is within deadband
+  double vmi = p_ltc_vmi;
+  double vma = p_ltc_vma;
+  if (vma - vmi < 0.002) {
+    double vmid = (vma + vmi) / 2.0;
+    vmi = vmid - 0.001;
+    vma = vmid + 0.001;
+  }
+  if (v_controlled >= vmi && v_controlled <= vma) {
+    return false;  // No action needed
+  }
+
+  double tap_current = p_tap_ratio[idx];
+  double tap_new = tap_current;
+
+  // Tap direction depends on which bus is controlled:
+  // - Tap on from-bus side: increasing tap INCREASES from-bus V, DECREASES to-bus V
+  // - If controlling to-bus: low V → decrease tap; high V → increase tap
+  // - If controlling from-bus: low V → increase tap; high V → decrease tap
+  double step = p_ltc_step;
+  if (p_ltc_cont_is_to) step = -step;  // Reverse direction for to-bus control
+
+  if (v_controlled < p_ltc_vmi) {
+    // Voltage too low
+    tap_new = tap_current + step;
+  } else {
+    // Voltage too high
+    tap_new = tap_current - step;
+  }
+
+  // Clamp to [RMI, RMA]
+  if (tap_new > p_ltc_rma) tap_new = p_ltc_rma;
+  if (tap_new < p_ltc_rmi) tap_new = p_ltc_rmi;
+
+  // No change possible (already at limit)
+  if (fabs(tap_new - tap_current) < 1.0e-8) {
+    p_ltc_locked = true;
+    return false;
+  }
+
+  // Cycle detection: if this adjustment would return to previous tap, lock
+  if (p_ltc_adj_count > 0 && fabs(tap_new - p_ltc_tap_prev) < 1.0e-8) {
+    p_ltc_locked = true;
+    return false;
+  }
+
+  // Apply the tap change to both PFBranch and YMBranch tap ratio vectors
+  p_ltc_tap_prev = tap_current;
+  p_tap_ratio[idx] = tap_new;
+  YMBranch::setParam(BRANCH_TAP, tap_new, idx);
+
+  p_ltc_adj_count++;
+  if (p_ltc_adj_count >= 10) {
+    p_ltc_locked = true;
+  }
+
+  return true;
+}
+
+/**
+ * Reset LTC to initial tap ratio
+ */
+void gridpack::powerflow::PFBranch::resetLTC()
+{
+  if (!p_hasLTC) return;
+  int idx = p_ltc_elem;
+  p_tap_ratio[idx] = p_ltc_tap_init;
+  YMBranch::setParam(BRANCH_TAP, p_ltc_tap_init, idx);
+  p_ltc_tap_prev = p_ltc_tap_init;
+  p_ltc_locked = false;
+  p_ltc_adj_count = 0;
+}
+
+/**
+ * Check if branch has LTC control
+ */
+bool gridpack::powerflow::PFBranch::hasLTC() const
+{
+  return p_hasLTC;
+}
+
+/**
+ * Get controlled bus number for LTC
+ */
+int gridpack::powerflow::PFBranch::getLTCControlledBus() const
+{
+  return p_ltc_cont;
+}
+
+/**
+ * Get index of the LTC-controlled element within this branch
+ */
+int gridpack::powerflow::PFBranch::getLTCElementIndex() const
+{
+  return p_ltc_elem;
+}
+
 void gridpack::powerflow::PFBranch::setMode(int mode)
 {
   if (mode == YBus) {
@@ -3279,8 +3858,9 @@ int gridpack::powerflow::PFBranch::forwardJacobianValues(double *rvals)
     double t11, t12, t21, t22;
     double cs = cos(p_theta);
     double sn = sin(p_theta);
-    bool bus1PV = bus1->isPV();
-    bool bus2PV = bus2->isPV();
+    // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+    bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+    bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
 #ifdef LARGE_MATRIX
     rvals[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
     rvals[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
@@ -3330,8 +3910,17 @@ int gridpack::powerflow::PFBranch::forwardJacobianValues(double *rvals)
       rvals[2] *= bus1->getVoltage();
       rvals[3] *= bus1->getVoltage();
       nvals = 4;
-    }  
+    }
 #endif
+    // For IREG PV bus1: replace Q-row with V_remote constraint
+    if (bus1->isIREG_PV()) {
+      int remote = bus1->getIREGRemoteBus();
+      int bus2_idx = bus2->getOriginalIndex();
+      if (nvals >= 2) rvals[1] = 0.0;  // ∂(V_remote)/∂θ_bus2 = 0
+      if (nvals >= 4) {
+        rvals[3] = (bus2_idx == remote) ? 1.0 : 0.0;
+      }
+    }
     return nvals;
   } else {
     return 0;
@@ -3354,8 +3943,9 @@ int gridpack::powerflow::PFBranch::reverseJacobianValues(double *rvals)
     double t11, t12, t21, t22;
     double cs = cos(-p_theta);
     double sn = sin(-p_theta);
-    bool bus1PV = bus1->isPV();
-    bool bus2PV = bus2->isPV();
+    // IREG PV buses have 2 vars/eqs (like PQ), not 1 (like standard PV)
+    bool bus1PV = bus1->isPV() && !bus1->isIREG_PV();
+    bool bus2PV = bus2->isPV() && !bus2->isIREG_PV();
 #ifdef LARGE_MATRIX
     rvals[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
     rvals[1] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);

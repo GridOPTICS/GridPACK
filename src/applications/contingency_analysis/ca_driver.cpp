@@ -809,10 +809,23 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 #endif
     // Skip power flow if contingency setup failed (no valid slack) or islanding detected
     bool slackCapacityOk = true;  // Will be checked after solve
-    if (contingencyFound && !islandDetected && pf_app.solve()) {
-      if (check_Qlim && !pf_app.checkQlimViolations()) {
-        pf_app.solve();
+    bool solveOk = false;
+    if (contingencyFound && !islandDetected) {
+      try {
+        solveOk = pf_app.solve();
+        if (solveOk && check_Qlim && !pf_app.checkQlimViolations()) {
+          pf_app.solve();
+        }
+      } catch (const std::exception& e) {
+        printf("p[%d] hit exception: %s\n", world.rank(), e.what());
+        printf("Solver failure\n");
+        solveOk = false;
+      } catch (...) {
+        printf("p[%d] hit unknown exception during solve\n", world.rank());
+        solveOk = false;
       }
+    }
+    if (solveOk) {
       // Write PV->PQ conversion warnings to output file
       if (print_calcs && check_Qlim) {
         std::vector<std::string>& warnings = gridpack::powerflow::PFBus::getQlimWarnings();

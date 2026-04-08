@@ -8,6 +8,11 @@
  *
  *  Created on: December 10, 2014
  *      Author: Kevin Glass, Bruce Palmer
+ *
+ *  @updated Yousu Chen
+ *  - Fixed: use SwitchedShuntParser34 instead of Parser35 (v34 format
+ *    has no ID/NREG fields; wrong parser shifted BINIT to B1)
+ *  @date  2026-04-04
  */
 
 #ifndef PTI34_PARSER_HPP_
@@ -47,7 +52,7 @@
 #include "gridpack/parser/block_parsers/interarea_parser33.hpp"
 #include "gridpack/parser/block_parsers/owner_parser33.hpp"
 #include "gridpack/parser/block_parsers/facts_parser33.hpp"
-#include "gridpack/parser/block_parsers/switched_shunt_parser35.hpp"
+#include "gridpack/parser/block_parsers/switched_shunt_parser34.hpp"
 
 #define TERM_CHAR '0'
 // SOURCE: http://www.ee.washington.edu/research/pstca/formats/pti.txt
@@ -291,7 +296,7 @@ class PTI34_parser : public BasePTIParser<_network>
         gridpack::parser::FACTSParser33 facts_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         facts_parser.parse(p_istream);
-        gridpack::parser::SwitchedShuntParser35 switched_shunt_parser(&p_busMap,
+        gridpack::parser::SwitchedShuntParser34 switched_shunt_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         switched_shunt_parser.parse(p_istream,p_busData);
 

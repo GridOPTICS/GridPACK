@@ -13,6 +13,22 @@
  * - Added setInitStartMode for power flow initialization (warm/flat start)
  * @date  2026-02-02
  *
+ * @updated Yousu Chen
+ * - Added switched shunt control configuration and controller loop solve architecture
+ * @date  2026-02-24
+ *
+ * @updated Yousu Chen
+ * - Added LTC (load tap changer) control configuration
+ * - Added area interchange MW control
+ * - Auto-detect PSS/E version from RAW file header
+ * @date  2026-03-28
+ *
+ * @updated Yousu Chen
+ * - Auto-detect: skip @! comment lines in v35/v36 RAW headers
+ * - IREG PV swap
+ * - 3-winding transformer star bus filtering for bus and branch output
+ * @date  2026-04-05
+ *
  * @brief
  *
  *
@@ -37,6 +53,7 @@
 #include "pf_helper.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 #include <algorithm>
+#include <fstream>
 
 #define USE_REAL_VALUES
 
@@ -140,11 +157,65 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     printf("No network configuration file specified\n");
     return;
   }
+
+  // Auto-detect PSS/E version from RAW file header when using networkConfiguration
+  // PSS/E v30+ files have: IC, SBASE, REV, ... on line 1 (comma-delimited).
+  // PSS/E v23 files have: IC  SBASE (space-delimited, no version field).
+  if (filetype == PTI23) {
+    gridpack::utility::StringUtils util;
+    std::string fname = util.trimQuotes(filename);
+    util.trim(fname);
+    std::ifstream testFile(fname.c_str());
+    if (testFile.good()) {
+      std::string line1;
+      // Skip comment lines (@! prefix) used in v35/v36 RAW files
+      do {
+        std::getline(testFile, line1);
+      } while (testFile.good() && line1.size() > 1 && line1[0] == '@');
+      testFile.close();
+      // Check if line contains commas (v30+ format)
+      if (line1.find(',') != std::string::npos) {
+        // Extract 3rd comma-delimited field (version number)
+        // Line format: IC, SBASE, REV, ...
+        size_t pos1 = line1.find(',');
+        size_t pos2 = (pos1 != std::string::npos) ? line1.find(',', pos1+1) : std::string::npos;
+        if (pos2 != std::string::npos) {
+          size_t pos3 = line1.find(',', pos2+1);
+          std::string verStr = line1.substr(pos2+1,
+              (pos3 != std::string::npos) ? pos3-pos2-1 : std::string::npos);
+          util.trim(verStr);
+          int ver = atoi(verStr.c_str());
+          if (ver == 33) {
+            filetype = PTI33;
+          } else if (ver == 34) {
+            filetype = PTI34;
+          } else if (ver == 35) {
+            filetype = PTI35;
+          } else if (ver >= 36) {
+            filetype = PTI36;
+          } else if (ver >= 30) {
+            filetype = PTI33;  // Fallback: treat v30-v32 as v33
+          }
+          if (filetype != PTI23 && !p_no_print) {
+            char ioBuf2[128];
+            sprintf(ioBuf2, "Auto-detected PSS/E v%d format from RAW file header\n", ver);
+            printf("%s", ioBuf2);
+          }
+        }
+      }
+    }
+  }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);
   p_qlim = cursor->get("qlim",true);
   p_max_iteration = cursor->get("maxIteration",50);
   p_max_qlim_iterations = cursor->get("maxQlimIterations",3);
+  p_switchedShunt = cursor->get("SwitchedShunt",false);
+  p_ltc = cursor->get("LTC",false);
+  p_areaInterchange = cursor->get("AreaInterchange",false);
+  p_max_controller_iterations = cursor->get("maxControllerIterations",10);
+  p_qlim_deadband = cursor->get("qlimDeadband",0.1);
+  p_dampingFactor = cursor->get("dampingFactor",1.0);
   ComplexType tol;
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
@@ -318,6 +389,12 @@ void gridpack::powerflow::PFAppModule::initialize()
   timer->start(t_updt);
   p_network->initBusUpdate();
   timer->stop(t_updt);
+
+  // Set up IREG PV bus swap (must be after setExchange and initBusUpdate)
+  p_factory->setupIREGPointers();
+  // Sync PV status changes to ghost buses across processes
+  p_network->updateBuses();
+
   timer->stop(t_total);
 }
 
@@ -347,23 +424,71 @@ bool gridpack::powerflow::PFAppModule::solve()
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
   p_factory->clearViolations();
-  gridpack::ComplexType tol = 2.0*p_tolerance;
-  int iter = 0;
-  bool repeat = true;
-  int int_repeat = 0;
-  while (repeat) {
+  char ioBuf[128];
+
+  // Determine max controller iterations based on configuration
+  int max_ctrl_iter = p_qlim ? p_max_qlim_iterations : 1;
+  if (p_switchedShunt || p_ltc) {
+    max_ctrl_iter = p_max_controller_iterations;
+  }
+  max_ctrl_iter = std::max(max_ctrl_iter, 10);
+
+  // Load area interchange data if enabled
+  int numAreas = 0;
+  std::vector<int> area_num, area_isw;
+  std::vector<double> area_pdes, area_ptol;
+  if (p_areaInterchange) {
+    boost::shared_ptr<gridpack::component::DataCollection> netdata =
+      p_network->getNetworkData();
+    netdata->getValue(AREA_TOTAL, &numAreas);
+    for (int ia = 0; ia < numAreas; ia++) {
+      int anum = 0, aisw = 0;
+      double pdes = 0.0, ptol = 10.0;
+      netdata->getValue(AREAINTG_NUMBER, &anum, ia);
+      netdata->getValue(AREAINTG_ISW, &aisw, ia);
+      netdata->getValue(AREAINTG_PDES, &pdes, ia);
+      netdata->getValue(AREAINTG_PTOL, &ptol, ia);
+      area_num.push_back(anum);
+      area_isw.push_back(aisw);
+      area_pdes.push_back(pdes);
+      area_ptol.push_back(ptol);
+    }
+  }
+
+  // =========================================================================
+  // Area Interchange Loop (outer) — adjusts area slack bus generation
+  // =========================================================================
+  int ai_iter = 0;
+  int max_ai_iter = p_areaInterchange ? 10 : 1;
+  bool ai_repeat = true;
+
+  while (ai_repeat) {
+    ai_repeat = false;
+    ai_iter++;
+
+  // =========================================================================
+  // Controller Loop — handles qlim, switched shunts, IREG, LTC
+  // =========================================================================
+  int ctrl_iter = 0;
+  bool ctrl_repeat = true;
+
+  while (ctrl_repeat) {
     ret = true;  // Reset ret - if this iteration converges, we should return true
-    iter = 0;
-    tol = 2.0*p_tolerance;
-    int_repeat ++;
+    ctrl_repeat = false;
+    ctrl_iter++;
     bool qlim_handled_early = false;  // Track if Q limits were handled during stagnation
-    char ioBuf[128];
+
     if (!p_no_print) {
-      sprintf (ioBuf," repeat time = %d \n", int_repeat);
+      sprintf(ioBuf," Controller iteration = %d \n", ctrl_iter);
       p_busIO->header(ioBuf);
     }
 
+    // =====================================================================
+    // Inner NR Loop — solve power flow equations
+    // =====================================================================
+
     // set YBus components so that you can create Y matrix
+    // (picks up modified p_shunt_bs from switched shunt adjustments)
     int t_fact = timer->createCategory("Powerflow: Factory Operations");
     timer->start(t_fact);
     p_factory->setYBus();
@@ -371,32 +496,18 @@ bool gridpack::powerflow::PFAppModule::solve()
 
     int t_cmap = timer->createCategory("Powerflow: Create Mappers");
     timer->start(t_cmap);
-    p_factory->setMode(YBus); 
-
-#if 0
-    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-#endif
+    p_factory->setMode(YBus);
     timer->stop(t_cmap);
     int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
-    timer->start(t_mmap);
-#if 0
-    gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-    boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-    p_busIO->header("\nY-matrix values\n");
-    //  Y->print();
-    Y->save("Ybus.m");
-#endif
-    timer->stop(t_mmap);
 
     // make Sbus components to create S vector
     timer->start(t_fact);
     p_factory->setSBus();
     timer->stop(t_fact);
-    //  p_busIO->header("\nIteration 0\n");
 
     // Set PQ
     timer->start(t_cmap);
-    p_factory->setMode(RHS); 
+    p_factory->setMode(RHS);
     gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
     timer->stop(t_cmap);
     int t_vmap = timer->createCategory("Powerflow: Map to Vector");
@@ -408,9 +519,9 @@ bool gridpack::powerflow::PFAppModule::solve()
     boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
 #endif
     timer->stop(t_vmap);
-    gridpack::ComplexType  tol_org = PQ->normInfinity();
+    gridpack::ComplexType tol_org = PQ->normInfinity();
     if (!p_no_print) {
-      sprintf (ioBuf,"\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
+      sprintf(ioBuf,"\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
       p_busIO->header(ioBuf);
     }
 
@@ -419,7 +530,6 @@ bool gridpack::powerflow::PFAppModule::solve()
     p_convergence.converged = false;
     p_convergence.iterations = 0;
 
-    //  PQ->print();
     timer->start(t_cmap);
     p_factory->setMode(Jacobian);
     gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
@@ -432,8 +542,6 @@ bool gridpack::powerflow::PFAppModule::solve()
     boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
 #endif
     timer->stop(t_mmap);
-    //  p_busIO->header("\nJacobian values\n");
-    //  J->print();
 
     // Create X vector by cloning PQ
 #ifdef USE_REAL_VALUES
@@ -455,16 +563,10 @@ bool gridpack::powerflow::PFAppModule::solve()
     solver.configure(cursor);
     timer->stop(t_csolv);
 
-    // First iteration
-    X->zero(); //might not need to do this
-    //p_busIO->header("\nCalling solver\n");
+    // First NR iteration
+    X->zero();
     int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
     timer->start(t_lsolv);
-    //    char dbgfile[32];
-    //    sprintf(dbgfile,"j0.bin");
-    //    J->saveBinary(dbgfile);
-    //    sprintf(dbgfile,"pq0.bin");
-    //    PQ->saveBinary(dbgfile);
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
@@ -478,14 +580,15 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
       timer->stop(t_lsolv);
       timer->stop(t_total);
-
       return false;
     }
+    if (p_dampingFactor < 1.0) X->scale(p_dampingFactor);
     timer->stop(t_lsolv);
-    tol = PQ->normInfinity();
-    // Create timer for map to bus
+
+    gridpack::ComplexType tol = PQ->normInfinity();
     int t_bmap = timer->createCategory("Powerflow: Map to Bus");
     int t_updt = timer->createCategory("Powerflow: Bus Update");
+    int iter = 0;
     if (!p_no_print) {
       sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
       p_busIO->header(ioBuf);
@@ -494,22 +597,18 @@ bool gridpack::powerflow::PFAppModule::solve()
     // Variables for early stagnation detection
     gridpack::ComplexType tol_prev = tol;
     int stagnant_count = 0;
-    const int STAGNANT_THRESHOLD = 5;  // Check Q limits after 5 stagnant iterations
-    const double STAGNANT_TOL = 1.0e-10;  // Tolerance for detecting stagnation
+    const int STAGNANT_THRESHOLD = 5;
+    const double STAGNANT_TOL = 1.0e-10;
 
     while (real(tol) > p_tolerance && iter < p_max_iteration) {
       // Push current values in X vector back into network components
-      // Need to implement setValues method in PFBus class in order for this to
-      // work
       timer->start(t_bmap);
       p_factory->setMode(RHS);
       vMap.mapToBus(X);
       timer->stop(t_bmap);
 
-      // Exchange data between ghost buses (I don't think we need to exchange data
-      // between branches)
+      // Exchange data between ghost buses
       timer->start(t_updt);
-      //  p_factory->checkQlimViolations();
       p_network->updateBuses();
       timer->stop(t_updt);
 
@@ -520,8 +619,6 @@ bool gridpack::powerflow::PFAppModule::solve()
 #else
       vMap.mapToVector(PQ);
 #endif
-      //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
-      //   PQ->print();
       timer->stop(t_vmap);
       timer->start(t_mmap);
       p_factory->setMode(Jacobian);
@@ -532,13 +629,9 @@ bool gridpack::powerflow::PFAppModule::solve()
 #endif
       timer->stop(t_mmap);
 
-      // Create linear solver
+      // Solve linear system
       timer->start(t_lsolv);
-      X->zero(); //might not need to do this
-      //    sprintf(dbgfile,"j%d.bin",iter+1);
-      //    J->saveBinary(dbgfile);
-      //    sprintf(dbgfile,"pq%d.bin",iter+1);
-      //    PQ->saveBinary(dbgfile);
+      X->zero();
       try {
         solver.solve(*PQ, *X);
       } catch (const gridpack::Exception e) {
@@ -554,6 +647,7 @@ bool gridpack::powerflow::PFAppModule::solve()
         timer->stop(t_total);
         return false;
       }
+      if (p_dampingFactor < 1.0) X->scale(p_dampingFactor);
       timer->stop(t_lsolv);
 
       tol = PQ->normInfinity();
@@ -631,8 +725,8 @@ bool gridpack::powerflow::PFAppModule::solve()
       if (p_qlim && fabs(real(tol) - real(tol_prev)) < STAGNANT_TOL) {
         stagnant_count++;
         if (stagnant_count >= STAGNANT_THRESHOLD) {
+          p_factory->setQlimDeadband(p_qlim_deadband);
           if (!p_factory->checkQlimViolations()) {
-            // Q limit violations found - break to restart with PV->PQ changes
             if (!p_no_print) {
               sprintf(ioBuf,"Stagnation detected at iter %d, Qlim violations found\n", iter);
               p_busIO->header(ioBuf);
@@ -640,19 +734,18 @@ bool gridpack::powerflow::PFAppModule::solve()
             qlim_handled_early = true;
             break;
           } else {
-            // No Q limit violations but still stagnant - likely numerical issue
-            stagnant_count = 0;  // Reset and continue trying
+            stagnant_count = 0;
           }
         }
       } else {
-        stagnant_count = 0;  // Reset if tolerance is changing
+        stagnant_count = 0;
       }
       tol_prev = tol;
 
-      if (real(tol)> 100.0*real(tol_org)){
+      if (real(tol) > 100.0*real(tol_org)) {
         ret = false;
         if (!p_no_print) {
-          sprintf (ioBuf,"\n-------------current iteration tol bigger than 100 times of original tol, power flow diverge\n");
+          sprintf(ioBuf,"\n-------------current iteration tol bigger than 100 times of original tol, power flow diverge\n");
           p_busIO->header(ioBuf);
         }
         break;
@@ -687,83 +780,155 @@ bool gridpack::powerflow::PFAppModule::solve()
       }
     }
 
-    // IREG: Adjust local bus voltage for remote bus voltage regulation.
+    // =====================================================================
+    // Controller checks (after NR converges or exits)
+    // =====================================================================
+
+    // Skip controller adjustments if inner NR failed — voltages are invalid
+    // and adjustments based on bad voltages will make the next solve worse.
+    if (!ret) {
+      ctrl_repeat = false;
+    } else {
+
+    // 1. IREG: Adjust local bus voltage for remote bus voltage regulation.
     // Must be done before Q-limit check since voltage adjustments affect Q.
     bool ireg_ok = p_factory->adjustRemoteRegulation();
     if (!ireg_ok && !p_no_print) {
-      sprintf(ioBuf, "IREG: remote voltage regulation adjustments applied (outer iter %d)\n",
-              int_repeat);
+      sprintf(ioBuf, "IREG: remote voltage regulation adjustments applied (ctrl iter %d)\n",
+              ctrl_iter);
       p_busIO->header(ioBuf);
     }
+    if (!ireg_ok && ctrl_iter < max_ctrl_iter) {
+      ctrl_repeat = true;
+    }
 
-    // Use larger iteration limit when IREG is active (needs more outer iterations)
-    int max_outer = std::max(p_max_qlim_iterations, 10);
-
-    if (!p_qlim) {
-      // No Q-limit enforcement; only IREG can cause repeat
-      if (ireg_ok || int_repeat >= max_outer) {
-        repeat = false;
-        if (!ireg_ok && !p_no_print) {
-          sprintf(ioBuf, "IREG: max outer iterations (%d) reached, accepting solution\n",
-                  max_outer);
-          p_busIO->header(ioBuf);
-        }
-      }
-      // else repeat stays true for IREG convergence
-    } else if (qlim_handled_early) {
-      // Q limits were already handled during early stagnation detection
-      // Check if we've reached max outer iterations
-      if (int_repeat >= max_outer) {
+    // 2. Q-limit check (existing PV->PQ conversion)
+    if (p_qlim && !qlim_handled_early) {
+      p_factory->setQlimDeadband(p_qlim_deadband);
+      if (!p_factory->checkQlimViolations()) {
+        // Violations found, PV->PQ changes made — need to re-solve
         if (!p_no_print) {
-          sprintf(ioBuf,"Max outer iterations (%d) reached, accepting current solution\n",
-                  max_outer);
+          sprintf(ioBuf,"Qlim violations found at controller iter %d\n", ctrl_iter);
           p_busIO->header(ioBuf);
         }
-        repeat = false;
+        if (ctrl_iter < max_ctrl_iter) {
+          ctrl_repeat = true;
+        }
       }
-      // Otherwise repeat stays true to restart with new PV/PQ configuration
-    } else {
-      bool qlim_ok = p_factory->checkQlimViolations();
-      if (qlim_ok && ireg_ok) {
-        repeat = false;
-      } else {
-        // Check if we've reached max outer iterations
-        if (int_repeat >= max_outer) {
-          if (!p_no_print) {
-            sprintf(ioBuf,"Max outer iterations (%d) reached, accepting current solution\n",
-                    max_outer);
-            p_busIO->header(ioBuf);
-          }
-          repeat = false;
-        } else {
-          if (!qlim_ok && !p_no_print) {
-            sprintf (ioBuf,"There are Qlim violations at iter =%d\n", iter);
-            p_busIO->header(ioBuf);
-          }
+    } else if (qlim_handled_early) {
+      // Q limits were already handled during stagnation detection
+      if (ctrl_iter < max_ctrl_iter) {
+        ctrl_repeat = true;
+      }
+    }
+
+    // 3. Switched shunt check (NEW)
+    if (p_switchedShunt) {
+      if (!p_factory->checkSwitchedShuntViolations()) {
+        if (!p_no_print) {
+          sprintf(ioBuf,"Switched shunt adjustments made at controller iter %d\n", ctrl_iter);
+          p_busIO->header(ioBuf);
+        }
+        if (ctrl_iter < max_ctrl_iter) {
+          ctrl_repeat = true;
         }
       }
     }
-    // Push final result back onto buses, but ONLY if no Q limit violations.
-    // If there are Q limit violations, p_isPV changed for some buses after vMap
-    // was created. The vMap indexing is based on old dimensions, but setValues()
-    // uses the current p_isPV. This mismatch causes incorrect memory access.
-    // When repeat=true, a new iteration will start with a fresh vMap anyway.
-    if (!repeat) {
+
+    // 4. LTC tap adjustment check
+    if (p_ltc) {
+      if (!p_factory->checkLTCViolations()) {
+        if (!p_no_print) {
+          sprintf(ioBuf,"LTC tap adjustments made at controller iter %d\n", ctrl_iter);
+          p_busIO->header(ioBuf);
+        }
+        if (ctrl_iter < max_ctrl_iter) {
+          ctrl_repeat = true;
+        }
+      }
+    }
+
+    } // end if (ret) — controller checks only run when NR converged
+
+    // Check if max controller iterations reached
+    if (ctrl_repeat && ctrl_iter >= max_ctrl_iter) {
+      if (!p_no_print) {
+        sprintf(ioBuf,"Max controller iterations (%d) reached, accepting current solution\n", max_ctrl_iter);
+        p_busIO->header(ioBuf);
+      }
+      ctrl_repeat = false;
+    }
+
+    // Push final result back onto buses, but ONLY if no controller changes.
+    // If qlim changed PV->PQ, vMap dimensions are stale — a new iteration
+    // will start with a fresh vMap. Shunt changes are safe (same dimensions)
+    // but we re-solve anyway for consistency.
+    if (!ctrl_repeat) {
       timer->start(t_bmap);
       p_factory->setMode(RHS);
       vMap.mapToBus(X);
       timer->stop(t_bmap);
 
-      // Make sure that ghost buses have up-to-date values before printing out
-      // results
       timer->start(t_updt);
       p_network->updateBuses();
       timer->stop(t_updt);
     }
+  }  // end controller loop
+
+  // =========================================================================
+  // Area Interchange check (after controller loop converges)
+  // =========================================================================
+  if (p_areaInterchange && ret && numAreas > 0) {
+    std::map<int,double> areaExport;
+    p_factory->computeAreaExport(areaExport);
+
+    bool ai_ok = true;
+    for (int ia = 0; ia < numAreas; ia++) {
+      double actual = areaExport[area_num[ia]];
+      double error = actual - area_pdes[ia];
+      if (fabs(error) > area_ptol[ia]) {
+        ai_ok = false;
+        if (!p_no_print) {
+          sprintf(ioBuf, "Area %d: export=%.2f MW, desired=%.2f MW, error=%.2f MW (tol=%.2f)\n",
+                  area_num[ia], actual, area_pdes[ia], error, area_ptol[ia]);
+          p_busIO->header(ioBuf);
+        }
+        // Adjust generation at area slack bus (ISW)
+        // Decrease Pg by the export error to bring actual export toward PDES
+        int isw = area_isw[ia];
+        std::vector<int> lids = p_network->getLocalBusIndices(isw);
+        if (lids.size() > 0) {
+          gridpack::powerflow::PFBus *sbus =
+            dynamic_cast<gridpack::powerflow::PFBus*>(
+                p_network->getBus(lids[0]).get());
+          // Adjust the first generator's Pg on the area slack bus
+          std::vector<std::string> gens = sbus->getGenerators();
+          if (gens.size() > 0) {
+            double pg_old = sbus->getGenPOutput(gens[0]);
+            double pg_new = pg_old - error;
+            sbus->setGeneratorRealPower(gens[0], pg_new,
+                p_network->getBusData(lids[0]).get());
+            if (!p_no_print) {
+              sprintf(ioBuf, "  Adjusting bus %d gen %s: Pg %.2f -> %.2f MW\n",
+                      isw, gens[0].c_str(), pg_old, pg_new);
+              p_busIO->header(ioBuf);
+            }
+          }
+        }
+      }
+    }
+    if (!ai_ok && ai_iter < max_ai_iter) {
+      ai_repeat = true;
+      ctrl_iter = 0;  // Reset controller iteration count for next pass
+    } else if (!ai_ok && !p_no_print) {
+      sprintf(ioBuf, "Max area interchange iterations (%d) reached\n", max_ai_iter);
+      p_busIO->header(ioBuf);
+    }
   }
+
+  }  // end area interchange loop
   timer->stop(t_total);
   return ret;
-
 }
 /**
  * Execute the iterative solve portion of the application using a library
@@ -885,6 +1050,9 @@ gridpack::powerflow::PFAppModule::collectResults()
         dynamic_cast<gridpack::powerflow::PFBus*>(
           p_network->getBus(i).get());
 
+      // Skip synthetic star buses from 3-winding transformers
+      if (bus->isStarBus()) continue;
+
       gridpack::utility::BusResult br;
       br.busId = bus->getOriginalIndex();
       br.type = bus->getBusType();
@@ -952,6 +1120,15 @@ gridpack::powerflow::PFAppModule::collectResults()
       gridpack::powerflow::PFBranch *branch =
         dynamic_cast<gridpack::powerflow::PFBranch*>(
           p_network->getBranch(i).get());
+
+      // Skip branches connected to star buses (3-winding transformer internals)
+      int idx1, idx2;
+      p_network->getBranchEndpoints(i, &idx1, &idx2);
+      gridpack::powerflow::PFBus *bbus1 =
+        dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(idx1).get());
+      gridpack::powerflow::PFBus *bbus2 =
+        dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(idx2).get());
+      if (bbus1->isStarBus() || bbus2->isStarBus()) continue;
 
       std::vector<std::string> cktIds = branch->getLineIDs();
       int bus1Id, bus2Id;
@@ -1356,6 +1533,8 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
   p_factory->clearLoneBus();
   p_factory->clearIslands();
   p_factory->restoreSlack();  // Restore original slack bus if it was transferred
+  p_factory->clearSwitchedShunts();  // Reset switched shunts to BINIT state
+  p_factory->clearLTCControls();     // Reset LTC taps to initial values
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();
@@ -1487,6 +1666,40 @@ bool gridpack::powerflow::PFAppModule::checkQlimViolations(int area)
 void gridpack::powerflow::PFAppModule::clearQlimViolations()
 {
   p_factory->clearQlimViolations();
+}
+
+/**
+ * Check switched shunt violations and adjust B values
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkSwitchedShuntViolations()
+{
+  return p_factory->checkSwitchedShuntViolations();
+}
+
+/**
+ * Clear switched shunt adjustments and reset to BINIT state
+ */
+void gridpack::powerflow::PFAppModule::clearSwitchedShunts()
+{
+  p_factory->clearSwitchedShunts();
+}
+
+/**
+ * Check LTC violations and adjust transformer tap ratios
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkLTCViolations()
+{
+  return p_factory->checkLTCViolations();
+}
+
+/**
+ * Clear LTC adjustments and reset taps to initial values
+ */
+void gridpack::powerflow::PFAppModule::clearLTCControls()
+{
+  p_factory->clearLTCControls();
 }
 
 /**
