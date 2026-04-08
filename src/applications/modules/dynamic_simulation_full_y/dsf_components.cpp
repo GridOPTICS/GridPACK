@@ -1320,6 +1320,10 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
   if (!data->setValue(BUS_VMAG_CURRENT, rV)) {
     data->addValue(BUS_VMAG_CURRENT, rV);
   }
+  double ang = atan2(imag(voltage), real(voltage));
+  if (!data->setValue(BUS_VANG_CURRENT, ang)) {
+    data->addValue(BUS_VANG_CURRENT, ang);
+  }
   for (i=0; i<p_ngen; i++) {
     if (data->getValue(GENERATOR_MODEL,&name,i)) {
       p_generators[i]->updateData(data, i);
