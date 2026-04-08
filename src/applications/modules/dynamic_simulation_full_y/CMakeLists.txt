@@ -132,6 +132,9 @@ set(target_source
   model_classes/wtdta1.cpp
   model_classes/wtpta1.cpp
   model_classes/wttqa1.cpp
+  model_classes/scrx.cpp
+  model_classes/stab2a.cpp
+  model_classes/ieeet2.cpp
 )
 
 if(ENABLE_EPRI_IBR_MODEL)
@@ -231,6 +234,9 @@ install(FILES
   model_classes/wtdta1.hpp
   model_classes/wtpta1.hpp
   model_classes/wttqa1.hpp
+  model_classes/scrx.hpp
+  model_classes/stab2a.hpp
+  model_classes/ieeet2.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 )
 
