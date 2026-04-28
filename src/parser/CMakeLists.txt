@@ -187,6 +187,16 @@ install(FILES
   parser_classes/wtdta1.hpp
   parser_classes/wtpta1.hpp
   parser_classes/wttqa1.hpp
+  parser_classes/ieeeg1.hpp
+  parser_classes/ieeest.hpp
+  parser_classes/ieeet2.hpp
+  parser_classes/ieesgo.hpp
+  parser_classes/epria1.hpp
+  parser_classes/esst3a.hpp
+  parser_classes/exst1.hpp
+  parser_classes/scrx.hpp
+  parser_classes/st2cut.hpp
+  parser_classes/stab2a.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )
 
