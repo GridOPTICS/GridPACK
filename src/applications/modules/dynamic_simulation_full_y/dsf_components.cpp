@@ -3,6 +3,8 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
+#include <cmath>
+#include <complex>
 #include <vector>
 #include <iostream>
 
@@ -12,6 +14,11 @@
 #include "lvshbl.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 
+namespace {
+
+const double pi = 4.0*std::atan(1.0);
+
+} // namespace
 
 /**
  *  Simple constructor
@@ -906,7 +913,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   data->getValue(BUS_AREA, &p_area);
   p_zone = 1;
   data->getValue(BUS_ZONE, &p_zone);
-  double pi = 4.0*atan(1.0);
   p_angle = p_angle*pi/180.0; 
 
   p_shunt = true;
@@ -1314,11 +1320,13 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
   int i;
   std::string name;
   gridpack::ComplexType voltage = getComplexVoltage();
-  double rV = real(voltage);
-  double iV = imag(voltage);
-  rV = sqrt(rV*rV+iV*iV);
-  if (!data->setValue(BUS_VMAG_CURRENT, rV)) {
-    data->addValue(BUS_VMAG_CURRENT, rV);
+  auto vmag = std::abs(voltage);
+  if (!data->setValue(BUS_VMAG_CURRENT, vmag)) {
+    data->addValue(BUS_VMAG_CURRENT, vmag);
+  }
+  auto vang = std::arg(voltage)*180.0/pi;
+  if (!data->setValue(BUS_VANG_CURRENT, vang)) {
+    data->addValue(BUS_VANG_CURRENT, vang);
   }
   double ang = atan2(imag(voltage), real(voltage));
   if (!data->setValue(BUS_VANG_CURRENT, ang)) {
@@ -1343,8 +1351,8 @@ void gridpack::dynamic_simulation::DSFullBus::updateData(
       lcnt++;
     } else {
       double pl_current,ql_current;
-      pl_current = rV*rV*p_gload[i];
-      ql_current = -rV*rV*p_bload[i];
+      pl_current = vmag*vmag*p_gload[i];
+      ql_current = -vmag*vmag*p_bload[i];
       if(p_bscatterinjload_flag_compensateY) {
         pl_current -= p_scatterinjload_p;
         ql_current -= p_scatterinjload_q;
@@ -1496,7 +1504,6 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   }
 	  
   //load data for LOAD_BUS
-  double pi = 4.0*atan(1.0);
  
   //p_shunt = true;
   //p_shunt = p_shunt && data->getValue(LOAD_BSS, &p_shunt_bs);
@@ -1969,7 +1976,6 @@ void gridpack::dynamic_simulation::DSFullBus::computeBusVolFrequency( double tim
 {
 	const double dFREQ_SYS = 60.0;
 	const double dTf = 0.1;
-	const double pi = 4.0*atan(1.0);
 	const double dw0 = 2.0*dFREQ_SYS*pi;
 	
 	double dstatex, dstatex1, ddx1, ddx2, dva_old, dva;
@@ -3491,7 +3497,6 @@ void gridpack::dynamic_simulation::DSFullBranch::setYBus(void)
 //    printf ("from %d-> to %d: p_phase_shift = %f, a = %f+%fi\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), p_phase_shift, real(a), imag(a) );
 //  }
   //p_theta = bus1->getPhase() - bus2->getPhase();
-  double pi = 4.0*atan(1.0);
   p_theta = (bus1->getPhase() - bus2->getPhase());
   //printf("p_phase_shift: %12.6f\n",p_phase_shift);
   //printf("p_theta: %12.6f\n",p_theta);
@@ -3567,7 +3572,6 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
   double rvar;
   int ivar;
   bool lvar;
-  double pi = 4.0*atan(1.0);
   p_active = false;
   ok = data->getValue(CASE_SBASE, &p_sbase);
   int idx;
@@ -3658,7 +3662,6 @@ void gridpack::dynamic_simulation::DSFullBranch::evaluateBranchFlow()
   if (p_bextendedloadbranch > 0) return;
 
   int i;
-  double pi = 4.0*atan(1.0);
 
   gridpack::dynamic_simulation::DSFullBus *bus1 =
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
