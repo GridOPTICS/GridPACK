@@ -219,6 +219,10 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   // Mark buses unreachable from any slack via in-service edges as
   // isolated, so the Jacobian has no structurally zero rows. Default true.
   bool p_isolateDeadIslands = cursor->get("isolateDeadIslands", true);
+  // Merge buses joined by near-zero-impedance jumper branches into one
+  // canonical bus to avoid Jacobian ill-conditioning. Default true.
+  bool p_mergeZeroImpedanceBranches =
+      cursor->get("mergeZeroImpedanceBranches", true);
   ComplexType tol;
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
@@ -330,6 +334,179 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     parser.parse(filename.c_str());
   }
   timer->stop(t_pti);
+
+  // Union-find on jumper branches (R<1e-6, |X|<5e-4, STAT=1); pick a
+  // canonical per group (slack>PV>PQ, lowest bus #), rewrite branch
+  // endpoints to canonical, mark non-canonical buses IDE=4, disable
+  // jumpers. Loads/gens/shunts on non-canonical buses are dropped.
+  if (p_mergeZeroImpedanceBranches && p_comm.rank() == 0) {
+    int t_merge = timer->createCategory("Powerflow: Zero-Z Branch Merge");
+    timer->start(t_merge);
+    int nBus = network->numBuses();
+    int nBranch = network->numBranches();
+
+    std::map<int,int> num2idx;
+    std::vector<int> busType(nBus, 1);
+    for (int i = 0; i < nBus; i++) {
+      boost::shared_ptr<gridpack::component::DataCollection> bd =
+        network->getBusData(i);
+      int num = 0;
+      bd->getValue(BUS_NUMBER, &num);
+      num2idx[num] = i;
+      int t = 1;
+      bd->getValue(BUS_TYPE, &t);
+      busType[i] = t;
+    }
+
+    std::vector<int> parent(nBus);
+    for (int i = 0; i < nBus; i++) parent[i] = i;
+    int nJumperElems = 0;
+    std::vector<std::pair<int,int> > jumper_branches;
+    const double R_TOL = 1.0e-6;
+    const double X_TOL = 5.0e-4;
+    for (int b = 0; b < nBranch; b++) {
+      boost::shared_ptr<gridpack::component::DataCollection> brd =
+        network->getBranchData(b);
+      int from_num = 0, to_num = 0;
+      if (!brd->getValue(BRANCH_FROMBUS, &from_num)) continue;
+      if (!brd->getValue(BRANCH_TOBUS, &to_num)) continue;
+      std::map<int,int>::const_iterator itf = num2idx.find(from_num);
+      std::map<int,int>::const_iterator itt = num2idx.find(to_num);
+      if (itf == num2idx.end() || itt == num2idx.end()) continue;
+      int i1 = itf->second, i2 = itt->second;
+      if (i1 == i2) continue;
+      int nelems = 1;
+      brd->getValue(BRANCH_NUM_ELEMENTS, &nelems);
+      for (int k = 0; k < nelems; k++) {
+        int st = 0;
+        if (!brd->getValue(BRANCH_STATUS, &st, k)) continue;
+        if (st != 1) continue;
+        double r = 0.0, x = 0.0;
+        brd->getValue(BRANCH_R, &r, k);
+        brd->getValue(BRANCH_X, &x, k);
+        if (std::fabs(r) < R_TOL && std::fabs(x) < X_TOL) {
+          int ra = i1;
+          while (parent[ra] != ra) {
+            parent[ra] = parent[parent[ra]];
+            ra = parent[ra];
+          }
+          int rb = i2;
+          while (parent[rb] != rb) {
+            parent[rb] = parent[parent[rb]];
+            rb = parent[rb];
+          }
+          if (ra != rb) parent[ra] = rb;
+          jumper_branches.push_back(std::make_pair(b, k));
+          nJumperElems++;
+        }
+      }
+    }
+
+    std::map<int, std::vector<int> > groups;
+    for (int i = 0; i < nBus; i++) {
+      int r = i;
+      while (parent[r] != r) {
+        parent[r] = parent[parent[r]];
+        r = parent[r];
+      }
+      groups[r].push_back(i);
+    }
+
+    std::map<int,int> rewrite_old_to_new_num;
+    int nGroupsActive = 0;
+    int nGroupsAllIsolated = 0;
+    int nBusesIsolatedHere = 0;
+    int largestGroup = 0;
+    for (std::map<int, std::vector<int> >::iterator git = groups.begin();
+         git != groups.end(); ++git) {
+      const std::vector<int> &members = git->second;
+      if (members.size() < 2) continue;
+      bool any_live = false;
+      for (size_t m = 0; m < members.size(); m++) {
+        if (busType[members[m]] != 4) { any_live = true; break; }
+      }
+      if (!any_live) { nGroupsAllIsolated++; continue; }
+
+      int canonical = -1;
+      int best_priority = -1;
+      int best_num = 0;
+      for (size_t m = 0; m < members.size(); m++) {
+        int idx = members[m];
+        int t = busType[idx];
+        int prio = (t == 3) ? 3 : (t == 2) ? 2 : (t == 1) ? 1 : 0;
+        if (prio == 0) continue;
+        boost::shared_ptr<gridpack::component::DataCollection> bd =
+          network->getBusData(idx);
+        int num = 0; bd->getValue(BUS_NUMBER, &num);
+        if (canonical < 0 || prio > best_priority ||
+            (prio == best_priority && num < best_num)) {
+          canonical = idx;
+          best_priority = prio;
+          best_num = num;
+        }
+      }
+      if (canonical < 0) continue;
+      int canonical_num = best_num;
+      nGroupsActive++;
+      if ((int)members.size() > largestGroup) largestGroup = members.size();
+
+      for (size_t m = 0; m < members.size(); m++) {
+        int idx = members[m];
+        if (idx == canonical) continue;
+        if (busType[idx] == 4) continue;
+        boost::shared_ptr<gridpack::component::DataCollection> bd =
+          network->getBusData(idx);
+        bd->setValue(BUS_TYPE, 4);
+        busType[idx] = 4;
+        int num = 0; bd->getValue(BUS_NUMBER, &num);
+        rewrite_old_to_new_num[num] = canonical_num;
+        nBusesIsolatedHere++;
+      }
+    }
+
+    for (size_t j = 0; j < jumper_branches.size(); j++) {
+      int b = jumper_branches[j].first;
+      int k = jumper_branches[j].second;
+      boost::shared_ptr<gridpack::component::DataCollection> brd =
+        network->getBranchData(b);
+      brd->setValue(BRANCH_STATUS, 0, k);
+    }
+
+    int nEndpointRewrites = 0;
+    if (!rewrite_old_to_new_num.empty()) {
+      for (int b = 0; b < nBranch; b++) {
+        boost::shared_ptr<gridpack::component::DataCollection> brd =
+          network->getBranchData(b);
+        int from_num = 0, to_num = 0;
+        if (!brd->getValue(BRANCH_FROMBUS, &from_num)) continue;
+        if (!brd->getValue(BRANCH_TOBUS, &to_num)) continue;
+        std::map<int,int>::const_iterator itf =
+          rewrite_old_to_new_num.find(from_num);
+        if (itf != rewrite_old_to_new_num.end()) {
+          brd->setValue(BRANCH_FROMBUS, itf->second);
+          nEndpointRewrites++;
+        }
+        std::map<int,int>::const_iterator itt =
+          rewrite_old_to_new_num.find(to_num);
+        if (itt != rewrite_old_to_new_num.end()) {
+          brd->setValue(BRANCH_TOBUS, itt->second);
+          nEndpointRewrites++;
+        }
+      }
+    }
+
+    if (!p_no_print) {
+      char ioBuf2[320];
+      sprintf(ioBuf2,
+        "Zero-Z merge: %d jumper elements found, %d merge groups, "
+        "%d non-canonical buses isolated, %d endpoint rewrites, "
+        "largest group=%d, %d groups already-isolated\n",
+        nJumperElems, nGroupsActive, nBusesIsolatedHere,
+        nEndpointRewrites, largestGroup, nGroupsAllIsolated);
+      printf("%s", ioBuf2);
+    }
+    timer->stop(t_merge);
+  }
 
   // BFS from every slack on the in-service-edge subgraph; mark
   // unreachable buses IDE=4. Runs on rank 0 before partition().
