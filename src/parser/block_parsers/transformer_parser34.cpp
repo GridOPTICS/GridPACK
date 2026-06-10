@@ -155,6 +155,20 @@ void gridpack::parser::TransformerParser34::parse(
         rval = (split_line2.size() > 10) ? atof(split_line2[10].c_str()) : 0.0;
         data->addValue(BUS_VOLTAGE_ANG,rval);
 
+        // CW=2 means WINDV is in kV (divide by NOMV); CZ=2 means R,X are
+        // on SBASE_ij (rescale by case_sbase/SBASE_ij). Codes 3 fall back
+        // to 1 with a warning.
+        int cw_code = (split_line.size() > 4) ? atoi(split_line[4].c_str()) : 1;
+        int cz_code = (split_line.size() > 5) ? atoi(split_line[5].c_str()) : 1;
+        if (cw_code == 3) {
+          printf("Warning: 3-winding xfmr CW=3 not supported; using CW=1 for %d-%d-%d\n",
+                 o_idx1, o_idx2, o_idx3);
+        }
+        if (cz_code == 3) {
+          printf("Warning: 3-winding xfmr CZ=3 not supported; using CZ=1 for %d-%d-%d\n",
+                 o_idx1, o_idx2, o_idx3);
+        }
+
         // parse remainder of line 1
         double mag1, mag2;
         mag1 = atof(split_line[7].c_str());
@@ -175,18 +189,19 @@ void gridpack::parser::TransformerParser34::parse(
         r31 = atof(split_line2[6].c_str());
         x31 = atof(split_line2[7].c_str());
         sb31 = atof(split_line2[8].c_str());
-        // Convert pairwise impedances to case base BEFORE delta-to-star conversion
-        if (sb12 != p_case_sbase && sb12 != 0.0) {
-          r12 = r12*p_case_sbase/sb12;
-          x12 = x12*p_case_sbase/sb12;
-        }
-        if (sb23 != p_case_sbase && sb23 != 0.0) {
-          r23 = r23*p_case_sbase/sb23;
-          x23 = x23*p_case_sbase/sb23;
-        }
-        if (sb31 != p_case_sbase && sb31 != 0.0) {
-          r31 = r31*p_case_sbase/sb31;
-          x31 = x31*p_case_sbase/sb31;
+        if (cz_code == 2) {
+          if (sb12 != p_case_sbase && sb12 != 0.0) {
+            r12 = r12*p_case_sbase/sb12;
+            x12 = x12*p_case_sbase/sb12;
+          }
+          if (sb23 != p_case_sbase && sb23 != 0.0) {
+            r23 = r23*p_case_sbase/sb23;
+            x23 = x23*p_case_sbase/sb23;
+          }
+          if (sb31 != p_case_sbase && sb31 != 0.0) {
+            r31 = r31*p_case_sbase/sb31;
+            x31 = x31*p_case_sbase/sb31;
+          }
         }
         // Now apply delta-to-star conversion with all impedances on same base
         r1 = 0.5*(r12+r31-r23);
@@ -214,6 +229,10 @@ void gridpack::parser::TransformerParser34::parse(
         split_line3 = this->splitPSSELine(line);
         double windv, ang, rate[12];
         parse3WindXForm(split_line3, &windv, &ang, rate);
+        if (cw_code == 2 && split_line3.size() > 1) {
+          double nomv1 = atof(split_line3[1].c_str());
+          if (nomv1 != 0.0) windv = windv / nomv1;
+        }
         data1->addValue(BRANCH_INDEX,index);
         data1->addValue(BRANCH_FROMBUS,o_idx1);
         data1->addValue(BRANCH_TOBUS,p_maxBusIndex);
@@ -264,6 +283,10 @@ void gridpack::parser::TransformerParser34::parse(
         this->cleanComment(line);
         split_line4 = this->splitPSSELine(line);
         parse3WindXForm(split_line4, &windv, &ang, rate);
+        if (cw_code == 2 && split_line4.size() > 1) {
+          double nomv2 = atof(split_line4[1].c_str());
+          if (nomv2 != 0.0) windv = windv / nomv2;
+        }
         data2->addValue(BRANCH_INDEX,index);
         data2->addValue(BRANCH_FROMBUS,o_idx2);
         data2->addValue(BRANCH_TOBUS,p_maxBusIndex);
@@ -314,6 +337,10 @@ void gridpack::parser::TransformerParser34::parse(
         this->cleanComment(line);
         split_line5 = this->splitPSSELine(line);
         parse3WindXForm(split_line5, &windv, &ang, rate);
+        if (cw_code == 2 && split_line5.size() > 1) {
+          double nomv3 = atof(split_line5[1].c_str());
+          if (nomv3 != 0.0) windv = windv / nomv3;
+        }
         data3->addValue(BRANCH_INDEX,index);
         data3->addValue(BRANCH_FROMBUS,o_idx3);
         data3->addValue(BRANCH_TOBUS,p_maxBusIndex);
