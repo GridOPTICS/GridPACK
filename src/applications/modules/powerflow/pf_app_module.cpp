@@ -35,6 +35,7 @@
  */
 // -------------------------------------------------------------
 
+#include <set>
 #include "pf_app_module.hpp"
 #include "pf_factory_module.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -415,6 +416,37 @@ void gridpack::powerflow::PFAppModule::readNetwork(
       groups[r].push_back(i);
     }
 
+    // Per-bus real-edge degree: count active branch elements with |Z| >= THRSHZ.
+    // Used to pick the canonical so that the survivor of a merge group keeps
+    // its real adjacency (network topology is fixed at parse time and the
+    // endpoint rewrites below cannot reattach branches to a different bus).
+    std::vector<int> realDegree(nBus, 0);
+    for (int b = 0; b < nBranch; b++) {
+      boost::shared_ptr<gridpack::component::DataCollection> brd =
+        network->getBranchData(b);
+      int from_num = 0, to_num = 0;
+      if (!brd->getValue(BRANCH_FROMBUS, &from_num)) continue;
+      if (!brd->getValue(BRANCH_TOBUS, &to_num)) continue;
+      std::map<int,int>::const_iterator itf = num2idx.find(from_num);
+      std::map<int,int>::const_iterator itt = num2idx.find(to_num);
+      if (itf == num2idx.end() || itt == num2idx.end()) continue;
+      int i1 = itf->second, i2 = itt->second;
+      if (i1 == i2) continue;
+      int nelems = 1;
+      brd->getValue(BRANCH_NUM_ELEMENTS, &nelems);
+      for (int k = 0; k < nelems; k++) {
+        int st = 0;
+        if (!brd->getValue(BRANCH_STATUS, &st, k)) continue;
+        if (st != 1) continue;
+        double r = 0.0, x = 0.0;
+        brd->getValue(BRANCH_R, &r, k);
+        brd->getValue(BRANCH_X, &x, k);
+        if (std::sqrt(r*r + x*x) < thrshz) continue;
+        realDegree[i1]++;
+        realDegree[i2]++;
+      }
+    }
+
     std::map<int,int> rewrite_old_to_new_num;
     int nGroupsActive = 0;
     int nGroupsAllIsolated = 0;
@@ -430,20 +462,41 @@ void gridpack::powerflow::PFAppModule::readNetwork(
       }
       if (!any_live) { nGroupsAllIsolated++; continue; }
 
+      // Pick canonical with the most real (non-jumper) edges, so the
+      // surviving bus retains useful network adjacency. Tie-break on
+      // bus type (slack > PV > PQ) so a real-edge slack/PV stays
+      // canonical when degrees are equal, then by lowest bus number.
+      // Generators/loads from any demoted slack/PV are transferred to
+      // the canonical below, and the canonical's BUS_TYPE is promoted
+      // to the maximum priority in the group.
       int canonical = -1;
+      int best_degree = -1;
       int best_priority = -1;
       int best_num = 0;
+      int max_priority_in_group = 0;
       for (size_t m = 0; m < members.size(); m++) {
         int idx = members[m];
         int t = busType[idx];
         int prio = (t == 3) ? 3 : (t == 2) ? 2 : (t == 1) ? 1 : 0;
         if (prio == 0) continue;
+        if (prio > max_priority_in_group) max_priority_in_group = prio;
         boost::shared_ptr<gridpack::component::DataCollection> bd =
           network->getBusData(idx);
         int num = 0; bd->getValue(BUS_NUMBER, &num);
-        if (canonical < 0 || prio > best_priority ||
-            (prio == best_priority && num < best_num)) {
+        int deg = realDegree[idx];
+        bool better = false;
+        if (canonical < 0) {
+          better = true;
+        } else if (deg != best_degree) {
+          better = (deg > best_degree);
+        } else if (prio != best_priority) {
+          better = (prio > best_priority);
+        } else {
+          better = (num < best_num);
+        }
+        if (better) {
           canonical = idx;
+          best_degree = deg;
           best_priority = prio;
           best_num = num;
         }
@@ -453,12 +506,57 @@ void gridpack::powerflow::PFAppModule::readNetwork(
       nGroupsActive++;
       if ((int)members.size() > largestGroup) largestGroup = members.size();
 
+      // Promote canonical's BUS_TYPE if any demoted member outranks it.
+      int canonical_type = (max_priority_in_group == 3) ? 3 :
+                           (max_priority_in_group == 2) ? 2 : 1;
+      if (canonical_type > busType[canonical]) {
+        boost::shared_ptr<gridpack::component::DataCollection> cbd =
+          network->getBusData(canonical);
+        cbd->setValue(BUS_TYPE, canonical_type);
+        busType[canonical] = canonical_type;
+      }
+
       for (size_t m = 0; m < members.size(); m++) {
         int idx = members[m];
         if (idx == canonical) continue;
         if (busType[idx] == 4) continue;
         boost::shared_ptr<gridpack::component::DataCollection> bd =
           network->getBusData(idx);
+        // Transfer generator records from the demoted bus to the
+        // canonical so a PV/slack source is not silently dropped.
+        int n_demoted_gen = 0;
+        if (bd->getValue(GENERATOR_NUMBER, &n_demoted_gen) &&
+            n_demoted_gen > 0) {
+          boost::shared_ptr<gridpack::component::DataCollection> cbd =
+            network->getBusData(canonical);
+          int n_can_gen = 0;
+          cbd->getValue(GENERATOR_NUMBER, &n_can_gen);
+          for (int gi = 0; gi < n_demoted_gen; gi++) {
+            #define COPY_GEN_FIELD(KEY, TYPE) do {                        \
+              TYPE _v;                                                    \
+              if (bd->getValue(KEY, &_v, gi)) {                            \
+                cbd->addValue(KEY, _v, n_can_gen + gi);                    \
+              }                                                            \
+            } while(0)
+            std::string _gid;
+            if (bd->getValue(GENERATOR_ID, &_gid, gi)) {
+              cbd->addValue(GENERATOR_ID, _gid.c_str(), n_can_gen + gi);
+            }
+            COPY_GEN_FIELD(GENERATOR_PG, double);
+            COPY_GEN_FIELD(GENERATOR_QG, double);
+            COPY_GEN_FIELD(GENERATOR_VS, double);
+            COPY_GEN_FIELD(GENERATOR_QMAX, double);
+            COPY_GEN_FIELD(GENERATOR_QMIN, double);
+            COPY_GEN_FIELD(GENERATOR_PMAX, double);
+            COPY_GEN_FIELD(GENERATOR_PMIN, double);
+            COPY_GEN_FIELD(GENERATOR_STAT, int);
+            COPY_GEN_FIELD(GENERATOR_RMPCT, double);
+            COPY_GEN_FIELD(GENERATOR_IREG, int);
+            #undef COPY_GEN_FIELD
+          }
+          int new_total = n_can_gen + n_demoted_gen;
+          cbd->setValue(GENERATOR_NUMBER, new_total);
+        }
         bd->setValue(BUS_TYPE, 4);
         busType[idx] = 4;
         int num = 0; bd->getValue(BUS_NUMBER, &num);
@@ -476,6 +574,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     }
 
     int nEndpointRewrites = 0;
+    std::set<int> busesNeedingRebuild;
     if (!rewrite_old_to_new_num.empty()) {
       for (int b = 0; b < nBranch; b++) {
         boost::shared_ptr<gridpack::component::DataCollection> brd =
@@ -483,17 +582,69 @@ void gridpack::powerflow::PFAppModule::readNetwork(
         int from_num = 0, to_num = 0;
         if (!brd->getValue(BRANCH_FROMBUS, &from_num)) continue;
         if (!brd->getValue(BRANCH_TOBUS, &to_num)) continue;
+        bool rewrote_from = false, rewrote_to = false;
         std::map<int,int>::const_iterator itf =
           rewrite_old_to_new_num.find(from_num);
         if (itf != rewrite_old_to_new_num.end()) {
           brd->setValue(BRANCH_FROMBUS, itf->second);
           nEndpointRewrites++;
+          rewrote_from = true;
         }
         std::map<int,int>::const_iterator itt =
           rewrite_old_to_new_num.find(to_num);
         if (itt != rewrite_old_to_new_num.end()) {
           brd->setValue(BRANCH_TOBUS, itt->second);
           nEndpointRewrites++;
+          rewrote_to = true;
+        }
+        if (rewrote_from || rewrote_to) {
+          int new_from = rewrote_from ? itf->second : from_num;
+          int new_to = rewrote_to ? itt->second : to_num;
+          std::map<int,int>::const_iterator if2 = num2idx.find(new_from);
+          std::map<int,int>::const_iterator it2 = num2idx.find(new_to);
+          if (if2 != num2idx.end() && it2 != num2idx.end()) {
+            int li1 = if2->second, li2 = it2->second;
+            network->setLocalBusIndex1(b, li1);
+            network->setLocalBusIndex2(b, li2);
+            // Also update global indexes; partition() rebuilds branch
+            // neighbor lists from p_globalBusIndex1/2, so the rewrite
+            // must land there to survive partitioning.
+            int g1 = network->getGlobalBusIndex(li1);
+            int g2 = network->getGlobalBusIndex(li2);
+            network->setGlobalBusIndex1(b, g1);
+            network->setGlobalBusIndex2(b, g2);
+            busesNeedingRebuild.insert(li1);
+            busesNeedingRebuild.insert(li2);
+          }
+          if (rewrote_from) {
+            std::map<int,int>::const_iterator iold = num2idx.find(from_num);
+            if (iold != num2idx.end()) busesNeedingRebuild.insert(iold->second);
+          }
+          if (rewrote_to) {
+            std::map<int,int>::const_iterator iold = num2idx.find(to_num);
+            if (iold != num2idx.end()) busesNeedingRebuild.insert(iold->second);
+          }
+        }
+      }
+      // Rebuild branch-neighbor lists for every bus whose adjacency changed.
+      for (std::set<int>::const_iterator it = busesNeedingRebuild.begin();
+           it != busesNeedingRebuild.end(); ++it) {
+        network->clearBranchNeighbors(*it);
+      }
+      for (int b = 0; b < nBranch; b++) {
+        boost::shared_ptr<gridpack::component::DataCollection> brd =
+          network->getBranchData(b);
+        int from_num = 0, to_num = 0;
+        if (!brd->getValue(BRANCH_FROMBUS, &from_num)) continue;
+        if (!brd->getValue(BRANCH_TOBUS, &to_num)) continue;
+        std::map<int,int>::const_iterator itf = num2idx.find(from_num);
+        std::map<int,int>::const_iterator itt = num2idx.find(to_num);
+        if (itf == num2idx.end() || itt == num2idx.end()) continue;
+        if (busesNeedingRebuild.count(itf->second)) {
+          network->addBranchNeighbor(itf->second, b);
+        }
+        if (busesNeedingRebuild.count(itt->second)) {
+          network->addBranchNeighbor(itt->second, b);
         }
       }
     }
