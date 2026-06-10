@@ -11,6 +11,7 @@
 #ifndef _SYSTEM_PARSER34_H
 #define _SYSTEM_PARSER34_H
 
+#include "gridpack/component/data_collection.hpp"
 #include "gridpack/parser/block_parsers/base_block_parser.hpp"
 
 namespace gridpack {
@@ -18,26 +19,22 @@ namespace parser {
 
 class SystemParser34 : public BaseBlockParser {
   public:
-  /**
-   * Constructor
-   * @param bus_map map indices in RAW file to internal indices
-   * @param name_map map name in RAW file to internal indices
-   * @param branch_map map bus index pair in RAW file to internal indices
-   */
   SystemParser34(
       std::map<int,int> *bus_map,
       std::map<std::string,int> *name_map,
       std::map<std::pair<int, int>, int> *branch_map);
 
-  /**
-   * Simple Destructor
-   */
   virtual ~SystemParser34(void);
 
-  /**
-   * parse System block. Currently does not store data
-   * @param stream input stream that feeds lines from RAW file
-   */
+  // Parse System-Wide Data block (GENERAL, GAUSS, NEWTON, ADJUST, TYSL,
+  // SOLVER, RATING, ...) and store the powerflow-relevant fields into
+  // network_data. Lines that don't match a known record keyword are
+  // consumed and ignored.
+  void parse(
+      gridpack::stream::InputStream &stream,
+      boost::shared_ptr<gridpack::component::DataCollection> network_data);
+
+  // Backward-compatible overload: just consume the block.
   void parse(
       gridpack::stream::InputStream &stream);
 };

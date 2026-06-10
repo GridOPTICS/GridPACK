@@ -31,11 +31,32 @@
 #define CASE_ID "CASE_ID"
 
 /**
- * System base MVS. 
+ * System base MVS.
  * Default value is 100.0 MVA
  * type: real float
  */
 #define CASE_SBASE "CASE_SBASE"
+
+// System-Wide Data record fields (PSS/E v34+).
+// Zero-impedance line threshold (pu); branches with |Z| < THRSHZ are
+// treated as bus-merge constraints by PSS/E. Default 1.0e-4.
+#define CASE_THRSHZ "CASE_THRSHZ"
+// PQ load voltage breakpoint at which constant-power load transitions
+// toward constant-current/impedance characteristic. Default 0.7.
+#define CASE_PQBRAK "CASE_PQBRAK"
+// Newton-Raphson controls (from NEWTON record).
+#define CASE_NEWTON_ITMXN "CASE_NEWTON_ITMXN"
+#define CASE_NEWTON_TOLN "CASE_NEWTON_TOLN"
+#define CASE_NEWTON_DVLIM "CASE_NEWTON_DVLIM"
+// SOLVER record defaults.
+#define CASE_SOLVER_FLATST "CASE_SOLVER_FLATST"
+#define CASE_SOLVER_VARLIM "CASE_SOLVER_VARLIM"
+#define CASE_SOLVER_SWSHNT "CASE_SOLVER_SWSHNT"
+#define CASE_SOLVER_NONDIV "CASE_SOLVER_NONDIV"
+#define CASE_SOLVER_ACTAPS "CASE_SOLVER_ACTAPS"
+#define CASE_SOLVER_AREAIN "CASE_SOLVER_AREAIN"
+#define CASE_SOLVER_PHSHFT "CASE_SOLVER_PHSHFT"
+#define CASE_SOLVER_DCTAPS "CASE_SOLVER_DCTAPS"
 
 // AREA DATA
 /**

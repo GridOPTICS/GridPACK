@@ -242,7 +242,7 @@ class PTI34_parser : public BasePTIParser<_network>
       if (me == 0) {
         gridpack::parser::SystemParser34 system_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
-        system_parser.parse(p_istream);
+        system_parser.parse(p_istream, p_network_data);
         gridpack::parser::BusParser33 bus_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         bus_parser.parse(p_istream,p_busData,p_case_sbase,p_case_id,
