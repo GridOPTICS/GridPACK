@@ -335,15 +335,19 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   timer->stop(t_pti);
 
-  // Union-find on jumper branches (R<1e-6, |X|<5e-4, STAT=1); pick a
-  // canonical per group (slack>PV>PQ, lowest bus #), rewrite branch
-  // endpoints to canonical, mark non-canonical buses IDE=4, disable
-  // jumpers. Loads/gens/shunts on non-canonical buses are dropped.
+  // Union-find on jumper branches (|Z|<THRSHZ, STAT=1); pick a canonical
+  // per group (slack>PV>PQ, lowest bus #), rewrite branch endpoints to
+  // canonical, mark non-canonical buses IDE=4, disable jumpers.
+  // Loads/gens/shunts on non-canonical buses are dropped.
   if (p_mergeZeroImpedanceBranches && p_comm.rank() == 0) {
     int t_merge = timer->createCategory("Powerflow: Zero-Z Branch Merge");
     timer->start(t_merge);
     int nBus = network->numBuses();
     int nBranch = network->numBranches();
+    double thrshz = 1.0e-4;
+    boost::shared_ptr<gridpack::component::DataCollection> netData =
+      network->getNetworkData();
+    if (netData) netData->getValue(CASE_THRSHZ, &thrshz);
 
     std::map<int,int> num2idx;
     std::vector<int> busType(nBus, 1);
@@ -362,8 +366,6 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     for (int i = 0; i < nBus; i++) parent[i] = i;
     int nJumperElems = 0;
     std::vector<std::pair<int,int> > jumper_branches;
-    const double R_TOL = 1.0e-6;
-    const double X_TOL = 5.0e-4;
     for (int b = 0; b < nBranch; b++) {
       boost::shared_ptr<gridpack::component::DataCollection> brd =
         network->getBranchData(b);
@@ -384,7 +386,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
         double r = 0.0, x = 0.0;
         brd->getValue(BRANCH_R, &r, k);
         brd->getValue(BRANCH_X, &x, k);
-        if (std::fabs(r) < R_TOL && std::fabs(x) < X_TOL) {
+        double zmag = std::sqrt(r*r + x*x);
+        if (zmag < thrshz) {
           int ra = i1;
           while (parent[ra] != ra) {
             parent[ra] = parent[parent[ra]];
@@ -498,10 +501,10 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     if (!p_no_print) {
       char ioBuf2[320];
       sprintf(ioBuf2,
-        "Zero-Z merge: %d jumper elements found, %d merge groups, "
-        "%d non-canonical buses isolated, %d endpoint rewrites, "
-        "largest group=%d, %d groups already-isolated\n",
-        nJumperElems, nGroupsActive, nBusesIsolatedHere,
+        "Zero-Z merge: THRSHZ=%g, %d jumper elements, %d merge groups, "
+        "%d buses isolated, %d endpoint rewrites, largest=%d, "
+        "%d already-isolated\n",
+        thrshz, nJumperElems, nGroupsActive, nBusesIsolatedHere,
         nEndpointRewrites, largestGroup, nGroupsAllIsolated);
       printf("%s", ioBuf2);
     }
