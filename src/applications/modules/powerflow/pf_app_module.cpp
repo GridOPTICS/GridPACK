@@ -216,6 +216,9 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_max_controller_iterations = cursor->get("maxControllerIterations",10);
   p_qlim_deadband = cursor->get("qlimDeadband",0.1);
   p_dampingFactor = cursor->get("dampingFactor",1.0);
+  // Mark buses unreachable from any slack via in-service edges as
+  // isolated, so the Jacobian has no structurally zero rows. Default true.
+  bool p_isolateDeadIslands = cursor->get("isolateDeadIslands", true);
   ComplexType tol;
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
@@ -327,6 +330,105 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     parser.parse(filename.c_str());
   }
   timer->stop(t_pti);
+
+  // BFS from every slack on the in-service-edge subgraph; mark
+  // unreachable buses IDE=4. Runs on rank 0 before partition().
+  if (p_isolateDeadIslands && p_comm.rank() == 0) {
+    int t_dead = timer->createCategory("Powerflow: Dead Island Isolation");
+    timer->start(t_dead);
+    int nBus = network->numBuses();
+    int nBranch = network->numBranches();
+
+    std::map<int,int> num2idx;
+    std::vector<int> busType(nBus, 1);
+    std::vector<int> busNum(nBus, 0);
+    for (int i = 0; i < nBus; i++) {
+      boost::shared_ptr<gridpack::component::DataCollection> bd =
+        network->getBusData(i);
+      int num = 0;
+      bd->getValue(BUS_NUMBER, &num);
+      busNum[i] = num;
+      num2idx[num] = i;
+      int t = 1;
+      bd->getValue(BUS_TYPE, &t);
+      busType[i] = t;
+    }
+
+    std::vector<std::vector<int> > adj(nBus);
+    for (int b = 0; b < nBranch; b++) {
+      boost::shared_ptr<gridpack::component::DataCollection> brd =
+        network->getBranchData(b);
+      int from_num = 0, to_num = 0;
+      if (!brd->getValue(BRANCH_FROMBUS, &from_num)) continue;
+      if (!brd->getValue(BRANCH_TOBUS, &to_num)) continue;
+      std::map<int,int>::const_iterator itf = num2idx.find(from_num);
+      std::map<int,int>::const_iterator itt = num2idx.find(to_num);
+      if (itf == num2idx.end() || itt == num2idx.end()) continue;
+      int i1 = itf->second, i2 = itt->second;
+      if (i1 == i2) continue;
+      int nelems = 1;
+      brd->getValue(BRANCH_NUM_ELEMENTS, &nelems);
+      bool any_active = false;
+      for (int k = 0; k < nelems; k++) {
+        int st = 0;
+        if (brd->getValue(BRANCH_STATUS, &st, k) && st == 1) {
+          any_active = true;
+          break;
+        }
+      }
+      if (!any_active) continue;
+      if (busType[i1] == 4 || busType[i2] == 4) continue;
+      adj[i1].push_back(i2);
+      adj[i2].push_back(i1);
+    }
+
+    std::vector<char> reachable(nBus, 0);
+    std::vector<int> queue;
+    queue.reserve(nBus);
+    for (int i = 0; i < nBus; i++) {
+      if (busType[i] == 3) {
+        reachable[i] = 1;
+        queue.push_back(i);
+      }
+    }
+    size_t head = 0;
+    while (head < queue.size()) {
+      int u = queue[head++];
+      for (size_t k = 0; k < adj[u].size(); k++) {
+        int v = adj[u][k];
+        if (!reachable[v]) {
+          reachable[v] = 1;
+          queue.push_back(v);
+        }
+      }
+    }
+
+    int nNewIsolated = 0;
+    int nAlreadyIsolated = 0;
+    int nReachable = 0;
+    for (int i = 0; i < nBus; i++) {
+      if (busType[i] == 4) {
+        nAlreadyIsolated++;
+        continue;
+      }
+      if (reachable[i]) {
+        nReachable++;
+        continue;
+      }
+      boost::shared_ptr<gridpack::component::DataCollection> bd =
+        network->getBusData(i);
+      bd->setValue(BUS_TYPE, 4);
+      nNewIsolated++;
+    }
+    if (!p_no_print) {
+      char ioBuf2[256];
+      sprintf(ioBuf2,
+        "Dead-island pass: %d buses live, %d already IDE=4, %d newly isolated\n",
+        nReachable, nAlreadyIsolated, nNewIsolated);
+      printf("%s", ioBuf2);
+    }
+    timer->stop(t_dead);
+  }
 
   // Create serial IO object to export data from buses
   // Increased buffer size from 512 to 2048 to handle buses with many generators
