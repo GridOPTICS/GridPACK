@@ -350,6 +350,11 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     boost::shared_ptr<gridpack::component::DataCollection> netData =
       network->getNetworkData();
     if (netData) netData->getValue(CASE_THRSHZ, &thrshz);
+    // Allow override for case-tuning experiments
+    if (const char *e = std::getenv("GRIDPACK_THRSHZ")) {
+      double v = atof(e);
+      if (v > 0.0) thrshz = v;
+    }
 
     std::map<int,int> num2idx;
     std::vector<int> busType(nBus, 1);

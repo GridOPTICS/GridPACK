@@ -216,6 +216,23 @@ void gridpack::parser::TransformerParser34::parse(
         r3 = 0.5*(r23+r31-r12);
         x3 = 0.5*(x23+x31-x12);
         b3 = 0.0;
+        // Clamp pathologically small star-leg reactance. Standard delta-to-star
+        // produces |X_i| ~ 0 when X_ij + X_ki ~= X_jk; the resulting Y-bus entry
+        // is ~100x typical line admittance and ruins LU conditioning. PSS/E
+        // silently fattens these. Override clamp value with GRIDPACK_3WT_XMIN.
+        {
+          double x_min = 1.0e-3;
+          if (const char *e = std::getenv("GRIDPACK_3WT_XMIN")) {
+            double v = atof(e);
+            if (v > 0.0) x_min = v;
+          }
+          auto clamp_x = [&](double r, double &x) {
+            if (std::abs(x) < x_min) x = (x < 0.0) ? -x_min : x_min;
+          };
+          clamp_x(r1, x1);
+          clamp_x(r2, x2);
+          clamp_x(r3, x3);
+        }
 
         if (getenv("GRIDPACK_DEBUG_3W")) {
           double thr = 0.00029; // approx THRSHZ; only used as a flag threshold here
