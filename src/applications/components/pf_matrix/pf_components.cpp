@@ -56,6 +56,8 @@
 #include <iostream>
 #include <cstring>
 #include <stdio.h>
+#include <cstdlib>
+#include <cmath>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
@@ -2546,6 +2548,34 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
       // Add ZIP load derivatives for PQ buses
       rvals[2] += dpzip_dV / p_sbase;
       rvals[3] += dqzip_dV / p_sbase;
+      if (getenv("GRIDPACK_DEBUG_TINY_DIAG")) {
+        double maxabs = 0.0;
+        for (int k=0; k<4; k++) {
+          double a = std::abs(rvals[k]);
+          if (a > maxabs) maxabs = a;
+        }
+        if (maxabs < 1e-10) {
+          static int count = 0;
+          if (count < 200) {
+            std::vector<boost::shared_ptr<BaseComponent> > nbrs;
+            getNeighborBranches(nbrs);
+            printf("TINYDIAG bus=%d V=%.6g ybusr=%.6g ybusi=%.6g nbr=%zu\n",
+                   getOriginalIndex(), p_v, p_ybusr, p_ybusi, nbrs.size());
+            count++;
+          }
+        }
+      }
+      if (getenv("GRIDPACK_DEBUG_HUGE_Y")) {
+        double mag = std::sqrt(p_ybusr*p_ybusr + p_ybusi*p_ybusi);
+        if (mag > 1e4) {
+          static int count = 0;
+          if (count < 100) {
+            printf("HUGEY bus=%d V=%.6g ybusr=%.6g ybusi=%.6g |Y|=%.3e\n",
+                   getOriginalIndex(), p_v, p_ybusr, p_ybusi, mag);
+            count++;
+          }
+        }
+      }
       return 4;
     } else if (!getReferenceBus() && p_isPV && p_isIREG_PV) {
       // IREG PV: equations [ΔP, V_remote-VS], variables [θ, V]

@@ -18,6 +18,9 @@
  */
 #include "transformer_parser34.hpp"
 #include "ga.h"
+#include <cstdlib>
+#include <cmath>
+#include <string>
 
 /**
  * Constructor
@@ -213,6 +216,25 @@ void gridpack::parser::TransformerParser34::parse(
         r3 = 0.5*(r23+r31-r12);
         x3 = 0.5*(x23+x31-x12);
         b3 = 0.0;
+
+        if (getenv("GRIDPACK_DEBUG_3W")) {
+          double thr = 0.00029; // approx THRSHZ; only used as a flag threshold here
+          auto flag = [&](double r, double x){
+            double z = sqrt(r*r + x*x);
+            const char *t = "";
+            if (z < thr)             t = " ZERO";
+            else if (z < 10.0*thr)   t = " SMALL";
+            if (x < 0.0)             t = " NEGX";
+            return std::string(t);
+          };
+          printf("3W %d-%d-%d  pair[12]=(%.6g,%.6g) [23]=(%.6g,%.6g) [31]=(%.6g,%.6g) | "
+                 "leg1=(%.6g,%.6g)%s leg2=(%.6g,%.6g)%s leg3=(%.6g,%.6g)%s\n",
+                 o_idx1, o_idx2, o_idx3,
+                 r12, x12, r23, x23, r31, x31,
+                 r1, x1, flag(r1,x1).c_str(),
+                 r2, x2, flag(r2,x2).c_str(),
+                 r3, x3, flag(r3,x3).c_str());
+        }
 
         // create branch between new bus and bus I
         int index = p_branchData.size();
