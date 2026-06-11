@@ -743,9 +743,11 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     int nNewIsolated = 0;
     int nAlreadyIsolated = 0;
     int nReachable = 0;
+    std::vector<char> nowDead(nBus, 0);
     for (int i = 0; i < nBus; i++) {
       if (busType[i] == 4) {
         nAlreadyIsolated++;
+        nowDead[i] = 1;
         continue;
       }
       if (reachable[i]) {
@@ -755,13 +757,44 @@ void gridpack::powerflow::PFAppModule::readNetwork(
       boost::shared_ptr<gridpack::component::DataCollection> bd =
         network->getBusData(i);
       bd->setValue(BUS_TYPE, 4);
+      nowDead[i] = 1;
       nNewIsolated++;
+    }
+    // Deactivate any branch element with at least one IDE=4 endpoint. Without
+    // this, getAdmittance/getTransformer/getShunt still leak the branch's
+    // contribution into the live endpoint's Y_ii (they only check
+    // p_branch_status, not endpoint isolation), while the Jacobian off-diagonal
+    // block is suppressed (PFBranch::matrixForwardSize checks isIsolated). The
+    // mismatch produces a phantom row contribution with no matching column,
+    // structurally weakening LU pivots downstream.
+    int nBranchElemsDeactivated = 0;
+    for (int b = 0; b < nBranch; b++) {
+      boost::shared_ptr<gridpack::component::DataCollection> brd =
+        network->getBranchData(b);
+      int from_num = 0, to_num = 0;
+      if (!brd->getValue(BRANCH_FROMBUS, &from_num)) continue;
+      if (!brd->getValue(BRANCH_TOBUS, &to_num)) continue;
+      std::map<int,int>::const_iterator itf = num2idx.find(from_num);
+      std::map<int,int>::const_iterator itt = num2idx.find(to_num);
+      if (itf == num2idx.end() || itt == num2idx.end()) continue;
+      int i1 = itf->second, i2 = itt->second;
+      if (!nowDead[i1] && !nowDead[i2]) continue;
+      int nelems = 1;
+      brd->getValue(BRANCH_NUM_ELEMENTS, &nelems);
+      for (int k = 0; k < nelems; k++) {
+        int st = 0;
+        if (!brd->getValue(BRANCH_STATUS, &st, k)) continue;
+        if (st == 1) {
+          brd->setValue(BRANCH_STATUS, 0, k);
+          nBranchElemsDeactivated++;
+        }
+      }
     }
     if (!p_no_print) {
       char ioBuf2[256];
       sprintf(ioBuf2,
-        "Dead-island pass: %d buses live, %d already IDE=4, %d newly isolated\n",
-        nReachable, nAlreadyIsolated, nNewIsolated);
+        "Dead-island pass: %d buses live, %d already IDE=4, %d newly isolated, %d branch elements deactivated\n",
+        nReachable, nAlreadyIsolated, nNewIsolated, nBranchElemsDeactivated);
       printf("%s", ioBuf2);
     }
     timer->stop(t_dead);
