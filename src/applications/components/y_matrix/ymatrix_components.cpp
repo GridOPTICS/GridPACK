@@ -22,6 +22,8 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <cstdlib>
+#include <string>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
@@ -100,20 +102,55 @@ void gridpack::ymatrix::YMBus::setYBus(void)
   getNeighborBranches(branches);
   int size = branches.size();
   int i;
+  // Optional per-bus diagnostic. Dumps every neighbor branch contribution.
+  const char *want_dbg = std::getenv("GRIDPACK_DEBUG_YBUS_BUS");
+  bool dump = false;
+  if (want_dbg) {
+    int b = getOriginalIndex();
+    char needle[32]; snprintf(needle, sizeof(needle), "%d", b);
+    std::string list(","); list += want_dbg; list += ",";
+    std::string key = std::string(",") + needle + ",";
+    if (list.find(key) != std::string::npos) dump = true;
+  }
   // HACK: Need to cast pointer, is there a better way?
   for (i=0; i<size; i++) {
     gridpack::ymatrix::YMBranch *branch
       = dynamic_cast<gridpack::ymatrix::YMBranch*>(branches[i].get());
-    ret -= branch->getAdmittance();
-    ret -= branch->getTransformer(this);
-    ret += branch->getShunt(this);
+    gridpack::ComplexType adm = branch->getAdmittance();
+    gridpack::ComplexType xfm = branch->getTransformer(this);
+    gridpack::ComplexType sh  = branch->getShunt(this);
+    ret -= adm;
+    ret -= xfm;
+    ret += sh;
+    if (dump) {
+      int b1 = -1, b2 = -1;
+      gridpack::ymatrix::YMBus *bb1 = dynamic_cast<gridpack::ymatrix::YMBus*>(branch->getBus1().get());
+      gridpack::ymatrix::YMBus *bb2 = dynamic_cast<gridpack::ymatrix::YMBus*>(branch->getBus2().get());
+      if (bb1) b1 = bb1->getOriginalIndex();
+      if (bb2) b2 = bb2->getOriginalIndex();
+      printf("YBUS bus=%d nbr=%d->%d adm=(%.4e,%.4e) xfm=(%.4e,%.4e) shunt=(%.4e,%.4e)  contrib=(%.4e,%.4e)\n",
+             getOriginalIndex(), b1, b2,
+             real(adm), imag(adm),
+             real(xfm), imag(xfm),
+             real(sh),  imag(sh),
+             real(-adm-xfm+sh), imag(-adm-xfm+sh));
+    }
   }
   if (p_shunt) {
     gridpack::ComplexType shunt(p_shunt_gs,p_shunt_bs);
     ret += shunt;
+    if (dump) {
+      printf("YBUS bus=%d bus_shunt=(%.4e,%.4e)\n",
+             getOriginalIndex(), p_shunt_gs, p_shunt_bs);
+    }
   }
   p_ybusr = real(ret);
   p_ybusi = imag(ret);
+  if (dump) {
+    printf("YBUS bus=%d FINAL Y_ii = (%.4f, %.4f)\n",
+           getOriginalIndex(), p_ybusr, p_ybusi);
+    fflush(stdout);
+  }
 }
 
 /**
@@ -587,6 +624,14 @@ gridpack::ymatrix::YMBranch::getTransformer(gridpack::ymatrix::YMBus *bus)
 {
   int i;
   gridpack::ComplexType ret(0.0,0.0);
+  bool dump_xfm = false;
+  if (const char *want = std::getenv("GRIDPACK_DEBUG_XFM_BUS")) {
+    int b = bus->getOriginalIndex();
+    char needle[32]; snprintf(needle, sizeof(needle), "%d", b);
+    std::string list(","); list += want; list += ",";
+    std::string key = std::string(",") + needle + ",";
+    if (list.find(key) != std::string::npos) dump_xfm = true;
+  }
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType tmp(p_resistance[i],p_reactance[i]);
     gridpack::ComplexType tmpB(0.0,0.5*p_charging[i]);
@@ -603,6 +648,17 @@ gridpack::ymatrix::YMBranch::getTransformer(gridpack::ymatrix::YMBus *bus)
       }
     } else {
       tmp = gridpack::ComplexType(0.0,0.0);
+    }
+    if (dump_xfm) {
+      printf("XFM bus=%d elem=%d xform=%d active=%d switched=%d tap=%.4f shift=%.4f R=%.4e X=%.4e B=%.4e tag=%s contrib=(%.4f,%.4f)\n",
+             bus->getOriginalIndex(), i,
+             p_xform[i] ? 1 : 0,
+             p_branch_status[i] ? 1 : 0,
+             p_switched[i] ? 1 : 0,
+             p_tap_ratio[i], p_phase_shift[i],
+             p_resistance[i], p_reactance[i], p_charging[i],
+             p_tag[i].c_str(),
+             real(tmp), imag(tmp));
     }
     ret += tmp;
   }

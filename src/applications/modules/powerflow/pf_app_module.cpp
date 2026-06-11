@@ -825,9 +825,11 @@ void gridpack::powerflow::PFAppModule::initialize()
   timer->stop(t_updt);
 
   // Set up IREG PV bus swap (must be after setExchange and initBusUpdate)
-  p_factory->setupIREGPointers();
-  // Sync PV status changes to ghost buses across processes
-  p_network->updateBuses();
+  if (!std::getenv("GRIDPACK_DISABLE_IREG_SWAP")) {
+    p_factory->setupIREGPointers();
+    // Sync PV status changes to ghost buses across processes
+    p_network->updateBuses();
+  }
 
   timer->stop(t_total);
 }
@@ -957,6 +959,45 @@ bool gridpack::powerflow::PFAppModule::solve()
     if (!p_no_print) {
       sprintf(ioBuf,"\n----------test Iteration 0, before PF solve, Tol: %12.6e \n", real(tol_org));
       p_busIO->header(ioBuf);
+    }
+    // Optional: dump per-bus iter-0 mismatch for the largest contributors
+    if (std::getenv("GRIDPACK_DEBUG_ITER0_MM")) {
+      int nbus = p_network->numBuses();
+      double maxP = 0.0, maxQ = 0.0;
+      int maxPBus = 0, maxQBus = 0;
+      double sumP = 0.0, sumQ = 0.0;
+      int npq = 0, npv = 0;
+      for (int bi = 0; bi < nbus; bi++) {
+        if (!p_network->getActiveBus(bi)) continue;
+        gridpack::powerflow::PFBus *bus =
+          dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(bi).get());
+        if (bus->isIsolated() || bus->getReferenceBus()) continue;
+        double rvals[2];
+        int nvals = bus->rhsValues(rvals);
+        double absP = std::fabs(rvals[0]) * bus->getSBase();
+        if (absP > maxP) { maxP = absP; maxPBus = bus->getOriginalIndex(); }
+        sumP += absP * absP;
+        if (nvals > 1) {
+          double absQ = std::fabs(rvals[1]) * bus->getSBase();
+          if (absQ > maxQ) { maxQ = absQ; maxQBus = bus->getOriginalIndex(); }
+          sumQ += absQ * absQ;
+          npq++;
+        } else npv++;
+        // Print bus mismatches over a threshold
+        const char *thr_s = std::getenv("GRIDPACK_DEBUG_ITER0_THR");
+        double thr = thr_s ? atof(thr_s) : 5.0;  // MW/MVAr
+        if (absP >= thr || (nvals>1 && std::fabs(rvals[1])*bus->getSBase() >= thr)) {
+          printf("ITER0_MM bus=%d type=%s dP=%.3f MW dQ=%.3f MVAr\n",
+                 bus->getOriginalIndex(),
+                 bus->isPV() ? "PV" : "PQ",
+                 rvals[0]*bus->getSBase(),
+                 nvals>1 ? rvals[1]*bus->getSBase() : 0.0);
+        }
+      }
+      printf("ITER0_MM SUMMARY: maxP=%.3f@bus%d maxQ=%.3f@bus%d sumP_rms=%.3f sumQ_rms=%.3f #PQ=%d #PV=%d\n",
+             maxP, maxPBus, maxQ, maxQBus,
+             std::sqrt(sumP), std::sqrt(sumQ), npq, npv);
+      fflush(stdout);
     }
 
     // Initialize convergence tracking
