@@ -271,7 +271,7 @@ class PTI34_parser : public BasePTIParser<_network>
         area_parser.parse(p_istream,p_network_data);
         gridpack::parser::TwoTermParser33 two_term_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
-        two_term_parser.parse(p_istream);
+        two_term_parser.parse(p_istream, p_busData, p_case_sbase);
         gridpack::parser::VSCLineParser33 vsc_line_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         vsc_line_parser.parse(p_istream);
