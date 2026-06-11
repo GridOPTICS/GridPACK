@@ -2576,6 +2576,41 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
           }
         }
       }
+      if (const char *want = std::getenv("GRIDPACK_DEBUG_PIVOTS")) {
+        // Comma-separated list of bus numbers to dump in detail
+        int b = getOriginalIndex();
+        char needle[32];
+        snprintf(needle, sizeof(needle), "%d", b);
+        std::string list(",");
+        list += want;
+        list += ",";
+        std::string key = std::string(",") + needle + ",";
+        if (list.find(key) != std::string::npos) {
+          double pl = 0.0, ql = 0.0;
+          for (size_t li = 0; li < p_lstatus.size(); li++) {
+            if (p_lstatus[li] == 1) { pl += p_pl[li]; ql += p_ql[li]; }
+          }
+          double pzip, qzip;
+          getZIPLoadPower(p_v, pzip, qzip);
+          printf("PIVOT bus=%d V=%.6g ybusr=%.6g ybusi=%.6g\n",
+                 b, p_v, p_ybusr, p_ybusi);
+          printf("PIVOT bus=%d Pinj=%.6e Qinj=%.6e Pload=%.6e Qload=%.6e Pzip=%.6e Qzip=%.6e\n",
+                 b, p_Pinj, p_Qinj, pl, ql, pzip, qzip);
+          printf("PIVOT bus=%d J = [[%.6e, %.6e],[%.6e, %.6e]] dpzip_dV=%.6e dqzip_dV=%.6e\n",
+                 b, rvals[0], rvals[1], rvals[2], rvals[3], dpzip_dV, dqzip_dV);
+          std::vector<boost::shared_ptr<BaseComponent> > nbrs;
+          getNeighborBranches(nbrs);
+          printf("PIVOT bus=%d nbr=%zu\n", b, nbrs.size());
+          for (size_t ni = 0; ni < nbrs.size(); ni++) {
+            PFBranch *br = dynamic_cast<PFBranch*>(nbrs[ni].get());
+            if (!br) continue;
+            int b1 = br->getBus1OriginalIndex();
+            int b2 = br->getBus2OriginalIndex();
+            printf("PIVOT bus=%d   nbr_branch %d->%d\n", b, b1, b2);
+          }
+          fflush(stdout);
+        }
+      }
       return 4;
     } else if (!getReferenceBus() && p_isPV && p_isIREG_PV) {
       // IREG PV: equations [ΔP, V_remote-VS], variables [θ, V]

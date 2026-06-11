@@ -54,6 +54,7 @@
 #include "pf_helper.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 
 #define USE_REAL_VALUES
@@ -975,6 +976,45 @@ bool gridpack::powerflow::PFAppModule::solve()
     boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
 #endif
     timer->stop(t_mmap);
+
+    // Env-gated diagnostic: emit a per-bus PETSc-row mapping line
+    //   MAPROW row_start=<r> nrows=<n> bus=<orig> matvec=<m> type=<PQ|PV|IREG>
+    // The mapper lays rows out in MatVecIndex order, so sorting active buses
+    // by MatVecIndex and accumulating their matrixDiagSize gives the row offset.
+    if (std::getenv("GRIDPACK_DEBUG_MAPROW")) {
+      p_factory->setMode(Jacobian);
+      int nbus = p_network->numBuses();
+      std::vector<std::pair<int,int> > order; // (matvec, bus_index)
+      order.reserve(nbus);
+      for (int i = 0; i < nbus; i++) {
+        if (!p_network->getActiveBus(i)) continue;
+        int mv = -1;
+        p_network->getBus(i)->getMatVecIndex(&mv);
+        order.push_back(std::make_pair(mv, i));
+      }
+      std::sort(order.begin(), order.end());
+      int row_cursor = 0;
+      for (size_t k = 0; k < order.size(); k++) {
+        int i = order[k].second;
+        int isz = 0, jsz = 0;
+        bool ok = p_network->getBus(i)->matrixDiagSize(&isz, &jsz);
+        if (!ok || isz <= 0) continue;
+        gridpack::powerflow::PFBus *bus =
+          dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+        const char *type = "PQ";
+        if (bus) {
+          if (bus->getReferenceBus()) type = "SLACK";
+          else if (bus->isPV() && bus->isIREG_PV()) type = "IREG";
+          else if (bus->isPV()) type = "PV";
+        }
+        printf("MAPROW row_start=%d nrows=%d bus=%d matvec=%d type=%s\n",
+               row_cursor, isz, p_network->getOriginalBusIndex(i),
+               order[k].first, type);
+        row_cursor += isz;
+      }
+      printf("MAPROW total_rows=%d\n", row_cursor);
+      fflush(stdout);
+    }
 
     // Create X vector by cloning PQ
 #ifdef USE_REAL_VALUES
