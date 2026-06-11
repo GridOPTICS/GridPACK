@@ -72,12 +72,24 @@ void gridpack::parser::TwoTermParser33::parse(
   }
 
   bool debug = (std::getenv("GRIDPACK_DEBUG_DC") != NULL);
-  // Reactive-load fraction at each terminal. Crude PSS/E-style estimate:
-  // converter VAR consumption ~0.5 * P_DC. Override with GRIDPACK_DC_QFRAC.
-  double q_frac = 0.5;
+  // Reactive-load fractions at each terminal. Validated against PSS/E ref
+  // voltages on the v34 case: rectifiers consume ~50% of P as VARs (firing
+  // angle 15-20deg), inverters consume close to 0 (extinction angle small).
+  // GRIDPACK_DC_QFRAC sets both; GRIDPACK_DC_QFRAC_R / GRIDPACK_DC_QFRAC_I
+  // override individually.
+  double q_frac_r = 0.5;
+  double q_frac_i = 0.0;
   if (const char *e = std::getenv("GRIDPACK_DC_QFRAC")) {
     double v = atof(e);
-    if (v >= 0.0) q_frac = v;
+    if (v >= 0.0) { q_frac_r = v; q_frac_i = v; }
+  }
+  if (const char *e = std::getenv("GRIDPACK_DC_QFRAC_R")) {
+    double v = atof(e);
+    if (v >= 0.0) q_frac_r = v;
+  }
+  if (const char *e = std::getenv("GRIDPACK_DC_QFRAC_I")) {
+    double v = atof(e);
+    if (v >= 0.0) q_frac_i = v;
   }
 
   std::string line;
@@ -132,7 +144,8 @@ void gridpack::parser::TwoTermParser33::parse(
     // Convert SETVL to MW. MDC=1 -> SETVL is MW. MDC=2 -> SETVL is kA at
     // rectifier DC bus; approximate P = SETVL * VSCHD (MW = kA * kV).
     double pdc_mw = (mdc == 2) ? std::abs(setvl) * std::abs(vschd) : std::abs(setvl);
-    double qdc_mvar = q_frac * pdc_mw;
+    double qdc_r_mvar = q_frac_r * pdc_mw;
+    double qdc_i_mvar = q_frac_i * pdc_mw;
 
     // Look up internal bus indices
     std::map<int,int>::iterator it_r = p_busMap->find(ipr);
@@ -178,14 +191,14 @@ void gridpack::parser::TwoTermParser33::parse(
       }
     };
 
-    add_dc_load(idx_r, ipr, "DR",  pdc_mw, qdc_mvar);  // rectifier: +P load
-    add_dc_load(idx_i, ipi, "DI", -pdc_mw, qdc_mvar);  // inverter:  -P load
+    add_dc_load(idx_r, ipr, "DR",  pdc_mw, qdc_r_mvar);  // rectifier: +P load
+    add_dc_load(idx_i, ipi, "DI", -pdc_mw, qdc_i_mvar);  // inverter:  -P load
 
     n_active++;
     total_mw += pdc_mw;
     if (debug) {
-      printf("DC_INJECT add name=%s rect_bus=%d inv_bus=%d P=%.2f MW Q=%.2f MVAr\n",
-             hdr.size()>0 ? hdr[0].c_str() : "?", ipr, ipi, pdc_mw, qdc_mvar);
+      printf("DC_INJECT add name=%s rect_bus=%d inv_bus=%d P=%.2f MW Qr=%.2f Qi=%.2f MVAr\n",
+             hdr.size()>0 ? hdr[0].c_str() : "?", ipr, ipi, pdc_mw, qdc_r_mvar, qdc_i_mvar);
     }
 
     stream.nextLine(line);
