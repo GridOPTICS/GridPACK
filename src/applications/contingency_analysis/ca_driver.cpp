@@ -29,10 +29,14 @@
 #include "gridpack/utilities/results_exporter.hpp"
 #include "ca_driver.hpp"
 
+#include <boost/scoped_ptr.hpp>
 #include <sstream>
 
 #define USE_SUCCESS
-#define USE_STATBLOCK
+// Statistical-summary output (vmag.txt, pflow.txt, etc.) used to be controlled
+// by a USE_STATBLOCK build-time macro; it is now a runtime XML option,
+// `Configuration.Contingency_analysis.writeStats`, defaulting to true to
+// preserve existing behavior.
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
 
@@ -366,6 +370,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       print_calcs = true;
     }
   }
+  // Statistical-summary output (vmag.txt, pflow.txt, etc. via StatBlock).
+  // Default true to preserve existing behavior; set false to skip the
+  // per-case StatBlock work and the 13 post-loop global writes.
+  bool write_stats = true;
+  if (cursor->get("writeStats",&tmp_bool)) {
+    util.toLower(tmp_bool);
+    write_stats = (tmp_bool != "false");
+  }
   if (!cursor->get("groupSize",&grp_size)) {
     grp_size = 1;
   }
@@ -579,164 +591,153 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   int nbus = pf_network->totalBuses();
   // Get bus voltage information for base case
   int i, j;
-#ifdef USE_STATBLOCK
+  // StatBlock objects and the per-case scratch vectors live across the
+  // contingency loop so they are declared up here, regardless of whether
+  // statistics output is enabled.
+  boost::scoped_ptr<gridpack::analysis::StatBlock> vmag_stats;
+  boost::scoped_ptr<gridpack::analysis::StatBlock> vang_stats;
+  boost::scoped_ptr<gridpack::analysis::StatBlock> pgen_stats;
+  boost::scoped_ptr<gridpack::analysis::StatBlock> qgen_stats;
+  boost::scoped_ptr<gridpack::analysis::StatBlock> pflow_stats;
+  boost::scoped_ptr<gridpack::analysis::StatBlock> qflow_stats;
+  boost::scoped_ptr<gridpack::analysis::StatBlock> perf_stats;
+  std::vector<std::string> v_vals;
+  int nsize = 0;
+  std::vector<double> vmag, vang, pgen, qgen, pflow, qflow, perf;
+  std::vector<int> mask, mag_mask;
   int t_store = timer->createCategory("Store Statistics");
-  timer->start(t_store);
-  std::vector<std::string> v_vals = pf_app.writeBusString("vr_str");
-  int nsize = v_vals.size();
-  std::vector<int> mag_ids;
-  std::vector<int> ids;
-  std::vector<int> branch_ids;
-  std::vector<std::string> mag_tags;
-  std::vector<std::string> tags;
-  std::vector<double> vmag;
-  std::vector<double> vang;
-  std::vector<int> mag_mask;
-  std::vector<int> mask;
-  // Find bus IDs and create a dummy tag label and get voltage magnitude
-  // and angle for base case
-  for (i=0; i<nsize; i++) {
-    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-    int not_isolated = atoi(tokens[3].c_str());
-    if (not_isolated == 1) {
-      mag_ids.push_back(atoi(tokens[0].c_str()));
-      mag_tags.push_back("1 ");
-      vmag.push_back(atof(tokens[2].c_str()));
-      if (atoi(tokens[4].c_str()) != 0) {
-        mag_mask.push_back(2);
-      } else {
-        mag_mask.push_back(1);
+  if (write_stats) {
+    timer->start(t_store);
+    v_vals = pf_app.writeBusString("vr_str");
+    nsize = v_vals.size();
+    std::vector<int> mag_ids;
+    std::vector<int> ids;
+    std::vector<std::string> mag_tags;
+    std::vector<std::string> tags;
+    // Find bus IDs and create a dummy tag label and get voltage magnitude
+    // and angle for base case
+    for (i=0; i<nsize; i++) {
+      std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+      int not_isolated = atoi(tokens[3].c_str());
+      if (not_isolated == 1) {
+        mag_ids.push_back(atoi(tokens[0].c_str()));
+        mag_tags.push_back("1 ");
+        vmag.push_back(atof(tokens[2].c_str()));
+        if (atoi(tokens[4].c_str()) != 0) {
+          mag_mask.push_back(2);
+        } else {
+          mag_mask.push_back(1);
+        }
       }
-    }
-    ids.push_back(atoi(tokens[0].c_str()));
-    tags.push_back("1 ");
-    vang.push_back(atof(tokens[1].c_str()));
-    mask.push_back(1);
-  }
-  int nmags = vmag.size();
-  world.max(&nmags,1);
-  world.max(&nbus,1);
-#endif
-  // Create StatBlock objects for voltage magnitude and angles and add
-  // bus IDs to it
-#ifdef USE_STATBLOCK
-  gridpack::analysis::StatBlock vmag_stats(world,nmags,ntasks+1);
-  gridpack::analysis::StatBlock vang_stats(world,nbus,ntasks+1);
-#endif
-  // Add bus IDs and tags to StatBlock objects as well as base case values of
-  // voltage magnitude and angle
-#ifdef USE_STATBLOCK
-  if (world.rank() == 0) {
-    vmag_stats.addRowLabels(mag_ids, mag_tags);
-    vang_stats.addRowLabels(ids, tags);
-    vmag_stats.addColumnValues(0,vmag,mag_mask);
-    vang_stats.addColumnValues(0,vang,mask);
-  }
-#endif
-  // Get generator power information
-#ifdef USE_STATBLOCK
-  v_vals.clear();
-  ids.clear();
-  tags.clear();
-  mask.clear();
-  std::vector<double> pgen;
-  std::vector<double> qgen;
-  v_vals = pf_app.writeBusString("power");
-  nsize = v_vals.size();
-  // Find bus IDs and tags for generators and eveluate Pg and Qg for base case
-  for (i=0; i<nsize; i++) {
-    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-    if (tokens.size()%4 != 0) {
-      printf("Incorrect generator listing\n");
-      continue;
-    }
-    int ngen = tokens.size()/4;
-    for (j=0; j<ngen; j++) {
-      ids.push_back(atoi(tokens[j*4].c_str()));
-      tags.push_back(tokens[j*4+1]);
-      pgen.push_back(atof(tokens[j*4+2].c_str()));
-      qgen.push_back(atof(tokens[j*4+3].c_str()));
+      ids.push_back(atoi(tokens[0].c_str()));
+      tags.push_back("1 ");
+      vang.push_back(atof(tokens[1].c_str()));
       mask.push_back(1);
     }
-  }
-  nsize = pgen.size();
-  world.max(&nsize,1);
-#endif
-  // Create StatBlock objects for Pg and Qg and add labels as well as values for
-  // base case
-#ifdef USE_STATBLOCK
-  gridpack::analysis::StatBlock pgen_stats(world,nsize,ntasks+1);
-  gridpack::analysis::StatBlock qgen_stats(world,nsize,ntasks+1);
-  if (world.rank() == 0) {
-    pgen_stats.addRowLabels(ids, tags);
-    qgen_stats.addRowLabels(ids, tags);
-    pgen_stats.addColumnValues(0,pgen,mask);
-    qgen_stats.addColumnValues(0,qgen,mask);
-  }
-#endif
-
-  // Find flow parameters for all branch lines
-#ifdef USE_STATBLOCK
-  v_vals.clear();
-  ids.clear();
-  tags.clear();
-  mask.clear();
-  std::vector<int> id1;
-  std::vector<int> id2;
-  std::vector<double> pmin, pmax;
-  std::vector<double> pflow;
-  std::vector<double> qflow;
-  std::vector<double> perf;
-  v_vals = pf_app.writeBranchString("flow_str");
-  nsize = v_vals.size();
-  // Parse branch line endpoints as well as line IDs and values of P and Q for
-  // base case
-  for (i=0; i<nsize; i++) {
-    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-    if (tokens.size()%8 != 0) {
-      printf("Incorrect branch power flow listing\n");
-      continue;
+    int nmags = vmag.size();
+    world.max(&nmags,1);
+    world.max(&nbus,1);
+    // Create StatBlock objects for voltage magnitude and angles and add
+    // bus IDs to it as well as base case values
+    vmag_stats.reset(new gridpack::analysis::StatBlock(world,nmags,ntasks+1));
+    vang_stats.reset(new gridpack::analysis::StatBlock(world,nbus,ntasks+1));
+    if (world.rank() == 0) {
+      vmag_stats->addRowLabels(mag_ids, mag_tags);
+      vang_stats->addRowLabels(ids, tags);
+      vmag_stats->addColumnValues(0,vmag,mag_mask);
+      vang_stats->addColumnValues(0,vang,mask);
     }
-    int nline = tokens.size()/8;
-    for (j=0; j<nline; j++) {
-      id1.push_back(atoi(tokens[j*8].c_str()));
-      id2.push_back(atoi(tokens[j*8+1].c_str()));
-      tags.push_back(tokens[j*8+2]);
-      pflow.push_back(atof(tokens[j*8+3].c_str()));
-      qflow.push_back(atof(tokens[j*8+4].c_str()));
-      perf.push_back(atof(tokens[j*8+5].c_str()));
-      pmin.push_back(-atof(tokens[j*8+6].c_str()));
-      pmax.push_back(atof(tokens[j*8+6].c_str()));
-      if (atoi(tokens[j*8+7].c_str()) == 0) {
+    // Get generator power information
+    v_vals.clear();
+    ids.clear();
+    tags.clear();
+    mask.clear();
+    v_vals = pf_app.writeBusString("power");
+    nsize = v_vals.size();
+    // Find bus IDs and tags for generators and evaluate Pg and Qg for base case
+    for (i=0; i<nsize; i++) {
+      std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+      if (tokens.size()%4 != 0) {
+        printf("Incorrect generator listing\n");
+        continue;
+      }
+      int ngen = tokens.size()/4;
+      for (j=0; j<ngen; j++) {
+        ids.push_back(atoi(tokens[j*4].c_str()));
+        tags.push_back(tokens[j*4+1]);
+        pgen.push_back(atof(tokens[j*4+2].c_str()));
+        qgen.push_back(atof(tokens[j*4+3].c_str()));
         mask.push_back(1);
-      } else {
-        mask.push_back(2);
       }
     }
+    nsize = pgen.size();
+    world.max(&nsize,1);
+    // Create StatBlock objects for Pg and Qg and add labels and base case values
+    pgen_stats.reset(new gridpack::analysis::StatBlock(world,nsize,ntasks+1));
+    qgen_stats.reset(new gridpack::analysis::StatBlock(world,nsize,ntasks+1));
+    if (world.rank() == 0) {
+      pgen_stats->addRowLabels(ids, tags);
+      qgen_stats->addRowLabels(ids, tags);
+      pgen_stats->addColumnValues(0,pgen,mask);
+      qgen_stats->addColumnValues(0,qgen,mask);
+    }
+
+    // Find flow parameters for all branch lines
+    v_vals.clear();
+    ids.clear();
+    tags.clear();
+    mask.clear();
+    std::vector<int> id1;
+    std::vector<int> id2;
+    std::vector<double> pmin, pmax;
+    v_vals = pf_app.writeBranchString("flow_str");
+    nsize = v_vals.size();
+    // Parse branch line endpoints as well as line IDs and values of P and Q for
+    // base case
+    for (i=0; i<nsize; i++) {
+      std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+      if (tokens.size()%8 != 0) {
+        printf("Incorrect branch power flow listing\n");
+        continue;
+      }
+      int nline = tokens.size()/8;
+      for (j=0; j<nline; j++) {
+        id1.push_back(atoi(tokens[j*8].c_str()));
+        id2.push_back(atoi(tokens[j*8+1].c_str()));
+        tags.push_back(tokens[j*8+2]);
+        pflow.push_back(atof(tokens[j*8+3].c_str()));
+        qflow.push_back(atof(tokens[j*8+4].c_str()));
+        perf.push_back(atof(tokens[j*8+5].c_str()));
+        pmin.push_back(-atof(tokens[j*8+6].c_str()));
+        pmax.push_back(atof(tokens[j*8+6].c_str()));
+        if (atoi(tokens[j*8+7].c_str()) == 0) {
+          mask.push_back(1);
+        } else {
+          mask.push_back(2);
+        }
+      }
+    }
+    nsize = pflow.size();
+    world.max(&nsize,1);
+    // Create StatBlock objects for flow parameters and add labels and base case
+    // values
+    pflow_stats.reset(new gridpack::analysis::StatBlock(world,nsize,ntasks+1));
+    qflow_stats.reset(new gridpack::analysis::StatBlock(world,nsize,ntasks+1));
+    perf_stats.reset(new gridpack::analysis::StatBlock(world,nsize,ntasks+1));
+    if (world.rank() == 0) {
+      pflow_stats->addRowLabels(id1, id2, tags);
+      qflow_stats->addRowLabels(id1, id2, tags);
+      perf_stats->addRowLabels(id1, id2, tags);
+      pflow_stats->addColumnValues(0,pflow,mask);
+      qflow_stats->addColumnValues(0,qflow,mask);
+      perf_stats->addColumnValues(0,perf,mask);
+      pflow_stats->addRowMinValue(pmin);
+      qflow_stats->addRowMinValue(pmin);
+      pflow_stats->addRowMaxValue(pmax);
+      qflow_stats->addRowMaxValue(pmax);
+    }
+    timer->stop(t_store);
   }
-  nsize = pflow.size();
-  world.max(&nsize,1);
-#endif
-  // Create StatBlock objects for flow parameters and add labels and base case
-  // values
-#ifdef USE_STATBLOCK
-  gridpack::analysis::StatBlock pflow_stats(world,nsize,ntasks+1);
-  gridpack::analysis::StatBlock qflow_stats(world,nsize,ntasks+1);
-  gridpack::analysis::StatBlock perf_stats(world,nsize,ntasks+1);
-  if (world.rank() == 0) {
-    pflow_stats.addRowLabels(id1, id2, tags);
-    qflow_stats.addRowLabels(id1, id2, tags);
-    perf_stats.addRowLabels(id1, id2, tags);
-    pflow_stats.addColumnValues(0,pflow,mask);
-    qflow_stats.addColumnValues(0,qflow,mask);
-    perf_stats.addColumnValues(0,perf,mask);
-    pflow_stats.addRowMinValue(pmin);
-    qflow_stats.addRowMinValue(pmin);
-    pflow_stats.addRowMaxValue(pmax);
-    qflow_stats.addRowMaxValue(pmax);
-  }
-  timer->stop(t_store);
-#endif
   if (check_Qlim) pf_app.clearQlimViolations();
   // Clear any Q limit warnings from base case before starting contingencies
   gridpack::powerflow::PFBus::clearQlimWarnings();
@@ -919,98 +920,88 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // Get strings of data from power flow calculation and parse them to
       // extract numerical values. Store these values in vectors and then
       // add them to StatBlock objects
-#ifdef USE_STATBLOCK
-      timer->start(t_store);
-      vmag.clear();
-      vang.clear();
-      mask.clear();
-      mag_mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("vr_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        int not_isolated = atoi(tokens[3].c_str());
-        if (not_isolated == 1) {
-          vmag.push_back(atof(tokens[2].c_str()));
-          if (atoi(tokens[4].c_str()) != 0) {
-            mag_mask.push_back(2);
-          } else {
-            mag_mask.push_back(1);
+      if (write_stats) {
+        timer->start(t_store);
+        vmag.clear();
+        vang.clear();
+        mask.clear();
+        mag_mask.clear();
+        v_vals.clear();
+        v_vals = pf_app.writeBusString("vr_str");
+        nsize = v_vals.size();
+        for (i=0; i<nsize; i++) {
+          std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          int not_isolated = atoi(tokens[3].c_str());
+          if (not_isolated == 1) {
+            vmag.push_back(atof(tokens[2].c_str()));
+            if (atoi(tokens[4].c_str()) != 0) {
+              mag_mask.push_back(2);
+            } else {
+              mag_mask.push_back(1);
+            }
           }
-        }
-        vang.push_back(atof(tokens[1].c_str()));
-        mask.push_back(1);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        vmag_stats.addColumnValues(task_id+1,vmag,mag_mask);
-        vang_stats.addColumnValues(task_id+1,vang,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pgen.clear();
-      qgen.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("power");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%4 != 0) {
-          printf("Incorrect generator listing\n");
-          continue;
-        }
-        int ngen = tokens.size()/4;
-        for (j=0; j<ngen; j++) {
-          pgen.push_back(atof(tokens[j*4+2].c_str()));
-          qgen.push_back(atof(tokens[j*4+3].c_str()));
+          vang.push_back(atof(tokens[1].c_str()));
           mask.push_back(1);
         }
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pgen_stats.addColumnValues(task_id+1,pgen,mask);
-        qgen_stats.addColumnValues(task_id+1,qgen,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pflow.clear();
-      qflow.clear();
-      perf.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBranchString("flow_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%8 != 0) {
-          printf("Incorrect branch power flow listing\n");
-          continue;
+        if (task_comm.rank() == 0) {
+          vmag_stats->addColumnValues(task_id+1,vmag,mag_mask);
+          vang_stats->addColumnValues(task_id+1,vang,mask);
         }
-        int nline = tokens.size()/8;
-        for (j=0; j<nline; j++) {
-          pflow.push_back(atof(tokens[j*8+3].c_str()));
-          qflow.push_back(atof(tokens[j*8+4].c_str()));
-          perf.push_back(atof(tokens[j*8+5].c_str()));
-          if (atoi(tokens[j*8+7].c_str()) == 0) {
+        pgen.clear();
+        qgen.clear();
+        mask.clear();
+        v_vals.clear();
+        v_vals = pf_app.writeBusString("power");
+        nsize = v_vals.size();
+        for (i=0; i<nsize; i++) {
+          std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          if (tokens.size()%4 != 0) {
+            printf("Incorrect generator listing\n");
+            continue;
+          }
+          int ngen = tokens.size()/4;
+          for (j=0; j<ngen; j++) {
+            pgen.push_back(atof(tokens[j*4+2].c_str()));
+            qgen.push_back(atof(tokens[j*4+3].c_str()));
             mask.push_back(1);
-          } else {
-            mask.push_back(2);
           }
         }
+        if (task_comm.rank() == 0) {
+          pgen_stats->addColumnValues(task_id+1,pgen,mask);
+          qgen_stats->addColumnValues(task_id+1,qgen,mask);
+        }
+        pflow.clear();
+        qflow.clear();
+        perf.clear();
+        mask.clear();
+        v_vals.clear();
+        v_vals = pf_app.writeBranchString("flow_str");
+        nsize = v_vals.size();
+        for (i=0; i<nsize; i++) {
+          std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          if (tokens.size()%8 != 0) {
+            printf("Incorrect branch power flow listing\n");
+            continue;
+          }
+          int nline = tokens.size()/8;
+          for (j=0; j<nline; j++) {
+            pflow.push_back(atof(tokens[j*8+3].c_str()));
+            qflow.push_back(atof(tokens[j*8+4].c_str()));
+            perf.push_back(atof(tokens[j*8+5].c_str()));
+            if (atoi(tokens[j*8+7].c_str()) == 0) {
+              mask.push_back(1);
+            } else {
+              mask.push_back(2);
+            }
+          }
+        }
+        if (task_comm.rank() == 0) {
+          pflow_stats->addColumnValues(task_id+1,pflow,mask);
+          qflow_stats->addColumnValues(task_id+1,qflow,mask);
+          perf_stats->addColumnValues(task_id+1,perf,mask);
+        }
+        timer->stop(t_store);
       }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pflow_stats.addColumnValues(task_id+1,pflow,mask);
-        qflow_stats.addColumnValues(task_id+1,qflow,mask);
-        perf_stats.addColumnValues(task_id+1,perf,mask);
-      }
-      timer->stop(t_store);
-#endif
         // Note: clearQlimViolations() moved after unSetContingency() below
       }  // end slackCapacityOk block
     } else {
@@ -1041,90 +1032,80 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       if (print_calcs) pf_app.print(sbuf);
       // Add dummy values to StatBlock object. Mask value is set to 0 for all
       // network elements to indicate calculation failure
-#ifdef USE_STATBLOCK
-      timer->start(t_store);
-      vmag.clear();
-      vang.clear();
-      mask.clear();
-      mag_mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("vfail_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        int not_isolated = atoi(tokens[3].c_str());
-        if (not_isolated == 1) {
-          vmag.push_back(0.0);
-          mag_mask.push_back(0);
-        }
-        vang.push_back(0.0);
-        mask.push_back(0);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        vmag_stats.addColumnValues(task_id+1,vmag,mag_mask);
-        vang_stats.addColumnValues(task_id+1,vang,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pgen.clear();
-      qgen.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("pfail_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%4 != 0) {
-          printf("Incorrect generator listing\n");
-          continue;
-        }
-        int ngen = tokens.size()/4;
-        for (j=0; j<ngen; j++) {
-          pgen.push_back(0.0);
-          qgen.push_back(0.0);
+      if (write_stats) {
+        timer->start(t_store);
+        vmag.clear();
+        vang.clear();
+        mask.clear();
+        mag_mask.clear();
+        v_vals.clear();
+        v_vals = pf_app.writeBusString("vfail_str");
+        nsize = v_vals.size();
+        for (i=0; i<nsize; i++) {
+          std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          int not_isolated = atoi(tokens[3].c_str());
+          if (not_isolated == 1) {
+            vmag.push_back(0.0);
+            mag_mask.push_back(0);
+          }
+          vang.push_back(0.0);
           mask.push_back(0);
         }
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pgen_stats.addColumnValues(task_id+1,pgen,mask);
-        qgen_stats.addColumnValues(task_id+1,qgen,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pflow.clear();
-      qflow.clear();
-      perf.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBranchString("fail_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%8 != 0) {
-          printf("Incorrect branch power flow listing\n");
-          continue;
+        if (task_comm.rank() == 0) {
+          vmag_stats->addColumnValues(task_id+1,vmag,mag_mask);
+          vang_stats->addColumnValues(task_id+1,vang,mask);
         }
-        int nline = tokens.size()/8;
-        for (j=0; j<nline; j++) {
-          pflow.push_back(0.0);
-          qflow.push_back(0.0);
-          perf.push_back(0.0);
-          mask.push_back(0);
+        pgen.clear();
+        qgen.clear();
+        mask.clear();
+        v_vals.clear();
+        v_vals = pf_app.writeBusString("pfail_str");
+        nsize = v_vals.size();
+        for (i=0; i<nsize; i++) {
+          std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          if (tokens.size()%4 != 0) {
+            printf("Incorrect generator listing\n");
+            continue;
+          }
+          int ngen = tokens.size()/4;
+          for (j=0; j<ngen; j++) {
+            pgen.push_back(0.0);
+            qgen.push_back(0.0);
+            mask.push_back(0);
+          }
         }
+        if (task_comm.rank() == 0) {
+          pgen_stats->addColumnValues(task_id+1,pgen,mask);
+          qgen_stats->addColumnValues(task_id+1,qgen,mask);
+        }
+        pflow.clear();
+        qflow.clear();
+        perf.clear();
+        mask.clear();
+        v_vals.clear();
+        v_vals = pf_app.writeBranchString("fail_str");
+        nsize = v_vals.size();
+        for (i=0; i<nsize; i++) {
+          std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          if (tokens.size()%8 != 0) {
+            printf("Incorrect branch power flow listing\n");
+            continue;
+          }
+          int nline = tokens.size()/8;
+          for (j=0; j<nline; j++) {
+            pflow.push_back(0.0);
+            qflow.push_back(0.0);
+            perf.push_back(0.0);
+            mask.push_back(0);
+          }
+        }
+        if (task_comm.rank() == 0) {
+          pflow_stats->addColumnValues(task_id+1,pflow,mask);
+          qflow_stats->addColumnValues(task_id+1,qflow,mask);
+          perf_stats->addColumnValues(task_id+1,perf,mask);
+        }
+        timer->stop(t_store);
       }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pflow_stats.addColumnValues(task_id+1,pflow,mask);
-        qflow_stats.addColumnValues(task_id+1,qflow,mask);
-        perf_stats.addColumnValues(task_id+1,perf,mask);
-      }
-      timer->stop(t_store);
-#endif
     }
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
@@ -1407,27 +1388,27 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
 
   // Print out statistics on contingencies
-#ifdef USE_STATBLOCK
-  int t_stats = timer->createCategory("Write Statistics");
-  timer->start(t_stats);
-  vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
-  vmag_stats.writeMinAndMax("vmag_mm.txt",1,false);
-  if (check_Qlim) vmag_stats.writeMaskValueCount("pq_change_cnt.txt",2,false);
-  vang_stats.writeMeanAndRMS("vang.txt",1,false);
-  vang_stats.writeMinAndMax("vang_mm.txt",1,false);
-  pgen_stats.writeMeanAndRMS("pgen.txt",1);
-  pgen_stats.writeMinAndMax("pgen_mm.txt",1);
-  qgen_stats.writeMeanAndRMS("qgen.txt",1);
-  qgen_stats.writeMinAndMax("qgen_mm.txt",1);
-  pflow_stats.writeMeanAndRMS("pflow.txt",1);
-  pflow_stats.writeMinAndMax("pflow_mm.txt",1);
-  pflow_stats.writeMaskValueCount("line_flt_cnt.txt",2);
-  qflow_stats.writeMeanAndRMS("qflow.txt",1);
-  qflow_stats.writeMinAndMax("qflow_mm.txt",1);
-  perf_stats.writeMinAndMax("perf_mm.txt",1);
-  perf_stats.sumColumnValues("perf_sum.txt",1);
-  timer->stop(t_stats);
-#endif
+  if (write_stats) {
+    int t_stats = timer->createCategory("Write Statistics");
+    timer->start(t_stats);
+    vmag_stats->writeMeanAndRMS("vmag.txt",1,false);
+    vmag_stats->writeMinAndMax("vmag_mm.txt",1,false);
+    if (check_Qlim) vmag_stats->writeMaskValueCount("pq_change_cnt.txt",2,false);
+    vang_stats->writeMeanAndRMS("vang.txt",1,false);
+    vang_stats->writeMinAndMax("vang_mm.txt",1,false);
+    pgen_stats->writeMeanAndRMS("pgen.txt",1);
+    pgen_stats->writeMinAndMax("pgen_mm.txt",1);
+    qgen_stats->writeMeanAndRMS("qgen.txt",1);
+    qgen_stats->writeMinAndMax("qgen_mm.txt",1);
+    pflow_stats->writeMeanAndRMS("pflow.txt",1);
+    pflow_stats->writeMinAndMax("pflow_mm.txt",1);
+    pflow_stats->writeMaskValueCount("line_flt_cnt.txt",2);
+    qflow_stats->writeMeanAndRMS("qflow.txt",1);
+    qflow_stats->writeMinAndMax("qflow_mm.txt",1);
+    perf_stats->writeMinAndMax("perf_mm.txt",1);
+    perf_stats->sumColumnValues("perf_sum.txt",1);
+    timer->stop(t_stats);
+  }
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
