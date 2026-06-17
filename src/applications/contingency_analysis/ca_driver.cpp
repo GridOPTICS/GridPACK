@@ -203,7 +203,9 @@ std::vector<gridpack::powerflow::Contingency>
       }
     }
 
-    printf("Auto-generated %d N-1 branch contingencies\n", branch_count);
+    if (gridpack::parallel::Communicator().rank() == 0) {
+      printf("Auto-generated %d N-1 branch contingencies\n", branch_count);
+    }
   }
 
   // Generate N-1 generator contingencies
@@ -238,7 +240,9 @@ std::vector<gridpack::powerflow::Contingency>
       }
     }
 
-    printf("Auto-generated %d N-1 generator contingencies\n", gen_count);
+    if (gridpack::parallel::Communicator().rank() == 0) {
+      printf("Auto-generated %d N-1 generator contingencies\n", gen_count);
+    }
   }
 
   return ret;
@@ -751,7 +755,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
   while (taskmgr.nextTask(task_comm, &task_id)) {
-    printf("Executing task %d on process %d\n",task_id,world.rank());
+    if (print_calcs) printf("Executing task %d on process %d\n",task_id,world.rank());
     // Trim trailing spaces from contingency name for filename
     std::string fname = events[task_id].p_name;
     size_t end = fname.find_last_not_of(' ');
@@ -771,7 +775,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         sprintf(sbuf," Line: (from) %d (to) %d (line) \'%s\'\n",
             events[task_id].p_from[j],events[task_id].p_to[j],
             events[task_id].p_ckt[j].c_str());
-        printf("p[%d] Line: (from) %d (to) %d (line) \'%s\'\n",
+        if (print_calcs) printf("p[%d] Line: (from) %d (to) %d (line) \'%s\'\n",
             pf_network->communicator().rank(),
             events[task_id].p_from[j],events[task_id].p_to[j],
             events[task_id].p_ckt[j].c_str());
@@ -782,7 +786,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       for (j=0; j<nbus; j++) {
         sprintf(sbuf," Generator: (bus) %d (generator ID) \'%s\'\n",
             events[task_id].p_busid[j],events[task_id].p_genid[j].c_str());
-        printf("p[%d] Generator: (bus) %d (generator ID) \'%s\'\n",
+        if (print_calcs) printf("p[%d] Generator: (bus) %d (generator ID) \'%s\'\n",
             pf_network->communicator().rank(),
             events[task_id].p_busid[j],events[task_id].p_genid[j].c_str());
       }
