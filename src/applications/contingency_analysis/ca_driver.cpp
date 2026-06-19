@@ -561,8 +561,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     printf("==================================================================\n\n");
   }
 
-  // Print contingency details
-  if (world.rank() == 0) {
+  // Print contingency details (gated on printCalcFiles; noisy for large lists)
+  if (print_calcs && world.rank() == 0) {
     int idx;
     for (idx = 0; idx < events.size(); idx++) {
       printf("Name: %s\n",events[idx].p_name.c_str());

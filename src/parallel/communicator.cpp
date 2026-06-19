@@ -186,6 +186,13 @@ Communicator::divide(int nsize) const
 {
   int nprocs(size());
   int me(rank());
+  // Fast path: when the result would contain every rank in this comm, return
+  // a copy that shares the existing GA process group handle. Skips a redundant
+  // GA_Pgroup_create (whose handle dispatches through a slower path than GA's
+  // built-in world group on some MPI stacks).
+  if (nsize >= nprocs) {
+    return *this;
+  }
   // find out how many communicators need to be created
   int ngrp = nprocs/nsize;
   if (ngrp*nsize < nprocs) ngrp++;
