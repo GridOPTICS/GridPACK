@@ -31,6 +31,9 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <sstream>
+#include <cstring>
+#include <cmath>
+#include <cstdio>
 
 #define USE_SUCCESS
 // Statistical-summary output (vmag.txt, pflow.txt, etc.) used to be controlled
@@ -426,6 +429,80 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   pf_app.readNetwork(pf_network,config);
   // Finish initializing the network
   pf_app.initialize();
+
+  // Build (number -> name) lookup tables for area, zone, owner.
+  // Keyed on the PSS/E-assigned number (not contiguous), used when
+  // emitting per-(branch,contingency) CSV rows so each row carries
+  // human-readable area/zone/owner names alongside the numbers.
+  std::map<int, std::string> area_name_by_num;
+  std::map<int, std::string> zone_name_by_num;
+  std::map<int, std::string> owner_name_by_num;
+  {
+    boost::shared_ptr<gridpack::component::DataCollection> netdata =
+      pf_network->getNetworkData();
+    int aT = 0, zT = 0, oT = 0;
+    netdata->getValue(AREA_TOTAL,  &aT);
+    netdata->getValue(ZONE_TOTAL,  &zT);
+    netdata->getValue(OWNER_TOTAL, &oT);
+    for (int i = 0; i < aT; i++) {
+      int n = 0; std::string s;
+      netdata->getValue(AREAINTG_NUMBER, &n, i);
+      netdata->getValue(AREAINTG_NAME,   &s, i);
+      area_name_by_num[n] = s;
+    }
+    for (int i = 0; i < zT; i++) {
+      int n = 0; std::string s;
+      netdata->getValue(ZONE_NUMBER, &n, i);
+      netdata->getValue(ZONE_NAME,   &s, i);
+      zone_name_by_num[n] = s;
+    }
+    for (int i = 0; i < oT; i++) {
+      int n = 0; std::string s;
+      netdata->getValue(OWNER_NUMBER, &n, i);
+      netdata->getValue(OWNER_NAME,   &s, i);
+      owner_name_by_num[n] = s;
+    }
+  }
+
+  // Per-(branch,contingency) flat-row capture used by outputFormat=csv_flat.
+  // One row per branch per converged contingency, looked up against per-bus
+  // metadata gathered from the local network (covers both active and ghost
+  // buses so all branch endpoints resolve on rank 0).
+  struct FlatRow {
+    int    event_idx;
+    int    branch_from, branch_to;
+    char   ckt[4];
+    double p_mw, q_mvar, flow_mva, rate_a_mva, loading_pct;
+    int    viol;
+    double v_from, v_to, ang_from_deg, ang_to_deg;
+    int    area_from, zone_from, owner_from;
+    int    area_to,   zone_to,   owner_to;
+    double basekv_from, basekv_to;
+  };
+  struct BusMeta {
+    std::string name;
+    double basekv;
+    int    area, zone, owner;
+  };
+  std::map<int, BusMeta> bus_meta;
+  if (outputFormat == "csv_flat") {
+    int nBus = pf_network->numBuses();
+    for (int i = 0; i < nBus; i++) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(i).get());
+      if (!bus) continue;
+      int orig = pf_network->getOriginalBusIndex(i);
+      BusMeta m;
+      m.name   = bus->getBusName();
+      m.basekv = bus->getBaseKV();
+      m.area   = bus->getArea();
+      m.zone   = bus->getZone();
+      m.owner  = bus->getOwner();
+      bus_meta[orig] = m;
+    }
+  }
+  std::vector<FlatRow> localFlatRows;
+
   //  Set minimum and maximum voltage limits on all buses
   pf_app.setVoltageLimits(Vmin, Vmax);
   // Solve the base power flow calculation. This calculation is replicated on
@@ -439,9 +516,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // buses to ignore voltage violations on them.
   pf_app.ignoreVoltageViolations();
 
-  // Collect base case results for export
+  // Collect base case results for export. csv_flat captures rows directly
+  // in the hot loop and skips the heavyweight collectResults() path.
   gridpack::utility::PowerFlowResults baseCaseResults;
-  if (outputFormat != "text") {
+  if (outputFormat == "json" || outputFormat == "csv") {
     baseCaseResults = pf_app.collectResults();
   }
 
@@ -848,7 +926,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         contingency_violation.push_back(0);
         contingency_isolated.push_back(false);
 #endif
-        if (outputFormat != "text") {
+        if (outputFormat == "json" || outputFormat == "csv") {
           gridpack::utility::ContingencyResult ctResult;
           ctResult.name = events[task_id].p_name;
           ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
@@ -873,7 +951,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         bool ok2 = pf_app.checkLineOverloadViolations();
         bool ok = ok1 && ok2;
         // Collect results for JSON/CSV export
-        if (outputFormat != "text") {
+        if (outputFormat == "json" || outputFormat == "csv") {
           gridpack::utility::ContingencyResult ctResult;
           ctResult.name = events[task_id].p_name;
           ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
@@ -881,6 +959,60 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           ctResult.hasBranchViolation = !ok2;
           ctResult.solution = pf_app.collectResults();
           localContingencies.push_back(ctResult);
+        }
+        if (outputFormat == "csv_flat" && task_comm.rank() == 0) {
+          std::vector<std::string> v_strs = pf_app.writeBusString("vr_str");
+          std::vector<std::string> b_strs = pf_app.writeBranchString("flow_str");
+          std::map<int, std::pair<double,double> > vbymag_ang;
+          for (size_t vi = 0; vi < v_strs.size(); vi++) {
+            int    bus_id = 0, use_vmag = 0, changed = 0;
+            double angle = 0.0, vmag = 0.0;
+            if (sscanf(v_strs[vi].c_str(), "%d %lf %lf %d %d",
+                       &bus_id, &angle, &vmag, &use_vmag, &changed) == 5) {
+              vbymag_ang[bus_id] = std::make_pair(vmag, angle);
+            }
+          }
+          for (size_t bi = 0; bi < b_strs.size(); bi++) {
+            FlatRow r;
+            char ckt[16] = {0};
+            int viol = 0;
+            double p = 0.0, q = 0.0, perf = 0.0, ratea = 0.0;
+            int from = 0, to = 0;
+            if (sscanf(b_strs[bi].c_str(),
+                       "%d %d %15s %lf %lf %lf %lf %d",
+                       &from, &to, ckt, &p, &q, &perf, &ratea, &viol) != 8) {
+              continue;
+            }
+            r.event_idx   = task_id + 1;
+            r.branch_from = from;
+            r.branch_to   = to;
+            std::strncpy(r.ckt, ckt, 3); r.ckt[3] = '\0';
+            r.p_mw        = p;
+            r.q_mvar      = q;
+            r.flow_mva    = std::sqrt(p*p + q*q);
+            r.rate_a_mva  = ratea;
+            r.loading_pct = (ratea > 0.0) ? (r.flow_mva / ratea) * 100.0 : 0.0;
+            r.viol        = viol;
+            std::map<int, std::pair<double,double> >::const_iterator vf =
+              vbymag_ang.find(from);
+            std::map<int, std::pair<double,double> >::const_iterator vt =
+              vbymag_ang.find(to);
+            r.v_from        = (vf != vbymag_ang.end()) ? vf->second.first  : 0.0;
+            r.ang_from_deg  = (vf != vbymag_ang.end()) ? vf->second.second : 0.0;
+            r.v_to          = (vt != vbymag_ang.end()) ? vt->second.first  : 0.0;
+            r.ang_to_deg    = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
+            std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
+            std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
+            r.area_from   = (mf != bus_meta.end()) ? mf->second.area  : 0;
+            r.zone_from   = (mf != bus_meta.end()) ? mf->second.zone  : 0;
+            r.owner_from  = (mf != bus_meta.end()) ? mf->second.owner : 0;
+            r.basekv_from = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
+            r.area_to     = (mt != bus_meta.end()) ? mt->second.area  : 0;
+            r.zone_to     = (mt != bus_meta.end()) ? mt->second.zone  : 0;
+            r.owner_to    = (mt != bus_meta.end()) ? mt->second.owner : 0;
+            r.basekv_to   = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
+            localFlatRows.push_back(r);
+          }
         }
       // Include results of violation checks in output
       if (ok) {
@@ -1014,7 +1146,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       contingency_violation.push_back(0);
       contingency_isolated.push_back(false);
 #endif
-      if (outputFormat != "text") {
+      if (outputFormat == "json" || outputFormat == "csv") {
         gridpack::utility::ContingencyResult ctResult;
         ctResult.name = events[task_id].p_name;
         ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
@@ -1122,6 +1254,28 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // Close output file for this contingency
     if (print_calcs) pf_app.close();
   }
+  // csv_flat smoke test: rank 0 prints local row count and first 3 rows.
+  // Final CSV emit + cross-rank gather is Phase E.
+  if (outputFormat == "csv_flat" && world.rank() == 0) {
+    printf("[csv_flat] rank 0 captured %zu rows\n", localFlatRows.size());
+    size_t n = localFlatRows.size();
+    if (n > 3) n = 3;
+    for (size_t i = 0; i < n; i++) {
+      const FlatRow &r = localFlatRows[i];
+      printf("[csv_flat] event=%d %d->%d ckt=%s P=%.3f Q=%.3f flow=%.3f"
+             " rateA=%.3f load%%=%.2f viol=%d Vfrom=%.4f Vto=%.4f"
+             " areas=%d/%d zones=%d/%d owners=%d/%d basekv=%.1f/%.1f"
+             " names=%s|%s\n",
+             r.event_idx, r.branch_from, r.branch_to, r.ckt,
+             r.p_mw, r.q_mvar, r.flow_mva, r.rate_a_mva, r.loading_pct,
+             r.viol, r.v_from, r.v_to,
+             r.area_from, r.area_to, r.zone_from, r.zone_to,
+             r.owner_from, r.owner_to, r.basekv_from, r.basekv_to,
+             area_name_by_num[r.area_from].c_str(),
+             area_name_by_num[r.area_to].c_str());
+    }
+  }
+
   // Print statistics from task manager describing the number of tasks performed
   // per processor
   taskmgr.printStats();
