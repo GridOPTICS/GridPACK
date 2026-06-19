@@ -37,6 +37,8 @@
 #include <cstring>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
+#include <set>
 
 #define USE_SUCCESS
 // Statistical-summary output (vmag.txt, pflow.txt, etc.) used to be controlled
@@ -510,16 +512,35 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     b = s.find_last_not_of(" \t");
     return (a == std::string::npos) ? std::string() : s.substr(a, b - a + 1);
   };
-  auto bus_name_lookup = [&](int orig) -> std::string {
-    std::map<int, BusMeta>::const_iterator it = bus_meta.find(orig);
-    if (it == bus_meta.end()) return std::string();
-    return trim_quoted(it->second.name);
-  };
   auto lookup_name = [&](const std::map<int, std::string> &m, int n) -> std::string {
     std::map<int, std::string>::const_iterator it = m.find(n);
     if (it == m.end()) return std::string();
     return trim_quoted(it->second);
   };
+
+  // Per-rank bus metadata sidecar. Each rank's bus_meta covers active + ghost
+  // buses, so the same bus_id appears on multiple ranks. World rank 0 dedupes
+  // these into the final outputFile_buses.csv after the contingency loop.
+  if (outputFormat == "csv_flat") {
+    std::ostringstream oss;
+    oss << outputFile << "_buses." << world.rank() << ".part";
+    std::ofstream fbus(oss.str().c_str(),
+                       std::ios::out | std::ios::trunc | std::ios::binary);
+    fbus << std::fixed;
+    for (std::map<int, BusMeta>::const_iterator it = bus_meta.begin();
+         it != bus_meta.end(); ++it) {
+      const BusMeta &m = it->second;
+      fbus << it->first << ","
+           << trim_quoted(m.name) << ","
+           << std::setprecision(2) << m.basekv << ","
+           << m.area << "," << m.zone << "," << m.owner << ","
+           << lookup_name(area_name_by_num,  m.area)  << ","
+           << lookup_name(zone_name_by_num,  m.zone)  << ","
+           << lookup_name(owner_name_by_num, m.owner)
+           << "\n";
+    }
+    fbus.close();
+  }
 
   // Per-rank streaming output file. Opened on first row written so non-csv_flat
   // runs and ranks that produce no rows leave nothing behind.
@@ -578,16 +599,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       double ang_from_deg = (vf != vbymag_ang.end()) ? vf->second.second : 0.0;
       double v_to         = (vt != vbymag_ang.end()) ? vt->second.first  : 0.0;
       double ang_to_deg   = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
-      std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
-      std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
-      int    area_from   = (mf != bus_meta.end()) ? mf->second.area  : 0;
-      int    zone_from   = (mf != bus_meta.end()) ? mf->second.zone  : 0;
-      int    owner_from  = (mf != bus_meta.end()) ? mf->second.owner : 0;
-      double basekv_from = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
-      int    area_to     = (mt != bus_meta.end()) ? mt->second.area  : 0;
-      int    zone_to     = (mt != bus_meta.end()) ? mt->second.zone  : 0;
-      int    owner_to    = (mt != bus_meta.end()) ? mt->second.owner : 0;
-      double basekv_to   = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
       flatPart << event_idx << "," << ct_name << ","
                << from << "," << to << "," << ckt << ","
                << std::setprecision(4) << p << ","
@@ -599,19 +610,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                << std::setprecision(6) << v_from << ","
                << std::setprecision(6) << v_to << ","
                << std::setprecision(4) << ang_from_deg << ","
-               << std::setprecision(4) << ang_to_deg << ","
-               << area_from  << "," << zone_from  << "," << owner_from  << ","
-               << area_to    << "," << zone_to    << "," << owner_to    << ","
-               << std::setprecision(2) << basekv_from << ","
-               << std::setprecision(2) << basekv_to << ","
-               << bus_name_lookup(from) << ","
-               << bus_name_lookup(to) << ","
-               << lookup_name(area_name_by_num,  area_from)  << ","
-               << lookup_name(area_name_by_num,  area_to)    << ","
-               << lookup_name(zone_name_by_num,  zone_from)  << ","
-               << lookup_name(zone_name_by_num,  zone_to)    << ","
-               << lookup_name(owner_name_by_num, owner_from) << ","
-               << lookup_name(owner_name_by_num, owner_to)
+               << std::setprecision(4) << ang_to_deg
                << "\n";
       flatRowCount++;
     }
@@ -1337,11 +1336,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                          std::ios::out | std::ios::trunc | std::ios::binary);
       fout << "event_idx,contingency,from_bus,to_bus,circuit_id,"
               "p_from_mw,q_from_mvar,mva_from,rate_a_mva,loading_percent,"
-              "viol,v_from_pu,v_to_pu,ang_from_deg,ang_to_deg,"
-              "area_from,zone_from,owner_from,"
-              "area_to,zone_to,owner_to,basekv_from,basekv_to,"
-              "bus_name_from,bus_name_to,area_name_from,area_name_to,"
-              "zone_name_from,zone_name_to,owner_name_from,owner_name_to\n";
+              "viol,v_from_pu,v_to_pu,ang_from_deg,ang_to_deg\n";
       size_t total_rows = 0;
       const size_t BUFSZ = 1 << 20;
       std::vector<char> buf(BUFSZ);
@@ -1366,6 +1361,40 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       fout.close();
       printf("[csv_flat] wrote %zu rows to %s\n", total_rows, flatFile.c_str());
+
+      // Bus metadata sidecar: each rank wrote its bus_meta to a .part file
+      // covering its active+ghost buses, so the same bus_id appears on
+      // multiple ranks. Read each part, dedupe by bus_id (first writer wins),
+      // then emit one row per unique bus to outputFile_buses.csv.
+      std::string busFile = outputFile + "_buses.csv";
+      std::ofstream bout(busFile.c_str(),
+                         std::ios::out | std::ios::trunc | std::ios::binary);
+      bout << "bus_id,bus_name,base_kv,area,zone,owner,"
+              "area_name,zone_name,owner_name\n";
+      std::set<int> seen_bus;
+      size_t bus_rows = 0;
+      for (int p = 0; p < world.size(); p++) {
+        std::ostringstream oss;
+        oss << outputFile << "_buses." << p << ".part";
+        std::string part = oss.str();
+        std::ifstream fin(part.c_str());
+        if (!fin) continue;
+        std::string line;
+        while (std::getline(fin, line)) {
+          if (line.empty()) continue;
+          size_t comma = line.find(',');
+          if (comma == std::string::npos) continue;
+          int bus_id = std::atoi(line.substr(0, comma).c_str());
+          if (seen_bus.insert(bus_id).second) {
+            bout << line << "\n";
+            bus_rows++;
+          }
+        }
+        fin.close();
+        std::remove(part.c_str());
+      }
+      bout.close();
+      printf("[csv_flat] wrote %zu rows to %s\n", bus_rows, busFile.c_str());
     }
   }
 
