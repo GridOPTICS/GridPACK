@@ -31,6 +31,9 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <sstream>
+#include <fstream>
+#include <iomanip>
+#include <algorithm>
 #include <cstring>
 #include <cmath>
 #include <cstdio>
@@ -470,6 +473,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // buses so all branch endpoints resolve on rank 0).
   struct FlatRow {
     int    event_idx;
+    char   ct_name[24];
     int    branch_from, branch_to;
     char   ckt[4];
     double p_mw, q_mvar, flow_mva, rate_a_mva, loading_pct;
@@ -503,6 +507,68 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   std::vector<FlatRow> localFlatRows;
 
+  // Lambda: parse current solved flow_str/vr_str into FlatRow records and
+  // append to localFlatRows. Called once per converged case (base + each
+  // contingency) on rank 0 of the task communicator. Caller decides
+  // event_idx/name (0/"base_case" for the base case).
+  auto captureFlatRows = [&](int event_idx, const std::string &name) {
+    std::vector<std::string> v_strs = pf_app.writeBusString("vr_str");
+    std::vector<std::string> b_strs = pf_app.writeBranchString("flow_str");
+    if (task_comm.rank() != 0) return;
+    std::map<int, std::pair<double,double> > vbymag_ang;
+    for (size_t vi = 0; vi < v_strs.size(); vi++) {
+      int    bus_id = 0, use_vmag = 0, changed = 0;
+      double angle = 0.0, vmag = 0.0;
+      if (sscanf(v_strs[vi].c_str(), "%d %lf %lf %d %d",
+                 &bus_id, &angle, &vmag, &use_vmag, &changed) == 5) {
+        vbymag_ang[bus_id] = std::make_pair(vmag, angle);
+      }
+    }
+    for (size_t bi = 0; bi < b_strs.size(); bi++) {
+      FlatRow r;
+      char ckt[16] = {0};
+      int viol = 0;
+      double p = 0.0, q = 0.0, perf = 0.0, ratea = 0.0;
+      int from = 0, to = 0;
+      if (sscanf(b_strs[bi].c_str(),
+                 "%d %d %15s %lf %lf %lf %lf %d",
+                 &from, &to, ckt, &p, &q, &perf, &ratea, &viol) != 8) {
+        continue;
+      }
+      r.event_idx   = event_idx;
+      std::strncpy(r.ct_name, name.c_str(), sizeof(r.ct_name) - 1);
+      r.ct_name[sizeof(r.ct_name) - 1] = '\0';
+      r.branch_from = from;
+      r.branch_to   = to;
+      std::strncpy(r.ckt, ckt, 3); r.ckt[3] = '\0';
+      r.p_mw        = p;
+      r.q_mvar      = q;
+      r.flow_mva    = std::sqrt(p*p + q*q);
+      r.rate_a_mva  = ratea;
+      r.loading_pct = (ratea > 0.0) ? (r.flow_mva / ratea) * 100.0 : 0.0;
+      r.viol        = viol;
+      std::map<int, std::pair<double,double> >::const_iterator vf =
+        vbymag_ang.find(from);
+      std::map<int, std::pair<double,double> >::const_iterator vt =
+        vbymag_ang.find(to);
+      r.v_from        = (vf != vbymag_ang.end()) ? vf->second.first  : 0.0;
+      r.ang_from_deg  = (vf != vbymag_ang.end()) ? vf->second.second : 0.0;
+      r.v_to          = (vt != vbymag_ang.end()) ? vt->second.first  : 0.0;
+      r.ang_to_deg    = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
+      std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
+      std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
+      r.area_from   = (mf != bus_meta.end()) ? mf->second.area  : 0;
+      r.zone_from   = (mf != bus_meta.end()) ? mf->second.zone  : 0;
+      r.owner_from  = (mf != bus_meta.end()) ? mf->second.owner : 0;
+      r.basekv_from = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
+      r.area_to     = (mt != bus_meta.end()) ? mt->second.area  : 0;
+      r.zone_to     = (mt != bus_meta.end()) ? mt->second.zone  : 0;
+      r.owner_to    = (mt != bus_meta.end()) ? mt->second.owner : 0;
+      r.basekv_to   = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
+      localFlatRows.push_back(r);
+    }
+  };
+
   //  Set minimum and maximum voltage limits on all buses
   pf_app.setVoltageLimits(Vmin, Vmax);
   // Solve the base power flow calculation. This calculation is replicated on
@@ -521,6 +587,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   gridpack::utility::PowerFlowResults baseCaseResults;
   if (outputFormat == "json" || outputFormat == "csv") {
     baseCaseResults = pf_app.collectResults();
+  }
+  if (outputFormat == "csv_flat") {
+    // The base case is replicated on every task communicator. captureFlatRows
+    // calls writeBusString/writeBranchString which use task_comm collectives,
+    // so every task_comm participates -- but only world rank 0 keeps the
+    // resulting rows so the base case isn't duplicated in the final file.
+    captureFlatRows(0, std::string("base_case"));
+    if (world.rank() != 0) localFlatRows.clear();
   }
 
   // Check if auto-generation of N-1 contingencies is enabled
@@ -960,59 +1034,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           ctResult.solution = pf_app.collectResults();
           localContingencies.push_back(ctResult);
         }
-        if (outputFormat == "csv_flat" && task_comm.rank() == 0) {
-          std::vector<std::string> v_strs = pf_app.writeBusString("vr_str");
-          std::vector<std::string> b_strs = pf_app.writeBranchString("flow_str");
-          std::map<int, std::pair<double,double> > vbymag_ang;
-          for (size_t vi = 0; vi < v_strs.size(); vi++) {
-            int    bus_id = 0, use_vmag = 0, changed = 0;
-            double angle = 0.0, vmag = 0.0;
-            if (sscanf(v_strs[vi].c_str(), "%d %lf %lf %d %d",
-                       &bus_id, &angle, &vmag, &use_vmag, &changed) == 5) {
-              vbymag_ang[bus_id] = std::make_pair(vmag, angle);
-            }
-          }
-          for (size_t bi = 0; bi < b_strs.size(); bi++) {
-            FlatRow r;
-            char ckt[16] = {0};
-            int viol = 0;
-            double p = 0.0, q = 0.0, perf = 0.0, ratea = 0.0;
-            int from = 0, to = 0;
-            if (sscanf(b_strs[bi].c_str(),
-                       "%d %d %15s %lf %lf %lf %lf %d",
-                       &from, &to, ckt, &p, &q, &perf, &ratea, &viol) != 8) {
-              continue;
-            }
-            r.event_idx   = task_id + 1;
-            r.branch_from = from;
-            r.branch_to   = to;
-            std::strncpy(r.ckt, ckt, 3); r.ckt[3] = '\0';
-            r.p_mw        = p;
-            r.q_mvar      = q;
-            r.flow_mva    = std::sqrt(p*p + q*q);
-            r.rate_a_mva  = ratea;
-            r.loading_pct = (ratea > 0.0) ? (r.flow_mva / ratea) * 100.0 : 0.0;
-            r.viol        = viol;
-            std::map<int, std::pair<double,double> >::const_iterator vf =
-              vbymag_ang.find(from);
-            std::map<int, std::pair<double,double> >::const_iterator vt =
-              vbymag_ang.find(to);
-            r.v_from        = (vf != vbymag_ang.end()) ? vf->second.first  : 0.0;
-            r.ang_from_deg  = (vf != vbymag_ang.end()) ? vf->second.second : 0.0;
-            r.v_to          = (vt != vbymag_ang.end()) ? vt->second.first  : 0.0;
-            r.ang_to_deg    = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
-            std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
-            std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
-            r.area_from   = (mf != bus_meta.end()) ? mf->second.area  : 0;
-            r.zone_from   = (mf != bus_meta.end()) ? mf->second.zone  : 0;
-            r.owner_from  = (mf != bus_meta.end()) ? mf->second.owner : 0;
-            r.basekv_from = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
-            r.area_to     = (mt != bus_meta.end()) ? mt->second.area  : 0;
-            r.zone_to     = (mt != bus_meta.end()) ? mt->second.zone  : 0;
-            r.owner_to    = (mt != bus_meta.end()) ? mt->second.owner : 0;
-            r.basekv_to   = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
-            localFlatRows.push_back(r);
-          }
+        if (outputFormat == "csv_flat") {
+          captureFlatRows(task_id + 1, events[task_id].p_name);
         }
       // Include results of violation checks in output
       if (ok) {
@@ -1254,25 +1277,110 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // Close output file for this contingency
     if (print_calcs) pf_app.close();
   }
-  // csv_flat smoke test: rank 0 prints local row count and first 3 rows.
-  // Final CSV emit + cross-rank gather is Phase E.
-  if (outputFormat == "csv_flat" && world.rank() == 0) {
-    printf("[csv_flat] rank 0 captured %zu rows\n", localFlatRows.size());
-    size_t n = localFlatRows.size();
-    if (n > 3) n = 3;
-    for (size_t i = 0; i < n; i++) {
+  // csv_flat: serialize each rank's localFlatRows to a CSV-text fragment
+  // (resolving area/zone/owner names against the rank-local lookup tables),
+  // gather to world rank 0 via point-to-point MPI send/recv, and write a
+  // single output file with header.
+  if (outputFormat == "csv_flat") {
+    // Strip a single layer of surrounding single quotes (PSS/E style) and
+    // collapse leading/trailing whitespace inside.
+    auto trim_quoted = [](const std::string &in) -> std::string {
+      std::string s = in;
+      size_t a = s.find_first_not_of(" \t");
+      size_t b = s.find_last_not_of(" \t");
+      if (a == std::string::npos) return std::string();
+      s = s.substr(a, b - a + 1);
+      if (s.size() >= 2 && s.front() == '\'' && s.back() == '\'') {
+        s = s.substr(1, s.size() - 2);
+      }
+      a = s.find_first_not_of(" \t");
+      b = s.find_last_not_of(" \t");
+      return (a == std::string::npos) ? std::string() : s.substr(a, b - a + 1);
+    };
+    auto bus_name_lookup = [&](int orig) -> std::string {
+      std::map<int, BusMeta>::const_iterator it = bus_meta.find(orig);
+      if (it == bus_meta.end()) return std::string();
+      return trim_quoted(it->second.name);
+    };
+    auto lookup_name = [&](const std::map<int, std::string> &m, int n) -> std::string {
+      std::map<int, std::string>::const_iterator it = m.find(n);
+      if (it == m.end()) return std::string();
+      return trim_quoted(it->second);
+    };
+    std::ostringstream local;
+    local << std::fixed;
+    for (size_t i = 0; i < localFlatRows.size(); i++) {
       const FlatRow &r = localFlatRows[i];
-      printf("[csv_flat] event=%d %d->%d ckt=%s P=%.3f Q=%.3f flow=%.3f"
-             " rateA=%.3f load%%=%.2f viol=%d Vfrom=%.4f Vto=%.4f"
-             " areas=%d/%d zones=%d/%d owners=%d/%d basekv=%.1f/%.1f"
-             " names=%s|%s\n",
-             r.event_idx, r.branch_from, r.branch_to, r.ckt,
-             r.p_mw, r.q_mvar, r.flow_mva, r.rate_a_mva, r.loading_pct,
-             r.viol, r.v_from, r.v_to,
-             r.area_from, r.area_to, r.zone_from, r.zone_to,
-             r.owner_from, r.owner_to, r.basekv_from, r.basekv_to,
-             area_name_by_num[r.area_from].c_str(),
-             area_name_by_num[r.area_to].c_str());
+      local << r.event_idx << "," << r.ct_name << ","
+            << r.branch_from << "," << r.branch_to << "," << r.ckt << ","
+            << std::setprecision(4) << r.p_mw << ","
+            << std::setprecision(4) << r.q_mvar << ","
+            << std::setprecision(4) << r.flow_mva << ","
+            << std::setprecision(4) << r.rate_a_mva << ","
+            << std::setprecision(2) << r.loading_pct << ","
+            << r.viol << ","
+            << std::setprecision(6) << r.v_from << ","
+            << std::setprecision(6) << r.v_to << ","
+            << std::setprecision(4) << r.ang_from_deg << ","
+            << std::setprecision(4) << r.ang_to_deg << ","
+            << r.area_from << "," << r.zone_from << "," << r.owner_from << ","
+            << r.area_to   << "," << r.zone_to   << "," << r.owner_to   << ","
+            << std::setprecision(2) << r.basekv_from << ","
+            << std::setprecision(2) << r.basekv_to << ","
+            << bus_name_lookup(r.branch_from) << ","
+            << bus_name_lookup(r.branch_to) << ","
+            << lookup_name(area_name_by_num,  r.area_from)  << ","
+            << lookup_name(area_name_by_num,  r.area_to)    << ","
+            << lookup_name(zone_name_by_num,  r.zone_from)  << ","
+            << lookup_name(zone_name_by_num,  r.zone_to)    << ","
+            << lookup_name(owner_name_by_num, r.owner_from) << ","
+            << lookup_name(owner_name_by_num, r.owner_to)
+            << "\n";
+    }
+    std::string localCSV = local.str();
+
+    MPI_Comm mpi_comm = static_cast<MPI_Comm>(world);
+    std::vector<std::string> allCSV(world.size());
+    allCSV[0] = (world.rank() == 0) ? localCSV : std::string();
+    if (world.rank() == 0) {
+      for (int p = 1; p < world.size(); p++) {
+        int len = 0;
+        MPI_Recv(&len, 1, MPI_INT, p, 10, mpi_comm, MPI_STATUS_IGNORE);
+        allCSV[p].resize(len);
+        if (len > 0) {
+          MPI_Recv(&allCSV[p][0], len, MPI_CHAR, p, 11, mpi_comm,
+                   MPI_STATUS_IGNORE);
+        }
+      }
+    } else {
+      int len = static_cast<int>(localCSV.size());
+      MPI_Send(&len, 1, MPI_INT, 0, 10, mpi_comm);
+      if (len > 0) {
+        MPI_Send(const_cast<char*>(localCSV.c_str()), len, MPI_CHAR, 0, 11,
+                 mpi_comm);
+      }
+    }
+
+    if (world.rank() == 0) {
+      std::string flatFile = outputFile + "_flat.csv";
+      std::ofstream fout(flatFile.c_str());
+      fout << "event_idx,contingency,from_bus,to_bus,circuit_id,"
+              "p_from_mw,q_from_mvar,mva_from,rate_a_mva,loading_percent,"
+              "viol,v_from_pu,v_to_pu,ang_from_deg,ang_to_deg,"
+              "area_from,zone_from,owner_from,"
+              "area_to,zone_to,owner_to,basekv_from,basekv_to,"
+              "bus_name_from,bus_name_to,area_name_from,area_name_to,"
+              "zone_name_from,zone_name_to,owner_name_from,owner_name_to\n";
+      size_t total_rows = 0;
+      for (int p = 0; p < world.size(); p++) {
+        fout << allCSV[p];
+        if (!allCSV[p].empty()) {
+          total_rows += static_cast<size_t>(
+              std::count(allCSV[p].begin(), allCSV[p].end(), '\n'));
+        }
+      }
+      fout.close();
+      printf("[csv_flat] wrote %zu rows to %s\n", total_rows, flatFile.c_str());
     }
   }
 
