@@ -34,34 +34,37 @@ gridpack::parser::OwnerParser33::~OwnerParser33(void)
 }
 
 /**
- * parse owner block. Currently does not store data
+ * parse owner block
  * @param stream input stream that feeds lines from RAW file
+ * @param p_network_data data collection object to store parameters from RAW file
  */
 void gridpack::parser::OwnerParser33::parse(
-    gridpack::stream::InputStream &stream)
+    gridpack::stream::InputStream &stream,
+    boost::shared_ptr<gridpack::component::DataCollection> &p_network_data)
 {
   std::string          line;
   stream.nextLine(line); //this should be the first line of the block
 
+  int ncnt = 0;
   while(test_end(line)) {
-#if 0
     std::vector<std::string>  split_line;
     if (check_comment(line)) {
       stream.nextLine(line);
       continue;
     }
+    this->cleanComment(line);
     split_line = this->splitPSSELine(line);
-    std::vector<gridpack::component::DataCollection>   owner_instance;
-    gridpack::component::DataCollection          data;
 
-    data.addValue(OWNER_NUMBER, atoi(split_line[0].c_str()));
-    owner_instance.push_back(data);
+    if (split_line.size() >= 2) {
+      // OWNER_NUMBER             "I"                    integer
+      p_network_data->addValue(OWNER_NUMBER, atoi(split_line[0].c_str()), ncnt);
 
-    data.addValue(OWNER_NAME, split_line[1].c_str());
-    owner_instance.push_back(data);
+      // OWNER_NAME              "OWNAM"                 string
+      p_network_data->addValue(OWNER_NAME, split_line[1].c_str(), ncnt);
+      ncnt++;
+    }
 
-    owner.push_back(owner_instance);
-#endif
     stream.nextLine(line);
   }
+  p_network_data->addValue(OWNER_TOTAL, ncnt);
 }

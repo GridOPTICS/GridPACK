@@ -34,19 +34,38 @@ gridpack::parser::ZoneParser33::~ZoneParser33(void)
 }
 
 /**
- * parse zone block. Currently does not store data
+ * parse zone block
  * @param stream input stream that feeds lines from RAW file
+ * @param p_network_data data collection object to store parameters from RAW file
  */
 void gridpack::parser::ZoneParser33::parse(
-    gridpack::stream::InputStream &stream)
+    gridpack::stream::InputStream &stream,
+    boost::shared_ptr<gridpack::component::DataCollection> &p_network_data)
 {
   std::string          line;
 
   stream.nextLine(line); //this should be the first line of the block
 
+  int ncnt = 0;
   while(test_end(line)) {
-    // TODO: parse something here
+    std::vector<std::string>  split_line;
+    if (check_comment(line)) {
+      stream.nextLine(line);
+      continue;
+    }
+    this->cleanComment(line);
+    split_line = this->splitPSSELine(line);
+
+    if (split_line.size() >= 2) {
+      // ZONE_NUMBER             "I"                    integer
+      p_network_data->addValue(ZONE_NUMBER, atoi(split_line[0].c_str()), ncnt);
+
+      // ZONE_NAME              "ZONAME"                string
+      p_network_data->addValue(ZONE_NAME, split_line[1].c_str(), ncnt);
+      ncnt++;
+    }
+
     stream.nextLine(line);
   }
-    
+  p_network_data->addValue(ZONE_TOTAL, ncnt);
 }
