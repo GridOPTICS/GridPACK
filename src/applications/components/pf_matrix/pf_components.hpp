@@ -482,6 +482,24 @@ class PFBus
     int getZone();
 
     /**
+     * Get owner number for bus
+     * @return bus owner number (0 if not set)
+     */
+    int getOwner();
+
+    /**
+     * Get base voltage for bus in kV
+     * @return base kV (0.0 if not set)
+     */
+    double getBaseKV();
+
+    /**
+     * Get bus name string
+     * @return bus name (empty if not set)
+     */
+    std::string getBusName();
+
+    /**
      * Evaluate diagonal block of Jacobian for power flow calculation and return
      * result as an array of real values
      * @param rvals values of Jacobian block

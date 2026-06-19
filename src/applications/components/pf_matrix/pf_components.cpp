@@ -2496,6 +2496,39 @@ int gridpack::powerflow::PFBus::getZone()
 }
 
 /**
+ * Get owner number for bus
+ * @return bus owner number (0 if not set)
+ */
+int gridpack::powerflow::PFBus::getOwner()
+{
+  int owner = 0;
+  if (p_data) p_data->getValue(BUS_OWNER, &owner);
+  return owner;
+}
+
+/**
+ * Get base voltage for bus in kV
+ * @return base kV (0.0 if not set)
+ */
+double gridpack::powerflow::PFBus::getBaseKV()
+{
+  double basekv = 0.0;
+  if (p_data) p_data->getValue(BUS_BASEKV, &basekv);
+  return basekv;
+}
+
+/**
+ * Get bus name string
+ * @return bus name (empty if not set)
+ */
+std::string gridpack::powerflow::PFBus::getBusName()
+{
+  std::string name;
+  if (p_data) p_data->getValue(BUS_NAME, &name);
+  return name;
+}
+
+/**
  * Evaluate diagonal block of Jacobian for power flow calculation and
  * return result as an array of real values
  * @param rvals values of Jacobian block
