@@ -628,6 +628,7 @@ class PFBus
      */
     static void setInitStartMode(InitStartMode mode);
     static void setQlim(bool qlim);
+    static void setQlimDeadband(double db);
 
     /**
      * Clear accumulated Q limit warning messages
@@ -709,6 +710,7 @@ class PFBus
     static std::vector<std::string> p_qlimWarnings;
     static InitStartMode p_initStartMode;
     static bool p_qlim;
+    static double p_qlim_deadband;
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;

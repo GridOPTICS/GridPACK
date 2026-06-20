@@ -401,6 +401,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   // Check for Q limit violations (qlim: true=enabled, false=disabled)
   bool check_Qlim = cursor->get("qlim", true);
+  double qlim_deadband = cursor->get("qlimDeadband", 0.1);
   // Output format: "json", "csv", or "text" (default)
   std::string outputFormat = "text";
   cursor->get("outputFormat", &outputFormat);
@@ -411,6 +412,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // - When check_Qlim = false: output uses calculated Q from p_Qinj
   // - When check_Qlim = true: output uses p_qg (set by chkQlim())
   gridpack::powerflow::PFBus::setQlim(check_Qlim);
+  gridpack::powerflow::PFBus::setQlimDeadband(qlim_deadband);
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations

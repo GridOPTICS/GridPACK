@@ -69,6 +69,7 @@
 // Static member initialization
 gridpack::powerflow::InitStartMode gridpack::powerflow::PFBus::p_initStartMode = INIT_START_WARM;
 bool gridpack::powerflow::PFBus::p_qlim = true;
+double gridpack::powerflow::PFBus::p_qlim_deadband = 0.1;
 std::vector<std::string> gridpack::powerflow::PFBus::p_qlimWarnings;
 
 /**
@@ -85,6 +86,11 @@ void gridpack::powerflow::PFBus::setInitStartMode(InitStartMode mode)
 void gridpack::powerflow::PFBus::setQlim(bool qlim)
 {
   p_qlim = qlim;
+}
+
+void gridpack::powerflow::PFBus::setQlimDeadband(double db)
+{
+  p_qlim_deadband = db;
 }
 
 /**
@@ -453,7 +459,7 @@ bool gridpack::powerflow::PFBus::chkQlim(double q_deadband)
   // Check if Q requirement can be met.
   // q_deadband avoids switching buses that are only marginally over their Q
   // limit due to floating-point differences. Configurable via XML qlimDeadband
-  // (default 0.1 Mvar, matching PW's 0.1 MVA convergence tolerance).
+  // (default 0.1 Mvar)
   bool need_pv_to_pq = false;
   char warnBuf[256];
   if (Q_required > Q_max_total + q_deadband) {
@@ -1077,11 +1083,7 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
-  // Warm-start Q-limit pre-saturation: if scheduled QG is already at QMAX or QMIN
-  // (within 0.1 Mvar), start this bus as PQ immediately.  This matches PW behavior
-  // where generators already at their limits in the input data are treated as PQ,
-  // preventing IREG from driving them to impossible Q requirements.
-  // Only applies for warm start with qlim enabled.
+  // Warm-start Q-limit pre-saturation: scheduled QG at QMAX/QMIN -> start as PQ.
   if (p_isPV && p_qlim && p_initStartMode != INIT_START_FLAT) {
     double total_qg = 0.0, total_qmax = 0.0, total_qmin = 0.0;
     for (i = 0; i < p_ngen; i++) {
@@ -1091,8 +1093,8 @@ void gridpack::powerflow::PFBus::load(
         total_qmin += p_qmin[i];
       }
     }
-    const double Q_init_tol = 0.1;  // Mvar — matches PW convergence tolerance
-    if (total_qg >= total_qmax - Q_init_tol || total_qg <= total_qmin + Q_init_tol) {
+    if (total_qg >= total_qmax - p_qlim_deadband
+        || total_qg <= total_qmin + p_qlim_deadband) {
       p_isPV = false;
       // Pick the saturated limit from V vs VS (V>VS => QMIN, V<VS => QMAX), not
       // scheduled QG which can be inconsistent. Local regulation only.
