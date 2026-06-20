@@ -1094,6 +1094,20 @@ void gridpack::powerflow::PFBus::load(
     const double Q_init_tol = 0.1;  // Mvar — matches PW convergence tolerance
     if (total_qg >= total_qmax - Q_init_tol || total_qg <= total_qmin + Q_init_tol) {
       p_isPV = false;
+      // Pick the saturated limit from V vs VS (V>VS => QMIN, V<VS => QMAX), not
+      // scheduled QG which can be inconsistent. Local regulation only.
+      if (p_ireg_remote_bus == 0) {
+        double vset = 0.0; int nv = 0;
+        for (i = 0; i < p_ngen; i++)
+          if (p_gstatus[i] == 1) { vset += p_vs[i]; nv++; }
+        if (nv > 0) vset /= nv;
+        const double V_init_tol = 1.0e-4;
+        if (p_voltage > vset + V_init_tol) {
+          for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmin[i];
+        } else if (p_voltage < vset - V_init_tol) {
+          for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmax[i];
+        }
+      }
     }
   }
 
