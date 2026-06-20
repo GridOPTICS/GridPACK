@@ -40,7 +40,6 @@
 #include <cstdlib>
 #include <set>
 
-#define USE_SUCCESS
 // Statistical-summary output (vmag.txt, pflow.txt, etc.) used to be controlled
 // by a USE_STATBLOCK build-time macro; it is now a runtime XML option,
 // `Configuration.Contingency_analysis.writeStats`, defaulting to true to
@@ -415,17 +414,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   gridpack::powerflow::PFBus::setQlimDeadband(qlim_deadband);
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
-  // Keep track of failed calculations
-#ifdef USE_SUCCESS
-  std::vector<int> contingency_idx;
-  std::vector<bool> contingency_success;
-  gridpack::parallel::GlobalVector<bool> ca_success(world);
-  std::vector<int> contingency_violation;
-  gridpack::parallel::GlobalVector<int> ca_violation(world);
-  std::vector<bool> contingency_isolated;
-  gridpack::parallel::GlobalVector<bool> ca_isolated(world);
-#endif
-
   // Create powerflow applications on each task communicator
   boost::shared_ptr<gridpack::powerflow::PFNetwork>
     pf_network(new gridpack::powerflow::PFNetwork(task_comm));
@@ -555,6 +543,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   std::ofstream flatPart;
   size_t flatRowCount = 0;
 
+  // Convergence sidecar rows.
+  struct ConvRow {
+    int    event_idx;
+    std::string name;
+    std::string type;
+    gridpack::utility::ConvergenceSummary cs;
+    std::string status;
+  };
+  std::vector<ConvRow> localConvRows;
+  bool emitConv = (outputFormat == "csv" ||
+                   outputFormat == "csv_flat" ||
+                   outputFormat == "csv_delta");
+
   // Lambda: parse current solved flow_str/vr_str and stream one CSV row
   // per branch into the rank's .part file. Called once per converged case
   // (base + each contingency) on every task communicator; non-rank-0
@@ -620,15 +621,40 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   //  Set minimum and maximum voltage limits on all buses
   pf_app.setVoltageLimits(Vmin, Vmax);
-  // Solve the base power flow calculation. This calculation is replicated on
-  // all task communicators
-  pf_app.solve();
-  // Check for Qlimit violations
-  if (check_Qlim && !pf_app.checkQlimViolations()) {
-    pf_app.solve();
+  // Solve the base power flow on every task communicator. Abort if it fails.
+  bool baseSolveOk = false;
+  try {
+    baseSolveOk = pf_app.solve();
+    if (baseSolveOk && check_Qlim && !pf_app.checkQlimViolations()) {
+      baseSolveOk = pf_app.solve();
+    }
+  } catch (const std::exception &e) {
+    if (world.rank() == 0) {
+      printf("ERROR: base-case solve threw exception: %s\n", e.what());
+    }
+    baseSolveOk = false;
+  } catch (...) {
+    if (world.rank() == 0) {
+      printf("ERROR: base-case solve threw unknown exception\n");
+    }
+    baseSolveOk = false;
   }
-  // Some buses may violate the voltage limits in the base problem. Flag these
-  // buses to ignore voltage violations on them.
+  if (!baseSolveOk) {
+    if (world.rank() == 0) {
+      gridpack::utility::ConvergenceSummary cs = pf_app.getConvergence();
+      printf("ERROR: base case did not converge "
+             "(iterations=%d, final_tol=%.6e, "
+             "max_p_bus=%d max_p_mismatch=%.4f, "
+             "max_q_bus=%d max_q_mismatch=%.4f). "
+             "Aborting contingency analysis.\n",
+             cs.iterations, cs.finalTolerance,
+             cs.finalMismatch.maxPBus, cs.finalMismatch.maxPMismatch,
+             cs.finalMismatch.maxQBus, cs.finalMismatch.maxQMismatch);
+    }
+    world.barrier();
+    MPI_Abort(static_cast<MPI_Comm>(world), 1);
+  }
+  // Suppress voltage violations already present at base.
   pf_app.ignoreVoltageViolations();
 
   // Collect base case results for export. csv_flat captures rows directly
@@ -949,6 +975,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Local contingency results storage for JSON/CSV export
   std::vector<gridpack::utility::ContingencyResult> localContingencies;
 
+  // Convergence row recorder; indexes events[task_id].
+  auto recordConv = [&](int task_id, const char *status,
+                        const std::string &) {
+    if (!emitConv) return;
+    if (task_comm.rank() != 0) return;
+    ConvRow r;
+    r.event_idx = task_id + 1;
+    r.name      = events[task_id].p_name;
+    r.type      = (events[task_id].p_type == Branch) ? "branch" : "generator";
+    r.cs        = pf_app.getConvergence();
+    r.status    = status;
+    localConvRows.push_back(r);
+  };
+
   // Evaluate contingencies using the task manager
   int task_id;
   char sbuf[128];
@@ -1008,10 +1048,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     int islandCount = pf_app.getIslandCount();
     bool hasLoneBus = pf_app.hasLoneBus();
     bool islandDetected = (islandCount > 1);
-    // Solve power flow equations for this system
-#ifdef USE_SUCCESS
-    contingency_idx.push_back(task_id);
-#endif
     // Skip power flow if contingency setup failed (no valid slack) or islanding detected
     bool slackCapacityOk = true;  // Will be checked after solve
     bool solveOk = false;
@@ -1043,29 +1079,22 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       if (!slackCapacityOk) {
         // Slack generator exceeds Pmax - insufficient generation capacity
         // This is treated as a failure, similar to divergence
-#ifdef USE_SUCCESS
-        contingency_success.push_back(false);
-        contingency_violation.push_back(0);
-        contingency_isolated.push_back(false);
-#endif
         if (outputFormat == "json" || outputFormat == "csv") {
           gridpack::utility::ContingencyResult ctResult;
           ctResult.name = events[task_id].p_name;
           ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
           ctResult.hasVoltageViolation = false;
           ctResult.hasBranchViolation = false;
+          ctResult.solution.convergence = pf_app.getConvergence();
           ctResult.solution.convergence.converged = false;
           localContingencies.push_back(ctResult);
         }
+        recordConv(task_id, "SLACK_OVERLOAD", std::string());
         sprintf(sbuf,"\nInsufficient generation capacity for contingency %s\n",
             events[task_id].p_name.c_str());
         if (print_calcs) pf_app.print(sbuf);
       } else {
         // Power flow solved and slack within capacity
-#ifdef USE_SUCCESS
-        contingency_success.push_back(true);
-        contingency_isolated.push_back(hasLoneBus);
-#endif
         // If power flow solution is successful, write out voltages and currents
         if (print_calcs) pf_app.write();
         // Check for violations
@@ -1085,13 +1114,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         if (outputFormat == "csv_flat") {
           captureFlatRows(task_id + 1, events[task_id].p_name, true);
         }
+        recordConv(task_id, "OK", std::string());
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
             events[task_id].p_name.c_str());
-#ifdef USE_SUCCESS
-        contingency_violation.push_back(1);
-#endif
       }
       // Report bus voltage violations
       if (!ok1) {
@@ -1111,16 +1138,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         sprintf(sbuf,"\nNo Branch Violation for contingency %s\n",
             events[task_id].p_name.c_str());
       }
-
-#ifdef USE_SUCCESS
-      if (!ok1 && !ok2) {
-        contingency_violation.push_back(4);
-      } else if (!ok1) {
-        contingency_violation.push_back(2);
-      } else if (!ok2) {
-        contingency_violation.push_back(3);
-      }
-#endif
 
       if (print_calcs) pf_app.print(sbuf);
       if (print_calcs) pf_app.writeCABranch();
@@ -1212,19 +1229,26 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         // Note: clearQlimViolations() moved after unSetContingency() below
       }  // end slackCapacityOk block
     } else {
-#ifdef USE_SUCCESS
-      contingency_success.push_back(false);
-      contingency_violation.push_back(0);
-      contingency_isolated.push_back(false);
-#endif
       if (outputFormat == "json" || outputFormat == "csv") {
         gridpack::utility::ContingencyResult ctResult;
         ctResult.name = events[task_id].p_name;
         ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
         ctResult.hasVoltageViolation = false;
         ctResult.hasBranchViolation = false;
+        ctResult.solution.convergence = pf_app.getConvergence();
         ctResult.solution.convergence.converged = false;
         localContingencies.push_back(ctResult);
+      }
+      {
+        const char *st;
+        if (islandDetected) {
+          st = "ISLANDED";
+        } else if (!contingencyFound) {
+          st = "NO_SLACK";
+        } else {
+          st = "DIVERGED";
+        }
+        recordConv(task_id, st, std::string());
       }
       if (islandDetected) {
         sprintf(sbuf,"\nIslanding detected for contingency %s (%d islands)\n",
@@ -1404,55 +1428,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // per processor
   taskmgr.printStats();
 
-  // Gather stats on successful contingency calculations
-#ifdef USE_SUCCESS
-  if (task_comm.rank() == 0) {
-    ca_success.addElements(contingency_idx, contingency_success);
-    ca_violation.addElements(contingency_idx, contingency_violation);
-    ca_isolated.addElements(contingency_idx, contingency_isolated);
-  }
-  ca_success.upload();
-  ca_violation.upload();
-  ca_isolated.upload();
-  // All processes call getData to ensure GA progress (NGA_Gather requires
-  // remote process participation for one-sided communication).
-  contingency_idx.clear();
-  contingency_success.clear();
-  contingency_violation.clear();
-  contingency_isolated.clear();
-  for (i=0; i<ntasks; i++) contingency_idx.push_back(i);
-  ca_success.getData(contingency_idx, contingency_success);
-  contingency_success.clear();
-  ca_violation.getData(contingency_idx, contingency_violation);
-  ca_isolated.getData(contingency_idx, contingency_isolated);
-  // Write out stats on successful calculations
-  if (world.rank() == 0) {
-    std::ofstream fout;
-    fout.open("success.txt");
-    for (i=0; i<ntasks; i++) {
-      if (contingency_success[i]) {
-        fout << "contingency: " << i+1 << " success: true";
-        if (contingency_violation[i] == 1) {
-          fout << " violation: none";
-        } else if (contingency_violation[i] == 2) {
-          fout << " violation: bus";
-        } else if (contingency_violation[i] == 3) {
-          fout << " violation: branch";
-        } else if (contingency_violation[i] == 4) {
-          fout << " violation: bus and branch";
-        }
-        if (contingency_isolated[i]) {
-          fout << " warning: isolated";
-        }
-        fout << std::endl;
-      } else {
-        fout << "contingency: " << i+1 << " success: false" << std::endl;
-      }
-    }
-    fout.close();
-  }
-#endif
-
   // Sync GA before MPI collectives to flush any pending one-sided operations
   world.sync();
 
@@ -1515,9 +1490,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
 
   if (outputFormat == "csv") {
-    // Each process serializes its contingency CSV data into 4 strings
-    // (buses, branches, generators, convergence rows without headers)
-    std::ostringstream localBus, localBranch, localGen, localConv;
+    // Convergence is emitted by the universal sidecar block below.
+    std::ostringstream localBus, localBranch, localGen;
     localBus << std::fixed;
     localBranch << std::fixed;
     localGen << std::fixed;
@@ -1567,33 +1541,22 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
            << std::setprecision(6) << g.voltageSetpoint << ","
            << g.status << "\n";
       }
-      localConv << ct.name << ","
-         << (r.convergence.converged ? "true" : "false") << ","
-         << r.convergence.iterations << ","
-         << std::scientific << r.convergence.finalTolerance << ","
-         << std::fixed
-         << r.convergence.finalMismatch.maxPBus << ","
-         << std::setprecision(4) << r.convergence.finalMismatch.maxPMismatch << ","
-         << r.convergence.finalMismatch.maxQBus << ","
-         << std::setprecision(4) << r.convergence.finalMismatch.maxQMismatch << "\n";
     }
 
     // Gather all CSV fragments on rank 0 using point-to-point send/recv
     MPI_Comm mpi_comm = static_cast<MPI_Comm>(world);
     std::vector<std::string> allBus(world.size()), allBranch(world.size());
-    std::vector<std::string> allGen(world.size()), allConv(world.size());
+    std::vector<std::string> allGen(world.size());
     allBus[0] = localBus.str();
     allBranch[0] = localBranch.str();
     allGen[0] = localGen.str();
-    allConv[0] = localConv.str();
     if (world.rank() == 0) {
       for (int p = 1; p < world.size(); p++) {
-        int lens[4];
-        MPI_Recv(lens, 4, MPI_INT, p, 0, mpi_comm, MPI_STATUS_IGNORE);
+        int lens[3];
+        MPI_Recv(lens, 3, MPI_INT, p, 0, mpi_comm, MPI_STATUS_IGNORE);
         allBus[p].resize(lens[0]);
         allBranch[p].resize(lens[1]);
         allGen[p].resize(lens[2]);
-        allConv[p].resize(lens[3]);
         if (lens[0] > 0)
           MPI_Recv(&allBus[p][0], lens[0], MPI_CHAR, p, 1, mpi_comm,
                    MPI_STATUS_IGNORE);
@@ -1603,16 +1566,12 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         if (lens[2] > 0)
           MPI_Recv(&allGen[p][0], lens[2], MPI_CHAR, p, 3, mpi_comm,
                    MPI_STATUS_IGNORE);
-        if (lens[3] > 0)
-          MPI_Recv(&allConv[p][0], lens[3], MPI_CHAR, p, 4, mpi_comm,
-                   MPI_STATUS_IGNORE);
       }
     } else {
       std::string sBus = localBus.str(), sBranch = localBranch.str();
-      std::string sGen = localGen.str(), sConv = localConv.str();
-      int lens[4] = {(int)sBus.size(), (int)sBranch.size(),
-                     (int)sGen.size(), (int)sConv.size()};
-      MPI_Send(lens, 4, MPI_INT, 0, 0, mpi_comm);
+      std::string sGen = localGen.str();
+      int lens[3] = {(int)sBus.size(), (int)sBranch.size(), (int)sGen.size()};
+      MPI_Send(lens, 3, MPI_INT, 0, 0, mpi_comm);
       if (lens[0] > 0)
         MPI_Send(const_cast<char*>(sBus.c_str()), lens[0], MPI_CHAR, 0, 1,
                  mpi_comm);
@@ -1621,9 +1580,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                  mpi_comm);
       if (lens[2] > 0)
         MPI_Send(const_cast<char*>(sGen.c_str()), lens[2], MPI_CHAR, 0, 3,
-                 mpi_comm);
-      if (lens[3] > 0)
-        MPI_Send(const_cast<char*>(sConv.c_str()), lens[3], MPI_CHAR, 0, 4,
                  mpi_comm);
     }
 
@@ -1645,27 +1601,90 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         std::ofstream out((outputFile + "_generators.csv").c_str(), std::ios::app);
         for (size_t p = 0; p < allGen.size(); p++) out << allGen[p];
       }
-      {
-        std::ofstream out((outputFile + "_convergence.csv").c_str(), std::ios::app);
-        for (size_t p = 0; p < allConv.size(); p++) out << allConv[p];
+    }
+  }
+
+  // Universal convergence sidecar: gather, sort by event_idx, write.
+  if (emitConv) {
+    auto formatRow = [](std::ostringstream &os, const ConvRow &r) {
+      os << r.event_idx << ","
+         << r.name << ","
+         << r.type << ","
+         << (r.cs.converged ? "true" : "false") << ","
+         << r.cs.iterations << ","
+         << std::scientific << r.cs.finalTolerance << ","
+         << std::fixed
+         << r.cs.finalMismatch.maxPBus << ","
+         << std::setprecision(4) << r.cs.finalMismatch.maxPMismatch << ","
+         << r.cs.finalMismatch.maxQBus << ","
+         << std::setprecision(4) << r.cs.finalMismatch.maxQMismatch << ","
+         << r.status << "\n";
+    };
+
+    std::vector<int> idx;
+    std::ostringstream localStream;
+    localStream << std::fixed;
+    std::vector<int> localOffsets;
+    localOffsets.reserve(localConvRows.size() + 1);
+    for (size_t i = 0; i < localConvRows.size(); i++) {
+      localOffsets.push_back(static_cast<int>(localStream.tellp()));
+      formatRow(localStream, localConvRows[i]);
+      idx.push_back(localConvRows[i].event_idx);
+    }
+    localOffsets.push_back(static_cast<int>(localStream.tellp()));
+    std::string localStr = localStream.str();
+
+    MPI_Comm conv_comm = static_cast<MPI_Comm>(world);
+    if (world.rank() == 0) {
+      std::vector<std::pair<int, std::string> > all;
+      for (size_t i = 0; i < idx.size(); i++) {
+        std::string row = localStr.substr(localOffsets[i],
+                                          localOffsets[i+1] - localOffsets[i]);
+        all.push_back(std::make_pair(idx[i], row));
       }
-#ifdef USE_SUCCESS
-      // Write summary CSV
-      std::string summaryFile = outputFile + "_summary.csv";
-      std::ofstream sout(summaryFile.c_str());
-      sout << "contingency,type,converged,has_voltage_violation,has_branch_violation\n";
-      for (int ci = 0; ci < ntasks; ci++) {
-        bool converged = (contingency_violation[ci] > 0);
-        sout << events[ci].p_name << ","
-             << (events[ci].p_type == Branch ? "branch" : "generator") << ","
-             << (converged ? "true" : "false") << ","
-             << ((contingency_violation[ci] == 2 || contingency_violation[ci] == 4)
-                 ? "true" : "false") << ","
-             << ((contingency_violation[ci] == 3 || contingency_violation[ci] == 4)
-                 ? "true" : "false") << "\n";
+      for (int p = 1; p < world.size(); p++) {
+        int n = 0;
+        MPI_Recv(&n, 1, MPI_INT, p, 10, conv_comm, MPI_STATUS_IGNORE);
+        if (n <= 0) continue;
+        std::vector<int> remIdx(n), remOff(n + 1);
+        MPI_Recv(&remIdx[0], n, MPI_INT, p, 11, conv_comm, MPI_STATUS_IGNORE);
+        MPI_Recv(&remOff[0], n + 1, MPI_INT, p, 12, conv_comm,
+                 MPI_STATUS_IGNORE);
+        int total = remOff[n];
+        std::string buf(total, '\0');
+        if (total > 0) {
+          MPI_Recv(&buf[0], total, MPI_CHAR, p, 13, conv_comm,
+                   MPI_STATUS_IGNORE);
+        }
+        for (int i = 0; i < n; i++) {
+          all.push_back(std::make_pair(
+              remIdx[i],
+              buf.substr(remOff[i], remOff[i+1] - remOff[i])));
+        }
       }
-      sout.close();
-#endif
+      std::sort(all.begin(), all.end());
+      std::string convFile = outputFile + "_convergence.csv";
+      std::ofstream cout(convFile.c_str(),
+                         std::ios::out | std::ios::trunc);
+      cout << "event_idx,contingency,type,converged,iterations,"
+              "final_tolerance,max_p_bus,max_p_mismatch,max_q_bus,"
+              "max_q_mismatch,status_code\n";
+      for (size_t i = 0; i < all.size(); i++) cout << all[i].second;
+      cout.close();
+      printf("[convergence] wrote %zu rows to %s\n",
+             all.size(), convFile.c_str());
+    } else {
+      int n = static_cast<int>(idx.size());
+      MPI_Send(&n, 1, MPI_INT, 0, 10, conv_comm);
+      if (n > 0) {
+        MPI_Send(&idx[0], n, MPI_INT, 0, 11, conv_comm);
+        MPI_Send(&localOffsets[0], n + 1, MPI_INT, 0, 12, conv_comm);
+        int total = localOffsets[n];
+        if (total > 0) {
+          MPI_Send(const_cast<char*>(localStr.c_str()), total, MPI_CHAR, 0, 13,
+                   conv_comm);
+        }
+      }
     }
   }
 

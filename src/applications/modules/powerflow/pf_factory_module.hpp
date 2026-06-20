@@ -369,6 +369,7 @@ class PFFactoryModule
 
     NetworkPtr p_network;
     std::vector<bool> p_saveIsolatedStatus;
+    std::vector<int>  p_loneBusIndices;
     std::vector<bool> p_saveIslandIsolatedStatus;  // For island detection
     std::vector<int> p_islandIsolatedBusIndices;   // Local indices of buses isolated due to islanding
     int p_islandCount;  // Number of islands detected

@@ -171,11 +171,15 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
   bool bus_ok = true;
   char buf[128];
   p_saveIsolatedStatus.clear();
+  p_loneBusIndices.clear();
   for (i=0; i<numBus; i++) {
     if (!p_network->getActiveBus(i)) continue;
     gridpack::powerflow::PFBus *bus =
       dynamic_cast<gridpack::powerflow::PFBus*>
       (p_network->getBus(i).get());
+    // Skip already-isolated buses (e.g. PSS/E type-4) so they are not
+    // re-flagged as lone on every call.
+    if (bus->isIsolated()) continue;
     std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
     bus->getNeighborBranches(branches);
     int size = branches.size();
@@ -200,6 +204,7 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
     if (!ok) {
       sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
       p_saveIsolatedStatus.push_back(bus->isIsolated());
+      p_loneBusIndices.push_back(i);
       bus->setIsolated(true);
       printf("%s",buf);
       if (stream != NULL) *stream << buf;
@@ -217,42 +222,17 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
 void gridpack::powerflow::PFFactoryModule::clearLoneBus()
 {
   p_hasLoneBus = false;
-  if (p_saveIsolatedStatus.size() == 0) return;
-  int numBus = p_network->numBuses();
-  int i, j, k;
-  int ncount = 0;
-  for (i=0; i<numBus; i++) {
-    if (!p_network->getActiveBus(i)) continue;
+  // Restore status of buses marked by the last checkLoneBus call.
+  for (size_t k = 0; k < p_loneBusIndices.size(); k++) {
+    int i = p_loneBusIndices[k];
     gridpack::powerflow::PFBus *bus =
       dynamic_cast<gridpack::powerflow::PFBus*>
       (p_network->getBus(i).get());
-    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
-    bus->getNeighborBranches(branches);
-    int size = branches.size();
-    bool ok = true;
-    if (size == 0) {
-      ok = false;
-    }
-    if (ok) {
-      ok = false;
-      for (j=0; j<size; j++) {
-        bool branch_ok = false;
-        std::vector<bool> status =
-          dynamic_cast<gridpack::powerflow::PFBranch*>
-          (branches[j].get())->getLineStatus();
-        int nlines = status.size();
-        for (k=0; k<nlines; k++) {
-          if (status[k]) branch_ok = true;
-        }
-        if (branch_ok) ok = true;
-      }
-    }
-    if (!ok) {
-      printf("\nLone bus %d reset\n",bus->getOriginalIndex());
-      bus->setIsolated(p_saveIsolatedStatus[ncount]);
-      ncount++;
-    }
+    printf("\nLone bus %d reset\n", bus->getOriginalIndex());
+    bus->setIsolated(p_saveIsolatedStatus[k]);
   }
+  p_loneBusIndices.clear();
+  p_saveIsolatedStatus.clear();
 }
 
 /**
