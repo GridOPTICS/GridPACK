@@ -459,19 +459,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
 
-  // Per-(branch,contingency) flat-row capture used by outputFormat=csv_flat.
-  // Streams one row per branch per converged contingency directly to a
-  // per-rank file (outputFile + "_flat.<rank>.part") so memory stays bounded
-  // regardless of contingency count. After the loop, world rank 0 writes
-  // the header to outputFile + "_flat.csv" and concatenates each rank's
-  // .part file into it (in rank order), then unlinks them.
+  // Per-rank bus metadata + wide/long branch-row outputs for csv_flat
+  // (long-form one row per branch per case) and csv_delta (wide-form one
+  // row per branch per case joining base and cont state). Both share the
+  // bus_meta load, the buses sidecar, and the per-rank .part-file gather.
+  bool wantBusSidecar = (outputFormat == "csv_flat" ||
+                         outputFormat == "csv_delta");
   struct BusMeta {
     std::string name;
     double basekv;
     int    area, zone, owner;
   };
   std::map<int, BusMeta> bus_meta;
-  if (outputFormat == "csv_flat") {
+  if (wantBusSidecar) {
     int nBus = pf_network->numBuses();
     for (int i = 0; i < nBus; i++) {
       gridpack::powerflow::PFBus *bus =
@@ -508,10 +508,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     return trim_quoted(it->second);
   };
 
-  // Per-rank bus metadata sidecar. Each rank's bus_meta covers active + ghost
-  // buses, so the same bus_id appears on multiple ranks. World rank 0 dedupes
-  // these into the final outputFile_buses.csv after the contingency loop.
-  if (outputFormat == "csv_flat") {
+  // Per-rank bus metadata sidecar (deduped by world rank 0 after the loop).
+  if (wantBusSidecar) {
     std::ostringstream oss;
     oss << outputFile << "_buses." << world.rank() << ".part";
     std::ofstream fbus(oss.str().c_str(),
@@ -542,6 +540,35 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   std::ofstream flatPart;
   size_t flatRowCount = 0;
+
+  // csv_delta wide-row state. Per-rank .part file streamed during the
+  // contingency loop; base_cache holds base-case branch state (populated
+  // once after base solve) keyed by (from, to, ckt).
+  struct BranchKey {
+    int from, to;
+    std::string ckt;
+    bool operator<(const BranchKey &o) const {
+      if (from != o.from) return from < o.from;
+      if (to   != o.to  ) return to   < o.to;
+      return ckt < o.ckt;
+    }
+  };
+  struct BaseFlow {
+    double p_mw, q_mvar, mva, loading_pct, rate_a;
+    double v_from_pu, v_to_pu, ang_from_deg, ang_to_deg;
+    double base_kv_from, base_kv_to;
+    int    area_from, area_to;
+  };
+  std::map<BranchKey, BaseFlow> base_cache;
+  std::string deltaPartPath;
+  if (outputFormat == "csv_delta") {
+    std::ostringstream oss;
+    oss << outputFile << "_delta." << world.rank() << ".part";
+    deltaPartPath = oss.str();
+  }
+  std::ofstream deltaPart;
+  size_t deltaRowCount = 0;
+  size_t deltaSkipCount = 0;
 
   // Convergence sidecar rows.
   struct ConvRow {
@@ -619,6 +646,176 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   };
 
+  // Populate base_cache from current solved state. Called once after base
+  // solve on every rank (csv_delta only); world.rank() == 0 is not special
+  // here -- each rank caches the branches it sees on its task_comm so it
+  // can join later in captureDeltaRows.
+  auto populateBaseCache = [&]() {
+    std::vector<std::string> v_strs = pf_app.writeBusString("vr_str");
+    std::vector<std::string> b_strs = pf_app.writeBranchString("flow_str");
+    if (task_comm.rank() != 0) return;
+    std::map<int, std::pair<double,double> > vbymag_ang;
+    for (size_t vi = 0; vi < v_strs.size(); vi++) {
+      int    bus_id = 0, use_vmag = 0, changed = 0;
+      double angle = 0.0, vmag = 0.0;
+      if (sscanf(v_strs[vi].c_str(), "%d %lf %lf %d %d",
+                 &bus_id, &angle, &vmag, &use_vmag, &changed) == 5) {
+        vbymag_ang[bus_id] = std::make_pair(vmag, angle);
+      }
+    }
+    for (size_t bi = 0; bi < b_strs.size(); bi++) {
+      char ckt_buf[16] = {0};
+      int viol = 0;
+      double p = 0.0, q = 0.0, perf = 0.0, ratea = 0.0;
+      int from = 0, to = 0;
+      if (sscanf(b_strs[bi].c_str(),
+                 "%d %d %15s %lf %lf %lf %lf %d",
+                 &from, &to, ckt_buf, &p, &q, &perf, &ratea, &viol) != 8) {
+        continue;
+      }
+      BranchKey k;
+      k.from = from; k.to = to;
+      k.ckt  = std::string(ckt_buf);
+      // Strip trailing spaces from ckt so the key matches what flow_str
+      // returns later (sscanf %15s already trims leading whitespace).
+      while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ') k.ckt.resize(k.ckt.size()-1);
+      BaseFlow bf;
+      bf.p_mw        = p;
+      bf.q_mvar      = q;
+      bf.mva         = std::sqrt(p*p + q*q);
+      bf.rate_a      = ratea;
+      bf.loading_pct = (ratea > 0.0) ? (bf.mva / ratea) * 100.0 : 0.0;
+      std::map<int, std::pair<double,double> >::const_iterator vf =
+        vbymag_ang.find(from);
+      std::map<int, std::pair<double,double> >::const_iterator vt =
+        vbymag_ang.find(to);
+      bf.v_from_pu     = (vf != vbymag_ang.end()) ? vf->second.first  : 0.0;
+      bf.ang_from_deg  = (vf != vbymag_ang.end()) ? vf->second.second : 0.0;
+      bf.v_to_pu       = (vt != vbymag_ang.end()) ? vt->second.first  : 0.0;
+      bf.ang_to_deg    = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
+      std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
+      std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
+      bf.base_kv_from = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
+      bf.base_kv_to   = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
+      bf.area_from    = (mf != bus_meta.end()) ? mf->second.area   : 0;
+      bf.area_to      = (mt != bus_meta.end()) ? mt->second.area   : 0;
+      base_cache[k] = bf;
+    }
+  };
+
+  // Wide-form (base+cont on same row) capture for csv_delta. Mirrors
+  // captureFlatRows but joins each branch with base_cache. Branches not
+  // in base_cache are counted in deltaSkipCount and skipped silently.
+  auto captureDeltaRows = [&](int event_idx,
+                              const gridpack::powerflow::Contingency &evt,
+                              bool emit) {
+    std::vector<std::string> v_strs = pf_app.writeBusString("vr_str");
+    std::vector<std::string> b_strs = pf_app.writeBranchString("flow_str");
+    if (!emit || task_comm.rank() != 0) return;
+    if (!deltaPart.is_open()) {
+      deltaPart.open(deltaPartPath.c_str(), std::ios::out | std::ios::trunc);
+      deltaPart << std::fixed;
+    }
+    // cont_event_facility: built once per contingency.
+    std::string facility;
+    if (evt.p_type == Branch && !evt.p_from.empty()) {
+      int outFrom = evt.p_from[0];
+      int area = 0;
+      std::map<int, BusMeta>::const_iterator mf = bus_meta.find(outFrom);
+      if (mf != bus_meta.end()) area = mf->second.area;
+      char buf[64];
+      snprintf(buf, sizeof(buf), "[%d] %d %d %s",
+               area, outFrom, evt.p_to[0], evt.p_ckt[0].c_str());
+      facility = buf;
+      if (evt.p_from.size() > 1) {
+        char suf[24];
+        snprintf(suf, sizeof(suf), " (+%zu more)", evt.p_from.size() - 1);
+        facility += suf;
+      }
+    } else if (evt.p_type == Generator && !evt.p_busid.empty()) {
+      char buf[48];
+      snprintf(buf, sizeof(buf), "gen %d %s",
+               evt.p_busid[0], evt.p_genid[0].c_str());
+      facility = buf;
+      if (evt.p_busid.size() > 1) {
+        char suf[24];
+        snprintf(suf, sizeof(suf), " (+%zu more)", evt.p_busid.size() - 1);
+        facility += suf;
+      }
+    }
+    std::string ct_name = evt.p_name;
+    while (!ct_name.empty() && ct_name[ct_name.size()-1] == ' ')
+      ct_name.resize(ct_name.size()-1);
+    const char *type_str = (evt.p_type == Branch) ? "branch" : "generator";
+    std::map<int, std::pair<double,double> > vbymag_ang;
+    for (size_t vi = 0; vi < v_strs.size(); vi++) {
+      int    bus_id = 0, use_vmag = 0, changed = 0;
+      double angle = 0.0, vmag = 0.0;
+      if (sscanf(v_strs[vi].c_str(), "%d %lf %lf %d %d",
+                 &bus_id, &angle, &vmag, &use_vmag, &changed) == 5) {
+        vbymag_ang[bus_id] = std::make_pair(vmag, angle);
+      }
+    }
+    for (size_t bi = 0; bi < b_strs.size(); bi++) {
+      char ckt_buf[16] = {0};
+      int viol = 0;
+      double p = 0.0, q = 0.0, perf = 0.0, ratea = 0.0;
+      int from = 0, to = 0;
+      if (sscanf(b_strs[bi].c_str(),
+                 "%d %d %15s %lf %lf %lf %lf %d",
+                 &from, &to, ckt_buf, &p, &q, &perf, &ratea, &viol) != 8) {
+        continue;
+      }
+      BranchKey k;
+      k.from = from; k.to = to;
+      k.ckt  = std::string(ckt_buf);
+      while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ')
+        k.ckt.resize(k.ckt.size()-1);
+      std::map<BranchKey, BaseFlow>::const_iterator it = base_cache.find(k);
+      if (it == base_cache.end()) { deltaSkipCount++; continue; }
+      const BaseFlow &bf = it->second;
+      double cont_mva     = std::sqrt(p*p + q*q);
+      double cont_loading = (ratea > 0.0) ? (cont_mva / ratea) * 100.0 : 0.0;
+      std::map<int, std::pair<double,double> >::const_iterator vf =
+        vbymag_ang.find(from);
+      std::map<int, std::pair<double,double> >::const_iterator vt =
+        vbymag_ang.find(to);
+      double v_from_c = (vf != vbymag_ang.end()) ? vf->second.first  : 0.0;
+      double a_from_c = (vf != vbymag_ang.end()) ? vf->second.second : 0.0;
+      double v_to_c   = (vt != vbymag_ang.end()) ? vt->second.first  : 0.0;
+      double a_to_c   = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
+      double d_ang_b  = bf.ang_from_deg - bf.ang_to_deg;
+      double d_ang_c  = a_from_c - a_to_c;
+      deltaPart << event_idx << "," << ct_name << "," << type_str << ","
+                << from << "," << to << "," << k.ckt << ","
+                << std::setprecision(2) << bf.base_kv_from << ","
+                << std::setprecision(2) << bf.base_kv_to   << ","
+                << bf.area_from << "," << bf.area_to << ","
+                << std::setprecision(4) << bf.rate_a << ","
+                << std::setprecision(4) << bf.p_mw   << ","
+                << std::setprecision(4) << p         << ","
+                << std::setprecision(4) << bf.q_mvar << ","
+                << std::setprecision(4) << q         << ","
+                << std::setprecision(4) << bf.mva    << ","
+                << std::setprecision(4) << cont_mva  << ","
+                << std::setprecision(2) << bf.loading_pct << ","
+                << std::setprecision(2) << cont_loading  << ","
+                << std::setprecision(6) << bf.v_from_pu << ","
+                << std::setprecision(6) << v_from_c     << ","
+                << std::setprecision(6) << bf.v_to_pu   << ","
+                << std::setprecision(6) << v_to_c       << ","
+                << std::setprecision(4) << bf.ang_from_deg << ","
+                << std::setprecision(4) << a_from_c        << ","
+                << std::setprecision(4) << bf.ang_to_deg   << ","
+                << std::setprecision(4) << a_to_c          << ","
+                << std::setprecision(4) << d_ang_b << ","
+                << std::setprecision(4) << d_ang_c << ","
+                << facility
+                << "\n";
+      deltaRowCount++;
+    }
+  };
+
   //  Set minimum and maximum voltage limits on all buses
   pf_app.setVoltageLimits(Vmin, Vmax);
   // Solve the base power flow on every task communicator. Abort if it fails.
@@ -669,6 +866,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // so every task_comm participates -- but only world rank 0 emits rows so
     // the base case isn't duplicated in the final file.
     captureFlatRows(0, std::string("base_case"), world.rank() == 0);
+  }
+  if (outputFormat == "csv_delta") {
+    // Cache base-case branch state on every rank for the contingency join.
+    populateBaseCache();
   }
 
   // Check if auto-generation of N-1 contingencies is enabled
@@ -1114,6 +1315,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         if (outputFormat == "csv_flat") {
           captureFlatRows(task_id + 1, events[task_id].p_name, true);
         }
+        if (outputFormat == "csv_delta") {
+          captureDeltaRows(task_id + 1, events[task_id], true);
+        }
         recordConv(task_id, "OK", std::string());
       // Include results of violation checks in output
       if (ok) {
@@ -1349,49 +1553,72 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // Close output file for this contingency
     if (print_calcs) pf_app.close();
   }
-  // csv_flat: each rank streamed its rows to outputFile_flat.<rank>.part
-  // during the loop. Close per-rank files, then on world rank 0 write the
-  // header to the final file and concatenate each rank's part file in
-  // rank order, unlinking each as it goes.
+  // csv_flat / csv_delta: each rank streamed rows to its .part file during
+  // the loop. Close, sync, then world rank 0 writes header + concatenates.
   if (outputFormat == "csv_flat") {
     if (flatPart.is_open()) flatPart.close();
+  }
+  if (outputFormat == "csv_delta") {
+    if (deltaPart.is_open()) deltaPart.close();
+  }
+  if (wantBusSidecar) {
     world.sync();
     if (world.rank() == 0) {
-      std::string flatFile = outputFile + "_flat.csv";
-      std::ofstream fout(flatFile.c_str(),
-                         std::ios::out | std::ios::trunc | std::ios::binary);
-      fout << "event_idx,contingency,from_bus,to_bus,circuit_id,"
-              "p_from_mw,q_from_mvar,mva_from,rate_a_mva,loading_percent,"
-              "viol,v_from_pu,v_to_pu,ang_from_deg,ang_to_deg\n";
-      size_t total_rows = 0;
       const size_t BUFSZ = 1 << 20;
       std::vector<char> buf(BUFSZ);
-      for (int p = 0; p < world.size(); p++) {
-        std::ostringstream oss;
-        oss << outputFile << "_flat." << p << ".part";
-        std::string part = oss.str();
-        std::ifstream fin(part.c_str(), std::ios::in | std::ios::binary);
-        if (!fin) continue;
-        while (fin) {
-          fin.read(&buf[0], BUFSZ);
-          std::streamsize got = fin.gcount();
-          if (got > 0) {
-            fout.write(&buf[0], got);
-            for (std::streamsize k = 0; k < got; k++) {
-              if (buf[k] == '\n') total_rows++;
+
+      auto concatParts = [&](const char *suffix, const char *header,
+                             const char *tag, const char *outName) {
+        std::string outFile = outputFile + outName;
+        std::ofstream fout(outFile.c_str(),
+                           std::ios::out | std::ios::trunc | std::ios::binary);
+        fout << header;
+        size_t rows = 0;
+        for (int p = 0; p < world.size(); p++) {
+          std::ostringstream oss;
+          oss << outputFile << suffix << p << ".part";
+          std::string part = oss.str();
+          std::ifstream fin(part.c_str(), std::ios::in | std::ios::binary);
+          if (!fin) continue;
+          while (fin) {
+            fin.read(&buf[0], BUFSZ);
+            std::streamsize got = fin.gcount();
+            if (got > 0) {
+              fout.write(&buf[0], got);
+              for (std::streamsize k = 0; k < got; k++) {
+                if (buf[k] == '\n') rows++;
+              }
             }
           }
+          fin.close();
+          std::remove(part.c_str());
         }
-        fin.close();
-        std::remove(part.c_str());
-      }
-      fout.close();
-      printf("[csv_flat] wrote %zu rows to %s\n", total_rows, flatFile.c_str());
+        fout.close();
+        printf("[%s] wrote %zu rows to %s\n", tag, rows, outFile.c_str());
+      };
 
-      // Bus metadata sidecar: each rank wrote its bus_meta to a .part file
-      // covering its active+ghost buses, so the same bus_id appears on
-      // multiple ranks. Read each part, dedupe by bus_id (first writer wins),
-      // then emit one row per unique bus to outputFile_buses.csv.
+      if (outputFormat == "csv_flat") {
+        concatParts("_flat.",
+                    "event_idx,contingency,from_bus,to_bus,circuit_id,"
+                    "p_from_mw,q_from_mvar,mva_from,rate_a_mva,loading_percent,"
+                    "viol,v_from_pu,v_to_pu,ang_from_deg,ang_to_deg\n",
+                    "csv_flat",
+                    "_flat.csv");
+      }
+      if (outputFormat == "csv_delta") {
+        concatParts("_delta.",
+                    "event_idx,contingency,type,from_bus,to_bus,ckt,"
+                    "base_kv_from,base_kv_to,area_from,area_to,rate_a,"
+                    "base_p_mw,cont_p_mw,base_q_mvar,cont_q_mvar,"
+                    "base_mva,cont_mva,base_loading_pct,cont_loading_pct,"
+                    "v_from_base,v_from_cont,v_to_base,v_to_cont,"
+                    "ang_from_base,ang_from_cont,ang_to_base,ang_to_cont,"
+                    "d_angle_base,d_angle_cont,cont_event_facility\n",
+                    "csv_delta",
+                    "_delta.csv");
+      }
+
+      // Bus metadata sidecar (deduped by bus_id, first writer wins).
       std::string busFile = outputFile + "_buses.csv";
       std::ofstream bout(busFile.c_str(),
                          std::ios::out | std::ios::trunc | std::ios::binary);
@@ -1420,7 +1647,17 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         std::remove(part.c_str());
       }
       bout.close();
-      printf("[csv_flat] wrote %zu rows to %s\n", bus_rows, busFile.c_str());
+      printf("[buses] wrote %zu rows to %s\n", bus_rows, busFile.c_str());
+    }
+  }
+  // Aggregate skip count across ranks for diagnostics.
+  if (outputFormat == "csv_delta") {
+    long localSkip = static_cast<long>(deltaSkipCount);
+    long totalSkip = localSkip;
+    world.sum(&totalSkip, 1);
+    if (world.rank() == 0 && totalSkip > 0) {
+      printf("[csv_delta] %ld branch rows had no base-cache match\n",
+             totalSkip);
     }
   }
 
