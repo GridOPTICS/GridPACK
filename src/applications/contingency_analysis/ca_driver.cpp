@@ -90,7 +90,9 @@ std::vector<gridpack::powerflow::Contingency>
       std::string buses;
       contingencies[idx]->get("contingencyLineBuses",&buses);
       std::string names;
-      contingencies[idx]->get("contingencyLineNames",&names);
+      if (!contingencies[idx]->get("CKT",&names)) {
+        contingencies[idx]->get("contingencyLineNames",&names);
+      }
       // Tokenize bus string to get a list of individual buses
       std::vector<std::string> string_vec = utils.blankTokenizer(buses);
       // Convert buses from character strings to ints
@@ -126,7 +128,9 @@ std::vector<gridpack::powerflow::Contingency>
       std::string buses;
       contingencies[idx]->get("contingencyBuses",&buses);
       std::string gens;
-      contingencies[idx]->get("contingencyGenerators",&gens);
+      if (!contingencies[idx]->get("GenID",&gens)) {
+        contingencies[idx]->get("contingencyGenerators",&gens);
+      }
       // Tokenize bus string to get a list of individual buses
       std::vector<std::string> string_vec = utils.blankTokenizer(buses);
       std::vector<int> bus_ids;
@@ -409,6 +413,21 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Optional CSV allowlist (from_bus,to_bus,ckt). Empty -> emit all.
   std::string monitorBranchesFile;
   cursor->get("monitorBranchesFile", &monitorBranchesFile);
+  // Optional area/kV gates. Empty/zero/missing -> no restriction on that
+  // dimension. Filters AND together with monitorBranchesFile.
+  std::string monitorAreasStr;
+  cursor->get("monitorAreas", &monitorAreasStr);
+  double monitorKvMin = 0.0;
+  cursor->get("monitorKvMin", &monitorKvMin);
+  double monitorKvMax = 0.0;
+  cursor->get("monitorKvMax", &monitorKvMax);
+  std::set<int> monitorAreas;
+  {
+    std::vector<std::string> tok = util.blankTokenizer(monitorAreasStr);
+    for (size_t i = 0; i < tok.size(); i++) {
+      if (!tok[i].empty()) monitorAreas.insert(atoi(tok[i].c_str()));
+    }
+  }
   // Which rating column csv_flat/csv_delta emit. A|B|C, default C.
   // Falls back A->B->C order if requested rating is zero/missing.
   std::string contingencyRating = "C";
@@ -691,6 +710,45 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   auto isMonitored = [&](const BranchKey &k) {
     return monitorSet.empty() || monitorSet.find(k) != monitorSet.end();
   };
+  // Area/kV gate. Either-endpoint match for areas (catches tie-lines).
+  // kV is gated on max(kv_from, kv_to) so a 138/13.8 stepdown counts as 138.
+  // Empty area set / zero kV bound = unrestricted on that dimension.
+  auto passesAreaKv = [&](int area_from, int area_to,
+                          double kv_from, double kv_to) {
+    if (!monitorAreas.empty()) {
+      if (monitorAreas.find(area_from) == monitorAreas.end() &&
+          monitorAreas.find(area_to)   == monitorAreas.end()) {
+        return false;
+      }
+    }
+    double kv_max = (kv_from > kv_to) ? kv_from : kv_to;
+    if (monitorKvMin > 0.0 && kv_max < monitorKvMin) return false;
+    if (monitorKvMax > 0.0 && kv_max > monitorKvMax) return false;
+    return true;
+  };
+  // When monitorBranchesFile presents, it overrides area/kV criteria.
+  bool haveAreaKvFilter = !monitorAreas.empty() ||
+                          monitorKvMin > 0.0 ||
+                          monitorKvMax > 0.0;
+  if (!monitorSet.empty() && haveAreaKvFilter) {
+    if (world.rank() == 0) {
+      printf("WARNING: monitorBranchesFile is set; ignoring "
+             "monitorAreas/monitorKvMin/monitorKvMax\n");
+    }
+    monitorAreas.clear();
+    monitorKvMin = 0.0;
+    monitorKvMax = 0.0;
+    haveAreaKvFilter = false;
+  }
+  if (world.rank() == 0) {
+    if (!monitorAreas.empty()) {
+      printf("Monitor areas filter: %zu areas\n", monitorAreas.size());
+    }
+    if (monitorKvMin > 0.0 || monitorKvMax > 0.0) {
+      printf("Monitor kV filter: min=%.2f max=%.2f (0 means unbounded)\n",
+             monitorKvMin, monitorKvMax);
+    }
+  }
 
   struct BaseFlow {
     double p_mw, q_mvar, mva, loading_pct;
@@ -765,6 +823,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       while (!mk.ckt.empty() && mk.ckt[mk.ckt.size()-1] == ' ')
         mk.ckt.resize(mk.ckt.size()-1);
       if (!monitorSet.empty() && monitorSet.find(mk) == monitorSet.end()) continue;
+      if (haveAreaKvFilter) {
+        std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
+        std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
+        int af = (mf != bus_meta.end()) ? mf->second.area   : 0;
+        int at = (mt != bus_meta.end()) ? mt->second.area   : 0;
+        double kf = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
+        double kt = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
+        if (!passesAreaKv(af, at, kf, kt)) continue;
+      }
       std::map<BranchKey, BranchRates>::const_iterator rIt = branch_rates.find(mk);
       double rate_sel = ratea;
       if (rIt != branch_rates.end()) {
@@ -831,6 +898,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // returns later (sscanf %15s already trims leading whitespace).
       while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ') k.ckt.resize(k.ckt.size()-1);
       if (!isMonitored(k)) continue;
+      if (haveAreaKvFilter) {
+        std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
+        std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
+        int af = (mf != bus_meta.end()) ? mf->second.area   : 0;
+        int at = (mt != bus_meta.end()) ? mt->second.area   : 0;
+        double kf = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
+        double kt = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
+        if (!passesAreaKv(af, at, kf, kt)) continue;
+      }
       double base_rate = ratea, cont_rate = ratea;
       std::map<BranchKey, BranchRates>::const_iterator rIt = branch_rates.find(k);
       if (rIt != branch_rates.end()) {
