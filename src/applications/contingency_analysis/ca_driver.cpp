@@ -406,6 +406,22 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   cursor->get("outputFormat", &outputFormat);
   std::string outputFile = "ca_results";
   cursor->get("outputFile", &outputFile);
+  // Optional CSV allowlist (from_bus,to_bus,ckt). Empty -> emit all.
+  std::string monitorBranchesFile;
+  cursor->get("monitorBranchesFile", &monitorBranchesFile);
+  // Which rating column csv_flat/csv_delta emit. A|B|C, default C.
+  // Falls back A->B->C order if requested rating is zero/missing.
+  std::string contingencyRating = "C";
+  cursor->get("contingencyRating", &contingencyRating);
+  util.toUpper(contingencyRating);
+  if (contingencyRating != "A" && contingencyRating != "B" &&
+      contingencyRating != "C") {
+    if (world.rank() == 0) {
+      printf("WARNING: contingencyRating='%s' not A/B/C; defaulting to C\n",
+             contingencyRating.c_str());
+    }
+    contingencyRating = "C";
+  }
   // Set static flag for PFBus class BEFORE network creation.
   // This controls how Q values are reported in output functions:
   // - When check_Qlim = false: output uses calculated Q from p_Qinj
@@ -541,9 +557,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   std::ofstream flatPart;
   size_t flatRowCount = 0;
 
-  // csv_delta wide-row state. Per-rank .part file streamed during the
-  // contingency loop; base_cache holds base-case branch state (populated
-  // once after base solve) keyed by (from, to, ckt).
+  // (from, to, ckt) key shared by the monitor allowlist and base_cache.
   struct BranchKey {
     int from, to;
     std::string ckt;
@@ -553,8 +567,134 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       return ckt < o.ckt;
     }
   };
+
+  // Per-branch rate-A/B/C from the parsed network data. Keyed by (from,to,ckt)
+  // so the csv_flat / csv_delta emit paths can pick the configured rating.
+  // Built once before the contingency loop. Each rank only sees its own
+  // active+ghost branches; that's fine -- the emit path is also rank-local.
+  struct BranchRates {
+    double rate_a, rate_b, rate_c;
+  };
+  std::map<BranchKey, BranchRates> branch_rates;
+  if (outputFormat == "csv_flat" || outputFormat == "csv_delta") {
+    int nBranch = pf_network->numBranches();
+    for (int i = 0; i < nBranch; i++) {
+      boost::shared_ptr<gridpack::component::DataCollection> bd =
+        pf_network->getBranchData(i);
+      if (!bd) continue;
+      int from = 0, to = 0, nelems = 0;
+      bd->getValue(BRANCH_FROMBUS, &from);
+      bd->getValue(BRANCH_TOBUS,   &to);
+      if (!bd->getValue(BRANCH_NUM_ELEMENTS, &nelems)) continue;
+      for (int k = 0; k < nelems; k++) {
+        std::string ckt;
+        if (!bd->getValue(BRANCH_CKT, &ckt, k)) continue;
+        // Trim leading/trailing whitespace and PSS/E surrounding quotes.
+        size_t a = ckt.find_first_not_of(" \t");
+        size_t b = ckt.find_last_not_of(" \t");
+        ckt = (a == std::string::npos) ? std::string()
+                                       : ckt.substr(a, b - a + 1);
+        if (ckt.size() >= 2 && ckt.front() == '\'' && ckt.back() == '\'') {
+          ckt = ckt.substr(1, ckt.size() - 2);
+          a = ckt.find_first_not_of(" \t");
+          b = ckt.find_last_not_of(" \t");
+          ckt = (a == std::string::npos) ? std::string()
+                                         : ckt.substr(a, b - a + 1);
+        }
+        BranchRates r;
+        r.rate_a = 0.0; r.rate_b = 0.0; r.rate_c = 0.0;
+        bd->getValue(BRANCH_RATING_A, &r.rate_a, k);
+        bd->getValue(BRANCH_RATING_B, &r.rate_b, k);
+        bd->getValue(BRANCH_RATING_C, &r.rate_c, k);
+        BranchKey key;
+        key.from = from; key.to = to; key.ckt = ckt;
+        branch_rates[key] = r;
+      }
+    }
+  }
+  // Base case always uses rate-A (PSS/E "normal" rating). Contingency rows
+  // use whichever the user picked, with A->B->C fallback if zero/missing.
+  auto pickContRate = [&](const BranchRates &r) -> double {
+    if (contingencyRating == "A") {
+      return r.rate_a;
+    }
+    if (contingencyRating == "B") {
+      return (r.rate_b > 0.0) ? r.rate_b : r.rate_a;
+    }
+    if (r.rate_c > 0.0) return r.rate_c;
+    if (r.rate_b > 0.0) return r.rate_b;
+    return r.rate_a;
+  };
+
+  // Monitor allowlist parsed from monitorBranchesFile. Empty -> emit all.
+  std::set<BranchKey> monitorSet;
+  if (!monitorBranchesFile.empty() &&
+      (outputFormat == "csv_flat" || outputFormat == "csv_delta")) {
+    std::ifstream fin(monitorBranchesFile.c_str());
+    if (!fin.is_open()) {
+      if (world.rank() == 0) {
+        printf("WARNING: monitorBranchesFile '%s' not found; emitting all branches\n",
+               monitorBranchesFile.c_str());
+      }
+    } else {
+      std::string line;
+      size_t lineNo = 0;
+      while (std::getline(fin, line)) {
+        lineNo++;
+        // Strip trailing CR (Windows line endings).
+        while (!line.empty() && (line[line.size()-1] == '\r' ||
+                                 line[line.size()-1] == '\n')) {
+          line.resize(line.size()-1);
+        }
+        // Skip blank lines and comments.
+        size_t firstNon = line.find_first_not_of(" \t");
+        if (firstNon == std::string::npos) continue;
+        if (line[firstNon] == '#') continue;
+        // Tokenize on commas.
+        std::vector<std::string> tok;
+        size_t pos = 0;
+        while (pos <= line.size()) {
+          size_t comma = line.find(',', pos);
+          std::string t = (comma == std::string::npos)
+                          ? line.substr(pos)
+                          : line.substr(pos, comma - pos);
+          size_t a = t.find_first_not_of(" \t");
+          size_t b = t.find_last_not_of(" \t");
+          tok.push_back((a == std::string::npos) ? std::string()
+                                                 : t.substr(a, b - a + 1));
+          if (comma == std::string::npos) break;
+          pos = comma + 1;
+        }
+        if (tok.size() < 3) continue;
+        // Skip header row: any non-numeric first field.
+        if (tok[0].empty()) continue;
+        bool numeric = true;
+        for (size_t ci = 0; ci < tok[0].size(); ci++) {
+          char c = tok[0][ci];
+          if (!(c >= '0' && c <= '9') && c != '-' && c != '+') {
+            numeric = false; break;
+          }
+        }
+        if (!numeric) continue;
+        BranchKey k;
+        k.from = atoi(tok[0].c_str());
+        k.to   = atoi(tok[1].c_str());
+        k.ckt  = tok[2];
+        monitorSet.insert(k);
+      }
+      if (world.rank() == 0) {
+        printf("Monitor allowlist: %zu branches loaded from %s\n",
+               monitorSet.size(), monitorBranchesFile.c_str());
+      }
+    }
+  }
+  auto isMonitored = [&](const BranchKey &k) {
+    return monitorSet.empty() || monitorSet.find(k) != monitorSet.end();
+  };
+
   struct BaseFlow {
-    double p_mw, q_mvar, mva, loading_pct, rate_a;
+    double p_mw, q_mvar, mva, loading_pct;
+    double base_rate, cont_rate;
     double v_from_pu, v_to_pu, ang_from_deg, ang_to_deg;
     double base_kv_from, base_kv_to;
     int    area_from, area_to;
@@ -587,7 +727,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // per branch into the rank's .part file. Called once per converged case
   // (base + each contingency) on every task communicator; non-rank-0
   // task_comm members short-circuit after the collective.
-  auto captureFlatRows = [&](int event_idx, const std::string &name, bool emit) {
+  auto captureFlatRows = [&](int event_idx, const std::string &name,
+                             bool emit, bool is_base) {
     std::vector<std::string> v_strs = pf_app.writeBusString("vr_str");
     std::vector<std::string> b_strs = pf_app.writeBranchString("flow_str");
     if (!emit || task_comm.rank() != 0) return;
@@ -619,8 +760,18 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       char ckt[4];
       std::strncpy(ckt, ckt_buf, 3); ckt[3] = '\0';
+      BranchKey mk;
+      mk.from = from; mk.to = to; mk.ckt = ckt;
+      while (!mk.ckt.empty() && mk.ckt[mk.ckt.size()-1] == ' ')
+        mk.ckt.resize(mk.ckt.size()-1);
+      if (!monitorSet.empty() && monitorSet.find(mk) == monitorSet.end()) continue;
+      std::map<BranchKey, BranchRates>::const_iterator rIt = branch_rates.find(mk);
+      double rate_sel = ratea;
+      if (rIt != branch_rates.end()) {
+        rate_sel = is_base ? rIt->second.rate_a : pickContRate(rIt->second);
+      }
       double flow_mva    = std::sqrt(p*p + q*q);
-      double loading_pct = (ratea > 0.0) ? (flow_mva / ratea) * 100.0 : 0.0;
+      double loading_pct = (rate_sel > 0.0) ? (flow_mva / rate_sel) * 100.0 : 0.0;
       std::map<int, std::pair<double,double> >::const_iterator vf =
         vbymag_ang.find(from);
       std::map<int, std::pair<double,double> >::const_iterator vt =
@@ -634,7 +785,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                << std::setprecision(4) << p << ","
                << std::setprecision(4) << q << ","
                << std::setprecision(4) << flow_mva << ","
-               << std::setprecision(4) << ratea << ","
+               << std::setprecision(4) << rate_sel << ","
                << std::setprecision(2) << loading_pct << ","
                << viol << ","
                << std::setprecision(6) << v_from << ","
@@ -679,12 +830,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // Strip trailing spaces from ckt so the key matches what flow_str
       // returns later (sscanf %15s already trims leading whitespace).
       while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ') k.ckt.resize(k.ckt.size()-1);
+      if (!isMonitored(k)) continue;
+      double base_rate = ratea, cont_rate = ratea;
+      std::map<BranchKey, BranchRates>::const_iterator rIt = branch_rates.find(k);
+      if (rIt != branch_rates.end()) {
+        base_rate = rIt->second.rate_a;
+        cont_rate = pickContRate(rIt->second);
+      }
       BaseFlow bf;
       bf.p_mw        = p;
       bf.q_mvar      = q;
       bf.mva         = std::sqrt(p*p + q*q);
-      bf.rate_a      = ratea;
-      bf.loading_pct = (ratea > 0.0) ? (bf.mva / ratea) * 100.0 : 0.0;
+      bf.base_rate   = base_rate;
+      bf.cont_rate   = cont_rate;
+      bf.loading_pct = (base_rate > 0.0) ? (bf.mva / base_rate) * 100.0 : 0.0;
       std::map<int, std::pair<double,double> >::const_iterator vf =
         vbymag_ang.find(from);
       std::map<int, std::pair<double,double> >::const_iterator vt =
@@ -771,11 +930,12 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       k.ckt  = std::string(ckt_buf);
       while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ')
         k.ckt.resize(k.ckt.size()-1);
+      if (!isMonitored(k)) continue;
       std::map<BranchKey, BaseFlow>::const_iterator it = base_cache.find(k);
       if (it == base_cache.end()) { deltaSkipCount++; continue; }
       const BaseFlow &bf = it->second;
       double cont_mva     = std::sqrt(p*p + q*q);
-      double cont_loading = (ratea > 0.0) ? (cont_mva / ratea) * 100.0 : 0.0;
+      double cont_loading = (bf.cont_rate > 0.0) ? (cont_mva / bf.cont_rate) * 100.0 : 0.0;
       std::map<int, std::pair<double,double> >::const_iterator vf =
         vbymag_ang.find(from);
       std::map<int, std::pair<double,double> >::const_iterator vt =
@@ -791,7 +951,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                 << std::setprecision(2) << bf.base_kv_from << ","
                 << std::setprecision(2) << bf.base_kv_to   << ","
                 << bf.area_from << "," << bf.area_to << ","
-                << std::setprecision(4) << bf.rate_a << ","
+                << std::setprecision(4) << bf.base_rate << ","
+                << std::setprecision(4) << bf.cont_rate << ","
                 << std::setprecision(4) << bf.p_mw   << ","
                 << std::setprecision(4) << p         << ","
                 << std::setprecision(4) << bf.q_mvar << ","
@@ -865,7 +1026,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // calls writeBusString/writeBranchString which are task_comm collectives,
     // so every task_comm participates -- but only world rank 0 emits rows so
     // the base case isn't duplicated in the final file.
-    captureFlatRows(0, std::string("base_case"), world.rank() == 0);
+    captureFlatRows(0, std::string("base_case"), world.rank() == 0, true);
   }
   if (outputFormat == "csv_delta") {
     // Cache base-case branch state on every rank for the contingency join.
@@ -1313,7 +1474,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           localContingencies.push_back(ctResult);
         }
         if (outputFormat == "csv_flat") {
-          captureFlatRows(task_id + 1, events[task_id].p_name, true);
+          captureFlatRows(task_id + 1, events[task_id].p_name, true, false);
         }
         if (outputFormat == "csv_delta") {
           captureDeltaRows(task_id + 1, events[task_id], true);
@@ -1600,7 +1761,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       if (outputFormat == "csv_flat") {
         concatParts("_flat.",
                     "event_idx,contingency,from_bus,to_bus,circuit_id,"
-                    "p_from_mw,q_from_mvar,mva_from,rate_a_mva,loading_percent,"
+                    "p_from_mw,q_from_mvar,mva_from,rate_mva,loading_percent,"
                     "viol,v_from_pu,v_to_pu,ang_from_deg,ang_to_deg\n",
                     "csv_flat",
                     "_flat.csv");
@@ -1608,7 +1769,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       if (outputFormat == "csv_delta") {
         concatParts("_delta.",
                     "event_idx,contingency,type,from_bus,to_bus,ckt,"
-                    "base_kv_from,base_kv_to,area_from,area_to,rate_a,"
+                    "base_kv_from,base_kv_to,area_from,area_to,base_rate_mva,cont_rate_mva,"
                     "base_p_mw,cont_p_mw,base_q_mvar,cont_q_mvar,"
                     "base_mva,cont_mva,base_loading_pct,cont_loading_pct,"
                     "v_from_base,v_from_cont,v_to_base,v_to_cont,"
