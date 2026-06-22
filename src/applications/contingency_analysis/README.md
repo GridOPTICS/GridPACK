@@ -40,10 +40,76 @@ When combined, duplicates from the file are automatically skipped.
 | `minVoltage` | Minimum voltage threshold for violations (p.u.) | 0.9 |
 | `maxVoltage` | Maximum voltage threshold for violations (p.u.) | 1.1 |
 | `qlim` | Enable reactive power limit enforcement (PV to PQ bus conversion) | false |
+| `outputFormat` | `text` / `json` / `csv` / `csv_flat` / `csv_delta` | `text` |
+| `outputFile` | Base name for output files | `ca_results` |
+| `writeStats` | Emit StatBlock summary files (vmag.txt etc.). Set false to skip and avoid the per-case StatBlock work | true |
+| `contingencyRating` | Which PSS/E rating drives `cont_rate_mva` / `cont_loading_pct`: `A`, `B`, or `C` (with A→B→C fallback if missing). `base_rate_mva` always uses rate-A | `C` |
+| `monitorBranchesFile` | Path to a CSV allowlist (`from_bus,to_bus,ckt`). When set, overrides the area/kV gates (TARA / PSS/E convention) | (unset) |
+| `monitorAreas` | Space-separated list of PSS/E area numbers. Branch is emitted if **either endpoint** is in the set | (unset) |
+| `monitorKvMin` | Lower kV threshold; branch passes if `max(kv_from, kv_to) >= monitorKvMin` | 0 (unbounded) |
+| `monitorKvMax` | Upper kV threshold; branch passes if `max(kv_from, kv_to) <= monitorKvMax` | 0 (unbounded) |
+
+### Filtering csv_flat / csv_delta output
+
+`csv_flat` and `csv_delta` emit per-(contingency, branch) rows. All filters
+are optional — unset means "monitor everything". `monitorBranchesFile` is
+authoritative when set; otherwise `monitorAreas` and the kV bounds AND
+together.
+
+```xml
+<!-- (a) Monitor everything (default): no filter options set -->
+
+<!-- (b) Curated allowlist -->
+<monitorBranchesFile>monitor_branches.csv</monitorBranchesFile>
+
+<!-- (c) Topology-based screening -->
+<monitorAreas>11 12 19</monitorAreas>
+<monitorKvMin>100.0</monitorKvMin>
+<monitorKvMax>500.0</monitorKvMax>
+```
+
+`monitorBranchesFile` is a CSV of `from_bus,to_bus,ckt` rows (header
+optional; `#` is a line comment). When set, area/kV options are ignored
+and a warning is logged.
+
+`monitorAreas` matches branches with either endpoint in the set (catches
+tie-lines). `monitorKvMin/Max` gate on `max(kv_from, kv_to)` so a 138/13.8
+step-down counts as 138.
+
+`contingencyRating` (`A` | `B` | `C`, default `C`) selects the rating
+behind `cont_rate_mva` / `cont_loading_pct`. `base_rate_mva` always uses
+rate-A. Falls back A→B→C if the requested rating is zero/missing.
+
+A complete annotated example is in
+`src/applications/data_sets/input/ca/input_14_filters_example.xml` with a
+sample monitor file `monitor_branches_14.csv` in the same directory.
+
+### Output ordering
+
+Rows are not sorted by contingency. The driver distributes contingencies
+across MPI ranks and streams each rank's results to its own `.part` file;
+rank 0 concatenates in rank order, so the final file is grouped by rank
+and ordered by completion within each rank. Column 1 (`event_idx`)
+preserves input-deck order — sort downstream if needed:
+
+```bash
+( head -1 my_run_delta.csv && tail -n +2 my_run_delta.csv | sort -t, -k1,1n ) > my_run_delta.sorted.csv
+```
+
 
 ### Contingency File Format
 
 See `contingencies_nk_example.xml` for examples of N-1, N-2, and N-3 contingency definitions.
+
+The line-tag and generator-id elements accept PSS/E-aligned aliases for clarity:
+
+| Element | Alias | Holds |
+|---|---|---|
+| `<contingencyLineNames>` | `<CKT>` | Branch circuit ID (PSS/E `CKT` field) |
+| `<contingencyGenerators>` | `<GenID>` | Generator ID (PSS/E `ID` field) |
+
+Either name works; mix-and-match within the same file is fine. Both legacy
+files and new files using the PSS/E names continue to parse without changes.
 
 ---
 
@@ -64,13 +130,6 @@ After the contingency analysis completes, the slack bus is restored to its origi
 
 After the power flow solves, the application checks if the slack bus generator output exceeds its Pmax rating. If the required generation exceeds capacity, the contingency is marked as failed with a warning message:
 
-```
-WARNING: Slack bus 80 generator output (475.3 MW) exceeds capacity (400.0 MW)
-Insufficient generation capacity for contingency GN_69_1
-```
-
-This ensures realistic results - a contingency that requires more generation than available capacity is properly flagged as a failure.
-
 ### Island Detection
 
 The application detects network islands (disconnected portions) caused by branch contingencies:
@@ -90,23 +149,89 @@ for contingencies that ran to completion are included. Calculations that failed
 either because of a numerical instability or because the calculations failed to
 converge are not included in the results. The output files are described below.
 
-**success.txt**: This file summarizes the results of each contingency and
-reports 1) whether the contingency calculation successfully ran to completion,
-2) whether a violation was found (bus, branch, or both), and 3) whether any
-buses were isolated.
+### CSV outputs (`outputFormat=csv_flat` / `csv_delta`)
 
-Example output:
-```
-contingency: 1 success: true violation: none
-contingency: 2 success: true violation: branch
-contingency: 3 success: true violation: none warning: isolated
-contingency: 4 success: false
+When `outputFormat` is set to `csv_flat` or `csv_delta`, the application writes
+per-(contingency, branch) rows for downstream statistical analysis instead of
+the aggregated `.txt` files described later in this section. All file names
+below use the value of `outputFile` as a prefix; the default prefix is
+`ca_results`.
+
+**`<outputFile>_delta.csv`** *(`outputFormat=csv_delta` only)* — wide-form,
+one row per (contingency, monitored branch) joining base + contingency state
+on the same row. This is the format most downstream consumers prefer because
+each row is self-contained (no separate base-case join needed).
+
+| # | Column | Notes |
+|---|---|---|
+| 1 | `event_idx` | 0 = base case (only if a base row is emitted), 1..N = contingencies in input-deck order |
+| 2 | `contingency` | contingency name from the input XML (`base_case` for the base) |
+| 3 | `type` | `branch` or `generator` — what kind of contingency was tripped |
+| 4–6 | `from_bus`, `to_bus`, `ckt` | Identity of the **monitored branch** in the row (not the tripped element) |
+| 7–8 | `base_kv_from`, `base_kv_to` | Endpoint base kV |
+| 9–10 | `area_from`, `area_to` | PSS/E area numbers |
+| 11 | `base_rate_mva` | Always rate-A (PSS/E "normal" rating) |
+| 12 | `cont_rate_mva` | Rating selected by `contingencyRating` (default C, with A→B→C fallback if zero/missing) |
+| 13–14 | `base_p_mw`, `cont_p_mw` | Real-power flow before / after contingency |
+| 15–16 | `base_q_mvar`, `cont_q_mvar` | Reactive-power flow before / after |
+| 17–18 | `base_mva`, `cont_mva` | `sqrt(P² + Q²)` before / after |
+| 19 | `base_loading_pct` | `base_mva / base_rate_mva × 100` |
+| 20 | `cont_loading_pct` | `cont_mva / cont_rate_mva × 100` |
+| 21–22 | `v_from_base`, `v_from_cont` | From-bus voltage magnitude (pu) before / after |
+| 23–24 | `v_to_base`, `v_to_cont` | To-bus voltage magnitude (pu) before / after |
+| 25–28 | `ang_from_base`, `ang_from_cont`, `ang_to_base`, `ang_to_cont` | Bus angles (deg) |
+| 29–30 | `d_angle_base`, `d_angle_cont` | `ang_from − ang_to` before / after |
+| 31 | `cont_event_facility` | Identifier of the **tripped element** in this contingency (e.g. `[area] from to ckt` for branch trips, `gen <bus> <id>` for gen trips) |
+
+**`<outputFile>_flat.csv`** *(`outputFormat=csv_flat` only)* — long-form,
+one row per (case, branch). Columns: `event_idx, contingency, from_bus,
+to_bus, ckt, p_from_mw, q_from_mvar, mva_from, rate_mva, loading_percent,
+viol, v_from_pu, v_to_pu, ang_from_deg, ang_to_deg`. `rate_mva` is rate-A
+on `event_idx=0` rows, the configured `contingencyRating` on contingency
+rows.
+
+**`<outputFile>_buses.csv`** *(both `csv_flat` and `csv_delta`)* — bus
+metadata sidecar so the per-branch files can stay narrow. Columns:
+`bus_id, bus_name, base_kv, area, zone, owner, area_name, zone_name,
+owner_name`.
+
+**`<outputFile>_convergence.csv`** *(every `outputFormat`)* — one row per
+contingency. Columns: `event_idx, contingency, type, status, iterations,
+final_tolerance, max_p_bus, max_p_mismatch, max_q_bus, max_q_mismatch`.
+Failed/divergent contingencies appear here even though they're omitted
+from `_delta.csv` / `_flat.csv`.
+
+When monitor filters are active, the data-row count of `_delta.csv` /
+`_flat.csv` equals `|monitored branches| × |converged contingencies|`.
+
+#### Pandas quickstart
+
+```python
+import pandas as pd
+df = pd.read_csv("my_run_delta.csv")
+df[df.cont_loading_pct >= 90.0]                 # overloaded branches
+df.assign(dv=df.v_from_cont - df.v_from_base) \
+  .nsmallest(20, "dv")[["contingency","from_bus","dv"]]
 ```
 
-- `success: true` - Power flow converged and slack capacity is within limits
-- `success: false` - Power flow failed, island detected, or slack capacity exceeded
-- `violation: none/bus/branch` - Whether voltage or thermal limits were violated
-- `warning: isolated` - One or more buses were isolated (lone bus or island)
+---
+
+### Aggregated `.txt` outputs (`writeStats=true`, default)
+
+The remaining files in this section are produced by the StatBlock summary
+pipeline, controlled by the `writeStats` option (default `true`). They
+contain per-element statistics (mean / RMS / min / max) aggregated **across
+all contingencies**, not per-contingency rows. Set `writeStats=false` to
+skip them when csv_flat / csv_delta output is sufficient.
+
+The set of files emitted is fixed; their names are not configurable. With
+`writeStats=true` you get: `vmag.txt`, `vmag_mm.txt`, `vang.txt`,
+`vang_mm.txt`, `pgen.txt`, `pgen_mm.txt`, `qgen.txt`, `qgen_mm.txt`,
+`pflow.txt`, `pflow_mm.txt`, `qflow.txt`, `qflow_mm.txt`, `perf_mm.txt`,
+`perf_sum.txt`, `line_flt_cnt.txt`. The file `pq_change_cnt.txt` is also
+written when `qlim=true`. Per-contingency convergence/status is reported
+via the `_convergence.csv` sidecar described above, which is written for
+every `outputFormat`.
 
 **vmag.txt**: This file contains the average value of the voltage magnitude for
 non-PV buses. It also contains the RMS fluctuations of the voltage magnitude

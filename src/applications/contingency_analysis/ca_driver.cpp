@@ -15,6 +15,11 @@
  * - Q-limit support integration
  * @date  2026-01-31
  *
+ * @updated Yousu Chen
+ * - csv_flat / csv_delta per-(contingency,branch) outputs
+ * - monitorBranchesFile / monitorAreas / monitorKvMin/Max filters
+ * @date  2026-06-21
+ *
  * @brief Driver for contingency analysis calculation that make use of the
  *        powerflow module to implement individual power flow simulations for
  *        each contingency. The different contingencies are distributed across
@@ -777,9 +782,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     std::string status;
   };
   std::vector<ConvRow> localConvRows;
-  bool emitConv = (outputFormat == "csv" ||
-                   outputFormat == "csv_flat" ||
-                   outputFormat == "csv_delta");
+  // _convergence.csv: written for every outputFormat.
+  bool emitConv = true;
 
   // Lambda: parse current solved flow_str/vr_str and stream one CSV row
   // per branch into the rank's .part file. Called once per converged case
