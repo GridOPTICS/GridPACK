@@ -274,6 +274,22 @@ bool SEFactoryModule::reportMeasurement(int idx, std::string& details)
   return found;
 }
 
+std::set<int> SEFactoryModule::getPseudoResidualIndices()
+{
+  std::vector<int> idxs;
+  int numBus = p_network->numBuses();
+  for (int i = 0; i < numBus; i++) {
+    dynamic_cast<SEBus*>(p_network->getBus(i).get())
+      ->getPseudoResidualIndices(idxs);
+  }
+  int numBranch = p_network->numBranches();
+  for (int i = 0; i < numBranch; i++) {
+    dynamic_cast<SEBranch*>(p_network->getBranch(i).get())
+      ->getPseudoResidualIndices(idxs);
+  }
+  return std::set<int>(idxs.begin(), idxs.end());
+}
+
 void SEFactoryModule::setVoltageLimits(double v_min, double v_max, bool enforce)
 {
   int numBus = p_network->numBuses();

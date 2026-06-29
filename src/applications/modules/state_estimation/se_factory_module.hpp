@@ -23,6 +23,7 @@
 #ifndef _se_factory_module_h_
 #define _se_factory_module_h_
 
+#include <set>
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
@@ -84,6 +85,16 @@ class SEFactoryModule
      * @return true if measurement found, false otherwise
      */
     bool reportMeasurement(int idx, std::string& details);
+
+    /**
+     * Collect the set of residual-vector indices that correspond to
+     * pseudo-measurements on this rank. Pseudo-measurements (e.g.
+     * zero-injection equations injected at 3W-xfmr dummy star buses) must
+     * be excluded from bad-data detection — removing them would leave the
+     * dummy bus unobservable. Built in one pass; bad-data detection should
+     * call this once per iteration and check membership inline.
+     */
+    std::set<int> getPseudoResidualIndices();
 
     /**
      * Set voltage limits for all buses

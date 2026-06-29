@@ -52,6 +52,10 @@ struct Measurement
   char p_ckt[3];
   double p_value;
   double p_deviation;
+  // Pseudo-measurements (e.g. zero-injection equations injected at 3W-xfmr
+  // dummy star buses) must be excluded from bad-data detection — removing
+  // them would leave the dummy bus unobservable.
+  bool p_isPseudo;
 };
 
 class SEBus
@@ -332,6 +336,13 @@ class SEBus
      */
     bool checkResidualIndex(int idx, bool report);
     bool getResidualDetails(int idx, char* buffer);
+    bool isResidualPseudo(int idx, bool &isPseudo);
+
+    /**
+     * Append all residual indices owned by this bus whose measurement is
+     * a pseudo-measurement. Used by detectBadData() to skip pseudos.
+     */
+    void getPseudoResidualIndices(std::vector<int> &out);
 
     /**
      * Pre-check measurements for suspicious values
@@ -775,6 +786,12 @@ class SEBranch
      */
     bool checkResidualIndex(int idx, bool report);
     bool getResidualDetails(int idx, char* buffer);
+    bool isResidualPseudo(int idx, bool &isPseudo);
+
+    /**
+     * Append pseudo-measurement residual indices owned by this branch.
+     */
+    void getPseudoResidualIndices(std::vector<int> &out);
 
     bool vectorValues(ComplexType *values); 
     

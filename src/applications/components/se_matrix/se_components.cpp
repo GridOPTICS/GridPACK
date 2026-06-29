@@ -375,7 +375,7 @@ void gridpack::state_estimation::SEBus::load(
         p_qmin.push_back(qmin);
         p_qmax.push_back(qmax);
         if (gstatus == 1) {
-          p_v = vs; //reset initial PV voltage to set voltage
+          // VS may be at a remote IREG bus; not a valid SE initial guess for p_v.
           if (itype == 2) p_isPV = true;
         }
       }
@@ -1429,6 +1429,27 @@ bool gridpack::state_estimation::SEBus::getResidualDetails(int idx, char* buffer
   return false;
 }
 
+bool gridpack::state_estimation::SEBus::isResidualPseudo(int idx, bool &isPseudo)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_vecZidx[i] == idx) {
+      isPseudo = p_meas[i].p_isPseudo;
+      return true;
+    }
+  }
+  return false;
+}
+
+void gridpack::state_estimation::SEBus::getPseudoResidualIndices(
+    std::vector<int> &out)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_meas[i].p_isPseudo) out.push_back(p_vecZidx[i]);
+  }
+}
+
 /**
  * Return the values of the residual vector
  * @param values: pointer to vector values
@@ -1584,6 +1605,27 @@ bool gridpack::state_estimation::SEBranch::getResidualDetails(int idx, char* buf
     }
   }
   return false;
+}
+
+bool gridpack::state_estimation::SEBranch::isResidualPseudo(int idx, bool &isPseudo)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_vecZidx[i] == idx) {
+      isPseudo = p_meas[i].p_isPseudo;
+      return true;
+    }
+  }
+  return false;
+}
+
+void gridpack::state_estimation::SEBranch::getPseudoResidualIndices(
+    std::vector<int> &out)
+{
+  int nsize = p_vecZidx.size();
+  for (int i = 0; i < nsize; i++) {
+    if (p_meas[i].p_isPseudo) out.push_back(p_vecZidx[i]);
+  }
 }
 
 /**

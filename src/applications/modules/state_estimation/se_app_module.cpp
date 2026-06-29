@@ -130,11 +130,13 @@ std::vector<gridpack::state_estimation::Measurement>
         int busid;
         measurements[idx]->get("Bus", &busid);
         gridpack::state_estimation::Measurement measurement;
+        memset(&measurement, 0, sizeof(measurement));
         strcpy(measurement.p_type,meas_type.c_str());
         measurement.p_busid = busid;
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
-        ret.push_back(measurement); 
+        measurement.p_isPseudo = false;
+        ret.push_back(measurement);
       } else if (meas_type == "PIJ" || meas_type == "PJI" ||
           meas_type == "QIJ" || meas_type == "QJI" ||
           meas_type == "IIJ" || meas_type == "IJI") {
@@ -152,14 +154,16 @@ std::vector<gridpack::state_estimation::Measurement>
           ckt = ckt.substr(0, 2);
         }
         gridpack::state_estimation::Measurement measurement;
+        memset(&measurement, 0, sizeof(measurement));
         strcpy(measurement.p_type,meas_type.c_str());
         measurement.p_fbusid = fbusid;
         measurement.p_tbusid = tbusid;
         strcpy(measurement.p_ckt,ckt.c_str());
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
+        measurement.p_isPseudo = false;
         ret.push_back(measurement);
-      } 
+      }
     }
   }
   return ret;
@@ -364,9 +368,45 @@ void gridpack::state_estimation::SEAppModule::readMeasurements(void)
   if (cursor) cursor->children(measurements);
   std::vector<gridpack::state_estimation::Measurement>
     meas = getMeasurements(measurements);
-  
+
   // Add measurements to buses and branches
   p_factory->setMeasurements(meas);
+
+  // Inject zero-injection pseudo-measurements (PI=0, QI=0) at 3W-transformer
+  // dummy star buses so SE has equations to estimate their V/theta. Marked
+  // p_isPseudo=true so the bad-data detector won't remove them.
+  int nbus = p_network->numBuses();
+  int localDummyCount = 0;
+  for (int i = 0; i < nbus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    bool is3WDummy = false;
+    if (!p_network->getBusData(i)->getValue(BUS_3WINDING, &is3WDummy)
+        || !is3WDummy) continue;
+    int busNum = p_network->getOriginalBusIndex(i);
+    const char* types[2] = {"PI", "QI"};
+    for (int k = 0; k < 2; k++) {
+      gridpack::state_estimation::Measurement m;
+      memset(&m, 0, sizeof(m));
+      strcpy(m.p_type, types[k]);
+      m.p_busid = busNum;
+      m.p_value = 0.0;
+      m.p_deviation = 1.0e-4;
+      m.p_isPseudo = true;
+      p_network->getBus(i)->addMeasurement(m);
+    }
+    p_network->getBus(i)->sortMeasurements();
+    localDummyCount++;
+  }
+  int totalDummyCount = localDummyCount;
+  p_comm.sum(&totalDummyCount, 1);
+  if (totalDummyCount > 0) {
+    char buf[160];
+    snprintf(buf, sizeof(buf),
+        "Added zero-injection pseudo-measurements at %d 3-winding dummy "
+        "star buses (PI=0, QI=0, sigma=1e-4, excluded from bad-data).\n",
+        totalDummyCount);
+    p_busIO->header(buf);
+  }
 
   timer->stop(t_meas);
   timer->stop(t_total);
@@ -1919,7 +1959,11 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   p_factory->setMode(R_inv);
   gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
-  
+
+  // Build the pseudo-measurement residual-index set once per call. These
+  // indices are skipped by the bad-data flagging step below.
+  std::set<int> pseudoIdx = p_factory->getPseudoResidualIndices();
+
   // Calculate normalized residuals
   int size = Residual->size();
 
@@ -2089,8 +2133,13 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       // Increase threshold for previously flagged measurements - they need higher residuals to be flagged again
       effectiveThreshold = effectiveThreshold * pow(2.0, appearanceCount);
     }
-    
-    if (std::abs(normRes) > effectiveThreshold) {
+
+    // Pseudo-measurements (e.g. 3W-xfmr dummy-bus zero-injection equations)
+    // must never be flagged bad — removing them leaves the dummy bus
+    // unobservable.
+    bool isPseudo = (pseudoIdx.count(i) > 0);
+
+    if (!isPseudo && std::abs(normRes) > effectiveThreshold) {
       // If it exceeds even the higher threshold, add it to local bad indices
       localBadIndices.push_back(i);
 

@@ -141,6 +141,8 @@ void gridpack::parser::TransformerParser33::parse(
         data->addValue(BUS_NAME,cbuf);
         data->addValue(BUS_BASEKV,0.0);
         data->addValue(BUS_TYPE,1);
+        // Tag dummy star bus for downstream apps (e.g. SE pseudo-measurements).
+        data->addValue(BUS_3WINDING,true);
         int ival;
         p_busData[l_idx1]->getValue(BUS_AREA,&ival);
         data->addValue(BUS_AREA,ival);
