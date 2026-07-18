@@ -249,7 +249,10 @@ class DSFResult:
 
     def _flatten_row(self, t: float, obs: Tuple) -> List[float]:
         # obs = (vMag, vAng, rSpd, rAng, genP, genQ, fOnline[, busfreq])
-        vMag, vAng, rSpd, rAng, genP, genQ, fOnline = obs[:7]
+        # HADREC returns an empty tuple when the XML has no <observations>.
+        empty: list = []
+        padded = tuple(obs) + (empty,) * max(0, 7 - len(obs))
+        vMag, vAng, rSpd, rAng, genP, genQ, fOnline = padded[:7]
         busfreq = obs[7] if self.with_bus_freq and len(obs) > 7 else []
 
         row: List[float] = [t]
