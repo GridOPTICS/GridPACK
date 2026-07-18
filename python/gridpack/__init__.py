@@ -37,6 +37,10 @@ from .session import Session                              # noqa: E402
 from .powerflow import PowerFlow                          # noqa: E402
 from .dynamic_sim import DynamicSim, DynamicSimStepper    # noqa: E402
 from .results import PowerFlowResult, DSFResult           # noqa: E402
+from .state_estimation import (                            # noqa: E402
+    StateEstimation,
+    StateEstimationResult,
+)
 
 __all__ = [
     "Session",
@@ -45,4 +49,6 @@ __all__ = [
     "DynamicSim",
     "DynamicSimStepper",
     "DSFResult",
+    "StateEstimation",
+    "StateEstimationResult",
 ]
