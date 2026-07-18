@@ -451,6 +451,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   double violationSeverityThreshold = 1.0;
   cursor->get("violationSeverityThreshold", &violationSeverityThreshold);
   if (violationSeverityThreshold <= 0.0) violationSeverityThreshold = 1.0;
+  // Cap on top_pi / top_voltage_severity and roster arrays in _summary.json.
+  int topN = 20;
+  cursor->get("topN", &topN);
+  if (topN < 1) topN = 1;
+  if (topN > 10000) topN = 10000;
 
   // Set static flag for PFBus class BEFORE network creation.
   // This controls how Q values are reported in output functions:
@@ -621,6 +626,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   worstVHi.v_pu = -1e9;
   std::set<std::string> ctsWithBranchViol;
   std::set<std::string> ctsWithVoltageViol;
+  // Per-contingency composite indices. ctPi = sum(mva/rate)^2 across
+  // branches; ctVpi = sum(dev_pu)^2 across violated buses. Rank-local,
+  // reduced to world rank 0 in the summary block.
+  std::map<std::string, double> ctPi;
+  std::map<std::string, double> ctVpi;
+  auto accumBranchPi = [&](const std::string &ct_name,
+                           double mva, double rate) {
+    if (rate <= 0.0) return;
+    double r = mva / rate;
+    ctPi[ct_name] += r * r;
+  };
+  auto accumVoltagePi = [&](const std::string &ct_name, double dev_pu) {
+    ctVpi[ct_name] += dev_pu * dev_pu;
+  };
   auto openViolPart = [&]() {
     if (violPart.is_open()) return;
     violPart.open(violPartPath.c_str(), std::ios::out | std::ios::trunc);
@@ -690,6 +709,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       worstVHi.ct_name = ct_name;
     }
     ctsWithVoltageViol.insert(ct_name);
+    accumVoltagePi(ct_name, dev);
   };
 
   // (from, to, ckt) key shared by the monitor allowlist and base_cache.
@@ -954,6 +974,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       double flow_mva    = std::sqrt(p*p + q*q);
       double loading_pct = (rate_sel > 0.0) ? (flow_mva / rate_sel) * 100.0 : 0.0;
+      if (!is_base) accumBranchPi(ct_name, flow_mva, rate_sel);
       // Stream to _violations.csv for csv_flat runs (contingency rows only).
       if (!is_base && loading_pct > violationSeverityThreshold * 100.0) {
         double base_mva = 0.0;
@@ -1136,6 +1157,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       const BaseFlow &bf = it->second;
       double cont_mva     = std::sqrt(p*p + q*q);
       double cont_loading = (bf.cont_rate > 0.0) ? (cont_mva / bf.cont_rate) * 100.0 : 0.0;
+      accumBranchPi(ct_name, cont_mva, bf.cont_rate);
       // Stream to _violations.csv (delta path knows base_mva already).
       if (cont_loading > violationSeverityThreshold * 100.0) {
         emitBranchViolation(event_idx, ct_name, from, to, k.ckt,
@@ -1564,8 +1586,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   auto populateViolations = [&](gridpack::utility::ContingencyResult &ct,
                                 int event_idx) {
     const double threshPct = violationSeverityThreshold * 100.0;
+    // Gate PI on task_comm rank 0 so groupSize>1 doesn't double-count.
+    bool accumPi = (task_comm.rank() == 0);
     for (size_t bi = 0; bi < ct.solution.branches.size(); bi++) {
       const gridpack::utility::BranchResult &br = ct.solution.branches[bi];
+      if (accumPi) {
+        double mva_br = (br.mvaFrom > br.mvaTo) ? br.mvaFrom : br.mvaTo;
+        accumBranchPi(ct.name, mva_br, br.rateSelected);
+      }
       if (br.loadingPercent <= threshPct) continue;
       gridpack::utility::BranchViolation v;
       v.fromBus = br.fromBus;
@@ -2201,6 +2229,91 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       MPI_Send(&wvLo, sizeof(wvLo), MPI_BYTE, 0, 31, mpi_comm);
       MPI_Send(&wvHi, sizeof(wvHi), MPI_BYTE, 0, 32, mpi_comm);
     }
+
+    // Gather per-contingency PI/VPI/rosters to rank 0. One line per name:
+    //   <name>\t<pi>\t<vpi>\t<br_flag>\t<v_flag>\n
+    // Union locally over the four rank-local maps/sets first.
+    std::map<std::string, double> aggPi;
+    std::map<std::string, double> aggVpi;
+    std::set<std::string> aggBranchViol;
+    std::set<std::string> aggVoltageViol;
+    {
+      std::ostringstream localOut;
+      localOut << std::setprecision(10);
+      std::set<std::string> names;
+      for (std::map<std::string,double>::const_iterator it = ctPi.begin();
+           it != ctPi.end(); ++it) names.insert(it->first);
+      for (std::map<std::string,double>::const_iterator it = ctVpi.begin();
+           it != ctVpi.end(); ++it) names.insert(it->first);
+      for (std::set<std::string>::const_iterator it = ctsWithBranchViol.begin();
+           it != ctsWithBranchViol.end(); ++it) names.insert(*it);
+      for (std::set<std::string>::const_iterator it = ctsWithVoltageViol.begin();
+           it != ctsWithVoltageViol.end(); ++it) names.insert(*it);
+      for (std::set<std::string>::const_iterator it = names.begin();
+           it != names.end(); ++it) {
+        const std::string &nm = *it;
+        double pi  = 0.0, vpi = 0.0;
+        std::map<std::string,double>::const_iterator itP = ctPi.find(nm);
+        if (itP != ctPi.end()) pi = itP->second;
+        std::map<std::string,double>::const_iterator itV = ctVpi.find(nm);
+        if (itV != ctVpi.end()) vpi = itV->second;
+        int brFlag = ctsWithBranchViol.count(nm)  ? 1 : 0;
+        int vFlag  = ctsWithVoltageViol.count(nm) ? 1 : 0;
+        localOut << nm << '\t' << pi << '\t' << vpi << '\t'
+                 << brFlag << '\t' << vFlag << '\n';
+      }
+      std::string localBlob = localOut.str();
+      // Rank 0 seeds aggregates from its own local blob, then absorbs
+      // one blob per remote rank.
+      auto absorb = [&](const std::string &blob) {
+        size_t pos = 0;
+        while (pos < blob.size()) {
+          size_t eol = blob.find('\n', pos);
+          if (eol == std::string::npos) break;
+          std::string line = blob.substr(pos, eol - pos);
+          pos = eol + 1;
+          size_t t1 = line.find('\t');
+          size_t t2 = (t1 == std::string::npos) ? std::string::npos
+                                                : line.find('\t', t1 + 1);
+          size_t t3 = (t2 == std::string::npos) ? std::string::npos
+                                                : line.find('\t', t2 + 1);
+          size_t t4 = (t3 == std::string::npos) ? std::string::npos
+                                                : line.find('\t', t3 + 1);
+          if (t4 == std::string::npos) continue;
+          std::string nm = line.substr(0, t1);
+          double pi  = std::atof(line.substr(t1 + 1, t2 - t1 - 1).c_str());
+          double vpi = std::atof(line.substr(t2 + 1, t3 - t2 - 1).c_str());
+          int brF    = std::atoi(line.substr(t3 + 1, t4 - t3 - 1).c_str());
+          int vF     = std::atoi(line.substr(t4 + 1).c_str());
+          if (pi  != 0.0) aggPi[nm]  += pi;
+          if (vpi != 0.0) aggVpi[nm] += vpi;
+          if (brF) aggBranchViol.insert(nm);
+          if (vF)  aggVoltageViol.insert(nm);
+        }
+      };
+      if (world.rank() == 0) {
+        absorb(localBlob);
+        for (int p = 1; p < world.size(); p++) {
+          int len = 0;
+          MPI_Recv(&len, 1, MPI_INT, p, 33, mpi_comm, MPI_STATUS_IGNORE);
+          std::string remote;
+          remote.resize(len);
+          if (len > 0) {
+            MPI_Recv(&remote[0], len, MPI_CHAR, p, 34, mpi_comm,
+                     MPI_STATUS_IGNORE);
+          }
+          absorb(remote);
+        }
+      } else {
+        int len = static_cast<int>(localBlob.size());
+        MPI_Send(&len, 1, MPI_INT, 0, 33, mpi_comm);
+        if (len > 0) {
+          MPI_Send(const_cast<char*>(localBlob.c_str()), len, MPI_CHAR, 0, 34,
+                   mpi_comm);
+        }
+      }
+    }
+
     if (world.rank() == 0) {
       std::string sumFile = outputFile + "_summary.json";
       std::ofstream sout(sumFile.c_str());
@@ -2244,9 +2357,79 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
              << ", \"bus_id\": " << wvHi.bus_id
              << ", \"v_pu\": "         << std::setprecision(6) << wvHi.v_pu
              << ", \"deviation_pu\": " << std::setprecision(6) << wvHi.dev_pu
-             << "}\n";
+             << "},\n";
       } else {
-        sout << "null\n";
+        sout << "null,\n";
+      }
+      sout << "  \"top_n\": " << topN << ",\n";
+      auto emitNameArray = [&](const char *field,
+                               const std::set<std::string> &names) {
+        sout << "  \"" << field << "\": [";
+        int emitted = 0;
+        for (std::set<std::string>::const_iterator it = names.begin();
+             it != names.end() && emitted < topN; ++it, ++emitted) {
+          if (emitted) sout << ", ";
+          sout << "\"" << *it << "\"";
+        }
+        sout << "],\n";
+      };
+      emitNameArray("contingencies_with_branch_violation", aggBranchViol);
+      emitNameArray("contingencies_with_voltage_violation", aggVoltageViol);
+      // top_pi: contingencies sorted by composite PI (desc).
+      {
+        std::vector<std::pair<double, std::string> > byPi;
+        byPi.reserve(aggPi.size());
+        for (std::map<std::string,double>::const_iterator it = aggPi.begin();
+             it != aggPi.end(); ++it) {
+          byPi.push_back(std::make_pair(it->second, it->first));
+        }
+        std::sort(byPi.begin(), byPi.end(),
+                  [](const std::pair<double,std::string> &a,
+                     const std::pair<double,std::string> &b) {
+                    if (a.first != b.first) return a.first > b.first;
+                    return a.second < b.second;
+                  });
+        sout << "  \"top_pi\": [";
+        int emitted = 0;
+        for (size_t i = 0; i < byPi.size() && emitted < topN; ++i, ++emitted) {
+          if (emitted) sout << ",\n    ";
+          else         sout << "\n    ";
+          sout << "{\"contingency\": \"" << byPi[i].second << "\""
+               << ", \"pi\": " << std::setprecision(6) << byPi[i].first
+               << ", \"has_branch_violation\": "
+               << (aggBranchViol.count(byPi[i].second) ? "true" : "false")
+               << ", \"has_voltage_violation\": "
+               << (aggVoltageViol.count(byPi[i].second) ? "true" : "false")
+               << "}";
+        }
+        sout << (emitted ? "\n  ],\n" : "],\n");
+      }
+      // top_voltage_severity: sorted by sum(dev_pu^2) desc.
+      {
+        std::vector<std::pair<double, std::string> > byV;
+        byV.reserve(aggVpi.size());
+        for (std::map<std::string,double>::const_iterator it = aggVpi.begin();
+             it != aggVpi.end(); ++it) {
+          if (it->second > 0.0)
+            byV.push_back(std::make_pair(it->second, it->first));
+        }
+        std::sort(byV.begin(), byV.end(),
+                  [](const std::pair<double,std::string> &a,
+                     const std::pair<double,std::string> &b) {
+                    if (a.first != b.first) return a.first > b.first;
+                    return a.second < b.second;
+                  });
+        sout << "  \"top_voltage_severity\": [";
+        int emitted = 0;
+        for (size_t i = 0; i < byV.size() && emitted < topN; ++i, ++emitted) {
+          if (emitted) sout << ",\n    ";
+          else         sout << "\n    ";
+          sout << "{\"contingency\": \"" << byV[i].second << "\""
+               << ", \"voltage_severity_index\": "
+               << std::setprecision(6) << byV[i].first
+               << "}";
+        }
+        sout << (emitted ? "\n  ]\n" : "]\n");
       }
       sout << "}\n";
       sout.close();
