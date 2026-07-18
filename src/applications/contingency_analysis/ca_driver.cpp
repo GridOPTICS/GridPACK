@@ -410,9 +410,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Check for Q limit violations (qlim: true=enabled, false=disabled)
   bool check_Qlim = cursor->get("qlim", true);
   double qlim_deadband = cursor->get("qlimDeadband", 0.1);
-  // Output format: "json", "csv", or "text" (default)
+  // Output format: "text" (default), "json", "csv", "csv_flat", "csv_delta".
   std::string outputFormat = "text";
   cursor->get("outputFormat", &outputFormat);
+  if (outputFormat != "text" && outputFormat != "json" &&
+      outputFormat != "csv"  && outputFormat != "csv_flat" &&
+      outputFormat != "csv_delta") {
+    if (world.rank() == 0) {
+      printf("ERROR: unrecognized outputFormat='%s'. "
+             "Must be one of: text, json, csv, csv_flat, csv_delta. Aborting.\n",
+             outputFormat.c_str());
+    }
+    world.barrier();
+    MPI_Abort(static_cast<MPI_Comm>(world), 1);
+  }
   std::string outputFile = "ca_results";
   cursor->get("outputFile", &outputFile);
   // Optional CSV allowlist (from_bus,to_bus,ckt). Empty -> emit all.
@@ -626,11 +637,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   worstVHi.v_pu = -1e9;
   std::set<std::string> ctsWithBranchViol;
   std::set<std::string> ctsWithVoltageViol;
-  // Per-contingency composite indices. ctPi = sum(mva/rate)^2 across
-  // branches; ctVpi = sum(dev_pu)^2 across violated buses. Rank-local,
-  // reduced to world rank 0 in the summary block.
-  std::map<std::string, double> ctPi;
-  std::map<std::string, double> ctVpi;
+  // Rank-local per-ct composite indices; reduced to world 0 in summary.
+  std::map<std::string, double> ctPi;   // sum(mva/rate)^2 over branches
+  std::map<std::string, double> ctVpi;  // sum(dev_pu)^2 over violated buses
   auto accumBranchPi = [&](const std::string &ct_name,
                            double mva, double rate) {
     if (rate <= 0.0) return;
@@ -2173,9 +2182,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         if (ct.solution.convergence.converged) localCounters[1] += 1;
       }
     } else {
-      // text / csv_flat / csv_delta: count from convergence rows.
-      // status=="OK" is the authoritative converged flag; cs.converged can be
-      // stale from a prior solve on ISLANDED/NO_SLACK/DIVERGED paths.
+      // text/csv_flat/csv_delta: count from convergence rows. Use status
+      // rather than cs.converged, which can be stale on ISLANDED/DIVERGED.
       localCounters[0] = static_cast<long>(localConvRows.size());
       long conv = 0;
       for (size_t i = 0; i < localConvRows.size(); i++) {
@@ -2235,9 +2243,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       MPI_Send(&wvHi, sizeof(wvHi), MPI_BYTE, 0, 32, mpi_comm);
     }
 
-    // Gather per-contingency PI/VPI/rosters to rank 0. One line per name:
-    //   <name>\t<pi>\t<vpi>\t<br_flag>\t<v_flag>\n
-    // Union locally over the four rank-local maps/sets first.
+    // Gather per-ct PI/VPI/rosters to rank 0 as one text blob per rank.
+    // Line: name\tpi\tvpi\tbr_flag\tv_flag\n
     std::map<std::string, double> aggPi;
     std::map<std::string, double> aggVpi;
     std::set<std::string> aggBranchViol;
@@ -2268,8 +2275,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                  << brFlag << '\t' << vFlag << '\n';
       }
       std::string localBlob = localOut.str();
-      // Rank 0 seeds aggregates from its own local blob, then absorbs
-      // one blob per remote rank.
+      // Rank 0 absorbs its own blob then each remote rank's.
       auto absorb = [&](const std::string &blob) {
         size_t pos = 0;
         while (pos < blob.size()) {
