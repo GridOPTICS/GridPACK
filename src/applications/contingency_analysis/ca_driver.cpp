@@ -1247,7 +1247,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Collect base case results for export. csv_flat captures rows directly
   // in the hot loop and skips the heavyweight collectResults() path.
   gridpack::utility::PowerFlowResults baseCaseResults;
-  if (outputFormat == "json" || outputFormat == "csv") {
+  if (outputFormat == "json" || outputFormat == "csv" ||
+      outputFormat == "text") {
     baseCaseResults = pf_app.collectResults();
   }
   if (outputFormat == "csv_flat") {
@@ -1570,7 +1571,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Populated on rank 0 of each task_comm (only place collectResults ran).
   // Used to fill BranchViolation.baseMva/deltaMva during contingency reporting.
   std::map<BranchKey, double> baseMvaByKey;
-  if (outputFormat == "json" || outputFormat == "csv") {
+  if (outputFormat == "json" || outputFormat == "csv" ||
+      outputFormat == "text") {
     for (size_t bi = 0; bi < baseCaseResults.branches.size(); bi++) {
       const gridpack::utility::BranchResult &br = baseCaseResults.branches[bi];
       BranchKey k; k.from = br.fromBus; k.to = br.toBus; k.ckt = br.circuitId;
@@ -1758,8 +1760,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         bool ok1 = pf_app.checkVoltageViolations();
         bool ok2 = pf_app.checkLineOverloadViolations();
         bool ok = ok1 && ok2;
-        // Collect results for JSON/CSV export
-        if (outputFormat == "json" || outputFormat == "csv") {
+        // text mode runs the summary path but discards the per-ct struct.
+        if (outputFormat == "json" || outputFormat == "csv" ||
+            outputFormat == "text") {
           gridpack::utility::ContingencyResult ctResult;
           ctResult.name = events[task_id].p_name;
           ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
@@ -1767,7 +1770,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           ctResult.hasBranchViolation = !ok2;
           ctResult.solution = pf_app.collectResults();
           populateViolations(ctResult, static_cast<int>(task_id) + 1);
-          localContingencies.push_back(ctResult);
+          if (outputFormat != "text") localContingencies.push_back(ctResult);
         }
         if (outputFormat == "csv_flat") {
           captureFlatRows(task_id + 1, events[task_id].p_name, true, false);
@@ -2170,11 +2173,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         if (ct.solution.convergence.converged) localCounters[1] += 1;
       }
     } else {
-      // csv_flat / csv_delta: no ct list, count from convergence rows.
+      // text / csv_flat / csv_delta: count from convergence rows.
+      // status=="OK" is the authoritative converged flag; cs.converged can be
+      // stale from a prior solve on ISLANDED/NO_SLACK/DIVERGED paths.
       localCounters[0] = static_cast<long>(localConvRows.size());
       long conv = 0;
       for (size_t i = 0; i < localConvRows.size(); i++) {
-        if (localConvRows[i].cs.converged) conv++;
+        if (localConvRows[i].status == "OK") conv++;
       }
       localCounters[1] = conv;
     }
