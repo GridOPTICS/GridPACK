@@ -33,8 +33,16 @@ from . import state_estimation    # noqa: F401,E402
 from . import emt                 # noqa: F401,E402
 
 # High-level Python API.
-from .session import Session                    # noqa: E402
-from .powerflow import PowerFlow                # noqa: E402
-from .results import PowerFlowResult            # noqa: E402
+from .session import Session                              # noqa: E402
+from .powerflow import PowerFlow                          # noqa: E402
+from .dynamic_sim import DynamicSim, DynamicSimStepper    # noqa: E402
+from .results import PowerFlowResult, DSFResult           # noqa: E402
 
-__all__ = ["Session", "PowerFlow", "PowerFlowResult"]
+__all__ = [
+    "Session",
+    "PowerFlow",
+    "PowerFlowResult",
+    "DynamicSim",
+    "DynamicSimStepper",
+    "DSFResult",
+]

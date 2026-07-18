@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 def _try_import_pandas():
@@ -148,4 +148,230 @@ class PowerFlowResult:
                 f"input={self.input_file!r}>")
 
 
-__all__ = ["PowerFlowResult"]
+def _try_import_matplotlib():
+    try:
+        import matplotlib.pyplot as plt
+        return plt
+    except ImportError:  # pragma: no cover - only exercised without extras
+        return None
+
+
+# The seven parallel arrays returned by DSFullApp::getObservations.
+# Order comes from the pybind11 tuple in gridpack_ds.cpp::getObservations.
+_DSF_OBS_LABELS = (
+    "vmag", "vangle", "rspeed", "rangle", "genP", "genQ", "fOnline",
+)
+
+
+class DSFResult:
+    """Container for :class:`gridpack.DynamicSim` / :class:`DynamicSimStepper` output.
+
+    Holds:
+
+    * per-step time series of observations (list of tuples, one per step),
+    * the observation-list metadata (which generators / loads / buses were
+      configured under ``<observations>`` in the XML),
+    * a live reference to the underlying pybind11 ``DSFullApp`` so on-demand
+      queries (``get_generator_power``, ``get_bus_total_load_power``, ...)
+      continue to work until the parent wrapper closes.
+
+    The container itself is time-series first: each row is one simulation
+    step.  Use :meth:`to_dataframe` for a flattened DataFrame (requires
+    the ``[results]`` extra) or :meth:`plot` for a quick visualization
+    (requires the ``[plot]`` extra).
+    """
+
+    def __init__(
+        self,
+        dsapp,
+        *,
+        input_file: Optional[str] = None,
+        with_bus_freq: bool = False,
+    ) -> None:
+        self._dsapp = dsapp
+        self.input_file = input_file
+        self.with_bus_freq = with_bus_freq
+
+        # (time, obs-tuple) rows.  Populated by DynamicSim / DynamicSimStepper.
+        self.times: List[float] = []
+        self.observations: List[Tuple] = []
+
+        # Metadata from getObservationLists (populated lazily by the wrapper).
+        self.obs_gen_buses: List[int] = []
+        self.obs_gen_ids: List[str] = []
+        self.obs_load_buses: List[int] = []
+        self.obs_load_ids: List[str] = []
+        self.obs_bus_ids: List[int] = []
+        self.obs_bus_freq_ids: List[int] = []
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
+
+    def close(self) -> None:
+        """Drop the reference to the pybind11 application.
+
+        Called automatically when the parent wrapper closes.  Subsequent
+        queries that need the C++ app raise ``RuntimeError``; the
+        already-collected time series remains accessible.
+        """
+        self._dsapp = None
+
+    def _check(self):
+        if self._dsapp is None:
+            raise RuntimeError("DSFResult is closed")
+
+    # ------------------------------------------------------------------
+    # Time-series accessors
+    # ------------------------------------------------------------------
+
+    @property
+    def n_steps(self) -> int:
+        return len(self.observations)
+
+    def channel_names(self) -> List[str]:
+        """Flattened list of column names for :meth:`to_dataframe`."""
+        cols: List[str] = ["time"]
+        for bus, gid in zip(self.obs_gen_buses, self.obs_gen_ids):
+            gid_s = str(gid).strip() or "1"
+            cols.append(f"gen_{bus}_{gid_s}_rspeed")
+            cols.append(f"gen_{bus}_{gid_s}_rangle")
+            cols.append(f"gen_{bus}_{gid_s}_P")
+            cols.append(f"gen_{bus}_{gid_s}_Q")
+            cols.append(f"gen_{bus}_{gid_s}_online")
+        for bus in self.obs_bus_ids:
+            cols.append(f"bus_{bus}_vmag")
+            cols.append(f"bus_{bus}_vangle")
+        if self.with_bus_freq:
+            for bus in self.obs_bus_freq_ids:
+                cols.append(f"bus_{bus}_freq")
+        return cols
+
+    def _flatten_row(self, t: float, obs: Tuple) -> List[float]:
+        # obs = (vMag, vAng, rSpd, rAng, genP, genQ, fOnline[, busfreq])
+        vMag, vAng, rSpd, rAng, genP, genQ, fOnline = obs[:7]
+        busfreq = obs[7] if self.with_bus_freq and len(obs) > 7 else []
+
+        row: List[float] = [t]
+        n_gen = len(self.obs_gen_buses)
+        for i in range(n_gen):
+            row.append(float(rSpd[i]) if i < len(rSpd) else float("nan"))
+            row.append(float(rAng[i]) if i < len(rAng) else float("nan"))
+            row.append(float(genP[i]) if i < len(genP) else float("nan"))
+            row.append(float(genQ[i]) if i < len(genQ) else float("nan"))
+            row.append(float(fOnline[i]) if i < len(fOnline) else float("nan"))
+        n_bus = len(self.obs_bus_ids)
+        for i in range(n_bus):
+            row.append(float(vMag[i]) if i < len(vMag) else float("nan"))
+            row.append(float(vAng[i]) if i < len(vAng) else float("nan"))
+        if self.with_bus_freq:
+            for i in range(len(self.obs_bus_freq_ids)):
+                row.append(float(busfreq[i]) if i < len(busfreq) else float("nan"))
+        return row
+
+    def to_records(self) -> List[Dict[str, float]]:
+        """Return the time series as a list of ``{column: value}`` dicts."""
+        cols = self.channel_names()
+        rows = []
+        for t, obs in zip(self.times, self.observations):
+            values = self._flatten_row(t, obs)
+            rows.append(dict(zip(cols, values)))
+        return rows
+
+    def to_dataframe(self):
+        """Return the time series as a pandas DataFrame.
+
+        Requires the ``[results]`` extra (``pip install gridpack[results]``).
+        """
+        pd = _try_import_pandas()
+        if pd is None:
+            raise ImportError(
+                "pandas is not installed. Install with "
+                "'pip install gridpack[results]' or 'pip install pandas'."
+            )
+        cols = self.channel_names()
+        data = [self._flatten_row(t, obs)
+                for t, obs in zip(self.times, self.observations)]
+        return pd.DataFrame(data, columns=cols)
+
+    def to_csv(self, path: str) -> None:
+        """Write the collected time series to CSV.
+
+        Uses pandas if available, otherwise the stdlib ``csv`` module.
+        """
+        cols = self.channel_names()
+        pd = _try_import_pandas()
+        if pd is not None:
+            self.to_dataframe().to_csv(path, index=False)
+            return
+        import csv
+        with open(path, "w", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(cols)
+            for t, obs in zip(self.times, self.observations):
+                w.writerow(self._flatten_row(t, obs))
+
+    # ------------------------------------------------------------------
+    # Live query passthroughs (require the app to still be open)
+    # ------------------------------------------------------------------
+
+    def get_generator_power(self, bus_id: int, gen_id: str = "1"):
+        """Return ``(P, Q)`` for a generator, or ``None`` if not present."""
+        self._check()
+        return self._dsapp.getGeneratorPower(bus_id, gen_id)
+
+    def get_bus_total_load_power(self, bus_id: int):
+        """Return ``(P, Q)`` for a bus load, or ``None`` if not present."""
+        self._check()
+        return self._dsapp.getBusTotalLoadPower(bus_id)
+
+    # ------------------------------------------------------------------
+    # Plotting
+    # ------------------------------------------------------------------
+
+    def plot(self, channels: Optional[Sequence[str]] = None, *, ax=None):
+        """Plot one or more channels against time.
+
+        Requires the ``[plot]`` extra (``pip install gridpack[plot]``).
+
+        If ``channels`` is omitted, every generator's rotor speed
+        (``gen_<bus>_<id>_rspeed``) is plotted.
+        """
+        plt = _try_import_matplotlib()
+        if plt is None:
+            raise ImportError(
+                "matplotlib is not installed. Install with "
+                "'pip install gridpack[plot]' or 'pip install matplotlib'."
+            )
+        cols = self.channel_names()
+        if channels is None:
+            channels = [c for c in cols if c.endswith("_rspeed")]
+
+        if ax is None:
+            _, ax = plt.subplots()
+        rows = [self._flatten_row(t, obs)
+                for t, obs in zip(self.times, self.observations)]
+        col_idx = {c: i for i, c in enumerate(cols)}
+        t_idx = col_idx["time"]
+        times = [r[t_idx] for r in rows]
+        for ch in channels:
+            if ch not in col_idx:
+                raise KeyError(f"Unknown channel {ch!r}. "
+                               f"Available: {cols}")
+            j = col_idx[ch]
+            ax.plot(times, [r[j] for r in rows], label=ch)
+        ax.set_xlabel("time [s]")
+        ax.legend(loc="best", fontsize="small")
+        return ax
+
+    # ------------------------------------------------------------------
+    # Repr
+    # ------------------------------------------------------------------
+
+    def __repr__(self) -> str:
+        state = "closed" if self._dsapp is None else "open"
+        return (f"<DSFResult {state} steps={self.n_steps} "
+                f"gens={len(self.obs_gen_buses)} buses={len(self.obs_bus_ids)}>")
+
+
+__all__ = ["PowerFlowResult", "DSFResult"]
