@@ -15,7 +15,7 @@
 # Updated in March 2026, by Yousu Chen
 # -------------------------------------------------------------
 
-pybind11_add_module(gridpack
+pybind11_add_module(_gridpack
   gridpack.cpp
   gridpack_ds.cpp
   gridpack_emt.cpp
@@ -30,7 +30,6 @@ set(parallel_scripts
   ${CMAKE_CURRENT_SOURCE_DIR}/emt.py
   ${CMAKE_CURRENT_SOURCE_DIR}/pf.py
   ${CMAKE_CURRENT_SOURCE_DIR}/stes.py
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack_cli.py
 )
 
 if (ENABLE_ENVIRONMENT_FROM_COMM)
@@ -38,8 +37,8 @@ if (ENABLE_ENVIRONMENT_FROM_COMM)
 endif()
 
 add_definitions(${GRIDPACK_DEFINITIONS})
-target_include_directories(gridpack PRIVATE ${MPI_CXX_INCLUDE_DIRS})
-target_link_libraries(gridpack PRIVATE ${GRIDPACK_LIBS})
+target_include_directories(_gridpack PRIVATE ${MPI_CXX_INCLUDE_DIRS})
+target_link_libraries(_gridpack PRIVATE ${GRIDPACK_LIBS})
 
 install(FILES
   ${parallel_scripts}

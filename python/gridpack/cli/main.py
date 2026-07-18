@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -------------------------------------------------------------
-# file: gridpack_cli.py
+# file: gridpack/cli/main.py
 # -------------------------------------------------------------
 # Unified command-line interface for GridPACK Python applications.
 #

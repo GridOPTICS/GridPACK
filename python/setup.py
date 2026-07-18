@@ -63,7 +63,9 @@ setup(
     author_email='william.perkins@pnnl.gov',
     description='A Python interface to some GridPACK application modules',
     long_description='',
-    ext_modules=[CMakeExtension('gridpack')],
+    packages=['gridpack', 'gridpack.cli'],
+    package_dir={'gridpack': 'gridpack', 'gridpack.cli': 'gridpack/cli'},
+    ext_modules=[CMakeExtension('gridpack._gridpack')],
     cmdclass=dict(build_ext=CMakeBuild),
     install_requires=["mpi4py"],
     zip_safe=False,
@@ -78,11 +80,10 @@ setup(
         'src/emt.py',
         'src/pf.py',
         'src/stes.py',
-        'src/gridpack_cli.py',
     ],
     entry_points={
         'console_scripts': [
-            'gridpack=gridpack_cli:main',
+            'gridpack=gridpack.cli.main:main',
         ],
     },
     test_suite='nose.collector',

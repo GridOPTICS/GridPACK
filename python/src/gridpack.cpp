@@ -121,8 +121,8 @@ extern void init_gridpack_emt(py::module& gpm);
 extern void init_gridpack_pf(py::module& gpm);
 extern void init_gridpack_se(py::module& gpm);
 
-PYBIND11_MODULE(gridpack, gpm) {
-  gpm.doc() = "GridPACK Module";
+PYBIND11_MODULE(_gridpack, gpm) {
+  gpm.doc() = "GridPACK compiled bindings (private; re-exported via gridpack)";
 
 #ifdef RHEL_OPENMPI_HACK
   stupid_openmpi_hack();
