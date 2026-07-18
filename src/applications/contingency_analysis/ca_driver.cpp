@@ -644,14 +644,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   std::set<std::string> ctsWithBranchViol;
   std::set<std::string> ctsWithVoltageViol;
   // Rank-local per-ct composite indices; reduced to world 0 in summary.
-  //   ctPi  = sum(mva/rate)^2 over all monitored branches
-  //   ctVpi = sum((v-1)/dv)^2 over all energized buses (textbook voltage PI,
-  //           direction-aware denominator so v=Vmin and v=Vmax each score 1)
-  //   ctVdev = sum(v-limit)^2 over violated buses only (legacy "depth" metric,
-  //           kept for backward compatibility as voltage_deviation_index)
-  std::map<std::string, double> ctPi;
-  std::map<std::string, double> ctVpi;
-  std::map<std::string, double> ctVdev;
+  std::map<std::string, double> ctPi;             // sum(mva/rate)^2, all monitored branches
+  std::map<std::string, double> ctVpi;            // sum((v-1)/dv)^2, all energized buses
+  std::map<std::string, double> ctVdev;           // sum(v-limit)^2, violated buses only
+  std::map<std::string, double> ctWorstLoading;   // max loading_pct among violated branches
+  std::map<std::string, double> ctWorstVdevLo;    // most negative (v-Vmin), 0 if none
+  std::map<std::string, double> ctWorstVdevHi;    // most positive (v-Vmax), 0 if none
+  std::map<std::string, double> ctWorstVpuLo;     // v_pu that produced ctWorstVdevLo
+  std::map<std::string, double> ctWorstVpuHi;     // v_pu that produced ctWorstVdevHi
   auto accumBranchPi = [&](const std::string &ct_name,
                            double mva, double rate) {
     if (rate <= 0.0) return;
@@ -707,6 +707,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       worstBr.ct_name = ct_name;
     }
     ctsWithBranchViol.insert(ct_name);
+    double &pc = ctWorstLoading[ct_name];
+    if (loading_pct > pc) pc = loading_pct;
   };
   auto emitVoltageViolation = [&](int event_idx, const std::string &ct_name,
                                   int bus_id, double v_pu,
@@ -743,6 +745,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
     ctsWithVoltageViol.insert(ct_name);
     accumVoltageDev(ct_name, dev);
+    if (dev < 0.0) {
+      double &d = ctWorstVdevLo[ct_name];
+      if (dev < d) { d = dev; ctWorstVpuLo[ct_name] = v_pu; }
+    } else {
+      double &d = ctWorstVdevHi[ct_name];
+      if (dev > d) { d = dev; ctWorstVpuHi[ct_name] = v_pu; }
+    }
   };
 
   // (from, to, ckt) key shared by the monitor allowlist and base_cache.
@@ -2282,11 +2291,17 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       MPI_Send(&wvHi, sizeof(wvHi), MPI_BYTE, 0, 32, mpi_comm);
     }
 
-    // Gather per-ct PI/VPI/Vdev/rosters to rank 0 as one text blob per rank.
-    // Line: name\tbranch_pi\tvoltage_pi\tvoltage_dev\tbr_flag\tv_flag\n
+    // Gather per-ct PI/VPI/Vdev/rosters + per-ct worst-single-element data to
+    // rank 0 as one text blob per rank. Line has 10 tab-separated fields:
+    // name pi vpi vdev worstLoad worstVdevLo worstVpuLo worstVdevHi worstVpuHi br_flag v_flag
     std::map<std::string, double> aggPi;
     std::map<std::string, double> aggVpi;
     std::map<std::string, double> aggVdev;
+    std::map<std::string, double> aggWorstLoading;
+    std::map<std::string, double> aggWorstVdevLo;
+    std::map<std::string, double> aggWorstVpuLo;
+    std::map<std::string, double> aggWorstVdevHi;
+    std::map<std::string, double> aggWorstVpuHi;
     std::set<std::string> aggBranchViol;
     std::set<std::string> aggVoltageViol;
     {
@@ -2303,49 +2318,71 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
            it != ctsWithBranchViol.end(); ++it) names.insert(*it);
       for (std::set<std::string>::const_iterator it = ctsWithVoltageViol.begin();
            it != ctsWithVoltageViol.end(); ++it) names.insert(*it);
+      auto lookup = [](const std::map<std::string,double> &m,
+                       const std::string &k) -> double {
+        std::map<std::string,double>::const_iterator it = m.find(k);
+        return (it == m.end()) ? 0.0 : it->second;
+      };
       for (std::set<std::string>::const_iterator it = names.begin();
            it != names.end(); ++it) {
         const std::string &nm = *it;
-        double pi  = 0.0, vpi = 0.0, vdev = 0.0;
-        std::map<std::string,double>::const_iterator itP = ctPi.find(nm);
-        if (itP != ctPi.end()) pi = itP->second;
-        std::map<std::string,double>::const_iterator itV = ctVpi.find(nm);
-        if (itV != ctVpi.end()) vpi = itV->second;
-        std::map<std::string,double>::const_iterator itD = ctVdev.find(nm);
-        if (itD != ctVdev.end()) vdev = itD->second;
+        double pi   = lookup(ctPi,  nm);
+        double vpi  = lookup(ctVpi, nm);
+        double vdev = lookup(ctVdev, nm);
+        double wL   = lookup(ctWorstLoading, nm);
+        double wDLo = lookup(ctWorstVdevLo, nm);
+        double wVLo = lookup(ctWorstVpuLo,  nm);
+        double wDHi = lookup(ctWorstVdevHi, nm);
+        double wVHi = lookup(ctWorstVpuHi,  nm);
         int brFlag = ctsWithBranchViol.count(nm)  ? 1 : 0;
         int vFlag  = ctsWithVoltageViol.count(nm) ? 1 : 0;
         localOut << nm << '\t' << pi << '\t' << vpi << '\t' << vdev << '\t'
+                 << wL << '\t' << wDLo << '\t' << wVLo << '\t'
+                 << wDHi << '\t' << wVHi << '\t'
                  << brFlag << '\t' << vFlag << '\n';
       }
       std::string localBlob = localOut.str();
-      // Rank 0 absorbs its own blob then each remote rank's.
+      auto splitTabs = [](const std::string &line,
+                          std::vector<std::string> &out) {
+        out.clear();
+        size_t pos = 0;
+        while (pos <= line.size()) {
+          size_t t = line.find('\t', pos);
+          if (t == std::string::npos) {
+            out.push_back(line.substr(pos));
+            break;
+          }
+          out.push_back(line.substr(pos, t - pos));
+          pos = t + 1;
+        }
+      };
       auto absorb = [&](const std::string &blob) {
         size_t pos = 0;
+        std::vector<std::string> fields;
         while (pos < blob.size()) {
           size_t eol = blob.find('\n', pos);
           if (eol == std::string::npos) break;
           std::string line = blob.substr(pos, eol - pos);
           pos = eol + 1;
-          size_t t1 = line.find('\t');
-          size_t t2 = (t1 == std::string::npos) ? std::string::npos
-                                                : line.find('\t', t1 + 1);
-          size_t t3 = (t2 == std::string::npos) ? std::string::npos
-                                                : line.find('\t', t2 + 1);
-          size_t t4 = (t3 == std::string::npos) ? std::string::npos
-                                                : line.find('\t', t3 + 1);
-          size_t t5 = (t4 == std::string::npos) ? std::string::npos
-                                                : line.find('\t', t4 + 1);
-          if (t5 == std::string::npos) continue;
-          std::string nm = line.substr(0, t1);
-          double pi   = std::atof(line.substr(t1 + 1, t2 - t1 - 1).c_str());
-          double vpi  = std::atof(line.substr(t2 + 1, t3 - t2 - 1).c_str());
-          double vdev = std::atof(line.substr(t3 + 1, t4 - t3 - 1).c_str());
-          int brF     = std::atoi(line.substr(t4 + 1, t5 - t4 - 1).c_str());
-          int vF      = std::atoi(line.substr(t5 + 1).c_str());
+          splitTabs(line, fields);
+          if (fields.size() < 11) continue;
+          const std::string &nm = fields[0];
+          double pi   = std::atof(fields[1].c_str());
+          double vpi  = std::atof(fields[2].c_str());
+          double vdev = std::atof(fields[3].c_str());
+          double wL   = std::atof(fields[4].c_str());
+          double wDLo = std::atof(fields[5].c_str());
+          double wVLo = std::atof(fields[6].c_str());
+          double wDHi = std::atof(fields[7].c_str());
+          double wVHi = std::atof(fields[8].c_str());
+          int brF     = std::atoi(fields[9].c_str());
+          int vF      = std::atoi(fields[10].c_str());
           if (pi   != 0.0) aggPi[nm]   += pi;
           if (vpi  != 0.0) aggVpi[nm]  += vpi;
           if (vdev != 0.0) aggVdev[nm] += vdev;
+          if (wL > aggWorstLoading[nm])       aggWorstLoading[nm] = wL;
+          if (wDLo < aggWorstVdevLo[nm]) { aggWorstVdevLo[nm] = wDLo; aggWorstVpuLo[nm] = wVLo; }
+          if (wDHi > aggWorstVdevHi[nm]) { aggWorstVdevHi[nm] = wDHi; aggWorstVpuHi[nm] = wVHi; }
           if (brF) aggBranchViol.insert(nm);
           if (vF)  aggVoltageViol.insert(nm);
         }
@@ -2539,6 +2576,101 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                << ", \"has_voltage_violation\": "
                << (aggVoltageViol.count(byC[i].second) ? "true" : "false")
                << "}";
+        }
+        sout << (emitted ? "\n  ],\n" : "],\n");
+      }
+      // top_severe_contingencies: Group A (any violation) first, sorted by
+      // worst-single-element severity; Group B (no violations) after,
+      // sorted by composite_pi. Combined list capped at topN.
+      {
+        std::set<std::string> ctSet;
+        for (std::map<std::string,double>::const_iterator it = aggPi.begin();
+             it != aggPi.end(); ++it) ctSet.insert(it->first);
+        for (std::map<std::string,double>::const_iterator it = aggVpi.begin();
+             it != aggVpi.end(); ++it) ctSet.insert(it->first);
+        for (std::set<std::string>::const_iterator it = aggBranchViol.begin();
+             it != aggBranchViol.end(); ++it) ctSet.insert(*it);
+        for (std::set<std::string>::const_iterator it = aggVoltageViol.begin();
+             it != aggVoltageViol.end(); ++it) ctSet.insert(*it);
+        auto agg_get = [](const std::map<std::string,double> &m,
+                          const std::string &k) -> double {
+          std::map<std::string,double>::const_iterator it = m.find(k);
+          return (it == m.end()) ? 0.0 : it->second;
+        };
+        struct SevRow {
+          std::string name;
+          bool violated;
+          double sortKey;   // Group A: worst-single severity; Group B: composite_pi
+          double composite, branchPi, voltagePi;
+          double worstLoading;
+          double worstVpuLo, worstVdevLo;
+          double worstVpuHi, worstVdevHi;
+        };
+        std::vector<SevRow> groupA, groupB;
+        for (std::set<std::string>::const_iterator it = ctSet.begin();
+             it != ctSet.end(); ++it) {
+          SevRow r;
+          r.name = *it;
+          r.branchPi   = agg_get(aggPi, *it);
+          r.voltagePi  = agg_get(aggVpi, *it);
+          r.composite  = piBranchWeight * r.branchPi + piVoltageWeight * r.voltagePi;
+          r.worstLoading = agg_get(aggWorstLoading, *it);
+          r.worstVdevLo  = agg_get(aggWorstVdevLo,  *it);
+          r.worstVpuLo   = agg_get(aggWorstVpuLo,   *it);
+          r.worstVdevHi  = agg_get(aggWorstVdevHi,  *it);
+          r.worstVpuHi   = agg_get(aggWorstVpuHi,   *it);
+          bool hasBr = aggBranchViol.count(*it) > 0;
+          bool hasV  = aggVoltageViol.count(*it) > 0;
+          r.violated = hasBr || hasV;
+          if (r.violated) {
+            double s = 0.0;
+            if (r.worstLoading > 100.0) s = std::max(s, r.worstLoading - 100.0);
+            if (r.worstVdevLo  < 0.0)   s = std::max(s, std::abs(r.worstVdevLo)  * 1000.0);
+            if (r.worstVdevHi  > 0.0)   s = std::max(s, r.worstVdevHi * 1000.0);
+            r.sortKey = s;
+            groupA.push_back(r);
+          } else {
+            r.sortKey = r.composite;
+            if (r.sortKey > 0.0) groupB.push_back(r);
+          }
+        }
+        auto sevCmp = [](const SevRow &a, const SevRow &b) {
+          if (a.sortKey != b.sortKey) return a.sortKey > b.sortKey;
+          return a.name < b.name;
+        };
+        std::sort(groupA.begin(), groupA.end(), sevCmp);
+        std::sort(groupB.begin(), groupB.end(), sevCmp);
+        auto emitRow = [&](const SevRow &r, bool first) {
+          if (!first) sout << ",\n    ";
+          else        sout << "\n    ";
+          sout << "{\"contingency\": \"" << r.name << "\""
+               << ", \"group\": \"" << (r.violated ? "violated" : "stressed") << "\""
+               << ", \"composite_pi\": " << std::setprecision(6) << r.composite
+               << ", \"branch_pi\": "    << std::setprecision(6) << r.branchPi
+               << ", \"voltage_pi\": "   << std::setprecision(6) << r.voltagePi
+               << ", \"worst_branch_loading_percent\": "
+               << std::setprecision(2) << r.worstLoading
+               << ", \"worst_voltage_pu_low\": "
+               << std::setprecision(6) << r.worstVpuLo
+               << ", \"worst_voltage_deviation_pu_low\": "
+               << std::setprecision(6) << r.worstVdevLo
+               << ", \"worst_voltage_pu_high\": "
+               << std::setprecision(6) << r.worstVpuHi
+               << ", \"worst_voltage_deviation_pu_high\": "
+               << std::setprecision(6) << r.worstVdevHi
+               << ", \"has_branch_violation\": "
+               << (aggBranchViol.count(r.name) ? "true" : "false")
+               << ", \"has_voltage_violation\": "
+               << (aggVoltageViol.count(r.name) ? "true" : "false")
+               << "}";
+        };
+        sout << "  \"top_severe_contingencies\": [";
+        int emitted = 0;
+        for (size_t i = 0; i < groupA.size() && emitted < topN; ++i, ++emitted) {
+          emitRow(groupA[i], emitted == 0);
+        }
+        for (size_t i = 0; i < groupB.size() && emitted < topN; ++i, ++emitted) {
+          emitRow(groupB[i], emitted == 0);
         }
         sout << (emitted ? "\n  ]\n" : "]\n");
       }
