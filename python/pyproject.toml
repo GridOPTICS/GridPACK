@@ -75,3 +75,11 @@ zip-safe = false
 [tool.setuptools.package-dir]
 gridpack = "gridpack"
 "gridpack.cli" = "gridpack/cli"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+markers = [
+    "integration: exercises the compiled gridpack._gridpack extension (requires GRIDPACK_DIR / a live build)",
+    "mpi: needs mpiexec available on PATH",
+]
