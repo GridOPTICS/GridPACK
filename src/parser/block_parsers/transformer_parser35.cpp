@@ -634,14 +634,18 @@ void gridpack::parser::TransformerParser35::parse(
 
       /*
        * type: float
-       * BRANCH_RATE1-12
+       * BRANCH_RATE1-12; also mirror the first three into
+       * BRANCH_RATING_A/B/C for downstream consumers.
        */
-      p_branchData[l_idx]->addValue(BRANCH_RATE1,
-          atof(split_line3[3].c_str()),nelems);
-      p_branchData[l_idx]->addValue(BRANCH_RATE2,
-          atof(split_line3[4].c_str()),nelems);
-      p_branchData[l_idx]->addValue(BRANCH_RATE3,
-          atof(split_line3[5].c_str()),nelems);
+      double rate1 = atof(split_line3[3].c_str());
+      double rate2 = atof(split_line3[4].c_str());
+      double rate3 = atof(split_line3[5].c_str());
+      p_branchData[l_idx]->addValue(BRANCH_RATE1, rate1, nelems);
+      p_branchData[l_idx]->addValue(BRANCH_RATE2, rate2, nelems);
+      p_branchData[l_idx]->addValue(BRANCH_RATE3, rate3, nelems);
+      p_branchData[l_idx]->addValue(BRANCH_RATING_A, rate1, nelems);
+      p_branchData[l_idx]->addValue(BRANCH_RATING_B, rate2, nelems);
+      p_branchData[l_idx]->addValue(BRANCH_RATING_C, rate3, nelems);
       p_branchData[l_idx]->addValue(BRANCH_RATE4,
           atof(split_line3[6].c_str()),nelems);
       p_branchData[l_idx]->addValue(BRANCH_RATE5,
