@@ -365,6 +365,18 @@ class PFFactoryModule
      */
     void useRateB(bool flag);
 
+    /**
+     * Select which rating tier drives overload checks. 'A', 'B', 'C';
+     * A->B->C fallback when the picked tier is zero/missing.
+     */
+    void setContingencyRating(const std::string& rating);
+    std::string getContingencyRating() const { return p_contingencyRating; }
+
+    /**
+     * Rating for one branch element under the current tier + fallback.
+     */
+    double pickBranchRating(int branchLocalIdx, int elemIdx) const;
+
   private:
 
     NetworkPtr p_network;
@@ -381,6 +393,7 @@ class PFFactoryModule
     std::vector<Violation> p_violations;
 
     bool p_rateB;
+    std::string p_contingencyRating;  // "A" | "B" | "C" (default "A")
     double p_qlim_deadband;  // Q deadband (Mvar) for PV->PQ switch
 };
 

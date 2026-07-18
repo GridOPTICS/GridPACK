@@ -144,6 +144,7 @@ void ResultsExporter::writeBranchesJSON(std::ostream& out,
     out << indent << "    \"mva_from\": " << std::setprecision(4) << br.mvaFrom << ",\n";
     out << indent << "    \"mva_to\": " << std::setprecision(4) << br.mvaTo << ",\n";
     out << indent << "    \"rate_a_mva\": " << std::setprecision(4) << br.rateA << ",\n";
+    out << indent << "    \"rate_selected_mva\": " << std::setprecision(4) << br.rateSelected << ",\n";
     out << indent << "    \"loading_percent\": " << std::setprecision(2) << br.loadingPercent << "\n";
     out << indent << "  }";
     if (i + 1 < branches.size()) {
@@ -184,6 +185,52 @@ void ResultsExporter::writeGeneratorsJSON(std::ostream& out,
 }
 
 // -------------------------------------------------------------
+// writeViolationsJSON
+// -------------------------------------------------------------
+void ResultsExporter::writeViolationsJSON(std::ostream& out,
+    const std::vector<BranchViolation>& brViols,
+    const std::vector<VoltageViolation>& vViols,
+    const std::string& indent)
+{
+  out << std::fixed;
+  out << indent << "\"violations\": {\n";
+  out << indent << "  \"branches\": [";
+  for (size_t i = 0; i < brViols.size(); ++i) {
+    const BranchViolation& v = brViols[i];
+    out << (i == 0 ? "\n" : ",\n");
+    out << indent << "    {"
+        << "\"from_bus\": " << v.fromBus
+        << ", \"to_bus\": " << v.toBus
+        << ", \"circuit_id\": \"" << escapeJSON(v.circuitId) << "\""
+        << ", \"mva\": "             << std::setprecision(4) << v.mva
+        << ", \"rate_mva\": "        << std::setprecision(4) << v.rate
+        << ", \"loading_percent\": " << std::setprecision(2) << v.loadingPercent
+        << ", \"base_mva\": "        << std::setprecision(4) << v.baseMva
+        << ", \"delta_mva\": "       << std::setprecision(4) << v.deltaMva
+        << ", \"severity\": \"" << escapeJSON(v.severity) << "\""
+        << "}";
+  }
+  if (!brViols.empty()) out << "\n" << indent << "  ";
+  out << "],\n";
+  out << indent << "  \"voltages\": [";
+  for (size_t i = 0; i < vViols.size(); ++i) {
+    const VoltageViolation& v = vViols[i];
+    out << (i == 0 ? "\n" : ",\n");
+    out << indent << "    {"
+        << "\"bus_id\": " << v.busId
+        << ", \"v_pu\": "         << std::setprecision(6) << v.vPu
+        << ", \"limit_low\": "    << std::setprecision(4) << v.limitLow
+        << ", \"limit_high\": "   << std::setprecision(4) << v.limitHigh
+        << ", \"deviation_pu\": " << std::setprecision(6) << v.deviationPu
+        << ", \"severity\": \"" << escapeJSON(v.severity) << "\""
+        << "}";
+  }
+  if (!vViols.empty()) out << "\n" << indent << "  ";
+  out << "]\n";
+  out << indent << "}";
+}
+
+// -------------------------------------------------------------
 // writePFJSON
 // -------------------------------------------------------------
 void ResultsExporter::writePFJSON(std::ofstream& out,
@@ -221,23 +268,7 @@ void ResultsExporter::writeCAJSON(std::ofstream& out,
 
   out << "  \"contingencies\": [\n";
   for (size_t i = 0; i < r.contingencies.size(); ++i) {
-    const ContingencyResult& ct = r.contingencies[i];
-    out << "    {\n";
-    out << "      \"name\": \"" << escapeJSON(ct.name) << "\",\n";
-    out << "      \"type\": \"" << escapeJSON(ct.type) << "\",\n";
-    out << "      \"has_voltage_violation\": " << (ct.hasVoltageViolation ? "true" : "false") << ",\n";
-    out << "      \"has_branch_violation\": " << (ct.hasBranchViolation ? "true" : "false") << ",\n";
-    out << "      \"solution\": {\n";
-    writeConvergenceJSON(out, ct.solution.convergence, "        ");
-    out << ",\n";
-    writeBusesJSON(out, ct.solution.buses, "        ");
-    out << ",\n";
-    writeBranchesJSON(out, ct.solution.branches, "        ");
-    out << ",\n";
-    writeGeneratorsJSON(out, ct.solution.generators, "        ");
-    out << "\n";
-    out << "      }\n";
-    out << "    }";
+    writeContingencyResultJSON(out, r.contingencies[i]);
     if (i + 1 < r.contingencies.size()) {
       out << ",";
     }
@@ -320,7 +351,7 @@ void ResultsExporter::writePFCSV(const std::string& basename,
       out << "from_bus,to_bus,circuit_id,"
           << "p_from_mw,q_from_mvar,p_to_mw,q_to_mvar,"
           << "p_loss_mw,q_loss_mvar,"
-          << "mva_from,mva_to,rate_a_mva,loading_percent\n";
+          << "mva_from,mva_to,rate_a_mva,rate_selected_mva,loading_percent\n";
     }
 
     for (size_t i = 0; i < r.branches.size(); ++i) {
@@ -340,6 +371,7 @@ void ResultsExporter::writePFCSV(const std::string& basename,
           << std::setprecision(4) << br.mvaFrom << ","
           << std::setprecision(4) << br.mvaTo << ","
           << std::setprecision(4) << br.rateA << ","
+          << std::setprecision(4) << br.rateSelected << ","
           << std::setprecision(2) << br.loadingPercent << "\n";
     }
     out.close();
@@ -485,6 +517,8 @@ void ResultsExporter::writeContingencyResultJSON(std::ostream& out,
       << (ct.hasVoltageViolation ? "true" : "false") << ",\n";
   out << "      \"has_branch_violation\": "
       << (ct.hasBranchViolation ? "true" : "false") << ",\n";
+  writeViolationsJSON(out, ct.branchViolations, ct.voltageViolations, "      ");
+  out << ",\n";
   out << "      \"solution\": {\n";
   writeConvergenceJSON(out, ct.solution.convergence, "        ");
   out << ",\n";
