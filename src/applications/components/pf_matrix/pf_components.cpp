@@ -3571,7 +3571,16 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
 {
   gridpack::ComplexType vi, vj, Yii, Yij, s;
   s = ComplexType(0.0,0.0);
-  gridpack::powerflow::PFBus *bus1 = 
+  // Out-of-service line: getLineElements does not gate on status, so
+  // return zero to avoid a phantom flow from stale admittance.
+  int bsize = p_branch_status.size();
+  for (int i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      if (!p_branch_status[i]) return s;
+      break;
+    }
+  }
+  gridpack::powerflow::PFBus *bus1 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   vi = bus1->getComplexVoltage();
   gridpack::powerflow::PFBus *bus2 =
@@ -3592,6 +3601,14 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getReversePower(
 {
   gridpack::ComplexType vi, vj, Yjj, Yji, s;
   s = ComplexType(0.0,0.0);
+  // Out-of-service line: see getComplexPower.
+  int bsize = p_branch_status.size();
+  for (int i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      if (!p_branch_status[i]) return s;
+      break;
+    }
+  }
   gridpack::powerflow::PFBus *bus1 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   vi = bus1->getComplexVoltage();
