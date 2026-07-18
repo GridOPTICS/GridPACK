@@ -462,11 +462,17 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   double violationSeverityThreshold = 1.0;
   cursor->get("violationSeverityThreshold", &violationSeverityThreshold);
   if (violationSeverityThreshold <= 0.0) violationSeverityThreshold = 1.0;
-  // Cap on top_pi / top_voltage_severity and roster arrays in _summary.json.
+  // Cap on top_*_pi and roster arrays in _summary.json.
   int topN = 20;
   cursor->get("topN", &topN);
   if (topN < 1) topN = 1;
   if (topN > 10000) topN = 10000;
+  // Weights for composite_pi = piBranchWeight*branch_pi + piVoltageWeight*voltage_pi.
+  double piBranchWeight = 1.0, piVoltageWeight = 1.0;
+  cursor->get("piBranchWeight",  &piBranchWeight);
+  cursor->get("piVoltageWeight", &piVoltageWeight);
+  if (piBranchWeight  < 0.0) piBranchWeight  = 0.0;
+  if (piVoltageWeight < 0.0) piVoltageWeight = 0.0;
 
   // Set static flag for PFBus class BEFORE network creation.
   // This controls how Q values are reported in output functions:
@@ -638,16 +644,34 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   std::set<std::string> ctsWithBranchViol;
   std::set<std::string> ctsWithVoltageViol;
   // Rank-local per-ct composite indices; reduced to world 0 in summary.
-  std::map<std::string, double> ctPi;   // sum(mva/rate)^2 over branches
-  std::map<std::string, double> ctVpi;  // sum(dev_pu)^2 over violated buses
+  //   ctPi  = sum(mva/rate)^2 over all monitored branches
+  //   ctVpi = sum((v-1)/dv)^2 over all energized buses (textbook voltage PI,
+  //           direction-aware denominator so v=Vmin and v=Vmax each score 1)
+  //   ctVdev = sum(v-limit)^2 over violated buses only (legacy "depth" metric,
+  //           kept for backward compatibility as voltage_deviation_index)
+  std::map<std::string, double> ctPi;
+  std::map<std::string, double> ctVpi;
+  std::map<std::string, double> ctVdev;
   auto accumBranchPi = [&](const std::string &ct_name,
                            double mva, double rate) {
     if (rate <= 0.0) return;
     double r = mva / rate;
     ctPi[ct_name] += r * r;
   };
-  auto accumVoltagePi = [&](const std::string &ct_name, double dev_pu) {
-    ctVpi[ct_name] += dev_pu * dev_pu;
+  // Textbook voltage PI: normalize by the direction-aware half-band so a bus
+  // at Vmin or Vmax contributes 1.0 even when limits are asymmetric.
+  // Skip isolated (v<=0) and NaN/inf buses so numerical failures on a single
+  // bus don't poison the accumulator.
+  auto accumVoltagePi = [&](const std::string &ct_name, double v_pu) {
+    if (v_pu <= 0.0 || !std::isfinite(v_pu)) return;
+    double denom = (v_pu < 1.0) ? (1.0 - Vmin) : (Vmax - 1.0);
+    if (denom <= 0.0) return;
+    double r = (v_pu - 1.0) / denom;
+    ctVpi[ct_name] += r * r;
+  };
+  // Legacy deviation metric: (v-limit)^2 accrued only for violated buses.
+  auto accumVoltageDev = [&](const std::string &ct_name, double dev_pu) {
+    ctVdev[ct_name] += dev_pu * dev_pu;
   };
   auto openViolPart = [&]() {
     if (violPart.is_open()) return;
@@ -718,7 +742,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       worstVHi.ct_name = ct_name;
     }
     ctsWithVoltageViol.insert(ct_name);
-    accumVoltagePi(ct_name, dev);
+    accumVoltageDev(ct_name, dev);
   };
 
   // (from, to, ckt) key shared by the monitor allowlist and base_cache.
@@ -950,6 +974,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     char ct_name[24];
     std::strncpy(ct_name, name.c_str(), sizeof(ct_name) - 1);
     ct_name[sizeof(ct_name) - 1] = '\0';
+    // Accrue voltage PI on every energized bus in contingency rows only.
+    if (!is_base) {
+      for (std::map<int,std::pair<double,double> >::const_iterator vit =
+             vbymag_ang.begin(); vit != vbymag_ang.end(); ++vit) {
+        accumVoltagePi(ct_name, vit->second.first);
+      }
+    }
     for (size_t bi = 0; bi < b_strs.size(); bi++) {
       char ckt_buf[16] = {0};
       int viol = 0;
@@ -1144,6 +1175,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                  &bus_id, &angle, &vmag, &use_vmag, &changed) == 5) {
         vbymag_ang[bus_id] = std::make_pair(vmag, angle);
       }
+    }
+    // Accrue voltage PI on every energized bus in this contingency.
+    for (std::map<int,std::pair<double,double> >::const_iterator vit =
+           vbymag_ang.begin(); vit != vbymag_ang.end(); ++vit) {
+      accumVoltagePi(ct_name, vit->second.first);
     }
     for (size_t bi = 0; bi < b_strs.size(); bi++) {
       char ckt_buf[16] = {0};
@@ -1627,6 +1663,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       const gridpack::utility::BusResult &b = ct.solution.buses[bi];
       double v_pu = b.voltage;
       if (v_pu <= 0.0) continue;   // Skip isolated / not-solved buses.
+      // Voltage PI accrues on every energized bus (textbook form),
+      // gated on task_comm rank 0 to avoid double-count under groupSize>1.
+      if (accumPi) accumVoltagePi(ct.name, v_pu);
       bool lo = v_pu < Vmin, hi = v_pu > Vmax;
       if (!lo && !hi) continue;
       gridpack::utility::VoltageViolation vv;
@@ -2243,10 +2282,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       MPI_Send(&wvHi, sizeof(wvHi), MPI_BYTE, 0, 32, mpi_comm);
     }
 
-    // Gather per-ct PI/VPI/rosters to rank 0 as one text blob per rank.
-    // Line: name\tpi\tvpi\tbr_flag\tv_flag\n
+    // Gather per-ct PI/VPI/Vdev/rosters to rank 0 as one text blob per rank.
+    // Line: name\tbranch_pi\tvoltage_pi\tvoltage_dev\tbr_flag\tv_flag\n
     std::map<std::string, double> aggPi;
     std::map<std::string, double> aggVpi;
+    std::map<std::string, double> aggVdev;
     std::set<std::string> aggBranchViol;
     std::set<std::string> aggVoltageViol;
     {
@@ -2257,6 +2297,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
            it != ctPi.end(); ++it) names.insert(it->first);
       for (std::map<std::string,double>::const_iterator it = ctVpi.begin();
            it != ctVpi.end(); ++it) names.insert(it->first);
+      for (std::map<std::string,double>::const_iterator it = ctVdev.begin();
+           it != ctVdev.end(); ++it) names.insert(it->first);
       for (std::set<std::string>::const_iterator it = ctsWithBranchViol.begin();
            it != ctsWithBranchViol.end(); ++it) names.insert(*it);
       for (std::set<std::string>::const_iterator it = ctsWithVoltageViol.begin();
@@ -2264,14 +2306,16 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       for (std::set<std::string>::const_iterator it = names.begin();
            it != names.end(); ++it) {
         const std::string &nm = *it;
-        double pi  = 0.0, vpi = 0.0;
+        double pi  = 0.0, vpi = 0.0, vdev = 0.0;
         std::map<std::string,double>::const_iterator itP = ctPi.find(nm);
         if (itP != ctPi.end()) pi = itP->second;
         std::map<std::string,double>::const_iterator itV = ctVpi.find(nm);
         if (itV != ctVpi.end()) vpi = itV->second;
+        std::map<std::string,double>::const_iterator itD = ctVdev.find(nm);
+        if (itD != ctVdev.end()) vdev = itD->second;
         int brFlag = ctsWithBranchViol.count(nm)  ? 1 : 0;
         int vFlag  = ctsWithVoltageViol.count(nm) ? 1 : 0;
-        localOut << nm << '\t' << pi << '\t' << vpi << '\t'
+        localOut << nm << '\t' << pi << '\t' << vpi << '\t' << vdev << '\t'
                  << brFlag << '\t' << vFlag << '\n';
       }
       std::string localBlob = localOut.str();
@@ -2290,14 +2334,18 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                                                 : line.find('\t', t2 + 1);
           size_t t4 = (t3 == std::string::npos) ? std::string::npos
                                                 : line.find('\t', t3 + 1);
-          if (t4 == std::string::npos) continue;
+          size_t t5 = (t4 == std::string::npos) ? std::string::npos
+                                                : line.find('\t', t4 + 1);
+          if (t5 == std::string::npos) continue;
           std::string nm = line.substr(0, t1);
-          double pi  = std::atof(line.substr(t1 + 1, t2 - t1 - 1).c_str());
-          double vpi = std::atof(line.substr(t2 + 1, t3 - t2 - 1).c_str());
-          int brF    = std::atoi(line.substr(t3 + 1, t4 - t3 - 1).c_str());
-          int vF     = std::atoi(line.substr(t4 + 1).c_str());
-          if (pi  != 0.0) aggPi[nm]  += pi;
-          if (vpi != 0.0) aggVpi[nm] += vpi;
+          double pi   = std::atof(line.substr(t1 + 1, t2 - t1 - 1).c_str());
+          double vpi  = std::atof(line.substr(t2 + 1, t3 - t2 - 1).c_str());
+          double vdev = std::atof(line.substr(t3 + 1, t4 - t3 - 1).c_str());
+          int brF     = std::atoi(line.substr(t4 + 1, t5 - t4 - 1).c_str());
+          int vF      = std::atoi(line.substr(t5 + 1).c_str());
+          if (pi   != 0.0) aggPi[nm]   += pi;
+          if (vpi  != 0.0) aggVpi[nm]  += vpi;
+          if (vdev != 0.0) aggVdev[nm] += vdev;
           if (brF) aggBranchViol.insert(nm);
           if (vF)  aggVoltageViol.insert(nm);
         }
@@ -2386,7 +2434,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       };
       emitNameArray("contingencies_with_branch_violation", aggBranchViol);
       emitNameArray("contingencies_with_voltage_violation", aggVoltageViol);
-      // top_pi: contingencies sorted by composite PI (desc).
+      sout << "  \"pi_branch_weight\": "  << std::setprecision(4) << piBranchWeight  << ",\n";
+      sout << "  \"pi_voltage_weight\": " << std::setprecision(4) << piVoltageWeight << ",\n";
+      auto piCmp = [](const std::pair<double,std::string> &a,
+                      const std::pair<double,std::string> &b) {
+        if (a.first != b.first) return a.first > b.first;
+        return a.second < b.second;
+      };
+      // top_branch_pi: sum((mva/rate)^2) over monitored branches.
       {
         std::vector<std::pair<double, std::string> > byPi;
         byPi.reserve(aggPi.size());
@@ -2394,19 +2449,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
              it != aggPi.end(); ++it) {
           byPi.push_back(std::make_pair(it->second, it->first));
         }
-        std::sort(byPi.begin(), byPi.end(),
-                  [](const std::pair<double,std::string> &a,
-                     const std::pair<double,std::string> &b) {
-                    if (a.first != b.first) return a.first > b.first;
-                    return a.second < b.second;
-                  });
-        sout << "  \"top_pi\": [";
+        std::sort(byPi.begin(), byPi.end(), piCmp);
+        sout << "  \"top_branch_pi\": [";
         int emitted = 0;
         for (size_t i = 0; i < byPi.size() && emitted < topN; ++i, ++emitted) {
           if (emitted) sout << ",\n    ";
           else         sout << "\n    ";
           sout << "{\"contingency\": \"" << byPi[i].second << "\""
-               << ", \"pi\": " << std::setprecision(6) << byPi[i].first
+               << ", \"branch_pi\": " << std::setprecision(6) << byPi[i].first
                << ", \"has_branch_violation\": "
                << (aggBranchViol.count(byPi[i].second) ? "true" : "false")
                << ", \"has_voltage_violation\": "
@@ -2415,7 +2465,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         }
         sout << (emitted ? "\n  ],\n" : "],\n");
       }
-      // top_voltage_severity: sorted by sum(dev_pu^2) desc.
+      // top_voltage_pi: textbook voltage PI over all energized buses.
+      // Each entry also carries voltage_deviation_index = sum((v-limit)^2)
+      // over violated buses, the legacy metric.
       {
         std::vector<std::pair<double, std::string> > byV;
         byV.reserve(aggVpi.size());
@@ -2424,20 +2476,68 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           if (it->second > 0.0)
             byV.push_back(std::make_pair(it->second, it->first));
         }
-        std::sort(byV.begin(), byV.end(),
-                  [](const std::pair<double,std::string> &a,
-                     const std::pair<double,std::string> &b) {
-                    if (a.first != b.first) return a.first > b.first;
-                    return a.second < b.second;
-                  });
-        sout << "  \"top_voltage_severity\": [";
+        std::sort(byV.begin(), byV.end(), piCmp);
+        sout << "  \"top_voltage_pi\": [";
         int emitted = 0;
         for (size_t i = 0; i < byV.size() && emitted < topN; ++i, ++emitted) {
           if (emitted) sout << ",\n    ";
           else         sout << "\n    ";
+          double vdev = 0.0;
+          std::map<std::string,double>::const_iterator itD =
+            aggVdev.find(byV[i].second);
+          if (itD != aggVdev.end()) vdev = itD->second;
           sout << "{\"contingency\": \"" << byV[i].second << "\""
-               << ", \"voltage_severity_index\": "
+               << ", \"voltage_pi\": "
                << std::setprecision(6) << byV[i].first
+               << ", \"voltage_deviation_index\": "
+               << std::setprecision(6) << vdev
+               << ", \"has_voltage_violation\": "
+               << (aggVoltageViol.count(byV[i].second) ? "true" : "false")
+               << "}";
+        }
+        sout << (emitted ? "\n  ],\n" : "],\n");
+      }
+      // top_composite_pi: piBranchWeight*branch_pi + piVoltageWeight*voltage_pi.
+      {
+        std::set<std::string> ctSet;
+        for (std::map<std::string,double>::const_iterator it = aggPi.begin();
+             it != aggPi.end(); ++it) ctSet.insert(it->first);
+        for (std::map<std::string,double>::const_iterator it = aggVpi.begin();
+             it != aggVpi.end(); ++it) ctSet.insert(it->first);
+        std::vector<std::pair<double, std::string> > byC;
+        byC.reserve(ctSet.size());
+        for (std::set<std::string>::const_iterator it = ctSet.begin();
+             it != ctSet.end(); ++it) {
+          double bp = 0.0, vp = 0.0;
+          std::map<std::string,double>::const_iterator itP = aggPi.find(*it);
+          if (itP != aggPi.end()) bp = itP->second;
+          std::map<std::string,double>::const_iterator itV = aggVpi.find(*it);
+          if (itV != aggVpi.end()) vp = itV->second;
+          double cpi = piBranchWeight * bp + piVoltageWeight * vp;
+          if (cpi > 0.0) byC.push_back(std::make_pair(cpi, *it));
+        }
+        std::sort(byC.begin(), byC.end(), piCmp);
+        sout << "  \"top_composite_pi\": [";
+        int emitted = 0;
+        for (size_t i = 0; i < byC.size() && emitted < topN; ++i, ++emitted) {
+          if (emitted) sout << ",\n    ";
+          else         sout << "\n    ";
+          double bp = 0.0, vp = 0.0;
+          std::map<std::string,double>::const_iterator itP = aggPi.find(byC[i].second);
+          if (itP != aggPi.end()) bp = itP->second;
+          std::map<std::string,double>::const_iterator itV = aggVpi.find(byC[i].second);
+          if (itV != aggVpi.end()) vp = itV->second;
+          sout << "{\"contingency\": \"" << byC[i].second << "\""
+               << ", \"composite_pi\": "
+               << std::setprecision(6) << byC[i].first
+               << ", \"branch_pi\": "
+               << std::setprecision(6) << bp
+               << ", \"voltage_pi\": "
+               << std::setprecision(6) << vp
+               << ", \"has_branch_violation\": "
+               << (aggBranchViol.count(byC[i].second) ? "true" : "false")
+               << ", \"has_voltage_violation\": "
+               << (aggVoltageViol.count(byC[i].second) ? "true" : "false")
                << "}";
         }
         sout << (emitted ? "\n  ]\n" : "]\n");
