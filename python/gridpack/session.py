@@ -16,6 +16,12 @@ from __future__ import annotations
 from typing import Optional
 
 
+# Module-level guard: GridPACK's C++ Environment (MPI + PETSc + GA)
+# cannot be initialized twice within the same process.  We enforce
+# process-lifetime singleton semantics.
+_SESSION_CREATED = False
+
+
 class Session:
     """MPI-safe context manager for a GridPACK run.
 
@@ -58,6 +64,15 @@ class Session:
         # module before the compiled extension is ready.
         from . import _gridpack as _ext
 
+        global _SESSION_CREATED
+        if _SESSION_CREATED:
+            raise RuntimeError(
+                "gridpack.Session has already been created in this process. "
+                "GridPACK's MPI/PETSc/GA environment can only be initialized "
+                "once per process; instantiate Session at most once."
+            )
+        _SESSION_CREATED = True
+
         # Environment MUST be constructed first.
         if mpi_comm is None:
             self._env = _ext.Environment()
@@ -70,6 +85,28 @@ class Session:
             _ext.NoPrint().setStatus(True)
 
         self._closed = False
+
+        # Registry of wrapper objects to close before we release the
+        # Environment.  Wrappers with pybind11-owned resources (PowerFlow,
+        # DynamicSim, etc.) call `session.register(self)` at construction
+        # and their `.close()` runs here in LIFO order.  This makes the
+        # teardown order explicit -- app modules first, then Communicator,
+        # then Environment -- matching the deletion order in pf.py.
+        self._resources: list = []
+
+    # ------------------------------------------------------------------
+    # Resource registry
+    # ------------------------------------------------------------------
+
+    def register(self, resource) -> None:
+        """Register a wrapper to be ``close()``'d when this Session closes.
+
+        The registry is drained in LIFO order.  A resource that has
+        already been closed by the user is skipped safely as long as
+        its ``close()`` is idempotent.
+        """
+        self._require_open()
+        self._resources.append(resource)
 
     # ------------------------------------------------------------------
     # Accessors
@@ -118,9 +155,23 @@ class Session:
 
         Idempotent.  Safe to call from ``__exit__`` and from ``__del__``.
         After close(), most Session methods raise ``RuntimeError``.
+
+        Runs a full ``gc.collect()`` before releasing MPI-owning objects
+        so that any pybind11 app modules with cyclic references (e.g.
+        PowerFlow -> PowerFlowResult -> pfapp) are torn down while the
+        Communicator and Environment are still alive.  Without this,
+        Python's shutdown sequence can release the app module after the
+        Environment is gone, causing MPI_Iprobe on MPI_COMM_NULL crashes.
         """
         if self._closed:
             return
+        # Drain registered resources in LIFO order.
+        while self._resources:
+            r = self._resources.pop()
+            try:
+                r.close()
+            except Exception:
+                pass
         # Release Communicator first, Environment last.  Matching the
         # explicit ordering used in the standalone scripts (pf.py etc.)
         # avoids MPI finalize / Boost.MPI teardown crashes.
