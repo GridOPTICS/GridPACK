@@ -648,10 +648,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   std::map<std::string, double> ctVpi;            // sum((v-1)/dv)^2, all energized buses
   std::map<std::string, double> ctVdev;           // sum(v-limit)^2, violated buses only
   std::map<std::string, double> ctWorstLoading;   // max loading_pct among violated branches
-  std::map<std::string, double> ctWorstVdevLo;    // most negative (v-Vmin), 0 if none
-  std::map<std::string, double> ctWorstVdevHi;    // most positive (v-Vmax), 0 if none
-  std::map<std::string, double> ctWorstVpuLo;     // v_pu that produced ctWorstVdevLo
-  std::map<std::string, double> ctWorstVpuHi;     // v_pu that produced ctWorstVdevHi
+  std::map<std::string, double> ctWorstVdev;      // max |v - limit| among violated buses
+  std::map<std::string, double> ctWorstVpu;       // v_pu that produced ctWorstVdev
   auto accumBranchPi = [&](const std::string &ct_name,
                            double mva, double rate) {
     if (rate <= 0.0) return;
@@ -745,13 +743,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
     ctsWithVoltageViol.insert(ct_name);
     accumVoltageDev(ct_name, dev);
-    if (dev < 0.0) {
-      double &d = ctWorstVdevLo[ct_name];
-      if (dev < d) { d = dev; ctWorstVpuLo[ct_name] = v_pu; }
-    } else {
-      double &d = ctWorstVdevHi[ct_name];
-      if (dev > d) { d = dev; ctWorstVpuHi[ct_name] = v_pu; }
-    }
+    double absDev = std::abs(dev);
+    double &d = ctWorstVdev[ct_name];
+    if (absDev > d) { d = absDev; ctWorstVpu[ct_name] = v_pu; }
   };
 
   // (from, to, ckt) key shared by the monitor allowlist and base_cache.
@@ -2291,17 +2285,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       MPI_Send(&wvHi, sizeof(wvHi), MPI_BYTE, 0, 32, mpi_comm);
     }
 
-    // Gather per-ct PI/VPI/Vdev/rosters + per-ct worst-single-element data to
-    // rank 0 as one text blob per rank. Line has 10 tab-separated fields:
-    // name pi vpi vdev worstLoad worstVdevLo worstVpuLo worstVdevHi worstVpuHi br_flag v_flag
+    // Gather per-ct PI/VPI/Vdev/rosters + per-ct worst-single-element data.
+    // Blob line: name pi vpi vdev worstLoad worstVdevAbs worstVpu br_flag v_flag
     std::map<std::string, double> aggPi;
     std::map<std::string, double> aggVpi;
     std::map<std::string, double> aggVdev;
     std::map<std::string, double> aggWorstLoading;
-    std::map<std::string, double> aggWorstVdevLo;
-    std::map<std::string, double> aggWorstVpuLo;
-    std::map<std::string, double> aggWorstVdevHi;
-    std::map<std::string, double> aggWorstVpuHi;
+    std::map<std::string, double> aggWorstVdev;    // unsigned max |v-limit|
+    std::map<std::string, double> aggWorstVpu;     // v_pu that produced aggWorstVdev
     std::set<std::string> aggBranchViol;
     std::set<std::string> aggVoltageViol;
     {
@@ -2326,19 +2317,16 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       for (std::set<std::string>::const_iterator it = names.begin();
            it != names.end(); ++it) {
         const std::string &nm = *it;
-        double pi   = lookup(ctPi,  nm);
-        double vpi  = lookup(ctVpi, nm);
-        double vdev = lookup(ctVdev, nm);
-        double wL   = lookup(ctWorstLoading, nm);
-        double wDLo = lookup(ctWorstVdevLo, nm);
-        double wVLo = lookup(ctWorstVpuLo,  nm);
-        double wDHi = lookup(ctWorstVdevHi, nm);
-        double wVHi = lookup(ctWorstVpuHi,  nm);
+        double pi    = lookup(ctPi,  nm);
+        double vpi   = lookup(ctVpi, nm);
+        double vdev  = lookup(ctVdev, nm);
+        double wL    = lookup(ctWorstLoading, nm);
+        double wDabs = lookup(ctWorstVdev, nm);
+        double wV    = lookup(ctWorstVpu,  nm);
         int brFlag = ctsWithBranchViol.count(nm)  ? 1 : 0;
         int vFlag  = ctsWithVoltageViol.count(nm) ? 1 : 0;
         localOut << nm << '\t' << pi << '\t' << vpi << '\t' << vdev << '\t'
-                 << wL << '\t' << wDLo << '\t' << wVLo << '\t'
-                 << wDHi << '\t' << wVHi << '\t'
+                 << wL << '\t' << wDabs << '\t' << wV << '\t'
                  << brFlag << '\t' << vFlag << '\n';
       }
       std::string localBlob = localOut.str();
@@ -2365,24 +2353,21 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           std::string line = blob.substr(pos, eol - pos);
           pos = eol + 1;
           splitTabs(line, fields);
-          if (fields.size() < 11) continue;
+          if (fields.size() < 9) continue;
           const std::string &nm = fields[0];
-          double pi   = std::atof(fields[1].c_str());
-          double vpi  = std::atof(fields[2].c_str());
-          double vdev = std::atof(fields[3].c_str());
-          double wL   = std::atof(fields[4].c_str());
-          double wDLo = std::atof(fields[5].c_str());
-          double wVLo = std::atof(fields[6].c_str());
-          double wDHi = std::atof(fields[7].c_str());
-          double wVHi = std::atof(fields[8].c_str());
-          int brF     = std::atoi(fields[9].c_str());
-          int vF      = std::atoi(fields[10].c_str());
+          double pi    = std::atof(fields[1].c_str());
+          double vpi   = std::atof(fields[2].c_str());
+          double vdev  = std::atof(fields[3].c_str());
+          double wL    = std::atof(fields[4].c_str());
+          double wDabs = std::atof(fields[5].c_str());
+          double wV    = std::atof(fields[6].c_str());
+          int brF      = std::atoi(fields[7].c_str());
+          int vF       = std::atoi(fields[8].c_str());
           if (pi   != 0.0) aggPi[nm]   += pi;
           if (vpi  != 0.0) aggVpi[nm]  += vpi;
           if (vdev != 0.0) aggVdev[nm] += vdev;
-          if (wL > aggWorstLoading[nm])       aggWorstLoading[nm] = wL;
-          if (wDLo < aggWorstVdevLo[nm]) { aggWorstVdevLo[nm] = wDLo; aggWorstVpuLo[nm] = wVLo; }
-          if (wDHi > aggWorstVdevHi[nm]) { aggWorstVdevHi[nm] = wDHi; aggWorstVpuHi[nm] = wVHi; }
+          if (wL > aggWorstLoading[nm])                aggWorstLoading[nm] = wL;
+          if (wDabs > aggWorstVdev[nm]) { aggWorstVdev[nm] = wDabs; aggWorstVpu[nm] = wV; }
           if (brF) aggBranchViol.insert(nm);
           if (vF)  aggVoltageViol.insert(nm);
         }
@@ -2488,8 +2473,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           double sortKey;   // Group A: worst-single severity; Group B: composite_pi
           double composite, branchPi, voltagePi;
           double worstLoading;
-          double worstVpuLo, worstVdevLo;
-          double worstVpuHi, worstVdevHi;
+          double worstVpu, worstVdev;   // worstVdev is unsigned |v - limit|
         };
         std::vector<SevRow> groupA, groupB;
         for (std::set<std::string>::const_iterator it = ctSet.begin();
@@ -2500,18 +2484,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           r.voltagePi  = agg_get(aggVpi, *it);
           r.composite  = piBranchWeight * r.branchPi + piVoltageWeight * r.voltagePi;
           r.worstLoading = agg_get(aggWorstLoading, *it);
-          r.worstVdevLo  = agg_get(aggWorstVdevLo,  *it);
-          r.worstVpuLo   = agg_get(aggWorstVpuLo,   *it);
-          r.worstVdevHi  = agg_get(aggWorstVdevHi,  *it);
-          r.worstVpuHi   = agg_get(aggWorstVpuHi,   *it);
+          r.worstVdev  = agg_get(aggWorstVdev, *it);
+          r.worstVpu   = agg_get(aggWorstVpu,  *it);
           bool hasBr = aggBranchViol.count(*it) > 0;
           bool hasV  = aggVoltageViol.count(*it) > 0;
           r.violated = hasBr || hasV;
           if (r.violated) {
             double s = 0.0;
             if (r.worstLoading > 100.0) s = std::max(s, r.worstLoading - 100.0);
-            if (r.worstVdevLo  < 0.0)   s = std::max(s, std::abs(r.worstVdevLo)  * 1000.0);
-            if (r.worstVdevHi  > 0.0)   s = std::max(s, r.worstVdevHi * 1000.0);
+            if (r.worstVdev    > 0.0)   s = std::max(s, r.worstVdev * 1000.0);
             r.sortKey = s;
             groupA.push_back(r);
           } else {
@@ -2529,25 +2510,18 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           if (!first) sout << ",\n    ";
           else        sout << "\n    ";
           bool hasBr = aggBranchViol.count(r.name) > 0;
-          bool hasVLo = r.worstVdevLo < 0.0;
-          bool hasVHi = r.worstVdevHi > 0.0;
+          bool hasV  = r.worstVdev > 0.0;
           sout << "{\"contingency\": \"" << r.name << "\""
                << ", \"composite_pi\": " << std::setprecision(6) << r.composite
                << ", \"worst_branch_loading_percent\": ";
           if (hasBr) sout << std::setprecision(2) << r.worstLoading;
           else       sout << "null";
-          sout << ", \"worst_voltage_pu_low\": ";
-          if (hasVLo) sout << std::setprecision(6) << r.worstVpuLo;
-          else        sout << "null";
-          sout << ", \"worst_voltage_deviation_pu_low\": ";
-          if (hasVLo) sout << std::setprecision(6) << r.worstVdevLo;
-          else        sout << "null";
-          sout << ", \"worst_voltage_pu_high\": ";
-          if (hasVHi) sout << std::setprecision(6) << r.worstVpuHi;
-          else        sout << "null";
-          sout << ", \"worst_voltage_deviation_pu_high\": ";
-          if (hasVHi) sout << std::setprecision(6) << r.worstVdevHi;
-          else        sout << "null";
+          sout << ", \"worst_voltage_pu\": ";
+          if (hasV) sout << std::setprecision(6) << r.worstVpu;
+          else      sout << "null";
+          sout << ", \"worst_voltage_deviation_pu\": ";
+          if (hasV) sout << std::setprecision(6) << r.worstVdev;
+          else      sout << "null";
           sout << ", \"has_branch_violation\": "
                << (hasBr ? "true" : "false")
                << ", \"has_voltage_violation\": "
