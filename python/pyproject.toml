@@ -1,4 +1,77 @@
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel", "mpi4py"]
+requires = ["setuptools>=61.0", "wheel", "mpi4py"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "gridpack"
+version = "3.6.1"
+description = "Python interface to the GridPACK power system simulation framework"
+readme = "README.md"
+requires-python = ">=3.9,<3.14"
+license = { file = "LICENSE" }
+authors = [
+    { name = "W.A. Perkins", email = "william.perkins@pnnl.gov" },
+    { name = "Yousu Chen", email = "yousu.chen@pnnl.gov" },
+]
+keywords = [
+    "power-systems",
+    "power-flow",
+    "dynamic-simulation",
+    "state-estimation",
+    "contingency-analysis",
+    "hpc",
+    "mpi",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "mpi4py",
+]
+
+[project.optional-dependencies]
+results = [
+    "pandas",
+    "numpy",
+]
+plot = [
+    "matplotlib",
+]
+all = [
+    "pandas",
+    "numpy",
+    "matplotlib",
+]
+test = [
+    "pytest",
+    "pandas",
+    "numpy",
+]
+
+[project.scripts]
+gridpack = "gridpack.cli.main:main"
+
+[project.urls]
+Homepage = "https://www.gridpack.org"
+Repository = "https://github.com/GridOPTICS/GridPACK"
+Documentation = "https://gridpack.readthedocs.io"
+
+[tool.setuptools]
+packages = ["gridpack", "gridpack.cli"]
+zip-safe = false
+
+[tool.setuptools.package-dir]
+gridpack = "gridpack"
+"gridpack.cli" = "gridpack/cli"
