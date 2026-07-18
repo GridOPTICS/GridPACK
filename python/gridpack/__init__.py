@@ -37,3 +37,9 @@ for _name in (
     _sys.modules[__name__ + "." + _name] = _sub
 
 del _name, _sub, _sys
+
+# High-level Python API.  Low-level pybind11 access continues to work
+# through the re-exports above.
+from .session import Session  # noqa: E402
+
+__all__ = ["Session"]
