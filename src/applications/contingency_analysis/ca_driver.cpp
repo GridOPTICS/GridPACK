@@ -446,6 +446,12 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
     contingencyRating = "C";
   }
+  // Severity threshold for violation reporting; loading% > threshold*100
+  // is flagged. Default 1.0 (100% of rate).
+  double violationSeverityThreshold = 1.0;
+  cursor->get("violationSeverityThreshold", &violationSeverityThreshold);
+  if (violationSeverityThreshold <= 0.0) violationSeverityThreshold = 1.0;
+
   // Set static flag for PFBus class BEFORE network creation.
   // This controls how Q values are reported in output functions:
   // - When check_Qlim = false: output uses calculated Q from p_Qinj
@@ -580,6 +586,111 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   std::ofstream flatPart;
   size_t flatRowCount = 0;
+
+  // Per-rank _violations.csv stream. Populated by every output format that
+  // knows about violations (json/csv via populateViolations; csv_flat/csv_delta
+  // inline where loading_pct is already computed). Emit-branch and emit-voltage
+  // helpers below open the file lazily.
+  std::string violPartPath;
+  {
+    std::ostringstream oss;
+    oss << outputFile << "_violations." << world.rank() << ".part";
+    violPartPath = oss.str();
+  }
+  std::ofstream violPart;
+  size_t violRowCount = 0;
+  // Running summary state; captureFlatRows / captureDeltaRows / populateViolations
+  // all funnel through the emit helpers, so this stays consistent regardless of
+  // outputFormat.
+  struct WorstBranchState {
+    double loading_pct = 0.0;
+    int from = 0, to = 0;
+    std::string ckt;
+    std::string ct_name;
+  };
+  struct WorstVoltageState {
+    double v_pu = 1.0;
+    double dev_pu = 0.0;   // signed
+    int bus_id = 0;
+    std::string ct_name;
+  };
+  WorstBranchState worstBr;
+  WorstVoltageState worstVLo;
+  worstVLo.v_pu = 1e9;   // start high so any real low value beats it
+  WorstVoltageState worstVHi;
+  worstVHi.v_pu = -1e9;
+  std::set<std::string> ctsWithBranchViol;
+  std::set<std::string> ctsWithVoltageViol;
+  auto openViolPart = [&]() {
+    if (violPart.is_open()) return;
+    violPart.open(violPartPath.c_str(), std::ios::out | std::ios::trunc);
+    violPart << std::fixed;
+  };
+  // Row schema (same 11 columns for branch and voltage rows; unused fields blank):
+  //   event_idx,contingency,type,element,mva_or_vpu,rate_or_limit,loading_percent,
+  //   base_mva,delta,severity
+  // For branch: element = "from-to-ckt", mva_or_vpu = MVA,      rate_or_limit = rate,
+  //             loading_percent = %,     base_mva/delta populated,        severity.
+  // For voltage: element = "bus_id",     mva_or_vpu = v_pu,     rate_or_limit = "low/high",
+  //             loading_percent = "",    base_mva = "",  delta = signed dev pu.
+  auto emitBranchViolation = [&](int event_idx, const std::string &ct_name,
+                                 int from, int to, const std::string &ckt,
+                                 double mva, double rate,
+                                 double loading_pct, double base_mva) {
+    openViolPart();
+    const char *sev = (loading_pct >= 105.0) ? "critical" : "warning";
+    violPart << event_idx << "," << ct_name << ",branch,"
+             << from << "-" << to << "-" << ckt << ","
+             << std::setprecision(4) << mva << ","
+             << std::setprecision(4) << rate << ","
+             << std::setprecision(2) << loading_pct << ","
+             << std::setprecision(4) << base_mva << ","
+             << std::setprecision(4) << (mva - base_mva) << ","
+             << sev << "\n";
+    violRowCount++;
+    if (loading_pct > worstBr.loading_pct) {
+      worstBr.loading_pct = loading_pct;
+      worstBr.from = from; worstBr.to = to;
+      worstBr.ckt = ckt;
+      worstBr.ct_name = ct_name;
+    }
+    ctsWithBranchViol.insert(ct_name);
+  };
+  auto emitVoltageViolation = [&](int event_idx, const std::string &ct_name,
+                                  int bus_id, double v_pu,
+                                  double lo, double hi) {
+    openViolPart();
+    double dev = (v_pu < lo) ? (v_pu - lo)
+               : (v_pu > hi) ? (v_pu - hi)
+               : 0.0;
+    if (dev == 0.0) return;
+    const char *sev = (std::abs(dev) >= 0.05) ? "critical" : "warning";
+    // rate_or_limit column holds "low_pu:high_pu" for voltage rows.
+    std::ostringstream limits;
+    limits << std::setprecision(4) << std::fixed << lo << ":" << hi;
+    violPart << event_idx << "," << ct_name << ",voltage,"
+             << bus_id << ","
+             << std::setprecision(6) << v_pu << ","
+             << limits.str() << ","
+             << ","                                 // loading_percent blank
+             << ","                                 // base_mva blank
+             << std::setprecision(6) << dev << ","
+             << sev << "\n";
+    violRowCount++;
+    if (dev < 0.0 && v_pu < worstVLo.v_pu) {
+      worstVLo.v_pu = v_pu;
+      worstVLo.dev_pu = dev;
+      worstVLo.bus_id = bus_id;
+      worstVLo.ct_name = ct_name;
+    }
+    if (dev > 0.0 && v_pu > worstVHi.v_pu) {
+      worstVHi.v_pu = v_pu;
+      worstVHi.dev_pu = dev;
+      worstVHi.bus_id = bus_id;
+      worstVHi.ct_name = ct_name;
+    }
+    ctsWithVoltageViol.insert(ct_name);
+  };
 
   // (from, to, ckt) key shared by the monitor allowlist and base_cache.
   struct BranchKey {
@@ -843,6 +954,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       double flow_mva    = std::sqrt(p*p + q*q);
       double loading_pct = (rate_sel > 0.0) ? (flow_mva / rate_sel) * 100.0 : 0.0;
+      // Stream to _violations.csv for csv_flat runs (contingency rows only).
+      if (!is_base && loading_pct > violationSeverityThreshold * 100.0) {
+        double base_mva = 0.0;
+        // No base_cache in csv_flat mode; look up in the persistent map built
+        // by populateBaseCache-style capture below? We don't have one for
+        // csv_flat, so base_mva stays 0 -- delta will just equal mva.
+        emitBranchViolation(event_idx, ct_name, from, to, ckt,
+                            flow_mva, rate_sel, loading_pct, base_mva);
+      }
       std::map<int, std::pair<double,double> >::const_iterator vf =
         vbymag_ang.find(from);
       std::map<int, std::pair<double,double> >::const_iterator vt =
@@ -1016,6 +1136,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       const BaseFlow &bf = it->second;
       double cont_mva     = std::sqrt(p*p + q*q);
       double cont_loading = (bf.cont_rate > 0.0) ? (cont_mva / bf.cont_rate) * 100.0 : 0.0;
+      // Stream to _violations.csv (delta path knows base_mva already).
+      if (cont_loading > violationSeverityThreshold * 100.0) {
+        emitBranchViolation(event_idx, ct_name, from, to, k.ckt,
+                            cont_mva, bf.cont_rate, cont_loading, bf.mva);
+      }
       std::map<int, std::pair<double,double> >::const_iterator vf =
         vbymag_ang.find(from);
       std::map<int, std::pair<double,double> >::const_iterator vt =
@@ -1059,6 +1184,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   //  Set minimum and maximum voltage limits on all buses
   pf_app.setVoltageLimits(Vmin, Vmax);
+  // Route CA violation checks and loadingPercent through the same rating tier.
+  pf_app.setContingencyRating(contingencyRating);
   // Solve the base power flow on every task communicator. Abort if it fails.
   bool baseSolveOk = false;
   try {
@@ -1417,6 +1544,66 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Local contingency results storage for JSON/CSV export
   std::vector<gridpack::utility::ContingencyResult> localContingencies;
 
+  // Base-case per-element MVA lookup, keyed on (from,to,ckt).
+  // Populated on rank 0 of each task_comm (only place collectResults ran).
+  // Used to fill BranchViolation.baseMva/deltaMva during contingency reporting.
+  std::map<BranchKey, double> baseMvaByKey;
+  if (outputFormat == "json" || outputFormat == "csv") {
+    for (size_t bi = 0; bi < baseCaseResults.branches.size(); bi++) {
+      const gridpack::utility::BranchResult &br = baseCaseResults.branches[bi];
+      BranchKey k; k.from = br.fromBus; k.to = br.toBus; k.ckt = br.circuitId;
+      while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ') k.ckt.resize(k.ckt.size()-1);
+      double mva = (br.mvaFrom > br.mvaTo) ? br.mvaFrom : br.mvaTo;
+      baseMvaByKey[k] = mva;
+    }
+  }
+
+  // Fill BranchViolation/VoltageViolation arrays from a solved ct result,
+  // and stream the same rows to <outputFile>_violations.<rank>.part.
+  // event_idx of 0 is reserved for base case; contingencies get task_id+1.
+  auto populateViolations = [&](gridpack::utility::ContingencyResult &ct,
+                                int event_idx) {
+    const double threshPct = violationSeverityThreshold * 100.0;
+    for (size_t bi = 0; bi < ct.solution.branches.size(); bi++) {
+      const gridpack::utility::BranchResult &br = ct.solution.branches[bi];
+      if (br.loadingPercent <= threshPct) continue;
+      gridpack::utility::BranchViolation v;
+      v.fromBus = br.fromBus;
+      v.toBus = br.toBus;
+      v.circuitId = br.circuitId;
+      v.mva = (br.mvaFrom > br.mvaTo) ? br.mvaFrom : br.mvaTo;
+      v.rate = br.rateSelected;
+      v.loadingPercent = br.loadingPercent;
+      BranchKey k; k.from = br.fromBus; k.to = br.toBus; k.ckt = br.circuitId;
+      while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ') k.ckt.resize(k.ckt.size()-1);
+      std::map<BranchKey, double>::const_iterator it = baseMvaByKey.find(k);
+      v.baseMva = (it != baseMvaByKey.end()) ? it->second : 0.0;
+      v.deltaMva = v.mva - v.baseMva;
+      v.severity = (br.loadingPercent >= 105.0) ? "critical" : "warning";
+      ct.branchViolations.push_back(v);
+      emitBranchViolation(event_idx, ct.name, v.fromBus, v.toBus, v.circuitId,
+                          v.mva, v.rate, v.loadingPercent, v.baseMva);
+    }
+    for (size_t bi = 0; bi < ct.solution.buses.size(); bi++) {
+      const gridpack::utility::BusResult &b = ct.solution.buses[bi];
+      double v_pu = b.voltage;
+      if (v_pu <= 0.0) continue;   // Skip isolated / not-solved buses.
+      bool lo = v_pu < Vmin, hi = v_pu > Vmax;
+      if (!lo && !hi) continue;
+      gridpack::utility::VoltageViolation vv;
+      vv.busId = b.busId;
+      vv.vPu = v_pu;
+      vv.limitLow = Vmin;
+      vv.limitHigh = Vmax;
+      vv.deviationPu = lo ? (v_pu - Vmin) : (v_pu - Vmax);
+      double dev = std::abs(vv.deviationPu);
+      vv.severity = (dev >= 0.05) ? "critical" : "warning";
+      ct.voltageViolations.push_back(vv);
+      emitVoltageViolation(event_idx, ct.name, vv.busId, vv.vPu,
+                           vv.limitLow, vv.limitHigh);
+    }
+  };
+
   // Convergence row recorder; indexes events[task_id].
   auto recordConv = [&](int task_id, const char *status,
                         const std::string &) {
@@ -1551,6 +1738,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           ctResult.hasVoltageViolation = !ok1;
           ctResult.hasBranchViolation = !ok2;
           ctResult.solution = pf_app.collectResults();
+          populateViolations(ctResult, static_cast<int>(task_id) + 1);
           localContingencies.push_back(ctResult);
         }
         if (outputFormat == "csv_flat") {
@@ -1891,6 +2079,43 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       printf("[buses] wrote %zu rows to %s\n", bus_rows, busFile.c_str());
     }
   }
+  // Concat per-rank _violations.<rank>.part into <outputFile>_violations.csv.
+  // Runs for every outputFormat; ranks that emitted zero rows simply have no
+  // .part file to include.
+  if (violPart.is_open()) violPart.close();
+  world.sync();
+  if (world.rank() == 0) {
+    const size_t BUFSZ = 1 << 20;
+    std::vector<char> buf(BUFSZ);
+    std::string outFile = outputFile + "_violations.csv";
+    std::ofstream fout(outFile.c_str(),
+                       std::ios::out | std::ios::trunc | std::ios::binary);
+    fout << "event_idx,contingency,type,element,mva_or_vpu,rate_or_limit,"
+            "loading_percent,base_mva,delta,severity\n";
+    size_t rows = 0;
+    for (int p = 0; p < world.size(); p++) {
+      std::ostringstream oss;
+      oss << outputFile << "_violations." << p << ".part";
+      std::string part = oss.str();
+      std::ifstream fin(part.c_str(), std::ios::in | std::ios::binary);
+      if (!fin) continue;
+      while (fin) {
+        fin.read(&buf[0], BUFSZ);
+        std::streamsize got = fin.gcount();
+        if (got > 0) {
+          fout.write(&buf[0], got);
+          for (std::streamsize k = 0; k < got; k++) {
+            if (buf[k] == '\n') rows++;
+          }
+        }
+      }
+      fin.close();
+      std::remove(part.c_str());
+    }
+    fout.close();
+    printf("[violations] wrote %zu rows to %s\n", rows, outFile.c_str());
+  }
+
   // Aggregate skip count across ranks for diagnostics.
   if (outputFormat == "csv_delta") {
     long localSkip = static_cast<long>(deltaSkipCount);
@@ -1899,6 +2124,137 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     if (world.rank() == 0 && totalSkip > 0) {
       printf("[csv_delta] %ld branch rows had no base-cache match\n",
              totalSkip);
+    }
+  }
+
+  // Aggregate per-run summary across all ranks. Emit <outputFile>_summary.json
+  // on rank 0. Counters and worst-of values follow the same shape commercial
+  // tools use in their contingency reports.
+  {
+    long localCounters[4] = { 0 };
+    // 0: total_ct  1: converged  2: cts_with_branch_viol  3: cts_with_voltage_viol
+    // (violation_rows is summed separately below)
+    if (!localContingencies.empty()) {
+      // json/csv paths: authoritative per-ct list.
+      for (size_t ci = 0; ci < localContingencies.size(); ci++) {
+        const gridpack::utility::ContingencyResult &ct = localContingencies[ci];
+        localCounters[0] += 1;
+        if (ct.solution.convergence.converged) localCounters[1] += 1;
+      }
+    } else {
+      // csv_flat / csv_delta: no ct list, count from convergence rows.
+      localCounters[0] = static_cast<long>(localConvRows.size());
+      long conv = 0;
+      for (size_t i = 0; i < localConvRows.size(); i++) {
+        if (localConvRows[i].cs.converged) conv++;
+      }
+      localCounters[1] = conv;
+    }
+    localCounters[2] = static_cast<long>(ctsWithBranchViol.size());
+    localCounters[3] = static_cast<long>(ctsWithVoltageViol.size());
+    long totalCounters[4] = { 0 };
+    for (int i = 0; i < 4; i++) totalCounters[i] = localCounters[i];
+    world.sum(&totalCounters[0], 4);
+    long localViolRows  = static_cast<long>(violRowCount);
+    long totalViolRows  = localViolRows;
+    world.sum(&totalViolRows, 1);
+
+    struct WorstBranchWire {
+      double loading_pct;
+      int from, to;
+      char ckt[4];
+      char ct_name[32];
+    };
+    struct WorstVoltageWire {
+      double v_pu;
+      double dev_pu;
+      int bus_id;
+      char ct_name[32];
+    };
+    WorstBranchWire wbLo;
+    wbLo.loading_pct = worstBr.loading_pct;
+    wbLo.from = worstBr.from; wbLo.to = worstBr.to;
+    std::strncpy(wbLo.ckt, worstBr.ckt.c_str(), 3); wbLo.ckt[3] = '\0';
+    std::strncpy(wbLo.ct_name, worstBr.ct_name.c_str(), 31); wbLo.ct_name[31] = '\0';
+    WorstVoltageWire wvLo;
+    wvLo.v_pu = worstVLo.v_pu; wvLo.dev_pu = worstVLo.dev_pu;
+    wvLo.bus_id = worstVLo.bus_id;
+    std::strncpy(wvLo.ct_name, worstVLo.ct_name.c_str(), 31); wvLo.ct_name[31] = '\0';
+    WorstVoltageWire wvHi;
+    wvHi.v_pu = worstVHi.v_pu; wvHi.dev_pu = worstVHi.dev_pu;
+    wvHi.bus_id = worstVHi.bus_id;
+    std::strncpy(wvHi.ct_name, worstVHi.ct_name.c_str(), 31); wvHi.ct_name[31] = '\0';
+    MPI_Comm mpi_comm = static_cast<MPI_Comm>(world);
+    if (world.rank() == 0) {
+      for (int p = 1; p < world.size(); p++) {
+        WorstBranchWire  otherB;
+        WorstVoltageWire otherLo, otherHi;
+        MPI_Recv(&otherB,  sizeof(otherB),  MPI_BYTE, p, 30, mpi_comm, MPI_STATUS_IGNORE);
+        MPI_Recv(&otherLo, sizeof(otherLo), MPI_BYTE, p, 31, mpi_comm, MPI_STATUS_IGNORE);
+        MPI_Recv(&otherHi, sizeof(otherHi), MPI_BYTE, p, 32, mpi_comm, MPI_STATUS_IGNORE);
+        if (otherB.loading_pct > wbLo.loading_pct) wbLo = otherB;
+        if (otherLo.dev_pu < wvLo.dev_pu)          wvLo = otherLo;
+        if (otherHi.dev_pu > wvHi.dev_pu)          wvHi = otherHi;
+      }
+    } else {
+      MPI_Send(&wbLo, sizeof(wbLo), MPI_BYTE, 0, 30, mpi_comm);
+      MPI_Send(&wvLo, sizeof(wvLo), MPI_BYTE, 0, 31, mpi_comm);
+      MPI_Send(&wvHi, sizeof(wvHi), MPI_BYTE, 0, 32, mpi_comm);
+    }
+    if (world.rank() == 0) {
+      std::string sumFile = outputFile + "_summary.json";
+      std::ofstream sout(sumFile.c_str());
+      sout << std::fixed;
+      sout << "{\n";
+      sout << "  \"total_contingencies\": "     << totalCounters[0] << ",\n";
+      sout << "  \"converged\": "               << totalCounters[1] << ",\n";
+      sout << "  \"diverged\": "                << (totalCounters[0] - totalCounters[1]) << ",\n";
+      sout << "  \"with_branch_violation\": "   << totalCounters[2] << ",\n";
+      sout << "  \"with_voltage_violation\": "  << totalCounters[3] << ",\n";
+      sout << "  \"violation_rows\": "          << totalViolRows << ",\n";
+      sout << "  \"contingency_rating\": \""    << contingencyRating << "\",\n";
+      sout << "  \"voltage_limit_low\": "       << std::setprecision(4) << Vmin << ",\n";
+      sout << "  \"voltage_limit_high\": "      << std::setprecision(4) << Vmax << ",\n";
+      sout << "  \"severity_threshold\": "      << std::setprecision(4)
+           << violationSeverityThreshold << ",\n";
+      sout << "  \"worst_loading\": ";
+      if (wbLo.loading_pct > 0.0) {
+        sout << "{\"contingency\": \"" << wbLo.ct_name << "\""
+             << ", \"from_bus\": " << wbLo.from
+             << ", \"to_bus\": "   << wbLo.to
+             << ", \"circuit_id\": \"" << wbLo.ckt << "\""
+             << ", \"loading_percent\": " << std::setprecision(2) << wbLo.loading_pct
+             << "},\n";
+      } else {
+        sout << "null,\n";
+      }
+      sout << "  \"worst_voltage_low\": ";
+      if (wvLo.dev_pu < 0.0) {
+        sout << "{\"contingency\": \"" << wvLo.ct_name << "\""
+             << ", \"bus_id\": " << wvLo.bus_id
+             << ", \"v_pu\": "          << std::setprecision(6) << wvLo.v_pu
+             << ", \"deviation_pu\": "  << std::setprecision(6) << wvLo.dev_pu
+             << "},\n";
+      } else {
+        sout << "null,\n";
+      }
+      sout << "  \"worst_voltage_high\": ";
+      if (wvHi.dev_pu > 0.0) {
+        sout << "{\"contingency\": \"" << wvHi.ct_name << "\""
+             << ", \"bus_id\": " << wvHi.bus_id
+             << ", \"v_pu\": "         << std::setprecision(6) << wvHi.v_pu
+             << ", \"deviation_pu\": " << std::setprecision(6) << wvHi.dev_pu
+             << "}\n";
+      } else {
+        sout << "null\n";
+      }
+      sout << "}\n";
+      sout.close();
+      printf("[summary] wrote %s (%ld contingencies, %ld converged, "
+             "%ld with branch violations, %ld with voltage violations)\n",
+             sumFile.c_str(),
+             totalCounters[0], totalCounters[1],
+             totalCounters[2], totalCounters[3]);
     }
   }
 
