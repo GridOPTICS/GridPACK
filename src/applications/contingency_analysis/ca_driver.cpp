@@ -462,8 +462,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   double violationSeverityThreshold = 1.0;
   cursor->get("violationSeverityThreshold", &violationSeverityThreshold);
   if (violationSeverityThreshold <= 0.0) violationSeverityThreshold = 1.0;
-  // Cap on top_*_pi and roster arrays in _summary.json.
-  int topN = 20;
+  // Cap on top_severe_contingencies and roster arrays in _summary.json.
+  int topN = 10;
   cursor->get("topN", &topN);
   if (topN < 1) topN = 1;
   if (topN > 10000) topN = 10000;
@@ -2420,12 +2420,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       sout << "  \"diverged\": "                << (totalCounters[0] - totalCounters[1]) << ",\n";
       sout << "  \"with_branch_violation\": "   << totalCounters[2] << ",\n";
       sout << "  \"with_voltage_violation\": "  << totalCounters[3] << ",\n";
-      sout << "  \"violation_rows\": "          << totalViolRows << ",\n";
-      sout << "  \"contingency_rating\": \""    << contingencyRating << "\",\n";
-      sout << "  \"voltage_limit_low\": "       << std::setprecision(4) << Vmin << ",\n";
-      sout << "  \"voltage_limit_high\": "      << std::setprecision(4) << Vmax << ",\n";
-      sout << "  \"severity_threshold\": "      << std::setprecision(4)
-           << violationSeverityThreshold << ",\n";
       sout << "  \"worst_loading\": ";
       if (wbLo.loading_pct > 0.0) {
         sout << "{\"contingency\": \"" << wbLo.ct_name << "\""
@@ -2457,13 +2451,12 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       } else {
         sout << "null,\n";
       }
-      sout << "  \"top_n\": " << topN << ",\n";
       auto emitNameArray = [&](const char *field,
                                const std::set<std::string> &names) {
         sout << "  \"" << field << "\": [";
         int emitted = 0;
         for (std::set<std::string>::const_iterator it = names.begin();
-             it != names.end() && emitted < topN; ++it, ++emitted) {
+             it != names.end(); ++it, ++emitted) {
           if (emitted) sout << ", ";
           sout << "\"" << *it << "\"";
         }
@@ -2471,114 +2464,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       };
       emitNameArray("contingencies_with_branch_violation", aggBranchViol);
       emitNameArray("contingencies_with_voltage_violation", aggVoltageViol);
-      sout << "  \"pi_branch_weight\": "  << std::setprecision(4) << piBranchWeight  << ",\n";
-      sout << "  \"pi_voltage_weight\": " << std::setprecision(4) << piVoltageWeight << ",\n";
-      auto piCmp = [](const std::pair<double,std::string> &a,
-                      const std::pair<double,std::string> &b) {
-        if (a.first != b.first) return a.first > b.first;
-        return a.second < b.second;
-      };
-      // top_branch_pi: sum((mva/rate)^2) over monitored branches.
-      {
-        std::vector<std::pair<double, std::string> > byPi;
-        byPi.reserve(aggPi.size());
-        for (std::map<std::string,double>::const_iterator it = aggPi.begin();
-             it != aggPi.end(); ++it) {
-          byPi.push_back(std::make_pair(it->second, it->first));
-        }
-        std::sort(byPi.begin(), byPi.end(), piCmp);
-        sout << "  \"top_branch_pi\": [";
-        int emitted = 0;
-        for (size_t i = 0; i < byPi.size() && emitted < topN; ++i, ++emitted) {
-          if (emitted) sout << ",\n    ";
-          else         sout << "\n    ";
-          sout << "{\"contingency\": \"" << byPi[i].second << "\""
-               << ", \"branch_pi\": " << std::setprecision(6) << byPi[i].first
-               << ", \"has_branch_violation\": "
-               << (aggBranchViol.count(byPi[i].second) ? "true" : "false")
-               << ", \"has_voltage_violation\": "
-               << (aggVoltageViol.count(byPi[i].second) ? "true" : "false")
-               << "}";
-        }
-        sout << (emitted ? "\n  ],\n" : "],\n");
-      }
-      // top_voltage_pi: textbook voltage PI over all energized buses.
-      // Each entry also carries voltage_deviation_index = sum((v-limit)^2)
-      // over violated buses, the legacy metric.
-      {
-        std::vector<std::pair<double, std::string> > byV;
-        byV.reserve(aggVpi.size());
-        for (std::map<std::string,double>::const_iterator it = aggVpi.begin();
-             it != aggVpi.end(); ++it) {
-          if (it->second > 0.0)
-            byV.push_back(std::make_pair(it->second, it->first));
-        }
-        std::sort(byV.begin(), byV.end(), piCmp);
-        sout << "  \"top_voltage_pi\": [";
-        int emitted = 0;
-        for (size_t i = 0; i < byV.size() && emitted < topN; ++i, ++emitted) {
-          if (emitted) sout << ",\n    ";
-          else         sout << "\n    ";
-          double vdev = 0.0;
-          std::map<std::string,double>::const_iterator itD =
-            aggVdev.find(byV[i].second);
-          if (itD != aggVdev.end()) vdev = itD->second;
-          sout << "{\"contingency\": \"" << byV[i].second << "\""
-               << ", \"voltage_pi\": "
-               << std::setprecision(6) << byV[i].first
-               << ", \"voltage_deviation_index\": "
-               << std::setprecision(6) << vdev
-               << ", \"has_voltage_violation\": "
-               << (aggVoltageViol.count(byV[i].second) ? "true" : "false")
-               << "}";
-        }
-        sout << (emitted ? "\n  ],\n" : "],\n");
-      }
-      // top_composite_pi: piBranchWeight*branch_pi + piVoltageWeight*voltage_pi.
-      {
-        std::set<std::string> ctSet;
-        for (std::map<std::string,double>::const_iterator it = aggPi.begin();
-             it != aggPi.end(); ++it) ctSet.insert(it->first);
-        for (std::map<std::string,double>::const_iterator it = aggVpi.begin();
-             it != aggVpi.end(); ++it) ctSet.insert(it->first);
-        std::vector<std::pair<double, std::string> > byC;
-        byC.reserve(ctSet.size());
-        for (std::set<std::string>::const_iterator it = ctSet.begin();
-             it != ctSet.end(); ++it) {
-          double bp = 0.0, vp = 0.0;
-          std::map<std::string,double>::const_iterator itP = aggPi.find(*it);
-          if (itP != aggPi.end()) bp = itP->second;
-          std::map<std::string,double>::const_iterator itV = aggVpi.find(*it);
-          if (itV != aggVpi.end()) vp = itV->second;
-          double cpi = piBranchWeight * bp + piVoltageWeight * vp;
-          if (cpi > 0.0) byC.push_back(std::make_pair(cpi, *it));
-        }
-        std::sort(byC.begin(), byC.end(), piCmp);
-        sout << "  \"top_composite_pi\": [";
-        int emitted = 0;
-        for (size_t i = 0; i < byC.size() && emitted < topN; ++i, ++emitted) {
-          if (emitted) sout << ",\n    ";
-          else         sout << "\n    ";
-          double bp = 0.0, vp = 0.0;
-          std::map<std::string,double>::const_iterator itP = aggPi.find(byC[i].second);
-          if (itP != aggPi.end()) bp = itP->second;
-          std::map<std::string,double>::const_iterator itV = aggVpi.find(byC[i].second);
-          if (itV != aggVpi.end()) vp = itV->second;
-          sout << "{\"contingency\": \"" << byC[i].second << "\""
-               << ", \"composite_pi\": "
-               << std::setprecision(6) << byC[i].first
-               << ", \"branch_pi\": "
-               << std::setprecision(6) << bp
-               << ", \"voltage_pi\": "
-               << std::setprecision(6) << vp
-               << ", \"has_branch_violation\": "
-               << (aggBranchViol.count(byC[i].second) ? "true" : "false")
-               << ", \"has_voltage_violation\": "
-               << (aggVoltageViol.count(byC[i].second) ? "true" : "false")
-               << "}";
-        }
-        sout << (emitted ? "\n  ],\n" : "],\n");
-      }
       // top_severe_contingencies: Group A (any violation) first, sorted by
       // worst-single-element severity; Group B (no violations) after,
       // sorted by composite_pi. Combined list capped at topN.
@@ -2643,23 +2528,28 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         auto emitRow = [&](const SevRow &r, bool first) {
           if (!first) sout << ",\n    ";
           else        sout << "\n    ";
+          bool hasBr = aggBranchViol.count(r.name) > 0;
+          bool hasVLo = r.worstVdevLo < 0.0;
+          bool hasVHi = r.worstVdevHi > 0.0;
           sout << "{\"contingency\": \"" << r.name << "\""
-               << ", \"group\": \"" << (r.violated ? "violated" : "stressed") << "\""
                << ", \"composite_pi\": " << std::setprecision(6) << r.composite
-               << ", \"branch_pi\": "    << std::setprecision(6) << r.branchPi
-               << ", \"voltage_pi\": "   << std::setprecision(6) << r.voltagePi
-               << ", \"worst_branch_loading_percent\": "
-               << std::setprecision(2) << r.worstLoading
-               << ", \"worst_voltage_pu_low\": "
-               << std::setprecision(6) << r.worstVpuLo
-               << ", \"worst_voltage_deviation_pu_low\": "
-               << std::setprecision(6) << r.worstVdevLo
-               << ", \"worst_voltage_pu_high\": "
-               << std::setprecision(6) << r.worstVpuHi
-               << ", \"worst_voltage_deviation_pu_high\": "
-               << std::setprecision(6) << r.worstVdevHi
-               << ", \"has_branch_violation\": "
-               << (aggBranchViol.count(r.name) ? "true" : "false")
+               << ", \"worst_branch_loading_percent\": ";
+          if (hasBr) sout << std::setprecision(2) << r.worstLoading;
+          else       sout << "null";
+          sout << ", \"worst_voltage_pu_low\": ";
+          if (hasVLo) sout << std::setprecision(6) << r.worstVpuLo;
+          else        sout << "null";
+          sout << ", \"worst_voltage_deviation_pu_low\": ";
+          if (hasVLo) sout << std::setprecision(6) << r.worstVdevLo;
+          else        sout << "null";
+          sout << ", \"worst_voltage_pu_high\": ";
+          if (hasVHi) sout << std::setprecision(6) << r.worstVpuHi;
+          else        sout << "null";
+          sout << ", \"worst_voltage_deviation_pu_high\": ";
+          if (hasVHi) sout << std::setprecision(6) << r.worstVdevHi;
+          else        sout << "null";
+          sout << ", \"has_branch_violation\": "
+               << (hasBr ? "true" : "false")
                << ", \"has_voltage_violation\": "
                << (aggVoltageViol.count(r.name) ? "true" : "false")
                << "}";
