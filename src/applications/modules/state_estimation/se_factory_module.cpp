@@ -251,26 +251,29 @@ bool SEFactoryModule::reportMeasurement(int idx, std::string& details)
 {
   char buf[256];
   bool found = false;
+  bool isPseudo = false;
   int numBus = p_network->numBuses();
-  // Check all buses for the measurement
   for (int i = 0; i < numBus && !found; i++) {
     SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
     if (bus->getResidualDetails(idx, buf)) {
       details = buf;
+      bus->isResidualPseudo(idx, isPseudo);
       found = true;
     }
   }
-  // If not found in buses, check branches
   if (!found) {
     int numBranch = p_network->numBranches();
     for (int i = 0; i < numBranch && !found; i++) {
       SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
       if (branch->getResidualDetails(idx, buf)) {
         details = buf;
+        branch->isResidualPseudo(idx, isPseudo);
         found = true;
       }
     }
   }
+  // Mark pseudo-measurements
+  if (found && isPseudo) details += " (pseudo)";
   return found;
 }
 

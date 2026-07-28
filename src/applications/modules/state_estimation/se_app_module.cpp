@@ -2223,16 +2223,25 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     }
   }
   
-  // Print information about the top 10 normalized residuals to help debugging
+  // Pseudo-measurements excluded from the top-N
   p_busIO->header("\nTop 10 highest normalized residuals for diagnostic purposes:\n");
+  p_busIO->header("(pseudo-measurements excluded)\n");
   p_busIO->header("-------------------------------------------------------------\n");
   p_busIO->header("Rank  Index  Type  Bus/From  To      Value        NormRes     Threshold   Status\n");
   p_busIO->header("--------------------------------------------------------------------------------\n");
-  
-  // Create a vector of index/residual pairs
+
+  // pseudoIdx is rank-local; gather so the display filter sees all ranks.
+  std::vector<int> localPseudo(pseudoIdx.begin(), pseudoIdx.end());
+  std::vector<std::vector<int> > allPseudo;
+  boost::mpi::all_gather(comm, localPseudo, allPseudo);
+  std::set<int> globalPseudo;
+  for (size_t p = 0; p < allPseudo.size(); p++) {
+    globalPseudo.insert(allPseudo[p].begin(), allPseudo[p].end());
+  }
+
   std::vector<std::pair<int, double>> residPairs;
   for (int i = 0; i < size; i++) {
-      // Get residual value from simple vector
+      if (globalPseudo.count(i)) continue;
       double r = std::abs(normResValues[i]);
       residPairs.push_back(std::make_pair(i, r));
   }
