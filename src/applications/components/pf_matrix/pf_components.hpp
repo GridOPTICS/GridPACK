@@ -990,6 +990,12 @@ class PFBranch
      */
     double getBranchRatingC(std::string tag);
 
+    // Contingency rating tier ("A"|"B"|"C") used by serialWrite("flow",...).
+    // Default "A" preserves non-CA behavior; A->B->C fallback if picked=0.
+    static void setContingencyRating(const std::string& rating);
+    static std::string getContingencyRating();
+    double pickBranchRating(int elemIdx) const;
+
     /**
      * Get list of line IDs
      * @return list of line identifiers
@@ -1077,6 +1083,8 @@ class PFBranch
     // LTC (Load Tap Changer) control variables
     bool p_hasLTC;              // true if this branch has an LTC-controlled transformer
     int p_ltc_elem;             // index of the LTC element within this branch
+    static std::string s_contingencyRating;
+
     int p_ltc_code;             // control mode (1=voltage, 0=off)
     int p_ltc_cont;             // controlled bus number
     bool p_ltc_cont_is_to;      // true if controlled bus is the to-bus (tap direction reversal)

@@ -1463,6 +1463,9 @@ void gridpack::powerflow::PFFactoryModule::setContingencyRating(
   } else {
     p_contingencyRating = "A";
   }
+  // Keep PFBranch's serialWrite("flow",...) denominator in sync so the .out
+  // file's loading% matches _violations.csv / JSON loading_percent.
+  gridpack::powerflow::PFBranch::setContingencyRating(p_contingencyRating);
 }
 
 /**

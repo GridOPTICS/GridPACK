@@ -444,18 +444,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       if (!tok[i].empty()) monitorAreas.insert(atoi(tok[i].c_str()));
     }
   }
-  // Which rating column csv_flat/csv_delta emit. A|B|C, default C.
-  // Falls back A->B->C order if requested rating is zero/missing.
-  std::string contingencyRating = "C";
+  // Loading% denominator for all CA outputs (.out, _violations.csv, JSON,
+  // csv_flat, csv_delta). A|B|C, default A to match PW/PSSE convention.
+  // A->B->C fallback if the requested tier is zero/missing.
+  std::string contingencyRating = "A";
   cursor->get("contingencyRating", &contingencyRating);
   util.toUpper(contingencyRating);
   if (contingencyRating != "A" && contingencyRating != "B" &&
       contingencyRating != "C") {
     if (world.rank() == 0) {
-      printf("WARNING: contingencyRating='%s' not A/B/C; defaulting to C\n",
+      printf("WARNING: contingencyRating='%s' not A/B/C; defaulting to A\n",
              contingencyRating.c_str());
     }
-    contingencyRating = "C";
+    contingencyRating = "A";
   }
   // Severity threshold for violation reporting; loading% > threshold*100
   // is flagged. Default 1.0 (100% of rate).
@@ -2213,9 +2214,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // on rank 0. Counters and worst-of values follow the same shape commercial
   // tools use in their contingency reports.
   {
-    long localCounters[4] = { 0 };
     // 0: total_ct  1: converged  2: cts_with_branch_viol  3: cts_with_voltage_viol
-    // (violation_rows is summed separately below)
+    // 4: islanded  5: no_slack   6: diverged                7: slack_overload
+    long localCounters[8] = { 0 };
     if (!localContingencies.empty()) {
       // json/csv paths: authoritative per-ct list.
       for (size_t ci = 0; ci < localContingencies.size(); ci++) {
@@ -2224,8 +2225,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         if (ct.solution.convergence.converged) localCounters[1] += 1;
       }
     } else {
-      // text/csv_flat/csv_delta: count from convergence rows. Use status
-      // rather than cs.converged, which can be stale on ISLANDED/DIVERGED.
+      // text/csv_flat/csv_delta: count from convergence rows.
       localCounters[0] = static_cast<long>(localConvRows.size());
       long conv = 0;
       for (size_t i = 0; i < localConvRows.size(); i++) {
@@ -2235,9 +2235,17 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
     localCounters[2] = static_cast<long>(ctsWithBranchViol.size());
     localCounters[3] = static_cast<long>(ctsWithVoltageViol.size());
-    long totalCounters[4] = { 0 };
-    for (int i = 0; i < 4; i++) totalCounters[i] = localCounters[i];
-    world.sum(&totalCounters[0], 4);
+    // Per-status breakdown from convergence rows (populated in every mode).
+    for (size_t i = 0; i < localConvRows.size(); i++) {
+      const std::string &st = localConvRows[i].status;
+      if      (st == "ISLANDED")       localCounters[4] += 1;
+      else if (st == "NO_SLACK")       localCounters[5] += 1;
+      else if (st == "DIVERGED")       localCounters[6] += 1;
+      else if (st == "SLACK_OVERLOAD") localCounters[7] += 1;
+    }
+    long totalCounters[8] = { 0 };
+    for (int i = 0; i < 8; i++) totalCounters[i] = localCounters[i];
+    world.sum(&totalCounters[0], 8);
     long localViolRows  = static_cast<long>(violRowCount);
     long totalViolRows  = localViolRows;
     world.sum(&totalViolRows, 1);
@@ -2403,6 +2411,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       sout << "  \"total_contingencies\": "     << totalCounters[0] << ",\n";
       sout << "  \"converged\": "               << totalCounters[1] << ",\n";
       sout << "  \"diverged\": "                << (totalCounters[0] - totalCounters[1]) << ",\n";
+      // Per-status breakdown of the diverged bucket. Sum equals `diverged`.
+      sout << "  \"islanded\": "                << totalCounters[4] << ",\n";
+      sout << "  \"no_slack\": "                << totalCounters[5] << ",\n";
+      sout << "  \"solver_diverged\": "         << totalCounters[6] << ",\n";
+      sout << "  \"slack_overload\": "          << totalCounters[7] << ",\n";
       sout << "  \"with_branch_violation\": "   << totalCounters[2] << ",\n";
       sout << "  \"with_voltage_violation\": "  << totalCounters[3] << ",\n";
       sout << "  \"worst_loading\": ";
@@ -2731,10 +2744,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Universal convergence sidecar: gather, sort by event_idx, write.
   if (emitConv) {
     auto formatRow = [](std::ostringstream &os, const ConvRow &r) {
+      // Derive converged from status so ISLANDED/NO_SLACK cases -- where solve()
+      // was never entered and pf_app.getConvergence() returns the previous
+      // case's stale value -- read as false, matching _summary.json's
+      // diverged=total-converged accounting.
       os << r.event_idx << ","
          << r.name << ","
          << r.type << ","
-         << (r.cs.converged ? "true" : "false") << ","
+         << ((r.status == "OK") ? "true" : "false") << ","
          << r.cs.iterations << ","
          << std::scientific << r.cs.finalTolerance << ","
          << std::fixed

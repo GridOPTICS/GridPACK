@@ -3628,6 +3628,38 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getReversePower(
  * routine what about kind of information to write
  * @return true if branch is contributing string to output, false otherwise
  */
+std::string gridpack::powerflow::PFBranch::s_contingencyRating = "A";
+
+void gridpack::powerflow::PFBranch::setContingencyRating(
+    const std::string& rating)
+{
+  if (rating == "A" || rating == "B" || rating == "C") {
+    s_contingencyRating = rating;
+  } else {
+    s_contingencyRating = "A";
+  }
+}
+
+std::string gridpack::powerflow::PFBranch::getContingencyRating()
+{
+  return s_contingencyRating;
+}
+
+// A->B->C fallback when the picked tier is zero.
+double gridpack::powerflow::PFBranch::pickBranchRating(int elemIdx) const
+{
+  if (elemIdx < 0 || elemIdx >= static_cast<int>(p_rateA.size())) return 0.0;
+  double a = p_rateA[elemIdx];
+  double b = (elemIdx < static_cast<int>(p_rateB.size())) ? p_rateB[elemIdx] : 0.0;
+  double c = (elemIdx < static_cast<int>(p_rateC.size())) ? p_rateC[elemIdx] : 0.0;
+  if (s_contingencyRating == "A") return a;
+  if (s_contingencyRating == "B") return (b > 0.0) ? b : a;
+  // "C"
+  if (c > 0.0) return c;
+  if (b > 0.0) return b;
+  return a;
+}
+
 bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
                                                 const char *signal)
 {
@@ -3710,10 +3742,13 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
       double S = sqrt(p*p+q*q);
-      if (S > p_rateA[i] && p_rateA[i] != 0.0){
+      // Use the picked contingency rating tier (A/B/C w/ fallback) as the
+      // loading% denominator so this .out file agrees with _violations.csv.
+      double rate = pickBranchRating(i);
+      if (S > rate && rate != 0.0){
         sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
     	  getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-          p,q,p_rateA[i],S/p_rateA[i]*100,"%");
+          p,q,rate,S/rate*100,"%");
         int len = strlen(buf);
         if (ilen + len < bufsize) {
           sprintf(string,"%s",buf);
