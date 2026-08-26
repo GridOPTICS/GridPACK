@@ -1305,7 +1305,10 @@ An example contingency application has been included in the contingency
 analysis directory. This contingency analysis is simpler than the one
 available under the ``applications`` directory and provides a
 relatively compact demonstration of some of the advanced features of
-GridPACK. This application is built entirely around the power flow
+GridPACK. The production driver under ``src/applications/contingency_analysis``
+adds CSV outputs, monitor filters, and PSS/E-aligned options; its
+runtime configuration is documented in the *Contingency Analysis Module*
+section of Section 9. This application is built entirely around the power flow
 module, so it has no network component classes of its own. The main
 functionality is located in the ``CADriver`` class that consists of
 two methods (other than the constructor and destructor). One function is

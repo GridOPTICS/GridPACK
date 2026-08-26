@@ -43,7 +43,7 @@ When combined, duplicates from the file are automatically skipped.
 | `outputFormat` | `text` / `json` / `csv` / `csv_flat` / `csv_delta` | `text` |
 | `outputFile` | Base name for output files | `ca_results` |
 | `writeStats` | Emit StatBlock summary files (vmag.txt etc.). Set false to skip and avoid the per-case StatBlock work | true |
-| `contingencyRating` | Which PSS/E rating drives `cont_rate_mva` / `cont_loading_pct`: `A`, `B`, or `C` (with A→B→C fallback if missing). `base_rate_mva` always uses rate-A | `C` |
+| `contingencyRating` | Loading% denominator across every CA output: `A`, `B`, or `C` with A→B→C fallback. Default `A` matches PW / PSS/E ACCC. `base_rate_mva` always uses rate-A | `A` |
 | `monitorBranchesFile` | Path to a CSV allowlist (`from_bus,to_bus,ckt`). When set, overrides the area/kV gates (TARA / PSS/E convention) | (unset) |
 | `monitorAreas` | Space-separated list of PSS/E area numbers. Branch is emitted if **either endpoint** is in the set | (unset) |
 | `monitorKvMin` | Lower kV threshold; branch passes if `max(kv_from, kv_to) >= monitorKvMin` | 0 (unbounded) |
@@ -76,9 +76,10 @@ and a warning is logged.
 tie-lines). `monitorKvMin/Max` gate on `max(kv_from, kv_to)` so a 138/13.8
 step-down counts as 138.
 
-`contingencyRating` (`A` | `B` | `C`, default `C`) selects the rating
-behind `cont_rate_mva` / `cont_loading_pct`. `base_rate_mva` always uses
-rate-A. Falls back A→B→C if the requested rating is zero/missing.
+`contingencyRating` (`A` | `B` | `C`, default `A`) sets the loading%
+denominator for every CA output. Default `A` matches PowerWorld / PSS/E
+ACCC. `base_rate_mva` always uses rate-A. A→B→C fallback if the picked
+tier is zero/missing.
 
 A complete annotated example is in
 `src/applications/data_sets/input/ca/input_14_filters_example.xml` with a
@@ -171,7 +172,7 @@ each row is self-contained (no separate base-case join needed).
 | 7–8 | `base_kv_from`, `base_kv_to` | Endpoint base kV |
 | 9–10 | `area_from`, `area_to` | PSS/E area numbers |
 | 11 | `base_rate_mva` | Always rate-A (PSS/E "normal" rating) |
-| 12 | `cont_rate_mva` | Rating selected by `contingencyRating` (default C, with A→B→C fallback if zero/missing) |
+| 12 | `cont_rate_mva` | Rating selected by `contingencyRating` (default A, with A→B→C fallback if zero/missing) |
 | 13–14 | `base_p_mw`, `cont_p_mw` | Real-power flow before / after contingency |
 | 15–16 | `base_q_mvar`, `cont_q_mvar` | Reactive-power flow before / after |
 | 17–18 | `base_mva`, `cont_mva` | `sqrt(P² + Q²)` before / after |
@@ -196,23 +197,15 @@ metadata sidecar so the per-branch files can stay narrow. Columns:
 owner_name`.
 
 **`<outputFile>_convergence.csv`** *(every `outputFormat`)* — one row per
-contingency. Columns: `event_idx, contingency, type, status, iterations,
-final_tolerance, max_p_bus, max_p_mismatch, max_q_bus, max_q_mismatch`.
-Failed/divergent contingencies appear here even though they're omitted
-from `_delta.csv` / `_flat.csv`.
+contingency. Columns: `event_idx, contingency, type, converged,
+iterations, final_tolerance, max_p_bus, max_p_mismatch, max_q_bus,
+max_q_mismatch, status_code`. `converged` is `true` iff `status_code ==
+"OK"`; `status_code` is one of `OK` / `ISLANDED` / `NO_SLACK` /
+`DIVERGED` / `SLACK_OVERLOAD`. Failed rows appear here even though
+they're omitted from `_delta.csv` / `_flat.csv`.
 
 When monitor filters are active, the data-row count of `_delta.csv` /
 `_flat.csv` equals `|monitored branches| × |converged contingencies|`.
-
-#### Pandas quickstart
-
-```python
-import pandas as pd
-df = pd.read_csv("my_run_delta.csv")
-df[df.cont_loading_pct >= 90.0]                 # overloaded branches
-df.assign(dv=df.v_from_cont - df.v_from_base) \
-  .nsmallest(20, "dv")[["contingency","from_bus","dv"]]
-```
 
 ---
 

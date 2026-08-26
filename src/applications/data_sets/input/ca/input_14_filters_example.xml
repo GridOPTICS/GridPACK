@@ -47,10 +47,10 @@
     <!-- <monitorKvMin>100.0</monitorKvMin> -->
     <!-- <monitorKvMax>500.0</monitorKvMax> -->
 
-    <!-- EXAMPLE: contingencyRating selects which rate is used as
-         cont_rate_mva and cont_loading_pct. Default C.
-         A->B->C fallback if the requested rating is zero/missing on a
-         given branch. base_rate_mva always uses rate-A. -->
+    <!-- EXAMPLE: contingencyRating sets the loading% denominator across
+         every CA output. Default A matches PW / PSS/E ACCC.
+         A->B->C fallback if the picked tier is zero/missing.
+         base_rate_mva always uses rate-A. -->
     <contingencyRating>C</contingencyRating>
   </Contingency_analysis>
 
