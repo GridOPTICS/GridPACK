@@ -771,7 +771,8 @@ Returns:
          "Get (integer) load parameters in data collection for specified bus")
 
     .def("getConvergence", &gpf::PFAppModule::getConvergence,
-         "ConvergenceSummary for the most recent solve() or nl_solve().")
+         "ConvergenceSummary for the most recent solve(). nl_solve() does not\n"
+       "populate it -- there it reads converged=false, iterations=0.")
 
     .def("collectResults", &gpf::PFAppModule::collectResults,
          R"eof(

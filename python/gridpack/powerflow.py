@@ -18,11 +18,37 @@ from ._gridpack import powerflow as _pfmod  # noqa: F401
 
 from .session import Session
 from .results import PowerFlowResult
+from .exceptions import PowerFlowDiverged
 
 
 def __getattr__(name):
     # Fallback for any pybind11 attribute not explicitly re-exported.
     return getattr(_pfmod, name)
+
+
+def _xml_bool(raw, default: bool = False) -> bool:
+    """Parse an XML scalar as a bool.  cursor.get() returns a string, so
+    bool(raw) would be True for "false"."""
+    if raw is None:
+        return default
+    if isinstance(raw, bool):
+        return raw
+    text = str(raw).strip().lower()
+    if text in ("true", "yes", "on", "1"):
+        return True
+    if text in ("false", "no", "off", "0", ""):
+        return False
+    return default
+
+
+def _xml_number(raw, cast, default=None):
+    """Parse an XML scalar as ``cast``, or ``default`` if unusable."""
+    if raw is None:
+        return default
+    try:
+        return cast(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
 
 
 class PowerFlow:
@@ -77,11 +103,15 @@ class PowerFlow:
         self._cursor = cursor
 
         # Precompute XML-controlled options so solve() can respect them.
-        self._xml_nonlinear = bool(cursor.get("UseNonLinear"))
-        xml_suppress = bool(cursor.get("suppressOutput"))
+        self._xml_nonlinear = _xml_bool(cursor.get("UseNonLinear"))
+        xml_suppress = _xml_bool(cursor.get("suppressOutput"))
         self._suppress_output = (
             xml_suppress if suppress_output is None else suppress_output
         )
+
+        # Reported in PowerFlowDiverged.
+        self._tolerance = _xml_number(cursor.get("tolerance"), float)
+        self._max_iteration = _xml_number(cursor.get("maxIteration"), int)
 
         # Create the pybind11 Powerflow application.
         self._pfapp = _ext.powerflow.Powerflow()
@@ -121,22 +151,30 @@ class PowerFlow:
     # Solve
     # ------------------------------------------------------------------
 
-    def solve(self, nonlinear: Optional[bool] = None) -> PowerFlowResult:
-        """Run the power flow solver and return a :class:`PowerFlowResult`.
+    def solve(
+        self,
+        nonlinear: Optional[bool] = None,
+        *,
+        strict: bool = True,
+    ) -> PowerFlowResult:
+        """Run the solver and return a :class:`PowerFlowResult`.
 
-        Parameters
-        ----------
-        nonlinear : bool, optional
-            If given, override the XML ``UseNonLinear`` setting.
-            ``True`` uses the math library non-linear solver
-            (``pfapp.nl_solve``); ``False`` uses the custom Newton-Raphson
-            loop (``pfapp.solve``).
+        ``nonlinear`` overrides the XML ``UseNonLinear`` key: True picks
+        ``nl_solve``, False the Newton-Raphson loop.
+
+        Raises :class:`gridpack.PowerFlowDiverged` if the tolerance is not
+        reached; every rank raises, so it is safe to catch under MPI.  Pass
+        ``strict=False`` to get the unconverged result instead --
+        ``result.mismatch`` names the worst bus.
+
+        ``nl_solve`` populates no convergence summary, so on that path the
+        verdict is its return value and ``result.convergence`` is None.
         """
         use_nl = self._xml_nonlinear if nonlinear is None else nonlinear
         if use_nl:
-            self._pfapp.nl_solve()
+            ok = self._pfapp.nl_solve()
         else:
-            self._pfapp.solve()
+            ok = self._pfapp.solve()
         self._pfapp.saveData()
         self._solved = True
 
@@ -144,8 +182,18 @@ class PowerFlow:
             self._pfapp,
             nonlinear=use_nl,
             input_file=self.input_file,
+            solver_converged=bool(ok),
         )
         self._live_results.add(result)
+
+        if strict and result.converged is False:
+            raise PowerFlowDiverged(
+                convergence=result.convergence,
+                nonlinear=use_nl,
+                tolerance=self._tolerance,
+                max_iteration=self._max_iteration,
+                input_file=self.input_file,
+            )
         return result
 
     def close(self) -> None:

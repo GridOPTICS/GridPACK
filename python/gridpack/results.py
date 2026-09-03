@@ -36,10 +36,16 @@ class PowerFlowResult:
         *,
         nonlinear: bool,
         input_file: Optional[str] = None,
+        solver_converged: Optional[bool] = None,
     ) -> None:
         self._pfapp = pfapp
         self.nonlinear = nonlinear
         self.input_file = input_file
+
+        # Snapshot now: re-solving overwrites it.  nl_solve never writes
+        # p_convergence, so that path falls back to the solver's return.
+        self._solver_converged = solver_converged
+        self._convergence = None if nonlinear else pfapp.getConvergence()
 
     def close(self) -> None:
         """Drop the reference to the pybind11 application.
@@ -52,6 +58,36 @@ class PowerFlowResult:
     def _check(self):
         if self._pfapp is None:
             raise RuntimeError("PowerFlowResult is closed")
+
+    # ------------------------------------------------------------------
+    # Convergence
+    # ------------------------------------------------------------------
+
+    @property
+    def convergence(self):
+        """Iteration history, or None on the non-linear path."""
+        return self._convergence
+
+    @property
+    def converged(self) -> Optional[bool]:
+        """Whether the tolerance was reached.  Rank-uniform."""
+        if self._convergence is not None:
+            return self._convergence.converged
+        return self._solver_converged
+
+    @property
+    def iterations(self) -> Optional[int]:
+        """Newton iterations, or None on the non-linear path."""
+        return None if self._convergence is None else self._convergence.iterations
+
+    @property
+    def mismatch(self):
+        """Largest final P/Q mismatch in MW / MVAr, or None."""
+        if self._convergence is None:
+            return None
+        if not self._convergence.perIteration:
+            return None
+        return self._convergence.finalMismatch
 
     # ------------------------------------------------------------------
     # Per-bus query
@@ -144,8 +180,11 @@ class PowerFlowResult:
             raise ValueError(f"Unsupported PSS/E version: {version}")
 
     def __repr__(self) -> str:
-        return (f"<PowerFlowResult nonlinear={self.nonlinear} "
-                f"input={self.input_file!r}>")
+        conv = self.converged
+        state = {True: "converged", False: "DIVERGED", None: "unknown"}[conv]
+        iters = "" if self.iterations is None else f" iterations={self.iterations}"
+        return (f"<PowerFlowResult {state}{iters} "
+                f"nonlinear={self.nonlinear} input={self.input_file!r}>")
 
 
 def _try_import_matplotlib():

@@ -42,6 +42,7 @@ from .state_estimation import (                            # noqa: E402
     StateEstimationResult,
 )
 from .hadrec import Hadrec                                 # noqa: E402
+from .exceptions import GridPACKError, PowerFlowDiverged   # noqa: E402
 
 __all__ = [
     "Session",
@@ -53,4 +54,6 @@ __all__ = [
     "StateEstimation",
     "StateEstimationResult",
     "Hadrec",
+    "GridPACKError",
+    "PowerFlowDiverged",
 ]
