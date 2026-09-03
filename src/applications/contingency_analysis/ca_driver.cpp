@@ -1140,33 +1140,49 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       deltaPart.open(deltaPartPath.c_str(), std::ios::out | std::ios::trunc);
       deltaPart << std::fixed;
     }
-    // cont_event_facility: built once per contingency.
-    std::string facility;
-    if (evt.p_type == Branch && !evt.p_from.empty()) {
-      int outFrom = evt.p_from[0];
-      int area = 0;
-      std::map<int, BusMeta>::const_iterator mf = bus_meta.find(outFrom);
-      if (mf != bus_meta.end()) area = mf->second.area;
-      char buf[64];
-      snprintf(buf, sizeof(buf), "[%d] %d %d %s",
-               area, outFrom, evt.p_to[0], evt.p_ckt[0].c_str());
-      facility = buf;
-      if (evt.p_from.size() > 1) {
-        char suf[24];
-        snprintf(suf, sizeof(suf), " (+%zu more)", evt.p_from.size() - 1);
-        facility += suf;
-      }
-    } else if (evt.p_type == Generator && !evt.p_busid.empty()) {
-      char buf[48];
-      snprintf(buf, sizeof(buf), "gen %d %s",
-               evt.p_busid[0], evt.p_genid[0].c_str());
-      facility = buf;
-      if (evt.p_busid.size() > 1) {
-        char suf[24];
-        snprintf(suf, sizeof(suf), " (+%zu more)", evt.p_busid.size() - 1);
-        facility += suf;
-      }
-    }
+    // cont_event_facility: disabled -- join event_idx against
+    // <outputFile>_contingencies.csv instead, which names every outaged element
+    // rather than the first plus "(+N more)". Kept commented in case the column
+    // is wanted back; uncomment this block, the emission below and the header
+    // field together. The [area] lookup needs a complete bus_meta (groupSize=1).
+    // std::string facility;
+    // // clean2Char pads ids to two chars; trim so the label has no stray space.
+    // auto rtrimId = [](const std::string &in) -> std::string {
+    //   std::string t = in;
+    //   while (!t.empty() && (t[t.size()-1] == ' ' || t[t.size()-1] == '\t'))
+    //     t.resize(t.size()-1);
+    //   return t;
+    // };
+    // // "[area] <element ids>" for both kinds; the type column says which.
+    // if (evt.p_type == Branch && !evt.p_from.empty()) {
+    //   int outFrom = evt.p_from[0];
+    //   int area = 0;
+    //   std::map<int, BusMeta>::const_iterator mf = bus_meta.find(outFrom);
+    //   if (mf != bus_meta.end()) area = mf->second.area;
+    //   char buf[64];
+    //   snprintf(buf, sizeof(buf), "[%d] %d %d %s",
+    //            area, outFrom, evt.p_to[0], rtrimId(evt.p_ckt[0]).c_str());
+    //   facility = buf;
+    //   if (evt.p_from.size() > 1) {
+    //     char suf[24];
+    //     snprintf(suf, sizeof(suf), " (+%zu more)", evt.p_from.size() - 1);
+    //     facility += suf;
+    //   }
+    // } else if (evt.p_type == Generator && !evt.p_busid.empty()) {
+    //   int outBus = evt.p_busid[0];
+    //   int area = 0;
+    //   std::map<int, BusMeta>::const_iterator mg = bus_meta.find(outBus);
+    //   if (mg != bus_meta.end()) area = mg->second.area;
+    //   char buf[64];
+    //   snprintf(buf, sizeof(buf), "[%d] %d %s",
+    //            area, outBus, rtrimId(evt.p_genid[0]).c_str());
+    //   facility = buf;
+    //   if (evt.p_busid.size() > 1) {
+    //     char suf[24];
+    //     snprintf(suf, sizeof(suf), " (+%zu more)", evt.p_busid.size() - 1);
+    //     facility += suf;
+    //   }
+    // }
     std::string ct_name = evt.p_name;
     while (!ct_name.empty() && ct_name[ct_name.size()-1] == ' ')
       ct_name.resize(ct_name.size()-1);
@@ -1222,6 +1238,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       double a_to_c   = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
       double d_ang_b  = bf.ang_from_deg - bf.ang_to_deg;
       double d_ang_c  = a_from_c - a_to_c;
+      // Across-branch drop, same convention as the angle deltas above.
+      double d_v_b    = bf.v_from_pu - bf.v_to_pu;
+      double d_v_c    = v_from_c - v_to_c;
       deltaPart << event_idx << "," << ct_name << "," << type_str << ","
                 << from << "," << to << "," << k.ckt << ","
                 << std::setprecision(2) << bf.base_kv_from << ","
@@ -1245,9 +1264,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                 << std::setprecision(4) << a_from_c        << ","
                 << std::setprecision(4) << bf.ang_to_deg   << ","
                 << std::setprecision(4) << a_to_c          << ","
+                << std::setprecision(6) << d_v_b   << ","
+                << std::setprecision(6) << d_v_c   << ","
                 << std::setprecision(4) << d_ang_b << ","
-                << std::setprecision(4) << d_ang_c << ","
-                << facility
+                << std::setprecision(4) << d_ang_c
+             // << "," << facility            // cont_event_facility: disabled
                 << "\n";
       deltaRowCount++;
     }
@@ -1426,6 +1447,53 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
     }
     printf("==================================================================\n\n");
+  }
+
+  // Decodes the event_idx used by every other CA output. One row per outaged
+  // element, so an N-2 event shares an event_idx; 0 is the base case.
+  if (world.rank() == 0) {
+    std::string ctgFile = outputFile + "_contingencies.csv";
+    std::ofstream cout_ctg(ctgFile.c_str(), std::ios::out | std::ios::trunc);
+    cout_ctg << "event_idx,contingency,type,n_elements,element_seq,"
+                "from_bus,to_bus,circuit_id,gen_bus,gen_id\n";
+    size_t ctgRows = 0;
+    cout_ctg << "0,base_case,base,0,0,,,,,\n";
+    ctgRows++;
+    for (size_t ei = 0; ei < events.size(); ei++) {
+      const gridpack::powerflow::Contingency &e = events[ei];
+      int event_idx = static_cast<int>(ei) + 1;
+      // Trim clean2Char padding so ids join against the other CSVs.
+      auto rtrim = [](const std::string &in) -> std::string {
+        std::string t = in;
+        while (!t.empty() && (t[t.size()-1] == ' ' || t[t.size()-1] == '\t'))
+          t.resize(t.size()-1);
+        return t;
+      };
+      std::string nm = rtrim(e.p_name);
+      size_t n = 0;
+      const char *ty = "unknown";
+      if (e.p_type == Branch) { n = e.p_from.size(); ty = "branch"; }
+      else if (e.p_type == Generator) { n = e.p_busid.size(); ty = "generator"; }
+      // An event with no elements (e.g. a malformed list entry) still gets a
+      // row, so no event_idx in the other files is left undecodable.
+      if (n == 0) {
+        cout_ctg << event_idx << "," << nm << "," << ty << ",0,0,,,,,\n";
+        ctgRows++;
+      }
+      for (size_t j = 0; j < n; j++) {
+        cout_ctg << event_idx << "," << nm << "," << ty << ","
+                 << n << "," << (j + 1) << ",";
+        if (e.p_type == Branch)
+          cout_ctg << e.p_from[j] << "," << e.p_to[j] << ","
+                   << rtrim(e.p_ckt[j]) << ",,\n";
+        else
+          cout_ctg << ",,," << e.p_busid[j] << ","
+                   << rtrim(e.p_genid[j]) << "\n";
+        ctgRows++;
+      }
+    }
+    cout_ctg.close();
+    printf("[contingencies] wrote %zu rows to %s\n", ctgRows, ctgFile.c_str());
   }
 
   // Print contingency details (gated on printCalcFiles; noisy for large lists)
@@ -1702,7 +1770,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   // Evaluate contingencies using the task manager
   int task_id;
-  char sbuf[128];
+  char sbuf[512];
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
   while (taskmgr.nextTask(task_comm, &task_id)) {
@@ -1848,7 +1916,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       if (print_calcs) pf_app.writeCABus();
       // Report branch overload violations
       if (!ok2) {
-        sprintf(sbuf,"\nBranch Violation for contingency %s\n",
+        // Keep in step with the row format in PFBranch::serialWrite("flow").
+        sprintf(sbuf,"\nBranch Violation for contingency %s\n"
+            "  From Bus    To Bus   CKT       P_from       Q_from"
+            "     MVA_from         P_to         Q_to       MVA_to"
+            "       Rate   Loading%%\n",
             events[task_id].p_name.c_str());
       } else if (!ok) {
         sprintf(sbuf,"\nNo Branch Violation for contingency %s\n",
@@ -2125,7 +2197,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                     "base_mva,cont_mva,base_loading_pct,cont_loading_pct,"
                     "v_from_base,v_from_cont,v_to_base,v_to_cont,"
                     "ang_from_base,ang_from_cont,ang_to_base,ang_to_cont,"
-                    "d_angle_base,d_angle_cont,cont_event_facility\n",
+                    // ",cont_event_facility" here if re-enabling the column
+                    "d_v_base,d_v_cont,d_angle_base,d_angle_cont\n",
                     "csv_delta",
                     "_delta.csv");
       }
@@ -2632,6 +2705,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     localBus << std::fixed;
     localBranch << std::fixed;
     localGen << std::fixed;
+    // Column layout must match the headers written by
+    // ResultsExporter::writePFCSV for the base case.
     for (size_t ci = 0; ci < localContingencies.size(); ci++) {
       const gridpack::utility::ContingencyResult& ct = localContingencies[ci];
       const gridpack::utility::PowerFlowResults& r = ct.solution;
@@ -2665,6 +2740,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
            << std::setprecision(4) << br.mvaFrom << ","
            << std::setprecision(4) << br.mvaTo << ","
            << std::setprecision(4) << br.rateA << ","
+           << std::setprecision(4) << br.rateSelected << ","
            << std::setprecision(2) << br.loadingPercent << "\n";
       }
       for (size_t gi = 0; gi < r.generators.size(); gi++) {

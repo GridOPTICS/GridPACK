@@ -3663,7 +3663,7 @@ double gridpack::powerflow::PFBranch::pickBranchRating(int elemIdx) const
 bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
                                                 const char *signal)
 {
-  char buf[128];
+  char buf[256];
   gridpack::powerflow::PFBus *bus1
     = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   gridpack::powerflow::PFBus *bus2
@@ -3737,18 +3737,28 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
+      gridpack::ComplexType s2 = getReversePower(tags[i]);
+      double p2 = real(s2);
+      double q2 = imag(s2);
       if (!p_branch_status[i]) p = 0.0;
       if (!p_branch_status[i]) q = 0.0;
+      if (!p_branch_status[i]) p2 = 0.0;
+      if (!p_branch_status[i]) q2 = 0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
-      double S = sqrt(p*p+q*q);
-      // Use the picked contingency rating tier (A/B/C w/ fallback) as the
-      // loading% denominator so this .out file agrees with _violations.csv.
+      if (bus1->isIsolated() || bus2->isIsolated()) p2=0.0;
+      if (bus1->isIsolated() || bus2->isIsolated()) q2=0.0;
+      double Sfrom = sqrt(p*p+q*q);
+      double Sto   = sqrt(p2*p2+q2*q2);
+      // One loading value, measured at the more heavily loaded end, as
+      // PowerWorld reports it and as _violations.csv/_branches.csv compute it.
+      double S = (Sfrom > Sto) ? Sfrom : Sto;
       double rate = pickBranchRating(i);
       if (S > rate && rate != 0.0){
-        sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
+        sprintf(buf, "%10d%10d%6s%13.6f%13.6f%13.6f%13.6f%13.6f%13.6f"
+                     "%11.2f%10.2f%s\n",
     	  getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-          p,q,rate,S/rate*100,"%");
+          p,q,Sfrom,p2,q2,Sto,rate,S/rate*100,"%");
         int len = strlen(buf);
         if (ilen + len < bufsize) {
           sprintf(string,"%s",buf);
