@@ -125,6 +125,20 @@ def tests_data_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
+def rated_raw() -> Path:
+    """The in-repo IEEE-14 with synthetic line ratings.
+
+    IEEE14.raw has rateA <= 0 on every branch, so it cannot exercise
+    overloads at all.
+    """
+    d = Path(__file__).resolve().parents[2] / "src/applications/data_sets/raw"
+    f = d / "IEEE14_PTIv33_rated.raw"
+    if not f.exists():
+        pytest.skip(f"missing {f}")
+    return f
+
+
+@pytest.fixture(scope="session")
 def se_data_dir() -> Path:
     """Directory holding the state-estimation IEEE14 inputs."""
     d = _se_data_dir()

@@ -61,8 +61,9 @@ class PowerFlow:
         with Session() as s:
             pf = PowerFlow(s, "input_14.xml")
             result = pf.solve()
-            result.write()                          # dump to stdout
-            df = result.to_dataframe([1, 2, 3])      # per-bus DataFrame
+            result.write()                    # dump to stdout
+            df = result.to_dataframe()        # all buses, all columns
+            bad = result.violations()         # voltage / overload report
 
     Parameters
     ----------
@@ -183,6 +184,7 @@ class PowerFlow:
             nonlinear=use_nl,
             input_file=self.input_file,
             solver_converged=bool(ok),
+            mpi_comm=self._session.mpi_comm,
         )
         self._live_results.add(result)
 

@@ -81,6 +81,11 @@ class Session:
 
         self._comm = _ext.Communicator()
 
+        # Resolved lazily: only gathering needs mpi4py.
+        self._mpi_comm_arg = mpi_comm
+        self._mpi_comm_resolved = False
+        self._mpi_comm = None
+
         if suppress_output:
             _ext.NoPrint().setStatus(True)
 
@@ -117,6 +122,39 @@ class Session:
         """The GridPACK ``Communicator`` bound to this session."""
         self._require_open()
         return self._comm
+
+    @property
+    def mpi_comm(self):
+        """The mpi4py communicator for this session, or None.
+
+        Defaults to COMM_WORLD; None if mpi4py is missing, which makes
+        gathering rank-local.  Raises if its size disagrees with the
+        GridPACK communicator -- gathering over the wrong comm would
+        silently mix in ranks from another job.
+        """
+        self._require_open()
+        if not self._mpi_comm_resolved:
+            self._mpi_comm_resolved = True
+            self._mpi_comm = self._resolve_mpi_comm()
+        return self._mpi_comm
+
+    def _resolve_mpi_comm(self):
+        if self._mpi_comm_arg is not None:
+            comm = self._mpi_comm_arg
+        else:
+            try:
+                from mpi4py import MPI
+            except ImportError:
+                return None
+            comm = MPI.COMM_WORLD
+        gp_size = self._comm.size()
+        if comm.Get_size() != gp_size:
+            raise RuntimeError(
+                f"mpi4py communicator size {comm.Get_size()} does not match "
+                f"the GridPACK communicator size {gp_size}; gathering over it "
+                "would mix ranks from a different communicator."
+            )
+        return comm
 
     @property
     def env(self):

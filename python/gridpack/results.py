@@ -21,13 +21,50 @@ def _try_import_pandas():
         return None
 
 
+# Record fields, in C++ struct order.  Dicts rather than the pybind11
+# records: records do not pickle, so they cannot cross MPI.
+_BUS_FIELDS = (
+    "busId", "type", "area", "zone", "baseKV", "voltage", "angle",
+    "pInjection", "qInjection", "pLoad", "qLoad", "pGen", "qGen",
+    "shuntMvar",
+)
+_BRANCH_FIELDS = (
+    "fromBus", "toBus", "circuitId", "pFrom", "qFrom", "pTo", "qTo",
+    "pLoss", "qLoss", "mvaFrom", "mvaTo", "rateA", "loadingPercent",
+)
+_GEN_FIELDS = (
+    "busId", "genId", "pGen", "qGen", "qMax", "qMin", "voltageSetpoint",
+    "status",
+)
+
+# Sort keys make row order independent of the rank count.
+_BUS_KEY = lambda r: r["busId"]
+_BRANCH_KEY = lambda r: (r["fromBus"], r["toBus"], r["circuitId"])
+_GEN_KEY = lambda r: (r["busId"], r["genId"])
+
+_TABLES = {
+    "buses": (_BUS_FIELDS, _BUS_KEY),
+    "branches": (_BRANCH_FIELDS, _BRANCH_KEY),
+    "generators": (_GEN_FIELDS, _GEN_KEY),
+}
+
+
+def _records_to_dicts(records, fields):
+    """Copy pybind11 records into dicts."""
+    return [{f: getattr(rec, f) for f in fields} for rec in records]
+
+
 class PowerFlowResult:
     """Solution container for :class:`gridpack.PowerFlow`.
 
     Holds a reference to the underlying pybind11 application module so
     per-bus queries stay live after :meth:`gridpack.PowerFlow.solve`
-    returns.  Bulk extraction is opt-in via :meth:`to_dataframe` and
-    :meth:`to_csv`, which take the bus IDs to include.
+    returns.
+
+    :meth:`buses`, :meth:`branches`, :meth:`generators` and
+    :meth:`violations` return the whole network, gathered across ranks and
+    sorted, so their output does not depend on the rank count.  They are
+    COLLECTIVE -- every rank must call them.
     """
 
     def __init__(
@@ -37,6 +74,7 @@ class PowerFlowResult:
         nonlinear: bool,
         input_file: Optional[str] = None,
         solver_converged: Optional[bool] = None,
+        mpi_comm: Optional[object] = None,
     ) -> None:
         self._pfapp = pfapp
         self.nonlinear = nonlinear
@@ -46,6 +84,10 @@ class PowerFlowResult:
         # p_convergence, so that path falls back to the solver's return.
         self._solver_converged = solver_converged
         self._convergence = None if nonlinear else pfapp.getConvergence()
+
+        # Gathering is collective, so cache each table after the first call.
+        self._mpi_comm = mpi_comm
+        self._tables: Dict[str, List[dict]] = {}
 
     def close(self) -> None:
         """Drop the reference to the pybind11 application.
@@ -102,15 +144,119 @@ class PowerFlowResult:
         return self._pfapp.getPFSolutionSingleBus(bus_id)
 
     # ------------------------------------------------------------------
+    # Gathered network tables
+    # ------------------------------------------------------------------
+    # Per-rank lists are a disjoint partition: concatenate, no dedup.
+    # Sorting fixes row order across rank counts; values still move ~1e-14.
+
+    def _table(self, name: str) -> List[dict]:
+        """Gather one table across ranks; cached.
+
+        COLLECTIVE: every rank must call, or the allgather deadlocks.
+        """
+        if name in self._tables:
+            return self._tables[name]
+        self._check()
+        fields, key = _TABLES[name]
+
+        results = self._pfapp.collectResults()
+        rows = _records_to_dicts(getattr(results, name), fields)
+
+        comm = self._mpi_comm
+        if comm is not None and comm.Get_size() > 1:
+            rows = [r for chunk in comm.allgather(rows) for r in chunk]
+        rows.sort(key=key)
+
+        self._tables[name] = rows
+        return rows
+
+    def buses(self) -> List[dict]:
+        """All buses, sorted by bus number.  Collective."""
+        return self._table("buses")
+
+    def branches(self) -> List[dict]:
+        """All branches, sorted by (from, to, circuit).  Collective."""
+        return self._table("branches")
+
+    def generators(self) -> List[dict]:
+        """All generators, sorted by (bus, id).  Collective."""
+        return self._table("generators")
+
+    # ------------------------------------------------------------------
+    # Violations
+    # ------------------------------------------------------------------
+
+    def violations(
+        self,
+        *,
+        min_voltage: float = 0.9,
+        max_voltage: float = 1.1,
+        overload_threshold: float = 100.0,
+    ) -> Dict[str, Any]:
+        """Report buses outside the voltage band and overloaded branches.
+
+        Defaults match ca_driver's minVoltage/maxVoltage.  Collective.
+
+        ``unrated_branches`` counts branches with ``rateA <= 0``: without
+        it, an unrated network looks like one with no overloads.
+
+        Differs from the C++ checks: overload uses ``loadingPercent``
+        (``max(mvaFrom, mvaTo)``) where ``checkLineOverloadViolations()``
+        tests one end, so this can flag more; and limits are uniform,
+        since per-bus ``BUS_VOLTAGE_MIN/MAX`` are not in ``BusResult``.
+        """
+        volt = [
+            {"busId": b["busId"], "voltage": b["voltage"],
+             "limit": max_voltage if b["voltage"] > max_voltage else min_voltage,
+             "kind": "high" if b["voltage"] > max_voltage else "low"}
+            for b in self.buses()
+            if b["voltage"] > max_voltage or b["voltage"] < min_voltage
+        ]
+
+        branches = self.branches()
+        rated = [br for br in branches if br["rateA"] > 0.0]
+        over = [
+            {"fromBus": br["fromBus"], "toBus": br["toBus"],
+             "circuitId": br["circuitId"], "rateA": br["rateA"],
+             "mva": max(br["mvaFrom"], br["mvaTo"]),
+             "loadingPercent": br["loadingPercent"]}
+            for br in rated
+            if br["loadingPercent"] > overload_threshold
+        ]
+
+        return {
+            "voltage": volt,
+            "overload": over,
+            "unrated_branches": len(branches) - len(rated),
+            "n_branches": len(branches),
+            "limits": {"min_voltage": min_voltage, "max_voltage": max_voltage,
+                       "overload_threshold": overload_threshold},
+        }
+
+    # ------------------------------------------------------------------
     # Bulk extraction
     # ------------------------------------------------------------------
 
-    def to_records(self, bus_ids: Sequence[int]) -> List[dict]:
-        """Return a list of ``{'bus': id, 'vmag': ..., 'vangle': ...}``.
+    def to_records(
+        self,
+        bus_ids: Optional[Sequence[int]] = None,
+        *,
+        table: str = "buses",
+    ) -> List[dict]:
+        """Return results as a list of dicts.
 
-        Ranks other than the owner return ``None`` for a given bus; those
-        rows are dropped.
+        With ``bus_ids``: the narrow rank-local view, dropping buses this
+        rank does not own.  Without: the full gathered ``table``
+        ("buses", "branches", "generators"), which is collective.
         """
+        if bus_ids is None:
+            if table not in _TABLES:
+                raise ValueError(
+                    f"unknown table {table!r}; expected one of "
+                    f"{sorted(_TABLES)}"
+                )
+            return list(self._table(table))
+
         self._check()
         rows = []
         for bid in bus_ids:
@@ -122,8 +268,13 @@ class PowerFlowResult:
                          "vangle": float(vangle)})
         return rows
 
-    def to_dataframe(self, bus_ids: Sequence[int]):
-        """Return per-bus results as a pandas DataFrame.
+    def to_dataframe(
+        self,
+        bus_ids: Optional[Sequence[int]] = None,
+        *,
+        table: str = "buses",
+    ):
+        """Return results as a pandas DataFrame.  See :meth:`to_records`.
 
         Requires the ``[results]`` extra (``pip install gridpack[results]``).
         """
@@ -133,22 +284,35 @@ class PowerFlowResult:
                 "pandas is not installed. Install with "
                 "'pip install gridpack[results]' or 'pip install pandas'."
             )
-        return pd.DataFrame(self.to_records(bus_ids))
+        rows = self.to_records(bus_ids, table=table)
+        if bus_ids is None:
+            # Fix column order even when the table is empty.
+            return pd.DataFrame(rows, columns=list(_TABLES[table][0]))
+        return pd.DataFrame(rows, columns=["bus", "vmag", "vangle"])
 
-    def to_csv(self, path: str, bus_ids: Sequence[int]) -> None:
-        """Write per-bus solutions to a CSV file.
+    def to_csv(
+        self,
+        path: str,
+        bus_ids: Optional[Sequence[int]] = None,
+        *,
+        table: str = "buses",
+    ) -> None:
+        """Write results to a CSV file.  See :meth:`to_records`.
 
         Uses pandas if available, otherwise the stdlib ``csv`` module.
         """
+        rows = self.to_records(bus_ids, table=table)
+        cols = (list(_TABLES[table][0]) if bus_ids is None
+                else ["bus", "vmag", "vangle"])
+
         pd = _try_import_pandas()
         if pd is not None:
-            self.to_dataframe(bus_ids).to_csv(path, index=False)
+            pd.DataFrame(rows, columns=cols).to_csv(path, index=False)
             return
 
         import csv
-        rows = self.to_records(bus_ids)
         with open(path, "w", newline="") as fh:
-            w = csv.DictWriter(fh, fieldnames=["bus", "vmag", "vangle"])
+            w = csv.DictWriter(fh, fieldnames=cols)
             w.writeheader()
             w.writerows(rows)
 
