@@ -7,6 +7,7 @@
 
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -37,3 +38,124 @@ def test_cli_version():
     out = (r.stdout or "") + (r.stderr or "")
     assert r.returncode == 0
     assert out.strip(), "gridpack --version produced no output"
+
+
+# -------------------------------------------------------------
+# Exit codes
+# -------------------------------------------------------------
+# 0 success / 1 unexpected error / 2 bad usage or config / 3 diverged.
+# Scripts branch on these, so each one is pinned here.
+
+_CLI = pytest.mark.skipif(not _has_gridpack_cli(),
+                          reason="gridpack console script not installed")
+
+_DATA = Path(__file__).resolve().parents[2] / "src/applications/data_sets"
+_CA_INPUT = _DATA / "input/ca/input_14.xml"
+_RAW_14 = _DATA / "raw/IEEE14.raw"
+
+
+def _run(*argv, cwd=None, np=0, env=None):
+    cmd = (["mpiexec", "-np", str(np)] if np else []) + ["gridpack", *argv]
+    return subprocess.run(cmd, cwd=str(cwd) if cwd else None,
+                          capture_output=True, text=True, check=False,
+                          timeout=300, env=env)
+
+
+def _capped(tests_data_dir, tmp_path, iterations=2):
+    """Copy the 14-bus case with maxIteration too low to converge."""
+    src = (tests_data_dir / "input_14.xml").read_text()
+    dst = tmp_path / "capped.xml"
+    dst.write_text(src.replace("<maxIteration>50</maxIteration>",
+                               f"<maxIteration>{iterations}</maxIteration>"))
+    shutil.copy(tests_data_dir / "IEEE14.raw", tmp_path / "IEEE14.raw")
+    return dst
+
+
+@_CLI
+def test_cli_no_command_is_usage_error():
+    assert _run().returncode == 2
+
+
+@_CLI
+def test_cli_missing_config_is_usage_error(tmp_path):
+    r = _run("pf", "does_not_exist.xml", cwd=tmp_path)
+    assert r.returncode == 2
+    assert "no such config file" in r.stderr
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_converged_exits_zero(tests_data_dir):
+    r = _run("pf", "input_14.xml", "-q", "--no-timer", cwd=tests_data_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_diverged_exits_three(tests_data_dir, tmp_path):
+    """A diverged solve must not report success."""
+    cfg = _capped(tests_data_dir, tmp_path)
+    r = _run("pf", cfg.name, "-q", "--no-timer", cwd=tmp_path)
+    assert r.returncode == 3, r.stderr[-2000:]
+    assert "did not converge" in r.stderr
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_honors_xml_nonlinear_false(tests_data_dir, tmp_path):
+    """cursor.get() returns strings, so "false" must not select nl_solve.
+
+    PETSc's SNES banner only appears on the nonlinear path, which is the
+    only externally visible difference between the two solvers.
+    """
+    src = (tests_data_dir / "input_14.xml").read_text()
+    cfg = tmp_path / "nlfalse.xml"
+    cfg.write_text(src.replace("<tolerance>",
+                               "<UseNonLinear>false</UseNonLinear>\n    <tolerance>"))
+    shutil.copy(tests_data_dir / "IEEE14.raw", tmp_path / "IEEE14.raw")
+
+    off = _run("pf", cfg.name, "--no-timer", cwd=tmp_path)
+    assert off.returncode == 0, off.stderr[-2000:]
+    assert "SNES" not in off.stdout + off.stderr
+
+    on = _run("pf", "input_14.xml", "--solver", "nl", "--no-timer",
+              cwd=tests_data_dir)
+    assert "SNES" in on.stdout + on.stderr, "--solver nl no longer nonlinear"
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_ca_without_contingencies_is_usage_error(tmp_path):
+    """Analyzing nothing must not look like a clean run."""
+    for f in (_CA_INPUT, _RAW_14):
+        if not f.exists():
+            pytest.skip(f"missing {f}")
+    shutil.copy(_CA_INPUT, tmp_path / "input_14.xml")
+    shutil.copy(_RAW_14, tmp_path / "IEEE14_ca.raw")
+    r = _run("ca", "input_14.xml", "-q", "--no-timer", "--no-print-calcs",
+             cwd=tmp_path)
+    assert r.returncode == 2, r.stderr[-2000:]
+    assert "FullBranchN1" in r.stderr
+
+
+@_CLI
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_cli_diverged_exits_three_under_mpi(tests_data_dir, tmp_path,
+                                            require_mpiexec):
+    """Every rank must agree, and mpiexec must surface the code."""
+    cfg = _capped(tests_data_dir, tmp_path)
+    r = _run("pf", cfg.name, "-q", "--no-timer", cwd=tmp_path, np=2)
+    assert r.returncode == 3, r.stderr[-2000:]
+    assert r.stderr.count("did not converge") == 2
+
+
+@_CLI
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_cli_dsf_finalizes_mpi(dsf_build_dir, require_mpiexec):
+    """os._exit skipped MPI_Finalize, so mpiexec reported exit 1 on success."""
+    r = _run("dsf", "input_9b3g.xml", "-q", "--no-timer",
+             cwd=dsf_build_dir, np=2)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "finalize" not in r.stderr.lower()

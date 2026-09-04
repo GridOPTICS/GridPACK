@@ -32,6 +32,12 @@ Examples:
     gridpack dsf input.xml --quiet
     gridpack ca input.xml --vlimits 0.9 1.1
     mpiexec -np 4 gridpack powerflow input.xml --output results.txt
+
+Exit codes:
+    0  success
+    1  unexpected error
+    2  bad arguments or unreadable config
+    3  the analysis did not converge
 """
 
 from __future__ import print_function
@@ -40,9 +46,10 @@ import os
 import argparse
 
 
-def _safe_exit(rc=0):
-    """Return exit code. Actual process termination is handled by main()."""
-    return rc
+EXIT_OK = 0
+EXIT_ERROR = 1
+EXIT_USAGE = 2
+EXIT_DIVERGED = 3
 
 
 class _GridPACKEnv:
@@ -83,12 +90,14 @@ def cmd_powerflow(args, gp_env):
     config.open(args.config, comm)
     cursor = config.getCursor("Configuration.Powerflow")
 
-    # Read options from XML, allow CLI overrides
-    useNonLinear = cursor.get("UseNonLinear")
+    # cursor.get() returns strings, so bool("false") would be True.
+    from ..powerflow import _xml_bool
+
+    useNonLinear = _xml_bool(cursor.get("UseNonLinear"))
     exportPSSE23 = cursor.get("exportPSSE_v23")
     exportPSSE33 = cursor.get("exportPSSE_v33")
     exportPSSE34 = cursor.get("exportPSSE_v34")
-    noPrint = cursor.get("suppressOutput")
+    noPrint = _xml_bool(cursor.get("suppressOutput"))
 
     # CLI overrides
     if args.quiet:
@@ -106,10 +115,7 @@ def cmd_powerflow(args, gp_env):
     pfapp.readNetwork(config, -1)
     pfapp.initialize()
 
-    if useNonLinear:
-        pfapp.nl_solve()
-    else:
-        pfapp.solve()
+    converged = pfapp.nl_solve() if useNonLinear else pfapp.solve()
 
     # Output handling
     if args.output:
@@ -142,7 +148,11 @@ def cmd_powerflow(args, gp_env):
     if not noPrint and not args.no_timer:
         timer.dump()
 
-    return 0
+    if not converged:
+        sys.stderr.write(
+            "Error: power flow did not converge; results were written anyway.\n")
+        return EXIT_DIVERGED
+    return EXIT_OK
 
 
 # -------------------------------------------------------------
@@ -225,14 +235,16 @@ def cmd_se(args, gp_env):
     if args.output:
         se.close()
 
-    if not se.hasConverged():
-        sys.stderr.write("Warning: State estimation did not fully converge, "
-                         "but results were written anyway.\n")
+    converged = se.hasConverged()
 
     if not args.no_timer:
         timer.dump()
 
-    return 0
+    if not converged:
+        sys.stderr.write("Error: state estimation did not converge; "
+                         "results were written anyway.\n")
+        return EXIT_DIVERGED
+    return EXIT_OK
 
 
 # -------------------------------------------------------------
@@ -367,6 +379,7 @@ def cmd_ca(args, gp_env):
     """
     import gridpack
     import gridpack.powerflow
+    from ..powerflow import _xml_bool
 
     comm = gp_env.comm
     timer = gridpack.CoarseTimer()
@@ -398,8 +411,12 @@ def cmd_ca(args, gp_env):
     pfapp.initialize()
     pfapp.setVoltageLimits(Vmin, Vmax)
 
-    # Solve base case
-    pfapp.solve()
+    # Solve base case.  Contingencies are measured against it, so a
+    # diverged base case makes all of them meaningless.
+    if not pfapp.solve():
+        sys.stderr.write("Error: contingency analysis base case did not "
+                         "converge; no contingencies were run.\n")
+        return EXIT_DIVERGED
 
     # Check Q limits if enabled
     check_qlim = True
@@ -419,6 +436,22 @@ def cmd_ca(args, gp_env):
 
     # Parse contingency list
     contingencies = _parse_contingency_xml(config)
+
+    # Analyzing nothing must not look like a clean run.  FullBranchN1 /
+    # FullGeneratorN1 auto-generation is not implemented here, so a config
+    # relying on it yields an empty list.
+    if not contingencies:
+        if _xml_bool(cursor.get("FullBranchN1")) or \
+                _xml_bool(cursor.get("FullGeneratorN1")):
+            sys.stderr.write(
+                "Error: FullBranchN1/FullGeneratorN1 auto-generation is not "
+                "supported by this CLI; list contingencies explicitly via "
+                "<contingencyList>.\n")
+        else:
+            sys.stderr.write(
+                "Error: no contingencies to run; set <contingencyList> in the "
+                "Contingency_analysis block.\n")
+        return EXIT_USAGE
 
     if comm.rank() == 0:
         print("=" * 60)
@@ -523,7 +556,8 @@ def cmd_ca(args, gp_env):
     if not args.no_timer:
         timer.dump()
 
-    return 0
+    # A contingency that diverges is a finding, not a run failure.
+    return EXIT_OK
 
 
 # -------------------------------------------------------------
@@ -627,24 +661,37 @@ def main(argv=None):
 
     if not args.command:
         parser.print_help()
-        return 1
+        return EXIT_USAGE
 
-    # Create the GridPACK environment (MPI init) before the handler,
-    # and close it (MPI finalize) after — matching the lifecycle pattern
-    # used by the standalone scripts (pf.py, dsf.py, etc.).
-    import signal
+    # Checked here so a typo exits cleanly instead of failing inside the
+    # C++ config reader after MPI is already up.
+    if not os.path.isfile(args.config):
+        sys.stderr.write("Error: no such config file: %s\n" % args.config)
+        return EXIT_USAGE
+
     gp_env = _GridPACKEnv()
-    rc = 0
+    rc = EXIT_OK
     try:
-        rc = args.func(args, gp_env) or 0
+        rc = args.func(args, gp_env) or EXIT_OK
     except Exception as e:
-        sys.stderr.write("Error: %s\n" % str(e))
-        rc = 1
+        # GRIDPACK_TRACEBACK=1 keeps the trace, which is otherwise the
+        # only way to diagnose a failure on one rank.
+        if os.environ.get("GRIDPACK_TRACEBACK"):
+            import traceback
+            traceback.print_exc()
+        sys.stderr.write("Error: %s: %s\n" % (type(e).__name__, e))
+        rc = EXIT_ERROR
+    finally:
+        sys.stdout.flush()
+        sys.stderr.flush()
 
-    sys.stdout.flush()
-    sys.stderr.flush()
-    os._exit(rc)
+    # Closing normally lets the Environment finalize MPI.  This used to be
+    # os._exit(rc) to dodge a DSFullApp teardown SEGV, but that skipped
+    # MPI_Finalize, so mpiexec reported abnormal termination (exit 1) even
+    # on a clean run.  The SEGV no longer reproduces; the exit code does.
+    gp_env.close()
+    return rc
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
