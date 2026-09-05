@@ -240,7 +240,7 @@ public:
   double        p_time = 0.0; /** Current time */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
 
-  EMTMachineIntegrationType integrationtype;
+  EMTMachineIntegrationType integrationtype = IMPLICIT;
 
   int           offsetb; /**< offset for the first variable for the branch in the array for all branch variables */
   int           p_gloc; // Global location of the first variable for the branch

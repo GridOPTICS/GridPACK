@@ -141,8 +141,8 @@ void Ieeet1::load(const boost::shared_ptr<gridpack::component::DataCollection> d
     Efdthresh = satA;
   }
 
-  if(integrationtype != IMPLICIT) {
-      // Set up blocks
+  // Set up blocks unconditionally: load() runs before the integration type is set.
+  {
     if(!zero_TR) {
       Vmeas_blk.setparams(1.0,TR);
     }

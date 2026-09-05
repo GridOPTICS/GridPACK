@@ -243,7 +243,7 @@ protected:
   double        shift; // shift (multiplier) used in the Jacobian calculation.
   double        p_time = 0.0; // Current time
 
-  EMTMachineIntegrationType integrationtype; // Integration type 
+  EMTMachineIntegrationType integrationtype = IMPLICIT; // Integration type 
 
   BaseEMTGenModel *p_gen;
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */

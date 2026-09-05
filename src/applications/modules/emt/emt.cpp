@@ -484,12 +484,8 @@ void Emt::setup()
   if(!rank()) printf("Emt:Set up completed\n");
 }
 
-// Consistent-initialization check. Rows whose residual changes between
-// Xdot=0 and Xdot=1 are differential; those with a large required derivative
-// (|F0/mass| >= 1) are sinusoidal abc states. Each aligned abc triple gets its
-// exact derivative from the phase values (x=A sin(wt+phi), xdot=wA cos(wt+phi));
-// all other derivatives are zero. F(0, X0, Xdot) must then vanish on every row
-// if X0 is a sinusoidal steady state of the EMT network.
+// t=0 check: F(0, X0, Xdot) with exact sinusoidal derivatives for abc triples
+// and zero for all other states must vanish at a valid initial point.
 void Emt::checkInitialResidual()
 {
   // Zero-length pre-step so explicitly integrated models have computed the

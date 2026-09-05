@@ -391,7 +391,7 @@ protected:
   double        shift; // shift (multiplier) used in the Jacobian calculation
   double        VD,VQ;
   
-  EMTMachineIntegrationType integrationtype; // Integration type 
+  EMTMachineIntegrationType integrationtype = IMPLICIT; // Integration type 
 
   BaseEMTGenModel* p_gen; // Generator model
   BaseEMTExcModel* p_econ; // Electrical Controller model

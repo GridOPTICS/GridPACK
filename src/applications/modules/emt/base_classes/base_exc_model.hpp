@@ -314,7 +314,7 @@ protected:
   double        p_delta;   /** Machine angle */
   double        shift; // shift (multiplier) used in the Jacobian calculation
   
-  EMTMachineIntegrationType integrationtype; // Integration type 
+  EMTMachineIntegrationType integrationtype = IMPLICIT; // Integration type 
 
   BaseEMTGenModel* p_gen; // Generator model
 

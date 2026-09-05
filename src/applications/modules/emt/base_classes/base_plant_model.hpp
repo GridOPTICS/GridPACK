@@ -251,7 +251,7 @@ protected:
   double        p_va,p_vb,p_vc; /** Bus voltage **/
   double        shift; // shift (multiplier) used in the Jacobian calculation
   
-  EMTMachineIntegrationType integrationtype; // Integration type 
+  EMTMachineIntegrationType integrationtype = IMPLICIT; // Integration type 
 
   BaseEMTGenModel* p_gen; // Generator model
   BaseEMTExcModel* p_econ; // Electrical Controller model

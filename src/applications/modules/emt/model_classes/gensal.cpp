@@ -437,8 +437,7 @@ double Gensal::getInitialFieldVoltage()
   return Efd;
 }
 
-// Explicit mode: forward-Euler step of the rotor states with the stator
-// fluxes and network voltage frozen at the start of the step.
+// Explicit mode: forward-Euler step of the rotor states.
 void Gensal::preStep(double time, double timestep)
 {
   if(integrationtype != EXPLICIT) return;

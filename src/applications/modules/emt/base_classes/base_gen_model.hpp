@@ -387,7 +387,7 @@ public:
   double        Efd; // Field voltage 
   bool          p_hasGovernor = false; // Flag indicating whether this generator has governor
   bool          p_hasPlantController = false; // Flag indicating whether this generator has plant controller
-  EMTMachineIntegrationType integrationtype;
+  EMTMachineIntegrationType integrationtype = IMPLICIT;
   boost::shared_ptr<BaseEMTExcModel> p_exciter; // Exciter
   boost::shared_ptr<BaseEMTGovModel> p_governor; // Governor
   boost::shared_ptr<BaseEMTPlantControllerModel> p_plantcontroller; // Plant Controller
