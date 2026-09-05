@@ -287,6 +287,73 @@ void EmtBus::setLocalOffset(int offset)
   }
 }
 
+std::string EmtBus::describeVariable(int ivar)
+{
+  char buf[128];
+  int busnum = getOriginalIndex();
+  if(ivar < 3) {
+    snprintf(buf, sizeof(buf), "bus %d KCL phase %c", busnum, "abc"[ivar]);
+    return buf;
+  }
+  if(p_hasInductiveShunt && ivar < 6) {
+    snprintf(buf, sizeof(buf), "bus %d shunt i%c", busnum, "abc"[ivar-3]);
+    return buf;
+  }
+  int i, off, n;
+  for(i = 0; i < p_ngen; i++) {
+    if(!p_gen[i]->getStatus()) continue;
+    std::string id = p_gen[i]->getid();
+    off = p_gen[i]->getLocalOffset() - p_offset;
+    p_gen[i]->getnvar(&n);
+    if(ivar >= off && ivar < off + n) {
+      snprintf(buf, sizeof(buf), "bus %d gen %s x[%d]", busnum, id.c_str(), ivar - off);
+      return buf;
+    }
+    if(p_gen[i]->hasExciter()) {
+      off = p_gen[i]->getExciter()->getLocalOffset() - p_offset;
+      p_gen[i]->getExciter()->getnvar(&n);
+      if(ivar >= off && ivar < off + n) {
+        snprintf(buf, sizeof(buf), "bus %d gen %s exciter x[%d]", busnum, id.c_str(), ivar - off);
+        return buf;
+      }
+    }
+    if(p_gen[i]->hasGovernor()) {
+      off = p_gen[i]->getGovernor()->getLocalOffset() - p_offset;
+      p_gen[i]->getGovernor()->getnvar(&n);
+      if(ivar >= off && ivar < off + n) {
+        snprintf(buf, sizeof(buf), "bus %d gen %s governor x[%d]", busnum, id.c_str(), ivar - off);
+        return buf;
+      }
+    }
+    if(p_gen[i]->hasPlantController()) {
+      off = p_gen[i]->getPlantController()->getLocalOffset() - p_offset;
+      p_gen[i]->getPlantController()->getnvar(&n);
+      if(ivar >= off && ivar < off + n) {
+        snprintf(buf, sizeof(buf), "bus %d gen %s plant x[%d]", busnum, id.c_str(), ivar - off);
+        return buf;
+      }
+    }
+  }
+  for(i = 0; i < p_nload; i++) {
+    if(!p_load[i]->getStatus()) continue;
+    off = p_load[i]->getLocalOffset() - p_offset;
+    p_load[i]->getnvar(&n);
+    if(ivar >= off && ivar < off + n) {
+      snprintf(buf, sizeof(buf), "bus %d load x[%d]", busnum, ivar - off);
+      return buf;
+    }
+  }
+  if(p_hasfault) {
+    off = p_fault->getLocalOffset() - p_offset;
+    if(ivar >= off) {
+      snprintf(buf, sizeof(buf), "bus %d fault x[%d]", busnum, ivar - off);
+      return buf;
+    }
+  }
+  snprintf(buf, sizeof(buf), "bus %d x[%d]", busnum, ivar);
+  return buf;
+}
+
 /**
  * Reset limiter flags after event has occured. Only called when the network
  * is resolved

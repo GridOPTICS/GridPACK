@@ -265,6 +265,9 @@ public:
 
   // Save output function
   void save_output(const double& time);
+  void checkInitialResidual(void);   // t=0 consistency check (see emt.cpp)
+  double p_initResidualTol;
+  bool   p_abortOnInitResidual;
 
   // Save output no input
   void save_output() {

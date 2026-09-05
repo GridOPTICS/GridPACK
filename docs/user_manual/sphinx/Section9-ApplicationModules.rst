@@ -1398,14 +1398,47 @@ The ``EMT`` block contains parameters specific to the EMT simulation:
 
 #. ``timeStep``: Integration time step for the EMT simulation.
 
-#. ``Events``: Block containing fault events and other disturbances.
-   Currently supports ``BusFault`` events with parameters for fault
-   timing, location, type, and impedance values.
+#. ``Events``: Block containing disturbances. ``BusFault`` applies a
+   temporary fault at a bus between ``begin`` and ``end`` (seconds), with
+   ``Ron`` the fault resistance and ``Rgnd`` the ground resistance in per
+   unit. ``type`` is ``ThreePhase`` or ``SLG``; for a single-line-to-ground
+   fault the faulted phase is given by ``phases`` (``A``, ``B`` or ``C``).
+   Each phase clears at its first current zero after ``end``. ``GenTrip``
+   disconnects a generator at ``time``:
 
-#. ``Monitors``: Specifies generators to be monitored during simulation.
-   Output from monitored generators is written to files.
+   ::
 
-#. ``DAESolver``: Configuration parameters for the DAE solver.
+      <Events>
+        <BusFault>
+          <begin>0.5</begin> <end>0.51</end> <bus>5</bus>
+          <type>SLG</type> <phases>A</phases>
+          <Ron>1e-3</Ron> <Rgnd>1e-2</Rgnd>
+        </BusFault>
+        <GenTrip>
+          <bus>5</bus> <id>1</id> <time>1.0</time>
+        </GenTrip>
+      </Events>
+
+#. ``Monitors``: Quantities written at every time step to a CSV file.
+   ``Generator`` (``bus``, ``id``) records terminal voltage, real and
+   reactive power, rotor angle and speed deviation; ``Bus`` (``bus``)
+   records the three instantaneous phase voltages. The file name is set
+   with ``MonitorFile`` and defaults to ``emtoutput.csv``. In a parallel
+   run each rank writes the quantities it owns, rank 0 to ``emtoutput.csv``
+   and rank *n* to ``emtoutput_n.csv``.
+
+#. ``checkInitialConditions``: After setup the driver verifies that the
+   power-flow initial point satisfies the EMT equations and prints
+   ``Emt: initial-condition check: max residual ...``. A consistent start
+   is near round-off (about 1e-9); larger values are listed row by row
+   and the case will drift. ``initResidualTol`` (default 1e-6) sets the
+   threshold and ``abortOnInitResidual`` (default false) stops the run
+   when it is exceeded. Default true.
+
+#. ``DAESolver``: Configuration parameters for the DAE solver. The
+   ``PETScPrefix`` (``emt_`` in the example) selects the options that the
+   time stepper reads from a ``.petscrc`` file in the run directory; a
+   sample is provided in ``src/applications/data_sets/petscoptions/emt``.
 
 After instantiating an ``Emt`` object with a communicator, the EMT
 calculation can be set up using the following sequence of function calls.
@@ -1467,6 +1500,19 @@ Output from the EMT simulation includes time series data for monitored
 generators, which is written to files during the simulation. The output
 frequency and monitored variables can be controlled through the input
 configuration.
+
+The stand-alone application is run as
+
+::
+
+   emt.x input.xml
+
+from a directory that contains the configuration file, the RAW and .dyr
+files it names and the ``.petscrc`` options file. The network file tag
+selects the RAW version: ``networkConfiguration`` reads version 23 and
+``networkConfiguration_v33`` through ``networkConfiguration_v36`` the
+corresponding PSS/E versions. Sample data sets for a 2-bus, 9-bus, Kundur
+two-area and 39-bus system are in ``src/applications/data_sets/emt``.
 
 The EMT module is designed to work in conjunction with other GridPACK
 modules, particularly power flow, to provide comprehensive power system

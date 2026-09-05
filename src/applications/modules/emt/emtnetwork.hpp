@@ -288,6 +288,9 @@ public:
 
   void resetEventFlags(void);
 
+  // Label for local variable ivar, e.g. "bus 2 gen 1 x[8]".
+  std::string describeVariable(int ivar);
+
   /**
     AddCshunt - Add capacitive shunt at this bus
     @param [input] Cshunt - the capacitive shunt matrix 3 X 3

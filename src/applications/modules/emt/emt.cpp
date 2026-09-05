@@ -205,7 +205,8 @@ void Emt::setMonitors(gridpack::utility::Configuration::CursorPtr p_configcursor
 	EmtBus *bus;
 	BaseEMTGenModel *gen;
 	bus_local_idx = emt_network->getLocalBusIndices(busnum);
-	if(bus_local_idx.size()) {
+	// Only the owning rank monitors; ghost copies are never advanced.
+	if(bus_local_idx.size() && emt_network->getActiveBus(bus_local_idx[0])) {
 	  bus = dynamic_cast<EmtBus*>(emt_network->getBus(bus_local_idx[0]).get());
 	  gen = bus->getGenerator(gen_id);
 	  if(gen) {
@@ -217,7 +218,7 @@ void Emt::setMonitors(gridpack::utility::Configuration::CursorPtr p_configcursor
 	std::vector<int> bus_local_idx;
 	EmtBus *bus;
 	bus_local_idx = emt_network->getLocalBusIndices(busnum);
-	if(bus_local_idx.size()) {
+	if(bus_local_idx.size() && emt_network->getActiveBus(bus_local_idx[0])) {
 	  bus = dynamic_cast<EmtBus*>(emt_network->getBus(bus_local_idx[0]).get());
 	  monitored_buses.push_back(bus);
 	}
@@ -440,6 +441,7 @@ void Emt::setup()
 
   // Initialize
   initialize(); 
+  if(!rank()) printf("Emt: DAE size %d, Jacobian %d x %d\n", p_X->size(), p_J->rows(), p_J->cols());
 
   // Set up solver
   int lsize = p_X->localSize();
@@ -473,9 +475,158 @@ void Emt::setup()
 
   if(!rank()) printf("Emt:Finished setting up DAE solver\n");
 
+  p_initResidualTol = p_configcursor->get("initResidualTol", 1.0e-6);
+  p_abortOnInitResidual = p_configcursor->get("abortOnInitResidual", false);
+  if(p_configcursor->get("checkInitialConditions", true)) checkInitialResidual();
+
   p_isSetUp = 1;
   p_profiler.stopsetuptimer();
   if(!rank()) printf("Emt:Set up completed\n");
+}
+
+// Consistent-initialization check. Rows whose residual changes between
+// Xdot=0 and Xdot=1 are differential; those with a large required derivative
+// (|F0/mass| >= 1) are sinusoidal abc states. Each aligned abc triple gets its
+// exact derivative from the phase values (x=A sin(wt+phi), xdot=wA cos(wt+phi));
+// all other derivatives are zero. F(0, X0, Xdot) must then vanish on every row
+// if X0 is a sinusoidal steady state of the EMT network.
+void Emt::checkInitialResidual()
+{
+  // Zero-length pre-step so explicitly integrated models have computed the
+  // internals (field voltage/current, block outputs) the residual reads.
+  p_factory->preStep(0.0, 0.0);
+  boost::scoped_ptr<gridpack::math::RealVector> xdot(p_X->clone());
+  boost::scoped_ptr<gridpack::math::RealVector> f(p_X->clone());
+  int lo, hi;
+  p_X->localIndexRange(lo, hi);
+  int n = hi - lo, i, j, off, nv;
+  std::vector<double> x0(n + 1), v0(n + 1), v1(n + 1), v2(n + 1), xd(n + 1, 0.0);
+  p_X->getElementRange(lo, hi, &x0[0]);
+  xdot->zero(); xdot->ready();
+  (*this)(0.0, *p_X, *xdot, *f);
+  f->getElementRange(lo, hi, &v0[0]);
+  xdot->fill(1.0); xdot->ready();
+  (*this)(0.0, *p_X, *xdot, *f);
+  f->getElementRange(lo, hi, &v1[0]);
+
+  // Local row -> owning bus/branch and variable index.
+  std::vector<int> isBus(n, -1), ownerIdx(n, -1), ownerVar(n, -1);
+  int nb = emt_network->numBuses(), nbr = emt_network->numBranches();
+  for(i = 0; i < nb; i++) {
+    p_VecMapper->getLocalBusOffset(i, &off, &nv);
+    for(j = 0; j < nv; j++) {
+      if(off + j < 0 || off + j >= n) continue;
+      isBus[off+j] = 1; ownerIdx[off+j] = i; ownerVar[off+j] = j;
+    }
+  }
+  for(i = 0; i < nbr; i++) {
+    p_VecMapper->getLocalBranchOffset(i, &off, &nv);
+    for(j = 0; j < nv; j++) {
+      if(off + j < 0 || off + j >= n) continue;
+      isBus[off+j] = 0; ownerIdx[off+j] = i; ownerVar[off+j] = j;
+    }
+  }
+
+  // Sinusoidal derivatives for aligned abc triples within one owner.
+  // A phase can have zero derivative at t=0, so a triple counts as sinusoidal
+  // when all three rows are differential and any one has |xdot| >= 1.
+  std::vector<char> sinus(n, 0), diff(n, 0);
+  for(i = 0; i < n; i++) {
+    double m = v0[i] - v1[i];
+    if(fabs(m) > 1e-12) { diff[i] = 1; if(fabs(v0[i] / m) >= 1.0) sinus[i] = 1; }
+  }
+  const double s3 = sqrt(3.0);
+  int ntriples = 0;
+  for(i = 0; i + 2 < n; i++) {
+    if(!(diff[i] && diff[i+1] && diff[i+2])) continue;
+    if(!(sinus[i] || sinus[i+1] || sinus[i+2])) continue;
+    if(isBus[i] != isBus[i+2] || ownerIdx[i] != ownerIdx[i+2] ||
+       ownerVar[i+2] != ownerVar[i] + 2) continue;
+    sinus[i] = sinus[i+1] = sinus[i+2] = 1;
+    ntriples++;
+    double asin_ = x0[i], acos_ = (x0[i+2] - x0[i+1]) / s3;
+    xd[i]   = OMEGA_S * acos_;
+    xd[i+1] = OMEGA_S * (-0.5 * acos_ + 0.5 * s3 * asin_);
+    xd[i+2] = OMEGA_S * (-0.5 * acos_ - 0.5 * s3 * asin_);
+    i += 2;
+  }
+  if(n > 0) xdot->setElementRange(lo, hi, &xd[0]);
+  xdot->ready();
+  (*this)(0.0, *p_X, *xdot, *f);
+  f->getElementRange(lo, hi, &v2[0]);
+  // Leave the network holding X0 with zero derivatives.
+  xdot->zero(); xdot->ready();
+  (*this)(0.0, *p_X, *xdot, *f);
+
+  // Optional full row map (<dumpVariableMap>true</dumpVariableMap>), for
+  // relating PETSc row numbers to network variables.
+  if(p_configcursor->get("dumpVariableMap", false)) {
+    for(i = 0; i < n; i++) {
+      std::string label = "unmapped";
+      if(isBus[i] == 1)
+        label = dynamic_cast<EmtBus*>(emt_network->getBus(ownerIdx[i]).get())->describeVariable(ownerVar[i]);
+      else if(isBus[i] == 0) {
+        EmtBranch *br = dynamic_cast<EmtBranch*>(emt_network->getBranch(ownerIdx[i]).get());
+        char b[96];
+        snprintf(b, sizeof(b), "branch %d-%d x[%d]", br->getBus1OriginalIndex(), br->getBus2OriginalIndex(), ownerVar[i]);
+        label = b;
+      }
+      printf("  row %6d  x=%13.6e  %s%s\n", lo + i, x0[i], label.c_str(),
+             sinus[i] ? " [abc]" : (diff[i] ? " [state]" : " [algebraic]"));
+    }
+  }
+  double maxres = 0.0;
+  int nbad = 0;
+  std::vector<std::string> lines;
+  for(i = 0; i < n; i++) {
+    double val = fabs(v2[i]);
+    if(val > maxres) maxres = val;
+    if(val <= p_initResidualTol) continue;
+    nbad++;
+    std::string label = "unmapped row";
+    if(isBus[i] == 1) {
+      label = dynamic_cast<EmtBus*>(emt_network->getBus(ownerIdx[i]).get())
+                ->describeVariable(ownerVar[i]);
+    } else if(isBus[i] == 0) {
+      EmtBranch *br = dynamic_cast<EmtBranch*>(emt_network->getBranch(ownerIdx[i]).get());
+      char b[96];
+      snprintf(b, sizeof(b), "branch %d-%d x[%d]",
+               br->getBus1OriginalIndex(), br->getBus2OriginalIndex(), ownerVar[i]);
+      label = b;
+    }
+    char buf[192];
+    snprintf(buf, sizeof(buf), "  residual %12.4e  (%s)  %s", v2[i],
+             sinus[i] ? "abc" : (fabs(v0[i]-v1[i]) > 1e-12 ? "state" : "algebraic"),
+             label.c_str());
+    lines.push_back(buf);
+  }
+  p_comm.max(&maxres, 1);
+  int cnt[2] = { nbad, ntriples };
+  p_comm.sum(cnt, 2);
+  if(!rank()) {
+    printf("Emt: initial-condition check: max residual %.3e with sinusoidal derivatives "
+           "(%d abc triples), %d rows above tol %.1e\n", maxres, cnt[1], cnt[0], p_initResidualTol);
+  }
+  for(int r = 0; r < size(); r++) {   // rank by rank to avoid interleaving
+    if(r == rank()) {
+      for(size_t k = 0; k < lines.size() && k < 40; k++) {
+        if(size() > 1) printf("  [rank %d]", r);
+        printf("%s\n", lines[k].c_str());
+      }
+      if(lines.size() > 40) printf("  ... %zu more rows\n", lines.size() - 40);
+      fflush(stdout);
+    }
+    p_comm.barrier();
+  }
+  if(cnt[0] > 0) {
+    if(p_abortOnInitResidual) {
+      if(!rank()) printf("Emt: ERROR inconsistent initial conditions; aborting (abortOnInitResidual=true)\n");
+      MPI_Abort(static_cast<MPI_Comm>(p_comm), 1);
+    } else if(!rank()) {
+      printf("Emt: WARNING initial conditions are not an equilibrium; the case will drift "
+             "(set <abortOnInitResidual>true</abortOnInitResidual> to stop here)\n");
+    }
+  }
 }
 
 void Emt::initialize()

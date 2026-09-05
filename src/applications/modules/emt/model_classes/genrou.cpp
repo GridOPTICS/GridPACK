@@ -165,7 +165,6 @@ void Genrou::init(gridpack::RealType* xin)
   gridpack::ComplexType S = gridpack::ComplexType(Pg,Qg);
   gridpack::ComplexType I;
   gridpack::ComplexType Z = gridpack::ComplexType(Ra,Xdpp);
-  gridpack::ComplexType Z1 = gridpack::ComplexType(Ra,Xq); // used in delta calculation
   gridpack::ComplexType E,E1;
 
   // Machine current
@@ -186,51 +185,18 @@ void Genrou::init(gridpack::RealType* xin)
   vabc[1] = p_vb;
   vabc[2] = p_vc;
   
-  // Iterative angle initialization with q-axis saturation.
-  // At steady state, iron saturation reduces the effective q-axis
-  // synchronous reactance: Xq_eff = Xl + (Xq - Xl) / (1 + Sq)
-  double Xq_eff = Xq;
   double Vd, Vq, V0, Id, Iq, I0;
   double Psidpp, Psiqpp, Psi_ag;
 
-  // Network (DQ) frame currents and voltages for initial angle computation
-  double IGr = real(I);  // real part of I in network frame
-  double IGi = imag(I);  // imag part of I in network frame
-  double Vrterm = real(V);
-  double Viterm = imag(V);
+  // Saturation from the subtransient flux |V + (Ra + jXdpp) I| (frame
+  // independent). The model's steady state then requires
+  // psiq = -Xq_sat*Iq with Xq_sat = Xdpp + (Xq - Xdpp)/(1 + Sq), so the
+  // rotor angle is that of E = V + (Ra + jXq_sat) I.
+  double Se = Sat(abs(V + Z*I));
+  double Sq = Se*(Xq - Xl)/(Xd - Xl);
+  double Xq_sat = Xdpp + (Xq - Xdpp)/(1.0 + Sq);
+  delta = arg(V + gridpack::ComplexType(Ra,Xq_sat)*I);
 
-  for (int sat_iter = 0; sat_iter < 10; sat_iter++) {
-    // Machine angle from voltage behind (Ra + j*Xq_eff)
-    delta = atan2(Viterm + IGr * Xq_eff + IGi * Ra,
-                  Vrterm + IGr * Ra - IGi * Xq_eff);
-
-    double theta = delta - PI/2.0;
-
-    // Network to machine reference frame transformation
-    abc2dq0(vabc,p_time,theta,vdq0);
-    abc2dq0(iabc,p_time,theta,idq0);
-
-    Vd = vdq0[0];
-    Vq = vdq0[1];
-    Id = idq0[0];
-    Iq = idq0[1];
-
-    Psidpp = Vq;   // +Vq at no-load
-    Psiqpp = -Vd;  // -Vd at no-load
-
-    Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
-
-    double Se = Sat(Psi_ag);
-    if (Se < 1e-10) break;  // no saturation, angle is exact
-
-    double Sq = Se * (Xq - Xl) / (Xd - Xl);
-    double Xq_eff_new = Xl + (Xq - Xl) / (1.0 + Sq);
-
-    if (fabs(Xq_eff_new - Xq_eff) < 1e-8) break;  // converged
-    Xq_eff = Xq_eff_new;
-  }
-
-  // theta is behind delta by 90 degrees
   double theta = delta - PI/2.0;
 
   // Final dq0 transformation with converged angle
@@ -261,7 +227,7 @@ void Genrou::init(gridpack::RealType* xin)
 
   // Field voltage with saturation at air-gap flux magnitude
   Psidpp = Eqp * (Xdpp - Xl) / (Xdp - Xl) + psi1d * (Xdp - Xdpp) / (Xdp - Xl);
-  Psiqpp = -Edp * (Xdpp - Xl) / (Xqp - Xl) - psi2q * (Xqp - Xdpp) / (Xqp - Xl);
+  Psiqpp = -Edp * (Xdpp - Xl) / (Xqp - Xl) + psi2q * (Xqp - Xdpp) / (Xqp - Xl);
   Psi_ag = sqrt(Psidpp * Psidpp + Psiqpp * Psiqpp);
 
   // Standard: LadIfd = E'q + Se(Psi_ag)*Psidpp + (Xd-Xdp)*Id (TempD=0 at SS)

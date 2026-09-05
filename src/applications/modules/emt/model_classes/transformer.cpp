@@ -4,6 +4,7 @@
 Transformer::Transformer(void)
 {
   nxbranch  = 6;
+  tap = 1.0;
 }
 
 Transformer::~Transformer(void)
@@ -224,12 +225,13 @@ void Transformer::matrixGetValues(int *nvals, gridpack::RealType *values, int *r
 
   getCurrentGlobalLocation(&i_gloc);
     
+  // Series drop is Z*ibr_to = tap*Z*ibr_from (tap on the from side).
   if(p_hasInductance) {
     for(j=0; j < 3; j++) {
       for(k=0; k < 3; k++) {
 	rows[ctr]   = i_gloc + j;
 	cols[ctr]   = i_gloc + k;
-	values[ctr] = -p_R[j][k] - shift*p_L[j][k];
+	values[ctr] = -tap*(p_R[j][k] + shift*p_L[j][k]);
 	ctr++;
       }
     }
@@ -238,7 +240,7 @@ void Transformer::matrixGetValues(int *nvals, gridpack::RealType *values, int *r
       for(k=0; k < 3; k++) {
 	rows[ctr]   = i_gloc + j;
 	cols[ctr]   = i_gloc + k;
-	values[ctr] = -p_R[j][k];
+	values[ctr] = -tap*p_R[j][k];
 	ctr++;
       }
     }
@@ -308,9 +310,10 @@ void Transformer::vectorGetValues(gridpack::RealType *values)
     
     if(p_hasInductance) {
       double Ribr[3],Ldidt[3];
-      // vf - R*ibr_from - vt - L*didt = 0
-      matvecmult3x3(p_R, ibr_from,Ribr); // fval1 = R*ibr
-      matvecmult3x3(p_L,dibrf_dt,Ldidt); // fval2 = L*didt
+      // vf/tap - vt = tap*(R*ibr_from + L*dibr_from/dt)  (ibr_to = tap*ibr_from)
+      matvecmult3x3(p_R, ibr_from,Ribr);
+      matvecmult3x3(p_L,dibrf_dt,Ldidt);
+      for(int k = 0; k < 3; k++) { Ribr[k] *= tap; Ldidt[k] *= tap; }
       f[0] = vf_minus_vt[0] - Ribr[0] - Ldidt[0];
       f[1] = vf_minus_vt[1] - Ribr[1] - Ldidt[1];
       f[2] = vf_minus_vt[2] - Ribr[2] - Ldidt[2];
@@ -324,7 +327,7 @@ void Transformer::vectorGetValues(gridpack::RealType *values)
       double Ribr[3];
 
       matvecmult3x3(p_R,ibr_from,Ribr);
-      
+      for(int k = 0; k < 3; k++) Ribr[k] *= tap;
       f[0] = -Ribr[0] + vf_minus_vt[0];
       f[1] = -Ribr[1] + vf_minus_vt[1];
       f[2] = -Ribr[2] + vf_minus_vt[2];
