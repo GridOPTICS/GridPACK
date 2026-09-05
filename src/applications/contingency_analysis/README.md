@@ -65,7 +65,7 @@ The same monitored set is used by every output, regardless of `outputFormat`:
 | `_violations.csv` | Branch and voltage rows for monitored elements only |
 | `json` / `csv` (`_buses.csv`, `_branches.csv`, `_generators.csv`, `.json`) | Base-case and contingency rows for monitored buses, branches and generators on monitored buses |
 | `csv_flat` / `csv_delta` | One row per (contingency, monitored branch) |
-| StatBlock `.txt` files (`vmag.txt`, `pflow.txt`, ...) | Rows for monitored buses / branches / generators only |
+| StatBlock `.txt` files (`vmag.txt`, `pflow.txt`, ...) | Rows for monitored buses / branches / generators only; a file is skipped when its element type has no monitored rows |
 | `_summary.json` | Violation counters, worst-of values, performance indices and rosters accrue over monitored elements only |
 | `_buses.csv` metadata sidecar (csv_flat / csv_delta), `_contingencies.csv`, `_convergence.csv` | Not filtered: these are lookup / bookkeeping tables and stay complete |
 
