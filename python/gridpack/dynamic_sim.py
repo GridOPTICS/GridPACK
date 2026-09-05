@@ -30,6 +30,7 @@ from typing import Iterable, List, Optional, Sequence
 from ._gridpack.dynamic_simulation import Event, EventVector
 
 from .session import Session
+from .powerflow import _xml_bool
 from .results import DSFResult
 
 
@@ -88,7 +89,7 @@ class DynamicSim:
             "Configuration.Dynamic_simulation"
         )
 
-        xml_suppress = bool(self._ds_cursor.get("suppressOutput"))
+        xml_suppress = _xml_bool(self._ds_cursor.get("suppressOutput"))
         self._suppress_output = (
             xml_suppress if suppress_output is None else suppress_output
         )

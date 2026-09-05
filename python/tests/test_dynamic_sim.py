@@ -6,6 +6,8 @@
 # to bypass upstream DSFullApp destructor SEGV).
 # -------------------------------------------------------------
 
+import shutil
+
 import pytest
 
 from .conftest import run_inline
@@ -104,3 +106,25 @@ def _parse_int(text: str, prefix: str) -> int:
         if line.startswith(prefix):
             return int(line[len(prefix):])
     raise AssertionError(f"'{prefix}' not found in output:\n{text}")
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("xml_value,expected", [("false", False), ("true", True)])
+def test_dynamic_sim_reads_xml_suppress_output(dsf_build_dir, tmp_path,
+                                               xml_value, expected):
+    """cursor.get() returns a string, so bool("false") was True."""
+    for name in ("9b3g.raw", "9b3g.dyr"):
+        shutil.copy(dsf_build_dir / name, tmp_path / name)
+    xml = (dsf_build_dir / "input_9b3g.xml").read_text()
+    (tmp_path / "input_9b3g.xml").write_text(xml.replace(
+        "<Dynamic_simulation>",
+        "<Dynamic_simulation>\n<suppressOutput>%s</suppressOutput>" % xml_value,
+        1))
+
+    r = run_inline("""
+        from gridpack import Session, DynamicSim
+        with Session() as s:
+            print("SUPPRESS", DynamicSim(s, "input_9b3g.xml").suppress_output)
+    """, cwd=tmp_path, timeout=180)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert ("SUPPRESS %s" % expected) in r.stdout
