@@ -85,7 +85,18 @@ init_gridpack_ds(py::module& gpm)
            gridpack::powerflow::PFAppModule pf_app;
            pf_app.readNetwork(pf_network, &config, pf_idx);
            pf_app.initialize();
-           pf_app.solve();
+           // Same solver selection and report as
+           // DSFullApp::solvePowerFlowBeforeDynSimu.
+           gpu::Configuration::CursorPtr cursor =
+             config.getCursor("Configuration.Powerflow");
+           bool useNonLinear = false;
+           useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+           if (useNonLinear) {
+             pf_app.nl_solve();
+           } else {
+             pf_app.solve();
+           }
+           pf_app.write();
            pf_app.saveData();
 
            // Create DS network and transfer PF results

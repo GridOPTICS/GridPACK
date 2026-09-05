@@ -128,3 +128,45 @@ def test_dynamic_sim_reads_xml_suppress_output(dsf_build_dir, tmp_path,
     """, cwd=tmp_path, timeout=180)
     assert r.returncode == 0, r.stderr[-2000:]
     assert ("SUPPRESS %s" % expected) in r.stdout
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("xml_value,nonlinear", [("false", False), ("true", True)])
+def test_dynamic_sim_honors_xml_nonlinear(dsf_build_dir, tmp_path,
+                                          xml_value, nonlinear):
+    """initFromConfig always called solve(), so UseNonLinear was ignored.
+
+    PETSc's SNES banner, which -ksp_view enables, is the only externally
+    visible difference between the two power flow solvers.
+    """
+    for name in ("9b3g.raw", "9b3g.dyr"):
+        shutil.copy(dsf_build_dir / name, tmp_path / name)
+    xml = (dsf_build_dir / "input_9b3g.xml").read_text()
+    xml = xml.replace("        -ksp_type richardson",
+                      "        -ksp_view\n        -ksp_type richardson", 1)
+    xml = xml.replace("<UseNonLinear>false</UseNonLinear>",
+                      "<UseNonLinear>%s</UseNonLinear>" % xml_value, 1)
+    (tmp_path / "input_9b3g.xml").write_text(xml)
+
+    r = run_inline("""
+        from gridpack import Session, DynamicSim
+        with Session() as s:
+            DynamicSim(s, "input_9b3g.xml")
+    """, cwd=tmp_path, timeout=180)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert ("SNES" in r.stdout + r.stderr) is nonlinear
+
+
+@pytest.mark.integration
+def test_dynamic_sim_writes_power_flow_report(dsf_build_dir, tmp_path):
+    """initFromConfig skipped pf_app.write(), dropping the PF tables."""
+    for name in ("9b3g.raw", "9b3g.dyr", "input_9b3g.xml"):
+        shutil.copy(dsf_build_dir / name, tmp_path / name)
+
+    r = run_inline("""
+        from gridpack import Session, DynamicSim
+        with Session() as s:
+            DynamicSim(s, "input_9b3g.xml")
+    """, cwd=tmp_path, timeout=180)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "Branch Power Flow" in r.stdout
