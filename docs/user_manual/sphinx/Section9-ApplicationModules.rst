@@ -599,7 +599,7 @@ Input options
 | ``monitorBranchesFile``    | (none) | Path to a CSV allowlist (``from_bus,to_bus,ckt`` rows).      |
 |                            |        | When set, area/kV gates are ignored.                         |
 +----------------------------+--------+--------------------------------------------------------------+
-| ``monitorAreas``           | (none) | Space-separated PSS/E area numbers. Branch passes if         |
+| ``monitorAreas``           | (none) | Area numbers (space- or comma-separated). Branch passes if   |
 |                            |        | **either endpoint** is in the set (catches tie-lines).       |
 +----------------------------+--------+--------------------------------------------------------------+
 | ``monitorKvMin``           | 0      | Lower kV threshold; branch passes if                         |

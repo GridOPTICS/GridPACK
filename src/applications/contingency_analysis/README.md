@@ -45,7 +45,7 @@ When combined, duplicates from the file are automatically skipped.
 | `writeStats` | Emit StatBlock summary files (vmag.txt etc.). Set false to skip and avoid the per-case StatBlock work | true |
 | `contingencyRating` | Loading% denominator across every CA output: `A`, `B`, or `C` with A→B→C fallback. Default `A` matches PW / PSS/E ACCC. `base_rate_mva` always uses rate-A | `A` |
 | `monitorBranchesFile` | Path to a CSV allowlist (`from_bus,to_bus,ckt`). When set, overrides the area/kV gates (TARA / PSS/E convention). Applies to every output format | (unset) |
-| `monitorAreas` | Space-separated list of PSS/E area numbers. A branch is monitored if **either endpoint** is in the set; a bus if its own area is. Applies to every output format | (unset) |
+| `monitorAreas` | PSS/E area numbers, space- or comma-separated (`2 3` or `2,3`). A branch is monitored if **either endpoint** is in the set; a bus if its own area is. Applies to every output format | (unset) |
 | `monitorKvMin` | Lower kV threshold; branch passes if `max(kv_from, kv_to) >= monitorKvMin`, bus if its base kV does. Applies to every output format | 0 (unbounded) |
 | `monitorKvMax` | Upper kV threshold; branch passes if `max(kv_from, kv_to) <= monitorKvMax`, bus if its base kV does. Applies to every output format | 0 (unbounded) |
 
@@ -78,6 +78,8 @@ buses that violate limits in the base case from the contingency checks.
 
 At startup the driver prints the effective filter and a count such as
 `Monitor filter: 20 of 179 branch elements and 10 of 118 buses monitored`.
+With an area / kV gate it also lists the areas and base kV levels in the case,
+e.g. `Case base kV levels (buses): 138(110) 345(8)`. 
 A filter that matches nothing produces a warning and empty outputs; check the
 area numbers and kV levels against the case (legacy v23 RAW files often carry
 area 1 and base kV 0 for every bus, so area / kV gates cannot select anything

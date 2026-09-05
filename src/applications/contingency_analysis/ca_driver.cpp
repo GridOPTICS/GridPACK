@@ -447,11 +447,32 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   cursor->get("monitorKvMin", &monitorKvMin);
   double monitorKvMax = 0.0;
   cursor->get("monitorKvMax", &monitorKvMax);
+  // Split on blanks, tabs, newlines, commas or semicolons; skip bad tokens.
   std::set<int> monitorAreas;
   {
-    std::vector<std::string> tok = util.blankTokenizer(monitorAreasStr);
+    std::string cur;
+    std::vector<std::string> tok;
+    for (size_t i = 0; i <= monitorAreasStr.size(); i++) {
+      char c = (i < monitorAreasStr.size()) ? monitorAreasStr[i] : ' ';
+      bool sep = (c == ' ' || c == '\t' || c == '\n' || c == '\r' ||
+                  c == ',' || c == ';');
+      if (sep) {
+        if (!cur.empty()) { tok.push_back(cur); cur.clear(); }
+      } else {
+        cur += c;
+      }
+    }
     for (size_t i = 0; i < tok.size(); i++) {
-      if (!tok[i].empty()) monitorAreas.insert(atoi(tok[i].c_str()));
+      char *end = NULL;
+      long v = strtol(tok[i].c_str(), &end, 10);
+      if (end == tok[i].c_str() || *end != '\0' || v <= 0) {
+        if (world.rank() == 0) {
+          printf("WARNING: monitorAreas token '%s' is not a positive integer; "
+                 "ignored\n", tok[i].c_str());
+        }
+        continue;
+      }
+      monitorAreas.insert(static_cast<int>(v));
     }
   }
   // Any monitor filter configured; gates every output format.
@@ -971,11 +992,41 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   if (world.rank() == 0) {
     if (!monitorAreas.empty()) {
-      printf("Monitor areas filter: %zu areas\n", monitorAreas.size());
+      printf("Monitor areas filter: %zu areas:", monitorAreas.size());
+      for (std::set<int>::const_iterator it = monitorAreas.begin();
+           it != monitorAreas.end(); ++it) printf(" %d", *it);
+      printf("\n");
     }
     if (monitorKvMin > 0.0 || monitorKvMax > 0.0) {
       printf("Monitor kV filter: min=%.2f max=%.2f (0 means unbounded)\n",
              monitorKvMin, monitorKvMax);
+    }
+    // List the areas and base kV levels present in the case.
+    if (haveAreaKvFilter) {
+      std::map<int, int> area_cnt;
+      std::map<double, int> kv_cnt;
+      for (std::map<int, BusAreaKv>::const_iterator it = bus_ak.begin();
+           it != bus_ak.end(); ++it) {
+        area_cnt[it->second.area]++;
+        kv_cnt[it->second.basekv]++;
+      }
+      const size_t maxShow = 25;
+      size_t n = 0;
+      printf("Case areas (buses):");
+      for (std::map<int, int>::const_iterator it = area_cnt.begin();
+           it != area_cnt.end() && n < maxShow; ++it, ++n)
+        printf(" %d(%d)", it->first, it->second);
+      if (area_cnt.size() > maxShow)
+        printf(" ... %zu areas total", area_cnt.size());
+      printf("\n");
+      n = 0;
+      printf("Case base kV levels (buses):");
+      for (std::map<double, int>::const_iterator it = kv_cnt.begin();
+           it != kv_cnt.end() && n < maxShow; ++it, ++n)
+        printf(" %g(%d)", it->first, it->second);
+      if (kv_cnt.size() > maxShow)
+        printf(" ... %zu levels total", kv_cnt.size());
+      printf("\n");
     }
   }
   auto busAreaKv = [&](int bus, int &area, double &kv) {
