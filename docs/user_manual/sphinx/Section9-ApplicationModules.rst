@@ -572,8 +572,8 @@ Input options
 +----------------------------+--------+--------------------------------------------------------------+
 | ``FullGeneratorN1``        | false  | Auto-generate N-1 over every in-service generator.           |
 +----------------------------+--------+--------------------------------------------------------------+
-| ``groupSize``              | 1      | MPI processes per contingency. Power flow scales poorly so   |
-|                            |        | leave at 1 and add ranks to widen task parallelism.          |
+| ``groupSize``              | 1      | Deprecated; ignored (forced to 1). An outaged branch can     |
+|                            |        | straddle a multi-rank partition. Add ranks for parallelism. |
 +----------------------------+--------+--------------------------------------------------------------+
 | ``minVoltage``             | 0.9    | Lower voltage limit (pu) for violation checks.               |
 +----------------------------+--------+--------------------------------------------------------------+

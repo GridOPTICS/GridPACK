@@ -35,7 +35,7 @@ When combined, duplicates from the file are automatically skipped.
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `groupSize` | Number of MPI processes per contingency (parallelization) | 1 |
+| `groupSize` | Deprecated; ignored. Each contingency runs on one rank (a group larger than one lets an outaged branch straddle the partition and fails the solve). Add MPI ranks to run more contingencies at once | 1 (forced) |
 | `printCalcFiles` | Write detailed output for each contingency | true |
 | `minVoltage` | Minimum voltage threshold for violations (p.u.) | 0.9 |
 | `maxVoltage` | Maximum voltage threshold for violations (p.u.) | 1.1 |
@@ -44,17 +44,44 @@ When combined, duplicates from the file are automatically skipped.
 | `outputFile` | Base name for output files | `ca_results` |
 | `writeStats` | Emit StatBlock summary files (vmag.txt etc.). Set false to skip and avoid the per-case StatBlock work | true |
 | `contingencyRating` | Loading% denominator across every CA output: `A`, `B`, or `C` with A→B→C fallback. Default `A` matches PW / PSS/E ACCC. `base_rate_mva` always uses rate-A | `A` |
-| `monitorBranchesFile` | Path to a CSV allowlist (`from_bus,to_bus,ckt`). When set, overrides the area/kV gates (TARA / PSS/E convention) | (unset) |
-| `monitorAreas` | Space-separated list of PSS/E area numbers. Branch is emitted if **either endpoint** is in the set | (unset) |
-| `monitorKvMin` | Lower kV threshold; branch passes if `max(kv_from, kv_to) >= monitorKvMin` | 0 (unbounded) |
-| `monitorKvMax` | Upper kV threshold; branch passes if `max(kv_from, kv_to) <= monitorKvMax` | 0 (unbounded) |
+| `monitorBranchesFile` | Path to a CSV allowlist (`from_bus,to_bus,ckt`). When set, overrides the area/kV gates (TARA / PSS/E convention). Applies to every output format | (unset) |
+| `monitorAreas` | Space-separated list of PSS/E area numbers. A branch is monitored if **either endpoint** is in the set; a bus if its own area is. Applies to every output format | (unset) |
+| `monitorKvMin` | Lower kV threshold; branch passes if `max(kv_from, kv_to) >= monitorKvMin`, bus if its base kV does. Applies to every output format | 0 (unbounded) |
+| `monitorKvMax` | Upper kV threshold; branch passes if `max(kv_from, kv_to) <= monitorKvMax`, bus if its base kV does. Applies to every output format | 0 (unbounded) |
 
-### Filtering csv_flat / csv_delta output
+### Monitor filters (all output formats)
 
-`csv_flat` and `csv_delta` emit per-(contingency, branch) rows. All filters
-are optional — unset means "monitor everything". `monitorBranchesFile` is
-authoritative when set; otherwise `monitorAreas` and the kV bounds AND
-together.
+The monitor filters select which **buses and branch elements are reported**;
+they never change which contingencies are simulated or how the network is
+solved. All filters are optional — unset means "monitor everything".
+`monitorBranchesFile` is authoritative when set; otherwise `monitorAreas` and
+the kV bounds AND together.
+
+The same monitored set is used by every output, regardless of `outputFormat`:
+
+| Output | What the filter does |
+|---|---|
+| `<name>.out` per-contingency text files (`printCalcFiles=true`) | Bus / branch violation listings and the "No violation" verdict cover monitored elements only |
+| `_violations.csv` | Branch and voltage rows for monitored elements only |
+| `json` / `csv` (`_buses.csv`, `_branches.csv`, `_generators.csv`, `.json`) | Base-case and contingency rows for monitored buses, branches and generators on monitored buses |
+| `csv_flat` / `csv_delta` | One row per (contingency, monitored branch) |
+| StatBlock `.txt` files (`vmag.txt`, `pflow.txt`, ...) | Rows for monitored buses / branches / generators only |
+| `_summary.json` | Violation counters, worst-of values, performance indices and rosters accrue over monitored elements only |
+| `_buses.csv` metadata sidecar (csv_flat / csv_delta), `_contingencies.csv`, `_convergence.csv` | Not filtered: these are lookup / bookkeeping tables and stay complete |
+
+The bus rule mirrors the branch rule: with an allowlist a bus is monitored when
+it is an endpoint of an allowlisted branch; with area / kV gates it is monitored
+when its own area is in `monitorAreas` and its own base kV lies inside the kV
+bounds. Non-monitored elements are flagged "ignore" on the network after the
+base-case solve, which is the same mechanism the driver already uses to exclude
+buses that violate limits in the base case from the contingency checks.
+
+At startup the driver prints the effective filter and a count such as
+`Monitor filter: 20 of 179 branch elements and 10 of 118 buses monitored`.
+A filter that matches nothing produces a warning and empty outputs; check the
+area numbers and kV levels against the case (legacy v23 RAW files often carry
+area 1 and base kV 0 for every bus, so area / kV gates cannot select anything
+there).
 
 ```xml
 <!-- (a) Monitor everything (default): no filter options set -->
@@ -206,6 +233,18 @@ they're omitted from `_delta.csv` / `_flat.csv`.
 
 When monitor filters are active, the data-row count of `_delta.csv` /
 `_flat.csv` equals `|monitored branches| × |converged contingencies|`.
+
+### `_contingencies.csv` sidecar (every `outputFormat`)
+
+Lookup table decoding the `event_idx` used by every other output. Columns:
+`event_idx, contingency, type, n_elements, from_bus, to_bus, circuit_id,
+gen_bus, gen_id`. One row per contingency; `event_idx=0` is the base case
+(`n_elements=0`, id columns blank). An N-1 row carries the single outaged
+element in the id columns, so it joins directly against the other CSVs. A
+multi-element (N-k) event stays on one row with `n_elements=k` and the
+element ids `;`-separated inside the same columns, e.g. `from_bus=1;3`,
+`to_bus=2;4`, `circuit_id=1;1`. Generator events fill `gen_bus`/`gen_id`
+and leave the branch columns blank.
 
 ---
 

@@ -4,7 +4,10 @@
   and contingencyRating. Uses the IEEE 14-bus case.
 
   AS WRITTEN this file demonstrates the DEFAULT "monitor everything" mode
-  (all filter options are commented out) 
+  (all filter options are commented out). Note that IEEE14_ca.raw is a
+  legacy-format case where every bus is in area 1 with base kV 0, so the
+  area / kV examples below are illustrative only; use monitorBranchesFile
+  with this case, or a v33 case with real area / kV data for area/kV gates.
 
   To narrow output, uncomment ONE of the EXAMPLE blocks below:
     - monitorBranchesFile  -> curated allowlist; wins over area/kV when set
@@ -19,7 +22,6 @@
     <printCalcFiles>false</printCalcFiles>
     <FullBranchN1>true</FullBranchN1>
     <FullGeneratorN1>true</FullGeneratorN1>
-    <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
     <qlim>true</qlim>
@@ -28,7 +30,9 @@
     <!-- EXAMPLE: csv_delta = wide-form, one row per joining base + cont 
          state on the same row. 
          csv_flat is the long form (separate rows per case). 
-         Either honors the monitor filters. -->
+         The monitor filters below apply to every outputFormat (text .out
+         files, json, csv, csv_flat, csv_delta, _violations.csv, StatBlock
+         .txt files and _summary.json). -->
     <outputFormat>csv_delta</outputFormat>
     <outputFile>ca_IEEE14</outputFile>
 

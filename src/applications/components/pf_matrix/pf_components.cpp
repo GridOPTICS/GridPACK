@@ -1837,6 +1837,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     sprintf(string, "%6d %20.12e %20.12e %d %d\n",
         getOriginalIndex(),0.0,0.0,use_vmag,changed);
   } else if (!strcmp(signal,"ca")) {
+    // Match checkVoltageViolations(): skip ignored buses.
+    if (p_ignore) return false;
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
     bool found = false;
@@ -3734,6 +3736,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     bool found = false;
     int ilen = 0;
     for (i=0; i<p_elems; i++) {
+      // Match checkLineOverloadViolations(): skip ignored elements.
+      if (i < static_cast<int>(p_ignore.size()) && p_ignore[i]) continue;
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);

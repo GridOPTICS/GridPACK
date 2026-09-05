@@ -17,7 +17,7 @@
  *
  * @updated Yousu Chen
  * - csv_flat / csv_delta per-(contingency,branch) outputs
- * - monitorBranchesFile / monitorAreas / monitorKvMin/Max filters
+ * - monitorBranchesFile / monitorAreas / monitorKvMin/Max filters (all formats)
  * @date  2026-06-21
  *
  * @brief Driver for contingency analysis calculation that make use of the
@@ -398,7 +398,17 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     util.toLower(tmp_bool);
     write_stats = (tmp_bool != "false");
   }
+  // groupSize is forced to 1: an outaged branch may straddle a multi-rank
+  // partition. Scale by adding ranks, not by widening a group.
   if (!cursor->get("groupSize",&grp_size)) {
+    grp_size = 1;
+  }
+  if (grp_size != 1) {
+    if (world.rank() == 0) {
+      printf("WARNING: groupSize=%d is not supported (a contingency branch "
+             "may span the partition boundary); using groupSize=1\n",
+             grp_size);
+    }
     grp_size = 1;
   }
   if (!cursor->get("minVoltage",&Vmin)) {
@@ -444,6 +454,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       if (!tok[i].empty()) monitorAreas.insert(atoi(tok[i].c_str()));
     }
   }
+  // Any monitor filter configured; gates every output format.
+  bool haveMonitorFilter = !monitorAreas.empty() ||
+                           monitorKvMin > 0.0 || monitorKvMax > 0.0 ||
+                           !monitorBranchesFile.empty();
   // Loading% denominator for all CA outputs (.out, _violations.csv, JSON,
   // csv_flat, csv_delta). A|B|C, default A to match PW/PSSE convention.
   // A->B->C fallback if the requested tier is zero/missing.
@@ -554,6 +568,45 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       m.zone   = bus->getZone();
       m.owner  = bus->getOwner();
       bus_meta[orig] = m;
+    }
+  }
+  // (area, base kV) per bus, all-gathered over task_comm so filter lookups
+  // work on gathered rows.
+  struct BusAreaKv { int area; double basekv; };
+  std::map<int, BusAreaKv> bus_ak;
+  if (wantBusSidecar || haveMonitorFilter) {
+    std::vector<int> lid, larea;
+    std::vector<double> lkv;
+    int nBus = pf_network->numBuses();
+    for (int i = 0; i < nBus; i++) {
+      if (!pf_network->getActiveBus(i)) continue;
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(i).get());
+      if (!bus) continue;
+      lid.push_back(pf_network->getOriginalBusIndex(i));
+      larea.push_back(bus->getArea());
+      lkv.push_back(bus->getBaseKV());
+    }
+    MPI_Comm tc = static_cast<MPI_Comm>(task_comm);
+    int tsize = task_comm.size();
+    int nloc = static_cast<int>(lid.size());
+    std::vector<int> counts(tsize, 0), displs(tsize, 0);
+    MPI_Allgather(&nloc, 1, MPI_INT, &counts[0], 1, MPI_INT, tc);
+    int tot = 0;
+    for (int p = 0; p < tsize; p++) { displs[p] = tot; tot += counts[p]; }
+    std::vector<int> gid(tot > 0 ? tot : 1), garea(tot > 0 ? tot : 1);
+    std::vector<double> gkv(tot > 0 ? tot : 1);
+    int *lid_p   = nloc > 0 ? &lid[0]   : NULL;
+    int *larea_p = nloc > 0 ? &larea[0] : NULL;
+    double *lkv_p = nloc > 0 ? &lkv[0]  : NULL;
+    MPI_Allgatherv(lid_p,   nloc, MPI_INT,    &gid[0],   &counts[0], &displs[0], MPI_INT,    tc);
+    MPI_Allgatherv(larea_p, nloc, MPI_INT,    &garea[0], &counts[0], &displs[0], MPI_INT,    tc);
+    MPI_Allgatherv(lkv_p,   nloc, MPI_DOUBLE, &gkv[0],   &counts[0], &displs[0], MPI_DOUBLE, tc);
+    for (int i = 0; i < tot; i++) {
+      BusAreaKv a;
+      a.area = garea[i];
+      a.basekv = gkv[i];
+      bus_ak[gid[i]] = a;
     }
   }
 
@@ -820,8 +873,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   // Monitor allowlist parsed from monitorBranchesFile. Empty -> emit all.
   std::set<BranchKey> monitorSet;
-  if (!monitorBranchesFile.empty() &&
-      (outputFormat == "csv_flat" || outputFormat == "csv_delta")) {
+  if (!monitorBranchesFile.empty()) {
     std::ifstream fin(monitorBranchesFile.c_str());
     if (!fin.is_open()) {
       if (world.rank() == 0) {
@@ -880,9 +932,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
     }
   }
-  auto isMonitored = [&](const BranchKey &k) {
-    return monitorSet.empty() || monitorSet.find(k) != monitorSet.end();
-  };
+  // Endpoints of allowlisted branches; gates voltage rows under an allowlist.
+  std::set<int> monitorBusSet;
+  for (std::set<BranchKey>::const_iterator it = monitorSet.begin();
+       it != monitorSet.end(); ++it) {
+    monitorBusSet.insert(it->from);
+    monitorBusSet.insert(it->to);
+  }
   // Area/kV gate. Either-endpoint match for areas (catches tie-lines).
   // kV is gated on max(kv_from, kv_to) so a 138/13.8 stepdown counts as 138.
   // Empty area set / zero kV bound = unrestricted on that dimension.
@@ -922,6 +978,43 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
              monitorKvMin, monitorKvMax);
     }
   }
+  auto busAreaKv = [&](int bus, int &area, double &kv) {
+    std::map<int, BusAreaKv>::const_iterator it = bus_ak.find(bus);
+    area = (it != bus_ak.end()) ? it->second.area   : 0;
+    kv   = (it != bus_ak.end()) ? it->second.basekv : 0.0;
+  };
+  // Branch monitor predicate shared by every output path (ckt padding trimmed).
+  auto branchMonitored = [&](int from, int to, const std::string &ckt) -> bool {
+    if (!monitorSet.empty()) {
+      BranchKey k;
+      k.from = from; k.to = to; k.ckt = ckt;
+      while (!k.ckt.empty() && (k.ckt[k.ckt.size()-1] == ' ' ||
+                                k.ckt[k.ckt.size()-1] == '\t'))
+        k.ckt.resize(k.ckt.size()-1);
+      return monitorSet.find(k) != monitorSet.end();
+    }
+    if (!haveAreaKvFilter) return true;
+    int af = 0, at = 0;
+    double kf = 0.0, kt = 0.0;
+    busAreaKv(from, af, kf);
+    busAreaKv(to,   at, kt);
+    return passesAreaKv(af, at, kf, kt);
+  };
+  // Bus counterpart: allowlist endpoint, else own area / base kV.
+  auto busMonitored = [&](int bus) -> bool {
+    if (!monitorSet.empty()) {
+      return monitorBusSet.find(bus) != monitorBusSet.end();
+    }
+    if (!haveAreaKvFilter) return true;
+    int area = 0;
+    double kv = 0.0;
+    busAreaKv(bus, area, kv);
+    if (!monitorAreas.empty() && monitorAreas.find(area) == monitorAreas.end())
+      return false;
+    if (monitorKvMin > 0.0 && kv < monitorKvMin) return false;
+    if (monitorKvMax > 0.0 && kv > monitorKvMax) return false;
+    return true;
+  };
 
   struct BaseFlow {
     double p_mw, q_mvar, mva, loading_pct;
@@ -978,11 +1071,17 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     char ct_name[24];
     std::strncpy(ct_name, name.c_str(), sizeof(ct_name) - 1);
     ct_name[sizeof(ct_name) - 1] = '\0';
-    // Accrue voltage PI on every energized bus in contingency rows only.
+    // Voltage PI and violations on monitored buses, contingency rows only.
     if (!is_base) {
       for (std::map<int,std::pair<double,double> >::const_iterator vit =
              vbymag_ang.begin(); vit != vbymag_ang.end(); ++vit) {
-        accumVoltagePi(ct_name, vit->second.first);
+        if (!busMonitored(vit->first)) continue;
+        double v_pu = vit->second.first;
+        accumVoltagePi(ct_name, v_pu);
+        if (v_pu <= 0.0 || !std::isfinite(v_pu)) continue;
+        if (v_pu < Vmin || v_pu > Vmax) {
+          emitVoltageViolation(event_idx, ct_name, vit->first, v_pu, Vmin, Vmax);
+        }
       }
     }
     for (size_t bi = 0; bi < b_strs.size(); bi++) {
@@ -1001,16 +1100,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       mk.from = from; mk.to = to; mk.ckt = ckt;
       while (!mk.ckt.empty() && mk.ckt[mk.ckt.size()-1] == ' ')
         mk.ckt.resize(mk.ckt.size()-1);
-      if (!monitorSet.empty() && monitorSet.find(mk) == monitorSet.end()) continue;
-      if (haveAreaKvFilter) {
-        std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
-        std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
-        int af = (mf != bus_meta.end()) ? mf->second.area   : 0;
-        int at = (mt != bus_meta.end()) ? mt->second.area   : 0;
-        double kf = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
-        double kt = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
-        if (!passesAreaKv(af, at, kf, kt)) continue;
-      }
+      if (!branchMonitored(from, to, mk.ckt)) continue;
       std::map<BranchKey, BranchRates>::const_iterator rIt = branch_rates.find(mk);
       double rate_sel = ratea;
       if (rIt != branch_rates.end()) {
@@ -1086,16 +1176,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // Strip trailing spaces from ckt so the key matches what flow_str
       // returns later (sscanf %15s already trims leading whitespace).
       while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ') k.ckt.resize(k.ckt.size()-1);
-      if (!isMonitored(k)) continue;
-      if (haveAreaKvFilter) {
-        std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
-        std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
-        int af = (mf != bus_meta.end()) ? mf->second.area   : 0;
-        int at = (mt != bus_meta.end()) ? mt->second.area   : 0;
-        double kf = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
-        double kt = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
-        if (!passesAreaKv(af, at, kf, kt)) continue;
-      }
+      if (!branchMonitored(from, to, k.ckt)) continue;
       double base_rate = ratea, cont_rate = ratea;
       std::map<BranchKey, BranchRates>::const_iterator rIt = branch_rates.find(k);
       if (rIt != branch_rates.end()) {
@@ -1117,12 +1198,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       bf.ang_from_deg  = (vf != vbymag_ang.end()) ? vf->second.second : 0.0;
       bf.v_to_pu       = (vt != vbymag_ang.end()) ? vt->second.first  : 0.0;
       bf.ang_to_deg    = (vt != vbymag_ang.end()) ? vt->second.second : 0.0;
-      std::map<int, BusMeta>::const_iterator mf = bus_meta.find(from);
-      std::map<int, BusMeta>::const_iterator mt = bus_meta.find(to);
-      bf.base_kv_from = (mf != bus_meta.end()) ? mf->second.basekv : 0.0;
-      bf.base_kv_to   = (mt != bus_meta.end()) ? mt->second.basekv : 0.0;
-      bf.area_from    = (mf != bus_meta.end()) ? mf->second.area   : 0;
-      bf.area_to      = (mt != bus_meta.end()) ? mt->second.area   : 0;
+      busAreaKv(from, bf.area_from, bf.base_kv_from);
+      busAreaKv(to,   bf.area_to,   bf.base_kv_to);
       base_cache[k] = bf;
     }
   };
@@ -1196,10 +1273,16 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         vbymag_ang[bus_id] = std::make_pair(vmag, angle);
       }
     }
-    // Accrue voltage PI on every energized bus in this contingency.
+    // Voltage PI and violations on monitored buses.
     for (std::map<int,std::pair<double,double> >::const_iterator vit =
            vbymag_ang.begin(); vit != vbymag_ang.end(); ++vit) {
-      accumVoltagePi(ct_name, vit->second.first);
+      if (!busMonitored(vit->first)) continue;
+      double v_pu = vit->second.first;
+      accumVoltagePi(ct_name, v_pu);
+      if (v_pu <= 0.0 || !std::isfinite(v_pu)) continue;
+      if (v_pu < Vmin || v_pu > Vmax) {
+        emitVoltageViolation(event_idx, ct_name, vit->first, v_pu, Vmin, Vmax);
+      }
     }
     for (size_t bi = 0; bi < b_strs.size(); bi++) {
       char ckt_buf[16] = {0};
@@ -1216,7 +1299,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       k.ckt  = std::string(ckt_buf);
       while (!k.ckt.empty() && k.ckt[k.ckt.size()-1] == ' ')
         k.ckt.resize(k.ckt.size()-1);
-      if (!isMonitored(k)) continue;
+      if (!branchMonitored(from, to, k.ckt)) continue;
       std::map<BranchKey, BaseFlow>::const_iterator it = base_cache.find(k);
       if (it == base_cache.end()) { deltaSkipCount++; continue; }
       const BaseFlow &bf = it->second;
@@ -1314,12 +1397,75 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Suppress voltage violations already present at base.
   pf_app.ignoreVoltageViolations();
 
+  // Flag non-monitored elements "ignore" so the violation checks and .out
+  // listings follow the filter.
+  if (haveMonitorFilter) {
+    long cnt[4] = { 0, 0, 0, 0 };   // mon buses, buses, mon elems, elems
+    int nBus = pf_network->numBuses();
+    for (int i = 0; i < nBus; i++) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>(pf_network->getBus(i).get());
+      if (!bus) continue;
+      bool mon = busMonitored(pf_network->getOriginalBusIndex(i));
+      if (!mon) bus->setIgnore(true);
+      if (pf_network->getActiveBus(i)) { cnt[1]++; if (mon) cnt[0]++; }
+    }
+    int nBranch = pf_network->numBranches();
+    for (int i = 0; i < nBranch; i++) {
+      gridpack::powerflow::PFBranch *br =
+        dynamic_cast<gridpack::powerflow::PFBranch*>(pf_network->getBranch(i).get());
+      if (!br) continue;
+      int from = br->getBus1OriginalIndex();
+      int to   = br->getBus2OriginalIndex();
+      std::vector<std::string> tags = br->getLineTags();
+      bool active = pf_network->getActiveBranch(i);
+      for (size_t t = 0; t < tags.size(); t++) {
+        bool mon = branchMonitored(from, to, tags[t]);
+        if (!mon) br->setIgnore(tags[t], true);
+        if (active) { cnt[3]++; if (mon) cnt[2]++; }
+      }
+    }
+    long tot[4] = { 0, 0, 0, 0 };
+    MPI_Allreduce(cnt, tot, 4, MPI_LONG, MPI_SUM,
+                  static_cast<MPI_Comm>(task_comm));
+    if (world.rank() == 0) {
+      printf("Monitor filter: %ld of %ld branch elements and %ld of %ld buses "
+             "monitored\n", tot[2], tot[3], tot[0], tot[1]);
+      if (tot[2] == 0 && tot[0] == 0) {
+        printf("WARNING: monitor filter matches nothing; all outputs will be "
+               "empty. Check monitorAreas/monitorKvMin/monitorKvMax/"
+               "monitorBranchesFile against the case.\n");
+      }
+    }
+  }
+  // Drop non-monitored elements from a collected result set.
+  auto filterResults = [&](gridpack::utility::PowerFlowResults &r) {
+    if (!haveMonitorFilter) return;
+    std::vector<gridpack::utility::BusResult> buses;
+    for (size_t i = 0; i < r.buses.size(); i++) {
+      if (busMonitored(r.buses[i].busId)) buses.push_back(r.buses[i]);
+    }
+    r.buses.swap(buses);
+    std::vector<gridpack::utility::BranchResult> branches;
+    for (size_t i = 0; i < r.branches.size(); i++) {
+      const gridpack::utility::BranchResult &b = r.branches[i];
+      if (branchMonitored(b.fromBus, b.toBus, b.circuitId)) branches.push_back(b);
+    }
+    r.branches.swap(branches);
+    std::vector<gridpack::utility::GeneratorResult> gens;
+    for (size_t i = 0; i < r.generators.size(); i++) {
+      if (busMonitored(r.generators[i].busId)) gens.push_back(r.generators[i]);
+    }
+    r.generators.swap(gens);
+  };
+
   // Collect base case results for export. csv_flat captures rows directly
   // in the hot loop and skips the heavyweight collectResults() path.
   gridpack::utility::PowerFlowResults baseCaseResults;
   if (outputFormat == "json" || outputFormat == "csv" ||
       outputFormat == "text") {
     baseCaseResults = pf_app.collectResults();
+    filterResults(baseCaseResults);
   }
   if (outputFormat == "csv_flat") {
     // The base case is replicated on every task communicator. captureFlatRows
@@ -1449,48 +1595,48 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     printf("==================================================================\n\n");
   }
 
-  // Decodes the event_idx used by every other CA output. One row per outaged
-  // element, so an N-2 event shares an event_idx; 0 is the base case.
+  // event_idx lookup table: one row per contingency (0 = base case); N-k
+  // element ids are ';'-separated within the columns.
   if (world.rank() == 0) {
     std::string ctgFile = outputFile + "_contingencies.csv";
     std::ofstream cout_ctg(ctgFile.c_str(), std::ios::out | std::ios::trunc);
-    cout_ctg << "event_idx,contingency,type,n_elements,element_seq,"
+    cout_ctg << "event_idx,contingency,type,n_elements,"
                 "from_bus,to_bus,circuit_id,gen_bus,gen_id\n";
     size_t ctgRows = 0;
-    cout_ctg << "0,base_case,base,0,0,,,,,\n";
+    cout_ctg << "0,base_case,base,0,,,,,\n";
     ctgRows++;
+    // Trim clean2Char padding so ids join against the other CSVs.
+    auto rtrim = [](const std::string &in) -> std::string {
+      std::string t = in;
+      while (!t.empty() && (t[t.size()-1] == ' ' || t[t.size()-1] == '\t'))
+        t.resize(t.size()-1);
+      return t;
+    };
     for (size_t ei = 0; ei < events.size(); ei++) {
       const gridpack::powerflow::Contingency &e = events[ei];
       int event_idx = static_cast<int>(ei) + 1;
-      // Trim clean2Char padding so ids join against the other CSVs.
-      auto rtrim = [](const std::string &in) -> std::string {
-        std::string t = in;
-        while (!t.empty() && (t[t.size()-1] == ' ' || t[t.size()-1] == '\t'))
-          t.resize(t.size()-1);
-        return t;
-      };
       std::string nm = rtrim(e.p_name);
       size_t n = 0;
       const char *ty = "unknown";
       if (e.p_type == Branch) { n = e.p_from.size(); ty = "branch"; }
       else if (e.p_type == Generator) { n = e.p_busid.size(); ty = "generator"; }
-      // An event with no elements (e.g. a malformed list entry) still gets a
-      // row, so no event_idx in the other files is left undecodable.
-      if (n == 0) {
-        cout_ctg << event_idx << "," << nm << "," << ty << ",0,0,,,,,\n";
-        ctgRows++;
-      }
+      std::ostringstream c_from, c_to, c_ckt, c_gbus, c_gid;
       for (size_t j = 0; j < n; j++) {
-        cout_ctg << event_idx << "," << nm << "," << ty << ","
-                 << n << "," << (j + 1) << ",";
-        if (e.p_type == Branch)
-          cout_ctg << e.p_from[j] << "," << e.p_to[j] << ","
-                   << rtrim(e.p_ckt[j]) << ",,\n";
-        else
-          cout_ctg << ",,," << e.p_busid[j] << ","
-                   << rtrim(e.p_genid[j]) << "\n";
-        ctgRows++;
+        const char *sep = (j > 0) ? ";" : "";
+        if (e.p_type == Branch) {
+          c_from << sep << e.p_from[j];
+          c_to   << sep << e.p_to[j];
+          c_ckt  << sep << rtrim(e.p_ckt[j]);
+        } else {
+          c_gbus << sep << e.p_busid[j];
+          c_gid  << sep << rtrim(e.p_genid[j]);
+        }
       }
+      // Empty events still get a row so every event_idx decodes.
+      cout_ctg << event_idx << "," << nm << "," << ty << "," << n << ","
+               << c_from.str() << "," << c_to.str() << "," << c_ckt.str() << ","
+               << c_gbus.str() << "," << c_gid.str() << "\n";
+      ctgRows++;
     }
     cout_ctg.close();
     printf("[contingencies] wrote %zu rows to %s\n", ctgRows, ctgFile.c_str());
@@ -1557,6 +1703,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // and angle for base case
     for (i=0; i<nsize; i++) {
       std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+      if (!busMonitored(atoi(tokens[0].c_str()))) continue;
       int not_isolated = atoi(tokens[3].c_str());
       if (not_isolated == 1) {
         mag_ids.push_back(atoi(tokens[0].c_str()));
@@ -1602,6 +1749,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       int ngen = tokens.size()/4;
       for (j=0; j<ngen; j++) {
+        if (!busMonitored(atoi(tokens[j*4].c_str()))) continue;
         ids.push_back(atoi(tokens[j*4].c_str()));
         tags.push_back(tokens[j*4+1]);
         pgen.push_back(atof(tokens[j*4+2].c_str()));
@@ -1641,6 +1789,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       int nline = tokens.size()/8;
       for (j=0; j<nline; j++) {
+        if (!branchMonitored(atoi(tokens[j*8].c_str()),
+                             atoi(tokens[j*8+1].c_str()),
+                             tokens[j*8+2])) continue;
         id1.push_back(atoi(tokens[j*8].c_str()));
         id2.push_back(atoi(tokens[j*8+1].c_str()));
         tags.push_back(tokens[j*8+2]);
@@ -1889,6 +2040,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           ctResult.hasVoltageViolation = !ok1;
           ctResult.hasBranchViolation = !ok2;
           ctResult.solution = pf_app.collectResults();
+          filterResults(ctResult.solution);
           populateViolations(ctResult, static_cast<int>(task_id) + 1);
           if (outputFormat != "text") localContingencies.push_back(ctResult);
         }
@@ -1943,6 +2095,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         nsize = v_vals.size();
         for (i=0; i<nsize; i++) {
           std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          if (!busMonitored(atoi(tokens[0].c_str()))) continue;
           int not_isolated = atoi(tokens[3].c_str());
           if (not_isolated == 1) {
             vmag.push_back(atof(tokens[2].c_str()));
@@ -1973,6 +2126,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           }
           int ngen = tokens.size()/4;
           for (j=0; j<ngen; j++) {
+            if (!busMonitored(atoi(tokens[j*4].c_str()))) continue;
             pgen.push_back(atof(tokens[j*4+2].c_str()));
             qgen.push_back(atof(tokens[j*4+3].c_str()));
             mask.push_back(1);
@@ -1997,6 +2151,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           }
           int nline = tokens.size()/8;
           for (j=0; j<nline; j++) {
+            if (!branchMonitored(atoi(tokens[j*8].c_str()),
+                                 atoi(tokens[j*8+1].c_str()),
+                                 tokens[j*8+2])) continue;
             pflow.push_back(atof(tokens[j*8+3].c_str()));
             qflow.push_back(atof(tokens[j*8+4].c_str()));
             perf.push_back(atof(tokens[j*8+5].c_str()));
@@ -2062,6 +2219,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         nsize = v_vals.size();
         for (i=0; i<nsize; i++) {
           std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+          if (!busMonitored(atoi(tokens[0].c_str()))) continue;
           int not_isolated = atoi(tokens[3].c_str());
           if (not_isolated == 1) {
             vmag.push_back(0.0);
@@ -2088,6 +2246,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           }
           int ngen = tokens.size()/4;
           for (j=0; j<ngen; j++) {
+            if (!busMonitored(atoi(tokens[j*4].c_str()))) continue;
             pgen.push_back(0.0);
             qgen.push_back(0.0);
             mask.push_back(0);
@@ -2112,6 +2271,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           }
           int nline = tokens.size()/8;
           for (j=0; j<nline; j++) {
+            if (!branchMonitored(atoi(tokens[j*8].c_str()),
+                                 atoi(tokens[j*8+1].c_str()),
+                                 tokens[j*8+2])) continue;
             pflow.push_back(0.0);
             qflow.push_back(0.0);
             perf.push_back(0.0);
