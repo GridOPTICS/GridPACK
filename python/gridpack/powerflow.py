@@ -78,6 +78,10 @@ class PowerFlow:
         If True, calls ``pfapp.suppressOutput(True)`` before solving.
         Reads ``Configuration.Powerflow.suppressOutput`` from XML if not
         overridden here.
+    comm : gridpack.Communicator, optional
+        Build the network on this communicator instead of the session's.
+        ContingencyAnalysis passes a task communicator so each task owns a
+        private copy; results are then task-local and never gathered.
     """
 
     def __init__(
@@ -87,6 +91,7 @@ class PowerFlow:
         *,
         idx: int = -1,
         suppress_output: Optional[bool] = None,
+        comm: Optional[object] = None,
     ) -> None:
         if session.closed:
             raise RuntimeError("Session is closed")
@@ -114,13 +119,29 @@ class PowerFlow:
         self._tolerance = _xml_number(cursor.get("tolerance"), float)
         self._max_iteration = _xml_number(cursor.get("maxIteration"), int)
 
+        # PSS/E exports requested by the XML, applied by the caller.
+        self._psse_exports = [
+            (v, cursor.get("exportPSSE_v%d" % v))
+            for v in (23, 33, 34)
+        ]
+        self._psse_exports = [(v, f) for v, f in self._psse_exports if f]
+
         # Create the pybind11 Powerflow application.
         self._pfapp = _ext.powerflow.Powerflow()
         if self._suppress_output:
             self._pfapp.suppressOutput(True)
 
-        self._pfapp.readNetwork(self._config, idx)
+        # A network on a sub-communicator is private to this task, so
+        # gathering its results over the session's world comm would splice
+        # together unrelated copies.
+        self._task_local = comm is not None
+        if comm is None:
+            self._pfapp.readNetwork(self._config, idx)
+        else:
+            self._pfapp.readNetwork(self._config, idx, comm)
         self._pfapp.initialize()
+
+        self._output_open = False
 
         self._solved = False
         self._closed = False
@@ -147,6 +168,16 @@ class PowerFlow:
     @property
     def suppress_output(self) -> bool:
         return self._suppress_output
+
+    @property
+    def network_is_task_local(self) -> bool:
+        """True if the network was built on a caller-supplied communicator."""
+        return self._task_local
+
+    @property
+    def psse_exports_from_xml(self):
+        """``[(version, path)]`` from the ``exportPSSE_v*`` XML keys."""
+        return list(self._psse_exports)
 
     # ------------------------------------------------------------------
     # Solve
@@ -184,7 +215,7 @@ class PowerFlow:
             nonlinear=use_nl,
             input_file=self.input_file,
             solver_converged=bool(ok),
-            mpi_comm=self._session.mpi_comm,
+            mpi_comm=None if self._task_local else self._session.mpi_comm,
         )
         self._live_results.add(result)
 
@@ -197,6 +228,101 @@ class PowerFlow:
                 input_file=self.input_file,
             )
         return result
+
+    # ------------------------------------------------------------------
+    # Contingency primitives
+    # ------------------------------------------------------------------
+    # Thin wrappers over PFAppModule, driven by ContingencyAnalysis; also
+    # the supported way to script an ad-hoc contingency.
+
+    def set_voltage_limits(self, vmin: float, vmax: float) -> None:
+        """Set the voltage band used by :meth:`check_voltage_violations`."""
+        self._require_open()
+        self._pfapp.setVoltageLimits(float(vmin), float(vmax))
+
+    def set_contingency(self, contingency) -> bool:
+        """Trip the lines or generators named by ``contingency``.
+
+        False if no element matched -- the next solve would just repeat
+        the base case.
+        """
+        self._require_open()
+        return bool(self._pfapp.setContingency(contingency))
+
+    def unset_contingency(self, contingency) -> None:
+        """Restore the elements tripped by :meth:`set_contingency`."""
+        self._require_open()
+        self._pfapp.unSetContingency(contingency)
+
+    def reset_voltages(self) -> None:
+        """Restore bus voltages to their initial values.
+
+        Required between contingencies, or convergence depends on order.
+        """
+        self._require_open()
+        self._pfapp.resetVoltages()
+
+    def ignore_voltage_violations(self) -> None:
+        """Exempt currently violating buses from later voltage checks.
+
+        Called on the base case so pre-existing violations are not
+        re-reported against every contingency.
+        """
+        self._require_open()
+        self._pfapp.ignoreVoltageViolations()
+
+    def check_qlim_violations(self) -> bool:
+        """True if no generator is outside its reactive limits.
+
+        False means a bus was converted PV -> PQ, so re-solve.
+        """
+        self._require_open()
+        return bool(self._pfapp.checkQlimViolations())
+
+    def clear_qlim_violations(self) -> None:
+        """Undo the PV -> PQ conversions from :meth:`check_qlim_violations`."""
+        self._require_open()
+        self._pfapp.clearQlimViolations()
+
+    def check_voltage_violations(self) -> bool:
+        """True if every bus is inside the band, ignoring exempted buses."""
+        self._require_open()
+        return bool(self._pfapp.checkVoltageViolations())
+
+    def check_line_overload_violations(self) -> bool:
+        """True if no branch exceeds its rating.
+
+        Tests one end per branch, unlike
+        :meth:`PowerFlowResult.violations`, which uses ``max(from, to)``.
+        """
+        self._require_open()
+        return bool(self._pfapp.checkLineOverloadViolations())
+
+    # ------------------------------------------------------------------
+    # Output redirection
+    # ------------------------------------------------------------------
+
+    def open_output(self, path: str) -> None:
+        """Redirect this application's output to ``path``."""
+        self._require_open()
+        self._pfapp.open(path)
+        self._output_open = True
+
+    def close_output(self) -> None:
+        """Stop redirecting output.  Idempotent."""
+        if self._closed or not self._output_open:
+            return
+        self._pfapp.close()
+        self._output_open = False
+
+    def print_output(self, text: str) -> None:
+        """Write ``text`` through the application's output stream."""
+        self._require_open()
+        self._pfapp.print(text)
+
+    def _require_open(self) -> None:
+        if self._closed:
+            raise RuntimeError("PowerFlow is closed")
 
     def close(self) -> None:
         """Release the underlying pybind11 objects in the correct order.
@@ -213,6 +339,7 @@ class PowerFlow:
             except Exception:
                 pass
         self._live_results.clear()
+        self.close_output()
         self._pfapp = None
         self._cursor = None
         self._config = None

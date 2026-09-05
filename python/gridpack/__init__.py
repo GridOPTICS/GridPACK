@@ -42,6 +42,11 @@ from .state_estimation import (                            # noqa: E402
     StateEstimationResult,
 )
 from .hadrec import Hadrec                                 # noqa: E402
+from .contingency import (                                  # noqa: E402
+    Contingency,
+    ContingencyAnalysis,
+    ContingencyResult,
+)
 from .exceptions import GridPACKError, PowerFlowDiverged   # noqa: E402
 
 __all__ = [
@@ -54,6 +59,9 @@ __all__ = [
     "StateEstimation",
     "StateEstimationResult",
     "Hadrec",
+    "Contingency",
+    "ContingencyAnalysis",
+    "ContingencyResult",
     "GridPACKError",
     "PowerFlowDiverged",
 ]

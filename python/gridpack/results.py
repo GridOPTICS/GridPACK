@@ -320,10 +320,21 @@ class PowerFlowResult:
     # Passthrough
     # ------------------------------------------------------------------
 
-    def write(self) -> None:
-        """Write the full solver output to stdout (mimics ``pf.x``)."""
+    def write(self, path: Optional[str] = None) -> None:
+        """Write the full solver output (mimics ``pf.x``).
+
+        Goes to stdout unless ``path`` is given, in which case the C++ side
+        redirects to that file and the redirect is closed again on return.
+        """
         self._check()
-        self._pfapp.write()
+        if path is None:
+            self._pfapp.write()
+            return
+        self._pfapp.open(path)
+        try:
+            self._pfapp.write()
+        finally:
+            self._pfapp.close()
 
     def export_psse(self, path: str, version: int = 33) -> None:
         """Export the solved network to PSS/E format.

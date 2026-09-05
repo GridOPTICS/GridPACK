@@ -38,6 +38,12 @@ Exit codes:
     1  unexpected error
     2  bad arguments or unreadable config
     3  the analysis did not converge
+
+A thin argparse shell over the ``gridpack.*`` wrappers.  Reaching into
+``gridpack._gridpack`` here duplicates library logic (that is how the
+XML-bool and divergence bugs got in), so ``tests/test_cli_uses_library.py``
+fails the build on new low-level calls; CoarseTimer and emt.EMT are the
+documented exceptions.
 """
 
 from __future__ import print_function
@@ -51,104 +57,47 @@ EXIT_ERROR = 1
 EXIT_USAGE = 2
 EXIT_DIVERGED = 3
 
-
-class _GridPACKEnv:
-    """Manages GridPACK environment lifecycle.
-
-    Ensures proper MPI initialization and finalization order.
-    The environment and communicator are stored as attributes
-    and cleaned up in the correct order when close() is called
-    or the object is deleted.
-    """
-    def __init__(self):
-        import gridpack
-        self._env = gridpack.Environment()
-        self._comm = gridpack.Communicator()
-
-    @property
-    def comm(self):
-        return self._comm
-
-    def close(self):
-        """Explicitly release in correct order."""
-        self._comm = None
-        self._env = None
+_PSSE_FORMATS = {"v23": 23, "v33": 33, "v34": 34}
 
 
 # -------------------------------------------------------------
 # Powerflow subcommand
 # -------------------------------------------------------------
-def cmd_powerflow(args, gp_env):
+def cmd_powerflow(args, session):
     """Run AC power flow analysis."""
     import gridpack
-    import gridpack.powerflow
 
-    comm = gp_env.comm
+    if args.export_psse:
+        fmt = args.export_psse[0]
+        if fmt not in _PSSE_FORMATS:
+            sys.stderr.write(
+                "Error: --export-psse format must be one of %s, not %r\n"
+                % (", ".join(sorted(_PSSE_FORMATS)), fmt))
+            return EXIT_USAGE
+
     timer = gridpack.CoarseTimer()
 
-    config = gridpack.Configuration()
-    config.open(args.config, comm)
-    cursor = config.getCursor("Configuration.Powerflow")
+    # None leaves the XML in charge; --solver overrides UseNonLinear.
+    nonlinear = {"nl": True, "nr": False}.get(args.solver)
 
-    # cursor.get() returns strings, so bool("false") would be True.
-    from ..powerflow import _xml_bool
+    pf = gridpack.PowerFlow(session, args.config,
+                            suppress_output=True if args.quiet else None)
 
-    useNonLinear = _xml_bool(cursor.get("UseNonLinear"))
-    exportPSSE23 = cursor.get("exportPSSE_v23")
-    exportPSSE33 = cursor.get("exportPSSE_v33")
-    exportPSSE34 = cursor.get("exportPSSE_v34")
-    noPrint = _xml_bool(cursor.get("suppressOutput"))
+    # strict=False: the divergence verdict is this command's exit code, and
+    # the results are still written either way.
+    result = pf.solve(nonlinear=nonlinear, strict=False)
+    result.write(args.output)
 
-    # CLI overrides
-    if args.quiet:
-        noPrint = True
-    if args.solver == "nl":
-        useNonLinear = True
-    elif args.solver == "nr":
-        useNonLinear = False
-
-    pfapp = gridpack.powerflow.Powerflow()
-
-    if noPrint:
-        pfapp.suppressOutput(True)
-
-    pfapp.readNetwork(config, -1)
-    pfapp.initialize()
-
-    converged = pfapp.nl_solve() if useNonLinear else pfapp.solve()
-
-    # Output handling
-    if args.output:
-        pfapp.open(args.output)
-
-    pfapp.write()
-    pfapp.saveData()
-
-    if args.output:
-        pfapp.close()
-
-    # PSS/E export from CLI
     if args.export_psse:
         fmt, fname = args.export_psse
-        if fmt == "v23":
-            pfapp.exportPSSE23(fname)
-        elif fmt == "v33":
-            pfapp.exportPSSE33(fname)
-        elif fmt == "v34":
-            pfapp.exportPSSE34(fname)
+        result.export_psse(fname, version=_PSSE_FORMATS[fmt])
+    for version, path in pf.psse_exports_from_xml:
+        result.export_psse(path, version=version)
 
-    # PSS/E export from XML config
-    if exportPSSE23:
-        pfapp.exportPSSE23(exportPSSE23)
-    if exportPSSE33:
-        pfapp.exportPSSE33(exportPSSE33)
-    if exportPSSE34:
-        pfapp.exportPSSE34(exportPSSE34)
-
-    if not noPrint and not args.no_timer:
+    if not pf.suppress_output and not args.no_timer:
         timer.dump()
 
-    if not converged:
+    if not result.converged:
         sys.stderr.write(
             "Error: power flow did not converge; results were written anyway.\n")
         return EXIT_DIVERGED
@@ -158,12 +107,11 @@ def cmd_powerflow(args, gp_env):
 # -------------------------------------------------------------
 # Dynamic Simulation subcommand
 # -------------------------------------------------------------
-def cmd_dsf(args, gp_env):
+def cmd_dsf(args, session):
     """Run dynamic simulation framework."""
     import gridpack
     from gridpack.dynamic_simulation import DSFullApp
 
-    comm = gp_env.comm
     timer = gridpack.CoarseTimer()
     t_total = timer.createCategory("Dynamic Simulation: Total Application")
     timer.start(t_total)
@@ -200,47 +148,29 @@ def cmd_dsf(args, gp_env):
 # -------------------------------------------------------------
 # State Estimation subcommand
 # -------------------------------------------------------------
-def cmd_se(args, gp_env):
+def cmd_se(args, session):
     """Run state estimation."""
     import gridpack
-    import gridpack.state_estimation
 
-    comm = gp_env.comm
+    # SEApp has no open()/close(), so -o used to raise AttributeError
+    # after the solve had already printed to stdout.
+    if args.output:
+        sys.stderr.write(
+            "Error: se cannot redirect output to a file; the SEApp binding "
+            "exposes no open()/close(). Redirect stdout instead.\n")
+        return EXIT_USAGE
+
     timer = gridpack.CoarseTimer()
 
-    config = gridpack.Configuration()
-    config.open(args.config, comm)
-
-    se = gridpack.state_estimation.SEApp()
-
-    # Get measurement file from config
-    measname = config.get("Configuration.State_estimation.measurementList")
-
-    mconfig = gridpack.Configuration()
-    mconfig.open(measname, comm)
-
-    measures = se.getMeasurements(mconfig)
-
-    se.readNetwork(config)
-    se.initialize()
-    se.setMeasurements(measures)
-    se.solve()
-    se.saveData()
-
-    if args.output:
-        se.open(args.output)
-
-    se.write()
-
-    if args.output:
-        se.close()
-
-    converged = se.hasConverged()
+    se = gridpack.StateEstimation(session, args.config,
+                                  suppress_output=args.quiet)
+    result = se.solve()
+    result.write()
 
     if not args.no_timer:
         timer.dump()
 
-    if not converged:
+    if not result.has_converged():
         sys.stderr.write("Error: state estimation did not converge; "
                          "results were written anyway.\n")
         return EXIT_DIVERGED
@@ -250,13 +180,11 @@ def cmd_se(args, gp_env):
 # -------------------------------------------------------------
 # HADREC subcommand
 # -------------------------------------------------------------
-def cmd_hadrec(args, gp_env):
+def cmd_hadrec(args, session):
     """Run HADREC remedial action control simulation."""
     import gridpack
     import gridpack.hadrec
     import gridpack.dynamic_simulation
-
-    comm = gp_env.comm
 
     np_ctrl = gridpack.NoPrint()
     if args.quiet:
@@ -278,12 +206,10 @@ def cmd_hadrec(args, gp_env):
 # -------------------------------------------------------------
 # EMT subcommand
 # -------------------------------------------------------------
-def cmd_emt(args, gp_env):
+def cmd_emt(args, session):
     """Run electromagnetic transient simulation."""
     import gridpack
     import gridpack.emt
-
-    comm = gp_env.comm
 
     emt_app = gridpack.emt.EMT()
     emt_app.setconfigurationfile(args.config)
@@ -297,155 +223,28 @@ def cmd_emt(args, gp_env):
 # -------------------------------------------------------------
 # Contingency Analysis subcommand
 # -------------------------------------------------------------
-def _parse_contingency_xml(config):
-    """Parse contingency list from XML configuration.
-
-    Reads the contingency list file specified in the
-    Contingency_analysis block and returns a list of dicts
-    describing each contingency.
-
-    Returns:
-        list of dict: Each dict has keys:
-            - name (str)
-            - type ("Line" or "Generator")
-            - from_buses, to_buses, ckt (for Line)
-            - buses, gen_ids (for Generator)
-    """
-    import xml.etree.ElementTree as ET
-
-    cursor = config.getCursor("Configuration.Contingency_analysis")
-    contingency_file = cursor.get("contingencyList")
-
-    if not contingency_file:
-        return []
-
-    tree = ET.parse(contingency_file)
-    root = tree.getroot()
-
-    contingencies = []
-    # Find Contingency elements under ContingencyList.Contingency_analysis.Contingencies
-    for cont_elem in root.iter("Contingency"):
-        ca_type = cont_elem.findtext("contingencyType", "")
-        ca_name = cont_elem.findtext("contingencyName", "")
-
-        if ca_type == "Line":
-            buses_str = cont_elem.findtext("contingencyLineBuses", "")
-            names_str = cont_elem.findtext("contingencyLineNames", "")
-            bus_ids = [int(x) for x in buses_str.split()]
-            line_names = names_str.split()
-            # Pad line names to 2 chars
-            line_names = [n.ljust(2)[:2] for n in line_names]
-
-            from_buses = []
-            to_buses = []
-            for i in range(len(line_names)):
-                from_buses.append(bus_ids[2 * i])
-                to_buses.append(bus_ids[2 * i + 1])
-
-            contingencies.append({
-                "name": ca_name,
-                "type": "Line",
-                "from_buses": from_buses,
-                "to_buses": to_buses,
-                "ckt": line_names,
-            })
-        elif ca_type == "Generator":
-            buses_str = cont_elem.findtext("contingencyBuses", "")
-            gens_str = cont_elem.findtext("contingencyGenerators", "")
-            bus_ids = [int(x) for x in buses_str.split()]
-            gen_ids = gens_str.split()
-            gen_ids = [g.ljust(2)[:2] for g in gen_ids]
-
-            contingencies.append({
-                "name": ca_name,
-                "type": "Generator",
-                "buses": bus_ids,
-                "gen_ids": gen_ids,
-            })
-
-    return contingencies
-
-
-def cmd_ca(args, gp_env):
-    """Run contingency analysis.
-
-    This implements the contingency analysis workflow using the
-    powerflow module with setContingency/unSetContingency, following
-    the same logic as the C++ ca_driver.
-
-    Note: Requires the contingency analysis pybind11 bindings
-    (setContingency, unSetContingency, Contingency struct) to be
-    available in gridpack.powerflow.
-    """
+def cmd_ca(args, session):
+    """Run N-1/N-k contingency analysis."""
     import gridpack
-    import gridpack.powerflow
-    from ..powerflow import _xml_bool
 
-    comm = gp_env.comm
     timer = gridpack.CoarseTimer()
     t_total = timer.createCategory("CA: Total Application")
     timer.start(t_total)
 
-    config = gridpack.Configuration()
-    config.open(args.config, comm)
+    ca = gridpack.ContingencyAnalysis(
+        session, args.config,
+        voltage_limits=args.vlimits,
+        print_calc_files=False if args.no_print_calcs else None,
+        suppress_output=True if args.quiet else None,
+    )
 
-    # Read CA parameters
-    cursor = config.getCursor("Configuration.Contingency_analysis")
-    grp_size = int(cursor.get("groupSize") or 1)
-    Vmin = float(args.vlimits[0] if args.vlimits else (cursor.get("minVoltage") or 0.9))
-    Vmax = float(args.vlimits[1] if args.vlimits else (cursor.get("maxVoltage") or 1.1))
-    print_calcs = True
-    tmp = cursor.get("printCalcFiles")
-    if tmp and tmp.lower() == "false":
-        print_calcs = False
-    if args.no_print_calcs:
-        print_calcs = False
-
-    # Create and initialize power flow
-    pfapp = gridpack.powerflow.Powerflow()
-
-    if args.quiet:
-        pfapp.suppressOutput(True)
-
-    pfapp.readNetwork(config, -1)
-    pfapp.initialize()
-    pfapp.setVoltageLimits(Vmin, Vmax)
-
-    # Solve base case.  Contingencies are measured against it, so a
-    # diverged base case makes all of them meaningless.
-    if not pfapp.solve():
-        sys.stderr.write("Error: contingency analysis base case did not "
-                         "converge; no contingencies were run.\n")
-        return EXIT_DIVERGED
-
-    # Check Q limits if enabled
-    check_qlim = True
-    qlim_val = cursor.get("qlim")
-    if qlim_val is not None:
-        if isinstance(qlim_val, str):
-            check_qlim = qlim_val.lower() != "false"
-        else:
-            check_qlim = bool(qlim_val)
-
-    if check_qlim:
-        if not pfapp.checkQlimViolations():
-            pfapp.solve()
-
-    # Flag base-case voltage violations to ignore
-    pfapp.ignoreVoltageViolations()
-
-    # Parse contingency list
-    contingencies = _parse_contingency_xml(config)
-
-    # Analyzing nothing must not look like a clean run.  FullBranchN1 /
-    # FullGeneratorN1 auto-generation is not implemented here, so a config
-    # relying on it yields an empty list.
-    if not contingencies:
-        if _xml_bool(cursor.get("FullBranchN1")) or \
-                _xml_bool(cursor.get("FullGeneratorN1")):
+    # Analyzing nothing must not look like a clean run.  Before the base
+    # case, so a config error costs no solve.
+    if not ca.contingencies:
+        if ca.requests_auto_n1:
             sys.stderr.write(
                 "Error: FullBranchN1/FullGeneratorN1 auto-generation is not "
-                "supported by this CLI; list contingencies explicitly via "
+                "supported; list contingencies explicitly via "
                 "<contingencyList>.\n")
         else:
             sys.stderr.write(
@@ -453,104 +252,35 @@ def cmd_ca(args, gp_env):
                 "Contingency_analysis block.\n")
         return EXIT_USAGE
 
-    if comm.rank() == 0:
+    if session.rank == 0:
         print("=" * 60)
         print("Contingency Analysis")
-        print("Total contingencies: %d" % len(contingencies))
-        print("Voltage limits: [%.3f, %.3f]" % (Vmin, Vmax))
+        print("Total contingencies: %d" % len(ca.contingencies))
+        print("Voltage limits: [%.3f, %.3f]" % (ca.min_voltage, ca.max_voltage))
         print("=" * 60)
 
-    # Use TaskManager for parallel distribution
-    task_comm = comm.divide(grp_size)
-    taskmgr = gridpack.TaskManager(comm)
-    ntasks = len(contingencies)
-    taskmgr.set(ntasks)
-    task = gridpack.TaskCounter()
+    # Contingencies are measured against the base case, so a diverged base
+    # case makes all of them meaningless.
+    if not ca.solve_base_case().converged:
+        sys.stderr.write("Error: contingency analysis base case did not "
+                         "converge; no contingencies were run.\n")
+        return EXIT_DIVERGED
 
-    results = []
+    def announce(task_id, contingency):
+        if session.rank == 0:
+            print("Running contingency %d: %s" % (task_id, contingency.name))
 
-    while taskmgr.nextTask(task_comm, task):
-        task_id = task.task_id
-        event = contingencies[task_id]
+    ca.run(progress=announce)
 
-        if comm.rank() == 0:
-            print("Running contingency %d: %s" % (task_id, event["name"]))
-
-        # Build Contingency object
-        contingency = gridpack.powerflow.Contingency()
-        contingency.p_name = event["name"]
-
-        if event["type"] == "Line":
-            contingency.p_type = 1  # Branch
-            contingency.p_from = event["from_buses"]
-            contingency.p_to = event["to_buses"]
-            contingency.p_ckt = event["ckt"]
-            contingency.p_saveLineStatus = [1] * len(event["ckt"])
-        else:
-            contingency.p_type = 0  # Generator
-            contingency.p_busid = event["buses"]
-            contingency.p_genid = event["gen_ids"]
-            contingency.p_saveGenStatus = [1] * len(event["gen_ids"])
-
-        # Open output file for this contingency
-        fname = event["name"].rstrip() + ".out"
-        if print_calcs:
-            pfapp.open(fname)
-
-        # Reset and apply contingency
-        pfapp.resetVoltages()
-        found = pfapp.setContingency(contingency)
-
-        if found and pfapp.solve():
-            if check_qlim:
-                if not pfapp.checkQlimViolations():
-                    pfapp.solve()
-
-            if print_calcs:
-                pfapp.write()
-
-            ok_v = pfapp.checkVoltageViolations()
-            ok_l = pfapp.checkLineOverloadViolations()
-
-            status = "OK"
-            if not ok_v and not ok_l:
-                status = "BUS+BRANCH VIOLATION"
-            elif not ok_v:
-                status = "BUS VIOLATION"
-            elif not ok_l:
-                status = "BRANCH VIOLATION"
-
-            results.append((event["name"], True, status))
-
-            if print_calcs:
-                if not ok_v:
-                    pfapp.print("\nBus Violation for contingency %s\n" % event["name"])
-                if not ok_l:
-                    pfapp.print("\nBranch Violation for contingency %s\n" % event["name"])
-                if ok_v and ok_l:
-                    pfapp.print("\nNo violation for contingency %s\n" % event["name"])
-        else:
-            results.append((event["name"], False, "DIVERGENT"))
-            if print_calcs:
-                pfapp.print("\nDivergent for contingency %s\n" % event["name"])
-
-        # Restore network
-        pfapp.unSetContingency(contingency)
-        if check_qlim:
-            pfapp.clearQlimViolations()
-
-        if print_calcs:
-            pfapp.close()
-
-    # Print summary
-    taskmgr.printStats()
-
-    if comm.rank() == 0:
+    # Every rank evaluated a disjoint subset; gather for a complete summary.
+    if session.rank == 0:
         print("\n" + "=" * 60)
         print("Contingency Analysis Summary")
         print("=" * 60)
-        for name, success, status in results:
-            print("  %-40s %s" % (name, status if success else "FAILED"))
+    results = ca.gather()
+    if session.rank == 0:
+        for r in results:
+            print("  %-40s %s" % (r.name, r.status))
 
     timer.stop(t_total)
     if not args.no_timer:
@@ -650,8 +380,6 @@ def main(argv=None):
     p_ca.add_argument("--vlimits", nargs=2, type=float,
                        metavar=("VMIN", "VMAX"),
                        help="Voltage limits (default: from XML or 0.9 1.1)")
-    p_ca.add_argument("--group-size", type=int, metavar="N",
-                       help="MPI group size for task distribution")
     p_ca.add_argument("--no-print-calcs", action="store_true",
                        help="Do not write per-contingency output files")
     p_ca.set_defaults(func=cmd_ca)
@@ -669,10 +397,12 @@ def main(argv=None):
         sys.stderr.write("Error: no such config file: %s\n" % args.config)
         return EXIT_USAGE
 
-    gp_env = _GridPACKEnv()
+    import gridpack
+
+    session = gridpack.Session()
     rc = EXIT_OK
     try:
-        rc = args.func(args, gp_env) or EXIT_OK
+        rc = args.func(args, session) or EXIT_OK
     except Exception as e:
         # GRIDPACK_TRACEBACK=1 keeps the trace, which is otherwise the
         # only way to diagnose a failure on one rank.
@@ -685,11 +415,12 @@ def main(argv=None):
         sys.stdout.flush()
         sys.stderr.flush()
 
-    # Closing normally lets the Environment finalize MPI.  This used to be
-    # os._exit(rc) to dodge a DSFullApp teardown SEGV, but that skipped
-    # MPI_Finalize, so mpiexec reported abnormal termination (exit 1) even
-    # on a clean run.  The SEGV no longer reproduces; the exit code does.
-    gp_env.close()
+    # Session.close() drains its registered wrappers before releasing the
+    # Communicator and Environment, which is what lets MPI finalize.  This
+    # used to be os._exit(rc) to dodge a DSFullApp teardown SEGV, but that
+    # skipped MPI_Finalize, so mpiexec reported abnormal termination (exit 1)
+    # even on a clean run.  The SEGV no longer reproduces; the exit code did.
+    session.close()
     return rc
 
 

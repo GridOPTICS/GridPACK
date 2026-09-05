@@ -151,6 +151,80 @@ def se_data_dir() -> Path:
     return d
 
 
+# The shipped contingencies_14.xml names circuits B1/B2/B3, but every branch
+# in IEEE14.raw is "BL", so every contingency there comes back not-found.
+# These hit the real network: three branches plus one diverging generator.
+_CA_CONTINGENCIES = """<?xml version="1.0" encoding="utf-8"?>
+<ContingencyList>
+  <Contingency_analysis>
+    <Contingencies>
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>LINE_2_3</contingencyName>
+        <contingencyLineBuses>2 3</contingencyLineBuses>
+        <contingencyLineNames>BL</contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>LINE_6_13</contingencyName>
+        <contingencyLineBuses>6 13</contingencyLineBuses>
+        <contingencyLineNames>BL</contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>LINE_13_14</contingencyName>
+        <contingencyLineBuses>13 14</contingencyLineBuses>
+        <contingencyLineNames>BL</contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>GEN_2</contingencyName>
+        <contingencyBuses>2</contingencyBuses>
+        <contingencyGenerators>1</contingencyGenerators>
+      </Contingency>
+    </Contingencies>
+  </Contingency_analysis>
+</ContingencyList>
+"""
+
+# Statuses the four contingencies above produce at the default 0.9-1.1 band.
+CA_EXPECTED_STATUS = {
+    "LINE_2_3": "OK",
+    "LINE_6_13": "OK",
+    "LINE_13_14": "OK",
+    "GEN_2": "DIVERGENT",
+}
+
+
+@pytest.fixture
+def ca_case(tmp_path) -> Path:
+    """A runnable CA case directory, returned as its path.
+
+    Switches the in-repo input off FullBranchN1 (unimplemented) onto a list.
+    """
+    data = Path(__file__).resolve().parents[2] / "src/applications/data_sets"
+    cfg_src = data / "input/ca/input_14.xml"
+    raw_src = data / "raw/IEEE14.raw"
+    for f in (cfg_src, raw_src):
+        if not f.exists():
+            pytest.skip(f"missing {f}")
+
+    cfg = cfg_src.read_text()
+    cfg = cfg.replace("<FullBranchN1>true</FullBranchN1>",
+                      "<FullBranchN1>false</FullBranchN1>")
+    cfg = cfg.replace("<FullGeneratorN1>true</FullGeneratorN1>",
+                      "<FullGeneratorN1>false</FullGeneratorN1>")
+    marker = "<!-- Option 2: Auto-generate N-1 contingencies from network -->"
+    assert marker in cfg, "CA input format changed; contingencyList not wired"
+    cfg = cfg.replace(
+        marker, "<contingencyList>contingencies.xml</contingencyList>")
+
+    (tmp_path / "input_14.xml").write_text(cfg)
+    (tmp_path / "contingencies.xml").write_text(_CA_CONTINGENCIES)
+    shutil.copy(raw_src, tmp_path / "IEEE14_ca.raw")
+    return tmp_path
+
+
 @pytest.fixture(scope="session")
 def dsf_build_dir() -> Path:
     """Directory holding ``input_9b3g.xml`` (in the DSF build tree)."""

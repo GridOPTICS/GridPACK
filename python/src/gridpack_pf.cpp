@@ -231,18 +231,28 @@ init_gridpack_pf(py::module& gpm)
   pfapp
     .def(py::init<>())
     .def("readNetwork",
-         [](gpf::PFAppModule& self, gpu::Configuration& config, const int& idx) {
+         [](gpf::PFAppModule& self, gpu::Configuration& config, const int& idx,
+            gpp::Communicator *comm) {
 
-           gpp::Communicator world;
-           boost::shared_ptr<gpf::PFNetwork> pfnet( new gpf::PFNetwork(world) );
+           // Default to the world communicator.  Contingency analysis
+           // passes a task communicator instead so each task owns a
+           // private copy of the network -- distributing tasks over ranks
+           // that share one distributed network deadlocks in solve().
+           gpp::Communicator net_comm;
+           if (comm != NULL) net_comm = *comm;
+           boost::shared_ptr<gpf::PFNetwork> pfnet( new gpf::PFNetwork(net_comm) );
 
            self.readNetwork(pfnet, &config, idx);
-         }, R"eof(
+         }, py::arg("config"), py::arg("idx"), py::arg("comm") = nullptr,
+         R"eof(
 Read the network specified in the configuration.  
 
 Parameters:
     config (gridpack.Configuration): power flow problem configuration usually read from an XML file
     idx (int): The index of the power flow problem in the configuration
+    comm (gridpack.Communicator, optional): communicator to build the network
+        on.  Defaults to the world communicator.  Pass a task communicator
+        from :func:`Communicator.divide` to give each task its own copy.
 )eof")
     .def("initialize", &gpf::PFAppModule::initialize,
          R"eof(

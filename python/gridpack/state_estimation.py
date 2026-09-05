@@ -222,9 +222,21 @@ class StateEstimationResult:
     def has_converged(self) -> bool:
         return self.converged
 
-    def write(self) -> None:
-        """Write final results of state estimation to standard output."""
+    def write(self, path: Optional[str] = None) -> None:
+        """Write final results of state estimation to standard output.
+
+        ``path`` is rejected: SEApp has no ``open``/``close`` binding, so
+        there is nothing to redirect through.  Raising here beats the
+        AttributeError that reaching for ``seapp.open`` used to produce
+        *after* the solve had already printed to stdout.
+        """
         self._check()
+        if path is not None:
+            raise NotImplementedError(
+                "state estimation output cannot be redirected to a file; "
+                "the SEApp binding exposes no open()/close(). Redirect the "
+                "process's stdout instead."
+            )
         self._seapp.write()
 
     def __repr__(self) -> str:

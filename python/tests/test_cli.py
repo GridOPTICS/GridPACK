@@ -159,3 +159,48 @@ def test_cli_dsf_finalizes_mpi(dsf_build_dir, require_mpiexec):
              cwd=dsf_build_dir, np=2)
     assert r.returncode == 0, r.stderr[-2000:]
     assert "finalize" not in r.stderr.lower()
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_ca_runs(ca_case):
+    """A contingency that diverges is a finding, not a failed run."""
+    r = _run("ca", "input_14.xml", "--no-timer", cwd=ca_case)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "LINE_2_3" in r.stdout and "GEN_2" in r.stdout
+    assert "DIVERGENT" in r.stdout
+
+
+@_CLI
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_cli_ca_under_mpi_exits_zero(ca_case, require_mpiexec):
+    """Regression: ranks solving different contingencies used to deadlock.
+
+    Rank 1 reported "No reference bus found" and the run hung in solve().
+    """
+    r = _run("ca", "input_14.xml", "--no-timer", cwd=ca_case, np=2)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "No reference bus found" not in r.stdout + r.stderr
+    # gather() gives rank 0 every contingency, not just its own share.
+    for name in ("LINE_2_3", "LINE_6_13", "LINE_13_14", "GEN_2"):
+        assert name in r.stdout
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_se_rejects_output_file(se_data_dir):
+    """-o used to AttributeError after the solve had already printed."""
+    r = _run("se", "input.xml", "-o", "se.out", cwd=se_data_dir)
+    assert r.returncode == 2
+    assert "no open()/close()" in r.stderr
+
+
+@_CLI
+def test_cli_rejects_unknown_psse_version(tests_data_dir, tmp_path):
+    """An unknown format used to be ignored, exporting nothing and exiting 0."""
+    r = _run("powerflow", str(tests_data_dir / "input_14.xml"),
+             "--export-psse", "v99", str(tmp_path / "out.raw"))
+    assert r.returncode == 2
+    assert "--export-psse format must be one of" in r.stderr
+    assert not (tmp_path / "out.raw").exists()
