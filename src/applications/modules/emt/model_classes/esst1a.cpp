@@ -3,799 +3,363 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
 /**
  * @file   esst1a.cpp
- *  
- * @brief ESST1A exciter model implementation
- *
- * @Modified: 2026-03-28 - Port DS fixes: Vrmax/Vrmin, Vamax/Vamin,
- *   Vimax/Vimin swap guards in load(). Fix Tf=0 div-by-zero in
- *   feedback block (Kf/Tf) — treat as algebraic xf=0 when Tf<=0.
- *
+ * @brief  IEEE ST1A static exciter (PSS/E ESST1A) for the EMT module.
+ *         Vmeas -> Vi limiter -> two lead-lags -> KA/(1+sTA) -> Va;
+ *         Efd = Va - max(0,KLR(Ifd-ILR)) limited to [Vt*VRmin, Vt*VRmax-KC*Ifd].
  */
 
 #include <esst1a.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
 
-Esst1aExc::Esst1aExc(void)
+Esst1a::Esst1a(void)
 {
-  Vmeas = 0.0; 
-  dVmeas = 0.0;
-  xLL1 = 0.0; 
-  dxLL1 = 0.0;
-  xLL2  = 0.0;
-  dxLL2 = 0.0;
-  Va    = 0.0;
-  dVa   = 0.0;
-  xf    = 0.0;
-  dxf   = 0.0;
-  UEL = 0; 
-  VOS = 0; 
-  Tr = 0.0; 
-  Vimax = 0.0; 
-  Vimin = 0.0; 
-  Tc = 0.0; 
-  Tb = 0.0;
-  Tc1 = 0.0;
-  Tb1 = 0.0; 
-  Ka = 0.0;
-  Ta = 0.0;
-  Vamax = 0.0;
-  Vamin = 0.0;
-  Vrmax = 0.0;
-  Vrmin = 0.0;
-  Kc = 0.0;
-  Kf = 0.0;
-  Tf = 0.0;
-  Klr = 0.0;
-  Ilr = 0.0;    
-
-  Efd_at_min = Efd_at_max = false;
-  Vi_at_min  = false;
-  Vi_at_max  = false;
-  Va_at_min = Va_at_max = false;
-
+  UEL = VOS = 0;
+  TR = VImax = VImin = TC = TB = TC1 = TB1 = 0.0;
+  KA = TA = VAmax = VAmin = VRmax = VRmin = 0.0;
+  KC = KF = TF = KLR = ILR = 0.0;
+  Vmeas = xLL1 = xLL2 = Va = xf = 0.0;
+  dVmeas = dxLL1 = dxLL2 = dVa = dxf = 0.0;
+  Efd = Ec = Vref = Vs = VF = Ifd = 0.0;
+  zero_TR = zero_TB = zero_TB1 = zero_TA = zero_TF = false;
+  Vi_at_min = Vi_at_max = Va_at_min = Va_at_max = false;
   nxexc = 5;
 }
 
-Esst1aExc::~Esst1aExc(void)
+Esst1a::~Esst1a(void)
 {
 }
 
-/**
- * Load parameters from DataCollection object into exciter model
- * @param data collection of exciter parameters from input files
- * @param index of exciter on bus
- * TODO: might want to move this functionality to BaseExciterModel
- */
-void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+void Esst1a::getnvar(int *nvar)
 {
-  BaseExcModel::load(data,idx); // load parameters in base exciter model
-  
-  // load parameters for the model type
-  data->getValue(EXCITER_UEL, &UEL, idx);
-  data->getValue(EXCITER_VOS, &VOS, idx);
-  data->getValue(EXCITER_TR, &Tr, idx);
-  data->getValue(EXCITER_VIMAX, &Vimax, idx);
-  data->getValue(EXCITER_VIMIN, &Vimin, idx);
-  data->getValue(EXCITER_TC, &Tc, idx);
-  data->getValue(EXCITER_TB, &Tb, idx);
-  data->getValue(EXCITER_TC1, &Tc1, idx);
-  data->getValue(EXCITER_TB1, &Tb1, idx);
-  data->getValue(EXCITER_KA, &Ka, idx);
-  data->getValue(EXCITER_TA, &Ta, idx);
-  data->getValue(EXCITER_VAMAX, &Vamax, idx);
-  data->getValue(EXCITER_VAMIN, &Vamin, idx);
-  data->getValue(EXCITER_VRMAX, &Vrmax, idx);
-  data->getValue(EXCITER_VRMIN, &Vrmin, idx);
-  data->getValue(EXCITER_KC, &Kc, idx);
-  data->getValue(EXCITER_KF, &Kf, idx);
-  data->getValue(EXCITER_TF, &Tf, idx);
-  data->getValue(EXCITER_KLR, &Klr, idx);
-  data->getValue(EXCITER_ILR, &Ilr, idx);
-
-  if(fabs(Klr) >= 1e-6) {
-    printf("ESST1A model does not support non-zero Klr yet\n");
-    exit(1);
-  }
-
-  // Swap limits if inverted
-  if (Vrmax < Vrmin) {
-    double tmp = Vrmax; Vrmax = Vrmin; Vrmin = tmp;
-  }
-  if (Vamax < Vamin) {
-    double tmp = Vamax; Vamax = Vamin; Vamin = tmp;
-  }
-  if (Vimax < Vimin) {
-    double tmp = Vimax; Vimax = Vimin; Vimin = tmp;
-  }
-
-  // Set flags for differential or algebraic equations
-  iseq_diff[0] = (Tr == 0)?0:1;
-  iseq_diff[1] = (Tb == 0 || Tc == 0)?0:1;
-  iseq_diff[2] = (Tb1 == 0 || Tc1 == 0)?0:1;
-  iseq_diff[3] = (Ta == 0)?0:1;
-  // Tf=0 means no feedback: Vf=0, xf=0 (algebraic)
-  iseq_diff[4] = (Tf > 0)?1:0;
+  if(integrationtype == EXPLICIT) nxexc = 0;
+  *nvar = nxexc;
 }
 
-
-/**
- * Initialize exciter model before calculation
- * @param [output] values - array where initialized exciter variables should be set
- */
-void Esst1aExc::init(gridpack::ComplexType* values) 
+void Esst1a::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
-  double Ec = sqrt(VD*VD + VQ*VQ);
-  double yLL2,yLL1;
-  double Vf=0.0,Vfd;
-  BaseGenModel *gen=getGenerator();
-  double LadIfd = gen->getFieldCurrent();
+  BaseEMTExcModel::load(data,idx);
+  if (!data->getValue(EXCITER_UEL, &UEL, idx)) UEL = 0;
+  if (!data->getValue(EXCITER_VOS, &VOS, idx)) VOS = 0;
+  if (!data->getValue(EXCITER_TR, &TR, idx)) TR = 0.0;
+  if (!data->getValue(EXCITER_VIMAX, &VImax, idx)) VImax = 99.0;
+  if (!data->getValue(EXCITER_VIMIN, &VImin, idx)) VImin = -99.0;
+  if (!data->getValue(EXCITER_TC, &TC, idx)) TC = 0.0;
+  if (!data->getValue(EXCITER_TB, &TB, idx)) TB = 0.0;
+  if (!data->getValue(EXCITER_TC1, &TC1, idx)) TC1 = 0.0;
+  if (!data->getValue(EXCITER_TB1, &TB1, idx)) TB1 = 0.0;
+  if (!data->getValue(EXCITER_KA, &KA, idx)) KA = 1.0;
+  if (!data->getValue(EXCITER_TA, &TA, idx)) TA = 0.0;
+  if (!data->getValue(EXCITER_VAMAX, &VAmax, idx)) VAmax = 99.0;
+  if (!data->getValue(EXCITER_VAMIN, &VAmin, idx)) VAmin = -99.0;
+  if (!data->getValue(EXCITER_VRMAX, &VRmax, idx)) VRmax = 99.0;
+  if (!data->getValue(EXCITER_VRMIN, &VRmin, idx)) VRmin = -99.0;
+  if (!data->getValue(EXCITER_KC, &KC, idx)) KC = 0.0;
+  if (!data->getValue(EXCITER_KF, &KF, idx)) KF = 0.0;
+  if (!data->getValue(EXCITER_TF, &TF, idx)) TF = 0.0;
+  if (!data->getValue(EXCITER_KLR, &KLR, idx)) KLR = 0.0;
+  if (!data->getValue(EXCITER_ILR, &ILR, idx)) ILR = 0.0;
 
-  // Field voltage (Efd0) and bus voltage (VD,VQ) are already set 
-  // Need to set the initial values for all the state variables
+  zero_TR  = (fabs(TR)  <= 1e-6);
+  zero_TB  = (fabs(TB)  <= 1e-6);
+  zero_TB1 = (fabs(TB1) <= 1e-6);
+  zero_TA  = (fabs(TA)  <= 1e-6);
+  zero_TF  = (fabs(TF)  <= 1e-6 || fabs(KF) <= 1e-12);
+  if(fabs(KA) < 1e-12) KA = 1.0;
 
+  // Blocks for the explicit path; load() runs before the integration type is set.
+  if(!zero_TR) Vmeas_blk.setparams(1.0,TR);
+  if(!zero_TB) LL1_blk.setparams(TC,TB);
+  if(!zero_TB1) LL2_blk.setparams(TC1,TB1);
+  if(!zero_TA) Regulator_blk.setparams(KA,TA,VAmin,VAmax,VAmin,VAmax);
+  else Regulator_gain_blk.setparams(KA,VAmin,VAmax);
+  if(!zero_TF) {
+    double a[2], b[2];
+    a[0] = TF; a[1] = 1.0;
+    b[0] = KF; b[1] = 0.0;
+    Feedback_blk.setcoeffs(a,b);
+  }
+}
+
+double Esst1a::terminalVoltage()
+{
+  double vabc[3], vdq0[3];
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+  double delta = getGenerator()->getAngle();
+  abc2dq0(vabc,p_time,delta,vdq0);
+  return sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
+}
+
+double Esst1a::computeEfd(double Va_in, double Vt, double Ifd_in, bool *clamped)
+{
+  double e = Va_in - std::max(0.0, KLR*(Ifd_in - ILR));
+  double emin = Vt*VRmin, emax = Vt*VRmax - KC*Ifd_in;
+  *clamped = (e < emin || e > emax);
+  return std::min(std::max(e,emin),emax);
+}
+
+void Esst1a::init(gridpack::RealType* xin)
+{
+  gridpack::RealType *x = xin + offsetb;
   Ec = sqrt(VD*VD + VQ*VQ);
-  Vfd = Klr*(LadIfd - Ilr); 
-  Vmeas    = Ec;
-  xf       = (Tf > 0) ? -Kf/Tf*Efd0 : 0.0;
-  Va       = Efd0 + Vfd;
-  yLL2     = Va/Ka;
-  yLL1     = yLL2;
-  if(iseq_diff[2]) xLL2    = (1.0 - Tc1/Tb1)*yLL2;
-  else xLL2 = yLL2;
-  Vref     = yLL1 + Vmeas + Vf;
-  if(iseq_diff[1]) xLL1    = (1.0 - Tc/Tb)*(Vref - Vmeas - Vf);
-  else xLL1 = Vref - Vmeas - Vf;
+  Efd = getInitialFieldVoltage();
+  Ifd = getGenerator()->getFieldCurrent();
 
-  values[0] = Vmeas;
-  values[1] = xLL1;
-  values[2] = xLL2;
-  values[3] = Va;
-  values[4] = xf;
+  double Vfd = std::max(0.0, KLR*(Ifd - ILR));
+  Va = Efd + Vfd;
+  double yLL2 = Va/KA, yLL1 = yLL2, Vi = yLL1;
+  VF = 0.0;
+  Vmeas = Ec;
+  Vref = Vi + Vmeas - Vs;
 
-  //  printf("Vmeas = %f,xLL1 = %f,xLL2 = %f,Va = %f,xf = %f,Vref = %f\n",
-  //	 Vmeas,xLL1,xLL2,Va,xf,Vref);
+  if(Va < VAmin || Va > VAmax)
+    printf("ESST1A bus %d: initial Va=%.4f outside [%.4f, %.4f]\n", busnum, Va, VAmin, VAmax);
+  if(Vi < VImin || Vi > VImax)
+    printf("ESST1A bus %d: initial Vi=%.4f outside [%.4f, %.4f]\n", busnum, Vi, VImin, VImax);
+  if(Efd < Ec*VRmin || Efd > Ec*VRmax - KC*Ifd)
+    printf("ESST1A bus %d: initial Efd=%.4f outside [%.4f, %.4f]\n", busnum, Efd, Ec*VRmin, Ec*VRmax - KC*Ifd);
+
+  if(integrationtype != IMPLICIT) {
+    if(!zero_TR) Vmeas_blk.init_given_u(Ec);
+    if(!zero_TF) Feedback_blk.init_given_u(Efd);
+    if(!zero_TB) LL1_blk.init_given_u(Vi);
+    if(!zero_TB1) LL2_blk.init_given_u(yLL1);
+    if(!zero_TA) Regulator_blk.init_given_y(Va);
+  } else {
+    xf   = zero_TF  ? 0.0 : -KF/TF*Efd;
+    xLL1 = zero_TB  ? Vi   : (1.0 - TC/TB)*Vi;
+    xLL2 = zero_TB1 ? yLL1 : (1.0 - TC1/TB1)*yLL1;
+    x[0] = Vmeas; x[1] = xLL1; x[2] = xLL2; x[3] = Va; x[4] = xf;
+  }
 }
 
-/**
- * Write output from exciters to a string.
- * @param string (output) string with information to be printed out
- * @param bufsize size of string buffer in bytes
- * @param signal an optional character string to signal to this
- * routine what about kind of information to write
- * @return true if bus is contributing string to output, false otherwise
- */
-bool Esst1aExc::serialWrite(char *string, const int bufsize,const char *signal)
+void Esst1a::preStep(double time, double timestep)
+{
+  if(integrationtype != EXPLICIT) return;
+  Ec = terminalVoltage();
+  Vmeas = zero_TR ? Ec : Vmeas_blk.getoutput(Ec,timestep,true);
+  VF = zero_TF ? 0.0 : Feedback_blk.getoutput(Efd,timestep,true);
+  double Vi = std::min(std::max(Vref - Vmeas + Vs - VF, VImin), VImax);
+  double yLL1 = zero_TB  ? Vi   : LL1_blk.getoutput(Vi,timestep,true);
+  double yLL2 = zero_TB1 ? yLL1 : LL2_blk.getoutput(yLL1,timestep,true);
+  Va = zero_TA ? Regulator_gain_blk.getoutput(yLL2) : Regulator_blk.getoutput(yLL2,timestep,true);
+  Ifd = getGenerator()->getFieldCurrent();
+  bool clamped;
+  Efd = computeEfd(Va, Ec, Ifd, &clamped);
+}
+
+void Esst1a::postStep(double time)
+{
+}
+
+bool Esst1a::serialWrite(char *string, const int bufsize, const char *signal)
 {
   return false;
 }
 
-/**
- * Write out exciter state
- * @param signal character string used to determine behavior
- * @param string buffer that contains output
- */
-void Esst1aExc::write(const char* signal, char* string)
+void Esst1a::write(const char* signal, char* string)
 {
 }
 
-/**
- *  Set the number of variables for this exciter model
- *  @param [output] number of variables for this model
- */
-bool Esst1aExc::vectorSize(int *nvar) const
+void Esst1a::setValues(gridpack::RealType *val)
 {
-  *nvar = nxexc;
-  return true;
-}
-
-/**
- * Set the internal values of the voltage magnitude and phase angle. Need this
- * function to push values from vectors back onto exciters
- * @param values array containing exciter state variables
-*/
-void Esst1aExc::setValues(gridpack::ComplexType *values)
-{  
+  gridpack::RealType *values = val + offsetb;
+  if(integrationtype == EXPLICIT) return;
   if(p_mode == XVECTOBUS) {
-    Vmeas = real(values[0]);
-    xLL1 = real(values[1]);
-    xLL2 = real(values[2]);
-    Va   = real(values[3]);
-    xf   = real(values[4]);
+    Vmeas = values[0]; xLL1 = values[1]; xLL2 = values[2]; Va = values[3]; xf = values[4];
   } else if(p_mode == XDOTVECTOBUS) {
-    dVmeas = real(values[0]);
-    dxLL1 = real(values[1]);
-    dxLL2 = real(values[2]);
-    dVa   = real(values[3]);
-    dxf   = real(values[4]);
-  } else if(p_mode == XVECPRETOBUS) {
-    Vmeasprev = real(values[0]);
-    xLL1prev = real(values[1]);
-    xLL2prev = real(values[2]);
-    Vaprev   = real(values[3]);
-    xfprev   = real(values[4]);
+    dVmeas = values[0]; dxLL1 = values[1]; dxLL2 = values[2]; dVa = values[3]; dxf = values[4];
   }
 }
 
-/**
- * Return the values of the exciter vector block
- * @param values: pointer to vector values
- * @return: false if exciter does not contribute
- *        vector element
- */
-bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
+void Esst1a::vectorGetValues(gridpack::RealType *values)
 {
-  int x1_idx = 0;
-  int x2_idx = 1;
-  int x3_idx = 2;
-  int x4_idx = 3;
-  int x5_idx = 4;
-  double Ec,yLL1,yLL2,Vf;
-  Ec = sqrt(VD*VD + VQ*VQ);
-  double Vi,Efd;
-  BaseGenModel* gen = getGenerator();
-  LadIfd = gen->getFieldCurrent();
-  
-  Efd = Va - Klr*(LadIfd - Ilr);
-  // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
-  if(p_mode == FAULT_EVAL) {
-    // Vmeas equation
-    if(iseq_diff[0]) values[0] = Vmeas - Vmeasprev;
-    else values[0] = -Vmeas + Ec;
+  gridpack::RealType *f = values + offsetb;
+  if(integrationtype == EXPLICIT || p_mode != RESIDUAL_EVAL) return;
 
-    // xLL1 equation
-    Vf = (Tf > 0) ? xf + Kf/Tf*Efd : 0.0;
-    Vi = Vref - Vmeas - Vf;
-    if(Vi_at_max) {
-      Vi = Vimax;
-    } else if(Vi_at_min) {
-      Vi = Vimin;
-    }
+  Ec = terminalVoltage();
+  Ifd = getGenerator()->getFieldCurrent();
+  bool clamped;
+  Efd = computeEfd(Va, Ec, Ifd, &clamped);
 
-    if(iseq_diff[1]) {
-      values[1] = xLL1 - xLL1prev;
-      yLL1 = xLL1 + Tc/Tb*Vi;
-    } else {
-      values[1] = -xLL1 + Vi;
-      yLL1 = xLL1;
-    }
+  f[0] = zero_TR ? (-Vmeas + Ec) : (-Vmeas + Ec)/TR - dVmeas;
 
-    // xLL2 equation
-    if(iseq_diff[2]) {
-      values[2] = xLL2 - xLL2prev;
-      yLL2 = xLL2 + Tc1/Tb1*yLL1;
-    } else {
-      values[2] = -xLL2 + yLL1;
-      yLL2 = xLL2;
-    }
+  double Vf = zero_TF ? 0.0 : xf + KF/TF*Efd;
+  double Vi = Vref - Vmeas + Vs - Vf;
+  if(Vi_at_max) Vi = VImax;
+  else if(Vi_at_min) Vi = VImin;
 
-    // Va equation
-    if(Va_at_min) {
-      values[3] = Va - Vamin;
-    } else if(Va_at_max) {
-      values[3] = Va - Vamax;
-    } else {
-      if(iseq_diff[3]) values[3] = Va - Vaprev;
-      else values[3] = -Va + Ka*yLL2;
-    }
+  double yLL1, yLL2;
+  if(zero_TB) { f[1] = -xLL1 + Vi; yLL1 = xLL1; }
+  else { f[1] = (-xLL1 + (1.0 - TC/TB)*Vi)/TB - dxLL1; yLL1 = xLL1 + TC/TB*Vi; }
 
-    // xf equation
-    values[4] = xf - xfprev;
+  if(zero_TB1) { f[2] = -xLL2 + yLL1; yLL2 = xLL2; }
+  else { f[2] = (-xLL2 + (1.0 - TC1/TB1)*yLL1)/TB1 - dxLL2; yLL2 = xLL2 + TC1/TB1*yLL1; }
 
-  } else if(p_mode == RESIDUAL_EVAL) {
+  if(Va_at_min) f[3] = Va - VAmin;
+  else if(Va_at_max) f[3] = Va - VAmax;
+  else f[3] = zero_TA ? (-Va + KA*yLL2) : (-Va + KA*yLL2)/TA - dVa;
 
-    // Vmeas equation
-    if(iseq_diff[0]) values[0] = (-Vmeas + Ec)/Tr - dVmeas;
-    else values[0] = -Vmeas + Ec;
-
-    // xLL1 equation
-    Vf = (Tf > 0) ? xf + Kf/Tf*Efd : 0.0;
-    Vi = Vref - Vmeas - Vf;
-    if(Vi_at_max) {
-      Vi = Vimax;
-    } else if(Vi_at_min) {
-      Vi = Vimin;
-    }
-
-    if(iseq_diff[1]) {
-      values[1] = (-xLL1 + (1.0 - Tc/Tb)*Vi)/Tb - dxLL1;
-      yLL1 = xLL1 + Tc/Tb*Vi;
-    } else {
-      values[1] = -xLL1 + Vi;
-      yLL1 = xLL1;
-    }
-
-    // xLL2 equation
-    if(iseq_diff[2]) {
-      values[2] = (-xLL2 + (1.0 - Tc1/Tb1)*yLL1)/Tb1 - dxLL2;
-      yLL2 = xLL2 + Tc1/Tb1*yLL1;
-    } else {
-      values[2] = -xLL2 + yLL1;
-      yLL2 = xLL2;
-    }
-
-    // Va equation
-    if(Va_at_min) {
-      values[3] = Va - Vamin;
-    } else if(Va_at_max) {
-      values[3] = Va - Vamax;
-    } else {
-      if(iseq_diff[3]) values[3] = (-Va + Ka*yLL2)/Ta - dVa;
-      else values[3] = -Va + Ka*yLL2;
-    }
-
-    // xf equation
-    if(iseq_diff[4]) {
-      values[4] = (-xf - Kf/Tf*Efd)/Tf - dxf;
-    } else {
-      values[4] = -xf; // Tf=0: xf held at 0 (no feedback)
-    }
-  }
-
-  return true;
+  f[4] = zero_TF ? -xf : (-xf - KF/TF*Efd)/TF - dxf;
 }
 
-/**
- * Set Jacobian block
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
+int Esst1a::matrixNumValues()
 {
-  int Vmeas_idx = offsetb;
-  int xLL1_idx  = offsetb+1;
-  int xLL2_idx  = offsetb+2;
-  int Va_idx    = offsetb+3;
-  int xf_idx    = offsetb+4;
-  int VD_idx    = 0;
-  int VQ_idx    = 1;
-  double Ec,yLL1,yLL2,Vf;
-  double dyLL2_dVmeas=0.0,dyLL2_dxLL1=0.0;
-  double dyLL2_dxLL2=0.0,dyLL2_dVa=0.0;
-  double dyLL2_dxf=0.0;
-  double dVf_dxf = (Tf > 0) ? 1.0 : 0.0;
-  double dVf_dEfd = (Tf > 0) ? Kf/Tf : 0.0;
-  double dyLL1_dxLL1=0.0,dyLL1_dVmeas=0.0;
-  double dyLL1_dxLL2=0.0,dyLL1_dVa=0.0;
-  double dyLL1_dxf=0.0, dyLL1_dEfd=0.0;
-  double Vi;
-
-  Ec = sqrt(VD*VD + VQ*VQ);
-
-  double dEc_dVD = VD/Ec;
-  double dEc_dVQ = VQ/Ec;
-
-  if(p_mode == FAULT_EVAL) {
-    // Partial derivatives of Vmeas equation
-    if(iseq_diff[0]) {
-      values[Vmeas_idx][Vmeas_idx] = 1.0;
-    } else {
-      values[Vmeas_idx][Vmeas_idx] = -1.0;
-      values[VD_idx][Vmeas_idx] = dEc_dVD;
-      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
-    }
-      
-    Vi = Vref - Vmeas - Vf;
-    if(Vi_at_max) Vi = Vimax;
-    else if(Vi_at_min) Vi = Vimin;
-    // Partial derivatives of xLL1 equation
-    if(iseq_diff[1]) {
-      values[xLL1_idx][xLL1_idx] = 1.0;
-      yLL1 = xLL1 + Tc/Tb*Vi;
-      dyLL1_dxLL1  = 1.0;
-      if(!Vi_at_min && !Vi_at_max) {
-	dyLL1_dVmeas = -Tc/Tb;
-	dyLL1_dxf    = -Tc/Tb*dVf_dxf;
-      }
-    } else {
-      values[xLL1_idx][xLL1_idx]  = -1.0;
-
-      if(!Vi_at_min && !Vi_at_max) {
-	values[Vmeas_idx][xLL1_idx] = -1.0;
-	values[xf_idx][xLL1_idx]    = -dVf_dxf;
-      }
-      yLL1 = xLL1;
-      dyLL1_dxLL1 = 1.0;
-    }
-
-    // Partial derivatives of xLL2 equation
-    if(iseq_diff[2]) {
-      values[xLL2_idx][xLL2_idx] = 1.0;
-      yLL2 = xLL2 + Tc1/Tb1*yLL1;
-
-      dyLL2_dVmeas = Tc1/Tb1*dyLL1_dVmeas;
-      dyLL2_dxLL1  = Tc1/Tb1*dyLL1_dxLL1;
-      dyLL2_dxLL2  = 1.0 + Tc1/Tb1*dyLL1_dxLL2;
-      dyLL2_dVa    = Tc1/Tb1*dyLL1_dVa;
-      dyLL2_dxf    = Tc1/Tb1*dyLL1_dxf;
-    } else {
-      values[Vmeas_idx][xLL2_idx] = dyLL1_dVmeas;
-      values[xLL1_idx][xLL2_idx]  = dyLL1_dxLL1;
-      values[xLL2_idx][xLL2_idx]  = -1.0  + dyLL1_dxLL2;
-      values[Va_idx][xLL2_idx]    = dyLL1_dVa;
-      values[xf_idx][xLL2_idx]    = dyLL1_dxf;
-
-      dyLL2_dxLL2 = 1.0;
-    }
-
-    // Partial derivatives of Va equation
-    if(Va_at_min || Va_at_max) {
-      values[Va_idx][Va_idx] = 1.0;
-    } else {
-      if(iseq_diff[3]) {
-	values[Va_idx][Va_idx] = 1.0;
-      } else {
-	values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
-	values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
-	values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
-	values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
-	values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
-      }
-    }
-
-    // Partial derivatives of xf equation
-    values[xf_idx][xf_idx] = 1.0;
-  } else {
-
-    // Partial derivatives of Vmeas equation
-    if(iseq_diff[0]) {
-      values[Vmeas_idx][Vmeas_idx] = -1.0/Tr - shift;
-      values[VD_idx][Vmeas_idx]    = dEc_dVD/Tr;
-      values[VQ_idx][Vmeas_idx]    = dEc_dVQ/Tr;
-    } else {
-      values[Vmeas_idx][Vmeas_idx] = -1.0;
-      values[VD_idx][Vmeas_idx] = dEc_dVD;
-      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
-    }
-
-    Vi = Vref - Vmeas - Vf;
-    if(Vi_at_max) Vi = Vimax;
-    else if(Vi_at_min) Vi = Vimin;
-    // Partial derivatives of xLL1 equation
-    if(iseq_diff[1]) {
-      values[xLL1_idx][xLL1_idx]  = -1.0/Tb - shift;
-      if(!Vi_at_min && !Vi_at_max) {
-	values[Vmeas_idx][xLL1_idx] = (1.0 - Tc/Tb)*-1.0/Tb;
-	values[xf_idx][xLL1_idx]    = (1.0 - Tc/Tb)*-dVf_dxf/Tb;
-      }
-      yLL1 = xLL1 + Tc/Tb*Vi;
-      dyLL1_dxLL1  = 1.0;
-
-      if(!Vi_at_min && !Vi_at_max) {
-	dyLL1_dVmeas = -Tc/Tb;
-	dyLL1_dxf    = -Tc/Tb*dVf_dxf;
-      }
-    } else {
-      values[xLL1_idx][xLL1_idx]  = -1.0;
-      if(!Vi_at_min && !Vi_at_max) {
-	values[Vmeas_idx][xLL1_idx] = -1.0;
-	values[xf_idx][xLL1_idx]    = -dVf_dxf;
-      }
-      yLL1 = xLL1;
-      dyLL1_dxLL1 = 1.0;
-    }
-
-    // Partial derivatives of xLL2 equation
-    if(iseq_diff[2]) {
-      values[Vmeas_idx][xLL2_idx] =  (1.0 - Tc1/Tb1)*dyLL1_dVmeas/Tb1;
-      values[xLL1_idx][xLL2_idx]  =  (1.0 - Tc1/Tb1)*dyLL1_dxLL1/Tb1;
-      values[xLL2_idx][xLL2_idx]  =  -1.0/Tb1 + (1 - Tc1/Tb1)*dyLL1_dxLL1/Tb1 - shift;
-      values[Va_idx][xLL2_idx]    =  (1.0 - Tc1/Tb1)*dyLL1_dVa/Tb1;
-      values[xf_idx][xLL2_idx]    =  (1.0 - Tc1/Tb1)*dyLL1_dxf/Tb1;
-
-      yLL2 = xLL2 + Tc1/Tb1*yLL1;
-
-      dyLL2_dVmeas = Tc1/Tb1*dyLL1_dVmeas;
-      dyLL2_dxLL1  = Tc1/Tb1*dyLL1_dxLL1;
-      dyLL2_dxLL2  = 1.0 + Tc1/Tb1*dyLL1_dxLL2;
-      dyLL2_dVa    = Tc1/Tb1*dyLL1_dVa;
-      dyLL2_dxf    = Tc1/Tb1*dyLL1_dxf;
-    } else {
-      values[Vmeas_idx][xLL2_idx] = dyLL1_dVmeas;
-      values[xLL1_idx][xLL2_idx]  = dyLL1_dxLL1;
-      values[xLL2_idx][xLL2_idx]  = -1.0  + dyLL1_dxLL2;
-      values[Va_idx][xLL2_idx]    = dyLL1_dVa;
-      values[xf_idx][xLL2_idx]    = dyLL1_dxf;
-
-      dyLL2_dxLL2 = 1.0;
-    }
-
-    // Partial derivatives of Va equation
-    if(Va_at_min || Va_at_max) {
-      values[Va_idx][Va_idx] = 1.0;
-    } else {
-      if(iseq_diff[3]) {
-	values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas/Ta;
-	values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1/Ta;
-	values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2/Ta;
-	values[Va_idx][Va_idx]    = (-1.0 + Ka*dyLL2_dVa)/Ta - shift;
-	values[xf_idx][Va_idx]    = Ka*dyLL2_dxf/Ta;
-      } else {
-	values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
-	values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
-	values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
-	values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
-	values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
-      }
-    }
-
-    // Partial derivatives of xf equation
-    if(iseq_diff[4]) {
-      values[Va_idx][xf_idx] = -Kf/(Tf*Tf);
-      values[xf_idx][xf_idx] = -1.0/Tf - shift;
-    } else {
-      values[xf_idx][xf_idx] = -1.0; // Tf=0: algebraic xf=0
-    }
-  }
-
-  return true;
+  return (integrationtype == IMPLICIT) ? 21 : 0;
 }
 
-
-/**
- * Set the initial field voltage (at t = tstart) for the exciter
- * @param fldv value of the field voltage
- */
-void Esst1aExc::setInitialFieldVoltage(double fldv)
+void Esst1a::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
 {
-  Efd0 = fldv;
+  int ctr = 0;
+  if(integrationtype != IMPLICIT) { *nvals = 0; return; }
+
+  int Vmeas_idx = p_gloc, xLL1_idx = p_gloc+1, xLL2_idx = p_gloc+2, Va_idx = p_gloc+3, xf_idx = p_gloc+4;
+  int delta_idx;
+  double delta = getGenerator()->getAngle(&delta_idx);
+
+  // Ec = |V_dq| partials w.r.t. va,vb,vc and delta
+  double Tdq0[3][3], dTdq0ddelta[3][3], vabc[3], vdq0[3];
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+  getTdq0(p_time,delta,Tdq0);
+  getdTdq0dtheta(p_time,delta,dTdq0ddelta);
+  abc2dq0(vabc,p_time,delta,vdq0);
+  double Vd = vdq0[0], Vq = vdq0[1];
+  double Ecv = sqrt(Vd*Vd + Vq*Vq);
+  double dEc_dVd = (Ecv > 1e-12) ? Vd/Ecv : 0.0, dEc_dVq = (Ecv > 1e-12) ? Vq/Ecv : 0.0;
+  double dEc_dv[3], dEc_ddelta;
+  for(int j = 0; j < 3; j++) dEc_dv[j] = dEc_dVd*Tdq0[0][j] + dEc_dVq*Tdq0[1][j];
+  dEc_ddelta = dEc_dVd*(dTdq0ddelta[0][0]*vabc[0] + dTdq0ddelta[0][1]*vabc[1] + dTdq0ddelta[0][2]*vabc[2])
+             + dEc_dVq*(dTdq0ddelta[1][0]*vabc[0] + dTdq0ddelta[1][1]*vabc[1] + dTdq0ddelta[1][2]*vabc[2]);
+
+  // Row Vmeas
+  double s0 = zero_TR ? 1.0 : 1.0/TR;
+  rows[ctr] = Vmeas_idx; cols[ctr] = Vmeas_idx; values[ctr++] = -s0 - (zero_TR ? 0.0 : shift);
+  rows[ctr] = Vmeas_idx; cols[ctr] = delta_idx; values[ctr++] = s0*dEc_ddelta;
+  for(int j = 0; j < 3; j++) { rows[ctr] = Vmeas_idx; cols[ctr] = p_glocvoltage+j; values[ctr++] = s0*dEc_dv[j]; }
+
+  // Vi = Vref - Vmeas + Vs - Vf, Vf = xf + KF/TF*Efd, Efd = Va (unless clamped)
+  bool clamped;
+  computeEfd(Va, Ecv, Ifd, &clamped);
+  double dEfd_dVa = clamped ? 0.0 : 1.0;
+  double dVi_dVmeas = -1.0, dVi_dxf = zero_TF ? 0.0 : -1.0, dVi_dVa = zero_TF ? 0.0 : -KF/TF*dEfd_dVa;
+  if(Vi_at_min || Vi_at_max) dVi_dVmeas = dVi_dxf = dVi_dVa = 0.0;
+
+  // Row xLL1; yLL1 partials
+  double c1 = zero_TB ? 1.0 : (1.0 - TC/TB)/TB;
+  rows[ctr] = xLL1_idx; cols[ctr] = xLL1_idx;  values[ctr++] = zero_TB ? -1.0 : -1.0/TB - shift;
+  rows[ctr] = xLL1_idx; cols[ctr] = Vmeas_idx; values[ctr++] = c1*dVi_dVmeas;
+  rows[ctr] = xLL1_idx; cols[ctr] = xf_idx;    values[ctr++] = c1*dVi_dxf;
+  rows[ctr] = xLL1_idx; cols[ctr] = Va_idx;    values[ctr++] = c1*dVi_dVa;
+  double dy1_dxLL1 = 1.0, dy1_dVi = zero_TB ? 0.0 : TC/TB;
+
+  // Row xLL2; yLL2 partials
+  double c2 = zero_TB1 ? 1.0 : (1.0 - TC1/TB1)/TB1;
+  rows[ctr] = xLL2_idx; cols[ctr] = xLL2_idx;  values[ctr++] = zero_TB1 ? -1.0 : -1.0/TB1 - shift;
+  rows[ctr] = xLL2_idx; cols[ctr] = xLL1_idx;  values[ctr++] = c2*dy1_dxLL1;
+  rows[ctr] = xLL2_idx; cols[ctr] = Vmeas_idx; values[ctr++] = c2*dy1_dVi*dVi_dVmeas;
+  rows[ctr] = xLL2_idx; cols[ctr] = xf_idx;    values[ctr++] = c2*dy1_dVi*dVi_dxf;
+  rows[ctr] = xLL2_idx; cols[ctr] = Va_idx;    values[ctr++] = c2*dy1_dVi*dVi_dVa;
+  double dy2_dxLL2 = 1.0, dy2_dy1 = zero_TB1 ? 0.0 : TC1/TB1;
+
+  // Row Va
+  if(Va_at_min || Va_at_max) {
+    rows[ctr] = Va_idx; cols[ctr] = Va_idx;    values[ctr++] = 1.0;
+    rows[ctr] = Va_idx; cols[ctr] = xLL2_idx;  values[ctr++] = 0.0;
+    rows[ctr] = Va_idx; cols[ctr] = xLL1_idx;  values[ctr++] = 0.0;
+    rows[ctr] = Va_idx; cols[ctr] = Vmeas_idx; values[ctr++] = 0.0;
+    rows[ctr] = Va_idx; cols[ctr] = xf_idx;    values[ctr++] = 0.0;
+  } else {
+    double k = zero_TA ? KA : KA/TA;
+    double dchain = dy2_dy1*dy1_dVi;   // d(yLL2)/d(Vi)
+    rows[ctr] = Va_idx; cols[ctr] = Va_idx;    values[ctr++] = (zero_TA ? -1.0 : -1.0/TA - shift) + k*dchain*dVi_dVa;
+    rows[ctr] = Va_idx; cols[ctr] = xLL2_idx;  values[ctr++] = k*dy2_dxLL2;
+    rows[ctr] = Va_idx; cols[ctr] = xLL1_idx;  values[ctr++] = k*dy2_dy1*dy1_dxLL1;
+    rows[ctr] = Va_idx; cols[ctr] = Vmeas_idx; values[ctr++] = k*dchain*dVi_dVmeas;
+    rows[ctr] = Va_idx; cols[ctr] = xf_idx;    values[ctr++] = k*dchain*dVi_dxf;
+  }
+
+  // Row xf
+  rows[ctr] = xf_idx; cols[ctr] = xf_idx; values[ctr++] = zero_TF ? -1.0 : -1.0/TF - shift;
+  rows[ctr] = xf_idx; cols[ctr] = Va_idx; values[ctr++] = zero_TF ? 0.0 : -(KF/TF)/TF*dEfd_dVa;
+
+  *nvals = ctr;
 }
 
-bool Esst1aExc::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
+double Esst1a::getFieldVoltage()
 {
-  int nxgen,i;
-
-  xexc_loc[0] = offsetb;
-  xexc_loc[1] = offsetb+1;
-  xexc_loc[2] = offsetb+2;
-  xexc_loc[3] = offsetb+3;
-  xexc_loc[4] = offsetb+4;
-
-  dEfd_dxexc[0] = 0.0;
-  dEfd_dxexc[1] = 0.0;
-  dEfd_dxexc[2] = 0.0;
-  dEfd_dxexc[3] = 1.0;
-  dEfd_dxexc[4] = 0.0;
-
-  // Note: dEfd_dxgen is all zeros since Klr is assumed to be zero. This
-  // should be updated when Klr is non-zero
-  getGenerator()->vectorSize(&nxgen);
-
-  for(i=0; i < nxgen; i++) dEfd_dxgen[i] = 0.0;
-
-  return true;
+  if(integrationtype == IMPLICIT) {
+    bool clamped;
+    Efd = computeEfd(Va, terminalVoltage(), Ifd, &clamped);
+  }
+  return Efd;
 }
 
-/** 
- * Get the value of the field voltage parameter
- * @return value of field voltage
- */
-double Esst1aExc::getFieldVoltage()
+double Esst1a::getFieldVoltage(int *Efd_gloc)
 {
-  double VT = sqrt(VD*VD + VQ*VQ);
-  double Vmin = VT*Vrmin;
-  double Vmax;
-  double fdv,Efd;
-  BaseGenModel* gen = getGenerator();
-  LadIfd = gen->getFieldCurrent();
-  Vmax = VT*Vrmax - Kc*LadIfd;
-  
-  Efd = Va - fmax(0,Klr*(LadIfd - Ilr)); // should be actually max(0,Klr*(LadIfd - Ilr));
-  fdv = fmin(fmax(Efd,Vmin),Vmax);
-
-  return fdv;
+  *Efd_gloc = (integrationtype == IMPLICIT) ? p_gloc + 3 : -1;
+  return getFieldVoltage();
 }
 
-/**
- * Update the event function values
- */
-void Esst1aExc::eventFunction(const double&t,gridpack::ComplexType *state,std::vector<std::complex<double> >& evalues)
+bool Esst1a::getFieldVoltagePartialDerivatives(int *xexc_loc, double *dEfd_dxexc, double *dEfd_dxgen)
 {
-  int offset    = getLocalOffset();
-  int Vmeas_idx = offset;
-  int xLL1_idx  = offset+1;
-  int xLL2_idx  = offset+2;
-  int Va_idx    = offset+3;
-  int xf_idx    = offset+4;
+  return false;
+}
 
-  Vmeas = real(state[Vmeas_idx]);
-  xLL1  = real(state[xLL1_idx]);
-  xLL2  = real(state[xLL2_idx]);
-  Va    = real(state[Va_idx]);
-  xf    = real(state[xf_idx]);
-
-  /* Only considering limits on Vi and Va */
-  
-  double Vf,Vi,Efd;
-  BaseGenModel* gen = getGenerator();
-  LadIfd = gen->getFieldCurrent();
-
-  Efd = Va - Klr*(LadIfd - Ilr);
-  Vf = xf + Kf/Tf*Efd;
-  Vi = Vref - Vmeas - Vf;
-
-  /* Limits on Vi */
-  if(!Vi_at_min) {
-    evalues[0] = Vi - Vimin;
-  } else {
-    evalues[0] = Vimin - Vi;
-  }
-
-  if(!Vi_at_max) {
-    evalues[1] = Vimax - Vi;
-  } else {
-    evalues[1] = Vi - Vimax;
-  }
-
-  double yLL1,yLL2;
-  if(iseq_diff[1]) yLL1 = xLL1 + Tc/Tb*Vi;
-  else yLL1 = xLL1;
-
-  if(iseq_diff[2]) yLL2 = xLL2 + Tc1/Tb1*yLL1;
-  else yLL2 = xLL2;
-
-  double dVa_dt = (-Va + Ka*yLL2)/Ta;
-  /* Limits on Va */
-  if(!Va_at_min) {
-    evalues[2] = Va - Vamin;
-  } else {
-    evalues[2] = -dVa_dt; /* Release when derivative reaches 0 */
-  }
-
-  if(!Va_at_max) {
-    evalues[3] = Vamax - Va;
-    //    printf("Va = %f\n", Va);
-  } else {
-    evalues[3] = dVa_dt; /* Release when derivative reaches 0 */
-    //    printf("Va = %f, dVa_dt = %f\n",Va,dVa_dt);
-  }
-  //  printf("Vi = %f Va = %f, dVa_dt = %f kf = %f tf = %f, Efd=%f,Vref=%f\n",Vi,Va,dVa_dt,Kf,Tf,Efd,Vref);
-} 
-
-/**
- * Reset limiter flags after a network resolve
- */
-void Esst1aExc::resetEventFlags()
+void Esst1a::resetEventFlags()
 {
-  /* Note that the states are already pushed onto the network, so we can access these
-     directly
-  */
-  double Vf,Vi,Efd;
-  BaseGenModel* gen = getGenerator();
-  LadIfd = gen->getFieldCurrent();
+  Vi_at_min = Vi_at_max = Va_at_min = Va_at_max = false;
+}
 
-  Efd = Va - Klr*(LadIfd - Ilr);
-  Vf = xf + Kf/Tf*Efd;
-  Vi = Vref - Vmeas - Vf;
+void Esst1a::eventFunction(const double&t, gridpack::RealType *state, std::vector<gridpack::RealType >& evalues)
+{
+  int off = getLocalOffset();
+  Vmeas = state[off]; xLL1 = state[off+1]; xLL2 = state[off+2]; Va = state[off+3]; xf = state[off+4];
 
-  if(!Vi_at_min) {
-    if(Vi - Vimin < 0) Vi_at_min = true;
-  } else {
-    if(Vimin - Vi < 0) Vi_at_min = false; /* Release */
-  }
+  double Vf = zero_TF ? 0.0 : xf + KF/TF*Efd;
+  double Vi = Vref - Vmeas + Vs - Vf;
+  double yLL1 = zero_TB  ? xLL1 : xLL1 + TC/TB*Vi;
+  double yLL2 = zero_TB1 ? xLL2 : xLL2 + TC1/TB1*yLL1;
+  double dVa_dt = zero_TA ? 0.0 : (-Va + KA*yLL2)/TA;
 
-  if(!Vi_at_max) {
-    if(Vimax - Vi < 0) Vi_at_max = true;
-  } else {
-    if(Vi - Vimax < 0) Vi_at_max = false; /* Release */
-  }
+  evalues[0] = Vi_at_min ? (VImin - Vi) : (Vi - VImin);
+  evalues[1] = Vi_at_max ? (Vi - VImax) : (VImax - Vi);
+  evalues[2] = Va_at_min ? -dVa_dt : (Va - VAmin);
+  evalues[3] = Va_at_max ?  dVa_dt : (VAmax - Va);
+}
 
-  double yLL1,yLL2;
-  if(iseq_diff[1]) yLL1 = xLL1 + Tc/Tb*Vi;
-  else yLL1 = xLL1;
+void Esst1a::eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state)
+{
+  int off = getLocalOffset();
+  Vmeas = state[off]; xLL1 = state[off+1]; xLL2 = state[off+2]; Va = state[off+3]; xf = state[off+4];
 
-  if(iseq_diff[2]) yLL2 = xLL2 + Tc1/Tb1*yLL1;
-  else yLL2 = xLL2;
+  double Vf = zero_TF ? 0.0 : xf + KF/TF*Efd;
+  double Vi = Vref - Vmeas + Vs - Vf;
+  double yLL1 = zero_TB  ? xLL1 : xLL1 + TC/TB*Vi;
+  double yLL2 = zero_TB1 ? xLL2 : xLL2 + TC1/TB1*yLL1;
+  double dVa_dt = zero_TA ? 0.0 : (-Va + KA*yLL2)/TA;
 
-  double dVa_dt = (-Va + Ka*yLL2)/Ta;
+  if(triggered[0]) Vi_at_min = !Vi_at_min;
+  if(triggered[1]) Vi_at_max = !Vi_at_max;
+  if(triggered[2]) Va_at_min = (!Va_at_min && dVa_dt < 0);
+  if(triggered[3]) Va_at_max = (!Va_at_max && dVa_dt > 0);
+}
 
-  if(!Va_at_min) {
-    if(Va - Vamin < 0) Va_at_min = true;
-  } else {
-    if(dVa_dt > 0) Va_at_min = false; /* Release */
-  }
-
-  if(!Va_at_max) {
-    if(Vamax - Va < 0) Va_at_max = true;
-  } else {
-    if(dVa_dt < 0) Va_at_max = false; /* Release */
+void Esst1a::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
+{
+  if(integrationtype == IMPLICIT) {
+    gridpack::math::RealDAESolver::EventPtr e(new Esst1aEvent(this));
+    eman->add(e);
   }
 }
 
-/**
- * Event handler
- */
-void Esst1aExc::eventHandlerFunction(const bool *triggered, const double& t, gridpack::ComplexType *state)
-{
-  int offset    = getLocalOffset();
-  int Vmeas_idx = offset;
-  int xLL1_idx  = offset+1;
-  int xLL2_idx  = offset+2;
-  int Va_idx    = offset+3;
-  int xf_idx    = offset+4;
-
-  Vmeas = real(state[Vmeas_idx]);
-  xLL1  = real(state[xLL1_idx]);
-  xLL2  = real(state[xLL2_idx]);
-  Va    = real(state[Va_idx]);
-  xf    = real(state[xf_idx]);
-
-  double Vf,Vi,Efd;
-  BaseGenModel* gen = getGenerator();
-  LadIfd = gen->getFieldCurrent();
-
-  Efd = Va - Klr*(LadIfd - Ilr);
-  Vf = xf + Kf/Tf*Efd;
-  Vi = Vref - Vmeas - Vf;
-
-  double yLL1,yLL2;
-  if(iseq_diff[1]) yLL1 = xLL1 + Tc/Tb*Vi;
-  else yLL1 = xLL1;
-
-  if(iseq_diff[2]) yLL2 = xLL2 + Tc1/Tb1*yLL1;
-  else yLL2 = xLL2;
-
-  double dVa_dt = (-Va + Ka*yLL2)/Ta;
-
-  if(triggered[0]) {
-    if(!Vi_at_min) {
-      /* Hold Vi at Vimin */
-      Vi_at_min = true;
-    } else {
-      /* Release */
-      Vi_at_max = false;
-    }
-  }
-
-  if(triggered[1]) {
-    if(!Vi_at_max) {
-      /* Hold Vi at Vimax */
-      Vi_at_max = true;
-    } else {
-      /* Release */
-      Vi_at_max = false;
-    }
-  }
-
-  if(triggered[2]) {
-    if(!Va_at_min && dVa_dt < 0) {
-      /* Hold Va at Vamin */
-      Va_at_min = true;
-    } else {
-      /* Release */
-      Va_at_min = false;
-    }
-  }
-
-  if(triggered[3]) {
-    if(!Va_at_max && dVa_dt > 0) {
-      /* Hold Va at Vamax */
-      Va_at_max = true;
-    } else {
-      /* Release */
-      Va_at_max = false;
-    }
-  }
-}
-
-/**
- * Set event
- */
-void Esst1aExc::setEvent(gridpack::math::DAESolver::EventManagerPtr eman)
-{
-  gridpack::math::DAESolver::EventPtr e(new Esst1aExcEvent(this));
-
-  eman->add(e);
-}
-
-void Esst1aExcEvent::p_update(const double& t,gridpack::ComplexType *state)
+void Esst1aEvent::p_update(const double& t, gridpack::RealType *state)
 {
   p_exc->eventFunction(t,state,p_current);
 }
 
-void Esst1aExcEvent::p_handle(const bool *triggered, const double& t, gridpack::ComplexType *state)
+void Esst1aEvent::p_handle(const bool *triggered, const double& t, gridpack::RealType *state)
 {
   p_exc->eventHandlerFunction(triggered,t,state);
 }

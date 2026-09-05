@@ -167,6 +167,8 @@ class Sexs : public BaseEMTExcModel
      */
     void eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state);
 
+    void resetEventFlags();
+
 
     /**
      * Set the initial field voltage value
@@ -231,7 +233,7 @@ public:
   // Default constructor
   SexsEvent(Sexs *exc):gridpack::math::RealDAESolver::Event(2),p_exc(exc)
   {
-    std:fill(p_term.begin(),p_term.end(),false);
+    std::fill(p_term.begin(),p_term.end(),false);
 
     std::fill(p_dir.begin(),p_dir.end(),gridpack::math::CrossZeroNegative);
 

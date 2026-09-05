@@ -407,7 +407,7 @@ void Sexs::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, in
     } else {
       values[ctr] =   (K*dyLL_dVmeas);
       values[ctr+1] = (K*dyLL_dxLL);
-      values[ctr+2] = -1.0/TE;
+      values[ctr+2] = -1.0;
     }
   }
       
@@ -451,7 +451,16 @@ bool Sexs::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,do
  */
 void Sexs::eventFunction(const double&t,gridpack::RealType *state,std::vector<gridpack::RealType>& evalues)
 {
+  int off = getLocalOffset();
+  Vmeas = state[off]; xLL = state[off+1]; Efd = state[off+2];
 
+  double Verr = Vref - Vmeas + Vs;
+  double yLL = (TB != 0 && TA != 0) ? xLL + TA/TB*Verr : xLL;
+  double dEfd_dt = (TE != 0) ? (-Efd + K*yLL)/TE : 0.0;
+
+  // At a limit, release when dEfd/dt points back inside
+  evalues[0] = Efd_at_min ? -dEfd_dt : (Efd - EMIN);
+  evalues[1] = Efd_at_max ?  dEfd_dt : (EMAX - Efd);
 }
 
 /**
@@ -459,7 +468,15 @@ void Sexs::eventFunction(const double&t,gridpack::RealType *state,std::vector<gr
  */
 void Sexs::eventHandlerFunction(const bool *triggered, const double& t, gridpack::RealType *state)
 {
+  int off = getLocalOffset();
+  Vmeas = state[off]; xLL = state[off+1]; Efd = state[off+2];
 
+  double Verr = Vref - Vmeas + Vs;
+  double yLL = (TB != 0 && TA != 0) ? xLL + TA/TB*Verr : xLL;
+  double dEfd_dt = (TE != 0) ? (-Efd + K*yLL)/TE : 0.0;
+
+  if(triggered[0]) Efd_at_min = (!Efd_at_min && dEfd_dt < 0);
+  if(triggered[1]) Efd_at_max = (!Efd_at_max && dEfd_dt > 0);
 }
 
 /**
@@ -467,7 +484,25 @@ void Sexs::eventHandlerFunction(const bool *triggered, const double& t, gridpack
  */
 void Sexs::setEvent(gridpack::math::RealDAESolver::EventManagerPtr eman)
 {
+  if(integrationtype == IMPLICIT) {
+    gridpack::math::RealDAESolver::EventPtr e(new SexsEvent(this));
+    eman->add(e);
+  }
+}
 
+void Sexs::resetEventFlags()
+{
+  Efd_at_min = Efd_at_max = false;
+}
+
+void SexsEvent::p_update(const double& t, gridpack::RealType *state)
+{
+  p_exc->eventFunction(t,state,p_current);
+}
+
+void SexsEvent::p_handle(const bool *triggered, const double& t, gridpack::RealType *state)
+{
+  p_exc->eventHandlerFunction(triggered,t,state);
 }
 
 /**

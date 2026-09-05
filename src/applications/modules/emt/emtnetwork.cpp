@@ -21,6 +21,7 @@
 #include <model_classes/gencvs.hpp>
 #include <model_classes/genrou.hpp>
 #include <model_classes/gensal.hpp>
+#include <model_classes/esst1a.hpp>
 #ifdef ENABLE_EPRI_IBR_MODEL
  #include <model_classes/epria1.hpp>
 #endif
@@ -881,6 +882,13 @@ void EmtBus::load(const
             p_gen[i]->setExciter(ex);
 	    
 	    sexs->load(data,i); // load exciter data
+	  } else if(type == "ESST1A") {
+	    Esst1a *esst1a;
+	    esst1a = new Esst1a;
+	    esst1a->setGenerator(p_gen[i]);
+	    ex.reset(esst1a);
+	    p_gen[i]->setExciter(ex);
+	    esst1a->load(data,i);
 	  } else if(type == "REECA1") {
 	    Reeca1 *reeca1;
             reeca1 = new Reeca1;

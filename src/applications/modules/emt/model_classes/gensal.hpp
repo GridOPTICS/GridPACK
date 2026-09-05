@@ -45,6 +45,7 @@ public:
   void vectorGetValues(gridpack::RealType *values);
   void setValues(gridpack::RealType *values);
   double getInitialFieldVoltage();
+  double getFieldCurrent() { return LadIfd; }
   double getInitialMechanicalPower() { return TM; }
   double getAngle() { return delta; }
   double getAngle(int *delta_gloc)

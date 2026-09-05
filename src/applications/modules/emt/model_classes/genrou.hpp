@@ -169,6 +169,7 @@ class Genrou: public BaseEMTGenModel
    * @param [out] Efd0 - Initial field voltage
    */
   double getInitialFieldVoltage();
+  double getFieldCurrent() { return LadIfd; }
 
   /**
    * Returns the initial mechanical power (Pmech(t0))
