@@ -76,6 +76,7 @@ int main(int argc, char **argv)
 
     // Parse qlim flag (default: true - enforce reactive power limits)
     bool qlim = cursor->get("qlim", true);
+    double qlim_deadband = cursor->get("qlimDeadband", 0.1);
 
     // Set flags BEFORE creating network
     // This must be called before readNetwork() for it to take effect
@@ -85,6 +86,7 @@ int main(int argc, char **argv)
       gridpack::powerflow::PFBus::setInitStartMode(gridpack::powerflow::INIT_START_WARM);
     }
     gridpack::powerflow::PFBus::setQlim(qlim);
+    gridpack::powerflow::PFBus::setQlimDeadband(qlim_deadband);
 
     // setup and run powerflow calculation
     boost::shared_ptr<gridpack::powerflow::PFNetwork>

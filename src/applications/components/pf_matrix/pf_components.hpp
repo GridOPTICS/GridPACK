@@ -482,6 +482,24 @@ class PFBus
     int getZone();
 
     /**
+     * Get owner number for bus
+     * @return bus owner number (0 if not set)
+     */
+    int getOwner();
+
+    /**
+     * Get base voltage for bus in kV
+     * @return base kV (0.0 if not set)
+     */
+    double getBaseKV();
+
+    /**
+     * Get bus name string
+     * @return bus name (empty if not set)
+     */
+    std::string getBusName();
+
+    /**
      * Evaluate diagonal block of Jacobian for power flow calculation and return
      * result as an array of real values
      * @param rvals values of Jacobian block
@@ -610,6 +628,7 @@ class PFBus
      */
     static void setInitStartMode(InitStartMode mode);
     static void setQlim(bool qlim);
+    static void setQlimDeadband(double db);
 
     /**
      * Clear accumulated Q limit warning messages
@@ -691,6 +710,7 @@ class PFBus
     static std::vector<std::string> p_qlimWarnings;
     static InitStartMode p_initStartMode;
     static bool p_qlim;
+    static double p_qlim_deadband;
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
@@ -970,6 +990,12 @@ class PFBranch
      */
     double getBranchRatingC(std::string tag);
 
+    // Contingency rating tier ("A"|"B"|"C") used by serialWrite("flow",...).
+    // Default "A" preserves non-CA behavior; A->B->C fallback if picked=0.
+    static void setContingencyRating(const std::string& rating);
+    static std::string getContingencyRating();
+    double pickBranchRating(int elemIdx) const;
+
     /**
      * Get list of line IDs
      * @return list of line identifiers
@@ -1057,6 +1083,8 @@ class PFBranch
     // LTC (Load Tap Changer) control variables
     bool p_hasLTC;              // true if this branch has an LTC-controlled transformer
     int p_ltc_elem;             // index of the LTC element within this branch
+    static std::string s_contingencyRating;
+
     int p_ltc_code;             // control mode (1=voltage, 0=off)
     int p_ltc_cont;             // controlled bus number
     bool p_ltc_cont_is_to;      // true if controlled bus is the to-bus (tap direction reversal)

@@ -1,0 +1,10 @@
+from_bus,to_bus,ckt
+# Sample monitor allowlist for the IEEE 14-bus case.
+# Format: from_bus,to_bus,ckt  (one branch per row)
+# Header row is tolerated; '#' starts a line comment; blank lines are skipped.
+# Whitespace and Windows line endings are tolerated.
+1,2,1
+1,5,1
+2,3,1
+4,7,1
+4,9,1

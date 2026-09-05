@@ -58,6 +58,7 @@ PFFactoryModule::PFFactoryModule(PFFactoryModule::NetworkPtr network)
 {
   p_network = network;
   p_rateB = false;
+  p_contingencyRating = "A";
   p_islandCount = 0;
   p_hasLoneBus = false;
   p_qlim_deadband = 0.1;
@@ -171,11 +172,15 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
   bool bus_ok = true;
   char buf[128];
   p_saveIsolatedStatus.clear();
+  p_loneBusIndices.clear();
   for (i=0; i<numBus; i++) {
     if (!p_network->getActiveBus(i)) continue;
     gridpack::powerflow::PFBus *bus =
       dynamic_cast<gridpack::powerflow::PFBus*>
       (p_network->getBus(i).get());
+    // Skip already-isolated buses (e.g. PSS/E type-4) so they are not
+    // re-flagged as lone on every call.
+    if (bus->isIsolated()) continue;
     std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
     bus->getNeighborBranches(branches);
     int size = branches.size();
@@ -200,6 +205,7 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
     if (!ok) {
       sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
       p_saveIsolatedStatus.push_back(bus->isIsolated());
+      p_loneBusIndices.push_back(i);
       bus->setIsolated(true);
       printf("%s",buf);
       if (stream != NULL) *stream << buf;
@@ -217,42 +223,17 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
 void gridpack::powerflow::PFFactoryModule::clearLoneBus()
 {
   p_hasLoneBus = false;
-  if (p_saveIsolatedStatus.size() == 0) return;
-  int numBus = p_network->numBuses();
-  int i, j, k;
-  int ncount = 0;
-  for (i=0; i<numBus; i++) {
-    if (!p_network->getActiveBus(i)) continue;
+  // Restore status of buses marked by the last checkLoneBus call.
+  for (size_t k = 0; k < p_loneBusIndices.size(); k++) {
+    int i = p_loneBusIndices[k];
     gridpack::powerflow::PFBus *bus =
       dynamic_cast<gridpack::powerflow::PFBus*>
       (p_network->getBus(i).get());
-    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
-    bus->getNeighborBranches(branches);
-    int size = branches.size();
-    bool ok = true;
-    if (size == 0) {
-      ok = false;
-    }
-    if (ok) {
-      ok = false;
-      for (j=0; j<size; j++) {
-        bool branch_ok = false;
-        std::vector<bool> status =
-          dynamic_cast<gridpack::powerflow::PFBranch*>
-          (branches[j].get())->getLineStatus();
-        int nlines = status.size();
-        for (k=0; k<nlines; k++) {
-          if (status[k]) branch_ok = true;
-        }
-        if (branch_ok) ok = true;
-      }
-    }
-    if (!ok) {
-      printf("\nLone bus %d reset\n",bus->getOriginalIndex());
-      bus->setIsolated(p_saveIsolatedStatus[ncount]);
-      ncount++;
-    }
+    printf("\nLone bus %d reset\n", bus->getOriginalIndex());
+    bus->setIsolated(p_saveIsolatedStatus[k]);
   }
+  p_loneBusIndices.clear();
+  p_saveIsolatedStatus.clear();
 }
 
 /**
@@ -721,53 +702,38 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
   int numBranch = p_network->numBranches();
   int i;
   bool branch_ok = true;
+  // p_rateB is legacy rtpr; treat it as "rating tier B" for one call.
+  std::string savedRating = p_contingencyRating;
+  if (p_rateB) p_contingencyRating = "B";
   for (i=0; i<numBranch; i++) {
     if (p_network->getActiveBranch(i)) {
       gridpack::powerflow::PFBranch *branch =
         dynamic_cast<gridpack::powerflow::PFBranch*>
         (p_network->getBranch(i).get());
-      // Loop over all lines in the branch and choose the smallest rating value
       int nlines;
       p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
       std::vector<std::string> tags = branch->getLineTags();
-      double rate;
       for (int k = 0; k<nlines; k++) {
-        if (!branch->getIgnore(tags[k])) {
-          bool foundRating=false;
-          if (p_rateB) {
-            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_B,&rate,k)) {
-              foundRating = true;
-            } else {
-              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
-                foundRating = true;
-              }
-            }
-          } else {
-            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
-              foundRating = true;
-            }
-          }
-          if (foundRating) {
-            if (rate > 0.0) {
-              gridpack::ComplexType s = branch->getComplexPower(tags[k]);
-              double pq = abs(s);
-              if (pq > rate) {
-                branch_ok = false;
-                gridpack::powerflow::PFFactoryModule::Violation violation;
-                violation.bus_violation = false;
-                violation.line_violation = true;
-                violation.bus1 = branch->getBus1OriginalIndex();
-                violation.bus2 = branch->getBus2OriginalIndex();
-                strncpy(violation.tag,tags[k].c_str(),2);
-                violation.tag[2] = '\0';
-                p_violations.push_back(violation);
-              }
-            }
-          }
+        if (branch->getIgnore(tags[k])) continue;
+        double rate = pickBranchRating(i, k);
+        if (rate <= 0.0) continue;
+        gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+        double pq = abs(s);
+        if (pq > rate) {
+          branch_ok = false;
+          gridpack::powerflow::PFFactoryModule::Violation violation;
+          violation.bus_violation = false;
+          violation.line_violation = true;
+          violation.bus1 = branch->getBus1OriginalIndex();
+          violation.bus2 = branch->getBus2OriginalIndex();
+          strncpy(violation.tag,tags[k].c_str(),2);
+          violation.tag[2] = '\0';
+          p_violations.push_back(violation);
         }
       }
     }
   }
+  p_contingencyRating = savedRating;
   return checkTrue(branch_ok);
 }
 
@@ -782,52 +748,34 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(int area)
   int numBranch = p_network->numBranches();
   int i;
   bool branch_ok = true;
+  std::string savedRating = p_contingencyRating;
+  if (p_rateB) p_contingencyRating = "B";
   for (i=0; i<numBranch; i++) {
     if (p_network->getActiveBranch(i)) {
       gridpack::powerflow::PFBranch *branch =
         dynamic_cast<gridpack::powerflow::PFBranch*>
         (p_network->getBranch(i).get());
-      // get buses at either end
       gridpack::powerflow::PFBus *bus1 =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (branch->getBus1().get());
       gridpack::powerflow::PFBus *bus2 =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (branch->getBus2().get());
-      // Loop over all lines in the branch and choose the smallest rating value
-      if (bus1->getArea() == area || bus2->getArea() == area) {
-        int nlines;
-        p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
-        std::vector<std::string> tags = branch->getLineTags();
-        double rate;
-        for (int k = 0; k<nlines; k++) {
-          if (!branch->getIgnore(tags[k])) {
-            bool foundRating=false;
-            if (p_rateB) {
-              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_B,&rate,k)) {
-                foundRating = true;
-              } else {
-                if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
-                  foundRating = true;
-                }
-              }
-            } else {
-              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
-                foundRating = true;
-              }
-            }
-            if (foundRating) {
-              if (rate > 0.0) {
-                gridpack::ComplexType s = branch->getComplexPower(tags[k]);
-                double pq = abs(s);
-                if (pq > rate) branch_ok = false;
-              }
-            }
-          }
-        }
+      if (bus1->getArea() != area && bus2->getArea() != area) continue;
+      int nlines;
+      p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      std::vector<std::string> tags = branch->getLineTags();
+      for (int k = 0; k<nlines; k++) {
+        if (branch->getIgnore(tags[k])) continue;
+        double rate = pickBranchRating(i, k);
+        if (rate <= 0.0) continue;
+        gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+        double pq = abs(s);
+        if (pq > rate) branch_ok = false;
       }
     }
   }
+  p_contingencyRating = savedRating;
   return checkTrue(branch_ok);
 }
 
@@ -1502,6 +1450,41 @@ void gridpack::powerflow::PFFactoryModule::useRateB(bool flag)
   } else {
     p_rateB = false;
   }
+}
+
+/**
+ * Select rating tier for overload checks.
+ */
+void gridpack::powerflow::PFFactoryModule::setContingencyRating(
+    const std::string& rating)
+{
+  if (rating == "A" || rating == "B" || rating == "C") {
+    p_contingencyRating = rating;
+  } else {
+    p_contingencyRating = "A";
+  }
+  // Keep PFBranch's serialWrite("flow",...) denominator in sync so the .out
+  // file's loading% matches _violations.csv / JSON loading_percent.
+  gridpack::powerflow::PFBranch::setContingencyRating(p_contingencyRating);
+}
+
+/**
+ * Rating for one line element under the current contingency tier
+ * with A->B->C fallback when the picked tier is zero/missing.
+ */
+double gridpack::powerflow::PFFactoryModule::pickBranchRating(
+    int branchLocalIdx, int elemIdx) const
+{
+  double a = 0.0, b = 0.0, c = 0.0;
+  p_network->getBranchData(branchLocalIdx)->getValue(BRANCH_RATING_A, &a, elemIdx);
+  p_network->getBranchData(branchLocalIdx)->getValue(BRANCH_RATING_B, &b, elemIdx);
+  p_network->getBranchData(branchLocalIdx)->getValue(BRANCH_RATING_C, &c, elemIdx);
+  if (p_contingencyRating == "A") return a;
+  if (p_contingencyRating == "B") return (b > 0.0) ? b : a;
+  // "C"
+  if (c > 0.0) return c;
+  if (b > 0.0) return b;
+  return a;
 }
 
 /**

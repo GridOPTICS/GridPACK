@@ -135,6 +135,16 @@ adjusted by one discrete step per controller iteration, bounded by
 number of tap positions (NTP), or read directly from the STEP field
 when available. Cycle detection prevents tap hunting.
 
+Remote voltage regulation (IREG) is enabled automatically for any
+generator whose PSS/E ``IREG`` field points to a bus other than its
+own. The controlled remote bus is treated as PV (held at the
+generator's scheduled voltage ``VS``) and the local bus is solved
+normally; the source bus voltage is adjusted across the controller loop
+until the remote bus tracks setpoint. No XML option is required. When
+the remote bus is the swing bus the regulation is dropped with a
+warning, and when multiple generators on the same source bus include a
+locally-regulating unit (``IREG=0``) local control wins.
+
 The ``AreaInterchange`` parameter (default ``false``) enables area
 interchange control. When enabled, after the inner controller loop
 converges, the solver computes actual MW exports for each area by
@@ -536,6 +546,255 @@ function
 Again, this may be useful in contingency calculations where multiple
 calculations are run on the same network and it is desirable that they
 all start with the same initial condition.
+
+Contingency Analysis Module
+---------------------------
+
+The production contingency analysis driver lives in
+``src/applications/contingency_analysis``. It is built on
+``PFAppModule`` and adds an MPI task manager, a contingency parser,
+monitor filtering, and per-(contingency, branch) CSV output for
+downstream statistical analysis. Configuration goes under a
+``Contingency_analysis`` block in the input deck alongside the standard
+``Powerflow`` block. The XML reader for the contingency list itself is
+covered in Section 10; this section documents the runtime options.
+
+Input options
+~~~~~~~~~~~~~
+
++----------------------------+--------+--------------------------------------------------------------+
+| Option                     | Default| Description                                                  |
++============================+========+==============================================================+
+| ``contingencyList``        | (none) | Path to the contingency XML. May be combined with            |
+|                            |        | ``FullBranchN1`` / ``FullGeneratorN1`` for N-1 + custom N-K. |
++----------------------------+--------+--------------------------------------------------------------+
+| ``FullBranchN1``           | false  | Auto-generate N-1 over every in-service branch.              |
++----------------------------+--------+--------------------------------------------------------------+
+| ``FullGeneratorN1``        | false  | Auto-generate N-1 over every in-service generator.           |
++----------------------------+--------+--------------------------------------------------------------+
+| ``groupSize``              | 1      | Deprecated; ignored (forced to 1). An outaged branch can     |
+|                            |        | straddle a multi-rank partition. Add ranks for parallelism. |
++----------------------------+--------+--------------------------------------------------------------+
+| ``minVoltage``             | 0.9    | Lower voltage limit (pu) for violation checks.               |
++----------------------------+--------+--------------------------------------------------------------+
+| ``maxVoltage``             | 1.1    | Upper voltage limit (pu) for violation checks.               |
++----------------------------+--------+--------------------------------------------------------------+
+| ``qlim``                   | false  | Enable PV→PQ Q-limit enforcement during the contingency      |
+|                            |        | solve. Honors ``qlimDeadband`` from the ``Powerflow`` block. |
++----------------------------+--------+--------------------------------------------------------------+
+| ``printCalcFiles``         | true   | Write per-contingency text output (``<name>.out``).          |
++----------------------------+--------+--------------------------------------------------------------+
+| ``outputFormat``           | text   | ``text`` | ``json`` | ``csv`` | ``csv_flat`` | ``csv_delta``.|
++----------------------------+--------+--------------------------------------------------------------+
+| ``outputFile``             |        | Base name (prefix) for the structured output files.          |
+|                            | results|                                                              |
++----------------------------+--------+--------------------------------------------------------------+
+| ``writeStats``             | true   | Emit the StatBlock summary ``.txt`` files. Set ``false`` to  |
+|                            |        | skip the per-case StatBlock work when CSV is sufficient.     |
++----------------------------+--------+--------------------------------------------------------------+
+| ``contingencyRating``      | A      | Loading% denominator across every CA output. ``A``, ``B``,   |
+|                            |        | or ``C`` with A→B→C fallback. Default ``A`` matches PW /     |
+|                            |        | PSS/E ACCC. ``base_rate_mva`` always uses rate-A.            |
++----------------------------+--------+--------------------------------------------------------------+
+| ``monitorBranchesFile``    | (none) | Path to a CSV allowlist (``from_bus,to_bus,ckt`` rows).      |
+|                            |        | When set, area/kV gates are ignored.                         |
++----------------------------+--------+--------------------------------------------------------------+
+| ``monitorAreas``           | (none) | Area numbers (space- or comma-separated). Branch passes if   |
+|                            |        | **either endpoint** is in the set (catches tie-lines).       |
++----------------------------+--------+--------------------------------------------------------------+
+| ``monitorKvMin``           | 0      | Lower kV threshold; branch passes if                         |
+|                            |        | ``max(kv_from, kv_to) >= monitorKvMin``. 0 disables.         |
++----------------------------+--------+--------------------------------------------------------------+
+| ``monitorKvMax``           | 0      | Upper kV threshold; branch passes if                         |
+|                            |        | ``max(kv_from, kv_to) <= monitorKvMax``. 0 disables.         |
++----------------------------+--------+--------------------------------------------------------------+
+
+Violation / ranking options driving ``_violations.csv`` and
+``_summary.json``:
+
+* ``violationSeverityThreshold`` (``1.0``) — loading% > threshold × 100
+  flags a branch violation.
+* ``topN`` (``20``, clamped ``[1,10000]``) — cap on ranked arrays.
+* ``piBranchWeight`` / ``piVoltageWeight`` (both ``1.0``) — weights on
+  the branch-PI and voltage-PI terms in the composite PI ranking.
+
+Monitor filter precedence: When ``monitorBranchesFile`` is set, area/kV 
+options are ignored and a warning is logged. Otherwise ``monitorAreas`` 
+AND the kV bounds combine.  With no filter set every branch is monitored. 
+Circuit IDs are matched with whitespace trimmed on both sides so PSS/E ckt
+strings with leading or trailing spaces compare equal to the unpadded form.
+
+A complete annotated example is shipped at
+``src/applications/data_sets/input/ca/input_14_filters_example.xml``
+with a sample monitor list ``monitor_branches_14.csv``.
+
+CSV outputs (``outputFormat=csv_flat`` / ``csv_delta``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When ``outputFormat`` is ``csv_flat`` or ``csv_delta`` the driver writes
+per-(contingency, monitored branch) rows for downstream analysis instead
+of the aggregated ``.txt`` files. All file names use the value of
+``outputFile`` as a prefix; the default prefix is ``ca_results``. Both
+formats also work for generator contingencies — column 3 (``type``)
+labels what was tripped and column 31 (``cont_event_facility``)
+identifies the tripped element.
+
+``<outputFile>_delta.csv`` (``csv_delta`` only) — wide form, one row
+per (contingency, monitored branch) joining base and contingency state
+on the same row. Most downstream consumers prefer this because each row
+is self-contained.
+
++-----+----------------------------+----------------------------------------------------------+
+| #   | Column                     | Notes                                                    |
++=====+============================+==========================================================+
+| 1   | ``event_idx``              | 0 = base case, 1..N = contingencies in input-deck order. |
++-----+----------------------------+----------------------------------------------------------+
+| 2   | ``contingency``            | Contingency name (``base_case`` for the base row).       |
++-----+----------------------------+----------------------------------------------------------+
+| 3   | ``type``                   | ``branch`` or ``generator`` — what was tripped.          |
++-----+----------------------------+----------------------------------------------------------+
+| 4–6 | ``from_bus``, ``to_bus``,  | Identity of the **monitored branch** (not the tripped    |
+|     | ``ckt``                    | element).                                                |
++-----+----------------------------+----------------------------------------------------------+
+| 7–8 | ``base_kv_from``,          | Endpoint base kV.                                        |
+|     | ``base_kv_to``             |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 9–10| ``area_from``,             | PSS/E area numbers.                                      |
+|     | ``area_to``                |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 11  | ``base_rate_mva``          | Always rate-A (PSS/E "normal" rating).                   |
++-----+----------------------------+----------------------------------------------------------+
+| 12  | ``cont_rate_mva``          | Rating selected by ``contingencyRating``.                |
++-----+----------------------------+----------------------------------------------------------+
+| 13–14| ``base_p_mw``,            | Real-power flow before / after.                          |
+|     | ``cont_p_mw``              |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 15–16| ``base_q_mvar``,          | Reactive-power flow before / after.                      |
+|     | ``cont_q_mvar``            |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 17–18| ``base_mva``,             | ``sqrt(P² + Q²)`` before / after.                        |
+|     | ``cont_mva``               |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 19  | ``base_loading_pct``       | ``base_mva / base_rate_mva × 100``.                      |
++-----+----------------------------+----------------------------------------------------------+
+| 20  | ``cont_loading_pct``       | ``cont_mva / cont_rate_mva × 100``.                      |
++-----+----------------------------+----------------------------------------------------------+
+| 21–22| ``v_from_base``,          | From-bus voltage magnitude (pu).                         |
+|     | ``v_from_cont``            |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 23–24| ``v_to_base``,            | To-bus voltage magnitude (pu).                           |
+|     | ``v_to_cont``              |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 25–28| ``ang_from_base``,        | Endpoint bus angles (deg).                               |
+|     | ``ang_from_cont``,         |                                                          |
+|     | ``ang_to_base``,           |                                                          |
+|     | ``ang_to_cont``            |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 29–30| ``d_angle_base``,         | ``ang_from − ang_to`` before / after.                    |
+|     | ``d_angle_cont``           |                                                          |
++-----+----------------------------+----------------------------------------------------------+
+| 31  | ``cont_event_facility``    | The tripped element (e.g. ``[area] from to ckt`` for a   |
+|     |                            | branch trip, ``gen <bus> <id>`` for a gen trip).         |
++-----+----------------------------+----------------------------------------------------------+
+
+``<outputFile>_flat.csv`` (``csv_flat`` only) — long form, one row per
+(case, branch). Columns: ``event_idx, contingency, from_bus, to_bus,
+ckt, p_from_mw, q_from_mvar, mva_from, rate_mva, loading_percent, viol,
+v_from_pu, v_to_pu, ang_from_deg, ang_to_deg``. ``rate_mva`` is rate-A
+on the base row and the configured ``contingencyRating`` on contingency
+rows.
+
+``<outputFile>_buses.csv`` (both CSV formats) — bus metadata sidecar so
+the per-branch files can stay narrow. Columns: ``bus_id, bus_name,
+base_kv, area, zone, owner, area_name, zone_name, owner_name``.
+
+``<outputFile>_convergence.csv`` (every ``outputFormat``) — one row per
+contingency. Columns: ``event_idx, contingency, type, converged,
+iterations, final_tolerance, max_p_bus, max_p_mismatch, max_q_bus,
+max_q_mismatch, status_code``. ``converged`` is ``true`` iff
+``status_code == "OK"``; ``status_code`` is one of ``OK`` / ``ISLANDED``
+/ ``NO_SLACK`` / ``DIVERGED`` / ``SLACK_OVERLOAD``. Failed rows appear
+here even when omitted from ``_delta.csv`` / ``_flat.csv``.
+
+``<outputFile>_violations.csv`` (every ``outputFormat``) — streamed row
+per branch/voltage violation. Columns: ``event_idx, contingency, type,
+element, mva_or_vpu, rate_or_limit, loading_percent, base_mva, delta,
+severity``. Emitted when ``loading_percent > violationSeverityThreshold
+× 100`` (branch) or ``v_pu`` outside ``[minVoltage, maxVoltage]``
+(voltage). ``loading_percent`` divides by the rate picked under
+``contingencyRating``. ``severity = "critical"`` when branch loading
+≥ 105 % or |Δv| ≥ 0.05 pu, else ``"warning"``.
+
+``<outputFile>_summary.json`` (every ``outputFormat``) — end-of-run
+aggregate: ``total_contingencies``, ``converged``, ``diverged =
+total − converged``, plus the per-status split ``islanded``,
+``no_slack``, ``solver_diverged``, ``slack_overload`` (sum to
+``diverged``). Also ``with_branch_violation`` / ``with_voltage_violation``
+/ ``violation_rows``; single-element extremes ``worst_loading`` /
+``worst_voltage_low`` / ``worst_voltage_high`` (``null`` if none);
+name arrays ``contingencies_with_branch_violation`` and
+``contingencies_with_voltage_violation``; a length-``topN`` ranked
+``top_severe_contingencies`` list (violated cases first by severity,
+non-violated after by composite PI); and an echo of the run config
+(``contingency_rating``, ``voltage_limit_low``/``high``,
+``severity_threshold``).
+
+When monitor filters are active the data-row count of ``_delta.csv`` /
+``_flat.csv`` equals ``|monitored branches| × |converged
+contingencies|``.
+
+Output ordering
+~~~~~~~~~~~~~~~
+
+Rows are not sorted by contingency. The driver streams each MPI rank's
+results to a per-rank ``.part`` file and rank 0 concatenates them in
+rank order, so the final file is grouped by rank and ordered by
+completion within each rank. Column 1 (``event_idx``) preserves
+input-deck order — sort downstream if needed::
+
+   ( head -1 my_run_delta.csv && \
+     tail -n +2 my_run_delta.csv | sort -t, -k1,1n ) > my_run_delta.sorted.csv
+
+Aggregated ``.txt`` outputs (``writeStats=true``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When ``writeStats=true`` the driver also writes the StatBlock summary
+files: ``vmag.txt``, ``vmag_mm.txt``, ``vang.txt``, ``vang_mm.txt``,
+``pgen.txt``, ``pgen_mm.txt``, ``qgen.txt``, ``qgen_mm.txt``,
+``pflow.txt``, ``pflow_mm.txt``, ``qflow.txt``, ``qflow_mm.txt``,
+``perf_mm.txt``, ``perf_sum.txt``, ``line_flt_cnt.txt``. The file
+``pq_change_cnt.txt`` is added when ``qlim=true``. These hold per-element
+statistics (mean / RMS / min / max) **across all contingencies**, not
+per-contingency rows; their layout is described in the application
+``README.md``. Set ``writeStats=false`` to skip them when CSV output is
+sufficient.
+
+Contingency XML aliases
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The element names in a contingency XML accept PSS/E-aligned aliases:
+
++----------------------------+------------+-------------------------------+
+| Element                    | Alias      | Holds                         |
++============================+============+===============================+
+| ``contingencyLineNames``   | ``CKT``    | Branch circuit ID (PSS/E      |
+|                            |            | ``CKT`` field).               |
++----------------------------+------------+-------------------------------+
+| ``contingencyGenerators``  | ``GenID``  | Generator ID (PSS/E ``ID``    |
+|                            |            | field).                       |
++----------------------------+------------+-------------------------------+
+
+Either name parses; mix-and-match within a file is fine.
+
+Advanced behavior
+~~~~~~~~~~~~~~~~~
+
+The driver also includes automatic slack-bus transfer when the slack
+generator is the tripped element, a slack-capacity check after each
+solve, and island / lone-bus detection when a branch trip splits the
+network. The underlying mechanisms (``checkAndTransferSlack``,
+``restoreSlack``, ``checkSlackCapacity``, ``getIslandCount``,
+``hasLoneBus``) are exposed by ``PFAppModule`` and described above.
 
 State Estimation Module
 -----------------------

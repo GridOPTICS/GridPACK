@@ -437,6 +437,12 @@ class PFAppModule
     void useRateB(bool flag);
 
     /**
+     * Select rating tier ("A" | "B" | "C") for CA violation checks and
+     * loadingPercent. A->B->C fallback when the picked tier is zero.
+     */
+    void setContingencyRating(const std::string& rating);
+
+    /**
      * Suppress all output from power flow module
      * @param flag if true, suppress printing
      */

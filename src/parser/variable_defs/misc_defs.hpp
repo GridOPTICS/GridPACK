@@ -153,14 +153,22 @@
 
 // ZONE DATA
 /**
+ * Total number of zone fields
+ * type: integer
+ */
+#define ZONE_TOTAL "ZONE_TOTAL"
+
+/**
  * Zone Number
  * type: integer
+ * indexed
  */
 #define ZONE_NUMBER "ZONE_NUMBER"
 
 /**
  * Zone Name
  * type: string
+ * indexed
  */
 #define ZONE_NAME "ZONE_NAME"
 
@@ -194,14 +202,22 @@
 
 // OWNER
 /**
+ * Total number of owner fields
+ * type: integer
+ */
+#define OWNER_TOTAL "OWNER_TOTAL"
+
+/**
  * Owner number
  * type: integer
+ * indexed
  */
 #define OWNER_NUMBER "OWNER_NUMBER"
 
 /**
  * Owner name
- * type: integer
+ * type: string
+ * indexed
  */
 #define OWNER_NAME "OWNER_NAME"
 

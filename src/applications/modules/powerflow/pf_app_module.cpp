@@ -1156,9 +1156,13 @@ gridpack::powerflow::PFAppModule::collectResults()
         bres.qLoss = bres.qFrom + bres.qTo;
 
         bres.rateA = branch->getBranchRatingA(cktIds[k]);
-        if (bres.rateA > 0.0) {
+        // Under the current contingency rating tier (A/B/C with fallback).
+        double ratePicked = p_factory->pickBranchRating(i, static_cast<int>(k));
+        if (ratePicked <= 0.0) ratePicked = bres.rateA;
+        bres.rateSelected = ratePicked;
+        if (ratePicked > 0.0) {
           double maxMVA = (bres.mvaFrom > bres.mvaTo) ? bres.mvaFrom : bres.mvaTo;
-          bres.loadingPercent = maxMVA / bres.rateA * 100.0;
+          bres.loadingPercent = maxMVA / ratePicked * 100.0;
         } else {
           bres.loadingPercent = 0.0;
         }
@@ -1870,6 +1874,12 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
 void gridpack::powerflow::PFAppModule::useRateB(bool flag)
 {
   p_factory->useRateB(flag);
+}
+
+void gridpack::powerflow::PFAppModule::setContingencyRating(
+    const std::string& rating)
+{
+  p_factory->setContingencyRating(rating);
 }
 
 /**

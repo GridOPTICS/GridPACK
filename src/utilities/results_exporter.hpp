@@ -58,8 +58,9 @@ struct BranchResult {
   double qLoss;           // MVAr
   double mvaFrom;         // MVA
   double mvaTo;           // MVA
-  double rateA;           // MVA
-  double loadingPercent;  // max(|S_from|,|S_to|)/rateA * 100
+  double rateA;           // MVA (always rate-A)
+  double rateSelected;    // MVA under the picked contingency rating tier
+  double loadingPercent;  // max(|S_from|,|S_to|)/rateSelected * 100
 };
 
 struct GeneratorResult {
@@ -95,12 +96,35 @@ struct PowerFlowResults {
   std::vector<GeneratorResult> generators;
 };
 
+struct BranchViolation {
+  int fromBus;
+  int toBus;
+  std::string circuitId;
+  double mva;             // max(|S_from|,|S_to|)
+  double rate;            // MVA under selected tier
+  double loadingPercent;  // mva / rate * 100
+  double baseMva;         // base-case max MVA on same element (0 if unknown)
+  double deltaMva;        // mva - baseMva
+  std::string severity;   // "warning" (<105%), "critical" (>=105%)
+};
+
+struct VoltageViolation {
+  int busId;
+  double vPu;
+  double limitLow;
+  double limitHigh;
+  double deviationPu;     // signed: v - nearest limit
+  std::string severity;
+};
+
 struct ContingencyResult {
   std::string name;
   std::string type;       // "branch" or "generator"
   PowerFlowResults solution;
   bool hasVoltageViolation;
   bool hasBranchViolation;
+  std::vector<BranchViolation> branchViolations;
+  std::vector<VoltageViolation> voltageViolations;
 };
 
 struct ContingencyAnalysisResults {
@@ -190,6 +214,11 @@ private:
 
   static void writeGeneratorsJSON(std::ostream& out,
                                   const std::vector<GeneratorResult>& gens,
+                                  const std::string& indent);
+
+  static void writeViolationsJSON(std::ostream& out,
+                                  const std::vector<BranchViolation>& brViols,
+                                  const std::vector<VoltageViolation>& vViols,
                                   const std::string& indent);
 
   static void writePFJSON(std::ofstream& out, const PowerFlowResults& r);
