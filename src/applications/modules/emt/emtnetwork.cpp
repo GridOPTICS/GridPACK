@@ -20,6 +20,7 @@
 #include <model_classes/gencls.hpp>
 #include <model_classes/gencvs.hpp>
 #include <model_classes/genrou.hpp>
+#include <model_classes/gensal.hpp>
 #ifdef ENABLE_EPRI_IBR_MODEL
  #include <model_classes/epria1.hpp>
 #endif
@@ -45,6 +46,16 @@
 /**
  *  Simple constructor
  */
+// Fatal: the dyr names a model this build cannot instantiate.
+static void emtUnsupportedModel(int bus, const std::string &id,
+                                const char *family, const std::string &type)
+{
+  printf("ERROR: bus %d id '%s': unsupported %s model '%s'\n",
+         bus, id.c_str(), family, type.c_str());
+  fflush(stdout);
+  MPI_Abort(MPI_COMM_WORLD, 1);
+}
+
 EmtBus::EmtBus(void)
 {
   p_gl = p_bl = 0.0;
@@ -777,6 +788,8 @@ void EmtBus::load(const
       p_gen[i] = NULL;
       std::string model;
       data->getValue(GENERATOR_MODEL,&model,i);
+      std::string gid;
+      data->getValue(GENERATOR_ID,&gid,i);
 
       std::string type;
 
@@ -799,6 +812,10 @@ void EmtBus::load(const
 	Genrou *genrou;
 	genrou = new Genrou;
 	p_gen[i] = genrou;
+      } else if(type == "GENSAL") {
+	Gensal *gensal;
+	gensal = new Gensal;
+	p_gen[i] = gensal;
       } else if(type == "REGCA1") {
 	Regca1 *regca1;
 	regca1 = new Regca1;
@@ -812,12 +829,17 @@ void EmtBus::load(const
 	Epria1 *epria1;
 	epria1 = new Epria1;
 	p_gen[i] = epria1;
-#endif	
-      } else {
-	// Assume a constant internal voltage source model
+#else
+	emtUnsupportedModel(p_busnum, gid, "generator (build without ENABLE_EPRI_IBR_MODEL)", type);
+#endif
+      } else if(type.empty()) {
+	// No dynamic model in the dyr: constant internal voltage source.
+	printf("Emt: bus %d id '%s' has no dyr model; using GENCVS\n", p_busnum, gid.c_str());
 	Gencvs *gencvs;
 	gencvs = new Gencvs;
 	p_gen[i] = gencvs;
+      } else {
+	emtUnsupportedModel(p_busnum, gid, "generator", type);
       }
 
       // Set status
@@ -868,6 +890,8 @@ void EmtBus::load(const
             p_gen[i]->setExciter(ex);
 	    
 	    reeca1->load(data,i); // load exciter data
+	  } else {
+	    emtUnsupportedModel(p_busnum, gid, "exciter", type);
 	  }
 	}
       }
@@ -919,6 +943,8 @@ void EmtBus::load(const
 
 	    // Handle governor data loading
 	    hygov->load(data,i); // load governor model
+	  } else {
+	    emtUnsupportedModel(p_busnum, gid, "governor", type);
 	  }
 	}
       }
@@ -941,6 +967,8 @@ void EmtBus::load(const
 	    
 	    // Handle plant controller data loading
 	    repca1->load(data,i); // load plant controller model
+	  } else {
+	    emtUnsupportedModel(p_busnum, gid, "plant controller", type);
 	  }
 	}
       }
@@ -970,7 +998,9 @@ void EmtBus::load(const
 	      
 	      // Handle torque controller data loading
 	      wttqa1->load(data,i); // load plant controller model
-	    }
+	    } else {
+	    emtUnsupportedModel(p_busnum, gid, "wind torque controller", type);
+	  }
 	  }
 	}
 
@@ -993,7 +1023,9 @@ void EmtBus::load(const
 
 	      // Handle drive train controller data loading
 	      wtdta1->load(data,i); // load drive train controller model
-	    }
+	    } else {
+	    emtUnsupportedModel(p_busnum, gid, "wind drive train", type);
+	  }
 	  }
 	}
 
@@ -1014,7 +1046,9 @@ void EmtBus::load(const
 
 	      // Handle torque controller data loading
 	      wtara1->load(data,i); // load plant controller model
-	    }
+	    } else {
+	    emtUnsupportedModel(p_busnum, gid, "wind aerodynamic", type);
+	  }
 	  }
 	}
 
@@ -1046,7 +1080,9 @@ void EmtBus::load(const
 
 	      // Handle torque controller data loading
 	      wtpta1->load(data,i); // load plant controller model
-	    }
+	    } else {
+	    emtUnsupportedModel(p_busnum, gid, "wind pitch controller", type);
+	  }
 	  }
 	}
       }
@@ -1102,6 +1138,9 @@ void EmtBus::load(const
     } else {
       std::string type = util.trimQuotes(lmodel);
       util.toUpper(type);
+      std::string lid;
+      data->getValue(LOAD_ID,&lid,i);
+      emtUnsupportedModel(p_busnum, lid, "load", type);
     }
 
     p_load[i]->load(data,i);

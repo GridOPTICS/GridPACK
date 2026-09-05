@@ -96,6 +96,7 @@ class Genrou: public BaseEMTGenModel
    * @return Se(x) = B*(x-A)^2/x (unscaled)
    */
   double Sat(double x);
+  double dSat(double x);
 
   double getSpeedDeviation() { return dw; }
 

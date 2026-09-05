@@ -3,144 +3,74 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
 /**
  * @file   gensal.hpp
- * 
- * @brief: Header file for GENSAL model  
- * 
- * 
+ * @brief  Salient-pole machine (PSS/E GENSAL) for the EMT module; Genrou
+ *         without the q-axis transient state, saturation on E'q.
  */
 
-#ifndef _gensal_h_
-#define _gensal_h_
+#ifndef _gensal_model_h_
+#define _gensal_model_h_
 
 #include <base_gen_model.hpp>
 #include <gridpack/include/gridpack.hpp>
-#include "boost/smart_ptr/shared_ptr.hpp"
 
-class GensalGen: public BaseGenModel
+class Gensal: public BaseEMTGenModel
 {
 public:
-  /**
-   * Basic constructor
-   */
-  GensalGen();
-  
-  /**
-   * Basic destructor
-   */
-  ~GensalGen();
-  
-  /**
-   * Load parameters from DataCollection object into generator model
-   * @param data collection of generator parameters from input files
-   * @param index of generator on bus
-   * TODO: might want to move this functionality to BaseGeneratorModel
-   */
+  Gensal();
+  ~Gensal();
+
   void load(const boost::shared_ptr<gridpack::component::DataCollection>
-	    data, int idx);
-  
-  /**
-   * Saturation function
-   * @ param x
-   */
-  double Sat(double x); 
-  
-  /**
-   * Initialize generator model before calculation
-   * @param [output] values - array where initialized generator variables should be set
-   */
-  void init(gridpack::ComplexType *values);
-  
-  /**
-   * Write output from generators to a string.
-   * @param string (output) string with information to be printed out
-   * @param bufsize size of string buffer in bytes
-   * @param signal an optional character string to signal to this
-   * routine what about kind of information to write
-   * @return true if bus is contributing string to output, false otherwise
-   */
-  bool serialWrite(char *string, const int bufsize,
-		   const char *signal);
-  
-  double getAngle();
-  
-  /**
-   * Write out generator state
-   * @param signal character string used to determine behavior
-   * @param string buffer that contains output
-   */
+            data, int idx);
+  bool setJacobian(gridpack::RealType **values);
+  void init(gridpack::RealType *values);
+  bool serialWrite(char *string, const int bufsize, const char *signal);
   void write(const char* signal, char* string);
-  
-  /**
-   *  Set the number of variables for this generator model
-   *  @param [output] number of variables for this model
-   */
-  bool vectorSize(int *nvar) const;
-  
-  /**
-   * Set the internal values of the voltage magnitude and phase angle. Need this
-   * function to push values from vectors back onto generators
-   * @param values array containing generator state variables
-   */
-  void setValues(gridpack::ComplexType*);
-  
-  /**
-   * Return the values of the generator vector block
-   * @param values: pointer to vector values
-   * @return: false if generator does not contribute
-   *        vector element
-   */
-  bool vectorValues(gridpack::ComplexType *values);
-  
-  /**
-   *  Set Jacobian values
-   *  @param values a 2-d array of Jacobian block for the bus
-   */
-  bool setJacobian(gridpack::ComplexType **values);
-  
-  /**
-   * Return the generator current injection (in rectangular form) 
-   * @param [output] IGD - real part of the generator current
-   * @param [output] IGQ - imaginary part of the generator current
-   */
-  void getCurrent(double *IGD, double *IGQ);
-  
-  /* Return the field current */ 
-  double getFieldCurrent();
-  
-  /* Return rotor speed deviation */ 
-  double getRotorSpeedDeviation();
-  
-  /* return rotor speed deviation variable location.
-     The variable location is w.r.t. variables in the bus array
-  */
-  int getRotorSpeedDeviationLocation();
-  
+  void getCurrent(double *ia, double *ib, double *ic);
+  void getCurrentGlobalLocation(int *i_gloc);
+  double Sat(double x);
+  double dSat(double x);
+  double getSpeedDeviation() { return dw; }
+  double getSpeedDeviation(int *dw_gloc)
+  {
+    *dw_gloc = (integrationtype != EXPLICIT) ? p_gloc + 7 : -1;
+    return dw;
+  }
+  void preStep(double time, double timestep);
+  void postStep(double time);
+  void getnvar(int *nvar);
+  int matrixNumValues();
+  void matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols);
+  void vectorGetValues(gridpack::RealType *values);
+  void setValues(gridpack::RealType *values);
+  double getInitialFieldVoltage();
+  double getInitialMechanicalPower() { return TM; }
+  double getAngle() { return delta; }
+  double getAngle(int *delta_gloc)
+  {
+    *delta_gloc = (integrationtype != EXPLICIT) ? p_gloc + 6 : -1;
+    return delta;
+  }
+
 private:
-  // Machine parameters
   double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl;
-  double Tdop, Tdopp, Tqopp, S10, S12, Tqop;
-  double Xqp, Xqpp;
-  
-  double LadIfd; // Field current
+  double Tdop, Tdopp, Tqopp, S10, S12;
 
-  // Inputs
-  double Efd; // Field voltage
-  double Pmech; // Mechanical power
+  double LadIfd;   // Field current
+  double TM;       // Mechanical torque
+  double VD, VQ;
+  double vdq0[3], idq0[3], vabc[3];
+  int flux_speed_sensitivity;
 
-  // constants
-  double B, G;
-  
-  // Variables and their derivatives
-  double delta, dw, Eqp, Psidp, Psiqpp; 
-  double ddelta, ddw, dEqp, dPsidp, dPsiqpp;
-  // previous step values of the variables
-  double deltaprev, dwprev, Eqpprev, Psidpprev, Psiqppprev; 
-  
-  double sat_A,sat_B; // Saturation function coefficients (unused — Sat() now computes inline)
-  bool enableSat; // Flag to enable/disable saturation
+  // States: psid psiq psi0 | Eqp psi1d psi2q delta dw | ia ib ic
+  double psid, psiq, psi0;
+  double Eqp, psi1d, psi2q, delta, dw;
+  double iabc[3];
+  double dpsid, dpsiq, dpsi0, dEqp, dpsi1d, dpsi2q, ddelta, ddw, diabc[3];
+
+  bool enableSat;
+  int bid;
 };
 
 #endif

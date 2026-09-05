@@ -3,684 +3,474 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-// -------------------------------------------------------------
 /**
- * @file   genrou.cpp
- *  
- * @brief GENSAL model implementation
- *
- * @Modified: 2026-03-28 - Port DS fixes: auto-corrections (4 rules),
- *   re-enable Sat() with proper guards, enableSat flag. 
- *
- *
+ * @file   gensal.cpp
+ * @brief  Salient-pole machine (PSS/E GENSAL) for the EMT module. States:
+ *         psid psiq psi0 | Eqp psi1d psi2q delta dw | ia ib ic.
  */
 
 #include <gensal.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
 
-GensalGen::GensalGen(void)
+Gensal::Gensal(void)
 {
-  delta = 0.0; // Rotor angle
-  dw = 0.0; // Rotor speed
-  Eqp = 0.0; // Transient Q axis Eq 
-  Psidp = 0.0; // Transient D axis flux
-  Psiqpp = 0.0; // Transient Q axis flux
-  ddelta = 0.0;
-  ddw = 0.0;
-  dEqp = 0.0;
-  dPsidp = 0.0;
-  dPsiqpp = 0.0;
-  Ra = 0.0; // Machine stator resistance
-  H = 0.0; // Machine inertia constant
-  D = 0.0; // Machine damping coefficient
-  Pmech = 0.0; // Mechanical power
-  Xd = 0.0;
-  Xq = 0.0;
-  Xdp = 0.0; // Machine transient reactance
-  Xdpp = 0.0;
-  Xl = 0.0;
-  Tdop = 0.0;
-  Tdopp = 0.0;
-  Tqopp = 0.0;
-  S10 = 0.0;
-  S12 = 0.0;
-  Tqop = 0.0;
-
-  B = 0.0;
-  G = 0.0;
-
-  nxgen = 5; // Number of variables
+  nxgen = 11;
+  flux_speed_sensitivity = 1;
+  enableSat = false;
+  TM = 0.0;
+  LadIfd = 0.0;
 }
 
-GensalGen::~GensalGen(void)
+Gensal::~Gensal(void)
 {
-  if(p_hasExciter) {
-    free(xexc_loc);
-    free(dEfd_dxexc);
-    free(dEfd_dxgen);
-  }
-
-  if(p_hasGovernor) {
-    free(xgov_loc);
-    free(dPmech_dxgov);
-  }
 }
 
-/**
- * Load parameters from DataCollection object into generator model
- * @param data collection of generator parameters from input files
- * @param index of generator on bus
- * TODO: might want to move this functionality to BaseGeneratorModel
- */
-void GensalGen::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+void Gensal::getnvar(int *nvar)
 {
-  BaseGenModel::load(data,idx); // load parameters in base generator model
+  if(integrationtype == EXPLICIT) nxgen = 6;
+  *nvar = nxgen;
+}
 
-  // load parameters for the model type
+void Gensal::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
+{
+  BaseEMTGenModel::load(data,idx);
 
-  if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &H, idx)) H = 0.0; // H
-  if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &D, idx)) D = 0.0; // D
-  if (!data->getValue(GENERATOR_RESISTANCE, &Ra, idx)) Ra=0.0; // Ra
-  if (!data->getValue(GENERATOR_XD, &Xd, idx)) Xd=0.0; // Xd
-  if (!data->getValue(GENERATOR_XQ, &Xq, idx)) Xq=0.0; // Xq
-  if (!data->getValue(GENERATOR_XDP, &Xdp, idx)) Xdp=0.0; // Xdp
-  if (!data->getValue(GENERATOR_XDPP, &Xdpp, idx)) Xdpp=0.0; // Xdpp
-  if (!data->getValue(GENERATOR_XL, &Xl, idx)) Xl=0.0; // Xl
-  if (!data->getValue(GENERATOR_TDOP, &Tdop, idx)) Tdop=0.0; // Tdop
-  if (!data->getValue(GENERATOR_TDOPP, &Tdopp, idx)) Tdopp=0.0; // Tdopp
-  if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tqopp=0.0; // Tqopp
-  if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
-  if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 
-  if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
+  gridpack::ComplexType Zsource;
+  data->getValue(BUS_NUMBER, &bid);
+  if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &H, idx)) H = 0.0;
+  if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &D, idx)) D = 0.0;
+  data->getValue(GENERATOR_ZSOURCE,&Zsource,idx);
+  Ra = real(Zsource);
+  if (!data->getValue(GENERATOR_RESISTANCE, &Ra, idx)) Ra = 0.0;
+  if (!data->getValue(GENERATOR_XD, &Xd, idx)) Xd = 0.0;
+  if (!data->getValue(GENERATOR_XQ, &Xq, idx)) Xq = 0.0;
+  if (!data->getValue(GENERATOR_XDP, &Xdp, idx)) Xdp = 0.0;
+  if (!data->getValue(GENERATOR_XDPP, &Xdpp, idx)) Xdpp = 0.0;
+  if (!data->getValue(GENERATOR_XL, &Xl, idx)) Xl = 0.0;
+  if (!data->getValue(GENERATOR_TDOP, &Tdop, idx)) Tdop = 0.0;
+  if (!data->getValue(GENERATOR_TDOPP, &Tdopp, idx)) Tdopp = 0.0;
+  if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tqopp = 0.0;
+  if (!data->getValue(GENERATOR_S1, &S10, idx)) S10 = 0.0;
+  if (!data->getValue(GENERATOR_S12, &S12, idx)) S12 = 0.0;
 
-  // Values given on mbase. Convert to sbase
-  double mult = mbase/sbase;
-  H *= mult;
-  D *= mult;
-  Ra /= mult;
-  Xd /= mult;
-  Xq /= mult;
-  Xdp /= mult;
-  Xdpp /= mult;
-  Xl   /= mult;
+  enableSat = (fabs(S10*S12) >= 1e-6);
 
-  // Saturation enable/disable
-  if(fabs(S10*S12) < 1e-6) {
-    enableSat = false;
-  } else enableSat = true;
-
-  // GENSAL machine parameter auto-correction (matches PowerWorld rules)
+  // Parameter guards (same rules as Genrou / PowerWorld).
   if (Xdp > Xd) {
     printf("GENSAL bus %d: Auto-correct Xd'=%.6f > Xd=%.6f -> Xd'=%.6f\n",
-           busnum, Xdp, Xd, 0.8*Xd);
-    Xdp = 0.8 * Xd;
+           bid, Xdp, Xd, 0.8*Xd);
+    Xdp = 0.8*Xd;
   }
   if (Xdpp > Xdp) {
     printf("GENSAL bus %d: Auto-correct Xd''=%.6f > Xd'=%.6f -> Xd''=%.6f\n",
-           busnum, Xdpp, Xdp, 0.8*Xdp);
-    Xdpp = 0.8 * Xdp;
+           bid, Xdpp, Xdp, 0.8*Xdp);
+    Xdpp = 0.8*Xdp;
   }
-  if (Xdpp < 0.05) {
-    printf("GENSAL bus %d: Auto-correct Xd''=%.6f < 0.05 -> Xd''=0.05\n",
-           busnum, Xdpp);
-    Xdpp = 0.05;
+  if (Xl >= Xdpp) {
+    printf("GENSAL bus %d: Auto-correct Xl=%.6f >= Xd''=%.6f -> Xl=%.6f\n",
+           bid, Xl, Xdpp, 0.8*Xdpp);
+    Xl = 0.8*Xdpp;
   }
-  if (Xl > Xdpp) {
-    printf("GENSAL bus %d: Auto-correct Xl=%.6f > Xd''=%.6f -> Xl=%.6f\n",
-           busnum, Xl, Xdpp, 0.8*Xdpp);
-    Xl = 0.8 * Xdpp;
+  if (Xq < Xdpp) {
+    printf("GENSAL bus %d: Auto-correct Xq=%.6f < Xd''=%.6f -> Xq=%.6f\n",
+           bid, Xq, Xdpp, Xdpp);
+    Xq = Xdpp;
   }
-
-  // Set up arrays for generator exciter Jacobian coupling
-  if(p_hasExciter) {
-    int nxexc;
-    p_exciter = getExciter();
-    p_exciter->vectorSize(&nxexc);
-    xexc_loc = (int*)malloc(nxexc*sizeof(int));
-    dEfd_dxexc = (double*)malloc(nxexc*sizeof(double));
-    dEfd_dxgen  = (double*)malloc(nxgen*sizeof(double));
-  }
-
-  if(p_hasGovernor) {
-    int nxgov;
-    p_governor = getGovernor();
-    p_governor->vectorSize(&nxgov);
-    xgov_loc = (int*)malloc(nxgov*sizeof(int));
-    dPmech_dxgov = (double*)malloc(nxgov*sizeof(double));
-  }
+  if (Tdop <= 0.0) Tdop = 1e-3;
+  if (Tdopp <= 0.0) Tdopp = 1e-3;
+  if (Tqopp <= 0.0) Tqopp = 1e-3;
 }
 
-/**
- * Saturation function
- * @ param x
- */
-double GensalGen::Sat(double x)
+// Scaled quadratic saturation Se(x) = B(x-A)^2/x fitted to S(1.0), S(1.2).
+double Gensal::Sat(double x)
 {
-  if (enableSat && x > 1e-6) {
-    // PowerWorld standard scaled saturation: Se(x) = B*(x-A)^2 / x
-    double R = 1.2 * S12 / S10;
-    double sqrtR = sqrt(R);
-    double A = (1.2 - sqrtR) / (1.0 - sqrtR);
-    double B_sat = S10 / ((1.0 - A) * (1.0 - A));
-
-    double tmp = x - A;
-    if (tmp < 0.0) {
-      tmp = 0.0;
-    }
-    double result = B_sat * tmp * tmp / x;
-    return result;
-  } else {
-    return 0.0;
-  }
+  if (!enableSat || x <= 1e-6) return 0.0;
+  double R = 1.2*S12/S10;
+  double sqrtR = sqrt(R);
+  double A = (1.2 - sqrtR)/(1.0 - sqrtR);
+  double B = S10/((1.0 - A)*(1.0 - A));
+  double tmp = x - A;
+  if (tmp < 0.0) return 0.0;
+  return B*tmp*tmp/x;
 }
 
-/**
- * Initialize generator model before calculation
- * @param [output] values - array where initialized generator variables should be set
- */
-void GensalGen::init(gridpack::ComplexType* values) 
+double Gensal::dSat(double x)
 {
-  double Vterm = sqrt(VD*VD + VQ*VQ); 
-  double P, Q; // Generator real and reactive power
-  double Vrterm = VD;
-  double Viterm = VQ;
-  double Ir,Ii,Id,Iq;
-  double Eppr,Eppi,Vd,Vq,Vdterm,Vqterm;
-  double Psid,Psiq,Psidpp,Telec;
+  if (!enableSat || x <= 1e-6) return 0.0;
+  double R = 1.2*S12/S10;
+  double sqrtR = sqrt(R);
+  double A = (1.2 - sqrtR)/(1.0 - sqrtR);
+  double B = S10/((1.0 - A)*(1.0 - A));
+  if (x - A < 0.0) return 0.0;
+  return B*(x - A)*(x + A)/(x*x);
+}
 
+void Gensal::init(gridpack::RealType* xin)
+{
+  gridpack::RealType *x = xin + offsetb;
+  double Pg = pg/mbase, Qg = qg/mbase;
 
-  // Admittance
-  B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
-  G = Ra / (Ra * Ra + Xdpp * Xdpp);
+  VD = p_Vm0*cos(p_Va0);
+  VQ = p_Vm0*sin(p_Va0);
+  gridpack::ComplexType V(VD,VQ), S(Pg,Qg);
+  gridpack::ComplexType I = conj(S/V);
+  double Im = abs(I), Ia = arg(I);
 
-  P = pg / sbase;
-  Q = qg / sbase;
+  iabc[0] = Im*sin(OMEGA_S*p_time + Ia);
+  iabc[1] = Im*sin(OMEGA_S*p_time + Ia - TWOPI_OVER_THREE);
+  iabc[2] = Im*sin(OMEGA_S*p_time + Ia + TWOPI_OVER_THREE);
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
 
-  Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
-  Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
+  // No q-axis saturation in GENSAL: E = V + (Ra + jXq) I lies on the q axis.
+  delta = arg(V + gridpack::ComplexType(Ra,Xq)*I);
+  double theta = delta - PI/2.0;
+  abc2dq0(vabc,p_time,theta,vdq0);
+  abc2dq0(iabc,p_time,theta,idq0);
+  double Vd = vdq0[0], Vq = vdq0[1];
+  double Id = idq0[0], Iq = idq0[1];
+
+  psid = Ra*Iq + Vq;
+  psiq = -Ra*Id - Vd;
+  psi0 = 0.0;
   dw = 0.0;
-  delta = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
 
-  Eppr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
-  Eppi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
-  Vd = Eppr * sin(delta) - Eppi * cos(delta); // convert to dq reference
-  Vq = Eppr * cos(delta) + Eppi * sin(delta); // convert to dq reference
-  Vdterm = VD*sin(delta) - VQ*cos(delta);
-  Vqterm = VD*cos(delta) + VQ*sin(delta);
-  Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
-  Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
+  psi1d = psid + Xl*Id;
+  Eqp   = psi1d + (Xdp - Xl)*Id;
+  psi2q = psiq + Xdpp*Iq;          // q-axis subtransient flux
 
-  Psiqpp = (Xdpp - Xq) * Iq;
+  TM = psid*Iq - psiq*Id;
+  LadIfd = Eqp*(1.0 + Sat(Eqp)) + (Xd - Xdp)*Id;
+  Efd = LadIfd;
 
-  Psiq = Psiqpp - Iq*Xdpp;
-  Psidpp = Vq;
-  Psid = Psidpp - Id*Xdpp;
-  Telec = Psid* Iq - Psiq * Id;
-
-  Psidp = Psidpp - Id * (Xdpp - Xl);
-  Eqp   = Psidp + Id * (Xdp - Xl);
-
-  Efd = Eqp * (1.0 + Sat(Eqp)) + Id * (Xd - Xdp); 
-  LadIfd = Efd;
-  Pmech = Psid * Iq - Psiq * Id;
-
-  values[0] = delta;
-  values[1] = dw;
-  values[2] = Eqp;
-  values[3] = Psidp;
-  values[4] = Psiqpp;
-  
-  //  printf("delta = %f,dw = %f,Eqp = %f,Psidp = %f,Psiqpp = %f,Efd = %f,Pmech = %f,VD = %f,VQ = %f\n",
-  //	 delta,dw,Eqp,Psidp,Psiqpp,Efd,Pmech,VD,VQ);
-
-  // Initialize exciters
-  if (p_hasExciter) {
-    p_exciter = getExciter();
-    p_exciter->setInitialFieldVoltage(Efd);
-  }
-
-  if (p_hasGovernor) {
-    p_governor = getGovernor();
-    p_governor->setInitialMechanicalPower(Pmech);
-  }
-
-}
-
-/**
- * Write output from generators to a string.
- * @param string (output) string with information to be printed out
- * @param bufsize size of string buffer in bytes
- * @param signal an optional character string to signal to this
- * routine what about kind of information to write
- * @return true if bus is contributing string to output, false otherwise
- */
-
-
-double GensalGen::getAngle(void)
-{
-  return delta;
-}
-
-/**
- * Write out generator state
- * @param signal character string used to determine behavior
- * @param string buffer that contains output
- */
-void GensalGen::write(const char* signal, char* string)
-{
-}
-
-/**
- *  Set the number of variables for this generator model
- *  @param [output] number of variables for this model
- */
-bool GensalGen::vectorSize(int *nvar) const
-{
-  *nvar = nxgen;
-  return true;
-}
-
-/**
- * Set the internal values of the voltage magnitude and phase angle. Need this
- * function to push values from vectors back onto generators
- * @param values array containing generator state variables
-*/
-void GensalGen::setValues(gridpack::ComplexType *values)
-{
-  if(p_mode == XVECTOBUS) {
-    delta = real(values[0]);
-    dw = real(values[1]);
-    Eqp = real(values[2]);
-    Psidp = real(values[3]);
-    Psiqpp = real(values[4]);
-  } else if(p_mode == XDOTVECTOBUS) {
-    ddelta = real(values[0]);
-    ddw = real(values[1]);
-    dEqp = real(values[2]);
-    dPsidp = real(values[3]);
-    dPsiqpp = real(values[4]);
-  } else if(p_mode == XVECPRETOBUS) {
-    deltaprev = real(values[0]);
-    dwprev = real(values[1]);
-    Eqpprev = real(values[2]);
-    Psidpprev = real(values[3]);
-    Psiqppprev = real(values[4]);
-  }    
-}
-
-/**
- * Return the values of the generator vector block
- * @param values: pointer to vector values
- * @return: false if generator does not contribute
- *        vector element
- */
-bool GensalGen::vectorValues(gridpack::ComplexType *values)
-{
-  int delta_idx = 0;
-  int dw_idx = 1;
-  int Eqp_idx = 2;
-  int Psidp_idx = 3;
-  int Psiqpp_idx = 4;
-  double Vd,Vq,Vdterm,Vqterm;
-  double Id,Iq;
-  double Psid,Psiq,Psidpp;
-  double Telec,TempD;
-  // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
-  if(p_mode == FAULT_EVAL) {
-    values[delta_idx] = delta - deltaprev;
-    values[dw_idx] = dw - dwprev;
-    values[Eqp_idx] = Eqp - Eqpprev;
-    values[Psidp_idx] = Psidp - Psidpprev;
-    values[Psiqpp_idx] = Psiqpp - Psiqppprev;
-
-  } else if(p_mode == RESIDUAL_EVAL) {
-    if (p_hasExciter) {
-      p_exciter = getExciter();
-      Efd = p_exciter->getFieldVoltage(); // Efd obtained from exciter
-    }
-    
-    if (p_hasGovernor) {
-      p_governor = getGovernor();
-      Pmech = p_governor->getMechanicalPower();
-    }
-
-    // Generator equations
-    Psidpp = + Eqp * (Xdpp - Xl) / (Xdp - Xl) + Psidp * (Xdp - Xdpp) / (Xdp - Xl);
-    Vd = -Psiqpp * (1 + dw);
-    Vq = +Psidpp * (1 + dw);
-    Vdterm = VD*sin(delta) - VQ*cos(delta);
-    Vqterm = VD*cos(delta) + VQ*sin(delta);
-    Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
-    Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
-
-    Psiq = Psiqpp - Iq * Xdpp;
-    Psid  = Psidpp - Id * Xdpp;
-    Telec = Psid * Iq - Psiq * Id;
-    TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
-    LadIfd = Eqp * (1.0 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
-
-    // RESIDUAL_EVAL for state 1 to 5
-    values[delta_idx] = dw * OMEGA_S - ddelta;
-    values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; 
-    values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp; 
-    values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
-    values[Psiqpp_idx] = (-Psiqpp - (Xq - Xdpp) * Iq ) / Tqopp - dPsiqpp;
-  }
-
-  return true;
-}
-
-/**
- * Set Jacobian values
- * @param values a 2-d array of Jacobian block for the bus
- */
-bool GensalGen::setJacobian(gridpack::ComplexType **values) 
-{
-  // The voltage variables are first two variable in the bus array
-  int VD_idx = 0; /* Row/col number for bus voltage VD variable */
-  int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
-  // The network current balance equations are the first two in the set
-  // of equations at the bus. Note that DSim orders the reactive current (IQ)
-  // first and then the real current (ID). Hence, IGQ is ordered first and then IGD
-  int IGQ_idx = 0; /* Row/col location for IGQ equations */
-  int IGD_idx = 1; /* Row/col location for IGD equations */
-
-  // Offsets for the variables in the bus variable array
-  int delta_idx = offsetb;
-  int dw_idx    = offsetb+1;
-  int Eqp_idx   = offsetb+2;
-  int Psidp_idx = offsetb+3;
-  int Psiqpp_idx = offsetb+4;
-
-  double Vd,Vq,Vdterm,Vqterm;
-  double Id,Iq;
-  double Psid,Psiq,Psidpp;
-  double Telec,TempD;
-
-  if (p_hasExciter) {
-    p_exciter = getExciter();
-    Efd = p_exciter->getFieldVoltage(); // Efd obtained from exciter
-  }
-  
-  if (p_hasGovernor) {
-    p_governor = getGovernor();
-    Pmech = p_governor->getMechanicalPower();
-  }
-  
-  Psidpp = + Eqp * (Xdpp - Xl) / (Xdp - Xl) + Psidp * (Xdp - Xdpp) / (Xdp - Xl);
-  Vd = -Psiqpp * (1 + dw);
-  Vq = +Psidpp * (1 + dw);
-  Vdterm = VD*sin(delta) - VQ*cos(delta);
-  Vqterm = VD*cos(delta) + VQ*sin(delta);
-  Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
-  Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
-  
-  double dPsidpp_ddelta = 0.0;
-  double dPsidpp_ddw    = 0.0;
-  double dPsidpp_dEqp   = (Xdpp - Xl)/(Xdp - Xl);
-  double dPsidpp_dPsidp = (Xdp - Xdpp)/(Xdp - Xl);
-  double dPsidpp_dPsiqpp = 0.0;
-  
-  double dVd_dPsiqpp = -(1 + dw);
-  double dVd_ddw    = -Psiqpp;
-  
-  double dVq_dEqp   = dPsidpp_dEqp*(1 + dw);
-  double dVq_dPsidp = dPsidpp_dPsidp*(1 + dw);
-  double dVq_ddw    = Psidpp;
-  
-  double dVdterm_dVD = sin(delta), dVdterm_dVQ = -cos(delta);
-  double dVqterm_dVD = cos(delta), dVqterm_dVQ =  sin(delta);
-  
-  double dVdterm_ddelta =  VD*cos(delta) + VQ*sin(delta);
-  double dVqterm_ddelta = -VD*sin(delta) + VQ*cos(delta);
-  
-  double dId_dVd     =  G, dId_dVq     = -B;
-  double dId_dVdterm = -G, dId_dVqterm =  B;
-  
-  double dIq_dVd     =  B, dIq_dVq     =  G;
-  double dIq_dVdterm = -B, dIq_dVqterm = -G;
-  
-  double dId_ddelta = dId_dVdterm*dVdterm_ddelta + dId_dVqterm*dVqterm_ddelta;
-  double dIq_ddelta = dIq_dVdterm*dVdterm_ddelta + dIq_dVqterm*dVqterm_ddelta;
-  
-  double dId_ddw = dId_dVd*dVd_ddw + dId_dVq*dVq_ddw;
-  double dIq_ddw = dIq_dVd*dVd_ddw + dIq_dVq*dVq_ddw;
-  
-  double dId_dEqp = dId_dVq*dVq_dEqp;
-  double dIq_dEqp = dIq_dVq*dVq_dEqp;
-  
-  double dId_dPsidp = dId_dVq*dVq_dPsidp;
-  double dIq_dPsidp = dIq_dVq*dVq_dPsidp;
-  
-  double dId_dPsiqpp = dId_dVd*dVd_dPsiqpp;
-  double dIq_dPsiqpp = dIq_dVd*dVd_dPsiqpp;
-  
-  double dId_dVD = dId_dVdterm*dVdterm_dVD + dId_dVqterm*dVqterm_dVD;
-  double dId_dVQ = dId_dVdterm*dVdterm_dVQ + dId_dVqterm*dVqterm_dVQ;
-  
-  double dIq_dVD = dIq_dVdterm*dVdterm_dVD + dIq_dVqterm*dVqterm_dVD;
-  double dIq_dVQ = dIq_dVdterm*dVdterm_dVQ + dIq_dVqterm*dVqterm_dVQ;
-  
-  Psiq = Psiqpp - Iq * Xdpp;
-  Psid  = Psidpp - Id * Xdpp;
-  
-  double dPsiq_ddelta  = -Xdpp*dIq_ddelta;
-  double dPsiq_ddw     = -Xdpp*dIq_ddw;
-  double dPsiq_dEqp    = -Xdpp*dIq_dEqp;
-  double dPsiq_dPsidp  = -Xdpp*dIq_dPsidp;
-  double dPsiq_dPsiqpp = 1.0 - Xdpp*dIq_dPsiqpp;
-  
-  double dPsiq_dVD     = -Xdpp*dIq_dVD;
-  double dPsiq_dVQ     = -Xdpp*dIq_dVQ;
-  
-  double dPsid_ddelta  = dPsidpp_ddelta - Xdpp*dId_ddelta;
-  double dPsid_ddw     = dPsidpp_ddw - Xdpp*dId_ddw;
-  double dPsid_dEqp    = dPsidpp_dEqp - Xdpp*dId_dEqp;
-  double dPsid_dPsidp  = dPsidpp_dPsidp - Xdpp*dId_dPsidp;
-  double dPsid_dPsiqpp = dPsidpp_dPsiqpp - Xdpp*dId_dPsiqpp;
-  
-  double dPsid_dVD     =  -Xdpp*dId_dVD;
-  double dPsid_dVQ     =  -Xdpp*dId_dVQ;
-  
-  double dTelec_ddelta = dPsid_ddelta*Iq + Psid*dIq_ddelta
-    - dPsiq_ddelta*Id - Psiq*dId_ddelta;
-  double dTelec_ddw    = dPsid_ddw*Iq + Psid*dIq_ddw
-    - dPsiq_ddw*Id - Psiq*dId_ddw;
-  double dTelec_dEqp   = dPsid_dEqp*Iq + Psid*dIq_dEqp
-    - dPsiq_dEqp*Id - Psiq*dId_dEqp;
-  double dTelec_dPsidp = dPsid_dPsidp*Iq + Psid*dIq_dPsidp
-    - dPsiq_dPsidp*Id - Psiq*dId_dPsidp;
-  double dTelec_dPsiqpp= dPsid_dPsiqpp*Iq + Psid*dIq_dPsiqpp
-    - dPsiq_dPsiqpp*Id - Psiq*dId_dPsiqpp;
-  double dTelec_dVD    = dPsid_dVD*Iq + Psid*dIq_dVD
-    - dPsiq_dVD*Id - Psiq*dId_dVD;
-  double dTelec_dVQ    = dPsid_dVQ*Iq + Psid*dIq_dVQ
-    - dPsiq_dVQ*Id - Psiq*dId_dVQ;
-  
-  if(p_mode == FAULT_EVAL) {
-    // Generator variables held constant
-    // dF_dX
-    // Set diagonal values to 1.0
-    values[delta_idx][delta_idx] = 1.0;
-    values[dw_idx][dw_idx] = 1.0;
-    values[Eqp_idx][Eqp_idx] = 1.0;
-    values[Psidp_idx][Psidp_idx] = 1.0;
-    values[Psiqpp_idx][Psiqpp_idx] = 1.0;
+  double scal = mbase/sbase;
+  if(integrationtype != EXPLICIT) {
+    x[0] = psid; x[1] = psiq; x[2] = psi0;
+    x[3] = Eqp;  x[4] = psi1d; x[5] = psi2q;
+    x[6] = delta; x[7] = dw;
+    x[8] = iabc[0]*scal; x[9] = iabc[1]*scal; x[10] = iabc[2]*scal;
   } else {
+    x[0] = psid; x[1] = psiq; x[2] = psi0;
+    x[3] = iabc[0]*scal; x[4] = iabc[1]*scal; x[5] = iabc[2]*scal;
+  }
+}
 
-    // Partial derivatives for ddelta_dt equation
-    values[delta_idx][delta_idx] = -shift;
-    values[dw_idx][delta_idx]    = OMEGA_S;
-
-    // Partial derivatives for dw_dt equation
-    double const1 = 1/(2*H);
-    
-    values[delta_idx][dw_idx] = const1*-dTelec_ddelta;
-    values[dw_idx][dw_idx] = const1*(-(Pmech-D*dw)/((1+dw)*(1+dw)) - D/(1+dw) - dTelec_ddw) - shift;
-    values[Eqp_idx][dw_idx] = const1*-dTelec_dEqp;
-    values[Psidp_idx][dw_idx] = const1*-dTelec_dPsidp;
-    values[Psiqpp_idx][dw_idx] = const1*-dTelec_dPsiqpp;
-    
-    values[VD_idx][dw_idx] = const1*-dTelec_dVD;
-    values[VQ_idx][dw_idx] = const1*-dTelec_dVQ;
-    
-    // Add Pmech contributions
-    if(p_hasGovernor) {
-      int nxgov,i;
-      p_governor->vectorSize(&nxgov);
-      p_governor->getMechanicalPowerPartialDerivatives(xgov_loc,dPmech_dxgov);
-      
-      /* Partials w.r.t. governor mechanical power Pmech */
-      for(i=0; i < nxgov; i++) {
-	values[xgov_loc[i]][dw_idx] = const1*dPmech_dxgov[i]/(1+dw);
-      }
+bool Gensal::serialWrite(char *string, const int bufsize,const char *signal)
+{
+  if(!strcmp(signal,"header")) {
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_Qg,%d_%s_delta, %d_%s_dw",
+            busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),
+            busnum,id.c_str(),busnum,id.c_str());
+    return true;
+  } else if(!strcmp(signal,"monitor")) {
+    double Vm, Pgen, Qgen, dspd;
+    if(p_online) {
+      Vm = sqrt(vdq0[0]*vdq0[0] + vdq0[1]*vdq0[1]);
+      dspd = dw;
+    } else {
+      Vm = p_Vm0;
+      dspd = 0.0;
     }
-    
-    // Partial derivatives for dEqp_dt equation
-    double const2 =  (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
-    double dLadIfd_ddelta =  (Xd - Xdp)*(dId_ddelta + const2*(-(Xdp - Xl)*dId_ddelta));
-    double dLadIfd_ddw    =  (Xd - Xdp)*(dId_ddw + const2*(-(Xdp - Xl)*dId_ddw));
-    double dLadIfd_dEqp   = 1.0 + (Xd - Xdp)*(dId_dEqp + const2*(1.0 - (Xdp - Xl)*dId_dEqp)); // No saturation considered yet
-    double dLadIfd_dPsidp =  (Xd - Xdp)*(dId_dPsidp + const2*(-1.0 -(Xdp - Xl)*dId_dPsidp));
-    double dLadIfd_dPsiqpp=  (Xd - Xdp)*(dId_dPsiqpp + const2*(-(Xdp - Xl)*dId_dPsiqpp));
-    
-    double dLadIfd_dVD   =  (Xd - Xdp)*(dId_dVD + const2*(-(Xdp - Xl)*dId_dVD));
-    double dLadIfd_dVQ   =  (Xd - Xdp)*(dId_dVQ + const2*(-(Xdp - Xl)*dId_dVQ));
-    
-    values[delta_idx][Eqp_idx] = -dLadIfd_ddelta/Tdop;
-    values[dw_idx][Eqp_idx]    = -dLadIfd_ddw/Tdop;
-    values[Eqp_idx][Eqp_idx]   = -dLadIfd_dEqp/Tdop - shift;
-    values[Psidp_idx][Eqp_idx] = -dLadIfd_dPsidp/Tdop;
-    values[Psiqpp_idx][Eqp_idx]= -dLadIfd_dPsiqpp/Tdop;
-    
-    values[VD_idx][Eqp_idx]    = -dLadIfd_dVD/Tdop;
-    values[VQ_idx][Eqp_idx]    = -dLadIfd_dVQ/Tdop;
-    
-    // Add Efd contributions
-    if(p_hasExciter) {
-      int nexc,i;
-      p_exciter->vectorSize(&nexc);
-      p_exciter->getFieldVoltagePartialDerivatives(xexc_loc,dEfd_dxexc,dEfd_dxgen);
-      
-      /* Partials w.r.t. exciter variables */
-      for(i=0; i < nexc; i++) {
-	values[xexc_loc[i]][Eqp_idx] = dEfd_dxexc[i]/Tdop;
-      }
+    Pgen = p_online*(vdq0[0]*idq0[0] + vdq0[1]*idq0[1])*mbase/sbase;
+    Qgen = p_online*(vdq0[1]*idq0[0] - vdq0[0]*idq0[1])*mbase/sbase;
+    sprintf(string,", %.17g,%.17g,%.17g,%.17g,%.17g",Vm,Pgen,Qgen,delta,dspd);
+    return true;
+  }
+  return false;
+}
 
-      /* Partials contributions for Efd w.r.t. generator variables. Note that this may be because
-	 the exciter Efd calculation uses the field current LadIfd (which is a function of generator variables)
-      */
-      for(i=0; i < nxgen; i++) {
-	values[offsetb+i][Eqp_idx] += dEfd_dxgen[i]/Tdop;
-      }
+void Gensal::write(const char* signal, char* string)
+{
+}
+
+void Gensal::setValues(gridpack::RealType *values)
+{
+  gridpack::RealType *x = values + offsetb;
+  if(integrationtype == EXPLICIT) {
+    if(p_mode == XVECTOBUS) {
+      psid = x[0]; psiq = x[1]; psi0 = x[2];
+      iabc[0] = x[3]; iabc[1] = x[4]; iabc[2] = x[5];
+    } else if(p_mode == XDOTVECTOBUS) {
+      dpsid = x[0]; dpsiq = x[1]; dpsi0 = x[2];
+      diabc[0] = x[3]; diabc[1] = x[4]; diabc[2] = x[5];
     }
+  } else {
+    if(p_mode == XVECTOBUS) {
+      psid = x[0]; psiq = x[1]; psi0 = x[2];
+      Eqp = x[3]; psi1d = x[4]; psi2q = x[5];
+      delta = x[6]; dw = x[7];
+      iabc[0] = x[8]; iabc[1] = x[9]; iabc[2] = x[10];
+    } else if(p_mode == XDOTVECTOBUS) {
+      dpsid = x[0]; dpsiq = x[1]; dpsi0 = x[2];
+      dEqp = x[3]; dpsi1d = x[4]; dpsi2q = x[5];
+      ddelta = x[6]; ddw = x[7];
+      diabc[0] = x[8]; diabc[1] = x[9]; diabc[2] = x[10];
+    }
+  }
+}
 
-    // Partial derivatives for dPsidp_dt equation
-    values[delta_idx][Psidp_idx] = -(Xdp - Xl)*dId_ddelta/Tdopp;
-    values[dw_idx][Psidp_idx]    = -(Xdp - Xl)*dId_ddw/Tdopp;
-    values[Eqp_idx][Psidp_idx]   = (1.0 -(Xdp - Xl)*dId_dEqp)/Tdopp;
-    values[Psidp_idx][Psidp_idx] = (-1.0 -(Xdp - Xl)*dId_dPsidp)/Tdopp - shift;
-    values[Psiqpp_idx][Psidp_idx]= (-(Xdp - Xl)*dId_dPsiqpp)/Tdopp;
+void Gensal::vectorGetValues(gridpack::RealType *values)
+{
+  gridpack::RealType *f = values + offsetb;
+  if(p_mode != RESIDUAL_EVAL) return;
 
-    values[VD_idx][Psidp_idx] = -(Xdp - Xl)*dId_dVD/Tdopp;
-    values[VQ_idx][Psidp_idx] = -(Xdp - Xl)*dId_dVQ/Tdopp;
+  double theta = delta - PI/2.0;
+  double tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+  double tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+  double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
 
-    // Partial derivatives for dPsiqpp_dt equation
-    values[delta_idx][Psiqpp_idx] = -(Xq - Xdpp)*dIq_ddelta/Tqopp;
-    values[dw_idx][Psiqpp_idx]    = -(Xq - Xdpp)*dIq_ddw/Tqopp;
-    values[Eqp_idx][Psiqpp_idx]   = -(Xq - Xdpp)*dIq_dEqp/Tqopp;
-    values[Psidp_idx][Psiqpp_idx] = -(Xq - Xdpp)*dIq_dPsidp/Tqopp;
-    values[Psiqpp_idx][Psiqpp_idx]= (-1.0 -(Xq - Xdpp)*dIq_dPsiqpp)/Tqopp - shift;
-    
-    values[VD_idx][Psiqpp_idx]    = -(Xq - Xdpp)*dIq_dVD/Tqopp;
-    values[VQ_idx][Psiqpp_idx]    = -(Xq - Xdpp)*dIq_dVQ/Tqopp;
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+  abc2dq0(vabc,p_time,theta,vdq0);
+  double Vd = vdq0[0], Vq = vdq0[1], V0 = vdq0[2];
+
+  double Id = (psid - tempd1*Eqp - tempd2*psi1d)/-Xdpp;
+  double Iq = (psiq - psi2q)/-Xdpp;
+  double I0 = psi0/-Xl;
+  idq0[0] = Id; idq0[1] = Iq; idq0[2] = I0;
+
+  if(hasExciter()) Efd = getExciter()->getFieldVoltage();
+  if(hasGovernor()) TM = getGovernor()->getMechanicalPower();
+
+  double dpsi1ddt = -psi1d + Eqp - (Xdp - Xl)*Id;
+  LadIfd = Eqp*(1.0 + Sat(Eqp)) + (Xd - Xdp)*(Id + param1*dpsi1ddt);
+
+  double igen[3];
+  dq02abc(idq0,p_time,theta,igen);
+  double scal = mbase/sbase;
+  double k = flux_speed_sensitivity;
+
+  if(integrationtype != EXPLICIT) {
+    f[0] = OMEGA_S*(Ra*Id + (1 + k*dw)*psiq + Vd) - dpsid;
+    f[1] = OMEGA_S*(Ra*Iq - (1 + k*dw)*psid + Vq) - dpsiq;
+    f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
+    f[3] = (Efd - LadIfd)/Tdop - dEqp;
+    f[4] = dpsi1ddt/Tdopp - dpsi1d;
+    f[5] = (-psi2q - (Xq - Xdpp)*Iq)/Tqopp - dpsi2q;
+    f[6] = dw*OMEGA_S - ddelta;
+    f[7] = 1.0/(2.0*H)*((TM - D*dw)/(1 + dw) - (psid*Iq - psiq*Id)) - ddw;
+    f[8]  = igen[0]*scal - iabc[0];
+    f[9]  = igen[1]*scal - iabc[1];
+    f[10] = igen[2]*scal - iabc[2];
+  } else if(p_online) {
+    f[0] = OMEGA_S*(Ra*Id + (1 + k*dw)*psiq + Vd) - dpsid;
+    f[1] = OMEGA_S*(Ra*Iq - (1 + k*dw)*psid + Vq) - dpsiq;
+    f[2] = OMEGA_S*(Ra*I0 + V0) - dpsi0;
+    f[3] = igen[0]*scal - iabc[0];
+    f[4] = igen[1]*scal - iabc[1];
+    f[5] = igen[2]*scal - iabc[2];
+  } else {
+    f[0] = psid; f[1] = psiq; f[2] = psi0;
+    f[3] = iabc[0]; f[4] = iabc[1]; f[5] = iabc[2];
+  }
+}
+
+void Gensal::getCurrent(double *ia, double *ib, double *ic)
+{
+  *ia = p_online*iabc[0];
+  *ib = p_online*iabc[1];
+  *ic = p_online*iabc[2];
+}
+
+void Gensal::getCurrentGlobalLocation(int *i_gloc)
+{
+  *i_gloc = (integrationtype != EXPLICIT) ? p_gloc + 8 : p_gloc + 3;
+}
+
+int Gensal::matrixNumValues()
+{
+  int numVals = 0;
+  if(integrationtype != EXPLICIT) {
+    numVals = 62;
+    if(hasExciter()) numVals += 1;
+    if(hasGovernor()) numVals += 1;
+  } else {
+    numVals = 27;
+  }
+  return numVals;
+}
+
+void Gensal::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, int *cols)
+{
+  int ctr = 0, j;
+  double k = flux_speed_sensitivity;
+  double Tdq0[3][3], Tdq0inv[3][3];
+  double theta = delta - PI/2.0;
+  double scal = mbase/sbase;
+  double dId_dpsid = -1/Xdpp, dIq_dpsiq = -1/Xdpp, dI0_dpsi0 = -1/Xl;
+
+  getTdq0(p_time,theta,Tdq0);
+  getTdq0inv(p_time,theta,Tdq0inv);
+
+  if(integrationtype == EXPLICIT) {
+    int psid_idx = p_gloc, psiq_idx = p_gloc+1, psi0_idx = p_gloc+2;
+    int i_idx[3] = { p_gloc+3, p_gloc+4, p_gloc+5 };
+    if(!p_online) {
+      for(j = 0; j < 6; j++) { rows[ctr] = cols[ctr] = p_gloc + j; values[ctr] = 1.0; ctr++; }
+      *nvals = ctr;
+      return;
+    }
+    rows[ctr] = psid_idx; cols[ctr] = psid_idx; values[ctr++] = OMEGA_S*Ra*dId_dpsid - shift;
+    rows[ctr] = psid_idx; cols[ctr] = psiq_idx; values[ctr++] = OMEGA_S*(1 + k*dw);
+    for(j = 0; j < 3; j++) { rows[ctr] = psid_idx; cols[ctr] = p_glocvoltage+j; values[ctr++] = OMEGA_S*Tdq0[0][j]; }
+    rows[ctr] = psiq_idx; cols[ctr] = psid_idx; values[ctr++] = -OMEGA_S*(1 + k*dw);
+    rows[ctr] = psiq_idx; cols[ctr] = psiq_idx; values[ctr++] = OMEGA_S*Ra*dIq_dpsiq - shift;
+    for(j = 0; j < 3; j++) { rows[ctr] = psiq_idx; cols[ctr] = p_glocvoltage+j; values[ctr++] = OMEGA_S*Tdq0[1][j]; }
+    rows[ctr] = psi0_idx; cols[ctr] = psi0_idx; values[ctr++] = OMEGA_S*Ra*dI0_dpsi0 - shift;
+    for(j = 0; j < 3; j++) { rows[ctr] = psi0_idx; cols[ctr] = p_glocvoltage+j; values[ctr++] = OMEGA_S*Tdq0[2][j]; }
+    for(int r = 0; r < 3; r++) {
+      rows[ctr] = i_idx[r]; cols[ctr] = psid_idx; values[ctr++] = scal*Tdq0inv[r][0]*dId_dpsid;
+      rows[ctr] = i_idx[r]; cols[ctr] = psiq_idx; values[ctr++] = scal*Tdq0inv[r][1]*dIq_dpsiq;
+      rows[ctr] = i_idx[r]; cols[ctr] = psi0_idx; values[ctr++] = scal*Tdq0inv[r][2]*dI0_dpsi0;
+      rows[ctr] = i_idx[r]; cols[ctr] = i_idx[r]; values[ctr++] = -1.0;
+    }
+    *nvals = ctr;
+    return;
   }
 
-  // Partial of generator currents IGD and IGQ w.r.t. x and V
-  values[delta_idx][IGD_idx]    = dId_ddelta*sin(delta) + Id*cos(delta)
-    + dIq_ddelta*cos(delta) - Iq*sin(delta);
-  values[dw_idx][IGD_idx]       = dId_ddw*sin(delta) + dIq_ddw*cos(delta);
-  values[Eqp_idx][IGD_idx]      = dId_dEqp*sin(delta) + dIq_dEqp*cos(delta);
-  values[Psidp_idx][IGD_idx]    = dId_dPsidp*sin(delta) + dIq_dPsidp*cos(delta);
-  values[Psiqpp_idx][IGD_idx]   = dId_dPsiqpp*sin(delta) + dIq_dPsiqpp*cos(delta);
+  int psid_idx = p_gloc, psiq_idx = p_gloc+1, psi0_idx = p_gloc+2;
+  int Eqp_idx = p_gloc+3, psi1d_idx = p_gloc+4, psi2q_idx = p_gloc+5;
+  int delta_idx = p_gloc+6, dw_idx = p_gloc+7;
+  int i_idx[3] = { p_gloc+8, p_gloc+9, p_gloc+10 };
 
-  // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
-  values[VD_idx][IGD_idx]      += dId_dVD*sin(delta) + dIq_dVD*cos(delta);
-  values[VQ_idx][IGD_idx]      += dId_dVQ*sin(delta) + dIq_dVQ*cos(delta);
-  
-  values[delta_idx][IGQ_idx]    = -dId_ddelta*cos(delta) + Id*sin(delta)
-    + dIq_ddelta*sin(delta) + Iq*cos(delta);
-  values[dw_idx][IGQ_idx]       = -dId_ddw*cos(delta) + dIq_ddw*sin(delta);
-  values[Eqp_idx][IGQ_idx]      = -dId_dEqp*cos(delta) + dIq_dEqp*sin(delta);
-  values[Psidp_idx][IGQ_idx]     = -dId_dPsidp*cos(delta) + dIq_dPsidp*sin(delta);
-  values[Psiqpp_idx][IGQ_idx]   = -dId_dPsiqpp*cos(delta) + dIq_dPsiqpp*sin(delta);
+  double tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+  double tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+  double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
+  double dId_dEqp = tempd1/Xdpp, dId_dpsi1d = tempd2/Xdpp;
+  double dIq_dpsi2q = 1/Xdpp;
 
-  // Note the values are added, since different components (bus, load, etc.) add contributions to these locations
-  values[VD_idx][IGQ_idx]      += -dId_dVD*cos(delta) + dIq_dVD*sin(delta);
-  values[VQ_idx][IGQ_idx]      += -dId_dVQ*cos(delta) + dIq_dVQ*sin(delta);
-      
+  double dTdq0_ddelta[3][3], dTdq0inv_ddelta[3][3], dvdq0_ddelta[3];
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+  getdTdq0dtheta(p_time,theta,dTdq0_ddelta);
+  getdTdq0invdtheta(p_time,theta,dTdq0inv_ddelta);
+  matvecmult3x3(dTdq0_ddelta,vabc,dvdq0_ddelta);
+
+  double Id = (psid - tempd1*Eqp - tempd2*psi1d)/-Xdpp;
+  double Iq = (psiq - psi2q)/-Xdpp;
+  double I0 = psi0/-Xl;
+
+  // Stator flux rows
+  rows[ctr] = psid_idx; cols[ctr] = psid_idx;  values[ctr++] = OMEGA_S*Ra*dId_dpsid - shift;
+  rows[ctr] = psid_idx; cols[ctr] = psiq_idx;  values[ctr++] = OMEGA_S*(1 + k*dw);
+  rows[ctr] = psid_idx; cols[ctr] = Eqp_idx;   values[ctr++] = OMEGA_S*Ra*dId_dEqp;
+  rows[ctr] = psid_idx; cols[ctr] = psi1d_idx; values[ctr++] = OMEGA_S*Ra*dId_dpsi1d;
+  rows[ctr] = psid_idx; cols[ctr] = delta_idx; values[ctr++] = OMEGA_S*dvdq0_ddelta[0];
+  rows[ctr] = psid_idx; cols[ctr] = dw_idx;    values[ctr++] = OMEGA_S*k*psiq;
+  for(j = 0; j < 3; j++) { rows[ctr] = psid_idx; cols[ctr] = p_glocvoltage+j; values[ctr++] = OMEGA_S*Tdq0[0][j]; }
+
+  rows[ctr] = psiq_idx; cols[ctr] = psid_idx;  values[ctr++] = -OMEGA_S*(1 + k*dw);
+  rows[ctr] = psiq_idx; cols[ctr] = psiq_idx;  values[ctr++] = OMEGA_S*Ra*dIq_dpsiq - shift;
+  rows[ctr] = psiq_idx; cols[ctr] = psi2q_idx; values[ctr++] = OMEGA_S*Ra*dIq_dpsi2q;
+  rows[ctr] = psiq_idx; cols[ctr] = delta_idx; values[ctr++] = OMEGA_S*dvdq0_ddelta[1];
+  rows[ctr] = psiq_idx; cols[ctr] = dw_idx;    values[ctr++] = -OMEGA_S*k*psid;
+  for(j = 0; j < 3; j++) { rows[ctr] = psiq_idx; cols[ctr] = p_glocvoltage+j; values[ctr++] = OMEGA_S*Tdq0[1][j]; }
+
+  rows[ctr] = psi0_idx; cols[ctr] = psi0_idx;  values[ctr++] = OMEGA_S*Ra*dI0_dpsi0 - shift;
+  rows[ctr] = psi0_idx; cols[ctr] = delta_idx; values[ctr++] = OMEGA_S*dvdq0_ddelta[2];
+  for(j = 0; j < 3; j++) { rows[ctr] = psi0_idx; cols[ctr] = p_glocvoltage+j; values[ctr++] = OMEGA_S*Tdq0[2][j]; }
+
+  // Eqp row: f = (Efd - LadIfd)/Tdop, LadIfd = Eqp(1+Se) + (Xd-Xdp)(Id + param1*dpsi1ddt)
+  double dpsi1ddt_dpsid  = -(Xdp - Xl)*dId_dpsid;
+  double dpsi1ddt_dEqp   = 1.0 - (Xdp - Xl)*dId_dEqp;
+  double dpsi1ddt_dpsi1d = -1.0 - (Xdp - Xl)*dId_dpsi1d;
+  double dLad_dpsid  = (Xd - Xdp)*(dId_dpsid + param1*dpsi1ddt_dpsid);
+  double dLad_dEqp   = 1.0 + Sat(Eqp) + Eqp*dSat(Eqp) + (Xd - Xdp)*(dId_dEqp + param1*dpsi1ddt_dEqp);
+  double dLad_dpsi1d = (Xd - Xdp)*(dId_dpsi1d + param1*dpsi1ddt_dpsi1d);
+  rows[ctr] = Eqp_idx; cols[ctr] = psid_idx;  values[ctr++] = -dLad_dpsid/Tdop;
+  rows[ctr] = Eqp_idx; cols[ctr] = Eqp_idx;   values[ctr++] = -dLad_dEqp/Tdop - shift;
+  rows[ctr] = Eqp_idx; cols[ctr] = psi1d_idx; values[ctr++] = -dLad_dpsi1d/Tdop;
+  if(hasExciter()) {
+    int Efd_idx;
+    getExciter()->getFieldVoltage(&Efd_idx);
+    if(Efd_idx >= 0) { rows[ctr] = Eqp_idx; cols[ctr] = Efd_idx; values[ctr++] = 1.0/Tdop; }
+  }
+
+  // psi1d row
+  rows[ctr] = psi1d_idx; cols[ctr] = psid_idx;  values[ctr++] = dpsi1ddt_dpsid/Tdopp;
+  rows[ctr] = psi1d_idx; cols[ctr] = Eqp_idx;   values[ctr++] = dpsi1ddt_dEqp/Tdopp;
+  rows[ctr] = psi1d_idx; cols[ctr] = psi1d_idx; values[ctr++] = dpsi1ddt_dpsi1d/Tdopp - shift;
+
+  // psi2q row: f = (-psi2q - (Xq-Xdpp)*Iq)/Tqopp
+  rows[ctr] = psi2q_idx; cols[ctr] = psiq_idx;  values[ctr++] = -(Xq - Xdpp)*dIq_dpsiq/Tqopp;
+  rows[ctr] = psi2q_idx; cols[ctr] = psi2q_idx; values[ctr++] = (-1.0 - (Xq - Xdpp)*dIq_dpsi2q)/Tqopp - shift;
+
+  // delta row
+  rows[ctr] = delta_idx; cols[ctr] = delta_idx; values[ctr++] = -shift;
+  rows[ctr] = delta_idx; cols[ctr] = dw_idx;    values[ctr++] = OMEGA_S;
+
+  // dw row: f = Minv*((TM - D*dw)/(1+dw) - Te), Te = psid*Iq - psiq*Id
+  double Minv = 1.0/(2.0*H);
+  int TM_idx = -1;
+  if(hasGovernor()) TM = getGovernor()->getMechanicalPower(&TM_idx);
+  rows[ctr] = dw_idx; cols[ctr] = psid_idx;  values[ctr++] = -Minv*(Iq - psiq*dId_dpsid);
+  rows[ctr] = dw_idx; cols[ctr] = psiq_idx;  values[ctr++] = -Minv*(psid*dIq_dpsiq - Id);
+  rows[ctr] = dw_idx; cols[ctr] = Eqp_idx;   values[ctr++] = -Minv*(-psiq*dId_dEqp);
+  rows[ctr] = dw_idx; cols[ctr] = psi1d_idx; values[ctr++] = -Minv*(-psiq*dId_dpsi1d);
+  rows[ctr] = dw_idx; cols[ctr] = psi2q_idx; values[ctr++] = -Minv*(psid*dIq_dpsi2q);
+  rows[ctr] = dw_idx; cols[ctr] = dw_idx;
+  values[ctr++] = Minv*(-D/(1 + dw) - (TM - D*dw)/((1 + dw)*(1 + dw))) - shift;
+  if(hasGovernor() && TM_idx >= 0) {
+    rows[ctr] = dw_idx; cols[ctr] = TM_idx; values[ctr++] = Minv/(1 + dw);
+  }
+
+  // Current rows: igen = Tdq0inv * idq0 (machine base) scaled to system base
+  for(int r = 0; r < 3; r++) {
+    rows[ctr] = i_idx[r]; cols[ctr] = psid_idx;  values[ctr++] = scal*Tdq0inv[r][0]*dId_dpsid;
+    rows[ctr] = i_idx[r]; cols[ctr] = psiq_idx;  values[ctr++] = scal*Tdq0inv[r][1]*dIq_dpsiq;
+    rows[ctr] = i_idx[r]; cols[ctr] = psi0_idx;  values[ctr++] = scal*Tdq0inv[r][2]*dI0_dpsi0;
+    rows[ctr] = i_idx[r]; cols[ctr] = Eqp_idx;   values[ctr++] = scal*Tdq0inv[r][0]*dId_dEqp;
+    rows[ctr] = i_idx[r]; cols[ctr] = psi1d_idx; values[ctr++] = scal*Tdq0inv[r][0]*dId_dpsi1d;
+    rows[ctr] = i_idx[r]; cols[ctr] = psi2q_idx; values[ctr++] = scal*Tdq0inv[r][1]*dIq_dpsi2q;
+    rows[ctr] = i_idx[r]; cols[ctr] = delta_idx;
+    values[ctr++] = scal*(dTdq0inv_ddelta[r][0]*Id + dTdq0inv_ddelta[r][1]*Iq + dTdq0inv_ddelta[r][2]*I0);
+    rows[ctr] = i_idx[r]; cols[ctr] = i_idx[r];  values[ctr++] = -1.0;
+  }
+  *nvals = ctr;
+}
+
+bool Gensal::setJacobian(gridpack::RealType **values)
+{
   return true;
 }
 
-
-/**
- * Return the generator current injection (in rectangular form) 
- * @param [output] IGD - real part of the generator current 
- * @param [output] IGQ - imaginary part of the generator current 
-*/
-void GensalGen::getCurrent(double *IGD, double *IGQ)
+double Gensal::getInitialFieldVoltage()
 {
-  double Psidpp = + Eqp * (Xdpp - Xl) / (Xdp - Xl) + Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
-  double Vd = -Psiqpp * (1 + dw);
-  double Vq = +Psidpp * (1 + dw);
-  double Vdterm = VD*sin(delta) - VQ*cos(delta);
-  double Vqterm = VD*cos(delta) + VQ*sin(delta);
-  double Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
-  double Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
-
-  // Generator current injections in the network
-  *IGD =   Id * sin(delta) + Iq * cos(delta);
-  *IGQ =  -Id * cos(delta) + Iq * sin(delta);
+  return Efd;
 }
 
-double GensalGen::getRotorSpeedDeviation()
+// Explicit mode: forward-Euler step of the rotor states with the stator
+// fluxes and network voltage frozen at the start of the step.
+void Gensal::preStep(double time, double timestep)
 {
-  return dw;
+  if(integrationtype != EXPLICIT) return;
+  double x[5], f[5];
+  x[0] = Eqp; x[1] = psi1d; x[2] = psi2q; x[3] = delta; x[4] = dw;
+
+  double theta = delta - PI/2.0;
+  double tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+  double tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+  double param1 = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
+
+  vabc[0] = p_va; vabc[1] = p_vb; vabc[2] = p_vc;
+  abc2dq0(vabc,time,theta,vdq0);
+  double Id = (psid - tempd1*Eqp - tempd2*psi1d)/-Xdpp;
+  double Iq = (psiq - psi2q)/-Xdpp;
+  idq0[0] = Id; idq0[1] = Iq; idq0[2] = psi0/-Xl;
+
+  if(hasExciter()) Efd = getExciter()->getFieldVoltage();
+  if(hasGovernor()) TM = getGovernor()->getMechanicalPower();
+
+  double dpsi1ddt = -psi1d + Eqp - (Xdp - Xl)*Id;
+  LadIfd = Eqp*(1.0 + Sat(Eqp)) + (Xd - Xdp)*(Id + param1*dpsi1ddt);
+
+  f[0] = (Efd - LadIfd)/Tdop;
+  f[1] = dpsi1ddt/Tdopp;
+  f[2] = (-psi2q - (Xq - Xdpp)*Iq)/Tqopp;
+  f[3] = dw*OMEGA_S;
+  f[4] = 1.0/(2.0*H)*((TM - D*dw)/(1 + dw) - (psid*Iq - psiq*Id));
+  for(int i = 0; i < 5; i++) x[i] += timestep*f[i];
+  Eqp = x[0]; psi1d = x[1]; psi2q = x[2]; delta = x[3]; dw = x[4];
 }
 
-int GensalGen::getRotorSpeedDeviationLocation()
+void Gensal::postStep(double time)
 {
-  return offsetb+1;
-}
-
-
-double GensalGen::getFieldCurrent()
-{
-  double Psidpp = + Eqp * (Xdpp - Xl) / (Xdp - Xl) + Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
-  double Vd = -Psiqpp * (1 + dw);
-  double Vq = +Psidpp * (1 + dw);
-  double Vdterm = VD*sin(delta) - VQ*cos(delta);
-  double Vqterm = VD*cos(delta) + VQ*sin(delta);
-  double Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
-  double Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
-  double Psiq = Psiqpp - Iq * Xdpp;
-  double Psid  = Psidpp - Id * Xdpp;
-  double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
-  double LadIfd = Eqp * (1.0 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
-
-  //  printf("LadIfd = %f\n",LadIfd);
-  return LadIfd;
-
-}
-
-/**
- * Write out generator state
- * @param signal character string used to determine behavior
- * @param string buffer that contains output
- */
-bool GensalGen::serialWrite(
-    char* string, const int bufsize, const char *signal)
-{
-  return false;
 }

@@ -123,6 +123,18 @@ void Genrou::load(const boost::shared_ptr<gridpack::component::DataCollection> d
  * Saturation function
  * @ param x air-gap flux magnitude
  */
+// d/dx of Sat(x) = B (x-A)^2 / x  ->  B (x-A)(x+A) / x^2 for x > A.
+double Genrou::dSat(double x)
+{
+  if (!(enableSat && x > 1e-6)) return 0.0;
+  double R = 1.2 * S12 / S10;
+  double sqrtR = sqrt(R);
+  double A = (1.2 - sqrtR) / (1.0 - sqrtR);
+  double B = S10 / ((1.0 - A) * (1.0 - A));
+  if (x - A < 0.0) return 0.0;
+  return B * (x - A) * (x + A) / (x * x);
+}
+
 double Genrou::Sat(double x)
 {
   if (enableSat && x > 1e-6) {
@@ -516,7 +528,7 @@ int Genrou::matrixNumValues()
 {
   int numVals = 0;
   if(integrationtype == IMPLICIT) {
-    numVals = 69 + 10;
+    numVals = 69 + 10 + 4;
     if(hasExciter()) numVals += 1;
     if(hasGovernor()) numVals += 1;
   } else if(integrationtype == EXPLICIT) {
@@ -870,16 +882,44 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
     dpsi1ddt_dEqp  = 1.0 -(Xdp - Xl)*dId_dEqp;
     dpsi1ddt_dpsi1d = -1.0 -(Xdp - Xl)*dId_dpsi1d;
     
+    // Saturation Se(Psi_ag), Psi_ag = |(tempd1*Eqp + tempd2*psi1d, -tempq1*Edp + tempq2*psi2q)|
+    double Psidpp_r = tempd1*Eqp + tempd2*psi1d;
+    double Psiqpp_r = -tempq1*Edp + tempq2*psi2q;
+    double Psi_ag = sqrt(Psidpp_r*Psidpp_r + Psiqpp_r*Psiqpp_r);
+    double Se = Sat(Psi_ag), dSe = dSat(Psi_ag);
+    double dPsiag_dEqp = 0.0, dPsiag_dpsi1d = 0.0, dPsiag_dEdp = 0.0, dPsiag_dpsi2q = 0.0;
+    if(Psi_ag > 1e-12) {
+      dPsiag_dEqp   = Psidpp_r*tempd1/Psi_ag;
+      dPsiag_dpsi1d = Psidpp_r*tempd2/Psi_ag;
+      dPsiag_dEdp   = -Psiqpp_r*tempq1/Psi_ag;
+      dPsiag_dpsi2q = Psiqpp_r*tempq2/Psi_ag;
+    }
+    double dSPd_dEqp   = dSe*dPsiag_dEqp*Psidpp_r   + Se*tempd1;   // d(Se*Psidpp)
+    double dSPd_dpsi1d = dSe*dPsiag_dpsi1d*Psidpp_r + Se*tempd2;
+    double dSPd_dEdp   = dSe*dPsiag_dEdp*Psidpp_r;
+    double dSPd_dpsi2q = dSe*dPsiag_dpsi2q*Psidpp_r;
+    double dSPq_dEqp   = dSe*dPsiag_dEqp*Psiqpp_r;                  // d(Se*Psiqpp)
+    double dSPq_dpsi1d = dSe*dPsiag_dpsi1d*Psiqpp_r;
+    double dSPq_dEdp   = dSe*dPsiag_dEdp*Psiqpp_r   - Se*tempq1;
+    double dSPq_dpsi2q = dSe*dPsiag_dpsi2q*Psiqpp_r + Se*tempq2;
+    double kq = (Xq - Xl)/(Xd - Xl);
+
     rows[ctr] = Eqp_idx;  cols[ctr] = psid_idx;
     values[ctr] = (-(Xd - Xdp)*(dId_dpsid - param1*-dpsi1ddt_dpsid))/Tdop;
     
     rows[ctr+1] = Eqp_idx; cols[ctr+1] = Eqp_idx;
-    values[ctr+1] = (-1.0 -(Xd - Xdp)*(dId_dEqp - param1*(-dpsi1ddt_dEqp)))/Tdop -shift;
+    values[ctr+1] = (-1.0 - dSPd_dEqp -(Xd - Xdp)*(dId_dEqp - param1*(-dpsi1ddt_dEqp)))/Tdop -shift;
     
     rows[ctr+2] = Eqp_idx; cols[ctr+2] = psi1d_idx;
-    values[ctr+2] = (-(Xd - Xdp)*(dId_dpsi1d -param1*-dpsi1ddt_dpsi1d))/Tdop;
+    values[ctr+2] = (-dSPd_dpsi1d -(Xd - Xdp)*(dId_dpsi1d -param1*-dpsi1ddt_dpsi1d))/Tdop;
+
+    rows[ctr+3] = Eqp_idx; cols[ctr+3] = Edp_idx;
+    values[ctr+3] = -dSPd_dEdp/Tdop;
+
+    rows[ctr+4] = Eqp_idx; cols[ctr+4] = psi2q_idx;
+    values[ctr+4] = -dSPd_dpsi2q/Tdop;
     
-    ctr += 3;
+    ctr += 5;
     if(hasExciter()) {
       int Efd_idx;
       double Efd;
@@ -915,12 +955,18 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
     values[ctr] = ((Xq - Xqp)*(dIq_dpsiq - param2*-dpsi2qdt_dpsiq))/Tqop;
     
     rows[ctr+1] = Edp_idx; cols[ctr+1] = Edp_idx;
-    values[ctr+1] = (-1.0 +(Xq - Xqp)*(dIq_dEdp - param2*(-dpsi2qdt_dEdp)))/Tqop - shift;
+    values[ctr+1] = (-1.0 +(Xq - Xqp)*(dIq_dEdp - param2*(-dpsi2qdt_dEdp)) + kq*dSPq_dEdp)/Tqop - shift;
     
     rows[ctr+2] = Edp_idx; cols[ctr+2] = psi2q_idx;
-    values[ctr+2] = ((Xq - Xqp)*(dIq_dpsi2q -param2*-dpsi2qdt_dpsi2q))/Tqop;
+    values[ctr+2] = ((Xq - Xqp)*(dIq_dpsi2q -param2*-dpsi2qdt_dpsi2q) + kq*dSPq_dpsi2q)/Tqop;
+
+    rows[ctr+3] = Edp_idx; cols[ctr+3] = Eqp_idx;
+    values[ctr+3] = kq*dSPq_dEqp/Tqop;
+
+    rows[ctr+4] = Edp_idx; cols[ctr+4] = psi1d_idx;
+    values[ctr+4] = kq*dSPq_dpsi1d/Tqop;
     
-    ctr += 3;
+    ctr += 5;
     
     // Derivative of dpsi2q_dt
     rows[ctr] = psi2q_idx;  cols[ctr] = psiq_idx;
@@ -975,7 +1021,7 @@ void Genrou::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
     }
     
     rows[ctr+6] = dw_idx; cols[ctr+6] = dw_idx;
-    values[ctr+6] = Minv*(-D*(1/(1+dw) - (TM - D*dw)/((1+dw)*(1+dw)))) -shift;
+    values[ctr+6] = Minv*(-D/(1+dw) - (TM - D*dw)/((1+dw)*(1+dw))) -shift;
     
     ctr += 7;
     

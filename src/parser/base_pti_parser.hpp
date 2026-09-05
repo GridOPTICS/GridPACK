@@ -1259,7 +1259,13 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"WTTQA1")) {
             Wttqa1Parser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else {
+            printf("WARNING: dyr model '%s' at bus %d id '%s' is not recognized; record ignored\n",
+                   gen_data[i].model, gen_data[i].bus_id, gen_data[i].gen_id);
           }
+        } else {
+          printf("WARNING: dyr record %s at bus %d id '%s' has no matching generator; ignored\n",
+                 gen_data[i].model, gen_data[i].bus_id, gen_data[i].gen_id);
         }
       }
       // Add parameters for a bus relay
@@ -1907,6 +1913,9 @@ class BasePTIParser : public BaseParser<_network>
             Distr1Parser<gen_params> parser;
             parser.parse(split_line, data);
           }
+        } else {
+          printf("WARNING: dyr record ignored, model '%s' is not recognized: %s\n",
+                 sval.c_str(), record.c_str());
         }
       }
     }
@@ -2142,6 +2151,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           }
           branch_relay_vector->push_back(data);
+        } else {
+          printf("WARNING: dyr record ignored, model '%s' is not recognized: %s\n",
+                 sval.c_str(), record.c_str());
         }
       }
     }
