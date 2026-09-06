@@ -37,10 +37,11 @@ functionality appears in the develop branch.
       across all outputs
   - Dynamic Simulation
     - REGFMA1 grid-forming model; QVflag initialization option
+    - Exciter models EXDC2, ESDC2A, ESST3A, EXST1, IEEET2 and SCRX;
+      governor IEESGO; PSS models IEEEST, ST2CUT and STAB2A
   - EMT
     - Ported dynamic simulation model fixes (saturation, auto-corrections,
-      limit guards) and added SEXS, REECA1, SCRX, EXDC2, EXST1, ESST3A,
-      IEEET2, IEEEG1, IEESGO, IEEEST, STAB2A and ST2CUT models
+      limit guards) to the EMT layer; updated SEXS and REECA1 ports
   - Python
     - updateData stores voltage phase angle
   - Documentation
