@@ -314,6 +314,18 @@ protected:
     p_matrix_impl->setElements(n, i, j, x); 
   }
 
+  bool p_hasCOO(void) const
+  {
+    return p_matrix_impl->hasCOO();
+  }
+  void p_setPatternCOO(const IdxType& n, const IdxType *i, const IdxType *j)
+  {
+    p_matrix_impl->setPatternCOO(n, i, j);
+  }
+  void p_setValuesCOO(const TheType *x)
+  {
+    p_matrix_impl->setValuesCOO(x);
+  }
   /// Add to  an individual element
   void p_addElement(const IdxType& i, const IdxType& j, const TheType& x)
   { 

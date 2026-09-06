@@ -21,6 +21,7 @@
 #define _petsc_matrix_implementation_h_
 
 #include <petscmat.h>
+#include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
 #include "petsc_exception.hpp"
@@ -180,6 +181,9 @@ protected:
 
   /// The actual PETSc matrix to be used
   boost::scoped_ptr<PetscMatrixWrapper> p_mwrap;
+
+  /// Number of entries in the COO pattern
+  IdxType p_nCOO = 0;
 
   /// Apply a specific unary operation to the vector
   void p_applyOperation(base_unary_function<TheType>& op)
@@ -368,6 +372,38 @@ protected:
     // FIXME: There's probably a better way
     for (IdxType k = 0; k < n; k++) {
       this->p_setElement(i[k], j[k], x[k]);
+    }
+  }
+
+  /// COO assembly: one PETSc call per Jacobian instead of one per entry
+  bool p_hasCOO(void) const
+  {
+    return elementSize == 1;
+  }
+  void p_setPatternCOO(const IdxType& n, const IdxType *i, const IdxType *j)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      Mat *mat = p_mwrap->getMatrix();
+      std::vector<PetscInt> ii(i, i + n), jj(j, j + n);
+      ierr = MatSetPreallocationCOO(*mat, (PetscCount)n, ii.data(), jj.data()); CHKERRXX(ierr);
+      p_nCOO = n;
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+  void p_setValuesCOO(const TheType *x)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      Mat *mat = p_mwrap->getMatrix();
+      std::vector<PetscScalar> px(p_nCOO);
+      MatrixValueTransferToLibrary<TheType, PetscScalar>
+        trans(p_nCOO, const_cast<TheType*>(x), px.data());
+      trans.go();
+      ierr = MatSetValuesCOO(*mat, px.data(), INSERT_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
     }
   }
 

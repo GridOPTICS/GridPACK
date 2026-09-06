@@ -27,6 +27,9 @@
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/math/matrix.hpp>
 #include <gridpack/utilities/exception.hpp>
+#include <vector>
+#include <algorithm>
+#include <utility>
 
 //#define DBG_CHECK
 
@@ -53,6 +56,8 @@ GenMatrixMap(boost::shared_ptr<_network> network)
 
   p_timer = NULL;
   //p_timer = gridpack::utility::CoarseTimer::instance();
+  p_cooOK = true;
+  p_cooSet = false;
 
   p_GAgrp = network->communicator().getGroup();
   p_me = GA_Pgroup_nodeid(p_GAgrp);
@@ -143,12 +148,79 @@ MatrixType* intMapToMatrix(void)
  */
 void mapToMatrix(MatrixType &matrix)
 {
-  int t_set, t_bus, t_branch;
+  if (p_cooOK && matrix.hasCOO() && loadCOO(matrix)) {
+    GA_Pgroup_sync(p_GAgrp);
+    matrix.ready();
+    return;
+  }
   matrix.zero();
   loadBusData(matrix,false);
   loadBranchData(matrix,false);
   GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
+}
+
+// Coordinate assembly: fix the (row,col) pattern once, then set all values in one
+// call. Returns false (element-wise fallback) if any (row,col) pair is duplicated.
+bool loadCOO(MatrixType &matrix)
+{
+  int i, j, nv, n = 0;
+  bool same = p_cooSet;
+  for (i=0; i<p_nBuses; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    p_network->getBus(i)->matrixGetValues(&nv,values,rows,cols);
+    for (j=0; j<nv; j++, n++) {
+      if (same && (n >= (int)p_cooRows.size() || p_cooRows[n] != rows[j] ||
+                   p_cooCols[n] != cols[j])) same = false;
+      if (!same) {
+        if (n < (int)p_cooRows.size()) { p_cooRows[n] = rows[j]; p_cooCols[n] = cols[j]; }
+        else { p_cooRows.push_back(rows[j]); p_cooCols.push_back(cols[j]); }
+      }
+      if (n < (int)p_cooVals.size()) p_cooVals[n] = values[j];
+      else p_cooVals.push_back(values[j]);
+    }
+  }
+  for (i=0; i<p_nBranches; i++) {
+    int ncols = p_network->getBranch(i)->matrixNumCols();
+    int rmin = 0, rmax = -1;
+    bool isActive = p_network->getActiveBranch(i);
+    if (ncols > 0) {
+      rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
+      rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
+    }
+    p_network->getBranch(i)->matrixGetValues(&nv,values,rows,cols);
+    for (j=0; j<nv; j++) {
+      if (rows[j] < p_minRowIndex || rows[j] > p_maxRowIndex) continue;
+      if (ncols > 0 && cols[j] >= rmin && cols[j] <= rmax && !isActive) continue;
+      if (same && (n >= (int)p_cooRows.size() || p_cooRows[n] != rows[j] ||
+                   p_cooCols[n] != cols[j])) same = false;
+      if (!same) {
+        if (n < (int)p_cooRows.size()) { p_cooRows[n] = rows[j]; p_cooCols[n] = cols[j]; }
+        else { p_cooRows.push_back(rows[j]); p_cooCols.push_back(cols[j]); }
+      }
+      if (n < (int)p_cooVals.size()) p_cooVals[n] = values[j];
+      else p_cooVals.push_back(values[j]);
+      n++;
+    }
+  }
+  if (same && n != (int)p_cooRows.size()) same = false;
+  if (!same) {
+    p_cooRows.resize(n); p_cooCols.resize(n); p_cooVals.resize(n);
+    std::vector<std::pair<int,int> > pairs(n);
+    for (i=0; i<n; i++) pairs[i] = std::make_pair(p_cooRows[i], p_cooCols[i]);
+    std::sort(pairs.begin(), pairs.end());
+    int dup = (std::adjacent_find(pairs.begin(), pairs.end()) != pairs.end()) ? 1 : 0;
+    GA_Pgroup_igop(p_GAgrp, &dup, 1, (char*)"max");
+    if (dup) {
+      if (p_me == 0) printf("GenMatrixMap: duplicate matrix entries, using element-wise assembly\n");
+      p_cooOK = false;
+      return false;
+    }
+    matrix.setPatternCOO(n, p_cooRows.data(), p_cooCols.data());
+    p_cooSet = true;
+  }
+  matrix.setValuesCOO(p_cooVals.data());
+  return true;
 }
 
 /**
@@ -807,6 +879,10 @@ int*                        p_nz_per_row;
 
 int*                        p_row_Offsets;
 int*                        p_col_Offsets;
+
+bool                        p_cooOK, p_cooSet;
+std::vector<int>            p_cooRows, p_cooCols;
+std::vector<T>              p_cooVals;
 
 T                           *values;
 int                         *rows;

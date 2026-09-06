@@ -25,6 +25,7 @@
 #ifndef _matrix_interface_hpp_
 #define _matrix_interface_hpp_
 
+#include <stdexcept>
 #include "gridpack/math/implementation_visitable.hpp"
 
 namespace gridpack {
@@ -141,6 +142,24 @@ public:
   void setElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x)
   {
     this->p_setElements(n, i, j, x);
+  }
+
+  /// True if coordinate (COO) assembly is available
+  bool hasCOO(void) const
+  {
+    return this->p_hasCOO();
+  }
+
+  /// Fix the COO nonzero pattern: @c n global, 0-based (row, column) pairs
+  void setPatternCOO(const IdxType& n, const IdxType *i, const IdxType *j)
+  {
+    this->p_setPatternCOO(n, i, j);
+  }
+
+  /// Replace all values of the COO pattern, in the order given to setPatternCOO()
+  void setValuesCOO(const TheType *x)
+  {
+    this->p_setValuesCOO(x);
   }
 
   /// Add to an individual element
@@ -401,6 +420,17 @@ protected:
   /// Set an several element (specialized)
   virtual void p_setElements(const IdxType& n, const IdxType *i, const IdxType *j, 
                              const TheType *x) = 0;
+
+  /// COO assembly (specialized); not supported unless overridden
+  virtual bool p_hasCOO(void) const { return false; }
+  virtual void p_setPatternCOO(const IdxType& n, const IdxType *i, const IdxType *j)
+  {
+    throw std::runtime_error("COO assembly not supported by this matrix");
+  }
+  virtual void p_setValuesCOO(const TheType *x)
+  {
+    throw std::runtime_error("COO assembly not supported by this matrix");
+  }
 
   /// Add to  an individual element (specialized)
   virtual void p_addElement(const IdxType& i, const IdxType& j, const TheType& x) = 0;
