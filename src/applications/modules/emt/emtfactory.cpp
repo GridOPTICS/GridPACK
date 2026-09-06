@@ -127,7 +127,8 @@ void EmtFactory::setEvents(gridpack::math::RealDAESolver::EventManagerPtr eman,g
   
   for(i=0; i < numBuses; i++) {
     bus = dynamic_cast<EmtBus*>(p_network->getBus(i).get());
-    bus->setEvent(eman);
+    // Ghost copies have no local state; only owned buses register events
+    if(p_network->getActiveBus(i)) bus->setEvent(eman);
 
     // This should be moved to a separate function
     vecmap->getLocalBusOffset(i,&offset,&size);
