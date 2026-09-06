@@ -38,6 +38,7 @@
 #include <model_classes/wttqa1.hpp>
 #include <model_classes/wtara1.hpp>
 #include <model_classes/gdform.hpp>
+#include <model_classes/regfma1.hpp>
 #include <model_classes/tgov1.hpp>
 #include <model_classes/gast.hpp>
 #include <model_classes/hygov.hpp>
@@ -825,6 +826,10 @@ void EmtBus::load(const
 	Gdform *gdform;
 	gdform = new Gdform;
 	p_gen[i] = gdform;
+      } else if(type == "REGFMA1") {
+	Regfma1 *regfma1;
+	regfma1 = new Regfma1;
+	p_gen[i] = regfma1;
       } else if(type == "EPRIA1") {
 #ifdef ENABLE_EPRI_IBR_MODEL
 	Epria1 *epria1;

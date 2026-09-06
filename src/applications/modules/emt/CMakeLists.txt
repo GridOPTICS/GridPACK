@@ -72,6 +72,7 @@ set(target_source
   model_classes/wttqa1.cpp
   model_classes/wtara1.cpp  
   model_classes/gdform.cpp
+  model_classes/regfma1.cpp
   model_classes/lumpedline.cpp
   model_classes/transformer.cpp
 
@@ -153,6 +154,7 @@ install(FILES
   model_classes/wttqa1.hpp
   model_classes/wtara1.hpp
   model_classes/gdform.hpp
+  model_classes/regfma1.hpp
   model_classes/lumpedline.hpp
   model_classes/transformer.hpp
   DESTINATION include/gridpack/applications/modules/emt/model_classes

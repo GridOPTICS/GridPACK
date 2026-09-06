@@ -310,8 +310,7 @@ void Repca1::preStep(double time ,double timestep)
 {
   double Pgen,Qgen, Vd, Vq, Vt;
   double vabc[3],vdq0[3],theta;
-  
-  if(integrationtype != EXPLICIT) return;
+  // Explicit-only controller (no DAE states): must run in both integration modes
 
   vabc[0] = p_va;
   vabc[1] = p_vb;

@@ -5,6 +5,8 @@
 Gdform::Gdform(void)
 {
   nxgen   = 6; // Number of variables for this model
+  omega = OMEGA_S;
+  zero_Tpf = zero_Tqf = zero_Tvf = false;
 }
 
 void Gdform::getnvar(int *nvar)
@@ -47,6 +49,8 @@ void Gdform::load(const boost::shared_ptr<gridpack::component::DataCollection> d
   Edroop_max = Emax;
 
   if (!data->getValue(GENERATOR_TPF, &Tpf, idx)) Tpf = 0.01666; //
+  // Flags must be reset here: load() may run more than once
+  zero_Tpf = zero_Tqf = zero_Tvf = false;
   if(fabs(Tpf) <= 1e-6) zero_Tpf = true;
 
   if (!data->getValue(GENERATOR_IMAX, &Imax, idx)) Imax=2.5;
@@ -101,7 +105,7 @@ void Gdform::init(gridpack::RealType* xin)
   Qmax_PI_blk.setparams(kpqmax,kiqmax,-1000.0,0.0,-1000.0,0.0);
   Qmin_PI_blk.setparams(kpqmax,kiqmax,0.0,1000.0,0.0,1000.0);
 
-  Delta_blk.setparams(OMEGA_S);
+  Delta_blk.setparams(1.0);   // delta' = domega [rad/s], as in the phasor model
 
   Pg = pg/mbase;
   Qg = qg/mbase;
@@ -194,11 +198,11 @@ bool Gdform::serialWrite(char *string, const int bufsize,const char *signal)
 {
   if(!strcmp(signal,"header")) {
     /* Print output header */
-    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
+    sprintf(string,", %d_%s_V,%d_%s_Pg,%d_%s_Qg,%d_%s_delta, %d_%s_dw",busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str(),busnum,id.c_str());
     return true;
   } else if(!strcmp(signal,"monitor")) {
     /* Print output */
-    sprintf(string,", %6.5f,%6.5f,%6.5f, %6.5f",Vmeas,Pinv*mbase/sbase,delta,(omega-OMEGA_S)/OMEGA_S);
+    sprintf(string,", %6.5f,%6.5f,%6.5f,%6.5f, %6.5f",Vmeas,Pinv*mbase/sbase,Qinv*mbase/sbase,delta,(omega-OMEGA_S)/OMEGA_S);
     return true;
   }
   return false;

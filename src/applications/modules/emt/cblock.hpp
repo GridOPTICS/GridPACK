@@ -77,6 +77,8 @@ class Cblock
   double x[1];      /* State variable x */
 
   char   name[128];  /* Control block name */
+  int    p_nwarn = 0; /* Limit messages printed so far (capped) */
+  void   limitmsg(const char *what, double v, const char *side, double lim);
   
   /**
      UPDATESTATE - Updates the linear control block state variable

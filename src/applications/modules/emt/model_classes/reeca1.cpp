@@ -425,7 +425,7 @@ void Reeca1::CurrentLimitLogic(int PQFLAG,double Vt_filter, double Ipcmd, double
 */
 void Reeca1::preStep(double time ,double timestep)
 {
-  if(integrationtype != EXPLICIT) return;
+  // Explicit-only controller (no DAE states): must run in both integration modes
 
   double vabc[3],vdq0[3];
 

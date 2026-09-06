@@ -55,6 +55,14 @@ void Cblock::setylimits(double ymin,double ymax)
 
 }
 
+// Report a limit hit for the first few occurrences per block, then stay quiet
+void Cblock::limitmsg(const char *what, double v, const char *side, double lim)
+{
+  if(p_nwarn >= 3) return;
+  printf("Block %s %s %.6g out of %s. bounds %.6g\n",name,what,v,side,lim);
+  if(++p_nwarn == 3) printf("Block %s: further limit messages suppressed\n",name);
+}
+
 double Cblock::getderivative(double x, double u)
 {
   return p_A[0]*x + p_B[0]*u;
@@ -66,18 +74,18 @@ void Cblock::updatestate(double u,double dt,double xmin,double xmax,double dxmin
 
   dx_dt = getderivative(x[0],u);
   if(dx_dt < p_dxmin) {
-    printf("Block %s state derivative %.17g out of min. bounds %.17g\n",name,dx_dt,p_dxmin);
+    limitmsg("state derivative",dx_dt,"min",p_dxmin);
   } else if(dx_dt > p_dxmax) {
-    printf("Block %s state derivative %.17g out of max. bounds %.17g\n",name,dx_dt,p_dxmax);
+    limitmsg("state derivative",dx_dt,"max",p_dxmax);
   }
 
   p_dxdt[0] = std::max(p_dxmin,std::min(dx_dt,p_dxmax));
   xout = x[0] + dt*p_dxdt[0];
 
   if(xout < xmin) {
-    printf("Block %s state %.17g out of min. bounds %.17g\n",name,xout,xmin);
+    limitmsg("state",xout,"min",xmin);
   } else if(xout > xmax) {
-    printf("Block %s state %.17g out of max. bounds %.17g\n",name,xout,xmax);
+    limitmsg("state",xout,"max",xmax);
   }
 
   
@@ -100,9 +108,9 @@ double Cblock::getoutput(double u)
   y_n = p_C[0]*x_n + p_D[0]*u;
 
   if(y_n < p_ymin) {
-    printf("Block %s output %.17g out of min. bounds %.17g\n",name,y_n,p_ymin);
+    limitmsg("output",y_n,"min",p_ymin);
   } else if(y_n > p_ymax) {
-    printf("Block %s output %.17g out of max. bounds %.17g\n",name,y_n,p_ymax);
+    limitmsg("output",y_n,"max",p_ymax);
   }
 
 
