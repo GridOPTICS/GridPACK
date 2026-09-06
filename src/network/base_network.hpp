@@ -295,6 +295,8 @@ explicit BaseNetwork(const parallel::Communicator& comm)
   p_branchXCBufType = 0;
   p_busGASet = false;
   p_branchGASet = false;
+  p_busXCNeeded = true;
+  p_branchXCNeeded = true;
   p_activeBusIndices = NULL;
   p_busSndBuf = NULL;
   p_inactiveBusIndices = NULL;
@@ -1697,6 +1699,8 @@ void clear(void)
   p_branchXCBufType = 0;
   p_busGASet = false;
   p_branchGASet = false;
+  p_busXCNeeded = true;
+  p_branchXCNeeded = true;
   p_activeBusIndices = NULL;
   p_busSndBuf = NULL;
   p_inactiveBusIndices = NULL;
@@ -2085,6 +2089,10 @@ void initBusUpdate(void)
     }
 
     p_numInactiveBuses = icnt;
+    // Skip the exchange entirely when no rank has ghost buses (serial runs)
+    int nghost = icnt;
+    GA_Pgroup_igop(grp,&nghost,1,plus);
+    p_busXCNeeded = (nghost > 0);
     if (icnt > 0) {
       p_inactiveBusIndices = new int*[icnt];
     }
@@ -2137,6 +2145,7 @@ void initBusUpdate(void)
  */
 void updateBuses(void)
 {
+  if (!p_busXCNeeded) return;
   int grp = this->communicator().getGroup();
   // Copy data from XC buffer to send buffer
   GA_Pgroup_sync(grp);
@@ -2273,6 +2282,9 @@ void initBranchUpdate(void)
     p_activeBranchIndices = new int*[lcnt];
     p_branchSndBuf = new char[lcnt*p_branchXCBufSize];
     p_numInactiveBranches = icnt;
+    int nghost = icnt;
+    GA_Pgroup_igop(grp,&nghost,1,plus);
+    p_branchXCNeeded = (nghost > 0);
     p_inactiveBranchIndices = new int*[icnt];
     p_branchRcvBuf = new char[icnt*p_branchXCBufSize];
     lcnt = 0;
@@ -2318,6 +2330,7 @@ void initBranchUpdate(void)
  */
 void updateBranches(void)
 {
+  if (!p_branchXCNeeded) return;
   // Copy data from XC buffer to send buffer
   int grp = this->communicator().getGroup();
   GA_Pgroup_sync(grp);
@@ -2630,6 +2643,7 @@ private:
   int p_busTotal;
   int **p_inactiveBusIndices;
   int p_numInactiveBuses;
+  bool p_busXCNeeded;
   int **p_activeBusIndices;
   int p_numActiveBuses;
   void *p_busSndBuf;
@@ -2646,6 +2660,7 @@ private:
   int p_branchTotal;
   int **p_inactiveBranchIndices;
   int p_numInactiveBranches;
+  bool p_branchXCNeeded;
   int **p_activeBranchIndices;
   int p_numActiveBranches;
   void *p_branchSndBuf;

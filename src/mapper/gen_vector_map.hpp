@@ -151,25 +151,26 @@ void mapToNetwork(const VectorType &vector)
   //  T *values = new T[p_maxValues];
   //  int *idx = new int[p_maxValues];
   // get values from buses
+  // One batched read per component instead of one per element
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      nvals = p_network->getBus(i)->vectorNumElements();
-      p_network->getBus(i)->vectorGetElementIndices(idx);
-      for (j=0; j<nvals; j++) {
-        vector.getElement(idx[j],values[j]);
-      }
-      p_network->getBus(i)->vectorSetElementValues(values);
+      typename _network::BusType *bus = p_network->getBus(i).get();
+      nvals = bus->vectorNumElements();
+      if (nvals <= 0) continue;
+      bus->vectorGetElementIndices(idx);
+      vector.getElements(nvals,idx,values);
+      bus->vectorSetElementValues(values);
     }
   }
   // get values from branches
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
-      nvals = p_network->getBranch(i)->vectorNumElements();
-      p_network->getBranch(i)->vectorGetElementIndices(idx);
-      for (j=0; j<nvals; j++) {
-        vector.getElement(idx[j],values[j]);
-      }
-      p_network->getBranch(i)->vectorSetElementValues(values);
+      typename _network::BranchType *branch = p_network->getBranch(i).get();
+      nvals = branch->vectorNumElements();
+      if (nvals <= 0) continue;
+      branch->vectorGetElementIndices(idx);
+      vector.getElements(nvals,idx,values);
+      branch->vectorSetElementValues(values);
     }
   }
   //  delete [] values;
@@ -524,14 +525,14 @@ void loadBusData(VectorType &vector, bool flag)
   //  int *idx = new int[p_maxValues];
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      nvals = p_network->getBus(i)->vectorNumElements();
-      p_network->getBus(i)->vectorGetElementValues(values, idx);
-      for (j=0; j<nvals; j++) {
-        if (flag) {
-          vector.addElement(idx[j],values[j]);
-        } else {
-          vector.setElement(idx[j],values[j]);
-        }
+      typename _network::BusType *bus = p_network->getBus(i).get();
+      nvals = bus->vectorNumElements();
+      if (nvals <= 0) continue;
+      bus->vectorGetElementValues(values, idx);
+      if (flag) {
+        vector.addElements(nvals,idx,values);
+      } else {
+        vector.setElements(nvals,idx,values);
       }
     }
   }
@@ -551,16 +552,22 @@ void loadBranchData(VectorType &vector, bool flag)
   //  int *idx = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
-      nvals = p_network->getBranch(i)->vectorNumElements();
-      p_network->getBranch(i)->vectorGetElementValues(values,idx);
+      typename _network::BranchType *branch = p_network->getBranch(i).get();
+      nvals = branch->vectorNumElements();
+      if (nvals <= 0) continue;
+      branch->vectorGetElementValues(values,idx);
+      // keep only locally owned entries, then one batched write
+      int nloc = 0;
       for (j=0; j<nvals; j++) {
         if (idx[j] >= p_minIndex && idx[j] <= p_maxIndex) {
-          if (flag) {
-            vector.addElement(idx[j],values[j]);
-          } else {
-            vector.setElement(idx[j],values[j]);
-          }
+          idx[nloc] = idx[j]; values[nloc] = values[j]; nloc++;
         }
+      }
+      if (nloc == 0) continue;
+      if (flag) {
+        vector.addElements(nloc,idx,values);
+      } else {
+        vector.setElements(nloc,idx,values);
       }
     }
   }
