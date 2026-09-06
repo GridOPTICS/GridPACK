@@ -1057,21 +1057,31 @@ IBR/Renewable Models:
    REGCB1
    REGCC1
    GDFORM
+   REGFMA1
    REECA1
    REPCA1
 
 The ``EPRIA1`` model is also available when GridPACK is built with
 ``ENABLE_EPRI_IBR_MODEL``.
 
+``REGFMA1`` is a droop-controlled grid-forming inverter model following
+the WECC REGFM_A1 specification.
+
 Exciters:
 
 ::
 
    EXDC1
+   EXDC2
+   ESDC2A
    ESST1A
-   IEEET1
-   SEXS
+   ESST3A
    ESST4B
+   EXST1
+   IEEET1
+   IEEET2
+   SCRX
+   SEXS
 
 Governors:
 
@@ -1083,12 +1093,17 @@ Governors:
    GAST
    HYGOV
    GGOV1
+   IEEEG1
+   IEESGO
 
 Power System Stabilizers:
 
 ::
 
    PSSSIM
+   IEEEST
+   ST2CUT
+   STAB2A
 
 Wind Turbine Models:
 
