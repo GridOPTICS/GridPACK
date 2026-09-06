@@ -1439,6 +1439,10 @@ The ``EMT`` block contains parameters specific to the EMT simulation:
    ``PETScPrefix`` (``emt_`` in the example) selects the options that the
    time stepper reads from a ``.petscrc`` file in the run directory; a
    sample is provided in ``src/applications/data_sets/petscoptions/emt``.
+   The sample uses GMRES with a block-Jacobi preconditioner and a KLU
+   factorization on each processor, which is an exact direct solve on one
+   processor. The file is required: a run directory without it fails at
+   the first time step.
 
 After instantiating an ``Emt`` object with a communicator, the EMT
 calculation can be set up using the following sequence of function calls.
