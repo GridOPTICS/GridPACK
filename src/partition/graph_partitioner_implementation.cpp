@@ -176,6 +176,25 @@ GraphPartitionerImplementation::partition(void)
 
   this->p_partition();          // fills p_node_destinations
 
+  // Every processor must own at least one node; the mappers and bus
+  // exchange deadlock or fail otherwise, so stop here with a clear message.
+  {
+    int nproc(communicator().size());
+    std::vector<int> lcount(nproc, 0), count(nproc, 0);
+    for (Index n = 0; n < static_cast<Index>(locnodes); ++n) {
+      lcount[p_node_destinations[n]] += 1;
+    }
+    boost::mpi::all_reduce(communicator(), &lcount[0], nproc, &count[0],
+                           std::plus<int>());
+    if (std::find(count.begin(), count.end(), 0) != count.end()) {
+      boost::format fmt("GraphPartitioner: partitioning %d buses over %d processors "
+                        "leaves a processor with no buses; run with fewer processors");
+      std::string msg = boost::str(fmt % allnodes % nproc);
+      if (communicator().rank() == 0 && !p_no_print) std::cerr << msg << std::endl;
+      throw Exception(msg);
+    }
+  }
+
   if (timer != NULL) timer->stop(t_part);
 
   // make two GAs, one that holds the node source and another that
