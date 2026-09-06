@@ -11,6 +11,7 @@ model](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workf
 The Unreleased section will be empty for tagged releases. Unreleased
 functionality appears in the develop branch.
 
+## [3.7.0]
 - Added
   - Power Flow
     - Switched shunt control (discrete MODSW=1 and continuous MODSW=2 modes)
@@ -26,8 +27,25 @@ functionality appears in the develop branch.
       cycling at marginal Q violations
     - NR step damping for improved convergence robustness
     - Test cases for switched shunt, LTC, and area interchange controls
+  - Contingency Analysis
+    - Monitor filters: monitorBranchesFile allowlist, monitorAreas, and
+      monitorKvMin/Max, applied to every output format
+    - Output formats csv, csv_flat, csv_delta and json, plus per-run
+      _violations.csv, _convergence.csv and _summary.json with performance
+      index ranking and worst-contingency rosters
+    - contingencyRating (A|B|C, default A) as the loading% denominator
+      across all outputs
+  - Dynamic Simulation
+    - REGFMA1 grid-forming model; QVflag initialization option
+  - EMT
+    - Ported dynamic simulation model fixes (saturation, auto-corrections,
+      limit guards) and added SEXS, REECA1, SCRX, EXDC2, EXST1, ESST3A,
+      IEEET2, IEEEG1, IEESGO, IEEEST, STAB2A and ST2CUT models
+  - Python
+    - updateData stores voltage phase angle
   - Documentation
-    - User manual updated with switched shunt and LTC control sections
+    - User manual updated with switched shunt, LTC and contingency analysis
+      output/filter sections
 - Fixed
   - Power Flow
     - Star bus output filtering: synthetic buses from 3-winding transformers
@@ -40,11 +58,26 @@ functionality appears in the develop branch.
       ratings were written to data1 instead of data2/data3
     - 3-winding transformer star bus voltage initialization from
       VMSTAR/ANSTAR fields
+    - Warm-start Q-limit clamp picked the wrong limit for generators whose
+      scheduled QG disagreed with the saved voltage
+    - Phantom flow reported on out-of-service branches
+  - Contingency Analysis
+    - StatBlock crash ("wrong dimension specified") when a monitor filter
+      left no buses, generators or branches
   - Parser
+    - 2-winding transformer ratings A/B/C not populated from RATE1-3 in
+      v34/v35
     - PSS/E v34 switched shunt parser: PTI34 incorrectly used v35 parser
       (SwitchedShuntParser35) which assumed ID and NREG fields not present
       in v34 format, causing BINIT to read B1 instead (e.g., 100 vs 400
       Mvar), producing large voltage errors at switched shunt buses
+  - Data
+    - IEEE118 RAW files: base kV corrected on 56 buses (54 were 1 kV,
+      buses 57/58 mistyped); 106 buses at 138 kV, 12 at 345 kV
+  - Python
+    - Removed distutils import that broke on Python 3.12+
+  - Build
+    - Install missing parser_classes headers used by base_pti_parser
 
 ## [3.6]
 - Added
