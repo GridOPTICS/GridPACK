@@ -365,10 +365,23 @@ class PFFactoryModule
      */
     void useRateB(bool flag);
 
+    /**
+     * Select which rating tier drives overload checks. 'A', 'B', 'C';
+     * A->B->C fallback when the picked tier is zero/missing.
+     */
+    void setContingencyRating(const std::string& rating);
+    std::string getContingencyRating() const { return p_contingencyRating; }
+
+    /**
+     * Rating for one branch element under the current tier + fallback.
+     */
+    double pickBranchRating(int branchLocalIdx, int elemIdx) const;
+
   private:
 
     NetworkPtr p_network;
     std::vector<bool> p_saveIsolatedStatus;
+    std::vector<int>  p_loneBusIndices;
     std::vector<bool> p_saveIslandIsolatedStatus;  // For island detection
     std::vector<int> p_islandIsolatedBusIndices;   // Local indices of buses isolated due to islanding
     int p_islandCount;  // Number of islands detected
@@ -380,6 +393,7 @@ class PFFactoryModule
     std::vector<Violation> p_violations;
 
     bool p_rateB;
+    std::string p_contingencyRating;  // "A" | "B" | "C" (default "A")
     double p_qlim_deadband;  // Q deadband (Mvar) for PV->PQ switch
 };
 

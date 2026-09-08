@@ -83,6 +83,11 @@ stb::StatBlock(const parallel::Communicator &comm, int nrows, int ncols)
   GA_Set_data(p_bounds,two,dims,C_DBL);
   GA_Set_pgroup(p_bounds,p_GAgrp);
   GA_Allocate(p_bounds);
+
+  // Start from zero so any column never written has mask 0 (excluded).
+  GA_Zero(p_data);
+  GA_Zero(p_mask);
+  GA_Zero(p_bounds);
 }
 
 /**

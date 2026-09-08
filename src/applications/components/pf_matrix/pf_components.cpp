@@ -69,6 +69,7 @@
 // Static member initialization
 gridpack::powerflow::InitStartMode gridpack::powerflow::PFBus::p_initStartMode = INIT_START_WARM;
 bool gridpack::powerflow::PFBus::p_qlim = true;
+double gridpack::powerflow::PFBus::p_qlim_deadband = 0.1;
 std::vector<std::string> gridpack::powerflow::PFBus::p_qlimWarnings;
 
 /**
@@ -85,6 +86,11 @@ void gridpack::powerflow::PFBus::setInitStartMode(InitStartMode mode)
 void gridpack::powerflow::PFBus::setQlim(bool qlim)
 {
   p_qlim = qlim;
+}
+
+void gridpack::powerflow::PFBus::setQlimDeadband(double db)
+{
+  p_qlim_deadband = db;
 }
 
 /**
@@ -453,7 +459,7 @@ bool gridpack::powerflow::PFBus::chkQlim(double q_deadband)
   // Check if Q requirement can be met.
   // q_deadband avoids switching buses that are only marginally over their Q
   // limit due to floating-point differences. Configurable via XML qlimDeadband
-  // (default 0.1 Mvar, matching PW's 0.1 MVA convergence tolerance).
+  // (default 0.1 Mvar)
   bool need_pv_to_pq = false;
   char warnBuf[256];
   if (Q_required > Q_max_total + q_deadband) {
@@ -1077,11 +1083,7 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
-  // Warm-start Q-limit pre-saturation: if scheduled QG is already at QMAX or QMIN
-  // (within 0.1 Mvar), start this bus as PQ immediately.  This matches PW behavior
-  // where generators already at their limits in the input data are treated as PQ,
-  // preventing IREG from driving them to impossible Q requirements.
-  // Only applies for warm start with qlim enabled.
+  // Warm-start Q-limit pre-saturation: scheduled QG at QMAX/QMIN -> start as PQ.
   if (p_isPV && p_qlim && p_initStartMode != INIT_START_FLAT) {
     double total_qg = 0.0, total_qmax = 0.0, total_qmin = 0.0;
     for (i = 0; i < p_ngen; i++) {
@@ -1091,9 +1093,23 @@ void gridpack::powerflow::PFBus::load(
         total_qmin += p_qmin[i];
       }
     }
-    const double Q_init_tol = 0.1;  // Mvar — matches PW convergence tolerance
-    if (total_qg >= total_qmax - Q_init_tol || total_qg <= total_qmin + Q_init_tol) {
+    if (total_qg >= total_qmax - p_qlim_deadband
+        || total_qg <= total_qmin + p_qlim_deadband) {
       p_isPV = false;
+      // Pick the saturated limit from V vs VS (V>VS => QMIN, V<VS => QMAX), not
+      // scheduled QG which can be inconsistent. Local regulation only.
+      if (p_ireg_remote_bus == 0) {
+        double vset = 0.0; int nv = 0;
+        for (i = 0; i < p_ngen; i++)
+          if (p_gstatus[i] == 1) { vset += p_vs[i]; nv++; }
+        if (nv > 0) vset /= nv;
+        const double V_init_tol = 1.0e-4;
+        if (p_voltage > vset + V_init_tol) {
+          for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmin[i];
+        } else if (p_voltage < vset - V_init_tol) {
+          for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmax[i];
+        }
+      }
     }
   }
 
@@ -1821,6 +1837,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     sprintf(string, "%6d %20.12e %20.12e %d %d\n",
         getOriginalIndex(),0.0,0.0,use_vmag,changed);
   } else if (!strcmp(signal,"ca")) {
+    // Match checkVoltageViolations(): skip ignored buses.
+    if (p_ignore) return false;
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
     bool found = false;
@@ -2493,6 +2511,39 @@ int gridpack::powerflow::PFBus::getArea()
 int gridpack::powerflow::PFBus::getZone()
 {
   return p_zone;
+}
+
+/**
+ * Get owner number for bus
+ * @return bus owner number (0 if not set)
+ */
+int gridpack::powerflow::PFBus::getOwner()
+{
+  int owner = 0;
+  if (p_data) p_data->getValue(BUS_OWNER, &owner);
+  return owner;
+}
+
+/**
+ * Get base voltage for bus in kV
+ * @return base kV (0.0 if not set)
+ */
+double gridpack::powerflow::PFBus::getBaseKV()
+{
+  double basekv = 0.0;
+  if (p_data) p_data->getValue(BUS_BASEKV, &basekv);
+  return basekv;
+}
+
+/**
+ * Get bus name string
+ * @return bus name (empty if not set)
+ */
+std::string gridpack::powerflow::PFBus::getBusName()
+{
+  std::string name;
+  if (p_data) p_data->getValue(BUS_NAME, &name);
+  return name;
 }
 
 /**
@@ -3522,7 +3573,16 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
 {
   gridpack::ComplexType vi, vj, Yii, Yij, s;
   s = ComplexType(0.0,0.0);
-  gridpack::powerflow::PFBus *bus1 = 
+  // Out-of-service line: getLineElements does not gate on status, so
+  // return zero to avoid a phantom flow from stale admittance.
+  int bsize = p_branch_status.size();
+  for (int i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      if (!p_branch_status[i]) return s;
+      break;
+    }
+  }
+  gridpack::powerflow::PFBus *bus1 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   vi = bus1->getComplexVoltage();
   gridpack::powerflow::PFBus *bus2 =
@@ -3543,6 +3603,14 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getReversePower(
 {
   gridpack::ComplexType vi, vj, Yjj, Yji, s;
   s = ComplexType(0.0,0.0);
+  // Out-of-service line: see getComplexPower.
+  int bsize = p_branch_status.size();
+  for (int i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      if (!p_branch_status[i]) return s;
+      break;
+    }
+  }
   gridpack::powerflow::PFBus *bus1 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   vi = bus1->getComplexVoltage();
@@ -3562,10 +3630,42 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getReversePower(
  * routine what about kind of information to write
  * @return true if branch is contributing string to output, false otherwise
  */
+std::string gridpack::powerflow::PFBranch::s_contingencyRating = "A";
+
+void gridpack::powerflow::PFBranch::setContingencyRating(
+    const std::string& rating)
+{
+  if (rating == "A" || rating == "B" || rating == "C") {
+    s_contingencyRating = rating;
+  } else {
+    s_contingencyRating = "A";
+  }
+}
+
+std::string gridpack::powerflow::PFBranch::getContingencyRating()
+{
+  return s_contingencyRating;
+}
+
+// A->B->C fallback when the picked tier is zero.
+double gridpack::powerflow::PFBranch::pickBranchRating(int elemIdx) const
+{
+  if (elemIdx < 0 || elemIdx >= static_cast<int>(p_rateA.size())) return 0.0;
+  double a = p_rateA[elemIdx];
+  double b = (elemIdx < static_cast<int>(p_rateB.size())) ? p_rateB[elemIdx] : 0.0;
+  double c = (elemIdx < static_cast<int>(p_rateC.size())) ? p_rateC[elemIdx] : 0.0;
+  if (s_contingencyRating == "A") return a;
+  if (s_contingencyRating == "B") return (b > 0.0) ? b : a;
+  // "C"
+  if (c > 0.0) return c;
+  if (b > 0.0) return b;
+  return a;
+}
+
 bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
                                                 const char *signal)
 {
-  char buf[128];
+  char buf[256];
   gridpack::powerflow::PFBus *bus1
     = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   gridpack::powerflow::PFBus *bus2
@@ -3636,18 +3736,33 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     bool found = false;
     int ilen = 0;
     for (i=0; i<p_elems; i++) {
+      // Match checkLineOverloadViolations(): skip ignored elements.
+      if (i < static_cast<int>(p_ignore.size()) && p_ignore[i]) continue;
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
+      gridpack::ComplexType s2 = getReversePower(tags[i]);
+      double p2 = real(s2);
+      double q2 = imag(s2);
       if (!p_branch_status[i]) p = 0.0;
       if (!p_branch_status[i]) q = 0.0;
+      if (!p_branch_status[i]) p2 = 0.0;
+      if (!p_branch_status[i]) q2 = 0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
-      double S = sqrt(p*p+q*q);
-      if (S > p_rateA[i] && p_rateA[i] != 0.0){
-        sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
+      if (bus1->isIsolated() || bus2->isIsolated()) p2=0.0;
+      if (bus1->isIsolated() || bus2->isIsolated()) q2=0.0;
+      double Sfrom = sqrt(p*p+q*q);
+      double Sto   = sqrt(p2*p2+q2*q2);
+      // One loading value, measured at the more heavily loaded end, as
+      // PowerWorld reports it and as _violations.csv/_branches.csv compute it.
+      double S = (Sfrom > Sto) ? Sfrom : Sto;
+      double rate = pickBranchRating(i);
+      if (S > rate && rate != 0.0){
+        sprintf(buf, "%10d%10d%6s%13.6f%13.6f%13.6f%13.6f%13.6f%13.6f"
+                     "%11.2f%10.2f%s\n",
     	  getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-          p,q,p_rateA[i],S/p_rateA[i]*100,"%");
+          p,q,Sfrom,p2,q2,Sto,rate,S/rate*100,"%");
         int len = strlen(buf);
         if (ilen + len < bufsize) {
           sprintf(string,"%s",buf);

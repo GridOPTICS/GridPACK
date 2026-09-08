@@ -4,7 +4,6 @@
     <!-- Test Q-limit enforcement feature -->
     <printCalcFiles>false</printCalcFiles>
     <contingencyList>contingencies_14.xml</contingencyList>
-    <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
     <qlim>true</qlim>

@@ -35,11 +35,13 @@ class OwnerParser33 : public BaseBlockParser {
   virtual ~OwnerParser33(void);
 
   /**
-   * parse owner block. Currently does not store data
+   * parse owner block
    * @param stream input stream that feeds lines from RAW file
+   * @param p_network_data data collection object to store parameters
    */
   void parse(
-      gridpack::stream::InputStream &stream);
+      gridpack::stream::InputStream &stream,
+      boost::shared_ptr<gridpack::component::DataCollection> &p_network_data);
 };
 
 } // parser

@@ -8,7 +8,6 @@
     <!-- <FullBranchN1>true</FullBranchN1> -->
     <!-- <FullGeneratorN1>true</FullGeneratorN1> -->
     <!-- Note: Can combine both options - auto-generate N-1 plus custom N-K from file -->
-    <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
     <qlim>false</qlim>

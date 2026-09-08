@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Example showing the csv_delta output format with all monitor filters
+  and contingencyRating. Uses the IEEE 14-bus case.
+
+  AS WRITTEN this file demonstrates the DEFAULT "monitor everything" mode
+  (all filter options are commented out). Note that IEEE14_ca.raw is a
+  legacy-format case where every bus is in area 1 with base kV 0, so the
+  area / kV examples below are illustrative only; use monitorBranchesFile
+  with this case, or a v33 case with real area / kV data for area/kV gates.
+
+  To narrow output, uncomment ONE of the EXAMPLE blocks below:
+    - monitorBranchesFile  -> curated allowlist; wins over area/kV when set
+    - monitorAreas         -> branches with either endpoint in given areas
+    - monitorKvMin / Max   -> branches whose max(kv_from,kv_to) falls in
+                              the bounds
+
+  See ../../../contingency_analysis/README.md for the full user guide.
+-->
+<Configuration>
+  <Contingency_analysis>
+    <printCalcFiles>false</printCalcFiles>
+    <FullBranchN1>true</FullBranchN1>
+    <FullGeneratorN1>true</FullGeneratorN1>
+    <maxVoltage>1.1</maxVoltage>
+    <minVoltage>0.9</minVoltage>
+    <qlim>true</qlim>
+    <writeStats>false</writeStats>
+
+    <!-- EXAMPLE: csv_delta = wide-form, one row per joining base + cont 
+         state on the same row. 
+         csv_flat is the long form (separate rows per case). 
+         The monitor filters below apply to every outputFormat (text .out
+         files, json, csv, csv_flat, csv_delta, _violations.csv, StatBlock
+         .txt files and _summary.json). -->
+    <outputFormat>csv_delta</outputFormat>
+    <outputFile>ca_IEEE14</outputFile>
+
+    <!-- EXAMPLE: monitorBranchesFile is authoritative when set. 
+         When this option is present, monitorAreas/monitorKvMin/monitorKvMax
+         are ignored with a warning. -->
+    <!-- <monitorBranchesFile>monitor_branches_14.csv</monitorBranchesFile> -->
+
+    <!-- EXAMPLE: monitorAreas restricts emit to branches that touch any
+         of the listed area numbers (either-endpoint match catches tie-lines).
+         Space-separated PSS/E area numbers; empty/missing = no restriction. -->
+    <!-- <monitorAreas>1 2</monitorAreas> -->
+
+    <!-- EXAMPLE: kV gates apply to max(kv_from, kv_to). Either bound is optional;
+         0 / missing means unbounded on that side. -->
+    <!-- <monitorKvMin>100.0</monitorKvMin> -->
+    <!-- <monitorKvMax>500.0</monitorKvMax> -->
+
+    <!-- EXAMPLE: contingencyRating sets the loading% denominator across
+         every CA output. Default A matches PW / PSS/E ACCC.
+         A->B->C fallback if the picked tier is zero/missing.
+         base_rate_mva always uses rate-A. -->
+    <contingencyRating>C</contingencyRating>
+  </Contingency_analysis>
+
+  <Powerflow>
+    <networkConfiguration>IEEE14_ca.raw</networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-6</tolerance>
+    <qlim>true</qlim>
+    <LinearSolver>
+      <PETScPrefix>pre_</PETScPrefix>
+      <PETScOptions>
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_type superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Powerflow>
+</Configuration>

@@ -286,13 +286,13 @@ class PTI34_parser : public BasePTIParser<_network>
         multi_section_parser.parse(p_istream,p_branchData);
         gridpack::parser::ZoneParser33 zone_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
-        zone_parser.parse(p_istream);
+        zone_parser.parse(p_istream,p_network_data);
         gridpack::parser::InterAreaParser33 interarea_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         interarea_parser.parse(p_istream);
         gridpack::parser::OwnerParser33 owner_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
-        owner_parser.parse(p_istream);
+        owner_parser.parse(p_istream,p_network_data);
         gridpack::parser::FACTSParser33 facts_parser(&p_busMap,
             &p_nameMap, &p_branchMap);
         facts_parser.parse(p_istream);
