@@ -223,10 +223,12 @@ def cmd_ca(args, session):
     # case, so a config error costs no solve.
     if not ca.contingencies:
         if ca.requests_auto_n1:
+            # Blocked on writeBranchString/writeBusString, the only powerflow
+            # methods left unbound; ca.x builds its list from those.
             sys.stderr.write(
                 "Error: FullBranchN1/FullGeneratorN1 auto-generation is not "
-                "supported; list contingencies explicitly via "
-                "<contingencyList>.\n")
+                "supported by pygridpack; list contingencies explicitly via "
+                "<contingencyList>, or run the ca.x driver.\n")
         else:
             sys.stderr.write(
                 "Error: no contingencies to run; set <contingencyList> in the "

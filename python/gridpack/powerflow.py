@@ -26,6 +26,9 @@ def __getattr__(name):
     return getattr(_pfmod, name)
 
 
+_PER_SHUNT_PARAMS = ("BUS_SHUNT_GL", "BUS_SHUNT_BL", "SHUNT_STATUS")
+
+
 def _xml_bool(raw, default: bool = False) -> bool:
     """Parse an XML scalar as a bool.  cursor.get() returns a string, so
     bool(raw) would be True for "false"."""
@@ -49,6 +52,21 @@ def _xml_number(raw, cast, default=None):
         return cast(str(raw).strip())
     except (TypeError, ValueError):
         return default
+
+
+def _reject_shunt_param(name: str) -> None:
+    """Refuse the per-shunt keys the bus accessor cannot address.
+
+    Raising beats returning False: the write would round-trip through
+    get_bus_param, so the failure mode is a correct-looking readback.
+    """
+    if name in _PER_SHUNT_PARAMS:
+        raise ValueError(
+            "%s is stored per shunt as %s:0, %s:1, ...; this accessor reads "
+            "and writes the unindexed key, which the solver ignores. Edit the "
+            "raw file named by <networkConfiguration> instead." % (
+                name, name, name)
+        )
 
 
 class PowerFlow:
@@ -297,6 +315,48 @@ class PowerFlow:
         """
         self._require_open()
         return bool(self._pfapp.checkLineOverloadViolations())
+
+    # ------------------------------------------------------------------
+    # Bus data-collection parameters
+    # ------------------------------------------------------------------
+
+    def get_bus_param(self, bus_id: int, name: str):
+        """Read a scalar parameter from bus ``bus_id``'s data collection.
+
+        Rank-local: None unless this rank owns the bus.  None also means
+        no such key.
+        """
+        self._require_open()
+        _reject_shunt_param(name)
+        value = self._pfapp.getDataCollectionBusParamReal(int(bus_id), name)
+        if value is None:
+            value = self._pfapp.getDataCollectionBusParamInt(int(bus_id), name)
+        return value
+
+    def set_bus_param(self, bus_id: int, name: str, value) -> bool:
+        """Write a scalar parameter into bus ``bus_id``'s data collection.
+
+        Takes effect on the next :meth:`reload` + :meth:`solve`.
+
+        False means nothing was written: this rank does not own the bus,
+        the key does not exist here (per-element load and generator data is
+        index-keyed, so unreachable), or ``value``'s type differs from the
+        stored one -- int and float are not interchangeable.
+        """
+        self._require_open()
+        _reject_shunt_param(name)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise TypeError(
+                "set_bus_param takes an int or a float, not %s"
+                % type(value).__name__
+            )
+        return bool(self._pfapp.modifyDataCollectionBusParam(
+            int(bus_id), name, value))
+
+    def reload(self) -> None:
+        """Re-run the network load so data-collection edits reach the solver."""
+        self._require_open()
+        self._pfapp.reload()
 
     # ------------------------------------------------------------------
     # Output redirection

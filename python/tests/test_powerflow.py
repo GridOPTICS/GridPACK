@@ -6,6 +6,8 @@
 # (Session is a process singleton).
 # -------------------------------------------------------------
 
+import re
+
 import pytest
 
 from .conftest import run_inline
@@ -563,3 +565,97 @@ def test_to_records_rejects_unknown_table(tests_data_dir):
     )
     assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
     assert "RAISED=True" in r.stdout
+
+
+# -------------------------------------------------------------
+# Bus data-collection parameters
+# -------------------------------------------------------------
+# modifyDataCollectionBusParam writes the *unindexed* key while the solver
+# reads BUS_SHUNT_BL:0, so a shunt edit round-trips through the API and
+# never changes the answer.  These pin the guard and the working path.
+
+_PER_SHUNT = ("BUS_SHUNT_GL", "BUS_SHUNT_BL", "SHUNT_STATUS")
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("key", _PER_SHUNT)
+def test_bus_param_rejects_per_shunt_keys(tests_data_dir, key):
+    """A silent no-op is worse than an error, so both directions must raise."""
+    r = run_inline(f"""
+        import gridpack
+        s = gridpack.Session()
+        pf = gridpack.PowerFlow(s, "input_14.xml", suppress_output=True)
+        for op in ("get", "set"):
+            try:
+                if op == "get":
+                    pf.get_bus_param(9, "{key}")
+                else:
+                    pf.set_bus_param(9, "{key}", 1.0)
+                print("NORAISE", op)
+            except ValueError as e:
+                assert "unindexed" in str(e), e
+                print("RAISED", op)
+        s.close()
+    """, cwd=tests_data_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert r.stdout.count("RAISED") == 2, r.stdout
+    assert "NORAISE" not in r.stdout
+
+
+@pytest.mark.integration
+def test_bus_param_write_reaches_the_solver(tests_data_dir):
+    """set + reload + solve must move the answer, or the write was inert.
+
+    Bus 2 is PV, so its voltage is pinned at 1.045 until it becomes PQ.
+    """
+    r = run_inline("""
+        import gridpack
+        s = gridpack.Session()
+        pf = gridpack.PowerFlow(s, "input_14.xml", suppress_output=True)
+        before = pf.solve().get_bus_solution(2)[0]
+        assert pf.get_bus_param(2, "BUS_TYPE") == 2
+        assert pf.set_bus_param(2, "BUS_TYPE", 1)
+        pf.reload()
+        after = pf.solve().get_bus_solution(2)[0]
+        print("BEFORE %.8f AFTER %.8f" % (before, after))
+        s.close()
+    """, cwd=tests_data_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+    before, after = (float(x) for x in re.search(
+        r"BEFORE (\S+) AFTER (\S+)", r.stdout).groups())
+    assert before == pytest.approx(1.045, abs=1e-9), before
+    assert abs(after - before) > 1e-6, "BUS_TYPE edit never reached the solver"
+
+
+@pytest.mark.integration
+def test_bus_param_reports_failed_writes(tests_data_dir):
+    """False, not a silent success, for the ways a write can miss."""
+    r = run_inline("""
+        import gridpack
+        s = gridpack.Session()
+        pf = gridpack.PowerFlow(s, "input_14.xml", suppress_output=True)
+        # Index-keyed, no unindexed twin: absent rather than misleading.
+        print("LOAD_PL", pf.get_bus_param(9, "LOAD_PL"),
+              pf.set_bus_param(9, "LOAD_PL", 1.0))
+        print("UNKNOWN_KEY", pf.get_bus_param(9, "NO_SUCH_KEY"),
+              pf.set_bus_param(9, "NO_SUCH_KEY", 1.0))
+        print("UNKNOWN_BUS", pf.set_bus_param(99999, "BUS_BASEKV", 1.0))
+        # int and float are separate maps; neither is coerced.
+        print("INT_INTO_DOUBLE", pf.set_bus_param(9, "BUS_BASEKV", 138))
+        print("FLOAT_INTO_INT", pf.set_bus_param(9, "BUS_TYPE", 2.0))
+        for bad in ("138", True):
+            try:
+                pf.set_bus_param(9, "BUS_BASEKV", bad)
+                print("NORAISE", type(bad).__name__)
+            except TypeError:
+                print("TYPEERROR", type(bad).__name__)
+        s.close()
+    """, cwd=tests_data_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "LOAD_PL None False" in r.stdout
+    assert "UNKNOWN_KEY None False" in r.stdout
+    assert "UNKNOWN_BUS False" in r.stdout
+    assert "INT_INTO_DOUBLE False" in r.stdout
+    assert "FLOAT_INTO_INT False" in r.stdout
+    assert "TYPEERROR str" in r.stdout and "TYPEERROR bool" in r.stdout
+    assert "NORAISE" not in r.stdout
