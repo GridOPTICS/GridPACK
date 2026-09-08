@@ -64,6 +64,9 @@ def _run(*argv, cwd=None, np=0, env=None):
 def _capped(tests_data_dir, tmp_path, iterations=2):
     """Copy the 14-bus case with maxIteration too low to converge."""
     src = (tests_data_dir / "input_14.xml").read_text()
+    assert "<maxIteration>50</maxIteration>" in src, (
+        "input_14.xml no longer has maxIteration=50; update this helper"
+    )
     dst = tmp_path / "capped.xml"
     dst.write_text(src.replace("<maxIteration>50</maxIteration>",
                                f"<maxIteration>{iterations}</maxIteration>"))
@@ -112,6 +115,9 @@ def test_cli_honors_xml_nonlinear_false(tests_data_dir, tmp_path):
     cfg = tmp_path / "nlfalse.xml"
     cfg.write_text(src.replace("<tolerance>",
                                "<UseNonLinear>false</UseNonLinear>\n    <tolerance>"))
+    assert "<UseNonLinear>false</UseNonLinear>" in cfg.read_text(), (
+        "config edit did nothing; the SNES assertion below would pass vacuously"
+    )
     shutil.copy(tests_data_dir / "IEEE14.raw", tmp_path / "IEEE14.raw")
 
     off = _run("pf", cfg.name, "--no-timer", cwd=tmp_path)

@@ -4,6 +4,8 @@
 # Tests for gridpack.ContingencyAnalysis and the contingency-list parser.
 # -------------------------------------------------------------
 
+import re
+
 import pytest
 
 from .conftest import CA_EXPECTED_STATUS, run_inline
@@ -210,8 +212,12 @@ def test_contingency_analysis_under_mpi_matches_serial(ca_case,
 def test_contingency_analysis_warns_on_group_size(ca_case):
     """groupSize > 1 is silently downgraded, so it has to say so."""
     cfg = ca_case / "input_14.xml"
-    cfg.write_text(cfg.read_text().replace("<groupSize>1</groupSize>",
-                                           "<groupSize>2</groupSize>"))
+    # Strip then insert: the shared XML has carried groupSize and then not.
+    src = re.sub(r"\s*<groupSize>\d+</groupSize>", "", cfg.read_text())
+    src = src.replace("<Contingency_analysis>",
+                      "<Contingency_analysis>\n    <groupSize>2</groupSize>", 1)
+    assert "<groupSize>2</groupSize>" in src, "config edit did nothing"
+    cfg.write_text(src)
     r = run_inline(_DRIVER, cwd=ca_case)
     assert r.returncode == 0, r.stderr[-2000:]
     assert "groupSize=2 is ignored" in r.stderr
