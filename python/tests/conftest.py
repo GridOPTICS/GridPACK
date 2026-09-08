@@ -40,21 +40,20 @@ def pytest_configure(config):
 # -------------------------------------------------------------
 
 
-def _tests_data_dir() -> Path:
-    """Directory that holds a copy of the standard 14-bus test data."""
-    return Path("/tmp/pygridpack-test").resolve()
+def _source_root() -> Path:
+    """GridPACK source tree holding the test inputs.
+
+    ``GRIDPACK_TEST_DATA`` overrides it when the tests run from an install
+    rather than from inside the source tree.
+    """
+    env = os.environ.get("GRIDPACK_TEST_DATA")
+    if env:
+        return Path(env).resolve()
+    return Path(__file__).resolve().parents[2]
 
 
-def _dsf_build_dir() -> Path:
-    """Location of ``input_9b3g.xml`` (in the DSF build tree)."""
-    return Path(
-        "/Users/yousu.chen/Software/GridPACK/src/build/applications/"
-        "dynamic_simulation_full_y"
-    ).resolve()
-
-
-def _se_data_dir() -> Path:
-    return _tests_data_dir() / "se"
+def _data_sets() -> Path:
+    return _source_root() / "src/applications/data_sets"
 
 
 def run_inline(
@@ -112,16 +111,27 @@ def run_inline(
 import pytest
 
 
+def _stage(dest: Path, *sources: Path) -> Path:
+    """Copy ``sources`` into ``dest``, skipping if any is missing.
+
+    The XMLs name their raw/dyr companions as bare filenames, so each case
+    needs every file in one directory.
+    """
+    missing = [str(s) for s in sources if not s.exists()]
+    if missing:
+        pytest.skip("missing test data: " + ", ".join(missing))
+    for s in sources:
+        shutil.copy(s, dest / s.name)
+    return dest
+
+
 @pytest.fixture(scope="session")
-def tests_data_dir() -> Path:
-    """Directory holding IEEE14 test inputs.  Skips the suite if absent."""
-    d = _tests_data_dir()
-    if not (d / "input_14.xml").exists() or not (d / "IEEE14.raw").exists():
-        pytest.skip(
-            f"missing test data under {d} (input_14.xml / IEEE14.raw). "
-            "Copy them into place to run integration tests."
-        )
-    return d
+def tests_data_dir(tmp_path_factory) -> Path:
+    """IEEE-14 power flow inputs, staged into one directory."""
+    d = _data_sets()
+    return _stage(tmp_path_factory.mktemp("pf14"),
+                  d / "input/powerflow/input_14.xml",
+                  d / "raw/IEEE14.raw")
 
 
 @pytest.fixture(scope="session")
@@ -131,7 +141,7 @@ def rated_raw() -> Path:
     IEEE14.raw has rateA <= 0 on every branch, so it cannot exercise
     overloads at all.
     """
-    d = Path(__file__).resolve().parents[2] / "src/applications/data_sets/raw"
+    d = _data_sets() / "raw"
     f = d / "IEEE14_PTIv33_rated.raw"
     if not f.exists():
         pytest.skip(f"missing {f}")
@@ -139,16 +149,11 @@ def rated_raw() -> Path:
 
 
 @pytest.fixture(scope="session")
-def se_data_dir() -> Path:
-    """Directory holding the state-estimation IEEE14 inputs."""
-    d = _se_data_dir()
-    for name in ("input.xml", "IEEE14.raw", "IEEE14_meas.xml"):
-        if not (d / name).exists():
-            pytest.skip(
-                f"missing SE test data at {d}/{name}. Copy from "
-                "src/applications/modules/state_estimation/test/"
-            )
-    return d
+def se_data_dir(tmp_path_factory) -> Path:
+    """State-estimation IEEE-14 inputs, staged into one directory."""
+    d = _source_root() / "src/applications/modules/state_estimation/test"
+    return _stage(tmp_path_factory.mktemp("se14"),
+                  d / "input.xml", d / "IEEE14.raw", d / "IEEE14_meas.xml")
 
 
 # The shipped contingencies_14.xml names circuits B1/B2/B3, but every branch
@@ -202,7 +207,7 @@ def ca_case(tmp_path) -> Path:
 
     Switches the in-repo input off FullBranchN1 (unimplemented) onto a list.
     """
-    data = Path(__file__).resolve().parents[2] / "src/applications/data_sets"
+    data = _data_sets()
     cfg_src = data / "input/ca/input_14.xml"
     raw_src = data / "raw/IEEE14.raw"
     for f in (cfg_src, raw_src):
@@ -226,14 +231,13 @@ def ca_case(tmp_path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def dsf_build_dir() -> Path:
-    """Directory holding ``input_9b3g.xml`` (in the DSF build tree)."""
-    d = _dsf_build_dir()
-    if not (d / "input_9b3g.xml").exists():
-        pytest.skip(
-            f"missing {d}/input_9b3g.xml; build the DSF example first."
-        )
-    return d
+def dsf_data_dir(tmp_path_factory) -> Path:
+    """9-bus/3-generator dynamic-simulation inputs, staged into one directory."""
+    d = _data_sets()
+    return _stage(tmp_path_factory.mktemp("dsf9"),
+                  d / "input/ds/input_9b3g.xml",
+                  d / "raw/9b3g.raw",
+                  d / "dyr/9b3g.dyr")
 
 
 @pytest.fixture(scope="session")

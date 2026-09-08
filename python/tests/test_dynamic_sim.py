@@ -14,7 +14,7 @@ from .conftest import run_inline
 
 
 @pytest.mark.integration
-def test_dynamic_sim_full_run(dsf_build_dir):
+def test_dynamic_sim_full_run(dsf_data_dir):
     r = run_inline(
         """
         from gridpack import Session, DynamicSim
@@ -24,7 +24,7 @@ def test_dynamic_sim_full_run(dsf_build_dir):
             if s.rank == 0:
                 print(f"OK steps={result.n_steps}")
         """,
-        cwd=dsf_build_dir,
+        cwd=dsf_data_dir,
         timeout=180,
     )
     assert r.returncode == 0, (
@@ -34,7 +34,7 @@ def test_dynamic_sim_full_run(dsf_build_dir):
 
 
 @pytest.mark.integration
-def test_dynamic_sim_stepper(dsf_build_dir):
+def test_dynamic_sim_stepper(dsf_data_dir):
     r = run_inline(
         """
         import os, sys
@@ -53,7 +53,7 @@ def test_dynamic_sim_stepper(dsf_build_dir):
             # Bypass upstream DSFullApp destructor SEGV.
             os._exit(0)
         """,
-        cwd=dsf_build_dir,
+        cwd=dsf_data_dir,
         timeout=180,
     )
     assert r.returncode == 0, (
@@ -65,7 +65,7 @@ def test_dynamic_sim_stepper(dsf_build_dir):
 
 
 @pytest.mark.integration
-def test_dynamic_sim_stepper_actuators(dsf_build_dir):
+def test_dynamic_sim_stepper_actuators(dsf_data_dir):
     r = run_inline(
         """
         import os, sys
@@ -91,7 +91,7 @@ def test_dynamic_sim_stepper_actuators(dsf_build_dir):
         finally:
             os._exit(0)
         """,
-        cwd=dsf_build_dir,
+        cwd=dsf_data_dir,
         timeout=180,
     )
     assert r.returncode == 0, (
@@ -110,12 +110,12 @@ def _parse_int(text: str, prefix: str) -> int:
 
 @pytest.mark.integration
 @pytest.mark.parametrize("xml_value,expected", [("false", False), ("true", True)])
-def test_dynamic_sim_reads_xml_suppress_output(dsf_build_dir, tmp_path,
+def test_dynamic_sim_reads_xml_suppress_output(dsf_data_dir, tmp_path,
                                                xml_value, expected):
     """cursor.get() returns a string, so bool("false") was True."""
     for name in ("9b3g.raw", "9b3g.dyr"):
-        shutil.copy(dsf_build_dir / name, tmp_path / name)
-    xml = (dsf_build_dir / "input_9b3g.xml").read_text()
+        shutil.copy(dsf_data_dir / name, tmp_path / name)
+    xml = (dsf_data_dir / "input_9b3g.xml").read_text()
     (tmp_path / "input_9b3g.xml").write_text(xml.replace(
         "<Dynamic_simulation>",
         "<Dynamic_simulation>\n<suppressOutput>%s</suppressOutput>" % xml_value,
@@ -132,7 +132,7 @@ def test_dynamic_sim_reads_xml_suppress_output(dsf_build_dir, tmp_path,
 
 @pytest.mark.integration
 @pytest.mark.parametrize("xml_value,nonlinear", [("false", False), ("true", True)])
-def test_dynamic_sim_honors_xml_nonlinear(dsf_build_dir, tmp_path,
+def test_dynamic_sim_honors_xml_nonlinear(dsf_data_dir, tmp_path,
                                           xml_value, nonlinear):
     """initFromConfig always called solve(), so UseNonLinear was ignored.
 
@@ -140,8 +140,8 @@ def test_dynamic_sim_honors_xml_nonlinear(dsf_build_dir, tmp_path,
     visible difference between the two power flow solvers.
     """
     for name in ("9b3g.raw", "9b3g.dyr"):
-        shutil.copy(dsf_build_dir / name, tmp_path / name)
-    xml = (dsf_build_dir / "input_9b3g.xml").read_text()
+        shutil.copy(dsf_data_dir / name, tmp_path / name)
+    xml = (dsf_data_dir / "input_9b3g.xml").read_text()
     xml = xml.replace("        -ksp_type richardson",
                       "        -ksp_view\n        -ksp_type richardson", 1)
     xml = xml.replace("<UseNonLinear>false</UseNonLinear>",
@@ -158,10 +158,10 @@ def test_dynamic_sim_honors_xml_nonlinear(dsf_build_dir, tmp_path,
 
 
 @pytest.mark.integration
-def test_dynamic_sim_writes_power_flow_report(dsf_build_dir, tmp_path):
+def test_dynamic_sim_writes_power_flow_report(dsf_data_dir, tmp_path):
     """initFromConfig skipped pf_app.write(), dropping the PF tables."""
     for name in ("9b3g.raw", "9b3g.dyr", "input_9b3g.xml"):
-        shutil.copy(dsf_build_dir / name, tmp_path / name)
+        shutil.copy(dsf_data_dir / name, tmp_path / name)
 
     r = run_inline("""
         from gridpack import Session, DynamicSim

@@ -159,10 +159,10 @@ def test_cli_diverged_exits_three_under_mpi(tests_data_dir, tmp_path,
 @_CLI
 @pytest.mark.integration
 @pytest.mark.mpi
-def test_cli_dsf_finalizes_mpi(dsf_build_dir, require_mpiexec):
+def test_cli_dsf_finalizes_mpi(dsf_data_dir, require_mpiexec):
     """os._exit skipped MPI_Finalize, so mpiexec reported exit 1 on success."""
     r = _run("dsf", "input_9b3g.xml", "-q", "--no-timer",
-             cwd=dsf_build_dir, np=2)
+             cwd=dsf_data_dir, np=2)
     assert r.returncode == 0, r.stderr[-2000:]
     assert "finalize" not in r.stderr.lower()
 
@@ -204,10 +204,10 @@ def test_cli_se_rejects_output_file(se_data_dir):
 
 @_CLI
 @pytest.mark.integration
-def test_cli_dsf_quiet_suppresses_output(dsf_build_dir, tmp_path):
+def test_cli_dsf_quiet_suppresses_output(dsf_data_dir, tmp_path):
     """--quiet has to reach NoPrint; this XML sets no suppressOutput."""
     for name in ("9b3g.raw", "9b3g.dyr", "input_9b3g.xml"):
-        shutil.copy(dsf_build_dir / name, tmp_path / name)
+        shutil.copy(dsf_data_dir / name, tmp_path / name)
     loud = _run("dsf", "input_9b3g.xml", "--no-timer", cwd=tmp_path)
     quiet = _run("dsf", "input_9b3g.xml", "-q", "--no-timer", cwd=tmp_path)
     assert loud.returncode == 0 and quiet.returncode == 0, quiet.stderr[-2000:]
@@ -217,10 +217,10 @@ def test_cli_dsf_quiet_suppresses_output(dsf_build_dir, tmp_path):
 
 @_CLI
 @pytest.mark.integration
-def test_cli_hadrec_quiet_suppresses_output(dsf_build_dir, tmp_path):
+def test_cli_hadrec_quiet_suppresses_output(dsf_data_dir, tmp_path):
     """--quiet has to reach NoPrint; teardown used to SEGV 139 here."""
     for name in ("9b3g.raw", "9b3g.dyr", "input_9b3g.xml"):
-        shutil.copy(dsf_build_dir / name, tmp_path / name)
+        shutil.copy(dsf_data_dir / name, tmp_path / name)
     loud = _run("hadrec", "input_9b3g.xml", "--no-timer", cwd=tmp_path)
     quiet = _run("hadrec", "input_9b3g.xml", "-q", "--no-timer", cwd=tmp_path)
     assert loud.returncode == 0 and quiet.returncode == 0, quiet.stderr[-2000:]

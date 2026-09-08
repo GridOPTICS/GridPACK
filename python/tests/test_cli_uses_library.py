@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pytest
 
-CLI_DIR = Path(__file__).resolve().parents[1] / "gridpack" / "cli"
+import gridpack.cli
+
+# From the imported package, not a path relative to this file: that is the
+# copy that ships, and an install without the source tree still gets guarded.
+CLI_DIR = Path(gridpack.cli.__file__).resolve().parent
 
 # Matched on the tail of the dotted expression, so "hadrec.Module" catches
 # gridpack.hadrec.Module.  CoarseTimer is deliberately absent: no wrapper,

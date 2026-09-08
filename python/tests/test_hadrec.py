@@ -11,7 +11,7 @@ from .conftest import run_inline
 
 
 @pytest.mark.integration
-def test_hadrec_full_run(dsf_build_dir):
+def test_hadrec_full_run(dsf_data_dir):
     r = run_inline(
         """
         import os, sys
@@ -38,7 +38,7 @@ def test_hadrec_full_run(dsf_build_dir):
         finally:
             os._exit(0)
         """,
-        cwd=dsf_build_dir,
+        cwd=dsf_data_dir,
         timeout=180,
     )
     assert r.returncode == 0, (
@@ -48,7 +48,7 @@ def test_hadrec_full_run(dsf_build_dir):
 
 
 @pytest.mark.integration
-def test_hadrec_run_until_done(dsf_build_dir):
+def test_hadrec_run_until_done(dsf_data_dir):
     r = run_inline(
         """
         import os, sys
@@ -66,7 +66,7 @@ def test_hadrec_run_until_done(dsf_build_dir):
         finally:
             os._exit(0)
         """,
-        cwd=dsf_build_dir,
+        cwd=dsf_data_dir,
         timeout=180,
     )
     assert r.returncode == 0, (

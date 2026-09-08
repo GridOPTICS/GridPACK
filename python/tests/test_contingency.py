@@ -169,8 +169,12 @@ _DRIVER = """
         ca = ContingencyAnalysis(s, "input_14.xml", print_calc_files=False,
                                  suppress_output=True)
         ca.run()
-        for r in ca.gather():
-            print("RESULT %s %s" % (r.name, r.status))
+        results = ca.gather()
+        # Rank 0 only: both ranks writing the same lines into one pipe
+        # interleaved mid-line, which _statuses then mis-parsed.
+        if s.rank == 0:
+            for r in results:
+                print("RESULT %s %s" % (r.name, r.status))
 """
 
 
@@ -202,6 +206,8 @@ def test_contingency_analysis_under_mpi_matches_serial(ca_case,
     r = run_inline(_DRIVER, cwd=ca_case, mpi_np=2, timeout=180)
     assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
     assert "No reference bus found" not in r.stdout + r.stderr
+    # One rank prints; two ranks sharing the pipe used to interleave mid-line.
+    assert r.stdout.count("RESULT ") == len(CA_EXPECTED_STATUS), r.stdout
     assert _statuses(r.stdout) == CA_EXPECTED_STATUS
     # gather() sorts by name, so both ranks report the same order regardless
     # of which rank drew which task.
