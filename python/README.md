@@ -1,8 +1,46 @@
 # GridPACK Python Wrapper
 
-This provides Python wrappers to a limited set of the
-[GridPACK](https://github.com/GridOPTICS/GridPACK/) library.
-The HADREC application is the main capability currently exposed.
+This provides Python wrappers for the
+[GridPACK](https://github.com/GridOPTICS/GridPACK/) library: power flow,
+dynamic simulation, state estimation, HADREC, EMT and contingency analysis,
+plus a `gridpack` command-line interface for all six.
+
+## Quick start (Docker)
+
+`gridpack` is a compiled extension linked against GridPACK's shared
+libraries, so it needs GridPACK, PETSc, Global Arrays, Boost and MPI already
+built.  The published image has all of that, so this adds only the Python
+layer and takes minutes instead of hours:
+
+```
+docker build -f ../Dockerfile.pygridpack -t pygridpack .
+docker run --rm -it -v "$PWD:/app/workspace" pygridpack
+```
+
+Inside the container, no environment variables are needed.  As a CLI:
+
+```
+gridpack powerflow input_14.xml
+mpiexec -np 4 gridpack powerflow input_14.xml
+```
+
+Or as a library:
+
+```python
+from gridpack import Session, PowerFlow
+
+with Session() as s:                       # one Session per process
+    result = PowerFlow(s, "input_14.xml").solve()
+    print(result.converged)
+```
+
+Run the test suite against the container's own input data:
+
+```
+docker run --rm pygridpack pytest /app/python/tests -q
+```
+
+To build from source instead, read on.
 
 ## Requirements
 

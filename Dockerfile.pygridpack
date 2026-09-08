@@ -1,0 +1,44 @@
+# Python API + CLI on top of the published GridPACK C++ stack.
+#
+# The full Dockerfile in this directory builds Boost, GA and PETSc from
+# source, which takes hours.  This one starts from that build so only the
+# Python layer is compiled:
+#
+#   docker build -f Dockerfile.pygridpack -t pygridpack .
+#   docker run --rm -it -v "$PWD:/app/workspace" pygridpack
+#
+# Then `import gridpack` and the `gridpack` CLI work with no environment
+# variables set.
+ARG gridpack_version=v3.7.0
+FROM pnnl/gridpack:${gridpack_version}
+
+# Built from a scratch directory that is then deleted: a `gridpack/` source
+# directory left on disk shadows the installed package for anything run from
+# its parent, which is exactly what `pytest /app/python/tests` does.
+COPY python /tmp/pygridpack-build
+# The base image installed its bindings under GRIDPACK_INSTALL_DIR and points
+# a .pth file there.  Same prefix, so this replaces them rather than leaving
+# two importable copies of `gridpack`.
+RUN pip install --upgrade --prefix=${GRIDPACK_INSTALL_DIR} /tmp/pygridpack-build && \
+    pip install --upgrade pytest && \
+    rm -rf /tmp/pygridpack-build
+
+# Tests only; conftest.py finds the inputs two directories up, at /app.
+COPY python/tests ${GRIDPACK_ROOT_DIR}/python/tests
+
+# The base image left a 0.0.1 egg-info here.  pytest puts this directory at
+# sys.path[0], so importlib.metadata.version("gridpack") reported 0.0.1.
+RUN rm -rf ${GRIDPACK_ROOT_DIR}/python/gridpack.egg-info
+
+# Break the build here rather than shipping an image whose API or CLI is
+# broken.  The powerflow run proves the extension links, not just imports.
+# The XML names IEEE14.raw as a bare filename, so stage both in one dir.
+RUN data=${GRIDPACK_ROOT_DIR}/src/applications/data_sets && \
+    mkdir -p /tmp/smoke && cd /tmp/smoke && \
+    python3 -c "import gridpack; print('gridpack from', gridpack.__file__)" && \
+    gridpack --version && \
+    cp ${data}/input/powerflow/input_14.xml ${data}/raw/IEEE14.raw . && \
+    gridpack powerflow input_14.xml --quiet --no-timer && \
+    cd / && rm -rf /tmp/smoke
+
+WORKDIR ${GRIDPACK_ROOT_DIR}/workspace

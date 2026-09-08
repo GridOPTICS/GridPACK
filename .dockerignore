@@ -1,5 +1,24 @@
 .idea
-external_dependencies
+
+# Never ship local secrets into the build context.
+.env
+.env.*
+
+# Local build/install trees; the image builds its own.
+/src/build
+/src/install
 /python/build
 /python/dist
 /python/gridpack_hadrec.egg-info
+/python/gridpack.egg-info
+
+# Vendored dependency sources (was misspelled with an underscore, so the
+# 2.5 GB tree was being uploaded).
+external-dependencies
+external_dependencies
+
+# Local scratch that is not part of any image.
+/temp
+/gridpack-macos-bootstrap
+*.tar.gz
+*.zip
