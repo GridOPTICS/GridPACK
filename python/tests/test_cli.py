@@ -197,6 +197,44 @@ def test_cli_se_rejects_output_file(se_data_dir):
 
 
 @_CLI
+@pytest.mark.integration
+def test_cli_dsf_quiet_suppresses_output(dsf_build_dir, tmp_path):
+    """--quiet has to reach NoPrint; this XML sets no suppressOutput."""
+    for name in ("9b3g.raw", "9b3g.dyr", "input_9b3g.xml"):
+        shutil.copy(dsf_build_dir / name, tmp_path / name)
+    loud = _run("dsf", "input_9b3g.xml", "--no-timer", cwd=tmp_path)
+    quiet = _run("dsf", "input_9b3g.xml", "-q", "--no-timer", cwd=tmp_path)
+    assert loud.returncode == 0 and quiet.returncode == 0, quiet.stderr[-2000:]
+    assert "Monitoring generators" in loud.stdout
+    assert "Monitoring generators" not in quiet.stdout
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_hadrec_quiet_suppresses_output(dsf_build_dir, tmp_path):
+    """--quiet has to reach NoPrint; teardown used to SEGV 139 here."""
+    for name in ("9b3g.raw", "9b3g.dyr", "input_9b3g.xml"):
+        shutil.copy(dsf_build_dir / name, tmp_path / name)
+    loud = _run("hadrec", "input_9b3g.xml", "--no-timer", cwd=tmp_path)
+    quiet = _run("hadrec", "input_9b3g.xml", "-q", "--no-timer", cwd=tmp_path)
+    assert loud.returncode == 0 and quiet.returncode == 0, quiet.stderr[-2000:]
+    assert "Power flow converged" in loud.stdout
+    assert "Power flow converged" not in quiet.stdout
+    assert "Monitoring generators" not in quiet.stdout
+
+
+@_CLI
+def test_cli_dsf_rejects_output_file(tmp_path):
+    """-o wrote a 0-byte file and exited 0; open() captures nothing here."""
+    cfg = tmp_path / "input.xml"
+    cfg.write_text("<Configuration/>\n")
+    r = _run("dsf", cfg.name, "-o", "dsf.out", cwd=tmp_path)
+    assert r.returncode == 2
+    assert "captures nothing" in r.stderr
+    assert not (tmp_path / "dsf.out").exists()
+
+
+@_CLI
 def test_cli_rejects_unknown_psse_version(tests_data_dir, tmp_path):
     """An unknown format used to be ignored, exporting nothing and exiting 0."""
     r = _run("powerflow", str(tests_data_dir / "input_14.xml"),

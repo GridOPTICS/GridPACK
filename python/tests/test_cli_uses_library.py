@@ -33,11 +33,6 @@ FORBIDDEN = (
 # (function, dotted) pairs that may still appear.  cmd_dsf/cmd_hadrec are
 # migrated in the next commit; only the cmd_emt entry should survive it.
 ALLOWED = {
-    ("cmd_dsf", "DSFullApp"),
-    ("cmd_dsf", "gridpack.NoPrint"),
-    ("cmd_hadrec", "gridpack.NoPrint"),
-    ("cmd_hadrec", "gridpack.hadrec.Module"),
-    ("cmd_hadrec", "gridpack.dynamic_simulation.EventVector"),
     ("cmd_emt", "gridpack.emt.EMT"),
 }
 

@@ -110,32 +110,22 @@ def cmd_powerflow(args, session):
 def cmd_dsf(args, session):
     """Run dynamic simulation framework."""
     import gridpack
-    from gridpack.dynamic_simulation import DSFullApp
+
+    # DSFullApp::open() only captures print() output, which the run()
+    # path never uses -- -o produced an empty file and exit 0.
+    if args.output:
+        sys.stderr.write(
+            "Error: dsf cannot redirect output to a file; DSFullApp::open() "
+            "captures nothing on the run() path. Redirect stdout instead.\n")
+        return EXIT_USAGE
 
     timer = gridpack.CoarseTimer()
     t_total = timer.createCategory("Dynamic Simulation: Total Application")
     timer.start(t_total)
 
-    np_ctrl = gridpack.NoPrint()
-    if args.quiet:
-        np_ctrl.setStatus(True)
-
-    ds_app = DSFullApp()
-    ds_app.solvePowerFlowBeforeDynSimu(args.config, -1)
-    ds_app.readGenerators()
-    ds_app.readSequenceData()
-    ds_app.initialize()
-    ds_app.setGeneratorWatch()
-
-    if args.output:
-        ds_app.open(args.output)
-
-    # Use run()-based execution (like dsf2.py)
-    ds_app.setup()
-    ds_app.run()
-
-    if args.output:
-        ds_app.close()
+    with gridpack.DynamicSim(session, args.config,
+                             suppress_output=True if args.quiet else None) as ds:
+        ds.run()
 
     timer.stop(t_total)
 
@@ -183,22 +173,13 @@ def cmd_se(args, session):
 def cmd_hadrec(args, session):
     """Run HADREC remedial action control simulation."""
     import gridpack
-    import gridpack.hadrec
-    import gridpack.dynamic_simulation
 
-    np_ctrl = gridpack.NoPrint()
-    if args.quiet:
-        np_ctrl.setStatus(True)
-
-    hadapp = gridpack.hadrec.Module()
-    hadapp.solvePowerFlowBeforeDynSimu(args.config, -1)
-    hadapp.transferPFtoDS()
-
-    busfaultlist = gridpack.dynamic_simulation.EventVector()
-    hadapp.initializeDynSimu(busfaultlist)
-
-    while not hadapp.isDynSimuDone():
-        hadapp.executeDynSimuOneStep()
+    with gridpack.Hadrec(session, args.config,
+                         suppress_output=args.quiet) as had:
+        had.initialize_dyn_simu()
+        # record=False: the CLI prints nothing per step, and accumulating
+        # observations for a long run is pure overhead.
+        had.run_until_done(record=False)
 
     return 0
 
@@ -415,11 +396,9 @@ def main(argv=None):
         sys.stdout.flush()
         sys.stderr.flush()
 
-    # Session.close() drains its registered wrappers before releasing the
-    # Communicator and Environment, which is what lets MPI finalize.  This
-    # used to be os._exit(rc) to dodge a DSFullApp teardown SEGV, but that
-    # skipped MPI_Finalize, so mpiexec reported abnormal termination (exit 1)
-    # even on a clean run.  The SEGV no longer reproduces; the exit code did.
+    # Not os._exit(rc): it skips MPI_Finalize, so mpiexec reports exit 1 even
+    # on a clean run.  close() drains the wrappers, then the Communicator and
+    # Environment.
     session.close()
     return rc
 
