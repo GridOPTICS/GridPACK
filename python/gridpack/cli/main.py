@@ -52,6 +52,15 @@ import os
 import argparse
 
 
+def _package_version() -> str:
+    """Installed package version; the CLI has none of its own."""
+    from importlib.metadata import PackageNotFoundError, version
+    try:
+        return version("gridpack")
+    except PackageNotFoundError:
+        return "unknown (running from a source tree)"
+
+
 EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_USAGE = 2
@@ -286,7 +295,8 @@ def main(argv=None):
         description="GridPACK: Unified command-line interface for power grid analysis",
         epilog="Run with MPI: mpiexec -np N gridpack <command> config.xml [options]"
     )
-    parser.add_argument("--version", action="version", version="GridPACK CLI 0.1.0")
+    parser.add_argument("--version", action="version",
+                        version="gridpack %s" % _package_version())
 
     subparsers = parser.add_subparsers(
         title="commands",
