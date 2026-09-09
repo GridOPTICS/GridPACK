@@ -9,8 +9,11 @@
 
 import re
 from pathlib import Path
+from types import ModuleType
 
 import pytest
+
+from .conftest import run_inline
 
 
 def test_top_level_symbols():
@@ -119,3 +122,96 @@ def test_cli_version_comes_from_package(capsys):
         main(["--version"])
     assert excinfo.value.code == 0
     assert capsys.readouterr().out.strip() == "gridpack %s" % version("gridpack")
+
+
+# -------------------------------------------------------------
+# Curated namespace
+# -------------------------------------------------------------
+# `from ._gridpack import *` used to pre-bind the pybind11 submodules as
+# attributes of this package, so CPython skipped importing the same-named
+# Python shims and gridpack.dynamic_simulation.DynamicSim raised
+# AttributeError.  The shim checks run in a subprocess because
+# test_submodule_shims above imports those shims by statement, which
+# populates sys.modules and hides the fault entirely.
+
+_SHIM_DRIVER = """
+    import sys
+    import gridpack                       # bare import only
+
+    for name in gridpack.COMPAT_MODULES:
+        attr = getattr(gridpack, name)
+        assert attr is sys.modules.get("gridpack." + name), name
+        assert attr.__file__.endswith(name + ".py"), (name, attr.__file__)
+
+    # dynamic_simulation.py re-exports these so the compat name reaches the
+    # high-level classes; emt.py is where the EMT wrapper will land.
+    assert gridpack.dynamic_simulation.DynamicSim is gridpack.DynamicSim
+    print("SHIMS OK")
+"""
+
+
+def test_shims_resolve_to_python_modules_after_bare_import(tmp_path):
+    r = run_inline(_SHIM_DRIVER, cwd=tmp_path)
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert "SHIMS OK" in r.stdout
+
+
+def test_all_names_are_importable():
+    import gridpack
+    assert not [n for n in gridpack.__all__ if not hasattr(gridpack, n)]
+
+
+def test_all_keeps_the_low_level_types():
+    """The scripts under python/src drive GridPACK through these."""
+    import gridpack
+    for n in ("CoarseTimer", "Communicator", "Configuration",
+              "ConfigurationCursor", "Environment", "NoPrint",
+              "TaskCounter", "TaskManager"):
+        assert n in gridpack.__all__, n
+        assert isinstance(getattr(gridpack, n), type), n
+
+
+def test_dir_hides_implementation_modules():
+    import gridpack
+    d = dir(gridpack)
+    for n in ("session", "results", "exceptions", "dynamic_sim", "contingency"):
+        assert n not in d, n
+    for n in gridpack.COMPAT_MODULES:
+        assert n in d, n
+
+
+def test_import_star_binds_no_modules():
+    ns = {}
+    exec("from gridpack import *", ns)
+    assert not [k for k, v in ns.items() if isinstance(v, ModuleType)]
+
+
+def test_unknown_attribute_names_the_public_api():
+    import gridpack
+    with pytest.raises(AttributeError, match="the public API is"):
+        gridpack.NoSuchThing
+
+
+# -------------------------------------------------------------
+# EMT is experimental
+# -------------------------------------------------------------
+
+def test_emt_use_warns_experimental():
+    import gridpack
+    with pytest.warns(FutureWarning, match="experimental"):
+        gridpack.emt.EMT
+
+
+_QUIET_DRIVER = """
+    import warnings
+    warnings.simplefilter("error", FutureWarning)
+    import gridpack               # emt is imported eagerly; must stay quiet
+    print("QUIET OK")
+"""
+
+
+def test_plain_import_does_not_warn(tmp_path):
+    """The notice has to fire on use, or it is noise on every import."""
+    r = run_inline(_QUIET_DRIVER, cwd=tmp_path)
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert "QUIET OK" in r.stdout
