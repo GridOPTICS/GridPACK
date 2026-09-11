@@ -15,6 +15,7 @@ file-not-found error, which is hard to place if you have not seen it.
 
 import csv
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -36,27 +37,42 @@ def data_sets() -> Path:
     return d
 
 
-def stage(session, *relpaths: str) -> str:
+def stage(session, *relpaths: str, network: str = None) -> str:
     """Stage inputs into a shared directory, chdir there, return the XML name.
 
     One writer and a barrier: every rank chdirs to the same path, so the
     directory name is derived from the case rather than from mkdtemp,
     which would hand each rank a different one.
+
+    ``network`` stages one more file and repoints the XML at it, for
+    running a stock config against a different network than it names.
     """
     dest = Path(tempfile.gettempdir()) / ("gridpack-demo-" + Path(relpaths[0]).stem)
+    wanted = list(relpaths) + ([network] if network else [])
 
     if session.rank == 0:
         src_dir = data_sets()
         dest.mkdir(parents=True, exist_ok=True)
-        for rel in relpaths:
+        for rel in wanted:
             src = src_dir / rel
             if not src.is_file():
                 raise SystemExit("missing input: %s" % src)
             shutil.copy(src, dest / Path(rel).name)
+        if network:
+            _repoint(dest / Path(relpaths[0]).name, Path(network).name)
     session.barrier()
 
     os.chdir(dest)
     return Path(relpaths[0]).name
+
+
+def _repoint(xml: Path, network: str) -> None:
+    """Rewrite the XML's <networkConfiguration> to name `network`."""
+    text, n = re.subn(r"(?<=<networkConfiguration>).*?(?=</networkConfiguration>)",
+                      " %s " % network, xml.read_text(), count=1, flags=re.S)
+    if not n:
+        raise SystemExit("no <networkConfiguration> in %s" % xml)
+    xml.write_text(text)
 
 
 def write_csv(path: str, rows, columns=None) -> None:

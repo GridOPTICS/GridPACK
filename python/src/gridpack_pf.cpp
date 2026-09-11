@@ -243,9 +243,30 @@ init_gridpack_pf(py::module& gpm)
            boost::shared_ptr<gpf::PFNetwork> pfnet( new gpf::PFNetwork(net_comm) );
 
            self.readNetwork(pfnet, &config, idx);
+
+           // BUS_NAME lives in the parser's DataCollection, and the
+           // network is private to the app module once this returns, so
+           // capture the names here.  Rank-local, like the BusResult
+           // rows they get joined onto.  Read from the DataCollection,
+           // not PFBus::getBusName(): PFBus::load() has not run yet, so
+           // its p_data is still NULL.
+           py::dict names;
+           int nbus = pfnet->numBuses();
+           for (int i = 0; i < nbus; i++) {
+             if (!pfnet->getActiveBus(i)) continue;
+             gridpack::component::DataCollection *data =
+               pfnet->getBusData(i).get();
+             std::string name;
+             if (data == NULL || !data->getValue(BUS_NAME, &name)) continue;
+             names[py::int_(pfnet->getOriginalBusIndex(i))] = py::str(name);
+           }
+           return names;
          }, py::arg("config"), py::arg("idx"), py::arg("comm") = nullptr,
          R"eof(
-Read the network specified in the configuration.  
+Read the network specified in the configuration.
+
+Returns a dict mapping original bus number to the parser's bus name,
+for the buses on this rank.
 
 Parameters:
     config (gridpack.Configuration): power flow problem configuration usually read from an XML file

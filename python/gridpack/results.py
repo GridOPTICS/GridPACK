@@ -54,6 +54,28 @@ def _records_to_dicts(records, fields):
     return [{f: getattr(rec, f) for f in fields} for rec in records]
 
 
+def _columns(table: str) -> List[str]:
+    """Output column order.  Bus rows carry a `name` BusResult has not got."""
+    fields = list(_TABLES[table][0])
+    if table == "buses":
+        fields.insert(1, "name")
+    return fields
+
+
+def _join_bus_names(rows, names) -> List[dict]:
+    """Put each bus's name second, after busId.
+
+    Call before the gather: `names` is rank-local, so another rank's
+    buses would come out unnamed.
+    """
+    out = []
+    for r in rows:
+        row = {"busId": r["busId"], "name": names.get(r["busId"], "")}
+        row.update((k, v) for k, v in r.items() if k not in row)
+        out.append(row)
+    return out
+
+
 class PowerFlowResult:
     """Solution container for :class:`gridpack.PowerFlow`.
 
@@ -75,8 +97,10 @@ class PowerFlowResult:
         input_file: Optional[str] = None,
         solver_converged: Optional[bool] = None,
         mpi_comm: Optional[object] = None,
+        bus_names: Optional[Dict[int, str]] = None,
     ) -> None:
         self._pfapp = pfapp
+        self._bus_names = bus_names or {}
         self.nonlinear = nonlinear
         self.input_file = input_file
 
@@ -161,6 +185,8 @@ class PowerFlowResult:
 
         results = self._pfapp.collectResults()
         rows = _records_to_dicts(getattr(results, name), fields)
+        if name == "buses":
+            rows = _join_bus_names(rows, self._bus_names)
 
         comm = self._mpi_comm
         if comm is not None and comm.Get_size() > 1:
@@ -171,7 +197,12 @@ class PowerFlowResult:
         return rows
 
     def buses(self) -> List[dict]:
-        """All buses, sorted by bus number.  Collective."""
+        """All buses, sorted by bus number.  Collective.
+
+        Rows carry a ``name`` that ``BusResult`` has not got: it is
+        captured from the parser at readNetwork, and is ``""`` for a
+        network whose buses are unnamed.
+        """
         return self._table("buses")
 
     def branches(self) -> List[dict]:
@@ -206,7 +237,7 @@ class PowerFlowResult:
         since per-bus ``BUS_VOLTAGE_MIN/MAX`` are not in ``BusResult``.
         """
         volt = [
-            {"busId": b["busId"], "voltage": b["voltage"],
+            {"busId": b["busId"], "name": b["name"], "voltage": b["voltage"],
              "limit": max_voltage if b["voltage"] > max_voltage else min_voltage,
              "kind": "high" if b["voltage"] > max_voltage else "low"}
             for b in self.buses()
@@ -287,7 +318,7 @@ class PowerFlowResult:
         rows = self.to_records(bus_ids, table=table)
         if bus_ids is None:
             # Fix column order even when the table is empty.
-            return pd.DataFrame(rows, columns=list(_TABLES[table][0]))
+            return pd.DataFrame(rows, columns=_columns(table))
         return pd.DataFrame(rows, columns=["bus", "vmag", "vangle"])
 
     def to_csv(
@@ -302,7 +333,7 @@ class PowerFlowResult:
         Uses pandas if available, otherwise the stdlib ``csv`` module.
         """
         rows = self.to_records(bus_ids, table=table)
-        cols = (list(_TABLES[table][0]) if bus_ids is None
+        cols = (_columns(table) if bus_ids is None
                 else ["bus", "vmag", "vangle"])
 
         pd = _try_import_pandas()

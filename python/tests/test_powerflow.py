@@ -348,9 +348,9 @@ def test_gathered_tables_serial(tests_data_dir):
     assert [b["busId"] for b in buses] == sorted(b["busId"] for b in buses)
     # Full column set, not just the legacy vmag/vangle view.
     assert set(buses[0]) == {
-        "busId", "type", "area", "zone", "baseKV", "voltage", "angle",
-        "pInjection", "qInjection", "pLoad", "qLoad", "pGen", "qGen",
-        "shuntMvar",
+        "busId", "name", "type", "area", "zone", "baseKV", "voltage",
+        "angle", "pInjection", "qInjection", "pLoad", "qLoad", "pGen",
+        "qGen", "shuntMvar",
     }
     branches = json.loads(_extract(r.stdout, "BRANCHES="))
     assert set(branches[0]) == {
@@ -536,7 +536,7 @@ def test_to_csv_writes_every_table(tests_data_dir, tmp_path):
     assert "WROTE=ok" in r.stdout
 
     header = (tmp_path / "buses.csv").read_text().splitlines()
-    assert header[0].startswith("busId,type,area,zone,baseKV,voltage,angle")
+    assert header[0].startswith("busId,name,type,area,zone,baseKV,voltage")
     assert len(header) == 15                       # 14 buses + header
     assert len((tmp_path / "branches.csv").read_text().splitlines()) == 21
     assert (tmp_path / "generators.csv").read_text().splitlines()[0].startswith(
@@ -659,3 +659,112 @@ def test_bus_param_reports_failed_writes(tests_data_dir):
     assert "FLOAT_INTO_INT False" in r.stdout
     assert "TYPEERROR str" in r.stdout and "TYPEERROR bool" in r.stdout
     assert "NORAISE" not in r.stdout
+
+
+# -------------------------------------------------------------
+# Bus names
+# -------------------------------------------------------------
+# The name is in the parser's DataCollection, not in BusResult, so it is
+# captured at readNetwork and joined onto the rows by bus number.  The
+# join has to happen BEFORE the allgather: the capture is rank-local, so
+# no rank holds names for another rank's buses.
+
+
+def _named_result(bus_ids, names, comm=None):
+    """A PowerFlowResult over stub records, with no solver behind it."""
+    from types import SimpleNamespace
+    from gridpack import PowerFlowResult
+    from gridpack.results import _BUS_FIELDS
+
+    recs = [SimpleNamespace(**{f: (b if f == "busId" else 0.0)
+                               for f in _BUS_FIELDS})
+            for b in bus_ids]
+    app = SimpleNamespace(collectResults=lambda: SimpleNamespace(
+        buses=recs, branches=[], generators=[]))
+    return PowerFlowResult(app, nonlinear=True, bus_names=names,
+                           mpi_comm=comm)
+
+
+def test_bus_name_follows_busid_in_every_row():
+    rows = _named_result([2, 1], {1: "BUS-1", 2: "BUS-2"}).buses()
+    assert list(rows[0])[:2] == ["busId", "name"]
+    assert [(r["busId"], r["name"]) for r in rows] == [(1, "BUS-1"),
+                                                      (2, "BUS-2")]
+
+
+def test_bus_name_is_empty_when_the_parser_had_none():
+    rows = _named_result([1], {}).buses()
+    assert rows[0]["name"] == ""
+
+
+def test_bus_names_join_before_the_gather():
+    """This rank holds no name for bus 9, so a late join would blank it."""
+    class Comm:
+        def Get_size(self):
+            return 2
+
+        def allgather(self, rows):
+            return [rows, [{"busId": 9, "name": "BUS-9", "voltage": 1.0}]]
+
+    r = _named_result([1], {1: "BUS-1"}, comm=Comm())
+    assert {row["busId"]: row["name"] for row in r.buses()} == {
+        1: "BUS-1", 9: "BUS-9"}
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        # PTI23 stores the field verbatim, quotes and column padding
+        # included; the v33+ parsers hand it back already clean.
+        ("'BUS-1       '", "BUS-1"),
+        ("'Riversid'", "Riversid"),
+        ("  'BUS-1  '  ", "BUS-1"),
+        ("BUS-1", "BUS-1"),
+        ("", ""),
+        (None, ""),
+    ],
+)
+def test_bus_name_drops_psse_quotes_and_padding(raw, expected):
+    from gridpack.powerflow import _clean_bus_name
+    assert _clean_bus_name(raw) == expected
+
+
+_NAME_DUMP = """
+    import json
+    from gridpack import Session, PowerFlow
+    with Session() as s:
+        pf = PowerFlow(s, "{xml}", suppress_output=True)
+        buses = pf.solve().buses()
+        if s.rank == 0:
+            print("NAMES=" + json.dumps({{b["busId"]: b["name"]
+                                          for b in buses}}))
+"""
+
+
+@pytest.mark.integration
+def test_bus_names_reach_the_rows_from_a_v23_network(tests_data_dir):
+    import json
+    r = run_inline(_NAME_DUMP.format(xml="input_14.xml"), cwd=tests_data_dir)
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    names = json.loads(_extract(r.stdout, "NAMES="))
+    assert names["1"] == "BUS-1"
+    assert all(names[str(b)] == "BUS-%d" % b for b in range(1, 15)), names
+
+
+@pytest.mark.integration
+def test_bus_names_reach_the_rows_from_a_v33_network(
+    tests_data_dir, tmp_path, rated_raw
+):
+    """A different parser fills BUS_NAME, so v33 needs its own check."""
+    import json
+    case = _rated_case(tests_data_dir, tmp_path, rated_raw)
+    r = run_inline(_NAME_DUMP.format(xml="case.xml"), cwd=case)
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    names = json.loads(_extract(r.stdout, "NAMES="))
+    assert all(names[str(b)] == "BUS-%d" % b for b in range(1, 15)), names
+
+
+def test_voltage_violation_rows_carry_the_bus_name():
+    """Bus 9 says little on its own; the name is what a report needs."""
+    v = _named_result([9], {9: "Riversid"}).violations()["voltage"]
+    assert [(r["busId"], r["name"]) for r in v] == [(9, "Riversid")]

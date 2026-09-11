@@ -57,11 +57,18 @@ def main():
             # base case that is already overloaded flags every contingency.
             pre = base.violations(min_voltage=ca.min_voltage,
                                   max_voltage=ca.max_voltage)
+            buses = base.buses()
             if session.rank == 0:
                 print("base case: %d bus / %d branch violations already "
                       "present" % (len(pre["voltage"]), len(pre["overload"])))
                 print("  (bus violations here are exempted from the screen; "
-                      "overloads are not)\n")
+                      "overloads are not)")
+                # IEEE118 carries real substation names, so the margin the
+                # screen starts from can be read without a bus-number table.
+                low = sorted(buses, key=lambda b: b["voltage"])[:3]
+                print("  thinnest margin: %s\n"
+                      % ", ".join("%s %.3f pu" % (b["name"] or b["busId"],
+                                                  b["voltage"]) for b in low))
 
             ca.run()
 

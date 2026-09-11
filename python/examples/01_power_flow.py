@@ -16,7 +16,10 @@ import os
 import gridpack
 from _case import stage, write_csv
 
-VMIN, VMAX = 0.95, 1.05          # tighter than the 0.9/1.1 default, to show a hit
+# Tighter than the 0.9/1.1 and 100% defaults, so the base case has hits:
+# five branches sit between 76% and 84% loaded with nothing switched out.
+VMIN, VMAX = 0.95, 1.05
+OVERLOAD = 75.0
 
 
 def main():
@@ -24,7 +27,11 @@ def main():
     # and let the with-block close it, or MPI_Finalize runs before GridPACK
     # has let go of the network.
     with gridpack.Session() as session:
-        case = stage(session, "input/powerflow/input_14.xml", "raw/IEEE14.raw")
+        # IEEE14.raw, which this XML names, carries no branch ratings, so
+        # the overload check would have nothing to test.  This v33 variant
+        # rates all 20; the version is auto-detected from the file header.
+        case = stage(session, "input/powerflow/input_14.xml",
+                     network="raw/IEEE14_PTIv33_rated.raw")
 
         pf = gridpack.PowerFlow(session, case, suppress_output=True)
 
@@ -36,7 +43,8 @@ def main():
         # Collective: these gather across ranks, so every rank has to reach
         # them.  Guarding them with `if rank == 0` deadlocks.
         buses = result.buses()
-        violations = result.violations(min_voltage=VMIN, max_voltage=VMAX)
+        violations = result.violations(min_voltage=VMIN, max_voltage=VMAX,
+                                       overload_threshold=OVERLOAD)
 
         if session.rank == 0:
             report(case, session, result, buses, violations)
@@ -61,15 +69,18 @@ def report(case, session, result, buses, violations):
     print("\nVoltage outside [%.2f, %.2f] pu:" % (band["min_voltage"],
                                                   band["max_voltage"]))
     if violations["voltage"]:
+        # The name is the RAW file's, so it is whatever the model author
+        # wrote: generic here, real substation names on IEEE 118 (demo 2).
         for v in violations["voltage"]:
-            print("  bus %-6d %.4f pu (%s)" % (v["busId"], v["voltage"], v["kind"]))
+            print("  bus %-4d %-12s %.4f pu (%s)"
+                  % (v["busId"], v["name"], v["voltage"], v["kind"]))
     else:
         print("  none")
 
     print("\nBranches loaded over %.0f%%:" % band["overload_threshold"])
     if violations["overload"]:
         for o in violations["overload"]:
-            print("  %d->%-4d %-3s %6.1f%% of %.0f MVA"
+            print("  %d->%-4d %-3s %6.1f%% of %g MVA"
                   % (o["fromBus"], o["toBus"], o["circuitId"],
                      o["loadingPercent"], o["rateA"]))
     else:

@@ -54,6 +54,18 @@ def _xml_number(raw, cast, default=None):
         return default
 
 
+def _clean_bus_name(raw) -> str:
+    """Strip the RAW file's quote delimiters and column padding.
+
+    A v23 name arrives verbatim, as ``'BUS-1       '``; the v33+ parsers
+    hand back the field already unquoted and trimmed.
+    """
+    name = str(raw or "").strip()
+    if len(name) > 1 and name[0] == name[-1] == "'":
+        name = name[1:-1].strip()
+    return name
+
+
 def _reject_shunt_param(name: str) -> None:
     """Refuse the per-shunt keys the bus accessor cannot address.
 
@@ -154,9 +166,14 @@ class PowerFlow:
         # together unrelated copies.
         self._task_local = comm is not None
         if comm is None:
-            self._pfapp.readNetwork(self._config, idx)
+            names = self._pfapp.readNetwork(self._config, idx)
         else:
-            self._pfapp.readNetwork(self._config, idx, comm)
+            names = self._pfapp.readNetwork(self._config, idx, comm)
+
+        # Only readNetwork sees the network, so the names are captured
+        # there or not at all.  Rank-local.
+        self._bus_names = {int(b): _clean_bus_name(n)
+                           for b, n in names.items()}
         self._pfapp.initialize()
 
         self._output_open = False
@@ -234,6 +251,7 @@ class PowerFlow:
             input_file=self.input_file,
             solver_converged=bool(ok),
             mpi_comm=None if self._task_local else self._session.mpi_comm,
+            bus_names=self._bus_names,
         )
         self._live_results.add(result)
 

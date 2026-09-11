@@ -6,7 +6,7 @@ you can check, with no framework of its own.
 
 | Demo | Application | Case | Shows |
 |---|---|---|---|
-| `01_power_flow.py` | power flow | IEEE 14 | solve, read the solved network, report limit violations |
+| `01_power_flow.py` | power flow | IEEE 14 (`IEEE14_PTIv33_rated.raw`: every branch rated) | solve, read the solved network, report limit violations |
 | `02_contingency_screening.py` | contingency analysis | IEEE 118 | 179 N-1 line outages ranked by what they break |
 | `03_dynamic_simulation.py` | dynamic simulation | 9-bus, 3-machine | XML-declared fault, whole run in C++, series from the watch file |
 | `04_stepped_event.py` | dynamic simulation | Kundur two-area | Python drives the step loop and trips a generator at run time |
