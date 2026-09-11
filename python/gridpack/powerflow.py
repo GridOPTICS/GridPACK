@@ -316,6 +316,25 @@ class PowerFlow:
         self._require_open()
         return bool(self._pfapp.checkLineOverloadViolations())
 
+    def check_slack_capacity(self) -> bool:
+        """True if no slack generator was pushed past its Pmax.
+
+        False means the solve only balanced because the slack absorbed
+        more than the unit can produce, so the solution is not usable;
+        ``ca.x`` treats this like a divergence.
+        """
+        self._require_open()
+        return bool(self._pfapp.checkSlackCapacity())
+
+    def island_count(self) -> int:
+        """Number of connected components in the network.
+
+        More than one after a contingency means the network split, and
+        there is nothing worth solving.
+        """
+        self._require_open()
+        return int(self._pfapp.getIslandCount())
+
     # ------------------------------------------------------------------
     # Bus data-collection parameters
     # ------------------------------------------------------------------

@@ -193,10 +193,14 @@ _CA_CONTINGENCIES = """<?xml version="1.0" encoding="utf-8"?>
 """
 
 # Statuses the four contingencies above produce at the default 0.9-1.1 band.
+# Cross-checked against ca.x on the same inputs: it reports a Branch Violation
+# for the first two, "No valid slack bus" for LINE_13_14 (setContingency
+# leaves no reference bus, which is what found=False means here), and
+# Divergent for GEN_2.
 CA_EXPECTED_STATUS = {
-    "LINE_2_3": "OK",
-    "LINE_6_13": "OK",
-    "LINE_13_14": "OK",
+    "LINE_2_3": "BRANCH VIOLATION",
+    "LINE_6_13": "BRANCH VIOLATION",
+    "LINE_13_14": "NOT FOUND",
     "GEN_2": "DIVERGENT",
 }
 
@@ -209,7 +213,10 @@ def ca_case(tmp_path) -> Path:
     """
     data = _data_sets()
     cfg_src = data / "input/ca/input_14.xml"
-    raw_src = data / "raw/IEEE14.raw"
+    # The network the XML names.  IEEE14.raw used to be copied under this
+    # name; it carries no branch ratings and less generation headroom, so
+    # every contingency came back OK and the overload check was untested.
+    raw_src = data / "raw/IEEE14_ca.raw"
     for f in (cfg_src, raw_src):
         if not f.exists():
             pytest.skip(f"missing {f}")

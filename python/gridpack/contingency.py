@@ -77,6 +77,8 @@ class ContingencyResult:
     converged: bool
     voltage_ok: bool = True
     overload_ok: bool = True
+    islanded: bool = False
+    slack_overload: bool = False
 
     @property
     def ok(self) -> bool:
@@ -86,6 +88,12 @@ class ContingencyResult:
     def status(self) -> str:
         if not self.found:
             return "NOT FOUND"
+        # Both are reported as their own status rather than DIVERGENT: the
+        # solver did not fail, the case is unsolvable or unusable.
+        if self.islanded:
+            return "ISLANDED"
+        if self.slack_overload:
+            return "SLACK OVERLOAD"
         if not self.converged:
             return "DIVERGENT"
         if not self.voltage_ok and not self.overload_ok:
@@ -104,6 +112,11 @@ class ContingencyResult:
         """
         if not self.found:
             return ["Not found for contingency %s" % self.name]
+        if self.islanded:
+            return ["Islanding detected for contingency %s" % self.name]
+        if self.slack_overload:
+            return ["Insufficient generation capacity for contingency %s"
+                    % self.name]
         if not self.converged:
             return ["Divergent for contingency %s" % self.name]
         out = []
@@ -129,7 +142,11 @@ def parse_contingency_list(path: str) -> List[Contingency]:
     ElementTree, not the GridPACK config reader: Boost property_tree does
     not validate closing-tag names, so typos parse silently.
     """
-    root = ET.parse(path).getroot()
+    # Bytes and lstrip, not ET.parse(path): three of the shipped lists
+    # (118, polish, euro) indent the <?xml?> declaration.  ca.x reads them;
+    # ElementTree rejects a declaration that is not at byte 0.
+    with open(path, "rb") as fh:
+        root = ET.fromstring(fh.read().lstrip())
 
     out: List[Contingency] = []
     for elem in root.iter("Contingency"):
@@ -366,13 +383,25 @@ class ContingencyAnalysis:
             found = pf.set_contingency(ctg)
 
             converged = False
+            islanded = slack_overload = False
             voltage_ok = overload_ok = True
+
+            # Islanding is tested before solving, as ca_driver does: a split
+            # network has no single solution, and solving anyway reports a
+            # meaningless one.
             if found:
+                islanded = pf.island_count() > 1
+
+            if found and not islanded:
                 result = pf.solve(strict=False)
                 converged = bool(result.converged)
+                if converged and self.check_qlim \
+                        and not pf.check_qlim_violations():
+                    converged = bool(pf.solve(strict=False).converged)
                 if converged:
-                    if self.check_qlim and not pf.check_qlim_violations():
-                        converged = bool(pf.solve(strict=False).converged)
+                    slack_overload = not pf.check_slack_capacity()
+                    converged = not slack_overload
+                if converged:
                     if self.print_calc_files:
                         result.write()
                     voltage_ok = pf.check_voltage_violations()
@@ -384,6 +413,8 @@ class ContingencyAnalysis:
                 converged=converged,
                 voltage_ok=voltage_ok,
                 overload_ok=overload_ok,
+                islanded=islanded,
+                slack_overload=slack_overload,
             )
             if self.print_calc_files:
                 for line in outcome.report_lines:

@@ -8,7 +8,7 @@ import re
 
 import pytest
 
-from .conftest import CA_EXPECTED_STATUS, run_inline
+from .conftest import CA_EXPECTED_STATUS, _data_sets, run_inline
 
 from gridpack.contingency import (
     Contingency,
@@ -101,6 +101,28 @@ def test_parse_rejects_short_bus_list(tmp_path):
         parse_contingency_list(p)
 
 
+def test_parse_tolerates_indented_declaration(tmp_path):
+    """ca.x reads the shipped 118/polish/euro lists; ElementTree would not.
+
+    Those three indent the <?xml?> declaration, and a declaration that is
+    not at byte 0 is a hard parse error.
+    """
+    p = tmp_path / "ctg.xml"
+    p.write_text(
+        '  \n<?xml version="1.0" encoding="utf-8"?>\n'
+        "<ContingencyList><Contingency_analysis><Contingencies>\n"
+        """      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>N1</contingencyName>
+        <contingencyLineBuses>2 3</contingencyLineBuses>
+        <contingencyLineNames>BL</contingencyLineNames>
+      </Contingency>"""
+        "\n</Contingencies></Contingency_analysis></ContingencyList>\n"
+    )
+    (c,) = parse_contingency_list(p)
+    assert c.name == "N1" and c.from_buses == [2]
+
+
 def test_parse_empty_list(tmp_path):
     assert parse_contingency_list(_write_list(tmp_path, "")) == []
 
@@ -118,6 +140,9 @@ def test_parse_empty_list(tmp_path):
     (dict(found=True, converged=False), "DIVERGENT"),
     # Not-found is a config error, not a network finding -- keep it distinct.
     (dict(found=False, converged=False), "NOT FOUND"),
+    # Neither is a solver failure, so neither reads as DIVERGENT.
+    (dict(found=True, converged=False, islanded=True), "ISLANDED"),
+    (dict(found=True, converged=False, slack_overload=True), "SLACK OVERLOAD"),
 ])
 def test_result_status(kwargs, status):
     assert ContingencyResult(name="C", **kwargs).status == status
@@ -139,6 +164,20 @@ def test_result_reports_both_violations():
 def test_result_reports_no_violation():
     r = ContingencyResult("C", found=True, converged=True)
     assert r.report_lines == ["No violation for contingency C"]
+
+
+def test_result_reports_slack_overload_like_ca_x():
+    """ca.x wording: the solve succeeded but the slack exceeded Pmax."""
+    r = ContingencyResult("C", found=True, converged=False, slack_overload=True)
+    assert r.report_lines == [
+        "Insufficient generation capacity for contingency C"]
+    assert not r.ok
+
+
+def test_result_reports_islanding():
+    r = ContingencyResult("C", found=True, converged=False, islanded=True)
+    assert r.report_lines == ["Islanding detected for contingency C"]
+    assert not r.ok
 
 
 def test_line_contingency_to_pybind_sets_branch_type():
@@ -245,7 +284,10 @@ def test_contingency_analysis_honors_voltage_limits(ca_case):
                 print("RESULT %s %s" % (r.name, r.status))
     """, cwd=ca_case)
     assert r.returncode == 0, r.stderr[-2000:]
-    assert _statuses(r.stdout)["LINE_2_3"] == "BUS VIOLATION"
+    # 0.98/1.02, not tighter: ignore_voltage_violations() exempts whatever
+    # the base case already violates, so a very tight band reports fewer
+    # bus violations, not more.
+    assert _statuses(r.stdout)["LINE_2_3"] == "BUS+BRANCH VIOLATION"
 
 
 @pytest.mark.integration
@@ -258,9 +300,72 @@ def test_contingency_analysis_writes_calc_files(ca_case):
     """, cwd=ca_case)
     assert r.returncode == 0, r.stderr[-2000:]
     assert (ca_case / "LINE_2_3.out").read_text().rstrip().endswith(
-        "No violation for contingency LINE_2_3")
+        "Branch Violation for contingency LINE_2_3")
     assert (ca_case / "GEN_2.out").read_text().rstrip().endswith(
         "Divergent for contingency GEN_2")
+
+
+@pytest.mark.integration
+def test_slack_overload_is_not_reported_as_converged(ca_case):
+    """A solve that only balances by overdrawing the slack is not a solution.
+
+    IEEE14.raw has less generation headroom than the IEEE14_ca.raw the case
+    normally uses, and ca.x reports "Insufficient generation capacity" for
+    all three line outages on it.  Without checkSlackCapacity they came
+    back OK, which is the worst possible answer: a masked failure.
+    """
+    import shutil
+    shutil.copy(_data_sets() / "raw/IEEE14.raw", ca_case / "IEEE14_ca.raw")
+    r = run_inline(_DRIVER, cwd=ca_case)
+    assert r.returncode == 0, r.stderr[-2000:]
+    got = _statuses(r.stdout)
+    assert [got[n] for n in ("LINE_2_3", "LINE_6_13", "LINE_13_14")] == \
+        ["SLACK OVERLOAD"] * 3, got
+
+
+@pytest.mark.integration
+def test_118_status_split_matches_ca_x(tmp_path):
+    """Pin the status split on IEEE-118 to what ca.x reports on the same run.
+
+    The 14-bus case splits into no islands, so this is the only coverage of
+    the pre-solve island check.  Counts come from ca.x's own
+    ca_results_convergence.csv: 160 solved, 17 SLACK_OVERLOAD, 2 ISLANDED.
+    """
+    import shutil
+    data = _data_sets()
+    src = [data / "input/ca/input_118.xml",
+           data / "contingencies/contingencies_118.xml",
+           data / "raw/IEEE118.raw"]
+    for f in src:
+        if not f.exists():
+            pytest.skip("missing %s" % f)
+        shutil.copy(f, tmp_path / f.name)
+
+    r = run_inline("""
+        from collections import Counter
+        from gridpack import Session, ContingencyAnalysis
+        with Session() as s:
+            ca = ContingencyAnalysis(s, "input_118.xml",
+                                     print_calc_files=False,
+                                     suppress_output=True)
+            ca.run()
+            c = Counter(x.status for x in ca.gather())
+            if s.rank == 0:
+                for k in sorted(c):
+                    print("COUNT %s=%d" % (k, c[k]))
+    """, cwd=tmp_path, timeout=600)
+    assert r.returncode == 0, r.stderr[-2000:]
+    counts = dict(
+        (kv.split("=")[0], int(kv.split("=")[1]))
+        for kv in (l.split(" ", 1)[1] for l in r.stdout.splitlines()
+                   if l.startswith("COUNT ")))
+    assert counts.get("ISLANDED") == 2, counts
+    assert counts.get("SLACK OVERLOAD") == 17, counts
+    # The rest solved; ca.x finds 5 bus and 160 branch violations among them.
+    solved = sum(v for k, v in counts.items()
+                 if k not in ("ISLANDED", "SLACK OVERLOAD"))
+    assert solved == 160, counts
+    assert counts.get("BUS+BRANCH VIOLATION") == 5, counts
 
 
 @pytest.mark.integration
