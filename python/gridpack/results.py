@@ -444,47 +444,45 @@ class DSFResult:
         return len(self.observations)
 
     def channel_names(self) -> List[str]:
-        """Flattened list of column names for :meth:`to_dataframe`."""
+        """Flattened list of column names for :meth:`to_dataframe`.
+
+        The order is fixed by ``HADRECAppModule::getObservations``, which
+        returns one flat vector grouped by quantity -- every generator's
+        speed, then every generator's angle, and so on -- not one group
+        per generator.
+        """
+        gens = [f"gen_{bus}_{str(gid).strip() or '1'}"
+                for bus, gid in zip(self.obs_gen_buses, self.obs_gen_ids)]
+        loads = [f"load_{bus}_{str(lid).strip() or '1'}"
+                 for bus, lid in zip(self.obs_load_buses, self.obs_load_ids)]
+
         cols: List[str] = ["time"]
-        for bus, gid in zip(self.obs_gen_buses, self.obs_gen_ids):
-            gid_s = str(gid).strip() or "1"
-            cols.append(f"gen_{bus}_{gid_s}_rspeed")
-            cols.append(f"gen_{bus}_{gid_s}_rangle")
-            cols.append(f"gen_{bus}_{gid_s}_P")
-            cols.append(f"gen_{bus}_{gid_s}_Q")
-            cols.append(f"gen_{bus}_{gid_s}_online")
-        for bus in self.obs_bus_ids:
-            cols.append(f"bus_{bus}_vmag")
-            cols.append(f"bus_{bus}_vangle")
-        if self.with_bus_freq:
-            for bus in self.obs_bus_freq_ids:
-                cols.append(f"bus_{bus}_freq")
+        for suffix in ("rspeed", "rangle", "P", "Q"):
+            cols += [f"{g}_{suffix}" for g in gens]
+        cols += [f"bus_{bus}_vmag" for bus in self.obs_bus_ids]
+        cols += [f"bus_{bus}_vangle" for bus in self.obs_bus_ids]
+        # Online *load* fraction, not a generator flag: fOnline comes from
+        # getOnlineLoadFraction, one entry per observed dynamic load.
+        cols += [f"{l}_online" for l in loads]
+        # Named whenever the ids are known rather than under with_bus_freq:
+        # getObservations appends bus frequencies regardless of the flag, and
+        # unnamed trailing values would be dropped silently.
+        cols += [f"bus_{bus}_freq" for bus in self.obs_bus_freq_ids]
         return cols
 
-    def _flatten_row(self, t: float, obs: Tuple) -> List[float]:
-        # obs = (vMag, vAng, rSpd, rAng, genP, genQ, fOnline[, busfreq])
-        # HADREC returns an empty tuple when the XML has no <observations>.
-        empty: list = []
-        padded = tuple(obs) + (empty,) * max(0, 7 - len(obs))
-        vMag, vAng, rSpd, rAng, genP, genQ, fOnline = padded[:7]
-        busfreq = obs[7] if self.with_bus_freq and len(obs) > 7 else []
+    def _flatten_row(self, t: float, obs: Sequence[float]) -> List[float]:
+        """Prepend the time to one observation vector, sized to the columns.
 
-        row: List[float] = [t]
-        n_gen = len(self.obs_gen_buses)
-        for i in range(n_gen):
-            row.append(float(rSpd[i]) if i < len(rSpd) else float("nan"))
-            row.append(float(rAng[i]) if i < len(rAng) else float("nan"))
-            row.append(float(genP[i]) if i < len(genP) else float("nan"))
-            row.append(float(genQ[i]) if i < len(genQ) else float("nan"))
-            row.append(float(fOnline[i]) if i < len(fOnline) else float("nan"))
-        n_bus = len(self.obs_bus_ids)
-        for i in range(n_bus):
-            row.append(float(vMag[i]) if i < len(vMag) else float("nan"))
-            row.append(float(vAng[i]) if i < len(vAng) else float("nan"))
-        if self.with_bus_freq:
-            for i in range(len(self.obs_bus_freq_ids)):
-                row.append(float(busfreq[i]) if i < len(busfreq) else float("nan"))
-        return row
+        ``getObservations`` already returns the values in channel order, so
+        this is a concatenation.  Short vectors (an inactive generator that
+        the C++ filtered out) pad with NaN; anything past the named columns
+        is dropped, which is what a bus-frequency observation the wrapper
+        was not told about looks like.
+        """
+        want = len(self.channel_names()) - 1
+        values = [float(v) for v in obs[:want]]
+        values += [float("nan")] * (want - len(values))
+        return [t] + values
 
     def to_records(self) -> List[Dict[str, float]]:
         """Return the time series as a list of ``{column: value}`` dicts."""

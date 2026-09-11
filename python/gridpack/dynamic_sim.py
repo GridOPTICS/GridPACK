@@ -30,8 +30,29 @@ from typing import Iterable, List, Optional, Sequence
 from ._gridpack.dynamic_simulation import Event, EventVector
 
 from .session import Session
-from .powerflow import _xml_bool
+from .powerflow import _xml_bool, _xml_number
 from .results import DSFResult
+
+
+# -------------------------------------------------------------
+# Shared XML lookup
+# -------------------------------------------------------------
+
+def _xml_time_step(session, input_file: str) -> float:
+    """``<timeStep>`` from the Dynamic_simulation block, else 0.0.
+
+    HADREC exposes no getTimeStep, so the seconds axis of a stepped run has
+    to come from the XML.  0.0 is what the C++ defaults to as well, and a
+    run configured that way is degenerate before Python sees it.
+    """
+    from . import _gridpack as _ext
+    try:
+        config = _ext.Configuration()
+        config.open(input_file, session.comm)
+        cursor = config.getCursor("Configuration.Dynamic_simulation")
+        return _xml_number(cursor.get("timeStep"), float, 0.0) or 0.0
+    except Exception:
+        return 0.0
 
 
 # -------------------------------------------------------------
@@ -281,6 +302,10 @@ class DynamicSimStepper:
             _ext.NoPrint().setStatus(True)
         self._suppress_output = bool(suppress_output)
 
+        # Read before the Module exists: HADREC opens its own Configuration
+        # on the same file, and this only needs one scalar from it.
+        self._time_step = _xml_time_step(session, input_file)
+
         self._hadapp = _ext.hadrec.Module()
         # solvePowerFlowBeforeDynSimu takes the input filename directly;
         # HADREC internally opens the Configuration on its own communicator.
@@ -364,10 +389,15 @@ class DynamicSimStepper:
         return self._step_count
 
     @property
-    def current_time(self) -> float:
-        """Elapsed simulation time inferred from step count.
+    def time_step(self) -> float:
+        """``<timeStep>`` from the XML, in seconds."""
+        return self._time_step
 
-        HADREC does not expose ``getCurrentTime``; we track it locally.
+    @property
+    def current_time(self) -> float:
+        """Elapsed simulation time in seconds.
+
+        ``step_count * time_step``: HADREC exposes no getCurrentTime.
         """
         return self._sim_time
 
@@ -387,11 +417,10 @@ class DynamicSimStepper:
             return None
         self._hadapp.executeDynSimuOneStep()
         self._step_count += 1
+        self._sim_time = self._step_count * self._time_step
         obs = self._hadapp.getObservations()
         if record:
-            # HADREC also doesn't emit current-time; approximate as
-            # step * dt if we can read dt from the XML, else count.
-            self.result.times.append(float(self._step_count))
+            self.result.times.append(self._sim_time)
             self.result.observations.append(obs)
         return obs
 

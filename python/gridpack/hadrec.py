@@ -26,6 +26,7 @@ from ._gridpack import hadrec as _mod  # noqa: F401
 from ._gridpack.dynamic_simulation import Event, EventVector
 
 from .session import Session
+from .dynamic_sim import _xml_time_step
 from .results import DSFResult
 
 
@@ -139,6 +140,10 @@ class Hadrec:
             _ext.NoPrint().setStatus(True)
         self._suppress_output = bool(suppress_output)
 
+        # Read before the Module exists: HADREC opens its own Configuration
+        # on the same file, and this only needs one scalar from it.
+        self._time_step = _xml_time_step(session, input_file)
+
         # HADREC solves PF as part of its own initialization; it opens
         # its own Configuration internally from the file path.
         self._hadapp = _ext.hadrec.Module()
@@ -166,6 +171,16 @@ class Hadrec:
     @property
     def step_count(self) -> int:
         return self._step_count
+
+    @property
+    def time_step(self) -> float:
+        """``<timeStep>`` from the XML, in seconds."""
+        return self._time_step
+
+    @property
+    def current_time(self) -> float:
+        """Elapsed simulation time in seconds (``step_count * time_step``)."""
+        return self._step_count * self._time_step
 
     @property
     def done(self) -> bool:
@@ -289,7 +304,7 @@ class Hadrec:
         else:
             obs = self._hadapp.getObservations()
         if record and self._result is not None:
-            self._result.times.append(float(self._step_count))
+            self._result.times.append(self.current_time)
             self._result.observations.append(obs)
         return obs
 
