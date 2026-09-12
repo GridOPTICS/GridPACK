@@ -55,6 +55,21 @@ def _xml_time_step(session, input_file: str) -> float:
         return 0.0
 
 
+def _xml_event_count(session, input_file: str) -> int:
+    """Number of events HADREC would read from the Dynamic_simulation block.
+
+    Uses DSFullApp's own parser on the shared Configuration, so it counts
+    what the C++ will see, not what the file says.
+    """
+    from . import _gridpack as _ext
+    config = _ext.Configuration()
+    config.open(input_file, session.comm)
+    cursor = config.getCursor("Configuration.Dynamic_simulation")
+    if cursor is None:
+        return 0
+    return len(_ext.dynamic_simulation.DSFullApp().getEvents(cursor))
+
+
 # -------------------------------------------------------------
 # Full-run driver (DSFullApp.setup / run)
 # -------------------------------------------------------------
@@ -305,6 +320,17 @@ class DynamicSimStepper:
         # Read before the Module exists: HADREC opens its own Configuration
         # on the same file, and this only needs one scalar from it.
         self._time_step = _xml_time_step(session, input_file)
+
+        # HADREC's initializer falls back to the XML <Events> when no faults
+        # are passed and then reads faults[0] unconditionally, so an empty
+        # list is a segfault in C++.  Count through the same cursor and the
+        # same parser it will use.
+        if not faults and _xml_event_count(session, input_file) == 0:
+            raise ValueError(
+                "%s declares no event under Dynamic_simulation/Events and no "
+                "faults were passed; DynamicSimStepper needs at least one. "
+                "Pass faults=[Event(...)] or declare one in the XML, even one "
+                "timed past simulationTime." % input_file)
 
         self._hadapp = _ext.hadrec.Module()
         # solvePowerFlowBeforeDynSimu takes the input filename directly;

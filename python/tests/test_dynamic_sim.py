@@ -6,6 +6,7 @@
 # to bypass upstream DSFullApp destructor SEGV).
 # -------------------------------------------------------------
 
+import re
 import shutil
 
 import pytest
@@ -178,6 +179,36 @@ def test_dynamic_sim_writes_power_flow_report(dsf_data_dir, tmp_path):
     """, cwd=tmp_path, timeout=180)
     assert r.returncode == 0, r.stderr[-2000:]
     assert "Branch Power Flow" in r.stdout
+
+
+@pytest.mark.integration
+def test_stepper_refuses_empty_event_list(dsf_data_dir, tmp_path):
+    """HADREC reads faults[0] from the XML list unconditionally; an empty
+    <Events> with no faults passed was a segfault, not an error."""
+    for name in ("9b3g.raw", "9b3g.dyr"):
+        shutil.copy(dsf_data_dir / name, tmp_path / name)
+    xml = (dsf_data_dir / "input_9b3g.xml").read_text()
+    xml, n = re.subn(r"<Events>.*?</Events>", "<Events></Events>", xml,
+                     count=1, flags=re.S)
+    assert n == 1
+    (tmp_path / "input_9b3g.xml").write_text(xml)
+
+    r = run_inline("""
+        import os, sys
+        from gridpack import Session, DynamicSimStepper
+        s = Session()
+        try:
+            try:
+                DynamicSimStepper(s, "input_9b3g.xml", suppress_output=True)
+                print("NO ERROR")
+            except ValueError as e:
+                print("GUARD", e)
+            sys.stdout.flush()
+        finally:
+            os._exit(0)
+    """, cwd=tmp_path, timeout=180)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "GUARD" in r.stdout and "no event" in r.stdout
 
 
 # -------------------------------------------------------------
