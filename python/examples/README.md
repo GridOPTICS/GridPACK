@@ -1,6 +1,6 @@
 # pygridpack examples
 
-Four self-contained demos, one GridPACK application each.  They are meant to
+Five self-contained demos, the first four one application each.  They are meant to
 be read: each takes the shortest honest path from an input file to a number
 you can check, with no framework of its own.
 
@@ -10,6 +10,7 @@ you can check, with no framework of its own.
 | `02_contingency_screening.py` | contingency analysis | IEEE 118 | 179 N-1 line outages ranked by what they break |
 | `03_dynamic_simulation.py` | dynamic simulation | 9-bus, 3-machine | XML-declared fault, whole run in C++, series from the watch file |
 | `04_stepped_event.py` | dynamic simulation | Kundur two-area | Python drives the step loop and trips a generator at run time |
+| `05_composed_study.py` | all three above | IEEE 14 | base case, N-1 screen, worst outage opened in a stepped run |
 
 ## Running them
 
@@ -37,6 +38,7 @@ How many ranks a demo can take is set by the case, not by your machine:
 | `02_contingency_screening.py` | `-np 4` | contingencies are handed out across ranks, so more ranks finishes the screen sooner |
 | `03_dynamic_simulation.py` | `-np 3` | a 9-bus network will not partition across four ranks |
 | `04_stepped_event.py` | serial | see below |
+| `05_composed_study.py` | `-np 2`, screen only | as `04`; in parallel it stops after the screen |
 
 **A network too small for the rank count hangs.**  `03` at `-np 4` never
 finishes -- both ranks spin at 100% CPU and the run has to be killed.  The
