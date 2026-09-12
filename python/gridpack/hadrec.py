@@ -275,6 +275,7 @@ class Hadrec:
 
         self._result = result
         self._live_results.add(result)
+        self._session.comm.sync()
         return result
 
     # ------------------------------------------------------------------
@@ -303,6 +304,9 @@ class Hadrec:
                 else self._hadapp.getObservations()
         else:
             obs = self._hadapp.getObservations()
+        # See DynamicSimStepper.step: keep every rank in GA until all
+        # one-sided gets are served, or the next collective deadlocks.
+        self._session.comm.sync()
         if record and self._result is not None:
             self._result.times.append(self.current_time)
             self._result.observations.append(obs)

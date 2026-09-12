@@ -11,7 +11,7 @@ import shutil
 
 import pytest
 
-from .conftest import run_inline
+from .conftest import _data_sets, run_inline
 
 
 @pytest.mark.integration
@@ -209,6 +209,36 @@ def test_stepper_refuses_empty_event_list(dsf_data_dir, tmp_path):
     """, cwd=tmp_path, timeout=180)
     assert r.returncode == 0, r.stderr[-2000:]
     assert "GUARD" in r.stdout and "no event" in r.stdout
+
+
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_stepper_completes_on_two_ranks(tmp_path):
+    """Kundur, np=2, 3000 steps: hung in most runs before step() synced
+    after getObservations (mpi-ts one-sided gets vs PETSc collectives).
+    A race, so more steps means better odds of catching a regression."""
+    d = _data_sets()
+    for rel in ("input/ds/input_kundur_two_area_wsieg1.xml",
+                "raw/kundur-twoarea_v33.raw", "dyr/kundur-twoarea_wsieg1.dyr"):
+        src = d / rel
+        if not src.exists():
+            pytest.skip("missing test data: %s" % src)
+        shutil.copy(src, tmp_path / src.name)
+
+    # No os._exit here: under mpiexec a rank that skips MPI_Finalize is an
+    # abnormal termination and the launcher returns 1.
+    r = run_inline("""
+        from gridpack import Session, DynamicSimStepper
+        with Session() as s:
+            with DynamicSimStepper(s, "input_kundur_two_area_wsieg1.xml",
+                                   suppress_output=True) as st:
+                while not st.done and st.step_count < 3000:
+                    st.step()
+                if s.rank == 0:
+                    print("STEPS=%d" % st.step_count, flush=True)
+    """, cwd=tmp_path, mpi_np=2, timeout=300)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert _parse_int(r.stdout, "STEPS=") == 3000, r.stdout[-3000:]
 
 
 # -------------------------------------------------------------

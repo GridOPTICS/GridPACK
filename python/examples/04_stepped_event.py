@@ -6,6 +6,7 @@
 """Trip a generator from Python mid-simulation and measure the frequency dip.
 
     python 04_stepped_event.py
+    mpiexec -np 2 python 04_stepped_event.py
 
 Writes stepped_event.csv next to the staged inputs.
 

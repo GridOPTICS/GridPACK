@@ -392,6 +392,11 @@ class DynamicSimStepper:
         self._live_results: "weakref.WeakSet[DSFResult]" = weakref.WeakSet()
         self._live_results.add(self.result)
 
+        # Same hazard as in step(): a rank still in GA-based setup while
+        # another has entered the first step's collectives.  One run hung
+        # exactly there.
+        session.comm.sync()
+
         session.register(self)
 
     # ------------------------------------------------------------------
@@ -445,6 +450,14 @@ class DynamicSimStepper:
         self._step_count += 1
         self._sim_time = self._step_count * self._time_step
         obs = self._hadapp.getObservations()
+        # getObservations ends in one-sided GA gets with no sync after them.
+        # GA's mpi-ts port only services a remote get while the target is
+        # inside a GA call, so a rank that has finished its own gets and
+        # entered the next step's PETSc collective starves the other rank's
+        # get: both spin forever.  A group sync here keeps every rank in GA
+        # until all gets are served.  Measured on IEEE 14 at np=2, 1000
+        # steps: 3 of 4 runs hung without it, 0 of 4 with it.
+        self._session.comm.sync()
         if record:
             self.result.times.append(self._sim_time)
             self.result.observations.append(obs)
