@@ -92,8 +92,9 @@ _PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
 def _pyproject_version():
     """Our own pyproject version, or None if that is not what sits there.
 
-    The tests ship without the source tree: in the Docker image the directory
-    above them holds the old setup.py-era pyproject, which has no [project].
+    The tests can ship without the source tree; a directory above them that
+    holds the old setup.py-era pyproject has no [project].  The Docker build
+    copies ours next to the tests so this pin is checked there too.
     """
     try:
         txt = _PYPROJECT.read_text()

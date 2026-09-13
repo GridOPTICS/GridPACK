@@ -213,7 +213,7 @@ def test_stepper_refuses_empty_event_list(dsf_data_dir, tmp_path):
 
 @pytest.mark.integration
 @pytest.mark.mpi
-def test_stepper_completes_on_two_ranks(tmp_path):
+def test_stepper_completes_on_two_ranks(tmp_path, require_mpiexec):
     """Kundur, np=2, 3000 steps: hung in most runs before step() synced
     after getObservations (mpi-ts one-sided gets vs PETSc collectives).
     A race, so more steps means better odds of catching a regression."""

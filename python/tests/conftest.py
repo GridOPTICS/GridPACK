@@ -23,6 +23,14 @@ from pathlib import Path
 from typing import List, Optional
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--fail-on-skip", action="store_true", default=False,
+        help="exit 1 if any test skipped: here a skip means mpiexec is "
+             "missing or the extension did not build, so CI must not pass",
+    )
+
+
 def pytest_configure(config):
     config.addinivalue_line(
         "markers",
@@ -33,6 +41,18 @@ def pytest_configure(config):
         "markers",
         "mpi: needs mpiexec available on PATH",
     )
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if not session.config.getoption("--fail-on-skip") or exitstatus != 0:
+        return
+    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+    skipped = reporter.stats.get("skipped", []) if reporter else []
+    if skipped:
+        reporter.write_line(
+            "--fail-on-skip: %d skipped, failing the run" % len(skipped),
+            red=True)
+        session.exitstatus = 1
 
 
 # -------------------------------------------------------------

@@ -20,11 +20,17 @@ COPY python /tmp/pygridpack-build
 # a .pth file there.  Same prefix, so this replaces them rather than leaving
 # two importable copies of `gridpack`.
 RUN pip install --upgrade --prefix=${GRIDPACK_INSTALL_DIR} /tmp/pygridpack-build && \
-    pip install --upgrade pytest && \
+    pip install --upgrade pytest pandas numpy && \
     rm -rf /tmp/pygridpack-build
 
 # Tests only; conftest.py finds the inputs two directories up, at /app.
+# The inputs come from this checkout, not the base image: its data sets
+# are the release's, and a fixture added since then would skip.
 COPY python/tests ${GRIDPACK_ROOT_DIR}/python/tests
+COPY src/applications/data_sets ${GRIDPACK_ROOT_DIR}/src/applications/data_sets
+# test_imports pins the installed version to the pyproject one directory up;
+# without ours there it finds the base image's and skips.
+COPY python/pyproject.toml ${GRIDPACK_ROOT_DIR}/python/pyproject.toml
 
 # The base image left a 0.0.1 egg-info here.  pytest puts this directory at
 # sys.path[0], so importlib.metadata.version("gridpack") reported 0.0.1.
@@ -40,5 +46,10 @@ RUN data=${GRIDPACK_ROOT_DIR}/src/applications/data_sets && \
     cp ${data}/input/powerflow/input_14.xml ${data}/raw/IEEE14.raw . && \
     gridpack powerflow input_14.xml --quiet --no-timer && \
     cd / && rm -rf /tmp/smoke
+
+# The full suite, and a skipped test fails the build too: here a skip means
+# mpiexec is missing, a test dependency is absent or the extension did not
+# build, none of which the smoke above sees.  -rs names the skip.
+RUN pytest ${GRIDPACK_ROOT_DIR}/python/tests -q -rs --fail-on-skip
 
 WORKDIR ${GRIDPACK_ROOT_DIR}/workspace
