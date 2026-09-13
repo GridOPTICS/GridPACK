@@ -6,7 +6,7 @@
 """Base case, N-1 screen, dynamic check of the worst outage: one study on IEEE 14.
 
     python 05_composed_study.py
-    mpiexec -np 2 python 05_composed_study.py     # screen only, see below
+    mpiexec -np 2 python 05_composed_study.py
 
 Chains three applications through one Session.  The screen's contingency
 list is written from the solved base case, and the outage the screen ranks
@@ -20,9 +20,7 @@ replacing it, and a path lookup only searches the first <Configuration>
 root -- so every block any step needs has to be in the first file opened,
 complete, before anything opens it.  That is also why the dynamic step
 uses the stepper (demo 4's route) rather than an XML event: the event is
-not known until the screen has run.  The stepper hangs intermittently on
-more than one rank, so under mpiexec the ranks share the screen and the
-dynamic check is skipped with a message.
+not known until the screen has run.
 """
 
 import csv
@@ -114,16 +112,6 @@ def main():
             if rank0:
                 print("\nNo solvable outage violates a limit; nothing to "
                       "verify dynamically.\nwrote %s/study.csv" % os.getcwd())
-            return
-
-        # The stepper hangs intermittently on more than one rank (both
-        # ranks spin; see demo 4), so the dynamic check is serial only.
-        # The screen above is where the ranks paid off.
-        if session.size > 1:
-            if rank0:
-                print("\nDynamic check of %s skipped: the stepped run is "
-                      "serial only.  Re-run without mpiexec for it.\n"
-                      "wrote %s/study.csv" % (worst["name"], os.getcwd()))
             return
 
         # ---- 4: open the worst outage in a dynamic run -----------------

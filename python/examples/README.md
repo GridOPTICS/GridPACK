@@ -37,8 +37,8 @@ How many ranks a demo can take is set by the case, not by your machine:
 | `01_power_flow.py` | `-np 4` | |
 | `02_contingency_screening.py` | `-np 4` | contingencies are handed out across ranks, so more ranks finishes the screen sooner |
 | `03_dynamic_simulation.py` | `-np 3` | a 9-bus network will not partition across four ranks |
-| `04_stepped_event.py` | serial | see below |
-| `05_composed_study.py` | `-np 2`, screen only | as `04`; in parallel it stops after the screen |
+| `04_stepped_event.py` | `-np 2` | |
+| `05_composed_study.py` | `-np 2` | |
 
 **A network too small for the rank count hangs.**  `03` at `-np 4` never
 finishes -- both ranks spin at 100% CPU and the run has to be killed.  The
