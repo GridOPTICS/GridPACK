@@ -8,8 +8,10 @@ Contents:
    :name: pythontoc
    :maxdepth: 3
 
+   getting_started
+
    gridpack
-   
+
    powerflow
 
    state_estimation
