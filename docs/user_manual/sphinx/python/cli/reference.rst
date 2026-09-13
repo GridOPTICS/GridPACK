@@ -1,61 +1,71 @@
 Python API Reference
 ====================
 
-This chapter documents the Python module that implements the GridPACK
-CLI, as well as the pybind11 bindings introduced to support contingency
-analysis from Python.
+This chapter documents the module behind the ``gridpack`` command and the
+pybind11 bindings added for contingency analysis.
 
-.. module:: gridpack_cli
+.. module:: gridpack.cli.main
 
 CLI Module
 ----------
 
-The ``gridpack_cli`` module provides the ``main()`` entry point and
-a set of subcommand handler functions. These functions can also be
-imported and called programmatically for custom scripting workflows.
+``gridpack.cli.main`` is a thin argparse shell over the high-level
+wrappers (``gridpack.PowerFlow``, ``gridpack.DynamicSim``,
+``gridpack.ContingencyAnalysis`` and so on); it holds no solver logic of
+its own.  The ``gridpack`` console script points at :func:`main`.
 
 Entry Point
 ~~~~~~~~~~~
 
 .. function:: main(argv=None)
 
-   Parse command-line arguments and dispatch to the appropriate
-   subcommand handler.
+   Parse the command line, open one ``gridpack.Session``, dispatch to the
+   subcommand handler and close the session.
 
    :param argv: Command-line arguments. Defaults to ``sys.argv[1:]``.
    :type argv: list[str] or None
-   :returns: Exit code (0 on success, non-zero on failure).
+   :returns: Exit code.
    :rtype: int
+
+   Exit codes:
+
+   - ``0`` success
+   - ``1`` unexpected error (set ``GRIDPACK_TRACEBACK=1`` to keep the trace)
+   - ``2`` bad arguments or unreadable config
+   - ``3`` the analysis did not converge
 
 Subcommand Handlers
 ~~~~~~~~~~~~~~~~~~~
 
-Each subcommand is implemented as a standalone function that receives
-the parsed ``argparse.Namespace`` object.
+Each subcommand is a function taking the parsed ``argparse.Namespace`` and
+the open session.
 
-.. function:: cmd_powerflow(args)
+.. function:: cmd_powerflow(args, session)
 
-   Execute AC power flow analysis.
+   AC power flow.  ``--solver`` overrides the XML ``UseNonLinear``;
+   ``--export-psse FORMAT FILE`` writes PSS/E v23, v33 or v34.
 
-.. function:: cmd_dsf(args)
+.. function:: cmd_dsf(args, session)
 
-   Execute dynamic simulation.
+   Dynamic simulation, the ``dsf2.x`` path.  ``--output`` is refused: the
+   run writes through ``printf`` that no redirect captures.
 
-.. function:: cmd_se(args)
+.. function:: cmd_se(args, session)
 
-   Execute state estimation.
+   State estimation.  ``--output`` is refused for the same reason.
 
-.. function:: cmd_hadrec(args)
+.. function:: cmd_hadrec(args, session)
 
-   Execute HADREC remedial action control simulation.
+   HADREC remedial action control.
 
-.. function:: cmd_emt(args)
+.. function:: cmd_emt(args, session)
 
-   Execute electromagnetic transient simulation.
+   Electromagnetic transient simulation.
 
-.. function:: cmd_ca(args)
+.. function:: cmd_ca(args, session)
 
-   Execute contingency analysis.
+   N-1 contingency analysis.  ``--vlimits VMIN VMAX`` overrides the XML
+   voltage band; ``--no-print-calcs`` suppresses per-contingency files.
 
 
 Contingency Analysis Bindings

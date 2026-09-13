@@ -19,3 +19,5 @@ Contents:
    hadrec
 
    emt
+
+   cli/index
