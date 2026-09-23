@@ -85,10 +85,14 @@ void gridpack::contingency_analysis::QuantileAnalysis::saveData(int cfg_idx,
   hi[2] = p_nsteps-1;
   ld[0] = 1;
   ld[1] = p_nsteps;
-  if (vals.size() > 0) {
-    NGA_Put(p_GA,lo,hi,&(vals[0]),ld);
+  // NGA_Put reads p_nsteps values from vals; a shorter series would over-read
+  if (static_cast<int>(vals.size()) < p_nsteps) {
+    printf("QuantileAnalysis::saveData: scenario %d variable %d has %d values,"
+        " expected %d; skipping\n",cfg_idx,gen_idx,
+        static_cast<int>(vals.size()),p_nsteps);
+    return;
   }
-
+  NGA_Put(p_GA,lo,hi,&(vals[0]),ld);
 }
 
 /**
@@ -122,12 +126,24 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
     std::vector<double> quantiles, double dt)
 {
   int i, j, k, nvals;
-  nvals = quantiles.size();
-  // Check quantile values to make sure they lie between 0.0 and 1.0
-  for (i=0; i<nvals; i++) {
+  bool is_root = (GA_Pgroup_nodeid(p_comm.getGroup()) == 0);
+  // Drop quantile values outside [0,1]; they have no meaning here
+  std::vector<double> valid;
+  for (i=0; i<static_cast<int>(quantiles.size()); i++) {
     if (quantiles[i]<0.0 || quantiles[i] > 1.0) {
-      //TODO: out of range error
+      if (is_root) {
+        printf("exportQuantiles: ignoring quantile %f outside [0,1]\n",
+            quantiles[i]);
+      }
+    } else {
+      valid.push_back(quantiles[i]);
     }
+  }
+  quantiles = valid;
+  nvals = quantiles.size();
+  if (nvals == 0) {
+    if (is_root) printf("exportQuantiles: no valid quantiles, nothing written\n");
+    return;
   }
   // Create global array of size n_vals*p_nwatch*p_nsteps to hold nvals
   // quantile values for all watched generators over all timesteps
@@ -169,9 +185,11 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
     }
   }
   int lo[3], hi[3], ld[2];
-  printf("Quantiles: [%d,%f] [%d,%f] [%d,%f] [%d,%f] [%d,%f]\n",
-      partition[0],weight[0],partition[1],weight[1],partition[2],weight[2],
-      partition[3],weight[3],partition[4],weight[4]);
+  if (is_root) {
+    printf("Quantiles:");
+    for (i=0; i<nvals; i++) printf(" [%d,%f]",partition[i],weight[i]);
+    printf("\n");
+  }
   // nconf, nwatch, nsteps
   std::vector<double> time_slice(p_nconf*p_nwatch);
   lo[0] = 0;
@@ -184,7 +202,6 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
   gridpack::parallel::TaskManager counter(p_comm);
   counter.set(p_nsteps);
   int step;
-  int nquar = quantiles.size();
   int rlo[3], rhi[3];
   rlo[0] = 0;
   rlo[1] = 0;
@@ -193,6 +210,7 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
   // loop over steps
   std::vector<double> results(p_nwatch*nvals);
   std::vector<double> qvalues(nvals);
+  bool warned_top = false;
   while (counter.nextTask(&step)){
     lo[2] = step;
     hi[2] = step;
@@ -218,7 +236,13 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
           if (partition[k] < p_nconf-1) {
             qvalues[k] = weight[k]*conf[kdx]+(1.0-weight[k])*conf[kdx+1];
           } else {
-            //TODO: report error
+            // Top bin has no upper neighbor to interpolate with; use its value
+            qvalues[k] = conf[kdx];
+            if (!warned_top) {
+              printf("exportQuantiles: quantile %f falls in top bin"
+                  " (nconf=%d), using bin value\n",quantiles[k],p_nconf);
+              warned_top = true;
+            }
           }
         }
       }
@@ -235,7 +259,7 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
   GA_Sync();
   // Write out results to files. Currently writing out each variable to a
   // separate file
-  if (GA_Pgroup_nodeid(p_comm.getGroup()) == 0) {
+  if (is_root) {
     // loop over watched variables
     std::vector<double> wbuf(nvals*p_nsteps);
     lo[0] = 0;
@@ -249,6 +273,11 @@ void gridpack::contingency_analysis::QuantileAnalysis::exportQuantiles(
       hi[1] = i;
       NGA_Get(g_quant,lo,hi,&wbuf[0],ld);
       FILE *fd = fopen(p_var_names[i].c_str(),"w");
+      if (fd == NULL) {
+        printf("exportQuantiles: unable to open %s for writing\n",
+            p_var_names[i].c_str());
+        continue;
+      }
       for (j=0; j<p_nsteps; j++) {
         fprintf(fd,"%16.4f",j*dt);
         for (k=0; k<nvals; k++) {
@@ -292,16 +321,13 @@ void gridpack::contingency_analysis::WindDriver::transferPFtoDS(
   gridpack::component::DataCollection *dsData;
   double rval;
   int ival;
-  double temp;
   double pi = 4.0*atan(1.0);
-  int itmp = 0;
   for (i=0; i<numBus; i++) {
     pfData = pf_network->getBusData(i).get();
     dsData = ds_network->getBusData(i).get();
     pfData->getValue("BUS_PF_VMAG",&rval);
     dsData->setValue("BUS_PF_VMAG",rval);
     dsData->setValue(BUS_VOLTAGE_MAG,rval);
-    temp = rval;
     pfData->getValue("BUS_PF_VANG",&rval);
     dsData->setValue("BUS_PF_VANG",rval);
     dsData->setValue(BUS_VOLTAGE_ANG,rval);
@@ -362,7 +388,9 @@ void gridpack::contingency_analysis::WindDriver::resetData(
   gridpack::powerflow::PFBus *pf_bus;
   for (i=0; i<nsize; i++) {
     if (genIDs[i] < 0 || genIDs[i] >= pf_network->numBuses()) {
-      printf("Invalid local bus Index: ",genIDs[i]);
+      printf("Invalid local bus Index: %d (generator %s skipped)\n",
+          genIDs[i],genTags[i].c_str());
+      continue;
     }
     pf_bus = dynamic_cast<gridpack::powerflow::PFBus*>
       (pf_network->getBus(genIDs[i]).get());
@@ -388,7 +416,9 @@ void gridpack::contingency_analysis::WindDriver::resetData(
   //  printf("LOADVALS: %d\n",nsize);
   for (i=0; i<nsize; i++) {
     if (loadIDs[i] < 0 || loadIDs[i] >= pf_network->numBuses()) {
-      printf("Invalid local load Index: ",loadIDs[i]);
+      printf("Invalid local load Index: %d (load %s skipped)\n",
+          loadIDs[i],loadTags[i].c_str());
+      continue;
     }
     pf_bus = dynamic_cast<gridpack::powerflow::PFBus*>
       (pf_network->getBus(loadIDs[i]).get());
@@ -562,20 +592,15 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   // read configuration file
   gridpack::utility::Configuration *config
     = gridpack::utility::Configuration::configuration();
-  if (argc >= 2 && argv[1] != NULL) {
-    char inputfile[256];
-    sprintf(inputfile,"%s",argv[1]);
-    config->open(inputfile,world);
-  } else {
-    config->open("input.xml",world);
-  }
+  std::string inputfile = "input.xml";
+  if (argc >= 2 && argv[1] != NULL) inputfile = argv[1];
+  config->open(inputfile,world);
 
   // get size of group (communicator) that individual contingency calculations
   // will run on and create task communicator
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Dynamic_simulation");
   int grp_size;
-  double Vmin, Vmax;
   if (!cursor->get("groupSize",&grp_size)) {
     grp_size = 1;
   }
@@ -598,7 +623,8 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   // Find branches to monitor in power flow calculation
   getWatchLines(cursor);
   if (world.rank() == 0) {
-    printf("List size %d %d %d\n",p_from.size(),p_to.size(),p_tags.size());
+    printf("List size %d %d %d\n",static_cast<int>(p_from.size()),
+        static_cast<int>(p_to.size()),static_cast<int>(p_tags.size()));
   }
   if (p_from.size()==0 || p_to.size()==0 || p_tags.size()==0) {
     p_watch_lines = false;
@@ -626,9 +652,12 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   /* TODO: Is this needed? */
 #if 1
   if (useNonLinear) {
-    pf_app.nl_solve();
+    pf_converged = pf_app.nl_solve();
   } else {
-    pf_app.solve();
+    pf_converged = pf_app.solve();
+  }
+  if (!pf_converged && world.rank() == 0) {
+    printf("Warning: base case power flow did not converge\n");
   }
   //  pf_app.write();
   pf_app.saveData();
@@ -674,8 +703,12 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   total_time = cursor->get("simulationTime",0.0);
   time_step = cursor->get("timeStep",0.0);
   if (total_time == 0.0 || time_step == 0.0) {
-    // Some kind of error
-  } 
+    if (world.rank() == 0) {
+      printf("Error: simulationTime (%f) and timeStep (%f) must be nonzero\n",
+          total_time,time_step);
+    }
+    return;
+  }
   int nsteps = static_cast<int>(total_time/time_step);
   if (world.rank() == 0) {
     printf(" Number of time steps: %d\n",nsteps);
@@ -689,21 +722,10 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   }
   std::vector<std::string> tokens;
   tokens = util.blankTokenizer(quantiles_str);
-  int i, j;
+  int i;
   std::vector<double> quantiles;
-  for (i=0; i<tokens.size(); i++) {
+  for (i=0; i<static_cast<int>(tokens.size()); i++) {
     quantiles.push_back(atof(tokens[i].c_str()));
-  }
-
-
-  // Find number of generators being watched
-  gridpack::utility::Configuration::CursorPtr list;
-  list = cursor->getCursor("generatorWatch");
-  gridpack::utility::Configuration::ChildCursors watch;
-  int num_watch_gen;
-  if (list) {
-    list->children(watch);
-    num_watch_gen = watch.size();
   }
 
   // get a list of faults
@@ -726,8 +748,8 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 
   if (world.rank() == 0) {
     int idx;
-    printf("Number of faults: %d\n",faults.size());
-    for (idx = 0; idx < faults.size(); idx++) {
+    printf("Number of faults: %d\n",static_cast<int>(faults.size()));
+    for (idx = 0; idx < static_cast<int>(faults.size()); idx++) {
       printf("Fault %d\n",idx);
       printf(" Begin fault: %12.6f End fault: %12.6f\n",
           faults[idx].start, faults[idx].end);
@@ -737,7 +759,6 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     }
   }
   timer->stop(t_flts);
-  int me = world.rank();
   /* TODO: Is this needed? */
 #if 0
   ds_app.solve(faults[0]);
@@ -797,16 +818,16 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
   // Construct variable names
   std::vector<std::string> var_names;
   char sbuf[128];
-  for (i=0; i<gen_ids.size(); i++) {
+  for (i=0; i<static_cast<int>(gen_ids.size()); i++) {
     std::string tag = gen_ids[i];
     util.trim(tag);
-    sprintf(sbuf, "%d_%s_ANG", bus_ids[i], tag.c_str());
+    snprintf(sbuf, sizeof(sbuf), "%d_%s_ANG", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
-    sprintf(sbuf, "%d_%s_SPD", bus_ids[i], tag.c_str());
+    snprintf(sbuf, sizeof(sbuf), "%d_%s_SPD", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
-    sprintf(sbuf, "%d_%s_GENP", bus_ids[i], tag.c_str());
+    snprintf(sbuf, sizeof(sbuf), "%d_%s_GENP", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
-    sprintf(sbuf, "%d_%s_GENQ", bus_ids[i], tag.c_str());
+    snprintf(sbuf, sizeof(sbuf), "%d_%s_GENQ", bus_ids[i], tag.c_str());
     var_names.push_back(sbuf);
   }
   timer->start(t_quantile);
@@ -850,7 +871,8 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 
     getWatchedBranches(pf_p, pf_q, pf_network);
     if (task_comm.rank() == 0)
-      printf("PF_P size: %d PF_Q size: %d\n",pf_p.size(),pf_q.size());
+      printf("PF_P size: %d PF_Q size: %d\n",static_cast<int>(pf_p.size()),
+          static_cast<int>(pf_q.size()));
     // only store results from process 0 on task communicator
     if (task_comm.rank()==0 && p_watch_lines) {
       pf_results.addVector(2*task_id+2,pf_p);
@@ -864,12 +886,12 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
 
 
     timer->start(t_file);
-    sprintf(sbuf,"Event_scn_%d_flt_%d_%d_%d.out",ncnfg,nfault,faults[nfault].from_idx,
-        faults[nfault].to_idx);
+    snprintf(sbuf,sizeof(sbuf),"Event_scn_%d_flt_%d_%d_%d.out",ncnfg,nfault,
+        faults[nfault].from_idx,faults[nfault].to_idx);
     ds_app.open(sbuf);
     timer->stop(t_file);
     // Save off time series to watch file
-    sprintf(sbuf,"Gen_watch_scn_%d_flt_%d.csv",ncnfg,nfault);
+    snprintf(sbuf,sizeof(sbuf),"Gen_watch_scn_%d_flt_%d.csv",ncnfg,nfault);
     ds_app.setGeneratorWatch(sbuf);
 //    ds_app.solvePreInitialize(faults[nfault]);
     timer->start(t_solve);
@@ -889,7 +911,7 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     std::vector<int> gen_idx = ds_app.getTimeSeriesMap();
     int iseries;
     timer->start(t_quantile);
-    for (iseries=0; iseries<gen_idx.size(); iseries++) {
+    for (iseries=0; iseries<static_cast<int>(gen_idx.size()); iseries++) {
       analysis.saveData(task_id, gen_idx[iseries],all_series[iseries]);
     }
     timer->stop(t_quantile);
@@ -931,19 +953,18 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     std::ofstream fout;
     char buf[128];
     fout.open(watchfile.c_str());
-    sprintf(buf,"    from       to ckt");
+    snprintf(buf,sizeof(buf),"    from       to ckt");
     fout << buf;
     for (j=0; j<ncols; j++) {
       char pbuf[128], qbuf[128];
       if (j == 0) {
-        sprintf(pbuf,"  P_base_base");
-        sprintf(qbuf,"  Q_base_base");
+        snprintf(pbuf,sizeof(pbuf),"  P_base_base");
+        snprintf(qbuf,sizeof(qbuf),"  Q_base_base");
       } else {
         int ncnfg = (j-1)%numConfigs;
         int nfault = (j-1-ncnfg)/numConfigs;
-        sprintf(pbuf,"P_%d_%d",ncnfg,nfault);
-        sprintf(qbuf,"Q_%d_%d",ncnfg,nfault);
-        sprintf(buf,"  P %4d %4d  Q %4d %4d",ncnfg,nfault,ncnfg,nfault);
+        snprintf(pbuf,sizeof(pbuf),"P_%d_%d",ncnfg,nfault);
+        snprintf(qbuf,sizeof(qbuf),"Q_%d_%d",ncnfg,nfault);
       }
       int len = strlen(pbuf);
       for (k=0; k<13-len; k++) {
@@ -958,11 +979,13 @@ void gridpack::contingency_analysis::WindDriver::execute(int argc, char** argv)
     }
     fout << std::endl;
     for (i=0; i<nsize; i++) {
-      sprintf(buf,"%8d %8d  %2s",p_from[i],p_to[i],p_tags[i].c_str());
+      snprintf(buf,sizeof(buf),"%8d %8d  %2s",p_from[i],p_to[i],
+          p_tags[i].c_str());
       fout << buf;
       for (j=0; j<ncols; j++) {
-        sprintf(buf," %12.6f %12.6f",lp[i+j*nsize],lq[i+j*nsize]);
-      fout << buf;
+        snprintf(buf,sizeof(buf)," %12.6f %12.6f",lp[i+j*nsize],
+            lq[i+j*nsize]);
+        fout << buf;
       }
       fout << std::endl;
     }
