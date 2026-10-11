@@ -64,8 +64,19 @@ The best (and fastest) way to reach us for any technical questions is by posting
 
 ## Citing GridPACK
 ```bibtex
+@article{doi:10.1109/OAJPE.2026.3728767,
+  author = {Yousu Chen and Bruce Palmer and William Perkins and Shuangshuang Jin and Shrirang Abhyankar and Yuan Liu},
+  title = {{GridPACK}: A Unified Open-Source High-Performance Computing Platform for Scalable Power System Simulation},
+  journal = {IEEE Open Access Journal of Power and Energy},
+  volume = {13},
+  pages = {851-862},
+  year = {2026},
+  doi = {10.1109/OAJPE.2026.3728767},
+  URL = {https://doi.org/10.1109/OAJPE.2026.3728767}
+}
+
 @article{doi:10.1177/1094342015607609, 
-  author = {Bruce Palmer and William Perkins and Yousu Chen and Shuangshuang Jin and David C allahan and Kevin Glass and Ruisheng Diao and Mark Rice and Stephen Elbert and Mallikarjun a Vallem and Zhenyu Huang}, 
+  author = {Bruce Palmer and William Perkins and Yousu Chen and Shuangshuang Jin and David Callahan and Kevin Glass and Ruisheng Diao and Mark Rice and Stephen Elbert and Mallikarjuna Vallem and Zhenyu Huang}, 
   title ={GridPACKTM: A framework for developing power grid simulations on high-performance computing platforms}, 
   journal = {The International Journal of High Performance Computing Applications}, 
   volume = {30}, 
@@ -100,7 +111,7 @@ Copyright &copy; 2013, Battelle Memorial Institute.
 
 GridPACK<sup>TM</sup> is a free software distributed under a BSD 2-clause license. You may reuse, modify, and redistribute the software. 
 
-See the [license](src/LICENSE.md) file for details.
+See the [license](src/LICENSE) file for details.
 
 
 ## Disclaimer
