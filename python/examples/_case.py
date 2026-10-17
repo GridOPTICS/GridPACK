@@ -4,12 +4,7 @@
 # Shared helpers for the demos.
 # -------------------------------------------------------------
 
-"""Shared helpers for the demos.
-
-GridPACK resolves the file names in an input XML relative to the working
-directory, so each demo writes its gridpack.Case into one directory and
-works there.
-"""
+"""Shared helpers for the demos."""
 
 import contextlib
 import csv
@@ -23,9 +18,7 @@ from pathlib import Path
 def stage(session, case, deferred=()) -> str:
     """Write `case` into this demo's directory, chdir there, return the XML name.
 
-    Every rank chdirs to the same path, so the directory name is derived
-    from the case rather than from mkdtemp, which would hand each rank a
-    different one.
+    Named after the case, not mkdtemp, so every rank gets the same path.
     """
     dest = Path(tempfile.gettempdir()) / ("gridpack-demo-" + case.source.stem)
     xml = case.write(dest, session=session, deferred=deferred)

@@ -121,3 +121,59 @@ def test_edits_reach_the_solver(tmp_path):
     )
     assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
     assert "CONVERGED=False ITER=1" in r.stdout
+
+
+def test_override_sets_the_keys_each_solver_reads():
+    case = Case.from_data_sets("input/powerflow/input_14.xml")
+    case.override("powerflow", tolerance=1e-8, max_iterations=7)
+    assert [case.get(p) for p in (
+        "Powerflow.tolerance", "Powerflow.NonlinearSolver.FunctionTolerance",
+        "Powerflow.maxIteration", "Powerflow.NonlinearSolver.MaxIterations",
+    )] == ["1e-08", "1e-08", "7", "7"]
+
+    case = Case.from_data_sets("emt/9-bus/input_9bus2.xml")
+    case.override("emt", time_step=1e-4, end_time=1)
+    assert (case.get("EMT.timeStep"), case.get("EMT.simulationTime")) \
+        == ("0.0001", "1.0")
+
+
+@pytest.mark.parametrize("app, kwargs, error", [
+    ("pf", {"tolerance": 1e-8}, ValueError),
+    ("powerflow", {"end_time": 1.0}, TypeError),
+    ("powerflow", {"tolerance": 0}, ValueError),
+    ("powerflow", {"tolerance": float("nan")}, ValueError),
+    ("powerflow", {"max_iterations": 2.0}, ValueError),
+    ("powerflow", {"max_iterations": True}, ValueError),
+    ("se", {"tolerance": 1e-6}, ValueError),     # no State_estimation block
+])
+def test_override_rejects_without_writing(app, kwargs, error):
+    case = Case.from_data_sets("input/powerflow/input_14.xml")
+    # A valid setting rides along: a rejected call must not write it.
+    with pytest.raises(error):
+        case.override(app, **{"max_iterations": 7, **kwargs})
+    assert case.get("Powerflow.maxIteration") == "50"
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("xml, app, kwargs, body, expect", [
+    ("input/powerflow/input_14.xml", "powerflow", {"max_iterations": 1},
+     "r = PowerFlow(s, 'input_14.xml', suppress_output=True).solve("
+     "nonlinear=True, strict=False); print('OUT=%s' % r.converged)",
+     "OUT=False"),
+    ("input/ds/input_9b3g.xml", "dsf", {"time_step": 0.005, "end_time": 0.5},
+     "d = DynamicSim(s, 'input_9b3g.xml', suppress_output=True); "
+     "print('OUT=%s,%s' % (d.time_step, d.final_time)); d.close()",
+     "OUT=0.005,0.5"),
+])
+def test_overrides_reach_the_application(tmp_path, xml, app, kwargs, body,
+                                         expect):
+    case = Case.from_data_sets(xml)
+    case.override(app, **kwargs)
+    case.write(tmp_path)
+    r = run_inline(
+        "from gridpack import Session, PowerFlow, DynamicSim\n"
+        "with Session() as s:\n    " + body + "\n",
+        cwd=tmp_path,
+    )
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert expect in r.stdout

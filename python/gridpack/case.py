@@ -4,15 +4,13 @@
 # Build, edit and stage an input XML from Python.
 # -------------------------------------------------------------
 
-"""Assemble one input file per study and stage it with its data files.
+"""One input XML per study, staged with its data files.
 
-GridPACK keeps a single process-wide ``Configuration`` tree: every
-``open()`` merges another root into it and a lookup searches only the
-first, so whatever a process needs must be in the first file it opens.
-A :class:`Case` holds that one file in memory until :meth:`Case.write`.
+GridPACK reads only the first Configuration it opens: build it all here.
 """
 
 import copy
+import math
 import os
 import re
 import shutil
@@ -30,13 +28,28 @@ _INPUT_TAGS = (
     (re.compile(r"Kalman(Ang|Mag)Data$"), "kalman"),
 )
 
+# Case.override keys per CLI subcommand; nl_solve() reads NonlinearSolver.
+_PF = {"tolerance": ("Powerflow.tolerance",
+                     "Powerflow.NonlinearSolver.FunctionTolerance"),
+       "max_iterations": ("Powerflow.maxIteration",
+                          "Powerflow.NonlinearSolver.MaxIterations")}
+_DS = {"time_step": ("Dynamic_simulation.timeStep",),
+       "end_time": ("Dynamic_simulation.simulationTime",)}
+_OVERRIDES = {
+    "powerflow": _PF,
+    "ca": _PF,
+    "dsf": _DS,
+    "hadrec": _DS,
+    "se": {"tolerance": ("State_estimation.tolerance",),
+           "max_iterations": ("State_estimation.maxIteration",)},
+    "emt": {"time_step": ("EMT.timeStep",),
+            "end_time": ("EMT.simulationTime",)},
+}
+
 
 def data_sets() -> Path:
-    """The ``src/applications/data_sets`` directory of a GridPACK tree.
-
-    Searched in ``GRIDPACK_TEST_DATA``, then ``GRIDPACK_ROOT_DIR`` (set in
-    the Docker image), then the source tree this package was installed from.
-    """
+    """``src/applications/data_sets`` under ``GRIDPACK_TEST_DATA``,
+    ``GRIDPACK_ROOT_DIR`` or this package's source tree."""
     roots = [os.environ.get("GRIDPACK_TEST_DATA"),
              os.environ.get("GRIDPACK_ROOT_DIR"),
              Path(__file__).resolve().parents[2]]
@@ -56,12 +69,7 @@ def _input_dir(tag):
 
 
 def _parse(text, origin):
-    """Parse what Boost's XML reader accepts.
-
-    It skips the declaration and any ``<!...>`` node, so the stock
-    ``<!-ksp_view>`` and a misspelt declaration are harmless to GridPACK
-    and fatal to ElementTree.  Dropping them gives the tree GridPACK sees.
-    """
+    """Parse as Boost does: skip the declaration and ``<!...>`` nodes."""
     text = re.sub(r"<\?.*?\?>", "", text, flags=re.S)
     text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     text = re.sub(r"<!(?!\[CDATA\[)[^>]*>", "", text)
@@ -84,7 +92,7 @@ def _format(value):
 
 
 class Case:
-    """An input XML held in memory, edited by dotted path, written once.
+    """An input XML in memory, edited by dotted path, written once.
 
     Usage::
 
@@ -93,14 +101,8 @@ class Case:
         xml = case.write("/tmp/run")      # input_14.xml + IEEE14.raw
         os.chdir(xml.parent)              # GridPACK reads relative to cwd
 
-    Paths are relative to ``<Configuration>`` and name the first match at
-    each level, as GridPACK's own lookup does.  Comments are not kept.
-
-    File references (``networkConfiguration``, ``generatorParameters``,
-    ``contingencyList``, ``measurementList``, Kalman data) are found
-    next to the XML, then in the working directory, then in the matching
-    ``data_sets`` subdirectory for a data_sets case.  :meth:`get` returns
-    the resolved path; :meth:`write` copies each file beside the XML.
+    Paths take the first match at each level, as GridPACK does.  Data
+    files are found beside the XML, in cwd, then in ``data_sets``.
     """
 
     def __init__(self, path, *, _data_sets=None):
@@ -131,11 +133,9 @@ class Case:
         return el.text.strip()
 
     def set(self, path, value):
-        """Set the text at ``path``, creating missing elements.
+        """Set the text at ``path``, creating it if missing.
 
-        Booleans are written ``true``/``false``.  A file reference is
-        resolved now; one not found yet must be named in
-        :meth:`write`'s ``deferred``.
+        A data file not found yet must be in :meth:`write`'s ``deferred``.
         """
         el = self._find(path, create=True)
         if len(el):
@@ -155,12 +155,8 @@ class Case:
         el.extend(new)
 
     def include(self, other, block):
-        """Copy the top-level ``block`` of ``other``, replacing any here.
-
-        For composing one study from several stock inputs, whose blocks
-        must all be in the one file opened first.  ``other`` is a Case or
-        a data_sets path; its file references stay resolved.
-        """
+        """Copy top-level ``block`` from ``other`` (a Case or data_sets
+        path), replacing ours."""
         if not isinstance(other, Case):
             other = Case.from_data_sets(other, root=self._data_sets)
         src = other._root.find(block)
@@ -171,6 +167,39 @@ class Case:
             self._root.remove(old)
         self._root.append(copy.deepcopy(src))
 
+    def override(self, app, **settings):
+        """Set solver settings for ``app``, a CLI subcommand name.
+
+        ``powerflow``/``ca``/``se``: ``tolerance``, ``max_iterations``;
+        ``dsf``/``hadrec``/``emt``: ``time_step``, ``end_time`` (s).
+        """
+        if app not in _OVERRIDES:
+            raise ValueError("unknown application %r; expected one of %s"
+                             % (app, ", ".join(_OVERRIDES)))
+        keys = _OVERRIDES[app]
+        unknown = sorted(set(settings) - set(keys))
+        if unknown:
+            raise TypeError("%s takes %s, not %s" % (
+                app, ", ".join(keys), ", ".join(unknown)))
+        for name, value in settings.items():
+            if name == "max_iterations":
+                ok = isinstance(value, int) and not isinstance(value, bool)
+            else:
+                ok = (isinstance(value, (int, float))
+                      and not isinstance(value, bool) and math.isfinite(value))
+            if not ok or value <= 0:
+                raise ValueError("%s must be a positive %s, not %r" % (
+                    name, "int" if name == "max_iterations" else "number",
+                    value))
+            block = keys[name][0].split(".")[0]
+            if self._root.find(block) is None:
+                raise ValueError("%s has no <%s> block for %s"
+                                 % (self.source.name, block, app))
+        for name, value in settings.items():
+            for path in keys[name]:
+                self.set(path, float(value) if name != "max_iterations"
+                         else value)
+
     def files(self):
         """``{path: value}`` for every file reference."""
         return {p: (el.text or "").strip() for p, el in self._references()}
@@ -178,13 +207,10 @@ class Case:
     # ---- output ------------------------------------------------------
 
     def write(self, workdir, name=None, *, session=None, deferred=()):
-        """Write the XML and its input files into ``workdir``.
+        """Write the XML and its data files into ``workdir``; return its path.
 
-        Returns the XML's path.  References are rewritten to bare names,
-        so GridPACK must run with ``workdir`` as its working directory.
-        ``deferred`` names files the caller puts in ``workdir`` before
-        GridPACK reads them.  With ``session``, rank 0 writes and all
-        ranks wait for it.
+        Run GridPACK from ``workdir``.  ``deferred``: files added there
+        later.  With ``session``, rank 0 writes and all ranks wait.
         """
         workdir = Path(workdir).resolve()
         root = copy.deepcopy(self._root)
