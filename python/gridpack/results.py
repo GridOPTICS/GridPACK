@@ -112,6 +112,7 @@ class PowerFlowResult:
         # Gathering is collective, so cache each table after the first call.
         self._mpi_comm = mpi_comm
         self._tables: Dict[str, List[dict]] = {}
+        self._slack: Optional[Dict[Tuple[int, str], Tuple[float, float]]] = None
 
     def close(self) -> None:
         """Drop the reference to the pybind11 application.
@@ -193,8 +194,49 @@ class PowerFlowResult:
             rows = [r for chunk in comm.allgather(rows) for r in chunk]
         rows.sort(key=key)
 
+        if name == "buses":
+            # Same set on every rank once gathered, so the writer's collective
+            # is entered by all or none (mpi4py is a hard dependency).
+            ref = {r["busId"] for r in rows if r.get("type") == 3}
+            slack = self._slack_outputs(ref) if ref else {}
+            self._slack = slack
+            for r in rows:
+                pq = [v for (b, _), v in slack.items() if b == r["busId"]]
+                if pq:
+                    r["pGen"] = sum(p for p, _ in pq)
+                    r["qGen"] = sum(q for _, q in pq)
+                    r["pInjection"] = r["pGen"] - r["pLoad"]
+                    r["qInjection"] = r["qGen"] - r["qLoad"]
+        elif name == "generators":
+            self._table("buses")           # fills self._slack
+            for r in rows:
+                pq = self._slack.get((r["busId"], str(r["genId"]).strip()))
+                if pq:
+                    r["pGen"], r["qGen"] = pq
+
         self._tables[name] = rows
         return rows
+
+    def _slack_outputs(self, ref_buses) -> Dict[Tuple[int, str], Tuple[float, float]]:
+        """Solved (P, Q) per slack-bus generator, keyed (bus, id).  Collective.
+
+        collectResults reports the slack's scheduled P and Q: the solve never
+        updates them for the reference bus.  The "power" writer recomputes
+        them from the solution; its rows reach rank 0 only.
+        """
+        if self._slack is None:
+            out = {}
+            for text in self._pfapp.writeBusString("power"):
+                tok = text.split()
+                for j in range(0, len(tok) - 3, 4):
+                    if int(tok[j]) in ref_buses:
+                        out[(int(tok[j]), tok[j + 1])] = (float(tok[j + 2]),
+                                                          float(tok[j + 3]))
+            comm = self._mpi_comm
+            if comm is not None and comm.Get_size() > 1:
+                out = comm.bcast(out, root=0)
+            self._slack = out
+        return self._slack
 
     def buses(self) -> List[dict]:
         """All buses, sorted by bus number.  Collective.

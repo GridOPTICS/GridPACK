@@ -834,3 +834,71 @@ def test_voltage_violation_rows_carry_the_bus_name():
     """Bus 9 says little on its own; the name is what a report needs."""
     v = _named_result([9], {9: "Riversid"}).violations()["voltage"]
     assert [(r["busId"], r["name"]) for r in v] == [(9, "Riversid")]
+
+
+# The slack's output is checked against the flows leaving bus 1 (no load
+# or shunt there), not against either GridPACK getter: collectResults
+# reported its scheduled P and Q, which the solve never updates.
+_SLACK = """
+    import gridpack
+    s = gridpack.Session()
+    pf = gridpack.PowerFlow(s, "input_14.xml", suppress_output=True)
+    r = pf.solve()
+    if EDIT:
+        pf.set_gen_param(2, "1", "GENERATOR_PG", 60.0)
+        pf.set_load_param(9, "1", "LOAD_PL", 60.0)
+        pf.set_load_param(9, "1", "LOAD_QL", 40.0)
+        pf.reload()
+        r = pf.solve()
+    out = [b for b in r.branches() if 1 in (b["fromBus"], b["toBus"])]
+    gen = [g for g in r.generators() if g["busId"] == 1][0]
+    bus = [b for b in r.buses() if b["busId"] == 1][0]
+    if s.rank == s.size - 1:          # at np=2, a rank the writer skips
+        print("FLOW %r %r" % (
+            sum(b["pFrom"] if b["fromBus"] == 1 else b["pTo"] for b in out),
+            sum(b["qFrom"] if b["fromBus"] == 1 else b["qTo"] for b in out)))
+        print("GEN %r %r" % (gen["pGen"], gen["qGen"]))
+        print("BUS %r %r %r %r" % (bus["pGen"], bus["qGen"],
+                                   bus["pInjection"], bus["qInjection"]))
+    s.close()
+"""
+
+
+def _slack_values(stdout):
+    vals = {}
+    for line in stdout.splitlines():
+        if line.split()[:1] and line.split()[0] in ("FLOW", "GEN", "BUS"):
+            vals[line.split()[0]] = [float(x) for x in line.split()[1:]]
+    return vals
+
+
+def _assert_slack_is_solved(vals):
+    (p, q), (gp, gq), (bp, bq, bpi, bqi) = vals["FLOW"], vals["GEN"], vals["BUS"]
+    for got in (gp, bp, bpi):          # bus 1 has no load: injection == gen
+        assert got == pytest.approx(p, abs=1e-3)
+    for got in (gq, bq, bqi):
+        assert got == pytest.approx(q, abs=1e-3)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("edit", [False, True])
+def test_slack_output_is_the_solved_one(tests_data_dir, edit):
+    """Stock case: Q solves at -16.549 against -16.9 scheduled.  Edited:
+    +20 MW on gen 2 and +30.5 MW on load 9 move the slack to ~245.9 MW."""
+    r = run_inline(_SLACK.replace("EDIT", str(edit)), cwd=tests_data_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+    vals = _slack_values(r.stdout)
+    _assert_slack_is_solved(vals)
+    if edit:
+        assert vals["GEN"][0] > 240.0, vals
+
+
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_slack_output_is_the_solved_one_on_two_ranks(tests_data_dir,
+                                                     require_mpiexec):
+    """The writer's rows reach rank 0 only; rank 1 must see them too."""
+    r = run_inline(_SLACK.replace("EDIT", "True"), cwd=tests_data_dir,
+                   mpi_np=2, timeout=180)
+    assert r.returncode == 0, r.stderr[-2000:]
+    _assert_slack_is_solved(_slack_values(r.stdout))
