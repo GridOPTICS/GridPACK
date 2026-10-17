@@ -36,8 +36,9 @@ Every application reads one XML file.  The XML names its network (RAW) and
 dynamics (DYR) files by bare filename, so copy the XML and the files it
 names into one directory and run from there.  The source tree ships cases
 under ``src/applications/data_sets/``: XMLs under ``input/``, networks under
-``raw/``, machine data under ``dyr/``.  A missing network file fails with
-``wrong dimension specified``, not with a file-not-found message.
+``raw/``, machine data under ``dyr/``.  A missing network file is never
+reported as such: the Docker image fails with ``wrong dimension specified``,
+and other builds can segfault instead.
 
 
 The Session

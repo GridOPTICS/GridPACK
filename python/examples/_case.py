@@ -9,8 +9,8 @@
 GridPACK resolves ``<networkConfiguration>`` relative to the working
 directory, and the stock inputs keep the XML and the network file in
 separate trees, so the files have to be brought together first.  A
-missing network file aborts with ``wrong dimension specified``, not a
-file-not-found error, which is hard to place if you have not seen it.
+missing network file is never reported as such: it aborts with ``wrong
+dimension specified`` in the Docker image and can segfault elsewhere.
 """
 
 import contextlib

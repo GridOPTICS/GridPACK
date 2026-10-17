@@ -10,14 +10,16 @@ plus a `gridpack` command-line interface for all six.
 `gridpack` is a compiled extension linked against GridPACK's shared
 libraries, so it needs GridPACK, PETSc, Global Arrays, Boost and MPI already
 built.  The published image has all of that, so this adds only the Python
-layer and takes minutes instead of hours:
+layer and takes minutes instead of hours.  Build from the repository root:
+the image copies `python/` and the data sets from there.
 
 ```
-docker build -f ../Dockerfile.pygridpack -t pygridpack .
+docker build -f Dockerfile.pygridpack -t pygridpack .
 docker run --rm -it -v "$PWD:/app/workspace" pygridpack
 ```
 
-Inside the container, no environment variables are needed.  As a CLI:
+Inside the container, no environment variables are needed.  As a CLI, in a
+directory holding the XML and its network file (see staging below):
 
 ```
 gridpack powerflow input_14.xml
@@ -44,9 +46,9 @@ To build from source instead, read on.
 
 ## Requirements
 
-  * GridPACK >= 3.4, built and *installed* as shared libraries
+  * GridPACK >= 3.7.0, built and *installed* as shared libraries
   * Python >= 3.9, < 3.14
-  * pybind11 >= 2.4 (included as a submodule, see below)
+  * pybind11 (included as a submodule, see below)
   * `pip` and `setuptools` >= 61
   * `mpi4py`, built against the same MPI as GridPACK
   * The CMake, C++ compiler and MPI installation used to build GridPACK
@@ -57,7 +59,7 @@ To build from source instead, read on.
 The source for `pybind11` is needed to build the wrapper, so it is included
 as a submodule.  Make sure it is present before building:
 ```
-git submodule update --init
+git submodule update --init python/pybind11
 ```
 
 ### GridPACK
@@ -127,31 +129,35 @@ python -m pytest python/tests -q -m "not integration"
 
 ## Run examples
 
-`python/src/example` holds scripts that drive the interface directly:
+`python/examples/` holds six demos: power flow, contingency screening, two
+dynamic simulations, a composed study and state estimation.  Its `README.md`
+lists what each shows and how many ranks it takes.
+
 ```
-cd python/src/example
-python 39bus_test_example.py
-python 39bus_test_example_dsf.py
-python 39bus_scatterload_steptest_new_itr.py
-mpiexec -np 2 python 39bus_scatterload_steptest_new_itr.py
-python 39bus_scatterload_steptest_new_itr_dsf.py
-mpiexec -np 2 python 39bus_scatterload_steptest_new_itr_dsf.py
-python 39bus_scatterload_steptest_new_itr_compensateY.py
-python 39bus_test_pfdata.py
+cd python/examples
+python 01_power_flow.py
+mpiexec -np 4 python 02_contingency_screening.py
 ```
+
+`python/src/example` holds scripts that call the low-level bindings
+directly, used for HADREC studies.  The test suite does not cover them; most
+need `xmltodict`, which `pip install "python/[examples]"` adds.  Run them on
+one rank: the stepping scripts hang at two.
 
 Or use the `gridpack` CLI, which covers all six applications:
 ```
 gridpack --help
 gridpack powerflow case.xml
 mpiexec -np 4 gridpack powerflow case.xml
-gridpack ca case.xml --vlimits 0.9 1.1     # needs <contingencyList> in the XML
+gridpack ca case.xml --vlimits 0.9 1.1     # <contingencyList> and/or FullBranchN1/FullGeneratorN1
 ```
-GridPACK resolves `<networkConfiguration>` relative to the working directory,
-so the network file has to sit beside the XML.  A missing one aborts with
-`wrong dimension specified` rather than a file-not-found error, so check that
-first.  The stock inputs keep the XML and the `.raw` in separate directories
-and need staging into one:
+GridPACK opens the file named in `<networkConfiguration>` relative to the
+working directory, not to the XML's location: run from the directory that
+holds the network file, or put a path to it in the XML.  A missing file is
+never reported as such.  The Docker image aborts with `wrong dimension
+specified`, and other builds can segfault instead, so check the path first
+when a run dies at startup.  The stock inputs keep the XML and the `.raw` in
+separate directories, so copy both into one working directory:
 ```
 export GP=/path/to/GridPACK          # the source tree
 mkdir /tmp/pf14 && cd /tmp/pf14

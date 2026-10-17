@@ -49,10 +49,15 @@ results = [
 plot = [
     "matplotlib",
 ]
+# The low-level scripts in src/example and src/tests/widearea_pss.
+examples = [
+    "xmltodict",
+]
 all = [
     "pandas",
     "numpy",
     "matplotlib",
+    "xmltodict",
 ]
 test = [
     "pytest",

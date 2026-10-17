@@ -42,11 +42,10 @@ How many ranks a demo can take is set by the case, not by your machine:
 | `05_composed_study.py` | `-np 2` | |
 | `06_state_estimation.py` | `-np 2` | |
 
-**A 9-bus case runs on at most three ranks.**  With more, the partitioner
-leaves a rank with no buses at all and the run hangs.  The stock `dsf.x`
-driver behaves the same way, so the limit is GridPACK's, not pygridpack's.
-Larger cases have work for every rank: the 118-bus screen in `02` runs on
-four.
+**A 9-bus case runs on at most three ranks.**  Partitioning so small a
+network over more ranks leaves a rank with no buses at all, and the run
+hangs; the stock `dsf.x` driver does the same.  Larger cases have work for
+every rank: the 118-bus screen in `02` runs on four.
 
 ## Which inputs carry observations
 
