@@ -105,7 +105,16 @@ then
 
     rm -rf build dist gridpack_hadrec.egg-info/
     
-    ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
+    # The extension compiles against mpi4py's headers.  The isolated build
+    # fetches its own mpi4py, so pin it to the one used at run time, built
+    # from source for this MPI if missing.
+    if ! ${python_exe} -c 'import mpi4py' 2>/dev/null; then
+        ${python_exe} -m pip install --no-binary=mpi4py mpi4py
+    fi
+    mpi4py_pin=`mktemp`
+    ${python_exe} -c 'import mpi4py; print("mpi4py==" + mpi4py.__version__)' > ${mpi4py_pin}
+    PIP_CONSTRAINT=${mpi4py_pin} ${python_exe} -m pip install --no-deps --upgrade --prefix=$GRIDPACK_INSTALL_DIR .
+    rm -f ${mpi4py_pin}
 
     # Construct the installed package path and check it. The actual
     # path with in the prefix seems to be kind of random, so
@@ -115,14 +124,19 @@ then
     pydir="${GRIDPACK_DIR}/lib/python${pyvnum}/site-packages:${GRIDPACK_DIR}/local/lib/python${pyvnum}/dist-packages"
     
     if [ -z "$PYTHONPATH" ]; then
-        PYTHONPATH="${pydir}:${PYTHONPATH}"
-    else
         PYTHONPATH="${pydir}"
+    else
+        PYTHONPATH="${pydir}:${PYTHONPATH}"
     fi
     export PYTHONPATH
 
-    # A quick check to see if the Python module is available
-    ${python_exe} -c 'import gridpack'
+    # A quick check to see if the Python module is available.  Not from
+    # python/, where the source tree shadows the installed package.
+    cd ${GRIDPACK_ROOT_DIR}
+    if ! ${python_exe} -c 'import gridpack'; then
+        echo "ERROR: the gridpack Python package does not import"
+        exit 1
+    fi
     
 fi
 
