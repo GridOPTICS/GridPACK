@@ -132,10 +132,11 @@ def main():
                     st.apply_line_trip(worst["from"], worst["to"],
                                        ckt=worst["ckt"])
                     tripped = True
-            # Rank-local lists that every rank holds alike, so one writer.
+            # Every rank holds the full merged series, so one writer.
             if rank0:
                 report_recovery(st.result.to_records(),
-                                st.result.channel_names(), worst)
+                                st.result.channel_names(), worst,
+                                inertia(dyr, os.path.basename(NETWORK)))
                 st.result.to_csv("dynamics.csv")
                 print("\nwrote %s/{study,dynamics}.csv" % os.getcwd())
 
@@ -152,6 +153,40 @@ def read_generators(dyr_path):
         if len(parts) > 2:
             gens.append((int(parts[0]), parts[2].strip().strip("'").strip()))
     return gens
+
+
+# Position of H among a model's parameters in a PSS/E .dyr record.
+_H_INDEX = {"GENCLS": 0, "GENSAL": 3, "GENROU": 4}
+
+
+def inertia(dyr_path, raw_path):
+    """H x MBASE per machine, keyed like the channels (`bus_id`).
+
+    None if a model's H position is not known here, which makes the
+    system speed a plain average.
+    """
+    mbase, block = {}, None
+    with open(raw_path) as fh:
+        for line in fh:
+            if "BEGIN GENERATOR DATA" in line:
+                block = "gen"
+            elif block == "gen":
+                if line.startswith("0 "):
+                    break
+                f = line.split(",")
+                mbase[(int(f[0]), f[1].strip().strip("'").strip())] = float(f[8])
+    weights = {}
+    for line in open(dyr_path):
+        f = [x.strip() for x in line.replace("/", "").split(",")]
+        if len(f) < 4:
+            continue
+        model = f[1].strip("'")
+        if model not in _H_INDEX:
+            return None
+        bus, gid = int(f[0]), f[2].strip("'").strip()
+        weights["%d_%s" % (bus, gid)] = (float(f[3 + _H_INDEX[model]])
+                                         * mbase.get((bus, gid), 100.0))
+    return weights
 
 
 def read_buses(raw_path):
@@ -293,7 +328,7 @@ def report_screen(results, measured, worst, vmin, vmax):
         print("\nWorst: %s (%s)" % (worst["name"], why))
 
 
-def report_recovery(records, channels, worst):
+def report_recovery(records, channels, worst, weights=None):
     """What the trip did, from the observation series.
 
     Voltages at generator buses come back constant at their setpoint on
@@ -349,15 +384,23 @@ def report_recovery(records, channels, worst):
         print("  %-8s %9.5f %9.5f %11.5f %11.5f %10.3f rad"
               % (m, min(s), max(s), max(e) - min(e), max(l) - min(l), rel))
 
-    mean_spd = sum(after[-1]["gen_%s_rspeed" % m] for m in machines) / len(machines)
+    # Centre-of-inertia speed: each machine weighted by its H x MBASE.
+    if weights and all(m in weights for m in machines):
+        w = [weights[m] for m in machines]
+        speed_kind = "centre-of-inertia speed"
+    else:
+        w = [1.0] * len(machines)
+        speed_kind = "mean machine speed (inertia unknown)"
+    mean_spd = (sum(wi * after[-1]["gen_%s_rspeed" % m]
+                    for wi, m in zip(w, machines)) / sum(w))
     if slipped:
         print("\n  Verdict: %s lost synchronism by %.1f s; the outage is not "
               "dynamically secure." % (", ".join("gen " + m for m in slipped),
                                        t_end))
     else:
-        print("\n  Verdict: all machines in step at %.1f s; system speed "
+        print("\n  Verdict: all machines in step at %.1f s; %s "
               "%.4f pu (%.2f Hz), still drifting with no governors."
-              % (t_end, mean_spd, 60.0 * mean_spd))
+              % (t_end, speed_kind, mean_spd, 60.0 * mean_spd))
 
 
 if __name__ == "__main__":
