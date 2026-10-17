@@ -154,6 +154,30 @@ def tests_data_dir(tmp_path_factory) -> Path:
                   d / "raw/IEEE14.raw")
 
 
+# ca.x on the in-repo input (FullBranchN1 + FullGeneratorN1), 2026-10-15.
+CA_AUTO_N1_STATUS = {
+    "BR_1_2_BL": "DIVERGENT", "BR_1_5_BL": "BRANCH VIOLATION",
+    "BR_2_3_BL": "BRANCH VIOLATION", "BR_2_4_BL": "BRANCH VIOLATION",
+    "BR_2_5_BL": "OK", "BR_3_4_BL": "OK", "BR_4_5_BL": "OK",
+    "BR_4_7_BL": "OK", "BR_4_9_BL": "OK", "BR_5_6_BL": "BRANCH VIOLATION",
+    "BR_6_11_BL": "OK", "BR_6_12_BL": "OK",
+    "BR_6_13_BL": "BRANCH VIOLATION", "BR_7_8_BL": "DIVERGENT",
+    "BR_7_9_BL": "OK", "BR_9_10_BL": "BRANCH VIOLATION", "BR_9_14_BL": "OK",
+    "BR_10_11_BL": "OK", "BR_12_13_BL": "OK", "BR_13_14_B1": "OK",
+    "BR_13_14_B2": "OK", "BR_13_14_B3": "OK",
+    "GN_1_1": "SLACK OVERLOAD", "GN_2_1": "DIVERGENT", "GN_3_1": "OK",
+    "GN_6_1": "OK", "GN_8_1": "OK",
+}
+
+
+@pytest.fixture
+def ca_auto_case(tmp_path) -> Path:
+    """The in-repo CA input as shipped: N-1 auto-generation, no list."""
+    d = _data_sets()
+    return _stage(tmp_path, d / "input/ca/input_14.xml",
+                  d / "raw/IEEE14_ca.raw")
+
+
 @pytest.fixture(scope="session")
 def rated_raw() -> Path:
     """The in-repo IEEE-14 with synthetic line ratings.
@@ -229,7 +253,7 @@ CA_EXPECTED_STATUS = {
 def ca_case(tmp_path) -> Path:
     """A runnable CA case directory, returned as its path.
 
-    Switches the in-repo input off FullBranchN1 (unimplemented) onto a list.
+    Switches the in-repo input off FullBranchN1/FullGeneratorN1 onto a list.
     """
     data = _data_sets()
     cfg_src = data / "input/ca/input_14.xml"

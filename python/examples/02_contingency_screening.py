@@ -34,10 +34,9 @@ def main():
                                           print_calc_files=False,
                                           suppress_output=True) as ca:
             if not ca.contingencies:
-                # pygridpack needs an explicit <contingencyList>; it cannot
-                # expand FullBranchN1/FullGeneratorN1 yet.
                 raise SystemExit(
-                    "no contingencies in %s -- set <contingencyList>" % case)
+                    "no contingencies in %s -- set <contingencyList> or "
+                    "<FullBranchN1>/<FullGeneratorN1>" % case)
 
             if session.rank == 0:
                 print("=" * 66)

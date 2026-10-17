@@ -189,6 +189,59 @@ def parse_contingency_list(path: str) -> List[Contingency]:
 
 
 # -------------------------------------------------------------
+# N-1 auto-generation (FullBranchN1 / FullGeneratorN1)
+# -------------------------------------------------------------
+
+def _clean2char(tok: str) -> str:
+    """StringUtils::clean2Char for a blank-free token: unquote, pad to 2."""
+    tag = tok.replace("'", "").replace('"', "")
+    return tag + " " if len(tag) == 1 else tag
+
+
+def generate_n1_contingencies(pf: PowerFlow, branches: bool,
+                              generators: bool) -> List[Contingency]:
+    """One contingency per branch circuit and/or generator, as ``ca.x``.
+
+    Reads the same serialWrite text as ``CADriver::generateN1Contingencies``
+    so order and the elements covered (out-of-service and three-winding
+    star legs included) match.  Names drop ca.x's trailing id pad
+    (``GN_1_1``, not ``GN_1_1 ``).  Rows reach rank 0 of the network's
+    communicator only.
+    """
+    out: List[Contingency] = []
+    if branches:
+        for text in pf.branch_strings("flow_str"):
+            tok = text.split()
+            if len(tok) % 8:
+                continue
+            for j in range(0, len(tok), 8):
+                f, t, ckt = int(tok[j]), int(tok[j + 1]), _clean2char(tok[j + 2])
+                out.append(Contingency(
+                    name="BR_%d_%d_%s" % (f, t, ckt.strip()), kind="Line",
+                    from_buses=[f], to_buses=[t], circuit_ids=[ckt]))
+    if generators:
+        for text in pf.bus_strings("power"):
+            tok = text.split()
+            if len(tok) % 4:
+                continue
+            for j in range(0, len(tok), 4):
+                bus, gid = int(tok[j]), _clean2char(tok[j + 1])
+                out.append(Contingency(
+                    name="GN_%d_%s" % (bus, gid.strip()), kind="Generator",
+                    buses=[bus], generator_ids=[gid]))
+    return out
+
+
+def _element_key(c: Contingency):
+    """Identity for ca.x's duplicate check: same kind, same element set."""
+    if c.is_line:
+        elems = zip(c.from_buses, c.to_buses, c.circuit_ids)
+    else:
+        elems = zip(c.buses, c.generator_ids)
+    return c.kind, frozenset(elems)
+
+
+# -------------------------------------------------------------
 # Driver
 # -------------------------------------------------------------
 
@@ -257,8 +310,8 @@ class ContingencyAnalysis:
         self.check_qlim = _xml_bool(cursor.get("qlim"), True)
 
         self._contingency_file = cursor.get("contingencyList")
-        self._auto_n1 = (_xml_bool(cursor.get("FullBranchN1"))
-                         or _xml_bool(cursor.get("FullGeneratorN1")))
+        self._full_branch_n1 = _xml_bool(cursor.get("FullBranchN1"))
+        self._full_generator_n1 = _xml_bool(cursor.get("FullGeneratorN1"))
 
         # Each task needs its own network, or ranks running different
         # contingencies deadlock inside the collective solve.
@@ -294,22 +347,38 @@ class ContingencyAnalysis:
 
     @property
     def contingencies(self) -> List[Contingency]:
-        """The contingency list, parsed on first access.
+        """The contingency list, built on first access.
 
-        Empty if the XML names no ``contingencyList``; ``FullBranchN1`` /
-        ``FullGeneratorN1`` auto-generation is not implemented.
+        ``FullBranchN1``/``FullGeneratorN1`` cases come first, then the
+        ``contingencyList`` entries that do not duplicate one, as ``ca.x``.
+        Auto-generation solves the base case first if not already done.
+        Empty if the XML asks for neither.
         """
         if self._contingencies is None:
-            self._contingencies = (
-                parse_contingency_list(self._contingency_file)
-                if self._contingency_file else []
-            )
+            listed = (parse_contingency_list(self._contingency_file)
+                      if self._contingency_file else [])
+            if self.requests_auto_n1:
+                # The "power" bus write aborts intermittently before a solve.
+                if self._base_result is None:
+                    self.solve_base_case()
+                # groupSize 1: each rank is rank 0 of its own task network,
+                # so every rank gets the full list.
+                auto = generate_n1_contingencies(
+                    self._pf, self._full_branch_n1, self._full_generator_n1)
+                seen = {_element_key(c) for c in auto}
+                for c in listed:
+                    key = _element_key(c)
+                    if key not in seen:
+                        seen.add(key)
+                        auto.append(c)
+                listed = auto
+            self._contingencies = listed
         return self._contingencies
 
     @property
     def requests_auto_n1(self) -> bool:
-        """True if the XML asks for unimplemented N-1 auto-generation."""
-        return self._auto_n1
+        """True if the XML sets ``FullBranchN1`` or ``FullGeneratorN1``."""
+        return self._full_branch_n1 or self._full_generator_n1
 
     # ------------------------------------------------------------------
     # Run
@@ -473,13 +542,16 @@ class ContingencyAnalysis:
     def __repr__(self) -> str:
         if self._closed:
             return "<gridpack.ContingencyAnalysis closed>"
-        return ("<gridpack.ContingencyAnalysis input=%r n_contingencies=%d>"
-                % (self.input_file, len(self.contingencies)))
+        # Not self.contingencies: under auto-N1 that would solve.
+        n = "?" if self._contingencies is None else len(self._contingencies)
+        return ("<gridpack.ContingencyAnalysis input=%r n_contingencies=%s>"
+                % (self.input_file, n))
 
 
 __all__ = [
     "Contingency",
     "ContingencyResult",
     "ContingencyAnalysis",
+    "generate_n1_contingencies",
     "parse_contingency_list",
 ]

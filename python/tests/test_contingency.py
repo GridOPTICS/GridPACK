@@ -8,11 +8,13 @@ import re
 
 import pytest
 
-from .conftest import CA_EXPECTED_STATUS, _data_sets, run_inline
+from .conftest import (CA_AUTO_N1_STATUS, CA_EXPECTED_STATUS,
+                       _CA_CONTINGENCIES, _data_sets, run_inline)
 
 from gridpack.contingency import (
     Contingency,
     ContingencyResult,
+    generate_n1_contingencies,
     parse_contingency_list,
 )
 
@@ -196,6 +198,47 @@ def test_generator_contingency_to_pybind_sets_generator_type():
     assert ctg.p_type == 0
     assert list(ctg.p_busid) == [2]
     assert list(ctg.p_saveGenStatus) == [1]
+
+
+# -------------------------------------------------------------
+# N-1 auto-generation
+# -------------------------------------------------------------
+
+class _FakePF:
+    """serialWrite text in the flow_str / power formats ca.x tokenizes."""
+
+    def branch_strings(self, signal):
+        assert signal == "flow_str"
+        return [
+            # Two circuits on one branch object, one id needing a pad.
+            "     1      2 BL  1.0e+00 2.0e+00 0.0e+00 0.0e+00 0\n"
+            "     1      2 1   1.0e+00 2.0e+00 0.0e+00 0.0e+00 0\n",
+            "malformed row",
+        ]
+
+    def bus_strings(self, signal):
+        assert signal == "power"
+        # A two-character id must survive the name strip whole.
+        return ["         3      1      10.0      2.0\n"
+                "         3      1A     10.0      2.0\n"]
+
+
+def test_generate_n1_pads_ids_but_not_names():
+    out = generate_n1_contingencies(_FakePF(), True, True)
+    assert [c.name for c in out] == ["BR_1_2_BL", "BR_1_2_1", "GN_3_1",
+                                     "GN_3_1A"]
+    br = out[1]
+    assert (br.kind, br.from_buses, br.to_buses, br.circuit_ids) == (
+        "Line", [1], [2], ["1 "])
+    gn = out[2]
+    assert (gn.kind, gn.buses, gn.generator_ids) == ("Generator", [3], ["1 "])
+
+
+def test_generate_n1_honors_each_flag():
+    assert [c.kind for c in generate_n1_contingencies(_FakePF(), True, False)
+            ] == ["Line", "Line"]
+    assert [c.kind for c in generate_n1_contingencies(_FakePF(), False, True)
+            ] == ["Generator", "Generator"]
 
 
 # -------------------------------------------------------------
@@ -402,3 +445,68 @@ def test_suppress_output_also_suppresses_calc_files(ca_case):
     """, cwd=ca_case)
     assert r.returncode == 0, r.stderr[-2000:]
     assert not list(ca_case.glob("*.out"))
+
+
+_AUTO_DRIVER = """
+    from gridpack import Session, ContingencyAnalysis
+    with Session() as s:
+        ca = ContingencyAnalysis(s, "input_14.xml", print_calc_files=False,
+                                 suppress_output=True)
+        ca.run()
+        results = ca.gather()
+        if s.rank == 0:
+            for r in results:
+                print("AUTO\t%s\t%s" % (r.name, r.status))
+"""
+
+
+def _auto_statuses(stdout):
+    return dict(line.split("\t")[1:] for line in stdout.splitlines()
+                if line.startswith("AUTO\t"))
+
+
+@pytest.mark.integration
+def test_auto_n1_matches_ca_x(ca_auto_case):
+    r = run_inline(_AUTO_DRIVER, cwd=ca_auto_case)
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert _auto_statuses(r.stdout) == CA_AUTO_N1_STATUS
+
+
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_auto_n1_under_mpi_matches_ca_x(ca_auto_case, require_mpiexec):
+    """The list builds from text only rank 0 of a network's comm receives;
+    every rank must still see all of it."""
+    r = run_inline(_AUTO_DRIVER, cwd=ca_auto_case, mpi_np=2, timeout=180)
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert _auto_statuses(r.stdout) == CA_AUTO_N1_STATUS
+
+
+@pytest.mark.integration
+def test_auto_n1_skips_listed_duplicates(ca_auto_case):
+    """Listed cases join the auto list unless they trip the same elements."""
+    cfg = ca_auto_case / "input_14.xml"
+    marker = "<!-- Option 2: Auto-generate N-1 contingencies from network -->"
+    text = cfg.read_text()
+    assert marker in text, "CA input format changed; contingencyList not wired"
+    cfg.write_text(text.replace(
+        marker, "<contingencyList>contingencies.xml</contingencyList>"))
+    (ca_auto_case / "contingencies.xml").write_text(_CA_CONTINGENCIES)
+
+    r = run_inline("""
+        from gridpack import Session, ContingencyAnalysis
+        with Session() as s:
+            ca = ContingencyAnalysis(s, "input_14.xml", print_calc_files=False,
+                                     suppress_output=True)
+            names = [c.name for c in ca.contingencies]
+            # The "power" write before a solve aborts ~1 run in 3.
+            print("SOLVED_FIRST", ca.base_result is not None)
+            for n in names:
+                print("NAME\t%s" % n)
+    """, cwd=ca_auto_case)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "SOLVED_FIRST True" in r.stdout
+    names = [l[5:] for l in r.stdout.splitlines() if l.startswith("NAME\t")]
+    # LINE_2_3, LINE_6_13, GEN_2 duplicate auto cases; LINE_13_14 ("BL")
+    # matches no circuit, so it is new.  ca.x makes the same cut.
+    assert sorted(names) == sorted([*CA_AUTO_N1_STATUS, "LINE_13_14"])

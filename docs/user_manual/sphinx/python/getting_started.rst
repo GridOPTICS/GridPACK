@@ -88,8 +88,10 @@ Contingency analysis
 ====================
 
 Each rank takes contingencies from a shared queue, so more ranks finish the
-screen sooner.  The XML must name a ``<contingencyList>`` file; the
-``FullBranchN1`` shortcut is not expanded yet.
+screen sooner.  The XML names a ``<contingencyList>`` file, sets
+``FullBranchN1``/``FullGeneratorN1`` to screen every branch or generator, or
+both: listed cases that repeat an auto-generated one are skipped, as in
+``ca.x``.
 
 .. code:: python
 

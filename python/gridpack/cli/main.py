@@ -228,20 +228,13 @@ def cmd_ca(args, session):
         suppress_output=True if args.quiet else None,
     )
 
-    # Analyzing nothing must not look like a clean run.  Before the base
-    # case, so a config error costs no solve.
+    # Analyzing nothing must not look like a clean run.  Without auto-N1
+    # this is before the base case, so a config error costs no solve.
     if not ca.contingencies:
-        if ca.requests_auto_n1:
-            # Blocked on writeBranchString/writeBusString, the only powerflow
-            # methods left unbound; ca.x builds its list from those.
-            sys.stderr.write(
-                "Error: FullBranchN1/FullGeneratorN1 auto-generation is not "
-                "supported by pygridpack; list contingencies explicitly via "
-                "<contingencyList>, or run the ca.x driver.\n")
-        else:
-            sys.stderr.write(
-                "Error: no contingencies to run; set <contingencyList> in the "
-                "Contingency_analysis block.\n")
+        sys.stderr.write(
+            "Error: no contingencies to run; set <contingencyList>, "
+            "<FullBranchN1> or <FullGeneratorN1> in the Contingency_analysis "
+            "block.\n")
         return EXIT_USAGE
 
     if session.rank == 0:
@@ -253,7 +246,11 @@ def cmd_ca(args, session):
 
     # Contingencies are measured against the base case, so a diverged base
     # case makes all of them meaningless.
-    if not ca.solve_base_case().converged:
+    # Auto-N1 has already solved it to build the list.
+    base = ca.base_result
+    if base is None:
+        base = ca.solve_base_case()
+    if not base.converged:
         sys.stderr.write("Error: contingency analysis base case did not "
                          "converge; no contingencies were run.\n")
         return EXIT_DIVERGED

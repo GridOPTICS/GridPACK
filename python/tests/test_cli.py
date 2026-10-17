@@ -136,12 +136,28 @@ def test_cli_ca_without_contingencies_is_usage_error(tmp_path):
     for f in (_CA_INPUT, _RAW_14):
         if not f.exists():
             pytest.skip(f"missing {f}")
-    shutil.copy(_CA_INPUT, tmp_path / "input_14.xml")
+    cfg = _CA_INPUT.read_text()
+    for tag in ("FullBranchN1", "FullGeneratorN1"):
+        on = "<%s>true</%s>" % (tag, tag)
+        assert on in cfg, "CA input no longer sets %s" % tag
+        cfg = cfg.replace(on, "<%s>false</%s>" % (tag, tag))
+    (tmp_path / "input_14.xml").write_text(cfg)
     shutil.copy(_RAW_14, tmp_path / "IEEE14_ca.raw")
     r = _run("ca", "input_14.xml", "-q", "--no-timer", "--no-print-calcs",
              cwd=tmp_path)
     assert r.returncode == 2, r.stderr[-2000:]
-    assert "FullBranchN1" in r.stderr
+    assert "no contingencies to run" in r.stderr
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_ca_auto_n1_runs(ca_auto_case):
+    """FullBranchN1/FullGeneratorN1 expand to ca.x's 27 cases."""
+    r = _run("ca", "input_14.xml", "--no-timer", "--no-print-calcs",
+             cwd=ca_auto_case)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "Total contingencies: 27" in r.stdout
+    assert "BR_13_14_B3" in r.stdout and "GN_8_1" in r.stdout
 
 
 @_CLI

@@ -346,8 +346,19 @@ called before this.
          "Print an arbitrary string to output" )
     ;
 
-  // Not implemented in Python, 
-  // "writeBusString", "writeBranchString"
+  // Strings come back on rank 0 of the network's communicator only.
+  pfapp
+    .def("writeBusString",
+         [](gpf::PFAppModule& self, const std::string& signal) {
+           return self.writeBusString(signal.c_str());
+         },
+         "Bus serialWrite output for signal, one string per bus")
+    .def("writeBranchString",
+         [](gpf::PFAppModule& self, const std::string& signal) {
+           return self.writeBranchString(signal.c_str());
+         },
+         "Branch serialWrite output for signal, one string per branch")
+    ;
 
   pfapp
     .def("setVoltageLimits", &gpf::PFAppModule::setVoltageLimits,

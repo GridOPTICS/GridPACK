@@ -197,10 +197,9 @@ Troubleshooting
 ``wrong dimension specified``
     The RAW file named in the XML is not in the working directory.
 
-``Error: FullBranchN1/FullGeneratorN1 auto-generation is not supported``
-    The contingency-analysis XML relies on ``ca.x`` expanding the full N-1
-    set; the package does not expand it yet.  Name a ``<contingencyList>``
-    file instead, or run ``/app/src/install/bin/ca.x``.
+``Error: no contingencies to run``
+    The ``Contingency_analysis`` block names no ``<contingencyList>`` and
+    sets neither ``FullBranchN1`` nor ``FullGeneratorN1``.
 
 A run that never finishes, with every rank at full CPU
     Too many ranks for the network.  Reduce ``-np``.

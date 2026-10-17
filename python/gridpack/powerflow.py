@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 # Re-export the pybind11 submodule for backwards compatibility.
 from ._gridpack.powerflow import *  # noqa: F401,F403
@@ -306,6 +306,21 @@ class PowerFlow:
         """
         self._require_open()
         self._pfapp.ignoreVoltageViolations()
+
+    def bus_strings(self, signal: str) -> List[str]:
+        """Per-bus ``serialWrite(signal)`` text, as ``ca.x`` reads it.
+
+        Collective; only rank 0 of the network's communicator gets rows.
+        Solve first: ``"power"`` on an unsolved network intermittently
+        aborts the process.
+        """
+        self._require_open()
+        return list(self._pfapp.writeBusString(signal))
+
+    def branch_strings(self, signal: str) -> List[str]:
+        """Per-branch ``serialWrite(signal)`` text; see :meth:`bus_strings`."""
+        self._require_open()
+        return list(self._pfapp.writeBranchString(signal))
 
     def check_qlim_violations(self) -> bool:
         """True if no generator is outside its reactive limits.

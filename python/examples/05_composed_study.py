@@ -64,6 +64,10 @@ def main():
         # (hadrec_app_module.cpp, initializeDynSimu), so an empty list is a
         # segfault.  The event this study wants is applied from Python.
         if rank0:
+            # Branches only, named by this demo: the dynamic check opens
+            # a line, so auto-generated generator cases cannot be finalists.
+            set_tag(case, "FullBranchN1", "false")
+            set_tag(case, "FullGeneratorN1", "false")
             set_tag(case, "contingencyList", N1_LIST,
                     parent="Contingency_analysis")
             copy_block("input/rtpr/input_14.xml", case, "Dynamic_simulation")
@@ -84,8 +88,7 @@ def main():
             branches = base.branches()
         if rank0:
             report_base(case, session, base, buses, branches)
-            # The XML asks for FullBranchN1, which pygridpack does not
-            # expand; the list is read lazily, so writing it now is in time.
+            # The list is read lazily, so writing it now is in time.
             write_contingency_list(N1_LIST, branches)
         session.barrier()
 
