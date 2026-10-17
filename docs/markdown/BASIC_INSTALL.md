@@ -19,6 +19,15 @@ interface, you should set the `install_gridpack_python` variable in
 build GridPACK and its dependencies by hand. Instructions for doing so are given
 in the following.
 
+## Python interface
+The `gridpack` Python package needs GridPACK and its dependencies built as
+*shared* libraries: Boost (`link=shared`), Global Arrays (`--enable-shared`),
+PETSc (`--with-shared-libraries=1`) and GridPACK (`-D BUILD_SHARED_LIBS=YES`).
+The notes under each step below show where each flag goes. Then follow
+[python/README.md](../../python/README.md). The Docker image described in the
+[top-level README](../../README.md#using-docker-recommended) has it built
+already.
+
 ## Prerequisite software
 Before building GridPACK using these instructions, you will need to make sure that
 - CMake is available on your system (version newer than 3.5.0) 

@@ -39,6 +39,8 @@ docker run -it --rm -v $(pwd):/app/workspace pnnl/gridpack:v3.6 bash
 
 The Docker image supports both AMD64 and ARM64 architectures. See the [Docker usage guide](https://gridpack.readthedocs.io/en/latest/Section2-Docker.html) for more examples.
 
+The image also provides the Python interface: the `gridpack` Python package, and a `gridpack` command that runs any application from the shell. See [Getting started with Python](https://gridpack.readthedocs.io/en/latest/python/getting_started.html).
+
 ### Building from Source
 
 See the [installation instructions](docs/markdown/BASIC_INSTALL.md) for building GridPACK from source, prerequisite software, and platform-specific installation notes. Formal releases are available [here](https://github.com/GridOPTICS/GridPACK/releases).
