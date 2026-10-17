@@ -31,9 +31,10 @@ Perform a transient stability study on the IEEE 39-bus system::
 
     gridpack dsf IEEE39bus_ds.xml
 
-Run in parallel with output redirected to a file::
+Run in parallel with output redirected to a file (``--output`` is not
+supported for dsf)::
 
-    mpiexec -np 8 gridpack dsf IEEE39bus_ds.xml --output dsf_results.txt
+    mpiexec -np 8 gridpack dsf IEEE39bus_ds.xml > dsf_results.txt
 
 Suppress console output during a batch run::
 
@@ -49,9 +50,9 @@ Run state estimation using measurements defined in the XML configuration::
 
 The measurement data file is specified by the ``measurementList``
 parameter within the ``<State_estimation>`` block of the XML
-configuration. Results can be redirected to a file::
+configuration. The estimated state can be written as JSON::
 
-    gridpack se IEEE14_se.xml --output se_results.txt
+    gridpack se IEEE14_se.xml --json se_results.json
 
 
 Contingency Analysis

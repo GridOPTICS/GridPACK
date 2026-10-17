@@ -152,7 +152,7 @@ specified in the XML configuration.
 **Examples**::
 
     gridpack dsf input.xml
-    gridpack dsf input.xml --quiet --output dsf_results.txt
+    gridpack dsf input.xml --quiet --json dsf_results.json
     mpiexec -np 8 gridpack dsf input.xml
 
 
@@ -226,7 +226,7 @@ printed to standard error; partial results are still written.
 **Examples**::
 
     gridpack se input.xml
-    gridpack se input.xml --output se_results.txt
+    gridpack se input.xml --json se_results.json
 
 
 .. _cmd-hadrec:
