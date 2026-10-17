@@ -52,7 +52,10 @@ def test_stdio_handshake():
     finally:
         p.kill()
     assert init["result"]["serverInfo"]["name"] == "gridpack"
-    assert tools["result"]["tools"] == []
+    assert [t["name"] for t in tools["result"]["tools"]] == [
+        "list_cases", "describe_case", "run_powerflow", "run_contingency",
+        "run_dynamic_sim", "run_state_estimation", "job_status",
+        "job_result", "job_log"]
 
 
 def test_missing_mcp_is_a_usage_error():

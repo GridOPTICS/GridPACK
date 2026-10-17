@@ -5,6 +5,7 @@
 # -------------------------------------------------------------
 
 import argparse
+import functools
 import sys
 
 from ..cli.main import _package_version
@@ -13,10 +14,36 @@ _INSTALL_HINT = ("gridpack-mcp needs the mcp package: "
                  "pip install 'gridpack[mcp]' (Python 3.10+)\n")
 
 
-def build_server():
-    """The MCP server object."""
+_TOOLS = ("list_cases", "describe_case", "run_powerflow", "run_contingency",
+          "run_dynamic_sim", "run_state_estimation", "job_status",
+          "job_result", "job_log")
+
+
+def build_server(tools=None):
+    """The MCP server object, with ``tools`` (a :class:`Tools`) registered."""
     from mcp.server.mcpserver import MCPServer
-    return MCPServer(name="gridpack", version=_package_version())
+    from .tools import Tools
+    tools = tools or Tools()
+    server = MCPServer(
+        name="gridpack", version=_package_version(),
+        instructions="Run GridPACK on its bundled cases: list_cases, then a "
+                     "run_* tool, then job_status / job_result.")
+    for name in _TOOLS:
+        server.add_tool(_reported(getattr(tools, name)))
+    return server
+
+
+def _reported(fn):
+    """Pass expected failures to the client; mcp masks other exceptions."""
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    @functools.wraps(fn)
+    def tool(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ToolError(str(exc.args[0] if exc.args else exc)) from exc
+    return tool
 
 
 def main(argv=None):
