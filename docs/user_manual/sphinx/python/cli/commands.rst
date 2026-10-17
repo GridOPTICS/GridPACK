@@ -29,6 +29,14 @@ The following options are available across all subcommands:
    Omit the timing statistics that are normally printed at the end
    of each run.
 
+.. option:: --json FILE
+
+   Write the results, ``exit_code`` and ``error`` to ``FILE`` as JSON,
+   from rank 0, also when the run fails.  Power flow: bus, branch and
+   generator tables; ca: one entry per contingency; se: estimated bus
+   state and flagged meters; dsf: the generator watch file; hadrec: the
+   observations.  emt reports status only.
+
 
 .. _cmd-powerflow:
 

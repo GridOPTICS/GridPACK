@@ -19,7 +19,6 @@ Writes estimate.csv next to the staged inputs.
 
 import os
 import random
-import re
 
 import gridpack
 from gridpack.state_estimation import Measurement
@@ -38,7 +37,6 @@ CASES = [
     ("VM at bus 12 reads 0.05 pu high", ("VM", 12), 0.05),
     ("PIJ 2-3 reads 0.5 pu high", ("PIJ", 2, 3), 0.5),
 ]
-RESULTS = "state_estimation_results.txt"   # written by SEAppModule::write
 LOG = "se.log"                              # the C++ module's own output
 
 
@@ -146,50 +144,22 @@ def corrupt(m, error):
 # -------------------------------------------------------------
 
 def estimate(session, case, meters):
-    """Solve SE and read back the estimate and the meters it flagged.
-
-    StateEstimationResult has no state accessor yet, so this reads the
-    report write() leaves on rank 0; every rank gets it by broadcast.
-    """
+    """Solve SE; return the estimated state and the meters it flagged."""
     # SE prints every iteration and table with bare printf.
     with stdout_to(LOG):
         with gridpack.StateEstimation(session, case,
                                       measurements=meters) as se:
             result = se.solve()
-            result.write()             # collective; also writes RESULTS
-    out = read_results(RESULTS) if session.rank == 0 else None
-    if session.mpi_comm is not None:
-        out = session.mpi_comm.bcast(out, root=0)
-    out["converged"] = result.converged
-    return out
-
-
-# A row of the per-iteration bad-measurement tables in the report.
-_FLAGGED = re.compile(r"^\d+\s+(VM|VA|PI|QI|PIJ|QIJ)\s+(\d+)\s+(\d+|-)\s")
-
-
-def read_results(path):
-    """Bus state table, and every meter flagged in any bad-data pass."""
-    state, flagged, section = {}, [], None
-    for line in open(path):
-        if line.startswith("BAD DATA DETECTION"):
-            section = "bad"
-        elif line.startswith("STATE ESTIMATION OUTPUTS"):
-            section = "state"
-        elif line.startswith("BRANCH POWER FLOW"):
-            section = None
-        elif section == "state":
-            f = line.split()
-            if len(f) == 3 and f[0].isdigit():
-                state[int(f[0])] = (float(f[1]), float(f[2]))
-        elif section == "bad":
-            m = _FLAGGED.match(line.strip())
-            if m:
-                kind, a, b = m.groups()
-                k = (kind, int(a)) if b == "-" else (kind, int(a), int(b))
-                if k not in flagged:
-                    flagged.append(k)
-    return {"state": state, "flagged": flagged}
+            buses = result.buses()                # collective
+            bad = result.bad_measurements()
+    flagged = []
+    for m in bad:
+        k = ((m["type"], m["busId"]) if "busId" in m
+             else (m["type"], m["fromBus"], m["toBus"]))
+        if k not in flagged:
+            flagged.append(k)
+    return {"state": {b["busId"]: (b["angle"], b["voltage"]) for b in buses},
+            "flagged": flagged, "converged": result.converged}
 
 
 # -------------------------------------------------------------

@@ -297,3 +297,108 @@ def test_cli_emt_matches_emt_x(tmp_path):
     assert r.returncode == 0, r.stderr[-2000:]
     assert ((tmp_path / "cli/emtoutput.csv").read_bytes()
             == (tmp_path / "driver/emtoutput.csv").read_bytes())
+
+
+# -------------------------------------------------------------
+# --json
+# -------------------------------------------------------------
+
+def _json_run(tmp_path, sub, xml, *overrides, np=0):
+    import json
+    from gridpack import Case
+    case = Case.from_data_sets(xml)
+    for app, kw in overrides:
+        case.override(app, **kw)
+    x = case.write(tmp_path)
+    if sub == "emt":
+        shutil.copy(_DATA / "emt/.petscrc", tmp_path)
+    r = _run(sub, x.name, "--no-timer", "--json", "out.json", cwd=tmp_path,
+             np=np)
+    out = json.loads((tmp_path / "out.json").read_text())
+    assert out["exit_code"] == r.returncode, r.stderr
+    assert out["config"] == str(x)
+    return out
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_json_powerflow(tmp_path):
+    from .test_powerflow import BUS5_ANGLE_REF, BUS5_VMAG_REF
+    out = _json_run(tmp_path, "pf", "input/powerflow/input_14.xml")
+    assert (out["command"], out["converged"], out["error"]) \
+        == ("powerflow", True, None)
+    bus5 = next(b for b in out["buses"] if b["busId"] == 5)
+    assert abs(bus5["voltage"] - BUS5_VMAG_REF) < 1e-5
+    assert abs(bus5["angle"] - BUS5_ANGLE_REF) < 1e-5
+    assert (len(out["branches"]), len(out["generators"])) == (20, 5)
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_json_reports_divergence_and_errors(tmp_path):
+    out = _json_run(tmp_path / "pf", "powerflow",
+                    "input/powerflow/input_14.xml",
+                    ("powerflow", {"max_iterations": 1}))
+    assert (out["exit_code"], out["converged"]) == (3, False)
+    # No State_estimation block: the wrapper raises.
+    out = _json_run(tmp_path / "se", "se", "input/powerflow/input_14.xml")
+    assert out["exit_code"] == 1 and out["error"].startswith("ValueError")
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_json_ca_matches_ca_x(tmp_path):
+    from .conftest import CA_AUTO_N1_STATUS
+    out = _json_run(tmp_path, "ca", "input/ca/input_14.xml")
+    assert out["converged"] is True
+    assert {c["name"]: c["status"] for c in out["contingencies"]} \
+        == CA_AUTO_N1_STATUS
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_json_se(tmp_path):
+    out = _json_run(tmp_path, "se", "input/se/input_14.xml")
+    assert out["converged"] is True and out["bad_measurements"] == []
+    assert [b["busId"] for b in out["buses"]] == list(range(1, 15))
+    assert (tmp_path / "state_estimation_results.txt").is_file()
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_json_dynamics(tmp_path):
+    import csv
+    dsf = _json_run(tmp_path / "dsf", "dsf", "input/ds/input_9b3g.xml",
+                    ("dsf", {"end_time": 0.5}))
+    assert (dsf["time_step"], dsf["final_time"]) == (0.01, 0.5)
+    with open(dsf["watch"]["file"]) as fh:
+        rows = [[float(v) for v in r] for r in list(csv.reader(fh))[1:]]
+    assert dsf["watch"]["rows"] == rows and len(rows) == 50
+
+    had = _json_run(tmp_path / "hadrec", "hadrec",
+                    "input/ds/input_kundur_two_area_wsieg1.xml",
+                    ("hadrec", {"end_time": 0.2}))
+    obs = had["observations"]
+    assert obs["columns"][0] == "time" and len(obs["columns"]) == 13
+    assert abs(obs["rows"][-1][0] - 0.2) < 1e-9
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_json_emt_reports_status(tmp_path):
+    out = _json_run(tmp_path, "emt", "emt/9-bus/input_9bus2.xml",
+                    ("emt", {"end_time": 0.005}))
+    assert (out["command"], out["exit_code"], out["error"]) == ("emt", 0, None)
+
+
+@_CLI
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_cli_json_under_mpi_matches_serial(tmp_path, require_mpiexec):
+    one = _json_run(tmp_path / "np1", "powerflow",
+                    "input/powerflow/input_14.xml")
+    two = _json_run(tmp_path / "np2", "powerflow",
+                    "input/powerflow/input_14.xml", np=2)
+    assert [b["busId"] for b in two["buses"]] == [b["busId"] for b in one["buses"]]
+    assert max(abs(a["voltage"] - b["voltage"])
+               for a, b in zip(one["buses"], two["buses"])) < 1e-10

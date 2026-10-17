@@ -39,6 +39,8 @@ Exit codes:
     2  bad arguments or unreadable config
     3  the analysis did not converge
 
+``--json FILE`` writes the results and the exit code there, from rank 0.
+
 A thin argparse shell over the ``gridpack.*`` wrappers.  Reaching into
 ``gridpack._gridpack`` here duplicates library logic (that is how the
 XML-bool and divergence bugs got in), so ``tests/test_cli_uses_library.py``
@@ -50,6 +52,8 @@ from __future__ import print_function
 import sys
 import os
 import argparse
+import json
+from dataclasses import asdict
 
 
 def _package_version() -> str:
@@ -96,6 +100,11 @@ def cmd_powerflow(args, session):
     # the results are still written either way.
     result = pf.solve(nonlinear=nonlinear, strict=False)
     result.write(args.output)
+    if args.json:
+        args.result.update(
+            converged=result.converged, iterations=result.iterations,
+            buses=result.buses(), branches=result.branches(),
+            generators=result.generators())
 
     if args.export_psse:
         fmt, fname = args.export_psse
@@ -135,6 +144,11 @@ def cmd_dsf(args, session):
     with gridpack.DynamicSim(session, args.config,
                              suppress_output=True if args.quiet else None) as ds:
         ds.run()
+        args.result.update(time_step=ds.time_step, final_time=ds.final_time)
+    if args.json and session.rank == 0:
+        watch = gridpack.Case(args.config).get(
+            "Dynamic_simulation.generatorWatchFileName")
+        args.result["watch"] = _read_watch(watch) if watch else None
 
     timer.stop(t_total)
 
@@ -164,7 +178,12 @@ def cmd_se(args, session):
     se = gridpack.StateEstimation(session, args.config,
                                   suppress_output=args.quiet)
     result = se.solve()
-    result.write()
+    if args.json:
+        # buses() runs write(), so the report file is still produced.
+        args.result.update(converged=result.converged, buses=result.buses(),
+                           bad_measurements=result.bad_measurements())
+    else:
+        result.write()
 
     if not args.no_timer:
         timer.dump()
@@ -186,9 +205,13 @@ def cmd_hadrec(args, session):
     with gridpack.Hadrec(session, args.config,
                          suppress_output=args.quiet) as had:
         had.initialize_dyn_simu()
-        # record=False: the CLI prints nothing per step, and accumulating
-        # observations for a long run is pure overhead.
-        had.run_until_done(record=False)
+        # Recording costs memory on a long run; only --json uses it.
+        result = had.run_until_done(record=bool(args.json))
+        if args.json:
+            cols = result.channel_names()
+            args.result["observations"] = {
+                "columns": cols,
+                "rows": [[r[c] for c in cols] for r in result.to_records()]}
 
     return 0
 
@@ -250,6 +273,8 @@ def cmd_ca(args, session):
     base = ca.base_result
     if base is None:
         base = ca.solve_base_case()
+    args.result.update(converged=base.converged, min_voltage=ca.min_voltage,
+                       max_voltage=ca.max_voltage)
     if not base.converged:
         sys.stderr.write("Error: contingency analysis base case did not "
                          "converge; no contingencies were run.\n")
@@ -270,6 +295,8 @@ def cmd_ca(args, session):
     if session.rank == 0:
         for r in results:
             print("  %-40s %s" % (r.name, r.status))
+    args.result["contingencies"] = [dict(asdict(r), status=r.status)
+                                    for r in results]
 
     timer.stop(t_total)
     if not args.no_timer:
@@ -277,6 +304,25 @@ def cmd_ca(args, session):
 
     # A contingency that diverges is a finding, not a run failure.
     return EXIT_OK
+
+
+def _read_watch(path):
+    """The generator watch CSV as columns and rows, or None if absent."""
+    if not os.path.isfile(path):
+        return None
+    with open(path) as fh:
+        lines = [l for l in fh.read().splitlines() if l.strip()]
+    return {"file": os.path.abspath(path),
+            "columns": [c.strip() for c in lines[0].split(",")],
+            "rows": [[float(v) for v in l.split(",")] for l in lines[1:]]}
+
+
+def _write_json(path, payload):
+    # Replace, never truncate: a poller must not read half a file.
+    tmp = path + ".tmp"
+    with open(tmp, "w") as fh:
+        json.dump(payload, fh, indent=1)
+    os.replace(tmp, path)
 
 
 # -------------------------------------------------------------
@@ -310,6 +356,8 @@ def main(argv=None):
                          help="Redirect output to file")
         sub.add_argument("--no-timer", action="store_true",
                          help="Skip timer dump at end")
+        sub.add_argument("--json", metavar="FILE",
+                         help="Write results and exit code to FILE as JSON")
 
     # -- powerflow --
     p_pf = subparsers.add_parser(
@@ -391,6 +439,8 @@ def main(argv=None):
 
     session = gridpack.Session()
     rc = EXIT_OK
+    error = None
+    args.result = {}
     try:
         rc = args.func(args, session) or EXIT_OK
     except Exception as e:
@@ -400,10 +450,17 @@ def main(argv=None):
             import traceback
             traceback.print_exc()
         sys.stderr.write("Error: %s: %s\n" % (type(e).__name__, e))
+        error = "%s: %s" % (type(e).__name__, e)
         rc = EXIT_ERROR
     finally:
         sys.stdout.flush()
         sys.stderr.flush()
+
+    if args.json and session.rank == 0:
+        _write_json(args.json, dict(
+            command=args.func.__name__[len("cmd_"):],
+            config=os.path.abspath(args.config), exit_code=rc, error=error,
+            **args.result))
 
     # Not os._exit(rc): it skips MPI_Finalize, so mpiexec reports exit 1 even
     # on a clean run.  close() drains the wrappers, then the Communicator and

@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import os
+import re
 import weakref
 import xml.etree.ElementTree as ET
 from typing import List, Optional, Sequence
@@ -193,6 +195,10 @@ class StateEstimation:
             converged=converged,
             measurements=self._measurements,
             input_file=self.input_file,
+            output_file=self._config.get(
+                "Configuration.State_estimation.outputFile")
+            or "state_estimation_results.txt",
+            mpi_comm=self._session.mpi_comm,
         )
         self._live_results.add(result)
         return result
@@ -240,11 +246,16 @@ class StateEstimationResult:
         converged: bool,
         measurements,
         input_file: Optional[str] = None,
+        output_file: str = "state_estimation_results.txt",
+        mpi_comm=None,
     ) -> None:
         self._seapp = seapp
         self.converged = bool(converged)
         self._measurements = measurements
         self.input_file = input_file
+        self.output_file = os.path.abspath(output_file.strip())
+        self._mpi_comm = mpi_comm
+        self._report = None
 
     def close(self) -> None:
         """Drop the reference to the pybind11 SEApp.
@@ -265,6 +276,30 @@ class StateEstimationResult:
 
     def has_converged(self) -> bool:
         return self.converged
+
+    def buses(self) -> List[dict]:
+        """``busId``, ``voltage`` (pu) and ``angle`` (deg), to 6 decimals.
+
+        Collective.  Read from the report :meth:`write` leaves in
+        :attr:`output_file`, which it rewrites.
+        """
+        return [dict(b) for b in self._read()["buses"]]
+
+    def bad_measurements(self) -> List[dict]:
+        """Meters the bad-data test flagged: ``type``, ``busId`` or
+        ``fromBus``/``toBus``, ``value``, ``deviation``.  Collective."""
+        return [dict(m) for m in self._read()["bad"]]
+
+    def _read(self):
+        if self._report is None:
+            self.write()
+            report = None
+            if self._mpi_comm is None or self._mpi_comm.Get_rank() == 0:
+                report = _parse_report(self.output_file)
+            if self._mpi_comm is not None:
+                report = self._mpi_comm.bcast(report, root=0)
+            self._report = report
+        return self._report
 
     def write(self, path: Optional[str] = None) -> None:
         """Write final results of state estimation to standard output.
@@ -289,6 +324,36 @@ class StateEstimationResult:
             f"<StateEstimationResult {state} "
             f"converged={self.converged} input={self.input_file!r}>"
         )
+
+
+# "  idx   TYPE  bus  to|-  value  deviation  N/A" in the bad-data table.
+_BAD_ROW = re.compile(r"^\d+\s+([A-Z]+)\s+(\d+)\s+(\d+|-)\s+(\S+)\s+(\S+)")
+
+
+def _parse_report(path):
+    buses, bad, section = [], [], None
+    with open(path) as fh:
+        for line in fh:
+            if line.startswith("BAD DATA DETECTION"):
+                section = "bad"
+            elif line.startswith("STATE ESTIMATION OUTPUTS"):
+                section = "state"
+            elif line.startswith("BRANCH POWER FLOW"):
+                section = None
+            elif section == "state":
+                f = line.split()
+                if len(f) == 3 and f[0].isdigit():
+                    buses.append({"busId": int(f[0]), "voltage": float(f[2]),
+                                  "angle": float(f[1])})
+            elif section == "bad":
+                m = _BAD_ROW.match(line.strip())
+                if m:
+                    kind, a, b, value, dev = m.groups()
+                    row = ({"type": kind, "busId": int(a)} if b == "-" else
+                           {"type": kind, "fromBus": int(a), "toBus": int(b)})
+                    row.update(value=float(value), deviation=float(dev))
+                    bad.append(row)
+    return {"buses": sorted(buses, key=lambda b: b["busId"]), "bad": bad}
 
 
 __all__ = ["StateEstimation", "StateEstimationResult"]
