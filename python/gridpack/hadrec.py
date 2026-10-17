@@ -27,6 +27,7 @@ from ._gridpack.dynamic_simulation import Event, EventVector
 
 from .session import Session
 from .dynamic_sim import _xml_time_step
+from ._observations import ObservationMerger
 from .results import DSFResult
 
 
@@ -151,6 +152,7 @@ class Hadrec:
         self._pf_solved = True
 
         self._initialized = False
+        self._obs_merger = None
         self._step_count = 0
         self._closed = False
         self._result: Optional[DSFResult] = None
@@ -241,6 +243,7 @@ class Hadrec:
             for f in faults:
                 event_vec.append(f)
         self._hadapp.initializeDynSimu(event_vec, dscase_idx)
+        self._obs_merger = None
         self._initialized = True
         self._step_count = 0
 
@@ -272,6 +275,14 @@ class Hadrec:
                 ) = self._hadapp.getObservationLists()
         except Exception:
             pass
+        # Past one rank each rank sees only its own observations.
+        self._obs_merger = ObservationMerger(
+            self._session.mpi_comm, self.input_file,
+            (result.obs_gen_buses, result.obs_gen_ids, result.obs_load_buses,
+             result.obs_load_ids, result.obs_bus_ids, result.obs_bus_freq_ids))
+        (result.obs_gen_buses, result.obs_gen_ids, result.obs_load_buses,
+         result.obs_load_ids, result.obs_bus_ids,
+         result.obs_bus_freq_ids) = self._obs_merger.as_tuple(True)
 
         self._result = result
         self._live_results.add(result)
@@ -307,6 +318,7 @@ class Hadrec:
         # See DynamicSimStepper.step: keep every rank in GA until all
         # one-sided gets are served, or the next collective deadlocks.
         self._session.comm.sync()
+        obs = self._obs_merger.merge(obs)
         if record and self._result is not None:
             self._result.times.append(self.current_time)
             self._result.observations.append(obs)
@@ -348,10 +360,14 @@ class Hadrec:
         """Return the current-step observation tuple.
 
         Handy for callers that want to sample without stepping (e.g.
-        immediately after :meth:`initialize_dyn_simu`).
+        immediately after :meth:`initialize_dyn_simu`).  Collective.
         """
         self._require_open()
-        return self._hadapp.getObservations()
+        obs = self._hadapp.getObservations()
+        if self._obs_merger is None:
+            return obs
+        self._session.comm.sync()
+        return self._obs_merger.merge(obs)
 
     def get_observation_lists(self):
         """Return ``(gen_buses, gen_ids, load_buses, load_ids, bus_ids)``.
@@ -360,6 +376,8 @@ class Hadrec:
         with an appended ``bus_freq_ids`` list.
         """
         self._require_open()
+        if self._obs_merger is not None:
+            return self._obs_merger.as_tuple(self._record_bus_freq)
         if self._record_bus_freq:
             return self._hadapp.getObservationLists_withBusFreq()
         return self._hadapp.getObservationLists()

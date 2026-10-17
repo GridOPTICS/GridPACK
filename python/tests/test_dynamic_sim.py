@@ -8,6 +8,7 @@
 
 import re
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -367,3 +368,110 @@ def test_stepper_time_axis_is_seconds(dsf_data_dir):
     assert _parse_float(r.stdout, "DT=") == pytest.approx(0.01)
     assert _parse_float(r.stdout, "NOW=") == pytest.approx(0.05)
     assert _parse_float(r.stdout, "LAST=") == pytest.approx(0.05)
+
+
+# -------------------------------------------------------------
+# Observations at more than one rank
+# -------------------------------------------------------------
+# DSFullApp::setObservations sums its "active" flags over p_comm.size()
+# entries, not the observation count, so past the first nranks entries a
+# rank lists and returns only what it owns.  ObservationMerger rebuilds
+# the global set; demo 5 at np=2 had lost machine 6 and seven buses.
+
+class _FakeComm:
+    """allgather returns preset per-rank objects, list or dict by type."""
+
+    def __init__(self, lists, obs):
+        self._lists, self._obs = lists, obs
+
+    def Get_size(self):
+        return len(self._lists)
+
+    def allgather(self, obj):
+        return self._lists if isinstance(obj, dict) else self._obs
+
+
+def _fake_xml(tmp_path):
+    p = tmp_path / "obs.xml"
+    p.write_text(
+        "<Configuration><Dynamic_simulation><observations>"
+        "<observation><type>generator</type><busID>6</busID>"
+        "<generatorID>1</generatorID></observation>"
+        "<observation><type>generator</type><busID>8</busID>"
+        "<generatorID>1</generatorID></observation>"
+        "<observation><type>generator</type><busID>1</busID>"
+        "<generatorID>'1'</generatorID></observation>"
+        "<observation><type> Bus </type><busID>3</busID></observation>"
+        "<observation><type>bus</type><busID>9</busID></observation>"
+        "</observations></Dynamic_simulation></Configuration>")
+    return str(p)
+
+
+def test_merger_rebuilds_global_set_in_xml_order(tmp_path):
+    """XML order (6, 8, 1) differs from first-seen order (8, 1, 6)."""
+    from gridpack._observations import ObservationMerger
+    keys = ("gen_buses", "gen_ids", "load_buses", "load_ids", "bus_ids",
+            "bus_freq_ids")
+    r0 = dict(zip(keys, ([8, 1], ["1 ", "1 "], [], [], [3], [])))
+    r1 = dict(zip(keys, ([8, 6], ["1 ", "1 "], [], [], [9], [])))
+    # Per rank: rSpd, rAng, P, Q per gen, then vMag, vAng per bus.
+    o0 = [10, 11, 20, 21, 30, 31, 40, 41, 3.0, 3.5]
+    o1 = [10, 16, 20, 26, 30, 36, 40, 46, 9.0, 9.5]
+    m = ObservationMerger(_FakeComm([r0, r1], [o0, o1]), _fake_xml(tmp_path),
+                          [r0[k] for k in keys])
+    assert m.lists["gen_buses"] == [6, 8, 1]
+    assert m.lists["gen_ids"] == ["1 ", "1 ", "1 "]
+    assert m.lists["bus_ids"] == [3, 9]
+    assert m.merge(o0) == [16, 10, 11, 26, 20, 21, 36, 30, 31, 46, 40, 41,
+                           3.0, 9.0, 3.5, 9.5]
+
+
+def test_merger_is_a_no_op_on_one_rank(tmp_path):
+    from gridpack._observations import ObservationMerger
+    m = ObservationMerger(None, _fake_xml(tmp_path), ([1], ["1 "], [], [], [3]))
+    assert m.lists["gen_buses"] == [1]
+    obs = [1.0, 2.0]
+    assert m.merge(obs) is obs
+
+
+@pytest.mark.integration
+@pytest.mark.mpi
+def test_stepper_sees_every_observation_on_two_ranks(tmp_path, require_mpiexec):
+    d = _data_sets()
+    for rel in ("input/rtpr/input_14.xml", "raw/IEEE14_ca.raw", "dyr/IEEE14.dyr"):
+        if not (d / rel).exists():
+            pytest.skip("missing test data: %s" % (d / rel))
+        shutil.copy(d / rel, tmp_path / Path(rel).name)
+    gens = [1, 2, 3, 6, 8]
+    obs = "".join("<observation><type>generator</type><busID>%d</busID>"
+                  "<generatorID>1</generatorID></observation>" % b for b in gens)
+    obs += "".join("<observation><type>bus</type><busID>%d</busID>"
+                   "</observation>" % b for b in range(1, 15))
+    cfg = tmp_path / "input_14.xml"
+    text = cfg.read_text()
+    assert "</Dynamic_simulation>" in text
+    cfg.write_text(text.replace("</Dynamic_simulation>",
+                                "<observations>%s</observations>"
+                                "</Dynamic_simulation>" % obs))
+    body = """
+        import math
+        from gridpack import Session, DynamicSimStepper
+        with Session() as s:
+            with DynamicSimStepper(s, "input_14.xml", suppress_output=True) as st:
+                for _ in range(20):
+                    st.step()
+                rec = st.result.to_records()[-1]
+                if s.rank == 0:
+                    print("NAMES=" + ",".join(st.result.channel_names()))
+                    print("NANS=%d" % sum(math.isnan(v) for v in rec.values()))
+    """
+    serial = run_inline(body, cwd=tmp_path, timeout=300)
+    assert serial.returncode == 0, serial.stderr[-2000:]
+    par = run_inline(body, cwd=tmp_path, mpi_np=2, timeout=300)
+    assert par.returncode == 0, par.stderr[-2000:]
+
+    def names(out):
+        return [l[6:] for l in out.splitlines() if l.startswith("NAMES=")][0]
+    assert len(names(serial.stdout).split(",")) == 1 + 4 * 5 + 2 * 14
+    assert names(par.stdout) == names(serial.stdout)
+    assert _parse_int(par.stdout, "NANS=") == 0

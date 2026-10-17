@@ -31,6 +31,7 @@ from ._gridpack.dynamic_simulation import Event, EventVector
 
 from .session import Session
 from .powerflow import _xml_bool, _xml_number
+from ._observations import ObservationMerger
 from .results import DSFResult
 
 
@@ -208,6 +209,13 @@ class DynamicSim:
             ) = self._dsapp.getObservationLists()
         except Exception:
             pass
+        # GA traffic from run() must settle before the merger's allgather.
+        self._session.comm.sync()
+        (result.obs_gen_buses, result.obs_gen_ids, result.obs_load_buses,
+         result.obs_load_ids, result.obs_bus_ids) = ObservationMerger(
+            self._session.mpi_comm, self.input_file,
+            (result.obs_gen_buses, result.obs_gen_ids, result.obs_load_buses,
+             result.obs_load_ids, result.obs_bus_ids)).as_tuple(False)
         self._live_results.add(result)
         return result
 
@@ -373,6 +381,15 @@ class DynamicSimStepper:
             self.obs_bus_ids = []
             self.obs_bus_freq_ids = []
 
+        # Past one rank each rank sees only its own observations.
+        self._obs_merger = ObservationMerger(
+            session.mpi_comm, input_file,
+            (self.obs_gen_buses, self.obs_gen_ids, self.obs_load_buses,
+             self.obs_load_ids, self.obs_bus_ids, self.obs_bus_freq_ids))
+        (self.obs_gen_buses, self.obs_gen_ids, self.obs_load_buses,
+         self.obs_load_ids, self.obs_bus_ids,
+         self.obs_bus_freq_ids) = self._obs_merger.as_tuple(True)
+
         # DSFResult accumulates time / observation rows.
         self.result = DSFResult(
             self._hadapp,
@@ -458,6 +475,7 @@ class DynamicSimStepper:
         # until all gets are served.  Measured on IEEE 14 at np=2, 1000
         # steps: 3 of 4 runs hung without it, 0 of 4 with it.
         self._session.comm.sync()
+        obs = self._obs_merger.merge(obs)
         if record:
             self.result.times.append(self._sim_time)
             self.result.observations.append(obs)
