@@ -11,6 +11,9 @@
 /python/dist
 /python/gridpack_hadrec.egg-info
 /python/gridpack.egg-info
+# Editable-install outputs: host paths and a host-platform extension.
+/python/gridpack/_libpaths.py
+/python/gridpack/*.so
 
 # Vendored dependency sources (was misspelled with an underscore, so the
 # 2.5 GB tree was being uploaded).

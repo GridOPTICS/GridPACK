@@ -17,7 +17,34 @@
 # the compiled symbols and hosts new high-level classes when we add them.
 # -------------------------------------------------------------
 
-from . import _gridpack           # noqa: F401  keep private extension reachable
+import os as _os
+import sys as _sys
+
+
+def _preload_emt_module():
+    """Bind the EMT module's control blocks to its own definitions.
+
+    It and the dynamic-simulation module both define global-namespace
+    ``Cblock``/``Filter``/``LeadLag``/... with different layouts.  ELF
+    binds each name to the first library loaded, which in the extension
+    is DSF, so EMT ran DSF's code on its blocks and corrupted them.
+    RTLD_DEEPBIND makes EMT look in itself first; the extension then reuses
+    this copy.  macOS binds per library and needs nothing.
+    """
+    if not _sys.platform.startswith("linux") or not hasattr(_os, "RTLD_DEEPBIND"):
+        return
+    try:
+        from ._libpaths import EMT_MODULE
+    except ImportError:
+        return
+    if EMT_MODULE and _os.path.exists(EMT_MODULE):
+        import ctypes
+        ctypes.CDLL(EMT_MODULE, mode=_os.RTLD_NOW | _os.RTLD_DEEPBIND)
+
+
+_preload_emt_module()
+
+from . import _gridpack           # noqa: F401,E402  keep private extension reachable
 
 # Bound one by one, NOT via `from ._gridpack import *`: the wildcard also
 # bound the pybind11 submodules as attributes of this package, and CPython

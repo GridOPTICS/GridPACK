@@ -264,3 +264,36 @@ def test_cli_rejects_unknown_psse_version(tests_data_dir, tmp_path):
     assert r.returncode == 2
     assert "--export-psse format must be one of" in r.stderr
     assert not (tmp_path / "out.raw").exists()
+
+
+@_CLI
+@pytest.mark.integration
+def test_cli_emt_matches_emt_x(tmp_path):
+    """Regression: on Linux the EMT control blocks bound to the dynamic-
+    simulation module's same-named classes and the run diverged from step 1.
+    """
+    from gridpack._libpaths import EMT_MODULE
+    emt_x = Path(EMT_MODULE).resolve().parent.parent / "bin" / "emt.x"
+    if not emt_x.exists():
+        pytest.skip(f"missing {emt_x}")
+    src = _DATA / "emt"
+    for d in ("driver", "cli"):
+        run = tmp_path / d
+        run.mkdir()
+        for f in ("9-bus/input_9bus2.xml", "9-bus/case9_PSCAD.raw",
+                  "9-bus/case9_GAST.dyr", ".petscrc"):
+            shutil.copy(src / f, run / Path(f).name)
+        cfg = run / "input_9bus2.xml"
+        text = cfg.read_text()
+        assert "<simulationTime>2.0</simulationTime>" in text
+        # 200 steps: the corruption showed from the second row.
+        cfg.write_text(text.replace("<simulationTime>2.0</simulationTime>",
+                                    "<simulationTime>0.01</simulationTime>"))
+
+    d = subprocess.run([str(emt_x), "input_9bus2.xml"], cwd=tmp_path / "driver",
+                       capture_output=True, text=True, timeout=300)
+    assert d.returncode == 0, d.stderr[-2000:]
+    r = _run("emt", "input_9bus2.xml", cwd=tmp_path / "cli")
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert ((tmp_path / "cli/emtoutput.csv").read_bytes()
+            == (tmp_path / "driver/emtoutput.csv").read_bytes())
