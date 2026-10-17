@@ -19,7 +19,7 @@ COPY python /tmp/pygridpack-build
 # The base image installed its bindings under GRIDPACK_INSTALL_DIR and points
 # a .pth file there.  Same prefix, so this replaces them rather than leaving
 # two importable copies of `gridpack`.
-RUN pip install --upgrade --prefix=${GRIDPACK_INSTALL_DIR} /tmp/pygridpack-build && \
+RUN pip install --upgrade --prefix=${GRIDPACK_INSTALL_DIR} "/tmp/pygridpack-build[mcp]" && \
     pip install --upgrade pytest pandas numpy && \
     rm -rf /tmp/pygridpack-build
 

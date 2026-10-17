@@ -49,6 +49,10 @@ results = [
 plot = [
     "matplotlib",
 ]
+# gridpack-mcp.  mcp 2.x needs Python 3.10+.
+mcp = [
+    "mcp>=2.3,<3; python_version >= '3.10'",
+]
 # The low-level scripts in src/example and src/tests/widearea_pss.
 examples = [
     "xmltodict",
@@ -67,6 +71,7 @@ test = [
 
 [project.scripts]
 gridpack = "gridpack.cli.main:main"
+gridpack-mcp = "gridpack.mcp.server:main"
 
 [project.urls]
 Homepage = "https://www.gridpack.org"
@@ -74,12 +79,13 @@ Repository = "https://github.com/GridOPTICS/GridPACK"
 Documentation = "https://gridpack.readthedocs.io"
 
 [tool.setuptools]
-packages = ["gridpack", "gridpack.cli"]
+packages = ["gridpack", "gridpack.cli", "gridpack.mcp"]
 zip-safe = false
 
 [tool.setuptools.package-dir]
 gridpack = "gridpack"
 "gridpack.cli" = "gridpack/cli"
+"gridpack.mcp" = "gridpack/mcp"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
