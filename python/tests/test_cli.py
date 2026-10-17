@@ -213,7 +213,7 @@ def test_cli_ca_under_mpi_exits_zero(ca_case, require_mpiexec):
 @pytest.mark.integration
 def test_cli_se_rejects_output_file(se_data_dir):
     """-o used to AttributeError after the solve had already printed."""
-    r = _run("se", "input.xml", "-o", "se.out", cwd=se_data_dir)
+    r = _run("se", "input_14.xml", "-o", "se.out", cwd=se_data_dir)
     assert r.returncode == 2
     assert "no open()/close()" in r.stderr
 

@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import weakref
+import xml.etree.ElementTree as ET
 from typing import List, Optional, Sequence
 
 from ._gridpack.state_estimation import *  # noqa: F401,F403
@@ -25,6 +26,44 @@ from .session import Session
 
 def __getattr__(name):
     return getattr(_mod, name)
+
+
+_BUS_TYPES = ("VM", "PI", "PJ", "QI", "QJ", "VA")
+_BRANCH_TYPES = ("PIJ", "PJI", "QIJ", "QJI", "IIJ", "IJI")
+
+
+def read_measurements(path: str) -> list:
+    """Parse a measurement-list XML as ``SEAppModule::getMeasurements`` does.
+
+    ElementTree, not Configuration: Configuration merges every file into
+    one process-wide tree and searches only the first, so a second
+    measurement file in the same process was silently ignored.
+    """
+    with open(path, "rb") as fh:
+        try:
+            root = ET.fromstring(fh.read().lstrip())
+        except ET.ParseError as exc:
+            # GridPACK's own reader accepts a mismatched closing tag but
+            # then drops that element's value without a word.
+            raise ValueError("malformed measurement file %s: %s"
+                             % (path, exc)) from None
+    out = []
+    for elem in root.iter("Measurement"):
+        kind = (elem.findtext("Type") or "").strip()
+        m = _mod.Measurement()
+        if kind in _BUS_TYPES:
+            m.busid = int(elem.findtext("Bus"))
+        elif kind in _BRANCH_TYPES:
+            m.fbusid = int(elem.findtext("FromBus"))
+            m.tbusid = int(elem.findtext("ToBus"))
+            m.ckt((elem.findtext("CKT") or "").strip().ljust(2)[:2])
+        else:
+            continue
+        m.type(kind)
+        m.value = float(elem.findtext("Value"))
+        m.deviation = float(elem.findtext("Deviation"))
+        out.append(m)
+    return out
 
 
 class StateEstimation:
@@ -53,6 +92,10 @@ class StateEstimation:
         ``Configuration.State_estimation.measurementList``.
     suppress_output : bool, optional
         If True, enable ``NoPrint`` for the duration of the run.
+    measurements : sequence of Measurement, optional
+        Solve against these instead of a file (see :func:`read_measurements`).
+        Pass the same list on every rank; only rank 0's is used, as with a
+        file.
     """
 
     def __init__(
@@ -62,6 +105,7 @@ class StateEstimation:
         *,
         measurement_file: Optional[str] = None,
         suppress_output: bool = False,
+        measurements: Optional[Sequence] = None,
     ) -> None:
         if session.closed:
             raise RuntimeError("Session is closed")
@@ -81,7 +125,7 @@ class StateEstimation:
 
         # Resolve the measurement file: CLI override wins, otherwise
         # read from the XML.
-        if measurement_file is None:
+        if measurements is None and measurement_file is None:
             measurement_file = self._config.get(
                 "Configuration.State_estimation.measurementList"
             )
@@ -93,13 +137,14 @@ class StateEstimation:
                 )
         self.measurement_file = measurement_file
 
-        # Load measurements through a second Configuration.  Keep it
-        # alive on `self` because SEApp caches pointers into cursors.
-        self._mconfig = _ext.Configuration()
-        self._mconfig.open(measurement_file, session.comm)
+        if measurements is None:
+            measurements = read_measurements(measurement_file)
+        # Rank 0 holds the list, as getMeasurements returns it;
+        # setMeasurements distributes it.
+        self._measurements = _ext.state_estimation.MeasurementVector(
+            measurements if session.rank == 0 else [])
 
         self._seapp = _ext.state_estimation.SEApp()
-        self._measurements = self._seapp.getMeasurements(self._mconfig)
         self._seapp.readNetwork(self._config)
         self._seapp.initialize()
         self._seapp.setMeasurements(self._measurements)
@@ -170,7 +215,6 @@ class StateEstimation:
                 pass
         self._live_results.clear()
         self._seapp = None
-        self._mconfig = None
         self._config = None
         self._closed = True
 

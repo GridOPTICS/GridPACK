@@ -194,10 +194,15 @@ def rated_raw() -> Path:
 
 @pytest.fixture(scope="session")
 def se_data_dir(tmp_path_factory) -> Path:
-    """State-estimation IEEE-14 inputs, staged into one directory."""
-    d = _source_root() / "src/applications/modules/state_estimation/test"
+    """State-estimation IEEE-14 inputs, staged into one directory.
+
+    The data_sets copies, as stes.x's ctest uses: the module's test copy of
+    IEEE14_meas.xml spells every QIJ value <Values>, so none is read.
+    """
+    d = _data_sets()
     return _stage(tmp_path_factory.mktemp("se14"),
-                  d / "input.xml", d / "IEEE14.raw", d / "IEEE14_meas.xml")
+                  d / "input/se/input_14.xml", d / "raw/IEEE14.raw",
+                  d / "measurements/IEEE14_meas.xml")
 
 
 # The shipped contingencies_14.xml names circuits B1/B2/B3, but every branch
