@@ -15,6 +15,14 @@ Session
 .. autoclass:: gridpack.Session
    :members:
 
+Input files
+-----------
+
+.. autoclass:: gridpack.Case
+   :members:
+
+.. autofunction:: gridpack.case.data_sets
+
 Power flow
 ----------
 

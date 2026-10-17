@@ -72,6 +72,7 @@ from . import emt                 # noqa: F401,E402
 
 # High-level Python API.
 from .session import Session                              # noqa: E402
+from .case import Case                                    # noqa: E402
 from .powerflow import PowerFlow                          # noqa: E402
 from .dynamic_sim import DynamicSim, DynamicSimStepper    # noqa: E402
 from .results import PowerFlowResult, DSFResult           # noqa: E402
@@ -99,6 +100,7 @@ COMPAT_MODULES = (
 
 _HIGH_LEVEL = [
     "Session",
+    "Case",
     "PowerFlow",
     "PowerFlowResult",
     "DynamicSim",

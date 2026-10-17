@@ -30,8 +30,9 @@ def main():
         # IEEE14.raw, which this XML names, carries no branch ratings, so
         # the overload check would have nothing to test.  This v33 variant
         # rates all 20; the version is auto-detected from the file header.
-        case = stage(session, "input/powerflow/input_14.xml",
-                     network="raw/IEEE14_PTIv33_rated.raw")
+        stock = gridpack.Case.from_data_sets("input/powerflow/input_14.xml")
+        stock.set("Powerflow.networkConfiguration", "IEEE14_PTIv33_rated.raw")
+        case = stage(session, stock)
 
         pf = gridpack.PowerFlow(session, case, suppress_output=True)
 

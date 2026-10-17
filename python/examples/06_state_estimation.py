@@ -23,7 +23,7 @@ import re
 
 import gridpack
 from gridpack.state_estimation import Measurement
-from _case import copy_block, stage, stdout_to, write_csv
+from _case import stage, stdout_to, write_csv
 
 SEED = 14
 # Meter standard deviations, per unit on 100 MVA.  Generator-bus voltages
@@ -48,10 +48,9 @@ def main():
         # One XML for both applications: Configuration merges every file
         # into one tree and reads only the first, so a second, differently
         # shaped XML would be ignored.
-        case = stage(session, "input/powerflow/input_14.xml", "raw/IEEE14.raw")
-        if rank0:
-            copy_block("input/se/input_14.xml", case, "State_estimation")
-        session.barrier()
+        study = gridpack.Case.from_data_sets("input/powerflow/input_14.xml")
+        study.include("input/se/input_14.xml", "State_estimation")
+        case = stage(session, study)
 
         # ---- 1: the true state ----------------------------------------
         with stdout_to(LOG):               # the XML turns on -ksp_view

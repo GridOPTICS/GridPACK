@@ -28,11 +28,9 @@ import os
 from collections import Counter
 
 import gridpack
-from _case import (branch_name, copy_block, copy_input, set_tag, stage,
-                   write_contingency_list, write_csv)
+from _case import branch_name, stage, write_contingency_list, write_csv
 
 NETWORK = "raw/IEEE14_PTIv33_rated.raw"   # all 20 branches rated
-DYNAMICS = "dyr/IEEE14.dyr"
 N1_LIST = "n1_branches.xml"               # written by this demo
 
 # Dynamic check: open the worst branch at TRIP_TIME and watch every machine
@@ -51,8 +49,6 @@ _SEVERITY = {"BUS+BRANCH VIOLATION": 0, "BUS VIOLATION": 1,
 def main():
     with gridpack.Session() as session:
         rank0 = session.rank == 0
-        case = stage(session, "input/ca/input_14.xml", network=NETWORK)
-        dyr = copy_input(session, DYNAMICS, os.path.basename(DYNAMICS))
 
         # ---- 0: one config for the whole study --------------------------
         # The CA input supplies Contingency_analysis and Powerflow; the
@@ -63,22 +59,23 @@ def main():
         # Python passes none and reads its first entry unconditionally
         # (hadrec_app_module.cpp, initializeDynSimu), so an empty list is a
         # segfault.  The event this study wants is applied from Python.
-        if rank0:
-            # Branches only, named by this demo: the dynamic check opens
-            # a line, so auto-generated generator cases cannot be finalists.
-            set_tag(case, "FullBranchN1", "false")
-            set_tag(case, "FullGeneratorN1", "false")
-            set_tag(case, "contingencyList", N1_LIST,
-                    parent="Contingency_analysis")
-            copy_block("input/rtpr/input_14.xml", case, "Dynamic_simulation")
-            set_tag(case, "simulationTime", T_END)
-            set_tag(case, "beginFault", 2 * T_END)
-            set_tag(case, "endFault", 2 * T_END)
-            set_tag(case, "observations",
-                    observations(read_generators(dyr),
-                                 read_buses(os.path.basename(NETWORK))),
-                    parent="Dynamic_simulation")
-        session.barrier()
+        study = gridpack.Case.from_data_sets("input/ca/input_14.xml")
+        study.set("Powerflow.networkConfiguration", NETWORK)
+        # Branches only, named by this demo: the dynamic check opens a
+        # line, so auto-generated generator cases cannot be finalists.
+        study.set("Contingency_analysis.FullBranchN1", False)
+        study.set("Contingency_analysis.FullGeneratorN1", False)
+        study.set("Contingency_analysis.contingencyList", N1_LIST)
+        study.include("input/rtpr/input_14.xml", "Dynamic_simulation")
+        study.set("Dynamic_simulation.simulationTime", T_END)
+        study.set("Dynamic_simulation.Events.faultEvent.beginFault", 2 * T_END)
+        study.set("Dynamic_simulation.Events.faultEvent.endFault", 2 * T_END)
+        dyr = study.get("Dynamic_simulation.generatorParameters")
+        raw = study.get("Powerflow.networkConfiguration")
+        study.set_xml("Dynamic_simulation.observations",
+                      observations(read_generators(dyr), read_buses(raw)))
+        # The list is written from the solved base case, below.
+        case = stage(session, study, deferred=[N1_LIST])
 
         # ---- 1: base case --------------------------------------------
         with gridpack.PowerFlow(session, case, suppress_output=True) as pf:
@@ -136,7 +133,7 @@ def main():
             if rank0:
                 report_recovery(st.result.to_records(),
                                 st.result.channel_names(), worst,
-                                inertia(dyr, os.path.basename(NETWORK)))
+                                inertia(dyr, raw))
                 st.result.to_csv("dynamics.csv")
                 print("\nwrote %s/{study,dynamics}.csv" % os.getcwd())
 

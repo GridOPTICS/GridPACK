@@ -32,8 +32,8 @@ FAULT_BRANCH = (6, 7)
 
 def main():
     with gridpack.Session() as session:
-        case = stage(session, "input/ds/input_9b3g.xml",
-                     "raw/9b3g.raw", "dyr/9b3g.dyr")
+        case = stage(session,
+                     gridpack.Case.from_data_sets("input/ds/input_9b3g.xml"))
 
         with gridpack.DynamicSim(session, case, suppress_output=True) as ds:
             if session.rank == 0:

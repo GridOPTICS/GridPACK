@@ -21,12 +21,9 @@ from _case import stage, write_csv
 
 def main():
     with gridpack.Session() as session:
-        # The XML names contingencies_118.xml and IEEE118.raw as bare
-        # filenames, so all three have to land in one directory.
+        # Writes the XML beside contingencies_118.xml and IEEE118.raw.
         case = stage(session,
-                     "input/ca/input_118.xml",
-                     "contingencies/contingencies_118.xml",
-                     "raw/IEEE118.raw")
+                     gridpack.Case.from_data_sets("input/ca/input_118.xml"))
 
         # print_calc_files=False: 179 per-contingency .out files are not
         # what this demo is showing.

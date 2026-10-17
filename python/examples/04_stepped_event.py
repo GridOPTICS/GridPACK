@@ -33,8 +33,7 @@ T_END = 8.0                      # s; the XML declares 20 s and a fault at 10 s
 
 def main():
     with gridpack.Session() as session:
-        case = stage(session, CASE, "raw/kundur-twoarea_v33.raw",
-                     "dyr/kundur-twoarea_wsieg1.dyr")
+        case = stage(session, gridpack.Case.from_data_sets(CASE))
 
         with gridpack.DynamicSimStepper(session, case,
                                         suppress_output=True) as st:
