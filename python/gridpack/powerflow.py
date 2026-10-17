@@ -66,6 +66,12 @@ def _clean_bus_name(raw) -> str:
     return name
 
 
+def _check_scalar(method: str, value) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError("%s takes an int or a float, not %s"
+                        % (method, type(value).__name__))
+
+
 def _reject_shunt_param(name: str) -> None:
     """Refuse the per-shunt keys the bus accessor cannot address.
 
@@ -194,6 +200,12 @@ class PowerFlow:
     # ------------------------------------------------------------------
     # Configuration accessors (read from XML at construction time)
     # ------------------------------------------------------------------
+
+    @property
+    def pfapp(self):
+        """The underlying pybind11 ``powerflow.Powerflow`` (advanced use)."""
+        self._require_open()
+        return self._pfapp
 
     @property
     def use_nonlinear_from_xml(self) -> bool:
@@ -397,13 +409,67 @@ class PowerFlow:
         """
         self._require_open()
         _reject_shunt_param(name)
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            raise TypeError(
-                "set_bus_param takes an int or a float, not %s"
-                % type(value).__name__
-            )
+        _check_scalar("set_bus_param", value)
         return bool(self._pfapp.modifyDataCollectionBusParam(
             int(bus_id), name, value))
+
+    # ------------------------------------------------------------------
+    # Generator, load and branch data-collection parameters
+    # ------------------------------------------------------------------
+    # Same contract as the bus pair: rank-local, int and float not
+    # interchangeable, and a write takes effect on reload() + solve().
+    # Ids are matched after padding to 2 characters, so "1" finds "1 ".
+
+    def get_gen_param(self, bus_id: int, gen_id: str, name: str):
+        """Read parameter ``name`` of generator ``gen_id`` at ``bus_id``."""
+        self._require_open()
+        a = (int(bus_id), str(gen_id), name)
+        value = self._pfapp.getDataCollectionGenParamReal(*a)
+        return self._pfapp.getDataCollectionGenParamInt(*a) if value is None else value
+
+    def set_gen_param(self, bus_id: int, gen_id: str, name: str, value) -> bool:
+        """Write parameter ``name`` of generator ``gen_id`` at ``bus_id``."""
+        self._require_open()
+        _check_scalar("set_gen_param", value)
+        return bool(self._pfapp.modifyDataCollectionGenParam(
+            int(bus_id), str(gen_id), name, value))
+
+    def get_load_param(self, bus_id: int, load_id: str, name: str):
+        """Read parameter ``name`` of load ``load_id`` at ``bus_id``."""
+        self._require_open()
+        a = (int(bus_id), str(load_id), name)
+        value = self._pfapp.getDataCollectionLoadParamReal(*a)
+        return self._pfapp.getDataCollectionLoadParamInt(*a) if value is None else value
+
+    def set_load_param(self, bus_id: int, load_id: str, name: str, value) -> bool:
+        """Write parameter ``name`` of load ``load_id`` at ``bus_id``.
+
+        The solve uses the new value, but ``buses()`` keeps reporting the
+        original load: ``PFBus::load`` does not clear its saved-load copy.
+        """
+        self._require_open()
+        _check_scalar("set_load_param", value)
+        return bool(self._pfapp.modifyDataCollectionLoadParam(
+            int(bus_id), str(load_id), name, value))
+
+    def get_branch_param(self, from_bus: int, to_bus: int, ckt: str, name: str):
+        """Read parameter ``name`` of circuit ``ckt`` on branch from-to."""
+        self._require_open()
+        a = (int(from_bus), int(to_bus), str(ckt), name)
+        value = self._pfapp.getDataCollectionBranchParamReal(*a)
+        return self._pfapp.getDataCollectionBranchParamInt(*a) if value is None else value
+
+    def set_branch_param(self, from_bus: int, to_bus: int, ckt: str, name: str,
+                         value) -> bool:
+        """Write parameter ``name`` of circuit ``ckt`` on branch from-to.
+
+        ``BRANCH_STATUS`` 0 switches the circuit out; ``branches()`` then
+        omits it.
+        """
+        self._require_open()
+        _check_scalar("set_branch_param", value)
+        return bool(self._pfapp.modifyDataCollectionBranchParam(
+            int(from_bus), int(to_bus), str(ckt), name, value))
 
     def reload(self) -> None:
         """Re-run the network load so data-collection edits reach the solver."""

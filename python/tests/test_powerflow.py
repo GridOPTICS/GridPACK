@@ -661,6 +661,72 @@ def test_bus_param_reports_failed_writes(tests_data_dir):
     assert "NORAISE" not in r.stdout
 
 
+
+
+# Generator, load and branch edits are judged by the solved line flow on
+# 1-2, not by the reports: generators() shows the slack's scheduled output
+# and buses() the original load, whatever the solve used.
+_ELEMENT_EDIT = """
+    import gridpack
+    s = gridpack.Session()
+    pf = gridpack.PowerFlow(s, "input_14.xml", suppress_output=True)
+    flow = lambda r: {(b["fromBus"], b["toBus"]): b["pFrom"]
+                      for b in r.branches()}
+    before = flow(pf.solve())
+    print("OLD %r" % (pf.get_KIND_param(WHERE, "NAME"),))
+    print("SET %r" % (pf.set_KIND_param(WHERE, "NAME", VALUE),))
+    print("NEW %r" % (pf.get_KIND_param(WHERE, "NAME"),))
+    pf.reload()
+    after = flow(pf.solve(strict=False))
+    print("FLOW12 %.4f %.4f" % (before[(1, 2)], after[(1, 2)]))
+    print("HAS23 %s" % ((2, 3) in after))
+    s.close()
+"""
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("kind,where,name,old,value", [
+    ("gen", '2, "1"', "GENERATOR_PG", 40.0, 60.0),
+    ("load", '9, "1"', "LOAD_PL", 29.5, 60.0),
+    ("branch", '2, 3, "BL"', "BRANCH_STATUS", 1, 0),
+])
+def test_element_param_write_reaches_the_solver(tests_data_dir, kind, where,
+                                                name, old, value):
+    body = (_ELEMENT_EDIT.replace("KIND", kind).replace("WHERE", where)
+            .replace("NAME", name).replace("VALUE", repr(value)))
+    r = run_inline(body, cwd=tests_data_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "OLD %r" % old in r.stdout and "SET True" in r.stdout
+    assert "NEW %r" % value in r.stdout
+    before, after = (float(x) for x in re.search(
+        r"FLOW12 (\S+) (\S+)", r.stdout).groups())
+    assert abs(after - before) > 1.0, "%s edit never reached the solver" % kind
+    # Switching 2-3 out is the one edit that removes a branch.
+    assert ("HAS23 False" in r.stdout) == (kind == "branch")
+
+
+@pytest.mark.integration
+def test_element_param_reports_failed_writes(tests_data_dir):
+    r = run_inline("""
+        import gridpack
+        s = gridpack.Session()
+        pf = gridpack.PowerFlow(s, "input_14.xml", suppress_output=True)
+        print("BAD_GEN_ID", pf.set_gen_param(2, "9", "GENERATOR_PG", 1.0))
+        print("BAD_LOAD_ID", pf.set_load_param(9, "9", "LOAD_PL", 1.0))
+        print("BAD_CKT", pf.set_branch_param(2, 3, "ZZ", "BRANCH_STATUS", 0))
+        print("INT_INTO_DOUBLE", pf.set_gen_param(2, "1", "GENERATOR_PG", 50))
+        print("PFAPP", pf.pfapp is pf._pfapp)
+        try:
+            pf.set_branch_param(2, 3, "BL", "BRANCH_STATUS", True)
+            print("NORAISE")
+        except TypeError:
+            print("TYPEERROR")
+        s.close()
+    """, cwd=tests_data_dir)
+    assert r.returncode == 0, r.stderr[-2000:]
+    for line in ("BAD_GEN_ID False", "BAD_LOAD_ID False", "BAD_CKT False",
+                 "INT_INTO_DOUBLE False", "PFAPP True", "TYPEERROR"):
+        assert line in r.stdout, r.stdout
 # -------------------------------------------------------------
 # Bus names
 # -------------------------------------------------------------
