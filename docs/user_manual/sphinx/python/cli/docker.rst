@@ -161,7 +161,7 @@ page walks through every application from here.
 Run the demos and the drivers
 -----------------------------
 
-With a checkout mounted, the five demos run in place::
+With a checkout mounted, the six demos run in place::
 
     cd /app/workspace/python/examples
     python3 01_power_flow.py

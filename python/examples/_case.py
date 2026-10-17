@@ -13,10 +13,13 @@ missing network file aborts with ``wrong dimension specified``, not a
 file-not-found error, which is hard to place if you have not seen it.
 """
 
+import contextlib
 import csv
+import ctypes
 import os
 import re
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -171,3 +174,25 @@ def write_csv(path: str, rows, columns=None) -> None:
         w = csv.DictWriter(fh, fieldnames=columns)
         w.writeheader()
         w.writerows(rows)
+
+
+@contextlib.contextmanager
+def stdout_to(path: str):
+    """Send everything written to fd 1 inside the block, C++ included, to
+    `path`.  For modules that print with bare printf, which NoPrint and
+    suppress_output cannot reach.  Both sides flush C stdio, or buffered
+    output lands on the wrong side of the switch.
+    """
+    libc = ctypes.CDLL(None)
+    sys.stdout.flush()
+    libc.fflush(None)
+    saved = os.dup(1)
+    with open(path, "a") as log:
+        os.dup2(log.fileno(), 1)
+        try:
+            yield
+        finally:
+            sys.stdout.flush()
+            libc.fflush(None)
+            os.dup2(saved, 1)
+            os.close(saved)
