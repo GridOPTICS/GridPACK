@@ -11,8 +11,10 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import sys
+# The Python API reference is built from python/gridpack's docstrings.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                '../../../python')))
 
 
 # -- Project information -----------------------------------------------------
@@ -37,6 +39,7 @@ needs_sphinx = '1.3'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     #'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
@@ -45,6 +48,11 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_subfigure'
 ]
+
+# Read the Docs builds without GridPACK compiled: stand in for the
+# extension and MPI so autodoc can import the pure-Python layer.
+autodoc_mock_imports = ['gridpack._gridpack', 'mpi4py']
+autodoc_member_order = 'bysource'
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 doc_path = os.path.dirname(dir_path)

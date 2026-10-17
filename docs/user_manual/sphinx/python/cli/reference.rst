@@ -1,8 +1,9 @@
-Python API Reference
+CLI Module Reference
 ====================
 
 This chapter documents the module behind the ``gridpack`` command and the
-pybind11 bindings added for contingency analysis.
+pybind11 bindings added for contingency analysis.  The classes the CLI calls
+are in :doc:`../api`.
 
 .. module:: gridpack.cli.main
 

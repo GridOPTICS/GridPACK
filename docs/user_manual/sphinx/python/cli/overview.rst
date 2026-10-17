@@ -7,9 +7,8 @@ It replaces the need to invoke individual Python scripts by consolidating
 all supported applications under a single ``gridpack`` command with
 intuitive subcommands.
 
-The CLI is implemented in Python and built on the GridPACK pybind11
-bindings, providing direct access to the same high-performance C++
-solvers used by the native GridPACK executables.
+The CLI is implemented in Python on top of the :doc:`../api`, which drives
+the same C++ solvers as the native GridPACK executables.
 
 Supported Applications
 ----------------------

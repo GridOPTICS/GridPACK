@@ -190,7 +190,9 @@ See :doc:`cli/index`.
 Where to go next
 ================
 
-``python/examples/`` in the source tree has five short scripts meant to be
-read, one application each and then one study that chains three, with a
-README saying what each shows and which rank counts were verified.  The
-pages that follow are the reference for the low-level pybind11 objects.
+``python/examples/`` in the source tree has six short demos meant to be
+read: power flow, contingency screening, two dynamic simulations, a study
+that chains three applications, and state estimation.  Its README says what
+each shows and which rank counts were verified.  :doc:`api` documents every
+class used above; the *Low-level bindings* pages cover the pybind11 objects
+underneath.

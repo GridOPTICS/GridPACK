@@ -204,9 +204,9 @@ def generate_n1_contingencies(pf: PowerFlow, branches: bool,
 
     Reads the same serialWrite text as ``CADriver::generateN1Contingencies``
     so order and the elements covered (out-of-service and three-winding
-    star legs included) match.  Names drop ca.x's trailing id pad
-    (``GN_1_1``, not ``GN_1_1 ``).  Rows reach rank 0 of the network's
-    communicator only.
+    star legs included) match.  Names drop the space ca.x pads ids with
+    (``GN_1_1``, not ``GN_1_1`` plus a space).  Rows reach rank 0 of the
+    network's communicator only.
     """
     out: List[Contingency] = []
     if branches:
