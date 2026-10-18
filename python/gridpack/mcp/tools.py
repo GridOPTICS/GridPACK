@@ -18,11 +18,13 @@ import re
 import shutil
 import sys
 import threading
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..case import _OVERRIDES, Case, data_sets
 from ..rawedit import OPS, edit_raw
+from .events import EVENT_OPS, append_events, plan_events
 from .runner import JobRunner
 from .templates import build_xml, raw_generators, raw_version
 
@@ -131,27 +133,49 @@ class Tools:
 
     def modify_case(self, case: str, edits: List[Dict[str, Any]],
                     name: Optional[str] = None) -> Dict[str, Any]:
-        """Derive a case from ``case`` with its network edited; list it as
-        derived/<name>/<name>.xml and return its description plus what
-        each edit changed (``edits``: before and after values).
+        """Derive a case from ``case`` with its network edited and events
+        added; list it as derived/<name>/<name>.xml and return its
+        description plus what each edit changed.
 
-        edits: a list of {"op": ..., ...}.  Ops and keys (id defaults to
-        "1"): set_load_active_power {bus, mw}; set_load_reactive_power
-        {bus, mvar}; scale_load {bus, factor}; set_load_in_service {bus,
-        in_service}; set_generator_active_power {bus, mw};
-        set_generator_voltage_setpoint {bus, vm_pu};
+        edits: a list of {"op": ..., ...}; ids default to the only one
+        there is.  Network ops: set_load_active_power {bus, mw};
+        set_load_reactive_power {bus, mvar}; scale_load {bus, factor};
+        set_load_in_service {bus, in_service}; set_generator_active_power
+        {bus, mw}; set_generator_voltage_setpoint {bus, vm_pu};
         set_generator_in_service {bus, in_service}; set_shunt {bus, mvar,
         mw}; set_shunt_in_service {bus, in_service}; set_branch_in_service
         {from, to, ckt, in_service}; set_param {kind, bus|from+to+ckt, id,
-        field, value} with a PSS/E RAW column name.  Everything else in the
-        case (events, settings, DYR) is inherited.
+        field, value} with a PSS/E RAW column name.  Event ops (seconds,
+        on a time step): add_fault {from, to, start, duration} (solid
+        fault at the from bus); add_bus_fault {bus, start, duration, g_pu,
+        b_pu}; trip_branch {from, to, ckt, time}; trip_generator {bus, id,
+        time}.  hadrec needs a fault as the first event.  Everything else
+        in the case is inherited.
         """
         entry = self._entry(case)
+        if not isinstance(edits, list) or not edits:
+            raise ValueError("edits must be a non-empty list")
+        for n, e in enumerate(edits, 1):
+            if not isinstance(e, dict) or "op" not in e:
+                raise ValueError("edit %d must be an object with an \"op\"" % n)
+            if e["op"] not in OPS and e["op"] not in EVENT_OPS:
+                raise ValueError("edit %d: unknown op %r; one of %s" % (
+                    n, e["op"], ", ".join(list(OPS) + list(EVENT_OPS))))
+        static = [e for e in edits if e["op"] in OPS]
+        dynamic = [e for e in edits if e["op"] in EVENT_OPS]
         c = self._load(case)
         tag = next((p for p in c.files() if ".networkConfiguration" in p), None)
         if tag is None:
             raise ValueError("%s has no network file to edit" % case)
         src = Path(c.files()[tag])
+        events = []
+        if dynamic:
+            if "dsf" not in entry["apps"]:
+                raise ValueError("%s has no Dynamic_simulation block to hold "
+                                 "events" % case)
+            events = plan_events(dynamic, src,
+                                 float(c.get("Dynamic_simulation.timeStep")),
+                                 float(c.get("Dynamic_simulation.simulationTime")))
         root = self.runner.root / _DERIVED
         stem = name or self._free_name(root, Path(entry["_xml"]).stem)
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", stem):
@@ -163,9 +187,16 @@ class Tools:
                              % (_DERIVED, stem))
         d.mkdir(parents=True)
         try:
-            report = edit_raw(src, d / src.name, edits)
-            c.set(tag, str(d / src.name))
+            changed = iter(edit_raw(src, d / src.name, static) if static else [])
+            if static:
+                c.set(tag, str(d / src.name))
             xml = c.write(d, name=stem + ".xml")
+            added = {id(e): ET.tostring(el, encoding="unicode")
+                     for e, el in events}
+            if events:
+                append_events(xml, [el for _, el in events])
+            report = [dict(e, xml=added[id(e)]) if id(e) in added
+                      else next(changed) for e in edits]
             (d / "edits.json").write_text(json.dumps(
                 {"base": case, "edits": report}, indent=1))
         except (ValueError, OSError):
@@ -357,14 +388,18 @@ def _apps(case):
         "powerflow": pf,
         "ca": pf and "Contingency_analysis" in blocks,
         "dsf": pf and "Dynamic_simulation" in blocks,
-        # HADREC reads the first fault event unconditionally.
-        "hadrec": pf and root.find("Dynamic_simulation/Events/faultEvent")
-        is not None,
+        # HADREC initialises from the first event, which must be a fault.
+        "hadrec": pf and _first_event(root) in ("faultEvent", "BusFault"),
         # se reads its network from its own block.
         "se": "State_estimation" in blocks,
         "emt": pf and "EMT" in blocks,
     }
     return [a for a in _APPS if can[a]]
+
+
+def _first_event(root):
+    events = root.find("Dynamic_simulation/Events")
+    return events[0].tag if events is not None and len(events) else None
 
 
 def _under(path, directory):

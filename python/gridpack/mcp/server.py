@@ -33,7 +33,7 @@ def build_server(tools=None):
                      "job_status / job_result.  create_case makes a case "
                      "from a RAW (and DYR) file under a --cases directory; "
                      "modify_case derives one with loads, generators, "
-                     "shunts or branches changed.")
+                     "shunts or branches changed and faults or trips added.")
     for name in _TOOLS:
         server.add_tool(_reported(getattr(tools, name)))
     return server

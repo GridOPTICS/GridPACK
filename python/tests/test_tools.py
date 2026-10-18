@@ -617,3 +617,146 @@ def test_modified_cases_run(tmp_path):
     gen = next(g for g in t.job_result(st["id"])["generators"]
                if g["busId"] == 1032 and g["genId"].strip() == "C")
     assert st["converged"] and gen["status"] == 0
+
+
+# -------------------------------------------------------------
+# modify_case: events
+# -------------------------------------------------------------
+
+DS9 = "input/ds/input_9b3g.xml"
+
+
+def _events(xml):
+    root = ET.parse(xml).getroot()
+    return [(e.tag, {c.tag: c.text.strip() for c in e})
+            for e in root.find("Dynamic_simulation/Events")]
+
+
+def test_modify_case_adds_events_in_order(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case(DS9, [
+        {"op": "add_fault", "from": 6, "to": 7, "start": 0.1, "duration": 0.05},
+        {"op": "scale_load", "bus": 5, "factor": 1.1},
+        {"op": "trip_branch", "from": 8, "to": 7, "time": 0.2},
+        {"op": "trip_generator", "bus": 3, "time": 0.3},
+        {"op": "add_bus_fault", "bus": 5, "start": 0.4, "duration": 0.05,
+         "b_pu": 1000}])
+    assert d["apps"] == ["powerflow", "dsf", "hadrec"]
+    # The base case's own fault stays first; ids and the line's
+    # orientation come from the RAW.
+    assert _events(tmp_path / "jobs/derived/input_9b3g-1/input_9b3g-1.xml") == [
+        ("faultEvent", {"beginFault": "0.03", "endFault": "0.06",
+                        "faultBranch": "6 7", "timeStep": "0.01"}),
+        ("faultEvent", {"beginFault": "0.1", "endFault": "0.15",
+                        "faultBranch": "6 7", "id": "BL"}),
+        ("LineStatus", {"time": "0.2", "line": "7 8", "id": "BL",
+                        "status": "0"}),
+        ("GenStatus", {"time": "0.3", "bus": "3", "id": "1", "status": "0"}),
+        ("BusFault", {"begin": "0.4", "end": "0.45", "bus": "5",
+                      "yfault": "0 1000"})]
+    # The report keeps the input order, events as XML.
+    assert [e["op"] for e in d["edits"]] == [
+        "add_fault", "scale_load", "trip_branch", "trip_generator",
+        "add_bus_fault"]
+    assert d["edits"][1]["now"] == {"PL": 99.0, "QL": 33.0}
+    assert [e["xml"].split(">")[0] for e in d["edits"] if "xml" in e] == [
+        "<faultEvent", "<LineStatus", "<GenStatus", "<BusFault"]
+    # A derived case with no network edit keeps the RAW byte for byte.
+    e = t.modify_case(DS9, [{"op": "trip_generator", "bus": 2, "time": 0.5,
+                             "in_service": True}], name="ev")
+    from .conftest import _data_sets
+    assert (tmp_path / "jobs/derived/ev/9b3g.raw").read_bytes() == \
+        (_data_sets() / "raw/9b3g.raw").read_bytes()
+    assert _events(tmp_path / "jobs/derived/ev/ev.xml")[-1] == (
+        "GenStatus", {"time": "0.5", "bus": "2", "id": "1", "status": "1"})
+
+
+def test_hadrec_needs_a_fault_first(tmp_path):
+    d = _mine(tmp_path, "raw/9b3g.raw", "dyr/9b3g.dyr")
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[d])
+    plain = t.create_case("mine/dyn/9b3g.raw", dyr="mine/dyn/9b3g.dyr")["case"]
+    trip = t.modify_case(plain, [{"op": "trip_generator", "bus": 3, "time": 1.0}])
+    assert trip["apps"] == ["powerflow", "dsf"]
+    fault = t.modify_case(plain, [
+        {"op": "add_bus_fault", "bus": 7, "start": 1.0, "duration": 0.1},
+        {"op": "trip_generator", "bus": 3, "time": 1.1}])
+    assert fault["apps"] == ["powerflow", "dsf", "hadrec"]
+    with pytest.raises(ValueError, match="cannot run hadrec"):
+        t.run_hadrec(trip["case"])          # refused before any job starts
+    assert t.runner.jobs() == []
+
+
+def test_transformers_can_be_tripped_as_events(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    k = t.modify_case("input/ds/input_kundur_two_area_esst1a.xml", [
+        {"op": "trip_branch", "from": 1, "to": 5, "time": 0.5}])
+    assert _events(tmp_path / "jobs/derived" / k["case"].split("/", 1)[1])[-1] == (
+        "LineStatus", {"time": "0.5", "line": "5 1", "id": "1", "status": "0"})
+
+
+@pytest.mark.parametrize("case, edit, msg", [
+    (DS9, {"op": "trip_generator", "bus": 3, "time": 0.105}, "not a multiple"),
+    (DS9, {"op": "add_fault", "from": 6, "to": 7, "start": 0.98,
+           "duration": 0.05}, "past simulationTime 1"),
+    (DS9, {"op": "add_fault", "from": 6, "to": 7, "start": 0.1,
+           "duration": 0}, "duration must be positive"),
+    (DS9, {"op": "trip_generator", "bus": 3, "time": -0.1}, "not be negative"),
+    (DS9, {"op": "add_bus_fault", "bus": 50, "start": 0.1, "duration": 0.1},
+     "no bus 50"),
+    (DS9, {"op": "trip_branch", "from": 1, "to": 9, "time": 0.1},
+     "no branch 1-9"),
+    (DS9, {"op": "add_fault", "from": 6, "to": 7, "ckt": "1", "start": 0.1,
+           "duration": 0.1}, "has circuit BL, not 1"),
+    (DS9, {"op": "trip_generator", "bus": 5, "time": 0.1},
+     "no generator at bus 5"),
+    (DS9, {"op": "trip_generator", "bus": 3, "id": "2", "time": 0.1},
+     "generator id 1, not 2"),
+    (DS9, {"op": "trip_branch", "from": 6, "to": 7, "time": 0.1,
+           "in_service": 0}, "true or false"),
+    (DS9, {"op": "trip_branch", "from": 6, "to": 7, "time": "0.1"},
+     "time must be a number"),
+    (DS9, {"op": "add_fault", "from": 6, "to": 7, "start": 0.1}, "missing duration"),
+    (DS9, {"op": "shed_load", "bus": 5}, "unknown op 'shed_load'; one of .*add_fault"),
+    (PF14, {"op": "add_fault", "from": 1, "to": 5, "start": 0.1,
+            "duration": 0.1}, "no Dynamic_simulation block"),
+    ("input/ds/input_kundur_two_area_esst1a.xml",
+     {"op": "trip_branch", "from": 7, "to": 8, "time": 0.5},
+     "circuits 1, 2; give ckt"),
+])
+def test_rejected_events_leave_nothing(tmp_path, case, edit, msg):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    with pytest.raises(ValueError, match=msg):
+        t.modify_case(case, [{"op": "scale_load", "bus": 5, "factor": 1.1}
+                             if case == DS9 else
+                             {"op": "scale_load", "bus": 9, "factor": 1.1},
+                             edit])
+    assert not (tmp_path / "jobs/derived").exists()
+
+
+@pytest.mark.integration
+def test_events_change_the_run_and_hadrec_accepts_a_fault(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    base = t.job_result(t.run_dynamic_sim(DS9, end_time=0.3)["id"])["watch"]
+    d = t.modify_case(DS9, [{"op": "trip_generator", "bus": 3, "time": 0.2}])
+    st = t.run_dynamic_sim(d["case"], end_time=0.3)
+    w = t.job_result(st["id"])["watch"]
+    i = w["columns"].index("1_1_speed")
+    same = [abs(a[i] - b[i]) for a, b in zip(w["rows"], base["rows"])]
+    assert st["exit_code"] == 0 and len(same) == 30
+    assert max(same[:19]) == 0 and max(same[21:]) > 1e-5    # trip at 0.2 s
+    # Line and bus-fault events change the trajectory too.
+    for edit in ({"op": "trip_branch", "from": 7, "to": 8, "time": 0.1},
+                 {"op": "add_bus_fault", "bus": 5, "start": 0.1,
+                  "duration": 0.05}):
+        e = t.modify_case(DS9, [edit])
+        w = t.job_result(t.run_dynamic_sim(e["case"], end_time=0.3)["id"])["watch"]
+        assert max(abs(a[i] - b[i]) for a, b in zip(w["rows"], base["rows"])) > 1e-5
+    # hadrec runs a derived case whose first event is a fault.
+    mine = _mine(tmp_path, "raw/9b3g.raw", "dyr/9b3g.dyr")
+    t2 = Tools(JobRunner(tmp_path / "jobs2"), cases=[mine])
+    plain = t2.create_case("mine/dyn/9b3g.raw", dyr="mine/dyn/9b3g.dyr")["case"]
+    f = t2.modify_case(plain, [{"op": "add_fault", "from": 6, "to": 7,
+                                "start": 0.1, "duration": 0.05}])
+    st = t2.run_hadrec(f["case"], end_time=0.3)
+    obs = t2.job_result(st["id"])["observations"]
+    assert (st["state"], st["exit_code"]) == ("done", 0) and len(obs["rows"]) > 0
