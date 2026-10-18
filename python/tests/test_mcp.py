@@ -60,7 +60,7 @@ def test_stdio_handshake():
     assert init["result"]["serverInfo"]["name"] == "gridpack"
     assert [t["name"] for t in tools["result"]["tools"]] == [
         "list_cases", "describe_case", "create_case", "modify_case",
-        "run_powerflow", "run_contingency", "run_dynamic_sim",
+        "create_measurements", "run_powerflow", "run_contingency", "run_dynamic_sim",
         "run_state_estimation", "run_hadrec", "run_emt", "job_status",
         "job_result", "job_log", "job_series", "job_report", "compare_jobs",
         "plot_job", "run_study", "study_status", "study_result"]

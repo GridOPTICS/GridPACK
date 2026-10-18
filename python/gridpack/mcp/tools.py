@@ -27,7 +27,7 @@ from ..case import _OVERRIDES, Case, data_sets
 from ..rawedit import OPS, edit_raw
 from .events import (EVENT_OPS, append_events, plan_events, raw_elements,
                      set_observations, watch_all_generators)
-from . import plots, post, study
+from . import measurements, plots, post, study
 from .runner import JobRunner
 from .templates import build_xml, raw_generators, raw_version
 
@@ -68,6 +68,7 @@ class Tools:
         self.timeout = timeout
         self._cases = None
         self._studies = {}
+        self._job_case = {}
         self._lock = threading.Lock()
 
     # ---- cases -------------------------------------------------------
@@ -235,6 +236,84 @@ class Tools:
         out.update(base=case, edits=report)
         return out
 
+    def create_measurements(self, job_id: str, types: Optional[List[str]] = None,
+                            noise: Optional[Dict[str, float]] = None,
+                            noise_scale: float = 1.0, coverage: float = 1.0,
+                            bad_data: Optional[List[Dict[str, Any]]] = None,
+                            random_bad: int = 0, bad_sigma: float = 20.0,
+                            seed: int = 0, name: Optional[str] = None
+                            ) -> Dict[str, Any]:
+        """Make a state estimation case from a finished power flow job:
+        meters taken from its solution with noise and optional bad data,
+        listed as derived/<name>/<name>.xml; returns its description, the
+        meter counts and what was planted.
+
+        types: VM, VA (deg), PI, QI, PIJ, QIJ, PJI, QJI (p.u.); default VM,
+        PI, QI, PIJ, QIJ on every bus and branch.  noise: std per type
+        (defaults VM 0.004, PI/QI 0.01, flows 0.008, VA 0.1), scaled by
+        noise_scale (0 = exact).  coverage: fraction of meters kept.
+        bad_data: [{type, bus | from, to, ckt, error}] adds error to those
+        meters; random_bad plants that many errors of bad_sigma standard
+        deviations.  seed makes it repeatable.  The SE job's job_report
+        then compares the estimate with this truth.
+        """
+        job, result = self._finished(job_id)
+        if job.app != "powerflow":
+            raise ValueError("job %s is a %s run; measurements come from a "
+                             "power flow" % (job_id, job.app))
+        if not result.get("converged"):
+            raise ValueError("job %s did not converge; its solution is not a "
+                             "truth" % job_id)
+        base = self._job_case.get(job_id)
+        if base is None:
+            raise ValueError("job %s has no case on record" % job_id)
+        if not isinstance(random_bad, int) or isinstance(random_bad, bool) \
+                or random_bad < 0:
+            raise ValueError("random_bad must be a non-negative int")
+        for k, v in (("noise_scale", noise_scale), ("bad_sigma", bad_sigma)):
+            if isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0:
+                raise ValueError("%s must be a non-negative number" % k)
+        if noise is not None:
+            if not isinstance(noise, dict) or any(
+                    t not in measurements.TYPES or isinstance(v, bool)
+                    or not isinstance(v, (int, float)) or v < 0
+                    for t, v in noise.items()):
+                raise ValueError("noise maps measurement types to non-negative "
+                                 "standard deviations")
+        c = self._load(base)
+        tag = next((p for p in c.files() if ".networkConfiguration" in p), None)
+        if tag is None:
+            raise ValueError("%s has no network file" % base)
+        raw = Path(c.files()[tag])
+        meters, summary = measurements.synthesize(
+            result, measurements.raw_sbase(raw), types, noise, noise_scale,
+            coverage, bad_data or (), random_bad, bad_sigma, seed)
+        root = self.runner.root / _DERIVED
+        stem = name or self._free_name(root, Path(self._entry(base)["_xml"]).stem + "-se")
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", stem):
+            raise ValueError("name must be letters, digits, _ . or -, "
+                             "not %r" % stem)
+        d = root / stem
+        if d.exists():
+            raise ValueError("%s/%s exists; pick another name" % (_DERIVED, stem))
+        d.mkdir(parents=True)
+        try:
+            measurements.write_measurements(d / "measurements.xml", meters)
+            (d / (stem + ".xml")).write_text(measurements.se_xml(
+                str(raw), raw_version(raw), "measurements.xml"))
+            xml = Case(d / (stem + ".xml")).write(d)   # copies the RAW beside
+            measurements.dump(d / "measurements.json", result,
+                              dict(summary, truth_job=job_id, base=base))
+        except (ValueError, OSError):
+            shutil.rmtree(d, ignore_errors=True)
+            raise
+        with self._lock:
+            self._dirs.setdefault(_DERIVED, root)
+            self._cases = None
+        out = self.describe_case("%s/%s/%s" % (_DERIVED, stem, xml.name))
+        out.update(truth_job=job_id, base=base, **summary)
+        return out
+
     # ---- runs ----------------------------------------------------------
 
     def run_powerflow(self, case: str, tolerance: Optional[float] = None,
@@ -304,6 +383,7 @@ class Tools:
         job = self.runner.get(job_id)
         status = job.status()
         status.pop("workdir")
+        status["case"] = self._job_case.get(job_id)
         result = job.result if job.state == "done" else None
         if result is not None and "converged" in result:
             status["converged"] = result["converged"]
@@ -443,6 +523,16 @@ class Tools:
         speed deviation.  Pending items are counted, failed ones listed."""
         return study.rank(self._study(study_id), self.runner)
 
+    def _truth(self, case):
+        """measurements.json of a synthesized SE case, or None."""
+        if not case:
+            return None
+        try:
+            path = Path(self._entry(case)["_xml"]).with_name("measurements.json")
+        except ValueError:
+            return None
+        return json.loads(path.read_text()) if path.is_file() else None
+
     def _study(self, study_id):
         with self._lock:
             if study_id not in self._studies:
@@ -467,7 +557,15 @@ class Tools:
         """A short text verdict on a finished job: convergence, violations,
         totals, events, speed deviation, damping and angle spread."""
         job, result = self._finished(job_id)
-        return post.report(result, job.app, job.workdir)
+        text = post.report(result, job.app, job.workdir)
+        if job.app == "se":
+            truth = self._truth(self._job_case.get(job_id))
+            if truth:
+                acc = measurements.accuracy(result, truth["truth_buses"],
+                                            truth["planted"],
+                                            result.get("bad_measurements", []))
+                text = "\n".join([text] + measurements.estimate_lines(acc))
+        return text
 
     def compare_jobs(self, job_a: str, job_b: str) -> Dict[str, Any]:
         """What changed from job_a to job_b: bus voltage and angle changes,
@@ -528,8 +626,11 @@ class Tools:
         # EMT aborts without its PETSc options file in the working dir.
         files = [entry["_petscrc"]] if app == "emt" and entry["_petscrc"] \
             else []
-        return self.runner.submit(app, c, ranks=ranks, files=files,
-                                  timeout=self.timeout)
+        job = self.runner.submit(app, c, ranks=ranks, files=files,
+                                 timeout=self.timeout)
+        with self._lock:
+            self._job_case[job.id] = entry["case"]
+        return job
 
     def _catalog(self):
         with self._lock:

@@ -1039,3 +1039,58 @@ def test_hadrec_records_the_added_observations(tmp_path):
     assert t.run_dynamic_sim(DS9, end_time=0.1)["channels"] == 8
     text = t.job_report(st["id"])
     assert "30 channels" in text and "Peak speed deviation" in text
+
+
+# -------------------------------------------------------------
+# create_measurements
+# -------------------------------------------------------------
+
+def test_create_measurements_needs_a_converged_power_flow(tmp_path):
+    noop = tmp_path / "noop.py"
+    noop.write_text("")
+    t = Tools(JobRunner(tmp_path / "jobs", cli=(sys.executable, str(noop))))
+    st = t.run_powerflow(PF14)              # fails: no result file
+    with pytest.raises(ValueError, match="no results"):
+        t.create_measurements(st["id"])
+    with pytest.raises(KeyError):
+        t.create_measurements("nope")
+    assert not (tmp_path / "jobs/derived").exists()
+
+
+@pytest.mark.integration
+def test_measurements_round_trip_through_the_estimator(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    pf = t.run_powerflow(PF14)
+    assert pf["case"] == PF14
+    with pytest.raises(ValueError, match="is a dsf run"):
+        t.create_measurements(t.run_dynamic_sim(DS9, end_time=0.05)["id"])
+    # Exact meters: the estimate reproduces the power flow.
+    exact = t.create_measurements(pf["id"], noise_scale=0.0, name="exact")
+    assert exact["case"] == "derived/exact/exact.xml" and exact["apps"] == ["se"]
+    assert exact["by_type"] == {"VM": 14, "PI": 14, "QI": 14, "PIJ": 20, "QIJ": 20}
+    assert exact["files"] == {"State_estimation.networkConfiguration": "IEEE14.raw",
+                              "State_estimation.measurementList": "measurements.xml"}
+    se = t.run_state_estimation(exact["case"])
+    assert se["converged"] is True
+    cmp = t.compare_jobs(pf["id"], se["id"])
+    assert abs(cmp["voltage_pu"]["max_change"]) < 2e-4 and abs(cmp["angle_deg"]["max_change"]) < 0.02
+    text = t.job_report(se["id"])
+    assert "Against the power flow truth: RMS voltage error 0.0000" in text
+    assert "Bad data" not in text
+    # Noisy meters with two planted gross errors on bus meters.
+    noisy = t.create_measurements(pf["id"], seed=5, bad_data=[
+        {"type": "VM", "bus": 9, "error": 0.15},
+        {"type": "PI", "bus": 5, "error": 0.5}])
+    assert [p["type"] for p in noisy["planted"]] == ["VM", "PI"]
+    se2 = t.run_state_estimation(noisy["case"])
+    text = t.job_report(se2["id"])
+    assert "Bad data: 2 planted" in text and se2["converged"] is True
+    truth = json.loads((tmp_path / "jobs/derived/input_14-se-1/measurements.json").read_text())
+    assert truth["truth_job"] == pf["id"] and len(truth["truth_buses"]) == 14
+    for kwargs, msg in [({"types": ["XX"]}, "unknown measurement type"),
+                        ({"random_bad": -1}, "non-negative int"),
+                        ({"noise": {"VM": -1}}, "non-negative standard"),
+                        ({"noise_scale": -2}, "non-negative number"),
+                        ({"name": "exact"}, "exists")]:
+        with pytest.raises(ValueError, match=msg):
+            t.create_measurements(pf["id"], **kwargs)

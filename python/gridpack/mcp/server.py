@@ -16,7 +16,7 @@ _INSTALL_HINT = ("gridpack-mcp needs the mcp package: "
 
 
 _TOOLS = ("list_cases", "describe_case", "create_case", "modify_case",
-          "run_powerflow", "run_contingency", "run_dynamic_sim",
+          "create_measurements", "run_powerflow", "run_contingency", "run_dynamic_sim",
           "run_state_estimation", "run_hadrec", "run_emt", "job_status",
           "job_result", "job_log", "job_series", "job_report", "compare_jobs",
           "plot_job", "run_study", "study_status", "study_result")
@@ -38,7 +38,9 @@ def build_server(tools=None):
                      "shunts or branches changed and faults or trips added.  "
                      "job_report, job_series, plot_job and compare_jobs read "
                      "finished jobs back; run_study fans out a load sweep or "
-                     "a dynamic N-1 screen.  EMT results are status only.")
+                     "a dynamic N-1 screen; create_measurements turns a power "
+                     "flow into a state estimation case.  EMT results are "
+                     "status only.")
     for name in _TOOLS:
         fn = getattr(tools, name)
         server.add_tool(_reported(_as_image(fn) if name == "plot_job" else fn))

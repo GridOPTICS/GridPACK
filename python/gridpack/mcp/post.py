@@ -296,13 +296,14 @@ def _compare_static(a, b):
     out["buses"] = {"common": len(common), "only_in_a": sorted(set(ba) - set(bb)),
                     "only_in_b": sorted(set(bb) - set(ba))}
     for key, label in (("voltage", "voltage_pu"), ("angle", "angle_deg")):
-        diffs = [(bb[i][key] - ba[i][key], i) for i in common if key in ba[i]]
+        diffs = [(bb[i][key] - ba[i][key], i) for i in common
+                 if key in ba[i] and key in bb[i]]
         if diffs:
             d, bus = max(diffs, key=lambda x: abs(x[0]))
             out[label] = {"max_change": d, "at_bus": bus,
                           "rms_change": math.sqrt(sum(x * x for x, _ in diffs) / len(diffs))}
     for key in ("pGen", "pLoad", "qGen", "qLoad"):
-        if key in ba[common[0]]:
+        if key in ba[common[0]] and key in bb[common[0]]:
             out[key + "_total"] = {"a": sum(ba[i][key] for i in common),
                                    "b": sum(bb[i][key] for i in common)}
     ka = {(x["fromBus"], x["toBus"], x["circuitId"].strip()): x for x in a.get("branches", [])}
