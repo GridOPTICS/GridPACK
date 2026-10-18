@@ -10,6 +10,8 @@ Cases are named by their path under ``data_sets``, as :meth:`list_cases`
 returns them; nothing else is accepted.
 """
 
+import os
+import re
 import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -21,21 +23,24 @@ _APPS = ("powerflow", "ca", "dsf", "hadrec", "se", "emt")
 _CASE_DIRS = ("input", "emt")
 _MAX_WAIT = 10.0
 _MAX_TAIL = 1000
+_TIMEOUT = 600.0
 
 
 class Tools:
     """The tool set; one :class:`JobRunner` holds the jobs."""
 
-    def __init__(self, runner: Optional[JobRunner] = None, root=None):
+    def __init__(self, runner: Optional[JobRunner] = None, root=None,
+                 timeout: float = _TIMEOUT):
         self.runner = runner or JobRunner()
         self._root = root
+        self.timeout = timeout
         self._cases = None
         self._lock = threading.Lock()
 
     # ---- cases -------------------------------------------------------
 
     def list_cases(self, app: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Bundled input cases and the applications each can run.
+        """Bundled input cases: applications, bus count and rank limit.
 
         app: only cases for this application (powerflow, ca, dsf, hadrec,
         se, emt).
@@ -56,6 +61,7 @@ class Tools:
                           _OVERRIDES[app].items()}
                     for app in entry["apps"]}
         return {"case": case, "apps": entry["apps"],
+                "buses": entry["buses"], "max_ranks": entry["max_ranks"],
                 "files": {p: Path(v).name for p, v in c.files().items()},
                 "settings": settings}
 
@@ -156,17 +162,21 @@ class Tools:
     # ---- internals -------------------------------------------------------
 
     def _run(self, app, case, ranks, wait_seconds, **settings):
-        apps = self._entry(case)["apps"]
-        if app not in apps:
+        entry = self._entry(case)
+        if app not in entry["apps"]:
             raise ValueError("%s cannot run %s; it supports %s"
-                             % (case, app, ", ".join(apps)))
+                             % (case, app, ", ".join(entry["apps"])))
+        if isinstance(ranks, int) and ranks > entry["max_ranks"]:
+            raise ValueError("%s (%d buses) runs on at most %d ranks"
+                             % (case, entry["buses"], entry["max_ranks"]))
         c = self._load(case)
         settings = {k: v for k, v in settings.items() if v is not None}
         if settings:
             c.override(app, **settings)
         # EMT aborts without its PETSc options file in the working dir.
         files = [self._data() / "emt/.petscrc"] if app == "emt" else []
-        job = self.runner.submit(app, c, ranks=ranks, files=files)
+        job = self.runner.submit(app, c, ranks=ranks, files=files,
+                                 timeout=self.timeout)
         self.runner.wait(job.id, max(0.0, min(float(wait_seconds),
                                               _MAX_WAIT)))
         return self.job_status(job.id)
@@ -225,6 +235,34 @@ def _scan(root):
             continue
         net = next((v for p, v in files.items()
                     if ".networkConfiguration" in p), None)
+        buses = _count_buses(net) if net else 0
         out.append({"case": rel, "apps": apps,
-                    "network": Path(net).name if net else None})
+                    "network": Path(net).name if net else None,
+                    "buses": buses, "max_ranks": _max_ranks(buses)})
     return out
+
+
+def _count_buses(raw):
+    """Records in a PSS/E RAW bus section (v23 to v36)."""
+    lines = Path(raw).read_text(errors="replace").splitlines()
+    # v35+ put system-wide data first; older versions have 3 header lines.
+    start = next((i + 1 for i, l in enumerate(lines)
+                  if "BEGIN BUS DATA" in l.upper()), 3)
+    n = 0
+    for line in lines[start:]:
+        s = line.strip()
+        if not s or s.startswith("@!"):
+            continue
+        if re.match(r"(0|Q)(\s|/|,|$)", s):
+            break
+        n += 1
+    return n
+
+
+def _max_ranks(buses):
+    # Partitioned finer, a rank gets no buses and every rank spins.
+    if buses < 9:
+        return 1
+    if buses == 9:
+        return 3
+    return max(1, min(os.cpu_count() or 1, buses))

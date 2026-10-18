@@ -58,6 +58,14 @@ def test_stdio_handshake():
         "job_status", "job_result", "job_log"]
 
 
+@_CLI
+@pytest.mark.parametrize("value", ["0", "-5", "nan", "soon"])
+def test_timeout_must_be_positive(value):
+    r = subprocess.run([_SCRIPT, "--timeout", value], capture_output=True,
+                       text=True, timeout=60)
+    assert r.returncode == 2 and "--timeout" in r.stderr
+
+
 def test_missing_mcp_is_a_usage_error():
     r = subprocess.run(
         [sys.executable, "-c",

@@ -5,9 +5,11 @@
 # -------------------------------------------------------------
 
 import json
+import os
 import shutil
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -19,13 +21,28 @@ PF14 = "input/powerflow/input_14.xml"
 
 @pytest.fixture(scope="module")
 def tools(tmp_path_factory):
-    return Tools(JobRunner(tmp_path_factory.mktemp("jobs")))
+    t = Tools(JobRunner(tmp_path_factory.mktemp("jobs")))
+    yield t
+    # Jobs run in their own sessions and would outlive pytest.
+    for job in t.runner.jobs():
+        t.runner.cancel(job.id)
+
+
+@pytest.fixture
+def harmless(tmp_path):
+    """Tools whose CLI and mpiexec are no-ops: a validation bug can't start
+    a real run, such as a 9-bus case on 4 ranks."""
+    noop = tmp_path / "noop.py"
+    noop.write_text("")
+    cmd = (sys.executable, str(noop))
+    return Tools(JobRunner(tmp_path / "jobs", cli=cmd, mpiexec=cmd))
 
 
 def test_list_cases(tools):
     cases = {c["case"]: c for c in tools.list_cases()}
     assert cases[PF14] == {"case": PF14, "apps": ["powerflow"],
-                           "network": "IEEE14.raw"}
+                           "network": "IEEE14.raw", "buses": 14,
+                           "max_ranks": min(os.cpu_count(), 14)}
     assert cases["input/ca/input_14.xml"]["apps"] == ["powerflow", "ca"]
     # Unparsable, and a Dynamic_simulation-only input dsf aborts on.
     assert "input/ds/input_dsim.xml" not in cases
@@ -59,6 +76,20 @@ def test_describe_case(tools):
         "powerflow"] == {"tolerance": "1.0e-6", "max_iterations": "50"}
 
 
+def test_bus_counts_and_rank_caps(tools):
+    cases = {c["case"]: c for c in tools.list_cases()}
+    cpus = os.cpu_count()
+    # Each count is the one the power flow reports for that network.
+    for case, buses, cap in [
+            ("emt/two-bus/input_2bus.xml", 2, 1),
+            ("input/ds/input_9b3g.xml", 9, 3),
+            ("input/ds/input_kundur_two_area_wsieg1.xml", 11, min(cpus, 11)),
+            ("input/powerflow/input_240_v36.xml", 243, cpus),
+            ("input/powerflow/input_european.xml", 13659, cpus)]:
+        assert (cases[case]["buses"], cases[case]["max_ranks"]) \
+            == (buses, cap), case
+
+
 def test_cases_with_missing_files_are_not_listed(tmp_path):
     (tmp_path / "input").mkdir()
     (tmp_path / "raw").mkdir()
@@ -78,14 +109,16 @@ def test_cases_with_missing_files_are_not_listed(tmp_path):
     {"case": PF14, "tolerance": -1.0},
     {"case": PF14, "ranks": 0},
     {"case": "input/ds/input_kundur_two_area_wshygp.xml", "app": "hadrec"},
+    # Over the cap.
+    {"case": "input/ds/input_9b3g.xml", "ranks": 4},
+    {"case": "emt/two-bus/input_2bus.xml", "ranks": 2},
 ])
-def test_run_rejects_without_a_job(tools, kwargs):
-    before = len(tools.runner.jobs())
-    run = getattr(tools, {"hadrec": "run_hadrec"}.get(
+def test_run_rejects_without_a_job(harmless, kwargs):
+    run = getattr(harmless, {"hadrec": "run_hadrec"}.get(
         kwargs.pop("app", None), "run_powerflow"))
     with pytest.raises(ValueError):
         run(**kwargs)
-    assert len(tools.runner.jobs()) == before
+    assert harmless.runner.jobs() == []
 
 
 @pytest.mark.integration
@@ -150,6 +183,11 @@ def test_waiting_and_unknown_jobs(tmp_path):
     t.runner.cancel(st["id"])
     st = t.job_status(t.runner.wait(st["id"], 30).id)
     assert (st["state"], st["error"]) == ("failed", "cancelled")
+
+    t = Tools(JobRunner(tmp_path / "jobs2", cli=(sys.executable, str(slow))),
+              timeout=1)
+    st = t.run_powerflow(PF14)
+    assert (st["state"], st["error"]) == ("failed", "timed out after 1 s")
     with pytest.raises(ValueError, match="no results"):
         t.job_result(st["id"])
     with pytest.raises(ValueError):
@@ -158,39 +196,98 @@ def test_waiting_and_unknown_jobs(tmp_path):
         t.job_status("nope")
 
 
+class _Server:
+    """gridpack-mcp over stdio, initialised."""
+
+    def __init__(self, *args):
+        self.p = subprocess.Popen(["gridpack-mcp", *args], stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, text=True)
+        self.n = 0
+        self.rpc("initialize", {"protocolVersion": "2025-06-18",
+                                "capabilities": {},
+                                "clientInfo": {"name": "pytest",
+                                               "version": "0"}})
+        self._send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+
+    def _send(self, msg):
+        self.p.stdin.write(json.dumps(msg) + "\n")
+        self.p.stdin.flush()
+
+    def rpc(self, method, params):
+        self.n += 1
+        self._send({"jsonrpc": "2.0", "id": self.n, "method": method,
+                    "params": params})
+        return json.loads(self.p.stdout.readline())["result"]
+
+    def call(self, name, **arguments):
+        return self.rpc("tools/call", {"name": name, "arguments": arguments})
+
+    def close(self):
+        self.p.stdin.close()
+        return self.p.wait(timeout=60)
+
+
+_STDIO = pytest.mark.skipif(shutil.which("gridpack-mcp") is None,
+                            reason="gridpack-mcp console script not installed")
+
+
+def _procs(pattern):
+    # pgrep -f matches the full command line; ps truncates it on Linux.
+    out = subprocess.run(["pgrep", "-f", pattern], capture_output=True,
+                         text=True).stdout
+    return out.split()
+
+
 @pytest.mark.integration
-@pytest.mark.skipif(shutil.which("gridpack-mcp") is None,
-                    reason="gridpack-mcp console script not installed")
+@_STDIO
 def test_tools_over_stdio():
     pytest.importorskip("mcp")
-    p = subprocess.Popen(["gridpack-mcp"], stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         text=True)
-
-    def rpc(i, method, params):
-        p.stdin.write(json.dumps({"jsonrpc": "2.0", "id": i,
-                                  "method": method, "params": params}) + "\n")
-        p.stdin.flush()
-        return json.loads(p.stdout.readline())["result"]
-
+    s = _Server()
     try:
-        rpc(1, "initialize", {"protocolVersion": "2025-06-18",
-                              "capabilities": {},
-                              "clientInfo": {"name": "pytest", "version": "0"}})
-        p.stdin.write(json.dumps({"jsonrpc": "2.0",
-                                  "method": "notifications/initialized"}) + "\n")
-        run = rpc(2, "tools/call", {"name": "run_powerflow",
-                                    "arguments": {"case": PF14}})
+        run = s.call("run_powerflow", case=PF14)
         job = run["structuredContent"]["result"]
-        res = rpc(3, "tools/call", {"name": "job_result",
-                                    "arguments": {"job_id": job["id"]}})
-        bad = rpc(4, "tools/call", {"name": "run_powerflow",
-                                    "arguments": {"case": "../x"}})
-        p.stdin.close()
-        assert p.wait(timeout=30) == 0
+        res = s.call("job_result", job_id=job["id"])
+        bad = s.call("run_powerflow", case="../x")
+        assert s.close() == 0
     finally:
-        p.kill()
+        s.p.kill()
     assert job["state"] == "done" and not run["isError"]
     assert len(res["structuredContent"]["result"]["buses"]) == 14
     # The reason reaches the client, not just "Error executing tool".
     assert bad["isError"] and "unknown case '../x'" in bad["content"][0]["text"]
+
+
+@pytest.mark.integration
+@_STDIO
+def test_server_exit_stops_its_jobs():
+    pytest.importorskip("mcp")
+    pattern = "dsf input_3000.xml --no-timer --json result.json"
+    assert not _procs(pattern)
+    s = _Server()
+    try:
+        st = s.call("run_dynamic_sim", case="input/ds/input_3000.xml",
+                    end_time=1e5, wait_seconds=1)["structuredContent"]["result"]
+        assert st["state"] == "running" and _procs(pattern)
+        assert s.close() == 0
+    finally:
+        s.p.kill()
+    for _ in range(50):
+        if not _procs(pattern):
+            break
+        time.sleep(0.2)
+    assert not _procs(pattern)
+
+
+@pytest.mark.integration
+@_STDIO
+def test_server_timeout_kills_jobs():
+    pytest.importorskip("mcp")
+    s = _Server("--timeout", "2")
+    try:
+        st = s.call("run_dynamic_sim", case="input/ds/input_3000.xml",
+                    end_time=1e5, wait_seconds=10)["structuredContent"]["result"]
+        assert s.close() == 0
+    finally:
+        s.p.kill()
+    assert (st["state"], st["error"]) == ("failed", "timed out after 2.0 s")
