@@ -1094,3 +1094,83 @@ def test_measurements_round_trip_through_the_estimator(tmp_path):
                         ({"name": "exact"}, "exists")]:
         with pytest.raises(ValueError, match=msg):
             t.create_measurements(pf["id"], **kwargs)
+
+
+# -------------------------------------------------------------
+# create_dyr and set_dyr_param
+# -------------------------------------------------------------
+
+def test_create_dyr_then_case(tmp_path):
+    d = _mine(tmp_path, "raw/IEEE14.raw")
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[d])
+    r = t.create_dyr("mine/IEEE14.raw")
+    assert r == {"dyr": "mine/IEEE14_classical.dyr", "generators": 5,
+                 "models": ["GENCLS"],
+                 "note": "generic textbook parameters, not validated for these "
+                         "machines"}
+    det = t.create_dyr("mine/IEEE14.raw", model_set="detailed", name="rich")
+    assert det["dyr"] == "mine/rich.dyr" and det["models"] == ["GENROU", "SEXS", "TGOV1"]
+    c = t.create_case("mine/IEEE14.raw", dyr=det["dyr"], name="dyn14")
+    assert c["apps"] == ["powerflow", "dsf"] and c["records"]["watched_generators"] == 5
+    for kwargs, msg in [({"raw": "mine/IEEE14.raw"}, "exists"),
+                        ({"raw": "mine/IEEE14.raw", "model_set": "x"}, "model_set is one of"),
+                        ({"raw": "mine/nope.raw"}, "not found"),
+                        ({"raw": "mine/IEEE14.raw", "name": "a b"}, "name must be")]:
+        with pytest.raises(ValueError, match=msg):
+            t.create_dyr(**kwargs)
+    with pytest.raises(ValueError, match="--cases DIR"):
+        Tools(JobRunner(tmp_path / "jobs2")).create_dyr("x.raw")
+
+
+def test_set_dyr_param_edit(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case(DS9, [
+        {"op": "set_dyr_param", "bus": 2, "model": "GENCLS", "field": "H", "value": 12.5},
+        {"op": "scale_load", "bus": 5, "factor": 1.1}])
+    assert d["edits"][0] == {"op": "set_dyr_param", "bus": 2, "model": "GENCLS",
+                             "field": "H", "value": 12.5, "was": 8.0, "now": 12.5}
+    assert d["edits"][1]["now"] == {"PL": 99.0, "QL": 33.0}
+    assert d["files"]["Dynamic_simulation.generatorParameters"] == "9b3g.dyr"
+    from gridpack.dyredit import dyr_records
+    dyr = tmp_path / "jobs/derived/input_9b3g-1/9b3g.dyr"
+    assert dyr_records(dyr)[1].get("H") == 12.5 and dyr_records(dyr)[0].get("H") == 8.0
+    for edits, msg in [
+            ([{"op": "set_dyr_param", "bus": 9, "model": "GENCLS", "field": "H",
+               "value": 1}], "no GENCLS record"),
+            ([{"op": "set_dyr_param", "bus": 1, "model": "GENCLS", "field": "XD",
+               "value": 1}], "has no field XD")]:
+        with pytest.raises(ValueError, match=msg):
+            t.modify_case(DS9, edits)
+    with pytest.raises(ValueError, match="no Dynamic_simulation block"):
+        t.modify_case(PF14, [{"op": "set_dyr_param", "bus": 1, "model": "GENCLS",
+                              "field": "H", "value": 1}])
+    assert len(list((tmp_path / "jobs/derived").iterdir())) == 1
+
+
+@pytest.mark.integration
+def test_synthesized_and_edited_models_run(tmp_path):
+    d = _mine(tmp_path, "raw/9b3g.raw")
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[d])
+    # Generic detailed models on the 9-bus network, faulted, run and stable.
+    dyr = t.create_dyr("mine/dyn/9b3g.raw", model_set="detailed")["dyr"]
+    case = t.create_case("mine/dyn/9b3g.raw", dyr=dyr)["case"]
+    f = t.modify_case(case, [{"op": "add_fault", "from": 6, "to": 7, "start": 0.1,
+                              "duration": 0.05}])
+    st = t.run_dynamic_sim(f["case"], end_time=1.0)
+    assert (st["state"], st["exit_code"], st["channels"]) == ("done", 0, 24)
+    text = t.job_report(st["id"])
+    assert "Verdict:" in text and "loss of synchronism" not in text
+    # A heavier machine swings less.
+    base = t.run_dynamic_sim(DS9, end_time=0.5)["id"]
+    heavy = t.modify_case(DS9, [{"op": "set_dyr_param", "bus": 1, "model": "GENCLS",
+                                 "field": "H", "value": 16.0}])
+    hv = t.run_dynamic_sim(heavy["case"], end_time=0.5)["id"]
+    s0 = post_stats(t, base)
+    s1 = post_stats(t, hv)
+    assert s1["peak_speed_deviation"] < s0["peak_speed_deviation"]
+    assert t.compare_jobs(base, hv)["first_difference_at"] <= 0.04
+
+
+def post_stats(t, job_id):
+    from gridpack.mcp import post
+    return post.dynamic_stats(t.job_result(job_id), "dsf")

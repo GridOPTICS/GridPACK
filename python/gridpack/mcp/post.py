@@ -192,7 +192,9 @@ def dynamic_stats(result, app, after=0.0):
     out = {"duration": time[-1], "rows": len(rows), "channels": len(cols) - 1,
            "time_step": time[1] - time[0] if len(time) > 1 else 0.0}
     speeds = [c for c in cols if c.endswith("_speed") or c.endswith("_rspeed")]
-    angles = [c for c in cols if c.endswith("_PowerAngle") or c.endswith("_rangle")]
+    # Rotor angles in radians for every model; PowerAngle is in degrees for
+    # some models and radians for others, so it is not used.
+    angles = [c for c in cols if c.endswith("_angle") or c.endswith("_rangle")]
     if speeds:
         dev = {c: [abs(row[cols.index(c)] - 1.0) for row in rows] for c in speeds}
         worst = max(speeds, key=lambda c: max(dev[c]))
@@ -200,13 +202,12 @@ def dynamic_stats(result, app, after=0.0):
                    final_speed_deviation=dev[worst][-1],
                    damping_ratio=_damping(dev[worst], time, after))
     if len(angles) > 1:
-        # Each machine's angle relative to its own start: the watch's
-        # absolute PowerAngle values carry arbitrary offsets per machine.
-        idx = [cols.index(c) for c in angles]
-        base = [rows[0][i] for i in idx]
-        spread = [_DEG * (max(row[i] - b for i, b in zip(idx, base))
-                          - min(row[i] - b for i, b in zip(idx, base)))
-                  for row in rows]
+        # Each machine's angle relative to its own start, unwrapped, so a
+        # common frequency drift and any +-pi wrapping drop out.
+        series = [_unwrap([row[cols.index(c)] for row in rows]) for c in angles]
+        rel = [[a - ser[0] for a in ser] for ser in series]
+        spread = [_DEG * (max(r[k] for r in rel) - min(r[k] for r in rel))
+                  for k in range(len(rows))]
         out.update(angle_spread_peak=max(spread), angle_spread_final=spread[-1],
                    loss_of_synchronism=max(spread) > 180.0)
     if "final_speed_deviation" in out:
@@ -254,6 +255,20 @@ def _report_dyn(r, workdir):
     if verdict:
         lines.append("Verdict: %s." % "; ".join(verdict))
     return lines
+
+
+def _unwrap(series):
+    """Remove 2 pi jumps from an angle series in radians."""
+    out = [series[0]]
+    offset = 0.0
+    for a, b in zip(series, series[1:]):
+        step = b - a
+        if step > math.pi:
+            offset -= 2 * math.pi
+        elif step < -math.pi:
+            offset += 2 * math.pi
+        out.append(b + offset)
+    return out
 
 
 def _gen(col):

@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..case import _OVERRIDES, Case, data_sets
+from ..dyredit import MODEL_SETS, edit_dyr, synthesize_dyr
 from ..rawedit import OPS, edit_raw
 from .events import (EVENT_OPS, append_events, plan_events, raw_elements,
                      set_observations, watch_all_generators)
@@ -35,6 +36,7 @@ _APPS = ("powerflow", "ca", "dsf", "hadrec", "se", "emt")
 _CASE_DIRS = ("input", "emt")
 _DERIVED = "derived"
 _OBSERVE = "add_observations"
+_DYR = "set_dyr_param"
 _MAX_WAIT = 10.0
 _MAX_TAIL = 1000
 _TIMEOUT = 600.0
@@ -141,6 +143,39 @@ class Tools:
             xml.unlink()
             raise
 
+    def create_dyr(self, raw: str, model_set: str = "classical",
+                   name: Optional[str] = None) -> Dict[str, Any]:
+        """Write a DYR beside a RAW under a cases directory, giving every
+        generator the generic models of model_set: "classical" (GENCLS) or
+        "detailed" (GENROU + SEXS + TGOV1), at textbook parameters.
+
+        The parameters are not those of any real machine: use the file for
+        teaching, screening and comparing scenarios, and tune it with
+        modify_case set_dyr_param.  Pass the result to create_case as dyr.
+        """
+        if not self._dirs:
+            raise ValueError("create_dyr needs a cases directory: start "
+                             "gridpack-mcp with --cases DIR")
+        raw_path = self._under_cases(raw, "RAW")
+        if model_set not in MODEL_SETS:
+            raise ValueError("model_set is one of %s, not %r"
+                             % (", ".join(MODEL_SETS), model_set))
+        stem = name or "%s_%s" % (raw_path.stem, model_set)
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", stem):
+            raise ValueError("name must be letters, digits, _ . or -, "
+                             "not %r" % stem)
+        dyr = raw_path.parent / (stem + ".dyr")
+        if dyr.exists():
+            raise ValueError("%s exists; pick another name" % self._name(dyr))
+        gens = raw_generators(raw_path)
+        if not gens:
+            raise ValueError("no generator records in %s" % raw_path.name)
+        dyr.write_text(synthesize_dyr(gens, model_set))
+        return {"dyr": self._name(dyr), "generators": len(gens),
+                "models": [m for m, _ in MODEL_SETS[model_set]],
+                "note": "generic textbook parameters, not validated for "
+                        "these machines"}
+
     def modify_case(self, case: str, edits: List[Dict[str, Any]],
                     name: Optional[str] = None,
                     replace_events: bool = False) -> Dict[str, Any]:
@@ -164,8 +199,11 @@ class Tools:
         b_pu}; trip_branch {from, to, ckt, time}; trip_generator {bus, id,
         time}.  hadrec needs a fault as the first event and observations:
         add_observations {generators: "all" or [bus...], buses: "all" or
-        [bus...], bus_frequency} sets what it records (replacing any).  Everything
-        else in the case is inherited.
+        [bus...], bus_frequency} sets what it records (replacing any).
+        set_dyr_param {bus, id, model, field, value} changes a dynamic model
+        parameter in the case's DYR (fields named as GridPACK's parsers do,
+        e.g. GENROU H, XDP; SEXS K; TGOV1 R; or p3, p4, ... by position).
+        Everything else in the case is inherited.
         """
         entry = self._entry(case)
         if not isinstance(edits, list) or not edits:
@@ -174,13 +212,14 @@ class Tools:
             if not isinstance(e, dict) or "op" not in e:
                 raise ValueError("edit %d must be an object with an \"op\"" % n)
             if e["op"] not in OPS and e["op"] not in EVENT_OPS \
-                    and e["op"] != _OBSERVE:
+                    and e["op"] not in (_OBSERVE, _DYR):
                 raise ValueError("edit %d: unknown op %r; one of %s" % (
                     n, e["op"], ", ".join(list(OPS) + list(EVENT_OPS)
-                                          + [_OBSERVE])))
+                                          + [_OBSERVE, _DYR])))
         static = [e for e in edits if e["op"] in OPS]
         dynamic = [e for e in edits if e["op"] in EVENT_OPS]
         observe = [e for e in edits if e["op"] == _OBSERVE]
+        dyr_edits = [e for e in edits if e["op"] == _DYR]
         if len(observe) > 1:
             raise ValueError("give one add_observations edit")
         if observe:
@@ -191,9 +230,13 @@ class Tools:
             raise ValueError("%s has no network file to edit" % case)
         src = Path(c.files()[tag])
         events = []
-        if (dynamic or observe) and "dsf" not in entry["apps"]:
+        if (dynamic or observe or dyr_edits) and "dsf" not in entry["apps"]:
             raise ValueError("%s has no Dynamic_simulation block to hold "
-                             "events or observations" % case)
+                             "events, observations or dynamic models" % case)
+        dyr_tag = next((p for p in c.files() if p.endswith(".generatorParameters")),
+                       None) if dyr_edits else None
+        if dyr_edits and dyr_tag is None:
+            raise ValueError("%s names no DYR file to edit" % case)
         if dynamic:
             events = plan_events(dynamic, src,
                                  float(c.get("Dynamic_simulation.timeStep")),
@@ -212,6 +255,12 @@ class Tools:
             changed = iter(edit_raw(src, d / src.name, static) if static else [])
             if static:
                 c.set(tag, str(d / src.name))
+            dyr_report = iter([])
+            if dyr_edits:
+                dyr_src = Path(c.files()[dyr_tag])
+                dyr_report = iter(edit_dyr(dyr_src, d / dyr_src.name, [
+                    {k: v for k, v in e.items() if k != "op"} for e in dyr_edits]))
+                c.set(dyr_tag, str(d / dyr_src.name))
             xml = c.write(d, name=stem + ".xml")
             added = {id(e): ET.tostring(el, encoding="unicode")
                      for e, el in events}
@@ -222,6 +271,7 @@ class Tools:
                     xml, src, e.get("generators"), e.get("buses"),
                     e.get("bus_frequency", False))
             report = [dict(e, observations=added[id(e)]) if e["op"] == _OBSERVE
+                      else dict(next(dyr_report), op=_DYR) if e["op"] == _DYR
                       else dict(e, xml=added[id(e)]) if id(e) in added
                       else next(changed) for e in edits]
             (d / "edits.json").write_text(json.dumps(

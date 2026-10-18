@@ -20,7 +20,12 @@ argument means.
    this plainly if the user asks for more.
 3. The user's own RAW and DYR files must sit under a directory the server
    was started with (`--cases DIR`); `create_case` builds the input from
-   them. Cases are named `<DIR name>/<path>`.
+   them. Cases are named `<DIR name>/<path>`. With no DYR, `create_dyr`
+   writes generic models (`classical` or `detailed`) for every generator;
+   always say these are textbook parameters, not the real machines.
+4. For state estimation, `create_measurements` on a finished power flow
+   job writes meters with noise and planted bad data; `job_report` on the
+   estimate then compares it with the truth.
 
 ## Changing a case
 
@@ -35,7 +40,9 @@ RAW exactly, and the error message lists the choices when they do not.
 - The reply echoes each edit with `was` and `now`; quote those numbers.
 - Derived cases live only while the server runs. `edits.json` beside each
   one records how it was made, so a study is reproducible from the base.
-- Transformer taps and DYR parameters cannot be edited yet; say so.
+- `set_dyr_param {bus, model, field, value}` tunes a dynamic model
+  parameter (GENROU `H`, `XDP`; SEXS `K`; TGOV1 `R`; or `p3`, `p4`, ... by
+  position). Transformer taps cannot be edited yet; say so.
 
 ## Faults and trips
 

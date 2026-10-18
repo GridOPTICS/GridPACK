@@ -25,7 +25,7 @@ class _Runner:
 
 def _watch(spread_deg, speed_dev, n=20):
     import math
-    cols = ["t", "1_1_speed", "1_1_PowerAngle", "2_1_speed", "2_1_PowerAngle"]
+    cols = ["t", "1_1_speed", "1_1_angle", "2_1_speed", "2_1_angle"]
     rows = [[0.01 * i, 1.0 + speed_dev * i / n, 0.0, 1.0,
              math.radians(spread_deg) * i / n] for i in range(n + 1)]
     return {"watch": {"columns": cols, "rows": rows}}

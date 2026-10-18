@@ -16,7 +16,7 @@ from gridpack.mcp import plots, post
 def _dyn(n=101, step=0.01, fault=(0.1, 0.15), damp=2.0):
     """A watch table: gen 1 swings after the fault and decays; gen 2 is
     flat; angles in radians."""
-    cols = ["t", "1_1_speed", "1_1_PowerAngle", "2_1_speed", "2_1_PowerAngle"]
+    cols = ["t", "1_1_speed", "1_1_angle", "2_1_speed", "2_1_angle"]
     rows = []
     for i in range(n):
         t = round(i * step, 6)
@@ -89,6 +89,21 @@ def test_report_dynamic_verdicts(tmp_path):
         "Dynamic run finished but recorded no time series")
 
 
+def test_angle_wrap_is_not_a_swing():
+    r = _dyn()
+    for i, row in enumerate(r["watch"]["rows"]):
+        # Generator 1 drifts 2.5 rad over the run (143 deg, no loss of
+        # synchronism) and the model wraps it into (-pi, pi] on the way.
+        a = 2.0 + 2.5 * row[0]
+        row[2] = (a + math.pi) % (2 * math.pi) - math.pi
+    assert min(row[2] for row in r["watch"]["rows"]) < -2.0       # it did wrap
+    st = post.dynamic_stats(r, "dsf")
+    assert st["angle_spread_peak"] == pytest.approx(math.degrees(2.5), abs=0.5)
+    assert not st["loss_of_synchronism"]
+    assert post._unwrap([3.0, -3.0, 3.0]) == pytest.approx(
+        [3.0, 2 * math.pi - 3.0, 3.0])
+
+
 def test_damping_estimate_matches_the_decay():
     for damp, zeta_true in ((1.5, 0.124), (6.0, 0.447)):
         r = _dyn(n=401, damp=damp)
@@ -129,7 +144,7 @@ def test_compare_static_and_dynamic():
     a, b = _dyn(), _dyn(damp=0.5)
     d = post.compare(a, b, "dsf", "dsf")
     assert d["rows_compared"] == 101 and d["first_difference_at"] == 0.16
-    assert d["channels"][0]["channel"] in ("1_1_PowerAngle", "1_1_speed")
+    assert d["channels"][0]["channel"] in ("1_1_angle", "1_1_speed")
     assert all(ch["max_change"] == 0 for ch in d["channels"] if ch["channel"].startswith("2_"))
     with pytest.raises(ValueError, match="cannot compare a powerflow job with a dsf"):
         post.compare(_pf(), _dyn(), "powerflow", "dsf")
@@ -158,7 +173,7 @@ def test_plot_without_matplotlib_says_how_to_install(monkeypatch):
 
 def test_plot_renders_png():
     pytest.importorskip("matplotlib")
-    png = plots.render(_dyn(), "dsf", channels=["*_speed", "1_1_PowerAngle"],
+    png = plots.render(_dyn(), "dsf", channels=["*_speed", "1_1_angle"],
                        events=[{"kind": "fault", "start": 0.1, "end": 0.15},
                                {"kind": "generator out", "time": 0.5}])
     assert png[:8] == b"\x89PNG\r\n\x1a\n" and len(png) > 10000

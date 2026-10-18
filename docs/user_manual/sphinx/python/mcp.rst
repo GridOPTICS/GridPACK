@@ -118,7 +118,14 @@ cannot point the server at arbitrary files.
   and optionally a DYR, under a ``--cases`` directory and it writes an
   input XML beside them with default power flow and dynamic simulation
   settings, every generator watched and observed and every bus observed,
-  and no events.
+  and no events.  Without a DYR of your own, ``create_dyr`` writes one with
+  generic models for every generator in the RAW, ``classical`` (GENCLS) or
+  ``detailed`` (GENROU with a SEXS exciter and a TGOV1 governor), at
+  textbook parameters: fine for teaching, screening and comparing
+  scenarios, not a model of any real machine.
+* **State estimation cases** come from ``create_measurements``: it takes a
+  finished power flow job as the truth and writes a measurement file with
+  chosen types, noise and planted bad data (see :ref:`mcp-measurements`).
 * **Derived cases** are made by ``modify_case`` (below) and live under the
   server's work directory as ``derived/<name>/<name>.xml`` until the
   server exits.  An ``edits.json`` beside each records how it was made.
@@ -171,9 +178,11 @@ Tools
        ``plot`` extra.
    * - ``compare_jobs``
      - What changed between two runs of the same kind.
-   * - ``create_case``, ``modify_case``
-     - New cases from RAW/DYR files, and derived cases with edits, events
-       and observations (next section).
+   * - ``create_case``, ``create_dyr``, ``modify_case``,
+       ``create_measurements``
+     - New cases from RAW/DYR files, generic DYR models, derived cases with
+       edits, events, observations and model parameters, and state
+       estimation cases from a power flow (next sections).
    * - ``run_study``, ``study_status``, ``study_result``
      - Load sweeps and dynamic N-1 screens, one job per point, ranked.
 
@@ -214,11 +223,36 @@ Event edits, times in seconds on the case's time step:
   ``trip_generator {bus, id, time, in_service}``.
 * ``add_observations {generators, buses, bus_frequency}`` with ``"all"`` or
   bus lists: what HADREC records.
+* ``set_dyr_param {bus, id, model, field, value}``: a dynamic model
+  parameter in the case's DYR, with the field names GridPACK's parsers use
+  (GENCLS H, D, XDP; GENROU TDOP, TDOPP, TQOP, TQOPP, H, D, XD, XQ, XDP,
+  XQP, XDPP, XL, S1, S12; SEXS TA_TB, TB, K, TE, EMIN, EMAX; TGOV1 R, T1,
+  VMAX, VMIN, T2, T3, DT) or ``p3``, ``p4``, ... by position for any other
+  model.
 
 Events are appended to the base case's own unless ``replace_events`` is
 true.  HADREC needs a fault as the first event and refuses a case with no
 observations.  Not editable yet: transformer taps and status in v33 and
-later files, switched shunts, DYR parameters.
+later files, and switched shunts.
+
+.. _mcp-measurements:
+
+Measurements for state estimation
+---------------------------------
+
+``create_measurements(job_id, ...)`` takes a finished, converged power flow
+job as the truth and writes a state estimation case: a measurement file
+with the chosen types (VM, VA in degrees, PI, QI, PIJ, QIJ, PJI, QJI in
+p.u. on the case base; by default every bus voltage, injection and
+from-end flow), Gaussian noise per type whose standard deviation is also
+each meter's ``Deviation``, ``coverage`` to keep a fraction of the meters,
+and planted gross errors by meter or ``random_bad`` of them at
+``bad_sigma`` standard deviations, all repeatable with ``seed``.  Running
+``run_state_estimation`` on the case and then ``job_report`` adds the
+estimate's RMS and largest errors against the truth and which planted bad
+data the detector caught, missed, or raised false alarms on.
+``noise_scale`` 0 writes exact values but keeps the nominal deviations, as
+the estimator weights meters by them.
 
 Studies
 -------
@@ -255,8 +289,8 @@ repository, ``.claude/skills/gridpack-study/SKILL.md``, which loads when a
 conversation turns to GridPACK studies.
 
 .. autoclass:: gridpack.mcp.tools.Tools
-   :members: list_cases, describe_case, create_case, modify_case,
-             run_powerflow, run_contingency, run_dynamic_sim,
+   :members: list_cases, describe_case, create_case, create_dyr,
+             modify_case, create_measurements, run_powerflow, run_contingency, run_dynamic_sim,
              run_state_estimation, run_hadrec, run_emt, job_status,
              job_result, job_log, job_series, job_report, plot_job,
              compare_jobs, run_study, study_status, study_result

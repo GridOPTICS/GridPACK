@@ -15,8 +15,8 @@ _INSTALL_HINT = ("gridpack-mcp needs the mcp package: "
                  "pip install 'gridpack[mcp]' (Python 3.10+)\n")
 
 
-_TOOLS = ("list_cases", "describe_case", "create_case", "modify_case",
-          "create_measurements", "run_powerflow", "run_contingency", "run_dynamic_sim",
+_TOOLS = ("list_cases", "describe_case", "create_case", "create_dyr",
+          "modify_case", "create_measurements", "run_powerflow", "run_contingency", "run_dynamic_sim",
           "run_state_estimation", "run_hadrec", "run_emt", "job_status",
           "job_result", "job_log", "job_series", "job_report", "compare_jobs",
           "plot_job", "run_study", "study_status", "study_result")
@@ -33,7 +33,8 @@ def build_server(tools=None):
         instructions="Run GridPACK on its cases: list_cases (with each "
                      "case's max_ranks), then a run_* tool, then "
                      "job_status / job_result.  create_case makes a case "
-                     "from a RAW (and DYR) file under a --cases directory; "
+                     "from a RAW (and DYR) file under a --cases directory, "
+                     "create_dyr a generic DYR for a RAW; "
                      "modify_case derives one with loads, generators, "
                      "shunts or branches changed and faults or trips added.  "
                      "job_report, job_series, plot_job and compare_jobs read "
