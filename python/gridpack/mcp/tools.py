@@ -12,19 +12,23 @@ names :meth:`list_cases` returns are accepted; :meth:`create_case` adds one
 for a RAW/DYR pair under a cases directory.
 """
 
+import json
 import os
 import re
+import shutil
 import sys
 import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..case import _OVERRIDES, Case, data_sets
+from ..rawedit import OPS, edit_raw
 from .runner import JobRunner
 from .templates import build_xml, raw_generators, raw_version
 
 _APPS = ("powerflow", "ca", "dsf", "hadrec", "se", "emt")
 _CASE_DIRS = ("input", "emt")
+_DERIVED = "derived"
 _MAX_WAIT = 10.0
 _MAX_TAIL = 1000
 _TIMEOUT = 600.0
@@ -46,7 +50,7 @@ class Tools:
             d = Path(d).expanduser().resolve()
             if not d.is_dir():
                 raise ValueError("cases directory %s does not exist" % d)
-            if d.name in _CASE_DIRS or d.name in self._dirs:
+            if d.name in _CASE_DIRS or d.name == _DERIVED or d.name in self._dirs:
                 raise ValueError("cases directory name %r is taken; rename "
                                  "the directory" % d.name)
             self._dirs[d.name] = d
@@ -124,6 +128,55 @@ class Tools:
         except ValueError:
             xml.unlink()
             raise
+
+    def modify_case(self, case: str, edits: List[Dict[str, Any]],
+                    name: Optional[str] = None) -> Dict[str, Any]:
+        """Derive a case from ``case`` with its network edited; list it as
+        derived/<name>/<name>.xml and return its description plus what
+        each edit changed (``edits``: before and after values).
+
+        edits: a list of {"op": ..., ...}.  Ops and keys (id defaults to
+        "1"): set_load_active_power {bus, mw}; set_load_reactive_power
+        {bus, mvar}; scale_load {bus, factor}; set_load_in_service {bus,
+        in_service}; set_generator_active_power {bus, mw};
+        set_generator_voltage_setpoint {bus, vm_pu};
+        set_generator_in_service {bus, in_service}; set_shunt {bus, mvar,
+        mw}; set_shunt_in_service {bus, in_service}; set_branch_in_service
+        {from, to, ckt, in_service}; set_param {kind, bus|from+to+ckt, id,
+        field, value} with a PSS/E RAW column name.  Everything else in the
+        case (events, settings, DYR) is inherited.
+        """
+        entry = self._entry(case)
+        c = self._load(case)
+        tag = next((p for p in c.files() if ".networkConfiguration" in p), None)
+        if tag is None:
+            raise ValueError("%s has no network file to edit" % case)
+        src = Path(c.files()[tag])
+        root = self.runner.root / _DERIVED
+        stem = name or self._free_name(root, Path(entry["_xml"]).stem)
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", stem):
+            raise ValueError("name must be letters, digits, _ . or -, "
+                             "not %r" % stem)
+        d = root / stem
+        if d.exists():
+            raise ValueError("%s/%s exists; pick another name"
+                             % (_DERIVED, stem))
+        d.mkdir(parents=True)
+        try:
+            report = edit_raw(src, d / src.name, edits)
+            c.set(tag, str(d / src.name))
+            xml = c.write(d, name=stem + ".xml")
+            (d / "edits.json").write_text(json.dumps(
+                {"base": case, "edits": report}, indent=1))
+        except (ValueError, OSError):
+            shutil.rmtree(d, ignore_errors=True)
+            raise
+        with self._lock:
+            self._dirs.setdefault(_DERIVED, root)
+            self._cases = None
+        out = self.describe_case("%s/%s/%s" % (_DERIVED, stem, xml.name))
+        out.update(base=case, edits=report)
+        return out
 
     # ---- runs ----------------------------------------------------------
 
@@ -279,6 +332,13 @@ class Tools:
         raise ValueError("%s file must be under a cases directory (%s), as "
                          "<dir name>/<path>; got %r"
                          % (kind, ", ".join(self._dirs), spec))
+
+    @staticmethod
+    def _free_name(root, base):
+        n = 1
+        while (root / ("%s-%d" % (base, n))).exists():
+            n += 1
+        return "%s-%d" % (base, n)
 
     def _name(self, path):
         """The catalog name of a file under a cases directory."""

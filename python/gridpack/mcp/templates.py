@@ -10,13 +10,9 @@ The settings are those of the bundled ``input_9b3g.xml`` without its
 events; every generator in the RAW is watched.
 """
 
-import re
-from pathlib import Path
+from ..rawedit import raw_generators, raw_version  # noqa: F401
 
 __all__ = ["raw_version", "raw_generators", "build_xml"]
-
-_END = re.compile(r"\s*(0|Q)(\s|/|,|$)")
-_BEGIN = re.compile(r"BEGIN (.+?) DATA", re.I)
 
 _LINEAR = """    <LinearSolver>
       <PETScOptions>
@@ -85,52 +81,6 @@ _WATCH = """      <generator>
         <generatorID>%s</generatorID>
       </generator>
 """
-
-
-def _lines(path):
-    # v35+ comment lines; blank lines stay so the 3-line header holds.
-    return [l for l in Path(path).read_text(errors="replace").splitlines()
-            if not l.lstrip().startswith("@!")]
-
-
-def raw_version(path) -> int:
-    """The RAW revision: the header's third field, else 23."""
-    fields = _lines(path)[0].split("/")[0].split(",")
-    try:
-        return int(float(fields[2])) if len(fields) >= 3 else 23
-    except ValueError:
-        return 23
-
-
-def raw_generators(path):
-    """``[(bus, id)]`` for every generator record in a RAW file."""
-    version = raw_version(path)
-    blocks, cur, name = [], [], "BUS"
-    for line in _lines(path)[3:]:
-        if not line.strip():
-            continue
-        if _END.match(line):
-            blocks.append((name, cur))
-            cur = []
-            m = _BEGIN.search(line)
-            name = m.group(1).upper() if m else None
-        else:
-            cur.append(line)
-    # Labelled terminators name the blocks (v35+, some v34 files);
-    # otherwise v23 is bus, gen, ... and v33/34 bus, load, fixed shunt, gen.
-    block = next((b for n, b in blocks if n == "GENERATOR"), None)
-    if block is None:
-        idx = 1 if version < 33 else 3
-        block = blocks[idx][1] if len(blocks) > idx else []
-    out = []
-    for line in block:
-        f = line.split(",")
-        try:
-            out.append((int(f[0]), f[1].strip().strip("'\"").strip() or "1"))
-        except (IndexError, ValueError):
-            raise ValueError("unreadable generator record in %s: %r"
-                             % (Path(path).name, line.strip()))
-    return out
 
 
 def build_xml(raw, version, dyr=None, generators=()):

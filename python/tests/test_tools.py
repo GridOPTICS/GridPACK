@@ -502,3 +502,118 @@ def test_created_cases_run(tmp_path):
     # Without events the system holds its power-flow point.
     i = w["columns"].index("1_1_speed")
     assert all(abs(r[i] - 1.0) < 1e-6 for r in w["rows"])
+
+
+# -------------------------------------------------------------
+# modify_case
+# -------------------------------------------------------------
+
+def test_modify_case_derives_and_lists(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    edits = [{"op": "scale_load", "bus": 9, "factor": 1.2},
+             {"op": "set_branch_in_service", "from": 1, "to": 5, "ckt": "BL",
+              "in_service": False}]
+    d = t.modify_case(PF14, edits)
+    assert d["case"] == "derived/input_14-1/input_14-1.xml"
+    assert (d["base"], d["apps"], d["buses"]) == (PF14, ["powerflow"], 14)
+    assert d["files"] == {"Powerflow.networkConfiguration": "IEEE14.raw"}
+    assert [(e["was"], e["now"]) for e in d["edits"]] == [
+        ({"PL": 29.5, "QL": 16.6}, {"PL": 35.4, "QL": 19.92}),
+        ({"STAT": 1}, {"STAT": 0})]
+    root = tmp_path / "jobs/derived/input_14-1"
+    assert sorted(f.name for f in root.iterdir()) == [
+        "IEEE14.raw", "edits.json", "input_14-1.xml"]
+    assert json.loads((root / "edits.json").read_text())["base"] == PF14
+    # The base case's file is untouched; the copy differs on two lines.
+    from .conftest import _data_sets
+    a = (_data_sets() / "raw/IEEE14.raw").read_text().splitlines()
+    b = (root / "IEEE14.raw").read_text().splitlines()
+    assert sum(x != y for x, y in zip(a, b)) == 2
+    assert "derived/input_14-1/input_14-1.xml" in [
+        c["case"] for c in t.list_cases()]
+    # Names count up; a derived case can be derived again.
+    d2 = t.modify_case(d["case"], [{"op": "set_generator_active_power",
+                                    "bus": 2, "mw": 60.0}], name="again")
+    assert d2["case"] == "derived/again/again.xml"
+    assert d2["edits"][0]["was"] == {"PG": 40.0}
+    assert t.modify_case(PF14, edits)["case"].startswith("derived/input_14-2/")
+
+
+def test_modify_case_keeps_dynamics_and_caps(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case("input/ds/input_9b3g.xml", [
+        {"op": "set_load_active_power", "bus": 5, "mw": 100.0}])
+    assert (d["apps"], d["max_ranks"]) == (["powerflow", "dsf", "hadrec"], 3)
+    assert d["files"] == {"Powerflow.networkConfiguration": "9b3g.raw",
+                          "Dynamic_simulation.generatorParameters": "9b3g.dyr"}
+    assert d["settings"]["dsf"] == {"time_step": "0.01", "end_time": "1.0"}
+
+
+@pytest.mark.parametrize("kwargs, msg", [
+    ({"case": "nope.xml", "edits": [{"op": "scale_load", "bus": 9,
+                                     "factor": 2}]}, "unknown case"),
+    ({"case": PF14, "edits": []}, "non-empty list"),
+    ({"case": PF14, "edits": [{"op": "scale_load", "bus": 99, "factor": 2}]},
+     "no bus 99"),
+    ({"case": PF14, "edits": [{"op": "scale_load", "bus": 9, "factor": 2}],
+     "name": "a/b"}, "name must be"),
+])
+def test_modify_case_rejections_leave_nothing(tmp_path, kwargs, msg):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    with pytest.raises(ValueError, match=msg):
+        t.modify_case(**kwargs)
+    assert not (tmp_path / "jobs/derived").exists() or \
+        not list((tmp_path / "jobs/derived").iterdir())
+    assert not any(c["case"].startswith("derived/") for c in t.list_cases())
+
+
+def test_modify_case_edits_a_state_estimation_network(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case("input/se/input_14.xml", [
+        {"op": "scale_load", "bus": 9, "factor": 2}])
+    assert d["apps"] == ["se"] and d["edits"][0]["now"] == {"PL": 59.0,
+                                                            "QL": 33.2}
+    assert "State_estimation.networkConfiguration" in d["files"]
+
+
+def test_derived_is_a_reserved_cases_name(tmp_path):
+    with pytest.raises(ValueError, match="is taken"):
+        Tools(cases=[_models(tmp_path, "derived")])
+
+
+@pytest.mark.integration
+def test_modified_cases_run(tmp_path):
+    from .test_powerflow import BUS5_VMAG_REF
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case(PF14, [
+        {"op": "set_load_active_power", "bus": 9, "mw": 60.0},
+        {"op": "set_generator_active_power", "bus": 2, "mw": 60.0},
+        {"op": "set_branch_in_service", "from": 1, "to": 5, "ckt": "BL",
+         "in_service": False},
+        {"op": "set_shunt", "bus": 9, "mvar": 25.0}])
+    st = t.run_powerflow(d["case"])
+    res = t.job_result(st["id"])
+    bus = {b["busId"]: b for b in res["buses"]}
+    assert st["converged"] and bus[9]["pLoad"] == 60.0 and bus[9]["shuntMvar"] == 25.0
+    assert next(g for g in res["generators"] if g["busId"] == 2)["pGen"] == 60.0
+    assert not any({b["fromBus"], b["toBus"]} == {1, 5} for b in res["branches"])
+    assert abs(bus[5]["voltage"] - BUS5_VMAG_REF) > 1e-3     # really changed
+
+    # v33, and the dynamics still run on the derived case.
+    k = t.modify_case("input/ds/input_kundur_two_area_esst1a.xml", [
+        {"op": "set_load_active_power", "bus": 7, "mw": 900.0},
+        {"op": "set_shunt_in_service", "bus": 9, "in_service": False}])
+    st = t.run_powerflow(k["case"])
+    bus = {b["busId"]: b for b in t.job_result(st["id"])["buses"]}
+    assert st["converged"] and bus[7]["pLoad"] == 900.0 and bus[9]["shuntMvar"] == 0.0
+    st = t.run_dynamic_sim(k["case"], end_time=0.05)
+    assert (st["state"], st["exit_code"]) == ("done", 0)
+
+    # v34 with labelled blocks and a lettered machine id.
+    w = t.modify_case("input/input_240bus.xml", [
+        {"op": "set_generator_in_service", "bus": 1032, "id": "C",
+         "in_service": False}])
+    st = t.run_powerflow(w["case"])
+    gen = next(g for g in t.job_result(st["id"])["generators"]
+               if g["busId"] == 1032 and g["genId"].strip() == "C")
+    assert st["converged"] and gen["status"] == 0
