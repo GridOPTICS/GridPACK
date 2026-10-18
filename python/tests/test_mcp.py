@@ -66,6 +66,24 @@ def test_timeout_must_be_positive(value):
     assert r.returncode == 2 and "--timeout" in r.stderr
 
 
+def test_no_cases_is_a_usage_error(monkeypatch, capsys):
+    import gridpack.mcp.tools as mod
+    from gridpack.mcp.server import main
+
+    def missing():
+        raise FileNotFoundError("no data_sets")
+    monkeypatch.setattr(mod, "data_sets", missing)
+    assert main([]) == 2
+    assert "GRIDPACK_TEST_DATA" in capsys.readouterr().err
+
+
+@_CLI
+def test_missing_cases_directory_is_a_usage_error(tmp_path):
+    r = subprocess.run([_SCRIPT, "--cases", str(tmp_path / "nope")],
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 2 and "does not exist" in r.stderr
+
+
 def test_missing_mcp_is_a_usage_error():
     r = subprocess.run(
         [sys.executable, "-c",

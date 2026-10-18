@@ -4,14 +4,16 @@
 # MCP tool functions over the job runner.
 # -------------------------------------------------------------
 
-"""Tools: bundled cases in, job ids and parsed ``--json`` results out.
+"""Tools: named cases in, job ids and parsed ``--json`` results out.
 
-Cases are named by their path under ``data_sets``, as :meth:`list_cases`
-returns them; nothing else is accepted.
+Cases are the bundled ``data_sets`` inputs, named by their path there, and
+the XMLs under each ``cases`` directory, named ``<dir name>/<path>``.  Only
+names :meth:`list_cases` returns are accepted.
 """
 
 import os
 import re
+import sys
 import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -30,9 +32,27 @@ class Tools:
     """The tool set; one :class:`JobRunner` holds the jobs."""
 
     def __init__(self, runner: Optional[JobRunner] = None, root=None,
-                 timeout: float = _TIMEOUT):
+                 timeout: float = _TIMEOUT, cases=()):
+        if root is None:
+            try:
+                root = data_sets()
+            except FileNotFoundError:
+                pass
+        self._root = Path(root) if root else None
+        self._dirs = {}
+        for d in cases:
+            d = Path(d).expanduser().resolve()
+            if not d.is_dir():
+                raise ValueError("cases directory %s does not exist" % d)
+            if d.name in _CASE_DIRS or d.name in self._dirs:
+                raise ValueError("cases directory name %r is taken; rename "
+                                 "the directory" % d.name)
+            self._dirs[d.name] = d
+        if self._root is None and not self._dirs:
+            raise ValueError("no cases: no GridPACK data_sets directory "
+                             "(set GRIDPACK_TEST_DATA to a GridPACK source "
+                             "tree) and no cases directory")
         self.runner = runner or JobRunner()
-        self._root = root
         self.timeout = timeout
         self._cases = None
         self._lock = threading.Lock()
@@ -40,7 +60,7 @@ class Tools:
     # ---- cases -------------------------------------------------------
 
     def list_cases(self, app: Optional[str] = None) -> List[Dict[str, Any]]:
-        """Bundled input cases: applications, bus count and rank limit.
+        """Available cases: applications, bus count and rank limit.
 
         app: only cases for this application (powerflow, ca, dsf, hadrec,
         se, emt).
@@ -51,7 +71,8 @@ class Tools:
                 raise ValueError("unknown application %r; expected one of %s"
                                  % (app, ", ".join(_APPS)))
             cases = [c for c in cases if app in c["apps"]]
-        return [dict(c) for c in cases]
+        return [{k: v for k, v in c.items() if not k.startswith("_")}
+                for c in cases]
 
     def describe_case(self, case: str) -> Dict[str, Any]:
         """A case's applications, data files and current solver settings."""
@@ -174,7 +195,8 @@ class Tools:
         if settings:
             c.override(app, **settings)
         # EMT aborts without its PETSc options file in the working dir.
-        files = [self._data() / "emt/.petscrc"] if app == "emt" else []
+        files = [entry["_petscrc"]] if app == "emt" and entry["_petscrc"] \
+            else []
         job = self.runner.submit(app, c, ranks=ranks, files=files,
                                  timeout=self.timeout)
         self.runner.wait(job.id, max(0.0, min(float(wait_seconds),
@@ -184,7 +206,13 @@ class Tools:
     def _catalog(self):
         with self._lock:
             if self._cases is None:
-                self._cases = _scan(self._data())
+                bundled = self._root / "emt/.petscrc" if self._root else None
+                cases = []
+                if self._root:
+                    cases += _scan(self._root, _CASE_DIRS, None, bundled)
+                for label, d in self._dirs.items():
+                    cases += _scan(d, (".",), label, bundled)
+                self._cases = cases
             return self._cases
 
     def _entry(self, case):
@@ -194,10 +222,8 @@ class Tools:
         raise ValueError("unknown case %r; see list_cases" % case)
 
     def _load(self, case):
-        return Case.from_data_sets(case, root=self._data())
-
-    def _data(self):
-        return self._root or data_sets()
+        entry = self._entry(case)
+        return _load(entry["_xml"], entry["_base"])
 
 
 def _apps(case):
@@ -219,26 +245,45 @@ def _apps(case):
     return [a for a in _APPS if can[a]]
 
 
-def _scan(root):
-    """XMLs under ``root/input`` and ``root/emt`` that some application can
-    run and whose data files are all present."""
+def _load(xml, base):
+    # Files are found beside the XML, then in base/raw, base/dyr, ...
+    return Case.from_data_sets(xml.relative_to(base), root=base)
+
+
+def _scan(base, subdirs, label, petscrc):
+    """XMLs under ``base/<subdirs>`` that some application can run and whose
+    data files are all present.  ``label`` marks a cases directory: its
+    names get the prefix and its skips are reported on stderr."""
     out = []
-    for xml in sorted(x for d in _CASE_DIRS for x in (root / d).rglob("*.xml")):
-        rel = xml.relative_to(root).as_posix()
-        try:
-            c = Case.from_data_sets(rel, root=root)
-        except (ValueError, OSError):
+    for xml in sorted(x for d in subdirs for x in (base / d).rglob("*.xml")):
+        rel = xml.relative_to(base).as_posix()
+        name = "%s/%s" % (label, rel) if label else rel
+        # Contingency and measurement lists sit beside the inputs.
+        if "<Configuration" not in xml.read_text(errors="replace"):
             continue
-        files = c.files()
-        apps = _apps(c)
-        if not apps or not all(Path(v).is_absolute() for v in files.values()):
+        try:
+            c = _load(xml, base)
+            files = c.files()
+            apps = _apps(c)
+            missing = [v for v in files.values() if not Path(v).is_absolute()]
+            reason = ("data files not found: %s" % ", ".join(missing)
+                      if missing else None if apps else "no application block")
+        except (ValueError, OSError) as exc:
+            reason = str(exc)
+        if reason:
+            if label:
+                sys.stderr.write("gridpack-mcp: skipping %s: %s\n"
+                                 % (name, reason))
             continue
         net = next((v for p, v in files.items()
                     if ".networkConfiguration" in p), None)
         buses = _count_buses(net) if net else 0
-        out.append({"case": rel, "apps": apps,
+        local = xml.parent / ".petscrc"
+        out.append({"case": name, "apps": apps,
                     "network": Path(net).name if net else None,
-                    "buses": buses, "max_ranks": _max_ranks(buses)})
+                    "buses": buses, "max_ranks": _max_ranks(buses),
+                    "_xml": xml, "_base": base,
+                    "_petscrc": local if local.is_file() else petscrc})
     return out
 
 

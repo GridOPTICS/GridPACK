@@ -291,3 +291,97 @@ def test_server_timeout_kills_jobs():
     finally:
         s.p.kill()
     assert (st["state"], st["error"]) == ("failed", "timed out after 2.0 s")
+
+
+# -------------------------------------------------------------
+# --cases directories
+# -------------------------------------------------------------
+
+def _models(tmp_path, name="mymodels"):
+    from .conftest import _data_sets
+    d, ds = tmp_path / name, _data_sets()
+    (d / "sub").mkdir(parents=True)
+    shutil.copy(ds / "input/powerflow/input_14.xml", d / "feeder.xml")
+    shutil.copy(ds / "raw/IEEE14.raw", d)
+    shutil.copy(ds / "input/ds/input_9b3g.xml", d / "sub/dyn.xml")
+    for f in ("raw/9b3g.raw", "dyr/9b3g.dyr"):
+        shutil.copy(ds / f, d / "sub")
+    shutil.copy(ds / "contingencies/contingencies_14.xml", d)   # not a case
+    (d / "broken.xml").write_text(
+        "<Configuration><Powerflow><networkConfiguration>gone.raw"
+        "</networkConfiguration></Powerflow></Configuration>")
+    return d
+
+
+def test_cases_directory_is_listed(tmp_path, capsys):
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[_models(tmp_path)])
+    mine = {c["case"]: c for c in t.list_cases()
+            if c["case"].startswith("mymodels/")}
+    assert sorted(mine) == ["mymodels/feeder.xml", "mymodels/sub/dyn.xml"]
+    assert (mine["mymodels/sub/dyn.xml"]["buses"],
+            mine["mymodels/sub/dyn.xml"]["max_ranks"]) == (9, 3)
+    assert "_xml" not in mine["mymodels/feeder.xml"]
+    err = capsys.readouterr().err
+    assert "skipping mymodels/broken.xml: data files not found: gone.raw" \
+        in err and "contingencies_14" not in err
+    assert len([c for c in t.list_cases()
+                if not c["case"].startswith("mymodels/")]) == 59
+
+
+def test_cases_directory_rank_cap(tmp_path):
+    noop = tmp_path / "noop.py"
+    noop.write_text("")
+    cmd = (sys.executable, str(noop))
+    t = Tools(JobRunner(tmp_path / "jobs", cli=cmd, mpiexec=cmd),
+              cases=[_models(tmp_path)])
+    with pytest.raises(ValueError, match="at most 3 ranks"):
+        t.run_dynamic_sim("mymodels/sub/dyn.xml", ranks=4)
+    assert t.runner.jobs() == []
+
+
+@pytest.mark.integration
+def test_cases_directory_runs(tmp_path):
+    from .test_powerflow import BUS5_VMAG_REF
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[_models(tmp_path)])
+    st = t.run_powerflow("mymodels/feeder.xml")
+    bus5 = next(b for b in t.job_result(st["id"])["buses"] if b["busId"] == 5)
+    assert st["converged"] and abs(bus5["voltage"] - BUS5_VMAG_REF) < 1e-5
+    st = t.run_dynamic_sim("mymodels/sub/dyn.xml", end_time=0.2)
+    assert (st["state"], st["exit_code"]) == ("done", 0)
+
+
+def test_emt_petscrc_prefers_the_case_directory(tmp_path):
+    from .conftest import _data_sets
+    ds = _data_sets()
+    for name, local in (("plain", False), ("own", True)):
+        d = tmp_path / name
+        shutil.copytree(ds / "emt/9-bus", d)
+        if local:
+            (d / ".petscrc").write_text("-emt_ts_type beuler\n")
+        t = Tools(cases=[d])
+        entry = t._entry("%s/input_9bus2.xml" % name)
+        assert entry["_petscrc"] == (d.resolve() / ".petscrc" if local
+                                     else ds / "emt/.petscrc")
+
+
+@pytest.mark.parametrize("name, twice", [("input", False), ("emt", False),
+                                         ("mymodels", True)])
+def test_cases_directory_names_must_be_free(tmp_path, name, twice):
+    d = _models(tmp_path, name)
+    with pytest.raises(ValueError, match="is taken"):
+        Tools(cases=[d, d] if twice else [d])
+    with pytest.raises(ValueError, match="does not exist"):
+        Tools(cases=[tmp_path / "nope"])
+
+
+def test_without_data_sets_only_cases_directories(tmp_path, monkeypatch):
+    import gridpack.mcp.tools as mod
+
+    def missing():
+        raise FileNotFoundError("no data_sets")
+    monkeypatch.setattr(mod, "data_sets", missing)
+    with pytest.raises(ValueError, match="GRIDPACK_TEST_DATA"):
+        Tools()
+    t = Tools(cases=[_models(tmp_path)])
+    assert [c["case"] for c in t.list_cases()] == [
+        "mymodels/feeder.xml", "mymodels/sub/dyn.xml"]
