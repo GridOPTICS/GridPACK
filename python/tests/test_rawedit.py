@@ -164,3 +164,20 @@ def test_line_endings_and_untouched_bytes_survive(tmp_path):
     assert out.count(b"\r\n") == src.read_bytes().count(b"\r\n")
     a, b = src.read_bytes().split(b"\r\n"), out.split(b"\r\n")
     assert sum(x != y for x, y in zip(a, b)) == 1
+
+
+def test_scale_everything_and_edits_see_each_other(tmp_path):
+    report, a, b = _edit(tmp_path, V23, [
+        {"op": "scale_all_loads", "factor": 1.1},
+        {"op": "scale_all_generation", "factor": 0.9},
+        {"op": "scale_load", "bus": 9, "factor": 2.0}])
+    assert report[0]["was"] == {"PL": 259.0, "QL": 73.5}
+    assert report[0]["now"] == {"PL": 284.9, "QL": 80.85} and report[0]["records"] == 14
+    assert report[1]["was"] == {"PG": 272.4} and report[1]["records"] == 5
+    # The later edit starts from the scaled value, not the file's.
+    assert report[2]["was"] == {"PL": 32.45, "QL": 18.26} and "records" not in report[2]
+    # Buses without load (1, 7, 8) and generators at 0 MW (3, 6, 8) are
+    # rewritten unchanged.
+    assert sum(x != y for x, y in zip(a, b)) == 11 + 2
+    report, _, _ = _edit(tmp_path, V33, [{"op": "scale_all_loads", "factor": 1.1}])
+    assert report[0]["records"] == 3 and report[0]["was"]["PL"] == 2734.0

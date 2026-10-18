@@ -73,11 +73,18 @@ def test_report_dynamic_verdicts(tmp_path):
     assert re.search(r"Peak speed deviation 0\.3\d\d% on generator 1 at bus 1; final 0\.0\d\d%", text)
     assert "damping ratio" in text and "Verdict: damped; speed within 1%" in text
     assert "angles held together" in text
-    # Growing angle separation is called out.
+    assert "Rotor angle spread between generators (each from its own start): peak" in text
+    # Growing angle separation is called out; so is a machine that never
+    # comes back.
     r = _dyn()
     for i, row in enumerate(r["watch"]["rows"]):
         row[2] = 0.5 + 0.05 * i                       # to 5.5 rad = 315 deg
     assert "loss of synchronism" in post.report(r, "dsf", None)
+    r = _dyn()
+    for row in r["watch"]["rows"]:
+        row[1] = 1.03                                  # 3% fast throughout
+    text = post.report(r, "dsf", None)
+    assert "machine running away" in text and post.dynamic_stats(r, "dsf")["runaway_speed"]
     assert post.report({"watch": None}, "dsf", None).startswith(
         "Dynamic run finished but recorded no time series")
 

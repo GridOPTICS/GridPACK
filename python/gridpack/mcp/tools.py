@@ -18,20 +18,23 @@ import re
 import shutil
 import sys
 import threading
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..case import _OVERRIDES, Case, data_sets
 from ..rawedit import OPS, edit_raw
-from .events import EVENT_OPS, append_events, plan_events
-from . import plots, post
+from .events import (EVENT_OPS, append_events, plan_events, raw_elements,
+                     set_observations, watch_all_generators)
+from . import plots, post, study
 from .runner import JobRunner
 from .templates import build_xml, raw_generators, raw_version
 
 _APPS = ("powerflow", "ca", "dsf", "hadrec", "se", "emt")
 _CASE_DIRS = ("input", "emt")
 _DERIVED = "derived"
+_OBSERVE = "add_observations"
 _MAX_WAIT = 10.0
 _MAX_TAIL = 1000
 _TIMEOUT = 600.0
@@ -64,6 +67,7 @@ class Tools:
         self.runner = runner or JobRunner()
         self.timeout = timeout
         self._cases = None
+        self._studies = {}
         self._lock = threading.Lock()
 
     # ---- cases -------------------------------------------------------
@@ -90,10 +94,13 @@ class Tools:
         settings = {app: {k: c.get(paths[0]) for k, paths in
                           _OVERRIDES[app].items()}
                     for app in entry["apps"]}
-        return {"case": case, "apps": entry["apps"],
-                "buses": entry["buses"], "max_ranks": entry["max_ranks"],
-                "files": {p: Path(v).name for p, v in c.files().items()},
-                "settings": settings}
+        out = {"case": case, "apps": entry["apps"],
+               "buses": entry["buses"], "max_ranks": entry["max_ranks"],
+               "files": {p: Path(v).name for p, v in c.files().items()},
+               "settings": settings}
+        if "dsf" in entry["apps"]:
+            out["records"] = _records(c._root)
+        return out
 
     def create_case(self, raw: str, dyr: Optional[str] = None,
                     name: Optional[str] = None) -> Dict[str, Any]:
@@ -103,7 +110,7 @@ class Tools:
         raw, dyr: "<dir name>/<path>" as list_cases names things, or a
         path under a cases directory.  name: the XML's stem (default:
         the RAW's).  The case runs powerflow, and dsf with a DYR (every
-        generator watched, no events yet).
+        generator watched and observed, every bus observed, no events yet).
         """
         if not self._dirs:
             raise ValueError("create_case needs a cases directory: start "
@@ -123,7 +130,8 @@ class Tools:
         xml.write_text(build_xml(
             raw_path.name, raw_version(raw_path),
             dyr=os.path.relpath(dyr_path, xml.parent) if dyr_path else None,
-            generators=gens))
+            generators=gens,
+            buses=sorted(raw_elements(raw_path)[0]) if dyr_path else ()))
         with self._lock:
             self._cases = None
         try:
@@ -133,10 +141,12 @@ class Tools:
             raise
 
     def modify_case(self, case: str, edits: List[Dict[str, Any]],
-                    name: Optional[str] = None) -> Dict[str, Any]:
+                    name: Optional[str] = None,
+                    replace_events: bool = False) -> Dict[str, Any]:
         """Derive a case from ``case`` with its network edited and events
-        added; list it as derived/<name>/<name>.xml and return its
-        description plus what each edit changed.
+        added (replacing the base case's events if replace_events); list
+        it as derived/<name>/<name>.xml and return its description plus
+        what each edit changed.
 
         edits: a list of {"op": ..., ...}; ids default to the only one
         there is.  Network ops: set_load_active_power {bus, mw};
@@ -145,13 +155,16 @@ class Tools:
         {bus, mw}; set_generator_voltage_setpoint {bus, vm_pu};
         set_generator_in_service {bus, in_service}; set_shunt {bus, mvar,
         mw}; set_shunt_in_service {bus, in_service}; set_branch_in_service
-        {from, to, ckt, in_service}; set_param {kind, bus|from+to+ckt, id,
-        field, value} with a PSS/E RAW column name.  Event ops (seconds,
+        {from, to, ckt, in_service}; scale_all_loads {factor};
+        scale_all_generation {factor}; set_param {kind, bus or from+to+ckt,
+        id, field, value} with a PSS/E RAW column name.  Event ops (seconds,
         on a time step): add_fault {from, to, start, duration} (solid
         fault at the from bus); add_bus_fault {bus, start, duration, g_pu,
         b_pu}; trip_branch {from, to, ckt, time}; trip_generator {bus, id,
-        time}.  hadrec needs a fault as the first event.  Everything else
-        in the case is inherited.
+        time}.  hadrec needs a fault as the first event and observations:
+        add_observations {generators: "all" or [bus...], buses: "all" or
+        [bus...], bus_frequency} sets what it records (replacing any).  Everything
+        else in the case is inherited.
         """
         entry = self._entry(case)
         if not isinstance(edits, list) or not edits:
@@ -159,21 +172,28 @@ class Tools:
         for n, e in enumerate(edits, 1):
             if not isinstance(e, dict) or "op" not in e:
                 raise ValueError("edit %d must be an object with an \"op\"" % n)
-            if e["op"] not in OPS and e["op"] not in EVENT_OPS:
+            if e["op"] not in OPS and e["op"] not in EVENT_OPS \
+                    and e["op"] != _OBSERVE:
                 raise ValueError("edit %d: unknown op %r; one of %s" % (
-                    n, e["op"], ", ".join(list(OPS) + list(EVENT_OPS))))
+                    n, e["op"], ", ".join(list(OPS) + list(EVENT_OPS)
+                                          + [_OBSERVE])))
         static = [e for e in edits if e["op"] in OPS]
         dynamic = [e for e in edits if e["op"] in EVENT_OPS]
+        observe = [e for e in edits if e["op"] == _OBSERVE]
+        if len(observe) > 1:
+            raise ValueError("give one add_observations edit")
+        if observe:
+            _check_observe(observe[0])
         c = self._load(case)
         tag = next((p for p in c.files() if ".networkConfiguration" in p), None)
         if tag is None:
             raise ValueError("%s has no network file to edit" % case)
         src = Path(c.files()[tag])
         events = []
+        if (dynamic or observe) and "dsf" not in entry["apps"]:
+            raise ValueError("%s has no Dynamic_simulation block to hold "
+                             "events or observations" % case)
         if dynamic:
-            if "dsf" not in entry["apps"]:
-                raise ValueError("%s has no Dynamic_simulation block to hold "
-                                 "events" % case)
             events = plan_events(dynamic, src,
                                  float(c.get("Dynamic_simulation.timeStep")),
                                  float(c.get("Dynamic_simulation.simulationTime")))
@@ -194,9 +214,14 @@ class Tools:
             xml = c.write(d, name=stem + ".xml")
             added = {id(e): ET.tostring(el, encoding="unicode")
                      for e, el in events}
-            if events:
-                append_events(xml, [el for _, el in events])
-            report = [dict(e, xml=added[id(e)]) if id(e) in added
+            if events or replace_events:
+                append_events(xml, [el for _, el in events], replace_events)
+            for e in observe:
+                added[id(e)] = set_observations(
+                    xml, src, e.get("generators"), e.get("buses"),
+                    e.get("bus_frequency", False))
+            report = [dict(e, observations=added[id(e)]) if e["op"] == _OBSERVE
+                      else dict(e, xml=added[id(e)]) if id(e) in added
                       else next(changed) for e in edits]
             (d / "edits.json").write_text(json.dumps(
                 {"base": case, "edits": report}, indent=1))
@@ -282,6 +307,9 @@ class Tools:
         result = job.result if job.state == "done" else None
         if result is not None and "converged" in result:
             status["converged"] = result["converged"]
+        t = post.table(result, job.app) if result is not None else None
+        if job.app in ("dsf", "hadrec") and result is not None:
+            status["channels"] = len(t[0]) - 1 if t else 0
         return status
 
     def job_result(self, job_id: str) -> Dict[str, Any]:
@@ -304,6 +332,123 @@ class Tools:
         return self.runner.get(job_id).log(
             stream, tail=max(1, min(int(tail), _MAX_TAIL)))
 
+    # ---- studies ---------------------------------------------------------
+
+    def run_study(self, case: str, kind: str,
+                  factors: Optional[List[float]] = None,
+                  branches: Optional[List[str]] = None, ranks: int = 1,
+                  fault_start: float = 0.1, fault_duration: float = 0.05,
+                  end_time: Optional[float] = None,
+                  scale_generation: bool = False,
+                  wait_seconds: float = _MAX_WAIT) -> Dict[str, Any]:
+        """Fan a study out as one derived case and one job per point;
+        return its status (see study_status / study_result).
+
+        kind "load_sweep": each factor scales every load (and every
+        generator with scale_generation) and runs a power flow.  kind
+        "dynamic_n1": each branch (all, or those given as "from-to" or
+        "from-to ckt") gets a fault at its from bus at fault_start,
+        cleared after fault_duration by tripping it, replacing the base
+        case's events, and runs dsf to end_time (s).  ranks is per job;
+        the server runs --parallel jobs at a time.
+        """
+        entry = self._entry(case)
+        if kind not in study.KINDS:
+            raise ValueError("kind is one of %s, not %r"
+                             % (", ".join(study.KINDS), kind))
+        app = "powerflow" if kind == "load_sweep" else "dsf"
+        if app not in entry["apps"]:
+            raise ValueError("%s cannot run %s; it supports %s"
+                             % (case, app, ", ".join(entry["apps"])))
+        if not isinstance(ranks, int) or isinstance(ranks, bool) or ranks < 1:
+            raise ValueError("ranks must be a positive int, not %r" % (ranks,))
+        if ranks > entry["max_ranks"]:
+            raise ValueError("%s (%d buses) runs on at most %d ranks"
+                             % (case, entry["buses"], entry["max_ranks"]))
+        if kind == "load_sweep":
+            if not isinstance(factors, list) or not factors or any(
+                    isinstance(f, bool) or not isinstance(f, (int, float))
+                    or f <= 0 for f in factors):
+                raise ValueError("factors must be a non-empty list of positive "
+                                 "numbers, such as [1.0, 1.1, 1.2]")
+            points = [{"name": "load-%g" % f, "factor": f,
+                       "edits": [{"op": "scale_all_loads", "factor": f}] + (
+                           [{"op": "scale_all_generation", "factor": f}]
+                           if scale_generation else [])} for f in factors]
+            params = {"factors": factors, "scale_generation": scale_generation}
+            settings = {}
+        else:
+            c = self._load(case)
+            raw = c.files()[next(p for p in c.files()
+                                 if ".networkConfiguration" in p)]
+            outages = study.n1_branches(raw, branches)
+            end = end_time if end_time is not None else float(
+                c.get("Dynamic_simulation.simulationTime"))
+            if fault_start + fault_duration >= end:
+                raise ValueError("the fault (%g s to %g s) must end before "
+                                 "end_time %g s" % (fault_start, fault_start
+                                                    + fault_duration, end))
+            points = [{"name": "out-%d-%d-%s" % b, "branch": "%d-%d %s" % b,
+                       "edits": [
+                           {"op": "add_fault", "from": b[0], "to": b[1],
+                            "ckt": b[2], "start": fault_start,
+                            "duration": fault_duration},
+                           {"op": "trip_branch", "from": b[0], "to": b[1],
+                            "ckt": b[2], "time": fault_start + fault_duration}]}
+                      for b in outages]
+            params = {"fault_start": fault_start,
+                      "fault_duration": fault_duration, "end_time": end,
+                      "branches": [pt["branch"] for pt in points]}
+            settings = {"end_time": end}
+        width = min(self.runner.max_parallel, len(points))
+        cpus = os.cpu_count() or 1
+        if ranks * width > cpus:
+            raise ValueError("%d jobs at a time on %d ranks each exceed the %d "
+                             "cpus; lower ranks or start gridpack-mcp with a "
+                             "smaller --parallel" % (width, ranks, cpus))
+        st = study.Study(kind, case, params)
+        # Every derived case is written before any job starts, so a bad
+        # point fails the whole study with nothing running.
+        for pt in points:
+            d = self.modify_case(case, pt["edits"],
+                                 name="%s-%s" % (st.id, pt["name"]),
+                                 replace_events=(kind == "dynamic_n1"))
+            pt["case"] = d["case"]
+            if kind == "dynamic_n1":
+                # Angle spread needs every machine, not the base's watch list.
+                e = self._entry(d["case"])
+                watch_all_generators(e["_xml"], raw)
+        if kind == "dynamic_n1":
+            with self._lock:
+                self._cases = None            # re-read the rewritten XMLs
+        for pt in points:
+            job = self._submit(app, self._entry(pt["case"]), ranks, settings)
+            st.items.append(dict({k: v for k, v in pt.items() if k != "edits"},
+                                 job_id=job.id))
+        with self._lock:
+            self._studies[st.id] = st
+        deadline = time.time() + max(0.0, min(float(wait_seconds), _MAX_WAIT))
+        for it in st.items:
+            self.runner.wait(it["job_id"], max(0.0, deadline - time.time()))
+        return st.status(self.runner)
+
+    def study_status(self, study_id: str) -> Dict[str, Any]:
+        """Job states of a study, per item and in total."""
+        return self._study(study_id).status(self.runner)
+
+    def study_result(self, study_id: str) -> Dict[str, Any]:
+        """The finished items ranked: load sweeps by factor with load,
+        generation, losses, lowest voltage and violations; dynamic N-1 most
+        severe first by loss of synchronism, peak rotor-angle spread and
+        speed deviation.  Pending items are counted, failed ones listed."""
+        return study.rank(self._study(study_id), self.runner)
+
+    def _study(self, study_id):
+        with self._lock:
+            if study_id not in self._studies:
+                raise KeyError("no study %r" % study_id)
+            return self._studies[study_id]
+
     # ---- post-processing -------------------------------------------------
 
     def job_series(self, job_id: str, columns: Optional[List[str]] = None,
@@ -311,8 +456,8 @@ class Tools:
         """Chosen channels of a finished dynamic run (dsf watch, hadrec
         observations), decimated to at most max_points rows.
 
-        columns: channel names or globs such as "*_speed" (time is always
-        the first column); None means every channel.
+        columns: channel names or globs such as ``"*_speed"`` (time is
+        always the first column); None means every channel.
         """
         job, result = self._finished(job_id)
         return post.series(result, job.app, columns,
@@ -364,18 +509,27 @@ class Tools:
         if isinstance(ranks, int) and ranks > entry["max_ranks"]:
             raise ValueError("%s (%d buses) runs on at most %d ranks"
                              % (case, entry["buses"], entry["max_ranks"]))
-        c = self._load(case)
+        if app == "hadrec" and not any(
+                _records(self._load(case)._root)["observations"].values()):
+            raise ValueError("%s has no observations, so hadrec would record "
+                             "nothing; derive a case with modify_case "
+                             "add_observations {\"generators\": \"all\", "
+                             "\"buses\": \"all\"}" % case)
+        job = self._submit(app, entry, ranks, settings)
+        self.runner.wait(job.id, max(0.0, min(float(wait_seconds),
+                                              _MAX_WAIT)))
+        return self.job_status(job.id)
+
+    def _submit(self, app, entry, ranks, settings):
+        c = self._load(entry["case"])
         settings = {k: v for k, v in settings.items() if v is not None}
         if settings:
             c.override(app, **settings)
         # EMT aborts without its PETSc options file in the working dir.
         files = [entry["_petscrc"]] if app == "emt" and entry["_petscrc"] \
             else []
-        job = self.runner.submit(app, c, ranks=ranks, files=files,
-                                 timeout=self.timeout)
-        self.runner.wait(job.id, max(0.0, min(float(wait_seconds),
-                                              _MAX_WAIT)))
-        return self.job_status(job.id)
+        return self.runner.submit(app, c, ranks=ranks, files=files,
+                                  timeout=self.timeout)
 
     def _catalog(self):
         with self._lock:
@@ -448,6 +602,37 @@ def _apps(case):
     return [a for a in _APPS if can[a]]
 
 
+def _records(root):
+    """What a dynamic case records: watched generators and observations."""
+    ds = root.find("Dynamic_simulation")
+    watch = ds.find("generatorWatch") if ds is not None else None
+    obs = ds.find("observations") if ds is not None else None
+    counts = {}
+    for o in (obs if obs is not None else []):
+        kind = (o.findtext("type") or "").strip()
+        counts[kind] = counts.get(kind, 0) + 1
+    return {"watched_generators": len(watch) if watch is not None else 0,
+            "observations": counts}
+
+
+def _check_observe(e):
+    extra = [k for k in e if k not in ("op", "generators", "buses", "bus_frequency")]
+    if extra:
+        raise ValueError("add_observations: unexpected %s" % ", ".join(extra))
+    if e.get("generators") is None and e.get("buses") is None:
+        raise ValueError("add_observations needs generators and/or buses "
+                         "(\"all\" or a list of bus numbers)")
+    for k in ("generators", "buses"):
+        v = e.get(k)
+        if v is not None and v != "all" and not (
+                isinstance(v, list) and v and all(
+                    isinstance(b, int) and not isinstance(b, bool) for b in v)):
+            raise ValueError("add_observations: %s is \"all\" or a list of bus "
+                             "numbers" % k)
+    if not isinstance(e.get("bus_frequency", False), bool):
+        raise ValueError("add_observations: bus_frequency is true or false")
+
+
 def _first_event(root):
     events = root.find("Dynamic_simulation/Events")
     return events[0].tag if events is not None and len(events) else None
@@ -495,11 +680,14 @@ def _scan(base, subdirs, label, petscrc):
                     if ".networkConfiguration" in p), None)
         buses = _count_buses(net) if net else 0
         local = xml.parent / ".petscrc"
-        out.append({"case": name, "apps": apps,
-                    "network": Path(net).name if net else None,
-                    "buses": buses, "max_ranks": _max_ranks(buses),
-                    "_xml": xml, "_base": base,
-                    "_petscrc": local if local.is_file() else petscrc})
+        entry = {"case": name, "apps": apps,
+                 "network": Path(net).name if net else None,
+                 "buses": buses, "max_ranks": _max_ranks(buses),
+                 "_xml": xml, "_base": base,
+                 "_petscrc": local if local.is_file() else petscrc}
+        if "emt" in apps:
+            entry["notes"] = ["emt results are status only"]
+        out.append(entry)
     return out
 
 

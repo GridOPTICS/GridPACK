@@ -173,13 +173,17 @@ from a script.
 ## MCP server
 
 `gridpack-mcp` lets an AI assistant or any other Model Context Protocol
-client run these applications on the bundled cases, or on your own with
-`--cases DIR`, and read the results back as data.  Each run is a `gridpack`
-subprocess.  It needs Python 3.10+:
+client run these applications on the bundled cases or on your own RAW/DYR
+files, change loads, generators and branches, add faults, run N-1 screens
+and load sweeps, and read reports, plots and comparisons back.  Each run is
+a `gridpack` subprocess.  It needs Python 3.10+:
 ```
-pip install 'gridpack[mcp]'
+pip install 'gridpack[mcp,plot]'
+gridpack-mcp doctor                      # checks the installation
+gridpack-mcp config --cases ~/my-cases   # prints the client registration
 claude mcp add gridpack -- gridpack-mcp                                  # native
 claude mcp add gridpack -- docker run -i --rm pygridpack gridpack-mcp    # Docker image
 ```
 Tools, case naming, rank limits and options are described in
-`docs/user_manual/sphinx/python/mcp.rst`.
+`docs/user_manual/sphinx/python/mcp.rst`; the Claude skill in
+`.claude/skills/gridpack-study` carries the study workflow.

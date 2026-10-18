@@ -15,9 +15,11 @@ server talks to its client over stdio.
 Installation
 ------------
 
-The server needs Python 3.10 or later and the ``mcp`` extra::
+The server needs Python 3.10 or later and the ``mcp`` extra; the ``plot``
+extra adds matplotlib for ``plot_job``::
 
-    pip install 'gridpack[mcp]'
+    pip install 'gridpack[mcp,plot]'
+    gridpack-mcp doctor
 
 ``gridpack`` and, for runs on more than one rank, ``mpiexec`` must be on
 the server's ``PATH``.  The bundled cases are read from the
@@ -58,6 +60,11 @@ in this form:
         "args": ["run", "-i", "--rm", "pygridpack", "gridpack-mcp"]}}}
 
 ``claude mcp list`` shows whether the server starts and connects.
+``gridpack-mcp config`` prints both registrations, the ``claude mcp add``
+line and the JSON block, for the options you give it, with a ``PATH`` that
+covers the server, ``gridpack`` and ``mpiexec``::
+
+    gridpack-mcp config --parallel 3 --cases ~/gridpack-cases
 
 Options
 ~~~~~~~
@@ -66,8 +73,17 @@ Options
     Stop any run after this long; the default is 600.  Clients cannot
     change it.
 
+``--parallel N``
+    Run up to ``N`` jobs at a time (default 1).  Studies fan out through
+    this; a job's ranks times ``N`` may not exceed the machine's cpus.
+
 ``--cases DIR``
-    Also offer the input files under ``DIR``.  May be repeated.
+    Also offer the input files under ``DIR``, and let ``create_case`` build
+    new ones from RAW and DYR files there.  May be repeated.
+
+``gridpack-mcp doctor`` checks all of this (Python, ``mcp``, the
+``gridpack`` CLI, ``mpiexec``, matplotlib, the cases it would offer) and
+ends with ``ready`` or ``not ready``.
 
 .. _mcp-own-cases:
 
@@ -97,6 +113,15 @@ cannot point the server at arbitrary files.
   lists in the directory are not offered as cases; an input that cannot be
   used is reported on the server's stderr with the reason.  An EMT case
   uses a ``.petscrc`` beside it if there is one, else the bundled one.
+
+* **Cases from a RAW file** are made by ``create_case``: give it a RAW,
+  and optionally a DYR, under a ``--cases`` directory and it writes an
+  input XML beside them with default power flow and dynamic simulation
+  settings, every generator watched and observed and every bus observed,
+  and no events.
+* **Derived cases** are made by ``modify_case`` (below) and live under the
+  server's work directory as ``derived/<name>/<name>.xml`` until the
+  server exits.  An ``edits.json`` beside each records how it was made.
 
 Each case lists the applications it can run, judged from its blocks, its
 bus count and the most ranks it may use.  A listed case can still fail in
@@ -133,13 +158,108 @@ Tools
    * - ``job_log``
      - The last lines of a job's stdout or stderr.
 
-Jobs are kept in memory and run one at a time; the server stops any that
-are still running when it exits.
+   * - ``job_series``
+     - Chosen channels of a dynamic run, by name or glob, decimated to a
+       point cap.
+   * - ``job_report``
+     - A short text verdict: convergence, totals, voltage range, violations
+       and overloads for a power flow; events, speed deviation, damping,
+       rotor angle spread and a stability verdict for a dynamic run.
+   * - ``plot_job``
+     - A PNG: generator speeds or any channels with fault windows shaded
+       and trips marked, or a voltage or angle profile.  Needs the
+       ``plot`` extra.
+   * - ``compare_jobs``
+     - What changed between two runs of the same kind.
+   * - ``create_case``, ``modify_case``
+     - New cases from RAW/DYR files, and derived cases with edits, events
+       and observations (next section).
+   * - ``run_study``, ``study_status``, ``study_result``
+     - Load sweeps and dynamic N-1 screens, one job per point, ranked.
+
+Jobs are kept in memory and run ``--parallel`` at a time; the server stops
+any that are still running when it exits.  EMT runs return status only.
+
+Deriving cases
+--------------
+
+``modify_case(case, edits, name, replace_events)`` writes a copy of the
+case with its RAW records edited and its events changed, and lists it.
+Only the named fields of the named records change; the rest of the RAW is
+kept byte for byte, for RAW versions 23 to 36.  Every edit is checked
+before anything is written, and the reply echoes each one with the value
+before and after.
+
+Network edits, in engineering units (ids default to the only one at the
+bus; circuit ids must match the RAW):
+
+* ``set_load_active_power {bus, mw}``, ``set_load_reactive_power {bus,
+  mvar}``, ``scale_load {bus, factor}``, ``set_load_in_service {bus,
+  in_service}``, ``scale_all_loads {factor}``
+* ``set_generator_active_power {bus, mw}``,
+  ``set_generator_voltage_setpoint {bus, vm_pu}``,
+  ``set_generator_in_service {bus, in_service}``,
+  ``scale_all_generation {factor}``
+* ``set_shunt {bus, mvar, mw}``, ``set_shunt_in_service {bus, in_service}``
+* ``set_branch_in_service {from, to, ckt, in_service}``
+* ``set_param {kind, bus | from, to, ckt, id, field, value}`` with a PSS/E
+  RAW column name, for anything else.
+
+Event edits, times in seconds on the case's time step:
+
+* ``add_fault {from, to, start, duration}``: a solid fault at the from bus,
+  cleared after ``duration`` (GridPACK's ``faultEvent``).
+* ``add_bus_fault {bus, start, duration, g_pu, b_pu}``.
+* ``trip_branch {from, to, ckt, time, in_service}`` and
+  ``trip_generator {bus, id, time, in_service}``.
+* ``add_observations {generators, buses, bus_frequency}`` with ``"all"`` or
+  bus lists: what HADREC records.
+
+Events are appended to the base case's own unless ``replace_events`` is
+true.  HADREC needs a fault as the first event and refuses a case with no
+observations.  Not editable yet: transformer taps and status in v33 and
+later files, switched shunts, DYR parameters.
+
+Studies
+-------
+
+``run_study(case, kind, ...)`` writes one derived case per point, runs one
+job each, ``--parallel`` at a time, and returns a study id for
+``study_status`` and ``study_result``.
+
+``load_sweep``
+    ``factors`` such as ``[1.0, 1.1, 1.2]`` scale every load (and every
+    generator with ``scale_generation``) and run power flows.  The table
+    gives load, generation and losses in MW, the lowest voltage and its
+    bus, violations and peak loading per factor.
+
+``dynamic_n1``
+    Every branch and transformer, or the ``branches`` given as
+    ``"from-to"`` or ``"from-to ckt"``, gets a fault at its from bus at
+    ``fault_start`` cleared after ``fault_duration`` by tripping it, with
+    the base case's events replaced and every machine watched, and a
+    dynamic simulation to ``end_time``.  The table ranks outages most
+    severe first: ``unstable`` means the rotor angle spread between
+    machines, each measured from its own start, passed 180 degrees, or a
+    machine was still more than 2% off speed at the end.  Treat the
+    180-degree rule as a first-swing screen; a large swing that recovers
+    can trip it, so read the final spread and speed columns too.
+
+Prompts and the Claude skill
+----------------------------
+
+The server offers three prompt templates, ``stability_study``,
+``n1_screen`` and ``voltage_study``, that lead a client through a study in
+the right order.  For Claude Code the same workflow is a skill in the
+repository, ``.claude/skills/gridpack-study/SKILL.md``, which loads when a
+conversation turns to GridPACK studies.
 
 .. autoclass:: gridpack.mcp.tools.Tools
-   :members: list_cases, describe_case, run_powerflow, run_contingency,
-             run_dynamic_sim, run_state_estimation, run_hadrec, run_emt,
-             job_status, job_result, job_log
+   :members: list_cases, describe_case, create_case, modify_case,
+             run_powerflow, run_contingency, run_dynamic_sim,
+             run_state_estimation, run_hadrec, run_emt, job_status,
+             job_result, job_log, job_series, job_report, plot_job,
+             compare_jobs, run_study, study_status, study_result
 
 Example
 -------
@@ -175,6 +295,31 @@ return (abridged):
         Error executing tool run_dynamic_sim: input/ds/input_9b3g.xml
         (9 buses) runs on at most 3 ranks
 
+    **You:** Screen every branch outage of the 9-bus case over one second
+    and show me the worst.
+
+    ``run_study(case="input/ds/input_9b3g.xml", kind="dynamic_n1",
+    end_time=1.0)`` then ``study_result(study_id="s33757c6e")`` ::
+
+        {"finished": 9, "pending": 0, "failed": [], "table": [
+          {"branch": "3-6 BL", "unstable": true, "angle_spread_peak_deg": 165.4,
+           "peak_speed_deviation": 0.0409, "final_speed_deviation": 0.0409, ...},
+          {"branch": "1-4 BL", "unstable": true, ...},
+          {"branch": "2-8 BL", "unstable": true, ...},
+          {"branch": "8-9 BL", "unstable": false, ...}, ...]}
+
+    ``job_report(job_id=...)`` for the first row ::
+
+        Dynamic simulation of 0.99 s at 0.01 s steps, 100 rows, 24 channels.
+        Event: fault at bus 3 from 0.1 to 0.15 s (50 ms).
+        Event: branch out at 0.15 s (line 3 6).
+        Peak speed deviation 4.092% on generator 1 at bus 3; final 4.092%.
+        Verdict: large speed excursion; speed still 4.1% off at the end:
+        machine running away.
+
+    Opening 3-6, 1-4 or 2-8 islands a generator, so those three rank worst.
+    ``plot_job(job_id=...)`` returns the speed curves as an image.
+
 Troubleshooting
 ---------------
 
@@ -188,3 +333,10 @@ Troubleshooting
 * **An EMT run aborts at start**: it needs a ``.petscrc`` in its working
   directory; the server supplies one, so check a ``--cases`` directory's
   own copy.
+* **HADREC finished but recorded only time**: the case has no
+  observations; derive one with ``add_observations``.  ``run_hadrec`` now
+  refuses such a case with that advice.
+* **plot_job says to install matplotlib**: ``pip install 'gridpack[plot]'``
+  in the server's environment.
+* **run_study refuses for cpus**: lower ``ranks`` or start the server with
+  a smaller ``--parallel``.

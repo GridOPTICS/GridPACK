@@ -86,6 +86,7 @@ class JobRunner:
         self.root.mkdir(parents=True, exist_ok=True)
         self._cli = list(cli)
         self._mpiexec = list(mpiexec)
+        self.max_parallel = max_parallel
         self._slots = threading.Semaphore(max_parallel)
         self._jobs = {}
         self._lock = threading.Lock()

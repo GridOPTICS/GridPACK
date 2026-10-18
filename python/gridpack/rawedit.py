@@ -60,6 +60,8 @@ OPS = {
     "set_shunt_in_service": ("fixed_shunt", ("bus", "in_service"), ("id",)),
     "set_branch_in_service": ("branch", ("from", "to", "ckt", "in_service"),
                               ()),
+    "scale_all_loads": ("load", ("factor",), ()),
+    "scale_all_generation": ("generator", ("factor",), ()),
     "set_param": (None, ("kind", "field", "value"),
                   ("bus", "id", "from", "to", "ckt")),
 }
@@ -307,10 +309,29 @@ def _check(edit, n):
 
 
 def _plan(raw, edit, n):
-    """``(record, {field: new value})`` for one validated edit."""
+    """``[(record, fields, fn)]`` for one validated edit: ``fn(record)``
+    gives the new field values when the edit is applied, so earlier edits
+    to the same record are seen."""
     op = edit["op"]
     kind = OPS[op][0] or edit["kind"]
     v23 = raw.version < 33
+    if op in ("scale_all_loads", "scale_all_generation"):
+        f = edit["factor"]
+        if op == "scale_all_loads":
+            recs = [r for (k, _), r in raw.records.items()
+                    if k == ("bus" if v23 else "load")]
+            return [(r, ["PL", "QL"], lambda r, f=f: {
+                "PL": r.get("PL") * f, "QL": r.get("QL") * f}) for r in recs]
+        recs = [r for (k, _), r in raw.records.items() if k == "generator"]
+        return [(r, ["PG"], lambda r, f=f: {"PG": r.get("PG") * f})
+                for r in recs]
+    rec, new = _plan_one(raw, edit, n, op, kind, v23)
+    if callable(new):
+        return [(rec, new.names, new)]
+    return [(rec, list(new), lambda r, v=new: v)]
+
+
+def _plan_one(raw, edit, n, op, kind, v23):
     ident = _id(str(edit.get("id", "1")))
     if kind == "branch":
         key = (edit["from"], edit["to"], _id(str(edit["ckt"])))
@@ -335,8 +356,10 @@ def _plan(raw, edit, n):
     if op == "set_load_reactive_power":
         return rec, {"QL": edit["mvar"]}
     if op == "scale_load":
-        return rec, {"PL": rec.get("PL") * edit["factor"],
-                     "QL": rec.get("QL") * edit["factor"]}
+        f = edit["factor"]
+        fn = lambda r, f=f: {"PL": r.get("PL") * f, "QL": r.get("QL") * f}
+        fn.names = ["PL", "QL"]
+        return rec, fn
     if op == "set_generator_active_power":
         return rec, {"PG": edit["mw"]}
     if op == "set_generator_voltage_setpoint":
@@ -367,15 +390,31 @@ def edit_raw(src, dst, edits):
     plan = []
     for n, edit in enumerate(edits, 1):
         _check(edit, n)
-        rec, new = _plan(raw, edit, n)
-        for name in new:
-            rec.index(name)                   # field exists in this version
-        plan.append((edit, rec, new))
+        targets = _plan(raw, edit, n)
+        if not targets:
+            raise EditError("edit %d (%s): no records to change" % (n, edit["op"]))
+        for rec, names, _ in targets:
+            for name in names:
+                rec.index(name)               # field exists in this version
+        plan.append((edit, targets))
     report = []
-    for edit, rec, new in plan:
-        was = {name: rec.get(name) for name in new}
-        for name, value in new.items():
-            rec.set(name, value)
-        report.append(dict(edit, was=was, now={n: rec.get(n) for n in new}))
+    for edit, targets in plan:
+        was = _values(targets)
+        for rec, _, fn in targets:
+            for name, value in fn(rec).items():
+                rec.set(name, value)
+        entry = dict(edit, was=was, now=_values(targets))
+        if len(targets) > 1:
+            entry["records"] = len(targets)
+        report.append(entry)
     raw.write(dst)
     return report
+
+
+def _values(targets):
+    """Field values of one record, or their totals over many."""
+    if len(targets) == 1:
+        rec, names, _ = targets[0]
+        return {n: rec.get(n) for n in names}
+    return {n: round(sum(rec.get(n) for rec, _, _ in targets), 6)
+            for n in targets[0][1]}

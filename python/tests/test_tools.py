@@ -62,6 +62,10 @@ def test_hadrec_and_emt_cases(tools):
     assert cases["input/ds/input_9b3g.xml"] == ["powerflow", "dsf", "hadrec"]
     emt = [c["case"] for c in tools.list_cases("emt")]
     assert "emt/9-bus/input_9bus2.xml" in emt and len(emt) == 7
+    assert all(c["notes"] == ["emt results are status only"]
+               for c in tools.list_cases("emt"))
+    assert "notes" not in tools.describe_case(PF14) and "notes" not in next(
+        c for c in tools.list_cases("powerflow") if "emt" not in c["apps"])
     assert tools.describe_case("emt/9-bus/input_9bus2.xml")["settings"][
         "emt"] == {"time_step": "0.00005", "end_time": "2.0"}
 
@@ -815,3 +819,223 @@ def test_post_tools_on_real_jobs(tmp_path):
             t.plot_job(base)
     else:
         assert t.plot_job(base)[:4] == b"\x89PNG"
+
+
+# -------------------------------------------------------------
+# studies
+# -------------------------------------------------------------
+
+def test_modify_case_can_replace_events(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case(DS9, [{"op": "add_bus_fault", "bus": 7, "start": 0.2,
+                             "duration": 0.05}], replace_events=True)
+    xml = tmp_path / "jobs/derived" / d["case"].split("/", 1)[1]
+    assert [tag for tag, _ in _events(xml)] == ["BusFault"]
+    e = t.modify_case(DS9, [{"op": "scale_load", "bus": 5, "factor": 1.1}],
+                      replace_events=True)
+    assert _events(tmp_path / "jobs/derived" / e["case"].split("/", 1)[1]) == []
+    assert e["apps"] == ["powerflow", "dsf"]           # no fault left for hadrec
+
+
+def test_run_study_fans_out_before_running(tmp_path):
+    noop = tmp_path / "noop.py"
+    noop.write_text("")
+    t = Tools(JobRunner(tmp_path / "jobs", max_parallel=2,
+                        cli=(sys.executable, str(noop)),
+                        mpiexec=(sys.executable, str(noop))))
+    st = t.run_study(DS9, "dynamic_n1", end_time=0.5, wait_seconds=5)
+    assert st["kind"] == "dynamic_n1" and st["items"] == 9      # 9b3g branches
+    assert st["params"]["branches"][:2] == ["1-4 BL", "2-8 BL"]
+    assert [j["state"] for j in st["jobs"]] == ["failed"] * 9    # no-op CLI
+    derived = sorted(p.name for p in (tmp_path / "jobs/derived").iterdir())
+    assert len(derived) == 9 and all(p.startswith(st["id"] + "-out-") for p in derived)
+    xml = tmp_path / "jobs/derived" / st["jobs"][0]["case"].split("/", 1)[1]
+    assert _events(xml) == [
+        ("faultEvent", {"beginFault": "0.1", "endFault": "0.15",
+                        "faultBranch": "1 4", "id": "BL"}),
+        ("LineStatus", {"time": "0.15", "line": "1 4", "id": "BL", "status": "0"})]
+    # Every machine is watched, whatever the base case watched.
+    watch = ET.parse(xml).getroot().find("Dynamic_simulation/generatorWatch")
+    assert [g.find("busID").text for g in watch] == ["1", "2", "3"]
+    res = t.study_result(st["id"])
+    assert (res["finished"], res["pending"], len(res["failed"])) == (0, 0, 9)
+    assert t.study_status(st["id"])["states"] == {"failed": 9}
+    sw = t.run_study(PF14, "load_sweep", factors=[1.0, 1.1], scale_generation=True,
+                     wait_seconds=5)
+    assert sw["items"] == 2 and sw["jobs"][1]["name"] == "load-1.1"
+    edits = json.loads((tmp_path / "jobs/derived" / sw["jobs"][1]["case"].split("/", 1)[1]
+                        ).with_name("edits.json").read_text())["edits"]
+    assert [e["op"] for e in edits] == ["scale_all_loads", "scale_all_generation"]
+    assert t.run_study(DS9, "dynamic_n1", branches=["4-5", "6-7 BL"], end_time=0.5,
+                       wait_seconds=0)["items"] == 2
+    with pytest.raises(KeyError):
+        t.study_status("nope")
+
+
+@pytest.mark.parametrize("kwargs, msg", [
+    ({"case": DS9, "kind": "n-2"}, "kind is one of"),
+    ({"case": PF14, "kind": "dynamic_n1"}, "cannot run dsf"),
+    ({"case": DS9, "kind": "load_sweep", "factors": []}, "non-empty list"),
+    ({"case": DS9, "kind": "load_sweep", "factors": [1.0, -2]}, "positive numbers"),
+    ({"case": DS9, "kind": "load_sweep", "factors": "1.1"}, "non-empty list"),
+    ({"case": DS9, "kind": "dynamic_n1", "ranks": 4}, "at most 3 ranks"),
+    ({"case": DS9, "kind": "dynamic_n1", "ranks": 0}, "positive int"),
+    ({"case": DS9, "kind": "dynamic_n1", "fault_start": 0.9, "end_time": 0.9},
+     "must end before end_time"),
+    ({"case": DS9, "kind": "dynamic_n1", "fault_start": 0.105}, "not a multiple"),
+    ({"case": DS9, "kind": "dynamic_n1", "branches": ["1-9"]}, "no branch 1-9"),
+])
+def test_run_study_rejections_start_nothing(harmless, kwargs, msg):
+    with pytest.raises(ValueError, match=msg):
+        harmless.run_study(**kwargs)
+    assert harmless.runner.jobs() == []
+    assert not any(c["case"].startswith("derived/") for c in harmless.list_cases())
+
+
+def test_run_study_respects_the_cpu_budget(tmp_path, monkeypatch):
+    import gridpack.mcp.tools as mod
+    monkeypatch.setattr(mod.os, "cpu_count", lambda: 4)
+    noop = tmp_path / "noop.py"
+    noop.write_text("")
+    t = Tools(JobRunner(tmp_path / "jobs", max_parallel=3,
+                        cli=(sys.executable, str(noop)),
+                        mpiexec=(sys.executable, str(noop))))
+    with pytest.raises(ValueError, match="3 jobs at a time on 2 ranks each exceed the 4 cpus"):
+        t.run_study(DS9, "dynamic_n1", ranks=2)
+    assert t.runner.jobs() == []
+
+
+@pytest.mark.integration
+def test_studies_match_runs_by_hand(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs", max_parallel=3))
+    st = t.run_study(DS9, "dynamic_n1", end_time=0.3, wait_seconds=10)
+    for _ in range(60):
+        if not t.study_status(st["id"])["pending"]:
+            break
+        time.sleep(1)
+    res = t.study_result(st["id"])
+    assert (res["finished"], res["pending"], res["failed"]) == (9, 0, [])
+    rows = res["table"]
+    assert len(rows) == 9 and rows[0]["angle_spread_peak_deg"] > 1.0
+    keys = [(not r["unstable"], -r["angle_spread_peak_deg"]) for r in rows]
+    assert keys == sorted(keys)                           # most severe first
+    # Islanding generator 3 (its step-up branch 3-6) is among the worst
+    # outages even in the first 0.3 s.
+    assert "3-6 BL" in {r["branch"] for r in rows[:3]}
+    # One outage, redone by hand with the same edits, gives the same rows.
+    item = next(r for r in rows if r["branch"] == "6-7 BL")
+    hand = t.modify_case(DS9, [
+        {"op": "add_fault", "from": 6, "to": 7, "ckt": "BL", "start": 0.1,
+         "duration": 0.05},
+        {"op": "trip_branch", "from": 6, "to": 7, "ckt": "BL", "time": 0.15}],
+        replace_events=True)
+    w_hand = t.job_result(t.run_dynamic_sim(hand["case"], end_time=0.3)["id"])["watch"]
+    w_study = t.job_result(item["job_id"])["watch"]
+    # The study watches every machine; the base case only generator 1.
+    assert w_hand["columns"] == w_study["columns"][:9]
+    assert [r[:9] for r in w_study["rows"]] == w_hand["rows"]
+
+    sw = t.run_study(PF14, "load_sweep", factors=[1.0, 1.2], wait_seconds=10)
+    table = t.study_result(sw["id"])["table"]
+    assert [r["factor"] for r in table] == [1.0, 1.2]
+    base = t.job_result(t.run_powerflow(PF14)["id"])
+    assert table[0]["min_voltage"] == min(b["voltage"] for b in base["buses"])
+    assert table[1]["load_mw"] == pytest.approx(1.2 * table[0]["load_mw"])
+    assert table[1]["min_voltage"] < table[0]["min_voltage"]
+
+
+# -------------------------------------------------------------
+# observations (what HADREC records)
+# -------------------------------------------------------------
+
+def _observations(xml):
+    root = ET.parse(xml).getroot()
+    return [(o.findtext("type").strip(), o.findtext("busID").strip(),
+             (o.findtext("generatorID") or "").strip())
+            for o in root.find("Dynamic_simulation/observations")]
+
+
+def test_describe_case_reports_what_a_dynamic_case_records(tools):
+    assert tools.describe_case(DS9)["records"] == {
+        "watched_generators": 1, "observations": {}}
+    kundur = tools.describe_case("input/ds/input_kundur_two_area_wsieg1.xml")
+    assert kundur["records"] == {"watched_generators": 1,
+                                 "observations": {"generator": 2, "bus": 2}}
+    assert "records" not in tools.describe_case(PF14)
+
+
+def test_created_cases_observe_everything(tmp_path):
+    d = _mine(tmp_path, "raw/9b3g.raw", "dyr/9b3g.dyr")
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[d])
+    c = t.create_case("mine/dyn/9b3g.raw", dyr="mine/dyn/9b3g.dyr")
+    assert c["records"] == {"watched_generators": 3,
+                            "observations": {"generator": 3, "bus": 9}}
+    obs = _observations(d / "dyn/9b3g.xml")
+    assert obs[:3] == [("generator", "1", "1"), ("generator", "2", "1"),
+                       ("generator", "3", "1")]
+    assert obs[3] == ("bus", "1", "") and len(obs) == 12
+
+
+def test_add_observations_edit(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case(DS9, [
+        {"op": "add_fault", "from": 6, "to": 7, "start": 0.1, "duration": 0.05},
+        {"op": "add_observations", "generators": "all", "buses": [5, 7],
+         "bus_frequency": True}], replace_events=True)
+    assert d["records"] == {"watched_generators": 1, "observations": {
+        "generator": 3, "bus": 2, "busfrequency": 2}}
+    assert d["edits"][1]["observations"] == {"generator": 3, "bus": 2,
+                                             "busfrequency": 2}
+    assert d["apps"] == ["powerflow", "dsf", "hadrec"]
+    xml = tmp_path / "jobs/derived" / d["case"].split("/", 1)[1]
+    assert _observations(xml) == [
+        ("generator", "1", "1"), ("generator", "2", "1"), ("generator", "3", "1"),
+        ("bus", "5", ""), ("bus", "7", ""),
+        ("busfrequency", "5", ""), ("busfrequency", "7", "")]
+    # Replaces existing observations; generators by bus.
+    k = t.modify_case("input/ds/input_kundur_two_area_wsieg1.xml", [
+        {"op": "add_observations", "generators": [3, 4]}])
+    assert k["records"]["observations"] == {"generator": 2}
+    for edits, msg in [
+            ([{"op": "add_observations"}], "needs generators and/or buses"),
+            ([{"op": "add_observations", "buses": [50]}], "no bus 50"),
+            ([{"op": "add_observations", "generators": [5]}],
+             "no generator at bus 5"),
+            ([{"op": "add_observations", "generators": "some"}],
+             "\"all\" or a list of bus numbers"),
+            ([{"op": "add_observations", "buses": [1], "bus_frequency": 1}],
+             "true or false"),
+            ([{"op": "add_observations", "buses": [1], "loads": "all"}],
+             "unexpected loads"),
+            ([{"op": "add_observations", "buses": [1]},
+              {"op": "add_observations", "buses": [2]}], "one add_observations"),
+            ([{"op": "add_observations", "buses": "all"}], None)]:
+        if msg is None:
+            with pytest.raises(ValueError, match="no Dynamic_simulation block"):
+                t.modify_case(PF14, edits)
+        else:
+            with pytest.raises(ValueError, match=msg):
+                t.modify_case(DS9, edits)
+    assert len(list((tmp_path / "jobs/derived").iterdir())) == 2
+
+
+def test_hadrec_refuses_a_case_that_records_nothing(harmless):
+    with pytest.raises(ValueError, match="no observations.*add_observations"):
+        harmless.run_hadrec(DS9)
+    assert harmless.runner.jobs() == []
+
+
+@pytest.mark.integration
+def test_hadrec_records_the_added_observations(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    d = t.modify_case(DS9, [
+        {"op": "add_observations", "generators": "all", "buses": "all"}])
+    st = t.run_hadrec(d["case"], end_time=0.2)
+    obs = t.job_result(st["id"])["observations"]
+    # 3 generators x (speed, angle, P, Q) + 9 buses x (vmag, vangle)
+    assert (st["state"], st["channels"], len(obs["columns"])) == ("done", 30, 31)
+    assert obs["columns"][1:4] == ["gen_1_1_rspeed", "gen_2_1_rspeed",
+                                   "gen_3_1_rspeed"]
+    assert t.run_dynamic_sim(DS9, end_time=0.1)["channels"] == 8
+    text = t.job_report(st["id"])
+    assert "30 channels" in text and "Peak speed deviation" in text

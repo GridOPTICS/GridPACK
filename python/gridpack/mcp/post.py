@@ -13,7 +13,8 @@ import math
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-__all__ = ["compare", "events_from_xml", "report", "series", "table"]
+__all__ = ["compare", "dynamic_stats", "events_from_xml", "report", "series",
+           "table"]
 
 _TIME = {"dsf": "t", "hadrec": "time"}
 _TABLE = {"dsf": "watch", "hadrec": "observations"}
@@ -179,18 +180,50 @@ def _report_emt(r, workdir):
             % r.get("exit_code")]
 
 
-def _report_dyn(r, workdir):
-    app = "dsf" if "watch" in r else "hadrec"
-    t = table(r, app)
+def dynamic_stats(result, app, after=0.0):
+    """Swing statistics of a dynamic run (speed deviations, damping, rotor
+    angle spread in degrees), or None without a time series.  ``after``:
+    the first disturbance, before which peaks are not counted."""
+    t = table(result, app)
     if t is None:
-        return ["Dynamic run finished but recorded no time series (no generator "
-                "watch or observations in the case)."]
+        return None
     cols, rows = t
     time = [row[0] for row in rows]
-    step = time[1] - time[0] if len(time) > 1 else 0.0
-    lines = ["Dynamic simulation of %.2f s at %.4g s steps, %d rows, %d channels."
-             % (time[-1], step, len(rows), len(cols) - 1)]
+    out = {"duration": time[-1], "rows": len(rows), "channels": len(cols) - 1,
+           "time_step": time[1] - time[0] if len(time) > 1 else 0.0}
+    speeds = [c for c in cols if c.endswith("_speed") or c.endswith("_rspeed")]
+    angles = [c for c in cols if c.endswith("_PowerAngle") or c.endswith("_rangle")]
+    if speeds:
+        dev = {c: [abs(row[cols.index(c)] - 1.0) for row in rows] for c in speeds}
+        worst = max(speeds, key=lambda c: max(dev[c]))
+        out.update(peak_speed_deviation=max(dev[worst]), worst_channel=worst,
+                   final_speed_deviation=dev[worst][-1],
+                   damping_ratio=_damping(dev[worst], time, after))
+    if len(angles) > 1:
+        # Each machine's angle relative to its own start: the watch's
+        # absolute PowerAngle values carry arbitrary offsets per machine.
+        idx = [cols.index(c) for c in angles]
+        base = [rows[0][i] for i in idx]
+        spread = [_DEG * (max(row[i] - b for i, b in zip(idx, base))
+                          - min(row[i] - b for i, b in zip(idx, base)))
+                  for row in rows]
+        out.update(angle_spread_peak=max(spread), angle_spread_final=spread[-1],
+                   loss_of_synchronism=max(spread) > 180.0)
+    if "final_speed_deviation" in out:
+        out["runaway_speed"] = out["final_speed_deviation"] > 0.02
+    return out
+
+
+def _report_dyn(r, workdir):
+    app = "dsf" if "watch" in r else "hadrec"
     events = events_from_xml(workdir) if workdir else []
+    first = min([e.get("start", e.get("time", 0.0)) for e in events] or [0.0])
+    st = dynamic_stats(r, app, first)
+    if st is None:
+        return ["Dynamic run finished but recorded no time series (no generator "
+                "watch or observations in the case)."]
+    lines = ["Dynamic simulation of %.2f s at %.4g s steps, %d rows, %d channels."
+             % (st["duration"], st["time_step"], st["rows"], st["channels"])]
     for e in events:
         if "time" in e:
             lines.append("Event: %s at %.3g s (%s)." % (e["kind"], e["time"], e["where"]))
@@ -198,29 +231,26 @@ def _report_dyn(r, workdir):
             lines.append("Event: %s at %s from %.3g to %.3g s (%.0f ms)."
                          % (e["kind"], e["where"], e["start"], e["end"],
                             1000 * (e["end"] - e["start"])))
-    first = min([e.get("start", e.get("time", 0.0)) for e in events] or [0.0])
-    speeds = [c for c in cols if c.endswith("_speed") or c.endswith("_rspeed")]
-    angles = [c for c in cols if c.endswith("_PowerAngle") or c.endswith("_rangle")]
     verdict = []
-    if speeds:
-        dev = {c: [abs(row[cols.index(c)] - 1.0) for row in rows] for c in speeds}
-        worst = max(speeds, key=lambda c: max(dev[c]))
-        peak = max(dev[worst])
+    if "peak_speed_deviation" in st:
         lines.append("Peak speed deviation %.3f%% on %s; final %.3f%%."
-                     % (100 * peak, _gen(worst), 100 * dev[worst][-1]))
-        zeta = _damping(dev[worst], time, first)
+                     % (100 * st["peak_speed_deviation"], _gen(st["worst_channel"]),
+                        100 * st["final_speed_deviation"]))
+        zeta = st["damping_ratio"]
         if zeta is not None:
             lines.append("Estimated damping ratio of that swing: %.1f%%." % (100 * zeta))
             verdict.append("poorly damped" if zeta < 0.03 else "damped")
-        verdict.append("speed within 1%" if peak < 0.01 else "large speed excursion")
-    if angles and len(angles) > 1:
-        scale = _DEG if "PowerAngle" in angles[0] or "rangle" in angles[0] else 1.0
-        spread = [scale * (max(row[cols.index(c)] for c in angles)
-                           - min(row[cols.index(c)] for c in angles)) for row in rows]
-        lines.append("Rotor angle spread between generators: %.1f deg at start, "
-                     "peak %.1f deg, final %.1f deg." % (spread[0], max(spread), spread[-1]))
+        verdict.append("speed within 1%" if st["peak_speed_deviation"] < 0.01
+                       else "large speed excursion")
+    if "angle_spread_peak" in st:
+        lines.append("Rotor angle spread between generators (each from its own "
+                     "start): peak %.1f deg, final %.1f deg." % (
+                         st["angle_spread_peak"], st["angle_spread_final"]))
         verdict.append("angles separated beyond 180 deg: loss of synchronism"
-                       if max(spread) > 180 else "angles held together")
+                       if st["loss_of_synchronism"] else "angles held together")
+    if st.get("runaway_speed"):
+        verdict.append("speed still %.1f%% off at the end: machine running away"
+                       % (100 * st["final_speed_deviation"]))
     if verdict:
         lines.append("Verdict: %s." % "; ".join(verdict))
     return lines

@@ -63,6 +63,8 @@ _DYNAMICS = """  <Dynamic_simulation>
     <timeStep>0.01</timeStep>
     <Events>
     </Events>
+    <observations>
+%(observations)s    </observations>
     <generatorWatch>
 %(watch)s    </generatorWatch>
     <generatorWatchFrequency>1</generatorWatchFrequency>
@@ -82,15 +84,32 @@ _WATCH = """      <generator>
       </generator>
 """
 
+_OBS_GEN = """      <observation>
+        <type>generator</type>
+        <busID>%d</busID>
+        <generatorID>%s</generatorID>
+      </observation>
+"""
 
-def build_xml(raw, version, dyr=None, generators=()):
+_OBS_BUS = """      <observation>
+        <type>bus</type>
+        <busID>%d</busID>
+      </observation>
+"""
+
+
+def build_xml(raw, version, dyr=None, generators=(), buses=()):
     """The XML text: a Powerflow block, plus Dynamic_simulation with
-    ``dyr`` watching ``generators`` (``[(bus, id)]``)."""
+    ``dyr`` watching ``generators`` (``[(bus, id)]``) and observing them
+    and ``buses`` for HADREC."""
     tag = "networkConfiguration" if version == 23 \
         else "networkConfiguration_v%d" % version
     text = _POWERFLOW % {"tag": tag, "raw": raw, "linear": _LINEAR}
     if dyr:
         watch = "".join(_WATCH % g for g in generators)
-        text += _DYNAMICS % {"dyr": dyr, "watch": watch, "linear": _LINEAR}
+        obs = "".join(_OBS_GEN % g for g in generators) + \
+            "".join(_OBS_BUS % b for b in buses)
+        text += _DYNAMICS % {"dyr": dyr, "watch": watch, "observations": obs,
+                             "linear": _LINEAR}
     return '<?xml version="1.0" encoding="utf-8"?>\n<Configuration>\n%s' \
         '</Configuration>\n' % text

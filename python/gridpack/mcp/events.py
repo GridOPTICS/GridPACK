@@ -14,7 +14,8 @@ import xml.etree.ElementTree as ET
 
 from ..rawedit import EditError, _id, _tokens, raw_blocks
 
-__all__ = ["EVENT_OPS", "append_events", "plan_events", "raw_elements"]
+__all__ = ["EVENT_OPS", "append_events", "plan_events", "raw_elements",
+           "set_observations", "watch_all_generators"]
 
 # op -> (required keys, optional keys)
 EVENT_OPS = {
@@ -114,8 +115,9 @@ def plan_events(edits, raw, time_step, end_time):
     return out
 
 
-def append_events(xml, elements):
-    """Append ``elements`` under Dynamic_simulation/Events of ``xml``."""
+def append_events(xml, elements, replace=False):
+    """Append ``elements`` under Dynamic_simulation/Events of ``xml``;
+    with ``replace`` the existing events go first."""
     tree = ET.parse(xml)
     ds = tree.getroot().find("Dynamic_simulation")
     if ds is None:
@@ -123,9 +125,85 @@ def append_events(xml, elements):
     events = ds.find("Events")
     if events is None:
         events = ET.SubElement(ds, "Events")
+    if replace:
+        for old in list(events):
+            events.remove(old)
     events.extend(elements)
     ET.indent(tree.getroot(), "  ")
     tree.write(xml, encoding="utf-8", xml_declaration=True)
+
+
+def watch_all_generators(xml, raw):
+    """Point Dynamic_simulation/generatorWatch of ``xml`` at every
+    generator in ``raw``; return how many."""
+    _, _, gens = raw_elements(raw)
+    tree = ET.parse(xml)
+    ds = tree.getroot().find("Dynamic_simulation")
+    if ds is None:
+        raise EditError("%s has no Dynamic_simulation block" % xml)
+    watch = ds.find("generatorWatch")
+    if watch is None:
+        watch = ET.SubElement(ds, "generatorWatch")
+    for old in list(watch):
+        watch.remove(old)
+    for bus, gid in sorted(gens):
+        g = ET.SubElement(watch, "generator")
+        ET.SubElement(g, "busID").text = str(bus)
+        ET.SubElement(g, "generatorID").text = gid
+    if ds.find("generatorWatchFileName") is None:
+        ET.SubElement(ds, "generatorWatchFileName").text = "gen_watch.csv"
+    ET.indent(tree.getroot(), "  ")
+    tree.write(xml, encoding="utf-8", xml_declaration=True)
+    return len(gens)
+
+
+def set_observations(xml, raw, generators=None, buses=None,
+                     bus_frequency=False):
+    """Replace Dynamic_simulation/observations of ``xml`` (what HADREC
+    records): ``generators`` and ``buses`` are "all" or bus-number lists;
+    ``bus_frequency`` adds a frequency observation per listed bus.
+    Returns the counts by type."""
+    all_buses, _, gens = raw_elements(raw)
+    tree = ET.parse(xml)
+    ds = tree.getroot().find("Dynamic_simulation")
+    if ds is None:
+        raise EditError("%s has no Dynamic_simulation block" % xml)
+    obs = ds.find("observations")
+    if obs is None:
+        obs = ET.SubElement(ds, "observations")
+    for old in list(obs):
+        obs.remove(old)
+    counts = {}
+
+    def add(kind, bus, gid=None):
+        o = ET.SubElement(obs, "observation")
+        ET.SubElement(o, "type").text = kind
+        ET.SubElement(o, "busID").text = str(bus)
+        if gid is not None:
+            ET.SubElement(o, "generatorID").text = gid
+        counts[kind] = counts.get(kind, 0) + 1
+
+    if generators == "all":
+        for bus, gid in sorted(gens):
+            add("generator", bus, gid)
+    elif generators:
+        for bus in generators:
+            mine = sorted(g for b, g in gens if b == bus)
+            if not mine:
+                raise EditError("no generator at bus %d" % bus)
+            for gid in mine:
+                add("generator", bus, gid)
+    chosen = sorted(all_buses) if buses == "all" else list(buses or [])
+    for bus in chosen:
+        if bus not in all_buses:
+            raise EditError("no bus %d in the RAW" % bus)
+        add("bus", bus)
+    if bus_frequency:
+        for bus in chosen:
+            add("busfrequency", bus)
+    ET.indent(tree.getroot(), "  ")
+    tree.write(xml, encoding="utf-8", xml_declaration=True)
+    return counts
 
 
 def _branch(edit, branches, where):
