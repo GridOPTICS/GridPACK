@@ -169,3 +169,17 @@ mpiexec -np 4 gridpack powerflow input_14.xml
 The CLI exits 0 on success, 2 on bad usage or an unreadable config, 3 when the
 analysis did not converge, and 1 on anything unexpected, so it can be driven
 from a script.
+
+## MCP server
+
+`gridpack-mcp` lets an AI assistant or any other Model Context Protocol
+client run these applications on the bundled cases, or on your own with
+`--cases DIR`, and read the results back as data.  Each run is a `gridpack`
+subprocess.  It needs Python 3.10+:
+```
+pip install 'gridpack[mcp]'
+claude mcp add gridpack -- gridpack-mcp                                  # native
+claude mcp add gridpack -- docker run -i --rm pygridpack gridpack-mcp    # Docker image
+```
+Tools, case naming, rank limits and options are described in
+`docs/user_manual/sphinx/python/mcp.rst`.

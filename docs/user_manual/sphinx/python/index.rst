@@ -12,6 +12,7 @@ Contents:
    getting_started
    api
    cli/index
+   mcp
 
 .. toctree::
    :caption: Low-level bindings
