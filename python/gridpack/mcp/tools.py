@@ -8,7 +8,8 @@
 
 Cases are the bundled ``data_sets`` inputs, named by their path there, and
 the XMLs under each ``cases`` directory, named ``<dir name>/<path>``.  Only
-names :meth:`list_cases` returns are accepted.
+names :meth:`list_cases` returns are accepted; :meth:`create_case` adds one
+for a RAW/DYR pair under a cases directory.
 """
 
 import os
@@ -20,6 +21,7 @@ from typing import Any, Dict, List, Optional
 
 from ..case import _OVERRIDES, Case, data_sets
 from .runner import JobRunner
+from .templates import build_xml, raw_generators, raw_version
 
 _APPS = ("powerflow", "ca", "dsf", "hadrec", "se", "emt")
 _CASE_DIRS = ("input", "emt")
@@ -85,6 +87,43 @@ class Tools:
                 "buses": entry["buses"], "max_ranks": entry["max_ranks"],
                 "files": {p: Path(v).name for p, v in c.files().items()},
                 "settings": settings}
+
+    def create_case(self, raw: str, dyr: Optional[str] = None,
+                    name: Optional[str] = None) -> Dict[str, Any]:
+        """Write an input XML for a RAW (and DYR) file beside it under a
+        cases directory and list it; return its description.
+
+        raw, dyr: "<dir name>/<path>" as list_cases names things, or a
+        path under a cases directory.  name: the XML's stem (default:
+        the RAW's).  The case runs powerflow, and dsf with a DYR (every
+        generator watched, no events yet).
+        """
+        if not self._dirs:
+            raise ValueError("create_case needs a cases directory: start "
+                             "gridpack-mcp with --cases DIR")
+        raw_path = self._under_cases(raw, "RAW")
+        dyr_path = self._under_cases(dyr, "DYR") if dyr else None
+        stem = name or raw_path.stem
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", stem):
+            raise ValueError("name must be letters, digits, _ . or -, "
+                             "not %r" % stem)
+        xml = raw_path.parent / (stem + ".xml")
+        if xml.exists():
+            raise ValueError("%s exists; pick another name" % self._name(xml))
+        gens = raw_generators(raw_path) if dyr_path else []
+        if dyr_path and not gens:
+            raise ValueError("no generator records in %s" % raw_path.name)
+        xml.write_text(build_xml(
+            raw_path.name, raw_version(raw_path),
+            dyr=os.path.relpath(dyr_path, xml.parent) if dyr_path else None,
+            generators=gens))
+        with self._lock:
+            self._cases = None
+        try:
+            return self.describe_case(self._name(xml))
+        except ValueError:
+            xml.unlink()
+            raise
 
     # ---- runs ----------------------------------------------------------
 
@@ -225,6 +264,29 @@ class Tools:
         entry = self._entry(case)
         return _load(entry["_xml"], entry["_base"])
 
+    def _under_cases(self, spec, kind):
+        """The file ``spec`` names inside a cases directory, resolved."""
+        p = Path(spec).expanduser()
+        candidates = [p] if p.is_absolute() else []
+        if p.parts and p.parts[0] in self._dirs:
+            candidates.append(self._dirs[p.parts[0]].joinpath(*p.parts[1:]))
+        for c in candidates:
+            c = c.resolve()
+            if any(_under(c, d) for d in self._dirs.values()):
+                if not c.is_file():
+                    raise ValueError("%s file %s not found" % (kind, spec))
+                return c
+        raise ValueError("%s file must be under a cases directory (%s), as "
+                         "<dir name>/<path>; got %r"
+                         % (kind, ", ".join(self._dirs), spec))
+
+    def _name(self, path):
+        """The catalog name of a file under a cases directory."""
+        for label, d in self._dirs.items():
+            if _under(path, d):
+                return "%s/%s" % (label, path.relative_to(d).as_posix())
+        raise ValueError("%s is not under a cases directory" % path)
+
 
 def _apps(case):
     """The applications a case can run, judged by its blocks."""
@@ -243,6 +305,14 @@ def _apps(case):
         "emt": pf and "EMT" in blocks,
     }
     return [a for a in _APPS if can[a]]
+
+
+def _under(path, directory):
+    try:
+        path.relative_to(directory)
+        return True
+    except ValueError:
+        return False
 
 
 def _load(xml, base):

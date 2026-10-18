@@ -15,9 +15,9 @@ _INSTALL_HINT = ("gridpack-mcp needs the mcp package: "
                  "pip install 'gridpack[mcp]' (Python 3.10+)\n")
 
 
-_TOOLS = ("list_cases", "describe_case", "run_powerflow", "run_contingency",
-          "run_dynamic_sim", "run_state_estimation", "run_hadrec", "run_emt",
-          "job_status", "job_result", "job_log")
+_TOOLS = ("list_cases", "describe_case", "create_case", "run_powerflow",
+          "run_contingency", "run_dynamic_sim", "run_state_estimation",
+          "run_hadrec", "run_emt", "job_status", "job_result", "job_log")
 
 
 def build_server(tools=None):
@@ -27,9 +27,10 @@ def build_server(tools=None):
     tools = tools or Tools()
     server = MCPServer(
         name="gridpack", version=_package_version(),
-        instructions="Run GridPACK on its bundled cases: list_cases (with "
-                     "each case's max_ranks), then a run_* tool, then "
-                     "job_status / job_result.")
+        instructions="Run GridPACK on its cases: list_cases (with each "
+                     "case's max_ranks), then a run_* tool, then "
+                     "job_status / job_result.  create_case makes a case "
+                     "from a RAW (and DYR) file under a --cases directory.")
     for name in _TOOLS:
         server.add_tool(_reported(getattr(tools, name)))
     return server

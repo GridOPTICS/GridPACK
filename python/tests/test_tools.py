@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -385,3 +386,119 @@ def test_without_data_sets_only_cases_directories(tmp_path, monkeypatch):
     t = Tools(cases=[_models(tmp_path)])
     assert [c["case"] for c in t.list_cases()] == [
         "mymodels/feeder.xml", "mymodels/sub/dyn.xml"]
+
+
+# -------------------------------------------------------------
+# create_case
+# -------------------------------------------------------------
+
+def _mine(tmp_path, *files):
+    from .conftest import _data_sets
+    d = tmp_path / "mine"
+    (d / "dyn").mkdir(parents=True)
+    for f in files:
+        shutil.copy(_data_sets() / f, d / ("dyn" if "9b3g" in f else ""))
+    return d
+
+
+def test_create_case_from_raw_and_dyr(tmp_path, capsys):
+    d = _mine(tmp_path, "raw/IEEE14.raw", "raw/9b3g.raw", "dyr/9b3g.dyr")
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[d])
+    pf = t.create_case("mine/IEEE14.raw")
+    assert (pf["case"], pf["apps"], pf["buses"]) == (
+        "mine/IEEE14.xml", ["powerflow"], 14)
+    assert pf["files"] == {"Powerflow.networkConfiguration": "IEEE14.raw"}
+    dyn = t.create_case(str(d / "dyn/9b3g.raw"), dyr="mine/dyn/9b3g.dyr",
+                        name="nine")
+    # hadrec needs a fault event, which the template has not got.
+    assert (dyn["case"], dyn["apps"]) == ("mine/dyn/nine.xml",
+                                          ["powerflow", "dsf"])
+    assert (dyn["buses"], dyn["max_ranks"]) == (9, 3)
+    assert dyn["files"]["Dynamic_simulation.generatorParameters"] == "9b3g.dyr"
+    assert dyn["settings"]["dsf"] == {"time_step": "0.01", "end_time": "10.0"}
+    assert {c["case"] for c in t.list_cases()} >= {"mine/IEEE14.xml",
+                                                   "mine/dyn/nine.xml"}
+    watch = ET.parse(d / "dyn/nine.xml").getroot().find(
+        "Dynamic_simulation/generatorWatch")
+    assert [(g.find("busID").text, g.find("generatorID").text)
+            for g in watch] == [("1", "1"), ("2", "1"), ("3", "1")]
+    with pytest.raises(ValueError, match="mine/IEEE14.xml exists"):
+        t.create_case("mine/IEEE14.raw")
+    assert capsys.readouterr().err == ""
+
+
+@pytest.mark.parametrize("raw, tag, gens", [
+    ("9b3g.raw", "networkConfiguration", 3),
+    ("kundur-twoarea_v33.raw", "networkConfiguration_v33", 4),
+    ("240busWECC_2018_PSS_fixedshunt.raw", "networkConfiguration_v34", 146),
+    ("240busWECC_2018_PSS_PQLoad_fixedshunt_noremotebus_yuan_v36.raw",
+     "networkConfiguration_v36", 146),
+])
+def test_raw_version_tag_and_generators(raw, tag, gens):
+    from .conftest import _data_sets
+    from gridpack.mcp.templates import build_xml, raw_generators, raw_version
+    path = _data_sets() / "raw" / raw
+    g = raw_generators(path)
+    assert len(g) == gens and all(isinstance(b, int) and i for b, i in g)
+    root = ET.fromstring(build_xml(raw, raw_version(path), dyr="x.dyr",
+                                   generators=g))
+    assert root.find("Powerflow/%s" % tag).text == raw
+    assert len(root.find("Dynamic_simulation/generatorWatch")) == gens
+    assert root.find("Dynamic_simulation/Events") is not None
+
+
+def test_unlabelled_v33_generator_block(tmp_path):
+    """PSS/E 33 labels its block ends; hand-made files may not."""
+    from gridpack.mcp.templates import raw_generators, raw_version
+    raw = tmp_path / "plain33.raw"
+    raw.write_text("0, 100.00, 33, 0, 1, 60.00\ntitle\ntitle\n"
+                   " 1,'A',1\n 2,'B',1\n0\n"          # buses
+                   " 1,'1 ',1\n0\n"                    # loads
+                   " 2,'1 ',1\n0\n"                    # fixed shunts
+                   " 2,'G1',1\n 1,'2 ',1\n0\n"        # generators
+                   " 1,2,'1 '\n0\nQ\n")
+    assert raw_version(raw) == 33
+    assert raw_generators(raw) == [(2, "G1"), (1, "2")]
+
+
+def test_create_case_rejections(tmp_path):
+    d = _mine(tmp_path, "raw/IEEE14.raw")
+    outside = tmp_path / "IEEE14.raw"
+    shutil.copy(d / "IEEE14.raw", outside)
+    (d / "nogen.raw").write_text("0 100.0\n\n\n 1,'B',1\n0\n0\n")
+    (d / "nogen.dyr").write_text("")
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[d])
+    for kwargs, msg in [
+            ({"raw": str(outside)}, "RAW file must be under a cases dir"),
+            ({"raw": "mine/../IEEE14.raw"}, "RAW file must be under"),
+            ({"raw": "mine/gone.raw"}, "RAW file mine/gone.raw not found"),
+            ({"raw": "mine/IEEE14.raw", "dyr": "mine/gone.dyr"},
+             "DYR file mine/gone.dyr not found"),
+            ({"raw": "mine/IEEE14.raw", "name": "../x"}, "name must be"),
+            ({"raw": "mine/IEEE14.raw", "name": "a b"}, "name must be"),
+            ({"raw": "mine/nogen.raw", "dyr": "mine/nogen.dyr"},
+             "no generator records")]:
+        with pytest.raises(ValueError, match=msg):
+            t.create_case(**kwargs)
+    assert not list(tmp_path.rglob("*.xml"))                # nothing written
+    with pytest.raises(ValueError, match="--cases DIR"):
+        Tools(JobRunner(tmp_path / "jobs2")).create_case("x.raw")
+
+
+@pytest.mark.integration
+def test_created_cases_run(tmp_path):
+    from .test_powerflow import BUS5_VMAG_REF
+    d = _mine(tmp_path, "raw/IEEE14.raw", "raw/9b3g.raw", "dyr/9b3g.dyr")
+    t = Tools(JobRunner(tmp_path / "jobs"), cases=[d])
+    st = t.run_powerflow(t.create_case("mine/IEEE14.raw")["case"])
+    bus5 = next(b for b in t.job_result(st["id"])["buses"] if b["busId"] == 5)
+    assert st["converged"] and abs(bus5["voltage"] - BUS5_VMAG_REF) < 1e-5
+    dyn = t.create_case("mine/dyn/9b3g.raw", dyr="mine/dyn/9b3g.dyr")["case"]
+    st = t.run_dynamic_sim(dyn, end_time=0.1)
+    w = t.job_result(st["id"])["watch"]
+    assert (st["state"], st["exit_code"], len(w["rows"])) == ("done", 0, 10)
+    assert {c for c in w["columns"] if c.endswith("_speed")} == {
+        "1_1_speed", "2_1_speed", "3_1_speed"}
+    # Without events the system holds its power-flow point.
+    i = w["columns"].index("1_1_speed")
+    assert all(abs(r[i] - 1.0) < 1e-6 for r in w["rows"])
