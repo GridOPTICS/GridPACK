@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional
 from ..case import _OVERRIDES, Case, data_sets
 from ..rawedit import OPS, edit_raw
 from .events import EVENT_OPS, append_events, plan_events
+from . import plots, post
 from .runner import JobRunner
 from .templates import build_xml, raw_generators, raw_version
 
@@ -303,7 +304,57 @@ class Tools:
         return self.runner.get(job_id).log(
             stream, tail=max(1, min(int(tail), _MAX_TAIL)))
 
+    # ---- post-processing -------------------------------------------------
+
+    def job_series(self, job_id: str, columns: Optional[List[str]] = None,
+                   max_points: int = 200) -> Dict[str, Any]:
+        """Chosen channels of a finished dynamic run (dsf watch, hadrec
+        observations), decimated to at most max_points rows.
+
+        columns: channel names or globs such as "*_speed" (time is always
+        the first column); None means every channel.
+        """
+        job, result = self._finished(job_id)
+        return post.series(result, job.app, columns,
+                           max(2, min(int(max_points), 100000)))
+
+    def job_report(self, job_id: str) -> str:
+        """A short text verdict on a finished job: convergence, violations,
+        totals, events, speed deviation, damping and angle spread."""
+        job, result = self._finished(job_id)
+        return post.report(result, job.app, job.workdir)
+
+    def compare_jobs(self, job_a: str, job_b: str) -> Dict[str, Any]:
+        """What changed from job_a to job_b: bus voltage and angle changes,
+        totals and branch differences for static runs; per-channel largest
+        change and the time it happened for dynamic runs."""
+        ja, ra = self._finished(job_a)
+        jb, rb = self._finished(job_b)
+        return post.compare(ra, rb, ja.app, jb.app)
+
+    def plot_job(self, job_id: str, kind: Optional[str] = None,
+                 channels: Optional[List[str]] = None,
+                 title: Optional[str] = None) -> bytes:
+        """A PNG of a finished job.  Dynamic runs: kind "series" over
+        channels (names or globs; default every generator speed), one
+        panel per quantity, events shaded.  Power flow / state estimation:
+        kind "voltage" (default) or "angle" over the buses.  Needs
+        matplotlib (pip install 'gridpack[plot]')."""
+        job, result = self._finished(job_id)
+        events = post.events_from_xml(job.workdir) if job.app in ("dsf", "hadrec") \
+            else ()
+        return plots.render(result, job.app, kind, channels, title, events)
+
     # ---- internals -------------------------------------------------------
+
+    def _finished(self, job_id):
+        job = self.runner.get(job_id)
+        if job.state in ("queued", "running"):
+            raise ValueError("job %s is still %s" % (job_id, job.state))
+        result = job.result
+        if result is None:
+            raise ValueError("job %s left no results: %s" % (job_id, job.error))
+        return job, result
 
     def _run(self, app, case, ranks, wait_seconds, **settings):
         entry = self._entry(case)

@@ -760,3 +760,58 @@ def test_events_change_the_run_and_hadrec_accepts_a_fault(tmp_path):
     st = t2.run_hadrec(f["case"], end_time=0.3)
     obs = t2.job_result(st["id"])["observations"]
     assert (st["state"], st["exit_code"]) == ("done", 0) and len(obs["rows"]) > 0
+
+
+# -------------------------------------------------------------
+# post-processing tools
+# -------------------------------------------------------------
+
+def test_post_tools_need_a_finished_job(tmp_path):
+    slow = tmp_path / "slow.py"
+    slow.write_text("import time; time.sleep(30)")
+    t = Tools(JobRunner(tmp_path / "jobs", cli=(sys.executable, str(slow))))
+    st = t.run_powerflow(PF14, wait_seconds=0)
+    for call in (lambda: t.job_series(st["id"]), lambda: t.job_report(st["id"]),
+                 lambda: t.compare_jobs(st["id"], st["id"]),
+                 lambda: t.plot_job(st["id"])):
+        with pytest.raises(ValueError, match="still"):
+            call()
+    t.runner.cancel(st["id"])
+    with pytest.raises(KeyError):
+        t.job_report("nope")
+
+
+@pytest.mark.integration
+def test_post_tools_on_real_jobs(tmp_path):
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    pf = t.run_powerflow(PF14)["id"]
+    text = t.job_report(pf)
+    assert text.startswith("Power flow converged in 2 iterations; 14 buses, 20 branches, 5 generators.")
+    assert "Slack bus 1 supplies 232.4 MW" in text
+    assert "No branch ratings in the case" in text
+    opened = t.modify_case(PF14, [{"op": "set_branch_in_service", "from": 1,
+                                   "to": 5, "ckt": "BL", "in_service": False}])
+    pf2 = t.run_powerflow(opened["case"])["id"]
+    c = t.compare_jobs(pf, pf2)
+    assert c["branches"] == {"only_in_a": ["1-5 BL"], "only_in_b": []}
+    assert c["voltage_pu"]["at_bus"] == 5 and c["voltage_pu"]["max_change"] < -0.01
+
+    base = t.run_dynamic_sim(DS9, end_time=0.5)["id"]
+    s = t.job_series(base, ["*_speed"], max_points=6)
+    assert s["columns"] == ["t", "1_1_speed"] and s["points"] == 6
+    assert s["decimated_from"] == 50 and s["rows"][-1][0] == pytest.approx(0.49)
+    text = t.job_report(base)
+    assert "Event: fault at bus 6 from 0.03 to 0.06 s (30 ms)" in text
+    assert "Peak speed deviation" in text and "Verdict:" in text
+    trip = t.modify_case(DS9, [{"op": "trip_generator", "bus": 3, "time": 0.2}])
+    d = t.compare_jobs(base, t.run_dynamic_sim(trip["case"], end_time=0.5)["id"])
+    assert d["first_difference_at"] == pytest.approx(0.2) and d["rows_compared"] == 50
+    with pytest.raises(ValueError, match="cannot compare"):
+        t.compare_jobs(pf, base)
+    try:
+        import matplotlib  # noqa: F401
+    except ImportError:
+        with pytest.raises(ValueError, match="gridpack\\[plot\\]"):
+            t.plot_job(base)
+    else:
+        assert t.plot_job(base)[:4] == b"\x89PNG"

@@ -18,7 +18,8 @@ _INSTALL_HINT = ("gridpack-mcp needs the mcp package: "
 _TOOLS = ("list_cases", "describe_case", "create_case", "modify_case",
           "run_powerflow", "run_contingency", "run_dynamic_sim",
           "run_state_estimation", "run_hadrec", "run_emt", "job_status",
-          "job_result", "job_log")
+          "job_result", "job_log", "job_series", "job_report", "compare_jobs",
+          "plot_job")
 
 
 def build_server(tools=None):
@@ -33,10 +34,26 @@ def build_server(tools=None):
                      "job_status / job_result.  create_case makes a case "
                      "from a RAW (and DYR) file under a --cases directory; "
                      "modify_case derives one with loads, generators, "
-                     "shunts or branches changed and faults or trips added.")
+                     "shunts or branches changed and faults or trips added.  "
+                     "job_report, job_series, plot_job and compare_jobs read "
+                     "finished jobs back.")
     for name in _TOOLS:
-        server.add_tool(_reported(getattr(tools, name)))
+        fn = getattr(tools, name)
+        server.add_tool(_reported(_as_image(fn) if name == "plot_job" else fn))
     return server
+
+
+def _as_image(plot_job):
+    """plot_job returning the PNG as MCP image content."""
+    from typing import List, Optional
+    from mcp.server.mcpserver.utilities.types import Image
+
+    def tool(job_id: str, kind: Optional[str] = None,
+             channels: Optional[List[str]] = None,
+             title: Optional[str] = None) -> Image:
+        return Image(data=plot_job(job_id, kind, channels, title), format="png")
+    tool.__name__, tool.__doc__ = "plot_job", plot_job.__doc__
+    return tool
 
 
 def _reported(fn):

@@ -56,7 +56,8 @@ def test_stdio_handshake():
         "list_cases", "describe_case", "create_case", "modify_case",
         "run_powerflow", "run_contingency", "run_dynamic_sim",
         "run_state_estimation", "run_hadrec", "run_emt", "job_status",
-        "job_result", "job_log"]
+        "job_result", "job_log", "job_series", "job_report", "compare_jobs",
+        "plot_job"]
 
 
 @_CLI
