@@ -33,12 +33,24 @@ def test_list_cases(tools):
     assert [c["case"] for c in tools.list_cases("se")] == [
         "input/se/input_118.xml", "input/se/input_14.xml"]
     with pytest.raises(ValueError):
-        tools.list_cases("emt")
+        tools.list_cases("kalman")
+
+
+def test_hadrec_and_emt_cases(tools):
+    cases = {c["case"]: c["apps"] for c in tools.list_cases()}
+    # No fault event: HADREC would index an empty list.
+    assert cases["input/ds/input_kundur_two_area_wshygp.xml"] == [
+        "powerflow", "dsf"]
+    assert cases["input/ds/input_9b3g.xml"] == ["powerflow", "dsf", "hadrec"]
+    emt = [c["case"] for c in tools.list_cases("emt")]
+    assert "emt/9-bus/input_9bus2.xml" in emt and len(emt) == 7
+    assert tools.describe_case("emt/9-bus/input_9bus2.xml")["settings"][
+        "emt"] == {"time_step": "0.00005", "end_time": "2.0"}
 
 
 def test_describe_case(tools):
     d = tools.describe_case("input/ds/input_9b3g.xml")
-    assert d["apps"] == ["powerflow", "dsf"]
+    assert d["apps"] == ["powerflow", "dsf", "hadrec"]
     assert d["files"] == {"Powerflow.networkConfiguration": "9b3g.raw",
                           "Dynamic_simulation.generatorParameters": "9b3g.dyr"}
     assert d["settings"]["dsf"] == {"time_step": "0.01", "end_time": "1.0"}
@@ -65,11 +77,14 @@ def test_cases_with_missing_files_are_not_listed(tmp_path):
     {"case": "input/se/input_14.xml"},           # se only
     {"case": PF14, "tolerance": -1.0},
     {"case": PF14, "ranks": 0},
+    {"case": "input/ds/input_kundur_two_area_wshygp.xml", "app": "hadrec"},
 ])
 def test_run_rejects_without_a_job(tools, kwargs):
     before = len(tools.runner.jobs())
+    run = getattr(tools, {"hadrec": "run_hadrec"}.get(
+        kwargs.pop("app", None), "run_powerflow"))
     with pytest.raises(ValueError):
-        tools.run_powerflow(**kwargs)
+        run(**kwargs)
     assert len(tools.runner.jobs()) == before
 
 
@@ -106,6 +121,22 @@ def test_run_dynamic_sim_and_state_estimation(tools):
     st = tools.run_state_estimation("input/se/input_14.xml")
     res = tools.job_result(st["id"])
     assert st["converged"] is True and len(res["buses"]) == 14
+
+
+@pytest.mark.integration
+def test_run_hadrec_and_emt(tools):
+    st = tools.run_hadrec("input/ds/input_kundur_two_area_wsieg1.xml",
+                          end_time=0.2)
+    obs = tools.job_result(st["id"])["observations"]
+    assert st["state"] == "done" and len(obs["columns"]) == 13
+    assert abs(obs["rows"][-1][0] - 0.2) < 1e-9
+
+    st = tools.run_emt("emt/9-bus/input_9bus2.xml", end_time=0.005)
+    assert (st["state"], st["exit_code"]) == ("done", 0)
+    job = tools.runner.get(st["id"])
+    assert (job.workdir / ".petscrc").is_file()
+    # EMT prints its timers even with --no-timer, so not the tail.
+    assert "TS dt 5e-05 time 0.005" in job.log()
 
 
 def test_waiting_and_unknown_jobs(tmp_path):

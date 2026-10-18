@@ -15,8 +15,8 @@ _INSTALL_HINT = ("gridpack-mcp needs the mcp package: "
 
 
 _TOOLS = ("list_cases", "describe_case", "run_powerflow", "run_contingency",
-          "run_dynamic_sim", "run_state_estimation", "job_status",
-          "job_result", "job_log")
+          "run_dynamic_sim", "run_state_estimation", "run_hadrec", "run_emt",
+          "job_status", "job_result", "job_log")
 
 
 def build_server(tools=None):

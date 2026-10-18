@@ -17,10 +17,8 @@ from typing import Any, Dict, List, Optional
 from ..case import _OVERRIDES, Case, data_sets
 from .runner import JobRunner
 
-# Top-level block -> the application it enables.
-_BLOCK_APPS = (("Powerflow", "powerflow"), ("Contingency_analysis", "ca"),
-               ("Dynamic_simulation", "dsf"), ("State_estimation", "se"))
-_APPS = [a for _, a in _BLOCK_APPS]
+_APPS = ("powerflow", "ca", "dsf", "hadrec", "se", "emt")
+_CASE_DIRS = ("input", "emt")
 _MAX_WAIT = 10.0
 _MAX_TAIL = 1000
 
@@ -39,7 +37,8 @@ class Tools:
     def list_cases(self, app: Optional[str] = None) -> List[Dict[str, Any]]:
         """Bundled input cases and the applications each can run.
 
-        app: only cases for this application (powerflow, ca, dsf, se).
+        app: only cases for this application (powerflow, ca, dsf, hadrec,
+        se, emt).
         """
         cases = self._catalog()
         if app is not None:
@@ -104,6 +103,24 @@ class Tools:
         return self._run("se", case, ranks, wait_seconds,
                          tolerance=tolerance, max_iterations=max_iterations)
 
+    def run_hadrec(self, case: str, time_step: Optional[float] = None,
+                   end_time: Optional[float] = None, ranks: int = 1,
+                   wait_seconds: float = _MAX_WAIT) -> Dict[str, Any]:
+        """Start a HADREC dynamic run with its observations recorded; return
+        its job status.  Times in seconds; waits up to wait_seconds (at
+        most 10) first."""
+        return self._run("hadrec", case, ranks, wait_seconds,
+                         time_step=time_step, end_time=end_time)
+
+    def run_emt(self, case: str, time_step: Optional[float] = None,
+                end_time: Optional[float] = None, ranks: int = 1,
+                wait_seconds: float = _MAX_WAIT) -> Dict[str, Any]:
+        """Start an electromagnetic transient run; return its job status.
+        Results are status only.  Times in seconds; waits up to
+        wait_seconds (at most 10) first."""
+        return self._run("emt", case, ranks, wait_seconds,
+                         time_step=time_step, end_time=end_time)
+
     # ---- jobs ----------------------------------------------------------
 
     def job_status(self, job_id: str) -> Dict[str, Any]:
@@ -147,7 +164,9 @@ class Tools:
         settings = {k: v for k, v in settings.items() if v is not None}
         if settings:
             c.override(app, **settings)
-        job = self.runner.submit(app, c, ranks=ranks)
+        # EMT aborts without its PETSc options file in the working dir.
+        files = [self._data() / "emt/.petscrc"] if app == "emt" else []
+        job = self.runner.submit(app, c, ranks=ranks, files=files)
         self.runner.wait(job.id, max(0.0, min(float(wait_seconds),
                                               _MAX_WAIT)))
         return self.job_status(job.id)
@@ -171,21 +190,37 @@ class Tools:
         return self._root or data_sets()
 
 
+def _apps(case):
+    """The applications a case can run, judged by its blocks."""
+    root = case._root
+    blocks = {el.tag for el in root}
+    pf = "Powerflow" in blocks
+    can = {
+        "powerflow": pf,
+        "ca": pf and "Contingency_analysis" in blocks,
+        "dsf": pf and "Dynamic_simulation" in blocks,
+        # HADREC reads the first fault event unconditionally.
+        "hadrec": pf and root.find("Dynamic_simulation/Events/faultEvent")
+        is not None,
+        # se reads its network from its own block.
+        "se": "State_estimation" in blocks,
+        "emt": pf and "EMT" in blocks,
+    }
+    return [a for a in _APPS if can[a]]
+
+
 def _scan(root):
-    """Input XMLs under ``root/input`` that some application can run and
-    whose data files are all present."""
+    """XMLs under ``root/input`` and ``root/emt`` that some application can
+    run and whose data files are all present."""
     out = []
-    for xml in sorted((root / "input").rglob("*.xml")):
+    for xml in sorted(x for d in _CASE_DIRS for x in (root / d).rglob("*.xml")):
         rel = xml.relative_to(root).as_posix()
         try:
             c = Case.from_data_sets(rel, root=root)
         except (ValueError, OSError):
             continue
         files = c.files()
-        blocks = {el.tag for el in c._root}
-        # se reads its network from its own block, the rest from Powerflow.
-        apps = [a for b, a in _BLOCK_APPS
-                if b in blocks and (a == "se" or "Powerflow" in blocks)]
+        apps = _apps(c)
         if not apps or not all(Path(v).is_absolute() for v in files.values()):
             continue
         net = next((v for p, v in files.items()
