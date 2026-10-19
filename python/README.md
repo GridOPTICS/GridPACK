@@ -175,7 +175,8 @@ from a script.
 `gridpack-mcp` lets an AI assistant or any other Model Context Protocol
 client run these applications on the bundled cases or on your own RAW/DYR
 files, change loads, generators and branches, add faults, run N-1 screens
-and load sweeps, and read reports, plots and comparisons back.  Each run is
+and load sweeps, read reports, plots and comparisons back, and save vector
+figures and HTML reports for papers (`--output DIR`).  Each run is
 a `gridpack` subprocess.  It needs Python 3.10+:
 ```
 pip install 'gridpack[mcp,plot]'

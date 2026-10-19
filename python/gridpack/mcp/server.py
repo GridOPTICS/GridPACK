@@ -19,7 +19,8 @@ _TOOLS = ("list_cases", "describe_case", "create_case", "create_dyr",
           "modify_case", "create_measurements", "run_powerflow", "run_contingency", "run_dynamic_sim",
           "run_state_estimation", "run_hadrec", "run_emt", "job_status",
           "job_result", "job_log", "job_series", "job_report", "compare_jobs",
-          "plot_job", "run_study", "study_status", "study_result")
+          "plot_job", "run_study", "study_status", "study_result",
+          "save_figure", "save_report", "export_data")
 
 
 def build_server(tools=None):
@@ -40,8 +41,9 @@ def build_server(tools=None):
                      "job_report, job_series, plot_job and compare_jobs read "
                      "finished jobs back; run_study fans out a load sweep or "
                      "a dynamic N-1 screen; create_measurements turns a power "
-                     "flow into a state estimation case.  EMT results are "
-                     "status only.")
+                     "flow into a state estimation case; save_figure, "
+                     "save_report and export_data write files for papers and "
+                     "readers.  EMT results are status only.")
     for name in _TOOLS:
         fn = getattr(tools, name)
         server.add_tool(_reported(_as_image(fn) if name == "plot_job" else fn))
@@ -183,7 +185,8 @@ def _doctor(args):
     from .runner import JobRunner
     from .tools import Tools
     try:
-        tools = Tools(JobRunner(max_parallel=args.parallel), cases=args.cases)
+        tools = Tools(JobRunner(max_parallel=args.parallel), cases=args.cases,
+                      output=args.output)
         cases = tools.list_cases()
         own = {}
         for c in cases:
@@ -198,6 +201,8 @@ def _doctor(args):
     cpus = os.cpu_count() or 1
     line(True, "%d cpus: --parallel %d jobs x ranks per job must stay within"
          % (cpus, args.parallel))
+    line(True, "output: %s" % (args.output or "temporary (use --output DIR to keep "
+                                              "figures and reports)"))
     print("ready" if ok else "not ready")
     return 0 if ok else 1
 
@@ -215,6 +220,8 @@ def _config(args):
         opts += ["--timeout", "%g" % args.timeout]
     for d in args.cases:
         opts += ["--cases", os.path.abspath(os.path.expanduser(d))]
+    if args.output:
+        opts += ["--output", os.path.abspath(os.path.expanduser(args.output))]
     dirs = []
     for exe in (cmd, shutil.which("gridpack"), shutil.which("mpiexec")):
         d = os.path.dirname(exe) if exe else None
@@ -244,6 +251,9 @@ def main(argv=None):
                         help="kill a job after this long (default 600)")
     parser.add_argument("--parallel", type=_count, default=1, metavar="N",
                         help="run up to N jobs at a time (default 1)")
+    parser.add_argument("--output", metavar="DIR",
+                        help="where save_figure, save_report and export_data "
+                             "write (default: the server's temporary directory)")
     parser.add_argument("--cases", action="append", default=[],
                         metavar="DIR",
                         help="also offer the XMLs under DIR as cases, named "
@@ -257,7 +267,7 @@ def main(argv=None):
     from .tools import Tools
     try:
         tools = Tools(JobRunner(max_parallel=args.parallel),
-                      timeout=args.timeout, cases=args.cases)
+                      timeout=args.timeout, cases=args.cases, output=args.output)
         tools.list_cases()          # report skipped cases at startup
     except ValueError as exc:
         sys.stderr.write("gridpack-mcp: %s\n" % exc)

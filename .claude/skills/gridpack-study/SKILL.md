@@ -83,6 +83,27 @@ watches nothing. A `failed` job's reason is in `job_status` and the tail of
    voltage change, lists branches present in one run only, and for dynamics
    the first time the runs differ and the channel that moved most.
 
+## Figures and reports for a paper
+
+`plot_job` is for the chat. When the user wants a figure to keep, use
+`save_figure` with the paper style (the default): PDF or SVG, `width`
+`single` or `double` for the journal column, `labels` naming the runs when
+several overlay, and no title, because the caption goes in the paper. Say
+where the file and its JSON recipe landed; if the reply carries a note
+that the output is temporary, tell the user to start the server with
+`--output DIR`. Write the caption yourself from `job_report`'s numbers, and
+offer the LaTeX figure block:
+
+```latex
+\begin{figure}[t]\centering
+\includegraphics[width=\columnwidth]{fig1.pdf}
+\caption{...}\label{fig:...}\end{figure}
+```
+
+`save_report` writes a self-contained HTML (or Markdown) report of a job or
+a study for a reader without the server; `export_data` writes the plotted
+series or the result tables as CSV for the user's own tooling.
+
 ## Studies
 
 `run_study` fans out one derived case and one job per point and ranks them:

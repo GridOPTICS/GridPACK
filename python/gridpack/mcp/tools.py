@@ -28,7 +28,7 @@ from ..dyredit import MODEL_SETS, edit_dyr, synthesize_dyr
 from ..rawedit import OPS, edit_raw
 from .events import (EVENT_OPS, append_events, plan_events, raw_elements,
                      set_observations, watch_all_generators)
-from . import measurements, plots, post, study
+from . import measurements, plots, post, report, study
 from .runner import JobRunner
 from .templates import build_xml, raw_generators, raw_version
 
@@ -46,7 +46,7 @@ class Tools:
     """The tool set; one :class:`JobRunner` holds the jobs."""
 
     def __init__(self, runner: Optional[JobRunner] = None, root=None,
-                 timeout: float = _TIMEOUT, cases=()):
+                 timeout: float = _TIMEOUT, cases=(), output=None):
         if root is None:
             try:
                 root = data_sets()
@@ -68,6 +68,10 @@ class Tools:
                              "tree) and no cases directory")
         self.runner = runner or JobRunner()
         self.timeout = timeout
+        # Reports, figures and exports; temporary unless --output names a dir.
+        self.output = Path(output).expanduser().resolve() if output else None
+        if self.output is not None and not self.output.is_dir():
+            raise ValueError("output directory %s does not exist" % self.output)
         self._cases = None
         self._studies = {}
         self._job_case = {}
@@ -638,6 +642,222 @@ class Tools:
             else ()
         return plots.render(result, job.app, kind, channels, title, events)
 
+    # ---- files for people ---------------------------------------------------
+
+    def save_figure(self, job_ids: List[str], kind: Optional[str] = None,
+                    channels: Optional[List[str]] = None,
+                    name: Optional[str] = None, format: str = "pdf",
+                    style: str = "paper", width: Any = "single",
+                    height: Optional[float] = None,
+                    labels: Optional[List[str]] = None, font: str = "serif",
+                    title: Optional[str] = None, overwrite: bool = False
+                    ) -> Dict[str, Any]:
+        """Write a figure of one or more finished jobs to the output
+        directory, with a JSON recipe beside it; return the paths.
+
+        format pdf (default), svg or png; style "paper" (no title, print
+        sizes, a dash per series so it reads in grayscale, fonts embedded)
+        or "screen"; width "single" (3.5 in), "double" (7.16 in) or inches;
+        labels name the jobs in the legend when several overlay (one color
+        per job, one dash per channel).  kind and channels as for plot_job.
+        The caption belongs in the paper, not in the figure.
+        """
+        if not isinstance(job_ids, list) or not job_ids:
+            raise ValueError("job_ids must be a non-empty list")
+        if format not in plots.FORMATS:
+            raise ValueError("format is one of %s" % ", ".join(plots.FORMATS))
+        if font not in ("serif", "sans"):
+            raise ValueError("font is serif or sans")
+        jobs = [self._finished(j) for j in job_ids]
+        path = self._output_path(name or "figure-%s" % "-".join(job_ids), format,
+                                 overwrite)
+        events = [post.events_from_xml(j.workdir) if j.app in ("dsf", "hadrec") else ()
+                  for j, _ in jobs]
+        try:
+            size = plots.save(path, [r for _, r in jobs], [j.app for j, _ in jobs],
+                              kind, channels, title, events, labels, style, format,
+                              width, height, font)
+        except ValueError:
+            path.unlink(missing_ok=True)
+            raise
+        recipe = {"jobs": [{"job_id": j.id, "app": j.app,
+                            "case": self._job_case.get(j.id)} for j, _ in jobs],
+                  "kind": kind, "channels": channels, "labels": labels,
+                  "style": style, "format": format, "width": width,
+                  "height": height, "font": font, "title": title,
+                  "size_in": list(size), "created": time.strftime("%Y-%m-%d %H:%M")}
+        path.with_suffix(".json").write_text(json.dumps(recipe, indent=1))
+        return self._written({"path": str(path), "recipe": str(path.with_suffix(".json")),
+                              "width_in": size[0], "height_in": size[1]})
+
+    def export_data(self, job_id: str, columns: Optional[List[str]] = None,
+                    name: Optional[str] = None, format: str = "csv",
+                    overwrite: bool = False) -> Dict[str, Any]:
+        """Write a finished job's data to the output directory: the time
+        series (chosen channels, full resolution) of a dynamic run, or the
+        bus and branch tables of a static one; csv or json."""
+        if format not in ("csv", "json"):
+            raise ValueError("format is csv or json")
+        job, result = self._finished(job_id)
+        files = []
+        if job.app in ("dsf", "hadrec"):
+            s = post.series(result, job.app, columns)
+            path = self._output_path(name or "series-%s" % job_id, format, overwrite)
+            _write_table(path, format, s["columns"], s["rows"])
+            files.append(str(path))
+        else:
+            for table in ("buses", "branches", "generators", "contingencies"):
+                rows = result.get(table)
+                if rows:
+                    path = self._output_path("%s-%s" % (name or job_id, table),
+                                             format, overwrite)
+                    cols = list(rows[0])
+                    _write_table(path, format, cols, [[r.get(c) for c in cols]
+                                                      for r in rows])
+                    files.append(str(path))
+            if not files:
+                raise ValueError("job %s has no tables to export" % job_id)
+        return self._written({"paths": files})
+
+    def save_report(self, job_id: Optional[str] = None,
+                    study_id: Optional[str] = None, name: Optional[str] = None,
+                    format: str = "html", figures: bool = True,
+                    overwrite: bool = False) -> Dict[str, Any]:
+        """Write a self-contained report of a finished job or a study to the
+        output directory and return its path: the case and how it was
+        derived, events, settings, the verdict, result tables and figures
+        (inline in html; png files beside the report in md)."""
+        if format not in report.FORMATS:
+            raise ValueError("format is one of %s" % ", ".join(report.FORMATS))
+        if (job_id is None) == (study_id is None):
+            raise ValueError("give job_id or study_id")
+        if job_id is not None:
+            job, result = self._finished(job_id)
+            title = "%s run %s" % (job.app, job.id)
+            stem = name or "report-%s" % job.id
+            sections = self._job_sections(job, result)
+        else:
+            st = self._study(study_id)
+            title = "%s study %s" % (st.kind, st.id)
+            stem = name or "report-%s" % st.id
+            sections = self._study_sections(st)
+        path = self._output_path(stem, format, overwrite)
+        if not figures:
+            sections = [(h, [b for b in blocks if b[0] != "figure"])
+                        for h, blocks in sections]
+        elif format == "md":
+            # Markdown cannot embed: the figures become files beside it.
+            sections = [(h, [self._figure_file(path, b) if b[0] == "figure" else b
+                             for b in blocks]) for h, blocks in sections]
+        path.write_text(report.render(format, title, sections))
+        return self._written({"path": str(path)})
+
+    def _job_sections(self, job, result):
+        case = self._job_case.get(job.id)
+        about = {"case": case, "application": job.app, "ranks": job.ranks,
+                 "state": job.state, "exit code": job.exit_code,
+                 "run time (s)": round((job.finished or 0) - (job.started or 0), 2)}
+        blocks = [("kv", about)]
+        try:
+            entry = self._entry(case) if case else None
+        except ValueError:
+            entry = None
+        if entry is not None:
+            desc = self.describe_case(case)
+            blocks.append(("kv", {"applications": ", ".join(desc["apps"]),
+                                  "buses": desc["buses"], "files": desc["files"],
+                                  "settings": desc["settings"].get(job.app, {})}))
+            edits = Path(entry["_xml"]).with_name("edits.json")
+            if edits.is_file():
+                blocks.append(("text", "Derived case; the edits that made it:"))
+                blocks.append(("pre", edits.read_text()))
+        sections = [("Run", blocks)]
+        events = post.events_from_xml(job.workdir) if job.app in ("dsf", "hadrec") else []
+        if events:
+            sections.append(("Events", [("table", ["kind", "where", "start/time", "end"],
+                                         [[e["kind"], e["where"],
+                                           e.get("start", e.get("time")), e.get("end")]
+                                          for e in events])]))
+        sections.append(("Verdict", [("verdict", self.job_report(job.id))]))
+        figs = []
+        if job.app in ("dsf", "hadrec"):
+            figs.append(("figure", "Generator speeds", plots.render(result, job.app, events=events)))
+            cols = post.table(result, job.app)[0] if post.table(result, job.app) else []
+            if any(c.endswith("_angle") or c.endswith("_rangle") for c in cols):
+                figs.append(("figure", "Rotor angles", plots.render(
+                    result, job.app, events=events,
+                    channels=["*_angle" if job.app == "dsf" else "*_rangle"])))
+        elif job.app in ("powerflow", "se") and result.get("buses"):
+            figs.append(("figure", "Bus voltage profile", plots.render(result, job.app)))
+        if figs:
+            sections.append(("Figures", self._figures_or_note(figs)))
+        tables = []
+        for table in ("buses", "generators", "branches", "contingencies",
+                      "bad_measurements"):
+            rows = result.get(table)
+            if rows:
+                cols = list(rows[0])
+                tables.append(("text", "%s (%d)" % (table, len(rows))))
+                tables.append(("table", cols, [[r.get(c) for c in cols] for r in rows]))
+        if tables:
+            sections.append(("Tables", tables))
+        return sections
+
+    def _study_sections(self, st):
+        res = study.rank(st, self.runner)
+        blocks = [("kv", {"base case": st.base, "kind": st.kind, "items": len(st.items),
+                          "finished": res["finished"], "pending": res["pending"],
+                          "failed": len(res["failed"]), "parameters": st.params})]
+        sections = [("Study", blocks)]
+        if res["table"]:
+            cols = [c for c in res["table"][0] if c not in ("case", "job_id")]
+            sections.append(("Ranked results", [
+                ("table", cols, [[r.get(c) for c in cols] for r in res["table"]])]))
+        if res["failed"]:
+            sections.append(("Failed", [("table", ["name", "job_id", "error"],
+                                         [[f["name"], f["job_id"], f["error"]]
+                                          for f in res["failed"]])]))
+        if st.kind == "dynamic_n1" and res["table"]:
+            figs = []
+            for row in res["table"][:3]:
+                job, result = self._finished(row["job_id"])
+                figs.append(("figure", "Outage %s: generator speeds" % row["branch"],
+                             plots.render(result, job.app,
+                                          events=post.events_from_xml(job.workdir))))
+            sections.append(("Worst outages", self._figures_or_note(figs)))
+        return sections
+
+    def _figures_or_note(self, figs):
+        try:
+            return [(k, c, png() if callable(png) else png) for k, c, png in figs]
+        except ValueError as exc:
+            return [("note", str(exc))]
+
+    def _figure_file(self, report_path, block):
+        png = report_path.with_name("%s-%s.png" % (
+            report_path.stem, re.sub(r"[^A-Za-z0-9]+", "-", block[1]).strip("-").lower()))
+        png.write_bytes(block[2])
+        return ("figure_file", block[1], png.name)
+
+    def _output_dir(self):
+        d = self.output or (self.runner.root / "output")
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def _output_path(self, stem, ext, overwrite):
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", stem):
+            raise ValueError("name must be letters, digits, _ . or -, not %r" % stem)
+        path = self._output_dir() / ("%s.%s" % (stem, ext))
+        if path.exists() and not overwrite:
+            raise ValueError("%s exists; pass overwrite true or another name" % path.name)
+        return path
+
+    def _written(self, out):
+        if self.output is None:
+            out["note"] = ("written under the server's temporary directory; start "
+                           "gridpack-mcp with --output DIR to keep files")
+        return out
+
     # ---- internals -------------------------------------------------------
 
     def _finished(self, job_id):
@@ -782,6 +1002,17 @@ def _check_observe(e):
                              "numbers" % k)
     if not isinstance(e.get("bus_frequency", False), bool):
         raise ValueError("add_observations: bus_frequency is true or false")
+
+
+def _write_table(path, fmt, cols, rows):
+    if fmt == "json":
+        path.write_text(json.dumps({"columns": cols, "rows": rows}, indent=1))
+        return
+    import csv
+    with open(path, "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(cols)
+        w.writerows(rows)
 
 
 def _first_event(root):

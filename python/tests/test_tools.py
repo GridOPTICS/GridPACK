@@ -6,6 +6,7 @@
 
 import json
 import os
+import pathlib
 import shutil
 import subprocess
 import sys
@@ -1174,3 +1175,78 @@ def test_synthesized_and_edited_models_run(tmp_path):
 def post_stats(t, job_id):
     from gridpack.mcp import post
     return post.dynamic_stats(t.job_result(job_id), "dsf")
+
+
+# -------------------------------------------------------------
+# save_figure, save_report, export_data
+# -------------------------------------------------------------
+
+def test_output_directory_must_exist(tmp_path):
+    with pytest.raises(ValueError, match="output directory .* does not exist"):
+        Tools(JobRunner(tmp_path / "jobs"), output=tmp_path / "nope")
+    t = Tools(JobRunner(tmp_path / "jobs"))
+    with pytest.raises(ValueError, match="give job_id or study_id"):
+        t.save_report()
+    with pytest.raises(ValueError, match="job_ids must be a non-empty list"):
+        t.save_figure([])
+    with pytest.raises(KeyError):
+        t.export_data("nope")
+
+
+@pytest.mark.integration
+def test_files_for_people(tmp_path):
+    pytest.importorskip("matplotlib")
+    out = tmp_path / "out"
+    out.mkdir()
+    t = Tools(JobRunner(tmp_path / "jobs", max_parallel=3), output=out)
+    base = t.run_dynamic_sim(DS9, end_time=0.5)["id"]
+    trip = t.modify_case(DS9, [{"op": "trip_generator", "bus": 3, "time": 0.2}])
+    tripped = t.run_dynamic_sim(trip["case"], end_time=0.5)["id"]
+    # A paper figure overlaying two runs, with its recipe.
+    f = t.save_figure([base, tripped], channels=["1_1_speed"], labels=["base", "gen 3 out"],
+                      name="fig-speeds")
+    assert f["path"] == str(out / "fig-speeds.pdf") and f["width_in"] == 3.5
+    assert (out / "fig-speeds.pdf").read_bytes()[:5] == b"%PDF-" and "note" not in f
+    recipe = json.loads((out / "fig-speeds.json").read_text())
+    assert [j["case"] for j in recipe["jobs"]] == [DS9, trip["case"]]
+    assert recipe["labels"] == ["base", "gen 3 out"] and recipe["style"] == "paper"
+    with pytest.raises(ValueError, match="exists; pass overwrite"):
+        t.save_figure([base], name="fig-speeds")
+    g = t.save_figure([base], name="fig-speeds", format="svg", overwrite=True,
+                      width="double", style="screen", font="sans")
+    assert g["path"].endswith(".svg") and g["width_in"] == 7.16
+    # Data export: the full series, chosen channels, csv and json.
+    e = t.export_data(base, columns=["*_speed"], name="speeds")
+    rows = (out / "speeds.csv").read_text().splitlines()
+    assert rows[0] == "t,1_1_speed" and len(rows) == 51
+    j = t.export_data(base, format="json")
+    assert json.loads(open(j["paths"][0]).read())["columns"][0] == "t"
+    pf = t.run_powerflow(PF14)["id"]
+    tables = t.export_data(pf, name="pf14")
+    assert sorted(pathlib.Path(p).name for p in tables["paths"]) == [
+        "pf14-branches.csv", "pf14-buses.csv", "pf14-generators.csv"]
+    assert (out / "pf14-buses.csv").read_text().splitlines()[0].startswith("busId,name,")
+    # Reports: html self-contained, md with figures beside it, study report.
+    r = t.save_report(job_id=tripped)
+    html_text = pathlib.Path(r["path"]).read_text()
+    assert "Derived case; the edits that made it" in html_text
+    assert "trip_generator" in html_text and "data:image/png;base64" in html_text
+    assert "Peak speed deviation" in html_text and "<td>generator out</td>" in html_text
+    m = t.save_report(job_id=pf, format="md", name="pf-report")
+    md = (out / "pf-report.md").read_text()
+    assert md.startswith("# powerflow run") and "![Bus voltage profile](pf-report-bus-voltage-profile.png)" in md
+    assert (out / "pf-report-bus-voltage-profile.png").read_bytes()[:4] == b"\x89PNG"
+    st = t.run_study(DS9, "dynamic_n1", end_time=0.3, wait_seconds=10)
+    while t.study_status(st["id"])["pending"]:
+        time.sleep(0.5)
+    s = t.save_report(study_id=st["id"], figures=False)
+    text = pathlib.Path(s["path"]).read_text()
+    assert "dynamic_n1 study" in text and "<th>branch</th>" in text and "<img" not in text
+    s2 = t.save_report(study_id=st["id"], name="n1-full")
+    assert pathlib.Path(s2["path"]).read_text().count("<img") == 3
+    # Without --output the files are temporary and the reply says so.
+    t2 = Tools(JobRunner(tmp_path / "jobs2"))
+    pf2 = t2.run_powerflow(PF14)["id"]
+    w = t2.export_data(pf2)
+    assert "temporary" in w["note"] and all(
+        p.startswith(str(tmp_path / "jobs2/output")) for p in w["paths"])

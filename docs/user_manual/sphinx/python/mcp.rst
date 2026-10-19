@@ -81,6 +81,11 @@ Options
     Also offer the input files under ``DIR``, and let ``create_case`` build
     new ones from RAW and DYR files there.  May be repeated.
 
+``--output DIR``
+    Where ``save_figure``, ``save_report`` and ``export_data`` write.
+    Without it they write under the server's temporary directory, which is
+    gone when the server exits, and their replies say so.
+
 ``gridpack-mcp doctor`` checks all of this (Python, ``mcp``, the
 ``gridpack`` CLI, ``mpiexec``, matplotlib, the cases it would offer) and
 ends with ``ready`` or ``not ready``.
@@ -185,6 +190,10 @@ Tools
        estimation cases from a power flow (next sections).
    * - ``run_study``, ``study_status``, ``study_result``
      - Load sweeps and dynamic N-1 screens, one job per point, ranked.
+   * - ``save_figure``, ``save_report``, ``export_data``
+     - Files for papers and readers: vector figures with a recipe,
+       self-contained HTML or Markdown reports, CSV or JSON data (see
+       :ref:`mcp-files`).
 
 Jobs are kept in memory and run ``--parallel`` at a time; the server stops
 any that are still running when it exits.  EMT runs return status only.
@@ -279,6 +288,42 @@ job each, ``--parallel`` at a time, and returns a study id for
     180-degree rule as a first-swing screen; a large swing that recovers
     can trip it, so read the final spread and speed columns too.
 
+.. _mcp-files:
+
+Files for papers and readers
+----------------------------
+
+``plot_job`` answers in the chat.  Three tools write files instead, into
+the ``--output`` directory:
+
+``save_figure(job_ids, ...)``
+    A figure of one or more finished jobs as ``pdf`` (default), ``svg`` or
+    ``png``, with a JSON recipe beside it naming the jobs, their cases and
+    every setting, so the figure can be regenerated after a run is redone.
+    ``style`` ``paper`` drops the title (the caption belongs in the paper),
+    uses print sizes with embedded fonts, labels axes with units, and gives
+    every series a dash pattern as well as a color so it survives
+    grayscale; ``screen`` is the chat style.  ``width`` is ``single`` (3.5
+    in), ``double`` (7.16 in) or a number of inches; ``height`` is optional.
+    Several jobs overlay: one color per job, named by ``labels``, and a dash
+    per channel, or per job when they share one channel.  ``kind`` and
+    ``channels`` are as for ``plot_job``; ``font`` is ``serif`` or ``sans``.
+
+``save_report(job_id | study_id, ...)``
+    One file a reader can open without the server: the case and, for a
+    derived case, the edits that made it; the events; the solver settings;
+    the ``job_report`` verdict; the result tables; and figures, inline in
+    ``html`` or as PNG files beside a ``md`` report.  A study report leads
+    with the ranked table and shows the three worst outages.
+
+``export_data(job_id, ...)``
+    The time series of a dynamic run at full resolution, with chosen
+    channels, or the bus, branch, generator and contingency tables of a
+    static run, as ``csv`` or ``json``, for your own plotting.
+
+Names are given with ``name`` or taken from the job; a file is never
+overwritten unless ``overwrite`` is true.
+
 Prompts and the Claude skill
 ----------------------------
 
@@ -293,7 +338,8 @@ conversation turns to GridPACK studies.
              modify_case, create_measurements, run_powerflow, run_contingency, run_dynamic_sim,
              run_state_estimation, run_hadrec, run_emt, job_status,
              job_result, job_log, job_series, job_report, plot_job,
-             compare_jobs, run_study, study_status, study_result
+             compare_jobs, run_study, study_status, study_result,
+             save_figure, save_report, export_data
 
 Example
 -------

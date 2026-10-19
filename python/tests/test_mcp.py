@@ -63,7 +63,8 @@ def test_stdio_handshake():
         "modify_case", "create_measurements", "run_powerflow", "run_contingency", "run_dynamic_sim",
         "run_state_estimation", "run_hadrec", "run_emt", "job_status",
         "job_result", "job_log", "job_series", "job_report", "compare_jobs",
-        "plot_job", "run_study", "study_status", "study_result"]
+        "plot_job", "run_study", "study_status", "study_result",
+        "save_figure", "save_report", "export_data"]
     assert [q["name"] for q in prompts["result"]["prompts"]] == [
         "stability_study", "n1_screen", "voltage_study"]
     text = prompt["result"]["messages"][0]["content"]["text"]
