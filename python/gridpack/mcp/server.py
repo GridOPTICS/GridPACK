@@ -23,9 +23,29 @@ _TOOLS = ("list_cases", "describe_case", "create_case", "create_dyr",
           "save_figure", "save_report", "export_data")
 
 
+# Tools that only read: clients may run them without asking each time.
+_READ_ONLY = {"list_cases", "describe_case", "job_status", "job_result", "job_log",
+              "job_series", "job_report", "compare_jobs", "plot_job",
+              "study_status", "study_result"}
+# Tools that write files or start runs, but never delete or overwrite
+# anything without being told to.
+_WRITERS = {"create_case", "create_dyr", "modify_case", "create_measurements",
+            "save_figure", "save_report", "export_data"}
+
+
+def _annotations(name):
+    from mcp_types import ToolAnnotations
+    if name in _READ_ONLY:
+        return ToolAnnotations(readOnlyHint=True, destructiveHint=False,
+                               idempotentHint=True, openWorldHint=False)
+    return ToolAnnotations(readOnlyHint=False, destructiveHint=False,
+                           idempotentHint=name in _WRITERS, openWorldHint=False)
+
+
 def build_server(tools=None):
     """The MCP server object, with ``tools`` (a :class:`Tools`) and the
-    study prompts registered."""
+    study prompts registered.  Each tool carries annotations: read-only
+    ones are marked so, none is destructive."""
     from mcp.server.mcpserver import MCPServer
     from .tools import Tools
     tools = tools or Tools()
@@ -46,7 +66,8 @@ def build_server(tools=None):
                      "readers.  EMT results are status only.")
     for name in _TOOLS:
         fn = getattr(tools, name)
-        server.add_tool(_reported(_as_image(fn) if name == "plot_job" else fn))
+        server.add_tool(_reported(_as_image(fn) if name == "plot_job" else fn),
+                        annotations=_annotations(name))
     _prompts(server)
     return server
 

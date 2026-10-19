@@ -65,6 +65,15 @@ def test_stdio_handshake():
         "job_result", "job_log", "job_series", "job_report", "compare_jobs",
         "plot_job", "run_study", "study_status", "study_result",
         "save_figure", "save_report", "export_data"]
+    # Read-only tools say so, so a client need not ask before each call;
+    # nothing is marked destructive.
+    ann = {t["name"]: t.get("annotations") or {} for t in tools["result"]["tools"]}
+    assert all(a.get("destructiveHint") is False for a in ann.values())
+    assert ann["list_cases"]["readOnlyHint"] is True
+    assert ann["job_report"]["readOnlyHint"] is True and ann["plot_job"]["readOnlyHint"] is True
+    assert ann["run_powerflow"]["readOnlyHint"] is False
+    assert ann["modify_case"]["readOnlyHint"] is False and ann["modify_case"]["idempotentHint"] is True
+    assert ann["run_study"]["idempotentHint"] is False
     assert [q["name"] for q in prompts["result"]["prompts"]] == [
         "stability_study", "n1_screen", "voltage_study"]
     text = prompt["result"]["messages"][0]["content"]["text"]
