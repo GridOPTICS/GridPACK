@@ -115,7 +115,8 @@ void gridpack::dynamic_simulation::HygovModel::predictor(double t_inc, bool flag
 
   double turbine_flow_block_in,h;
 
-  h = opening_block_out/turbine_flow_block_out;
+  // h = (q/g)^2; the inverse ratio makes the water column unstable
+  h = turbine_flow_block_out/opening_block_out;
   h = h*h;
 
   turbine_flow_block_in = 1 - h;
@@ -142,7 +143,7 @@ void gridpack::dynamic_simulation::HygovModel::corrector(double t_inc, bool flag
 
   double turbine_flow_block_in,h;
 
-  h = opening_block_out/turbine_flow_block_out;
+  h = turbine_flow_block_out/opening_block_out;
   h = h*h;
 
   turbine_flow_block_in = 1 - h;
