@@ -1,0 +1,534 @@
+# -------------------------------------------------------------
+# file: gridpack/powerflow.py
+# -------------------------------------------------------------
+# Re-exports the compiled pybind11 powerflow submodule (so existing
+# code like `from gridpack.powerflow import Powerflow` keeps working)
+# and adds the high-level PowerFlow driver class on top.
+#
+# See also :mod:`gridpack.results` for the returned PowerFlowResult.
+# -------------------------------------------------------------
+
+from __future__ import annotations
+
+from typing import List, Optional
+
+# Re-export the pybind11 submodule for backwards compatibility.
+from ._gridpack.powerflow import *  # noqa: F401,F403
+from ._gridpack import powerflow as _pfmod  # noqa: F401
+
+from .session import Session
+from .results import PowerFlowResult
+from .exceptions import PowerFlowDiverged
+
+
+def __getattr__(name):
+    # Fallback for any pybind11 attribute not explicitly re-exported.
+    return getattr(_pfmod, name)
+
+
+_PER_SHUNT_PARAMS = ("BUS_SHUNT_GL", "BUS_SHUNT_BL", "SHUNT_STATUS")
+
+
+def _xml_bool(raw, default: bool = False) -> bool:
+    """Parse an XML scalar as a bool.  cursor.get() returns a string, so
+    bool(raw) would be True for "false"."""
+    if raw is None:
+        return default
+    if isinstance(raw, bool):
+        return raw
+    text = str(raw).strip().lower()
+    if text in ("true", "yes", "on", "1"):
+        return True
+    if text in ("false", "no", "off", "0", ""):
+        return False
+    return default
+
+
+def _xml_number(raw, cast, default=None):
+    """Parse an XML scalar as ``cast``, or ``default`` if unusable."""
+    if raw is None:
+        return default
+    try:
+        return cast(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def _clean_bus_name(raw) -> str:
+    """Strip the RAW file's quote delimiters and column padding.
+
+    A v23 name arrives verbatim, as ``'BUS-1       '``; the v33+ parsers
+    hand back the field already unquoted and trimmed.
+    """
+    name = str(raw or "").strip()
+    if len(name) > 1 and name[0] == name[-1] == "'":
+        name = name[1:-1].strip()
+    return name
+
+
+def _check_scalar(method: str, value) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError("%s takes an int or a float, not %s"
+                        % (method, type(value).__name__))
+
+
+def _reject_shunt_param(name: str) -> None:
+    """Refuse the per-shunt keys the bus accessor cannot address.
+
+    Raising beats returning False: the write would round-trip through
+    get_bus_param, so the failure mode is a correct-looking readback.
+    """
+    if name in _PER_SHUNT_PARAMS:
+        raise ValueError(
+            "%s is stored per shunt as %s:0, %s:1, ...; this accessor reads "
+            "and writes the unindexed key, which the solver ignores. Edit the "
+            "raw file named by <networkConfiguration> instead." % (
+                name, name, name)
+        )
+
+
+class PowerFlow:
+    """High-level power flow driver.
+
+    Usage::
+
+        from gridpack import Session, PowerFlow
+
+        with Session() as s:
+            pf = PowerFlow(s, "input_14.xml")
+            result = pf.solve()
+            result.write()                    # dump to stdout
+            df = result.to_dataframe()        # all buses, all columns
+            bad = result.violations()         # voltage / overload report
+
+    Parameters
+    ----------
+    session : gridpack.Session
+        Active session owning the MPI environment.
+    input_file : str
+        Path to the GridPACK powerflow XML configuration.
+    idx : int, optional
+        Index of the power flow problem within a multi-network XML.
+        Defaults to -1 (single-network XML).
+    suppress_output : bool, optional
+        If True, calls ``pfapp.suppressOutput(True)`` before solving.
+        Reads ``Configuration.Powerflow.suppressOutput`` from XML if not
+        overridden here.
+    comm : gridpack.Communicator, optional
+        Build the network on this communicator instead of the session's.
+        ContingencyAnalysis passes a task communicator so each task owns a
+        private copy; results are then task-local and never gathered.
+    """
+
+    def __init__(
+        self,
+        session: Session,
+        input_file: str,
+        *,
+        idx: int = -1,
+        suppress_output: Optional[bool] = None,
+        comm: Optional[object] = None,
+    ) -> None:
+        if session.closed:
+            raise RuntimeError("Session is closed")
+
+        from . import _gridpack as _ext
+
+        self._session = session
+        self.input_file = input_file
+        self._idx = idx
+
+        # Read configuration.
+        self._config = _ext.Configuration()
+        self._config.open(input_file, session.comm)
+        cursor = self._config.getCursor("Configuration.Powerflow")
+        self._cursor = cursor
+
+        # Precompute XML-controlled options so solve() can respect them.
+        self._xml_nonlinear = _xml_bool(cursor.get("UseNonLinear"))
+        xml_suppress = _xml_bool(cursor.get("suppressOutput"))
+        self._suppress_output = (
+            xml_suppress if suppress_output is None else suppress_output
+        )
+
+        # Reported in PowerFlowDiverged.
+        self._tolerance = _xml_number(cursor.get("tolerance"), float)
+        self._max_iteration = _xml_number(cursor.get("maxIteration"), int)
+
+        # PSS/E exports requested by the XML, applied by the caller.
+        self._psse_exports = [
+            (v, cursor.get("exportPSSE_v%d" % v))
+            for v in (23, 33, 34)
+        ]
+        self._psse_exports = [(v, f) for v, f in self._psse_exports if f]
+
+        # Create the pybind11 Powerflow application.
+        self._pfapp = _ext.powerflow.Powerflow()
+        if self._suppress_output:
+            self._pfapp.suppressOutput(True)
+
+        # A network on a sub-communicator is private to this task, so
+        # gathering its results over the session's world comm would splice
+        # together unrelated copies.
+        self._task_local = comm is not None
+        if comm is None:
+            names = self._pfapp.readNetwork(self._config, idx)
+        else:
+            names = self._pfapp.readNetwork(self._config, idx, comm)
+
+        # Only readNetwork sees the network, so the names are captured
+        # there or not at all.  Rank-local.
+        self._bus_names = {int(b): _clean_bus_name(n)
+                           for b, n in names.items()}
+        self._pfapp.initialize()
+
+        self._output_open = False
+
+        self._solved = False
+        self._closed = False
+
+        # Track live results so we can null out their pfapp reference
+        # when we close (otherwise the pybind11 PFAppModule outlives
+        # this wrapper and crashes at MPI finalize).
+        import weakref
+        self._live_results: "weakref.WeakSet[PowerFlowResult]" = weakref.WeakSet()
+
+        # Ensure the session tears us down before it releases the
+        # Communicator/Environment.
+        session.register(self)
+
+    # ------------------------------------------------------------------
+    # Configuration accessors (read from XML at construction time)
+    # ------------------------------------------------------------------
+
+    @property
+    def pfapp(self):
+        """The underlying pybind11 ``powerflow.Powerflow`` (advanced use)."""
+        self._require_open()
+        return self._pfapp
+
+    @property
+    def use_nonlinear_from_xml(self) -> bool:
+        """Value of ``UseNonLinear`` in the XML config."""
+        return self._xml_nonlinear
+
+    @property
+    def suppress_output(self) -> bool:
+        return self._suppress_output
+
+    @property
+    def network_is_task_local(self) -> bool:
+        """True if the network was built on a caller-supplied communicator."""
+        return self._task_local
+
+    @property
+    def psse_exports_from_xml(self):
+        """``[(version, path)]`` from the ``exportPSSE_v*`` XML keys."""
+        return list(self._psse_exports)
+
+    # ------------------------------------------------------------------
+    # Solve
+    # ------------------------------------------------------------------
+
+    def solve(
+        self,
+        nonlinear: Optional[bool] = None,
+        *,
+        strict: bool = True,
+    ) -> PowerFlowResult:
+        """Run the solver and return a :class:`PowerFlowResult`.
+
+        ``nonlinear`` overrides the XML ``UseNonLinear`` key: True picks
+        ``nl_solve``, False the Newton-Raphson loop.
+
+        Raises :class:`gridpack.PowerFlowDiverged` if the tolerance is not
+        reached; every rank raises, so it is safe to catch under MPI.  Pass
+        ``strict=False`` to get the unconverged result instead --
+        ``result.mismatch`` names the worst bus.
+
+        ``nl_solve`` populates no convergence summary, so on that path the
+        verdict is its return value and ``result.convergence`` is None.
+        """
+        use_nl = self._xml_nonlinear if nonlinear is None else nonlinear
+        if use_nl:
+            ok = self._pfapp.nl_solve()
+        else:
+            ok = self._pfapp.solve()
+        self._pfapp.saveData()
+        self._solved = True
+
+        result = PowerFlowResult(
+            self._pfapp,
+            nonlinear=use_nl,
+            input_file=self.input_file,
+            solver_converged=bool(ok),
+            mpi_comm=None if self._task_local else self._session.mpi_comm,
+            bus_names=self._bus_names,
+        )
+        self._live_results.add(result)
+
+        if strict and result.converged is False:
+            raise PowerFlowDiverged(
+                convergence=result.convergence,
+                nonlinear=use_nl,
+                tolerance=self._tolerance,
+                max_iteration=self._max_iteration,
+                input_file=self.input_file,
+            )
+        return result
+
+    # ------------------------------------------------------------------
+    # Contingency primitives
+    # ------------------------------------------------------------------
+    # Thin wrappers over PFAppModule, driven by ContingencyAnalysis; also
+    # the supported way to script an ad-hoc contingency.
+
+    def set_voltage_limits(self, vmin: float, vmax: float) -> None:
+        """Set the voltage band used by :meth:`check_voltage_violations`."""
+        self._require_open()
+        self._pfapp.setVoltageLimits(float(vmin), float(vmax))
+
+    def set_contingency(self, contingency) -> bool:
+        """Trip the lines or generators named by ``contingency``.
+
+        False if no element matched -- the next solve would just repeat
+        the base case.
+        """
+        self._require_open()
+        return bool(self._pfapp.setContingency(contingency))
+
+    def unset_contingency(self, contingency) -> None:
+        """Restore the elements tripped by :meth:`set_contingency`."""
+        self._require_open()
+        self._pfapp.unSetContingency(contingency)
+
+    def reset_voltages(self) -> None:
+        """Restore bus voltages to their initial values.
+
+        Required between contingencies, or convergence depends on order.
+        """
+        self._require_open()
+        self._pfapp.resetVoltages()
+
+    def ignore_voltage_violations(self) -> None:
+        """Exempt currently violating buses from later voltage checks.
+
+        Called on the base case so pre-existing violations are not
+        re-reported against every contingency.
+        """
+        self._require_open()
+        self._pfapp.ignoreVoltageViolations()
+
+    def bus_strings(self, signal: str) -> List[str]:
+        """Per-bus ``serialWrite(signal)`` text, as ``ca.x`` reads it.
+
+        Collective; only rank 0 of the network's communicator gets rows.
+        Solve first: ``"power"`` on an unsolved network intermittently
+        aborts the process.
+        """
+        self._require_open()
+        return list(self._pfapp.writeBusString(signal))
+
+    def branch_strings(self, signal: str) -> List[str]:
+        """Per-branch ``serialWrite(signal)`` text; see :meth:`bus_strings`."""
+        self._require_open()
+        return list(self._pfapp.writeBranchString(signal))
+
+    def check_qlim_violations(self) -> bool:
+        """True if no generator is outside its reactive limits.
+
+        False means a bus was converted PV -> PQ, so re-solve.
+        """
+        self._require_open()
+        return bool(self._pfapp.checkQlimViolations())
+
+    def clear_qlim_violations(self) -> None:
+        """Undo the PV -> PQ conversions from :meth:`check_qlim_violations`."""
+        self._require_open()
+        self._pfapp.clearQlimViolations()
+
+    def check_voltage_violations(self) -> bool:
+        """True if every bus is inside the band, ignoring exempted buses."""
+        self._require_open()
+        return bool(self._pfapp.checkVoltageViolations())
+
+    def check_line_overload_violations(self) -> bool:
+        """True if no branch exceeds its rating.
+
+        Tests one end per branch, unlike
+        :meth:`PowerFlowResult.violations`, which uses ``max(from, to)``.
+        """
+        self._require_open()
+        return bool(self._pfapp.checkLineOverloadViolations())
+
+    def check_slack_capacity(self) -> bool:
+        """True if no slack generator was pushed past its Pmax.
+
+        False means the solve only balanced because the slack absorbed
+        more than the unit can produce, so the solution is not usable;
+        ``ca.x`` treats this like a divergence.
+        """
+        self._require_open()
+        return bool(self._pfapp.checkSlackCapacity())
+
+    def island_count(self) -> int:
+        """Number of connected components in the network.
+
+        More than one after a contingency means the network split, and
+        there is nothing worth solving.
+        """
+        self._require_open()
+        return int(self._pfapp.getIslandCount())
+
+    # ------------------------------------------------------------------
+    # Bus data-collection parameters
+    # ------------------------------------------------------------------
+
+    def get_bus_param(self, bus_id: int, name: str):
+        """Read a scalar parameter from bus ``bus_id``'s data collection.
+
+        Rank-local: None unless this rank owns the bus.  None also means
+        no such key.
+        """
+        self._require_open()
+        _reject_shunt_param(name)
+        value = self._pfapp.getDataCollectionBusParamReal(int(bus_id), name)
+        if value is None:
+            value = self._pfapp.getDataCollectionBusParamInt(int(bus_id), name)
+        return value
+
+    def set_bus_param(self, bus_id: int, name: str, value) -> bool:
+        """Write a scalar parameter into bus ``bus_id``'s data collection.
+
+        Takes effect on the next :meth:`reload` + :meth:`solve`.
+
+        False means nothing was written: this rank does not own the bus,
+        the key does not exist here (per-element load and generator data is
+        index-keyed, so unreachable), or ``value``'s type differs from the
+        stored one -- int and float are not interchangeable.
+        """
+        self._require_open()
+        _reject_shunt_param(name)
+        _check_scalar("set_bus_param", value)
+        return bool(self._pfapp.modifyDataCollectionBusParam(
+            int(bus_id), name, value))
+
+    # ------------------------------------------------------------------
+    # Generator, load and branch data-collection parameters
+    # ------------------------------------------------------------------
+    # Same contract as the bus pair: rank-local, int and float not
+    # interchangeable, and a write takes effect on reload() + solve().
+    # Ids are matched after padding to 2 characters, so "1" finds "1 ".
+
+    def get_gen_param(self, bus_id: int, gen_id: str, name: str):
+        """Read parameter ``name`` of generator ``gen_id`` at ``bus_id``."""
+        self._require_open()
+        a = (int(bus_id), str(gen_id), name)
+        value = self._pfapp.getDataCollectionGenParamReal(*a)
+        return self._pfapp.getDataCollectionGenParamInt(*a) if value is None else value
+
+    def set_gen_param(self, bus_id: int, gen_id: str, name: str, value) -> bool:
+        """Write parameter ``name`` of generator ``gen_id`` at ``bus_id``."""
+        self._require_open()
+        _check_scalar("set_gen_param", value)
+        return bool(self._pfapp.modifyDataCollectionGenParam(
+            int(bus_id), str(gen_id), name, value))
+
+    def get_load_param(self, bus_id: int, load_id: str, name: str):
+        """Read parameter ``name`` of load ``load_id`` at ``bus_id``."""
+        self._require_open()
+        a = (int(bus_id), str(load_id), name)
+        value = self._pfapp.getDataCollectionLoadParamReal(*a)
+        return self._pfapp.getDataCollectionLoadParamInt(*a) if value is None else value
+
+    def set_load_param(self, bus_id: int, load_id: str, name: str, value) -> bool:
+        """Write parameter ``name`` of load ``load_id`` at ``bus_id``.
+
+        The solve uses the new value, but ``buses()`` keeps reporting the
+        original load: ``PFBus::load`` does not clear its saved-load copy.
+        """
+        self._require_open()
+        _check_scalar("set_load_param", value)
+        return bool(self._pfapp.modifyDataCollectionLoadParam(
+            int(bus_id), str(load_id), name, value))
+
+    def get_branch_param(self, from_bus: int, to_bus: int, ckt: str, name: str):
+        """Read parameter ``name`` of circuit ``ckt`` on branch from-to."""
+        self._require_open()
+        a = (int(from_bus), int(to_bus), str(ckt), name)
+        value = self._pfapp.getDataCollectionBranchParamReal(*a)
+        return self._pfapp.getDataCollectionBranchParamInt(*a) if value is None else value
+
+    def set_branch_param(self, from_bus: int, to_bus: int, ckt: str, name: str,
+                         value) -> bool:
+        """Write parameter ``name`` of circuit ``ckt`` on branch from-to.
+
+        ``BRANCH_STATUS`` 0 switches the circuit out; ``branches()`` then
+        omits it.
+        """
+        self._require_open()
+        _check_scalar("set_branch_param", value)
+        return bool(self._pfapp.modifyDataCollectionBranchParam(
+            int(from_bus), int(to_bus), str(ckt), name, value))
+
+    def reload(self) -> None:
+        """Re-run the network load so data-collection edits reach the solver."""
+        self._require_open()
+        self._pfapp.reload()
+
+    # ------------------------------------------------------------------
+    # Output redirection
+    # ------------------------------------------------------------------
+
+    def open_output(self, path: str) -> None:
+        """Redirect this application's output to ``path``."""
+        self._require_open()
+        self._pfapp.open(path)
+        self._output_open = True
+
+    def close_output(self) -> None:
+        """Stop redirecting output.  Idempotent."""
+        if self._closed or not self._output_open:
+            return
+        self._pfapp.close()
+        self._output_open = False
+
+    def print_output(self, text: str) -> None:
+        """Write ``text`` through the application's output stream."""
+        self._require_open()
+        self._pfapp.print(text)
+
+    def _require_open(self) -> None:
+        if self._closed:
+            raise RuntimeError("PowerFlow is closed")
+
+    def close(self) -> None:
+        """Release the underlying pybind11 objects in the correct order.
+
+        Idempotent; called automatically at Session close.
+        """
+        if self._closed:
+            return
+        # Invalidate any outstanding Result objects so their strong
+        # reference to _pfapp is dropped BEFORE we release it here.
+        for r in list(self._live_results):
+            try:
+                r.close()
+            except Exception:
+                pass
+        self._live_results.clear()
+        self.close_output()
+        self._pfapp = None
+        self._cursor = None
+        self._config = None
+        self._closed = True
+
+    def __enter__(self) -> "PowerFlow":
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        self.close()
+        return False
+
+
+__all__ = ["PowerFlow"]

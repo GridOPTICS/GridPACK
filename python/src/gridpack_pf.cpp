@@ -10,12 +10,27 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created February 10, 2025 by Perkins
+// Added CA pybind11 bindings
+// Updated March, 2026 by Yousu Chen 
+// Added structured result bindings
+// Updated September, 2026 by Yousu Chen
 // -------------------------------------------------------------
 
 #include "common.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 
 namespace gpf = gridpack::powerflow;
+
+// Compact float formatting for __repr__ strings. std::to_string always
+// gives six decimal places, which prints a 1e-10 tolerance as "0.000000";
+// %g keeps small and large magnitudes readable.
+static std::string
+repr_num(double v, int sig = 6)
+{
+  char buf[32];
+  snprintf(buf, sizeof(buf), "%.*g", sig, v);
+  return std::string(buf);
+}
 
 // -------------------------------------------------------------
 // init_gridpack_pf
@@ -27,6 +42,187 @@ init_gridpack_pf(py::module& gpm)
   py::module pfm =
     gpm.def_submodule("powerflow", "GridPACK power flow module");
 
+  // Contingency type enum
+  pfm.attr("Branch") = py::int_(static_cast<int>(gpf::Branch));
+  pfm.attr("Generator") = py::int_(static_cast<int>(gpf::Generator));
+
+  // Contingency struct for contingency analysis
+  py::class_<gpf::Contingency>(pfm, "Contingency",
+      "Container for contingency definition (line or generator)")
+    .def(py::init<>())
+    .def_readwrite("p_type", &gpf::Contingency::p_type,
+        "Contingency type: 0=Generator, 1=Branch")
+    .def_readwrite("p_name", &gpf::Contingency::p_name,
+        "Contingency name")
+    .def_readwrite("p_from", &gpf::Contingency::p_from,
+        "From bus IDs for line contingencies")
+    .def_readwrite("p_to", &gpf::Contingency::p_to,
+        "To bus IDs for line contingencies")
+    .def_readwrite("p_ckt", &gpf::Contingency::p_ckt,
+        "Circuit IDs for line contingencies")
+    // std::vector<bool> cannot use def_readwrite in pybind11 (proxy issue),
+    // so use def_property with conversion to/from std::vector<int>.
+    .def_property("p_saveLineStatus",
+        [](const gpf::Contingency& self) {
+          std::vector<int> v(self.p_saveLineStatus.begin(), self.p_saveLineStatus.end());
+          return v;
+        },
+        [](gpf::Contingency& self, const std::vector<int>& v) {
+          self.p_saveLineStatus.assign(v.begin(), v.end());
+        },
+        "Saved line status before contingency (as list of int: 1=true, 0=false)")
+    .def_property("p_saveGenStatus",
+        [](const gpf::Contingency& self) {
+          std::vector<int> v(self.p_saveGenStatus.begin(), self.p_saveGenStatus.end());
+          return v;
+        },
+        [](gpf::Contingency& self, const std::vector<int>& v) {
+          self.p_saveGenStatus.assign(v.begin(), v.end());
+        },
+        "Saved generator status before contingency (as list of int: 1=true, 0=false)")
+    .def_readwrite("p_busid", &gpf::Contingency::p_busid,
+        "Bus IDs for generator contingencies")
+    .def_readwrite("p_genid", &gpf::Contingency::p_genid,
+        "Generator IDs for generator contingencies")
+    ;
+
+  // -----------------------------------------------------------------
+  // Structured result types (gridpack/utilities/results_exporter.hpp),
+  // populated by PFAppModule::solve / collectResults. Output-only: the
+  // fields are read-only and there is no Python constructor.
+  // -----------------------------------------------------------------
+
+  py::class_<gpu::MismatchInfo>(pfm, "MismatchInfo",
+      "Largest P and Q mismatch at one Newton iteration. Bus numbers are\n"
+      "original PSS/E numbers. Globally reduced, so all ranks agree.")
+    .def_readonly("maxPBus", &gpu::MismatchInfo::maxPBus, "bus number")
+    .def_readonly("maxPMismatch", &gpu::MismatchInfo::maxPMismatch, "MW")
+    .def_readonly("maxQBus", &gpu::MismatchInfo::maxQBus, "bus number")
+    .def_readonly("maxQMismatch", &gpu::MismatchInfo::maxQMismatch, "MVAr")
+    .def("__repr__", [](const gpu::MismatchInfo& m) {
+        return "<MismatchInfo dP=" + repr_num(m.maxPMismatch) + " MW @ bus "
+             + std::to_string(m.maxPBus) + ", dQ=" + repr_num(m.maxQMismatch)
+             + " MVAr @ bus " + std::to_string(m.maxQBus) + ">";
+      })
+    ;
+
+  py::class_<gpu::ConvergenceSummary>(pfm, "ConvergenceSummary",
+      "Outcome of the most recent solve() or nl_solve(). Globally reduced\n"
+      "inside solve(), so every rank sees the same summary and `converged`\n"
+      "matches what solve() returned. Reads as zero before the first solve.")
+    .def_readonly("converged", &gpu::ConvergenceSummary::converged,
+        "True if tolerance was reached")
+    .def_readonly("iterations", &gpu::ConvergenceSummary::iterations,
+        "Newton iterations taken")
+    .def_readonly("finalTolerance", &gpu::ConvergenceSummary::finalTolerance,
+        "tolerance on the final iteration")
+    .def_readonly("finalMismatch", &gpu::ConvergenceSummary::finalMismatch,
+        "MismatchInfo for the final iteration")
+    .def_readonly("perIteration", &gpu::ConvergenceSummary::perIteration,
+        "MismatchInfo per iteration; each access copies the list")
+    .def("__repr__", [](const gpu::ConvergenceSummary& c) {
+        return std::string("<ConvergenceSummary ")
+             + (c.converged ? "converged" : "DIVERGED")
+             + " iterations=" + std::to_string(c.iterations)
+             + " tol=" + repr_num(c.finalTolerance) + ">";
+      })
+    ;
+
+  py::class_<gpu::BusResult>(pfm, "BusResult", "Solved quantities at one bus.")
+    .def_readonly("busId", &gpu::BusResult::busId, "original bus number")
+    .def_readonly("type", &gpu::BusResult::type, "1=PQ, 2=PV, 3=slack")
+    .def_readonly("area", &gpu::BusResult::area, "area number")
+    .def_readonly("zone", &gpu::BusResult::zone, "zone number")
+    .def_readonly("baseKV", &gpu::BusResult::baseKV, "kV")
+    .def_readonly("voltage", &gpu::BusResult::voltage, "pu")
+    .def_readonly("angle", &gpu::BusResult::angle, "degrees")
+    .def_readonly("pInjection", &gpu::BusResult::pInjection, "pGen - pLoad, MW")
+    .def_readonly("qInjection", &gpu::BusResult::qInjection, "qGen - qLoad, MVAr")
+    .def_readonly("pLoad", &gpu::BusResult::pLoad, "in-service load, MW")
+    .def_readonly("qLoad", &gpu::BusResult::qLoad, "in-service load, MVAr")
+    .def_readonly("pGen", &gpu::BusResult::pGen, "MW")
+    .def_readonly("qGen", &gpu::BusResult::qGen, "MVAr")
+    .def_readonly("shuntMvar", &gpu::BusResult::shuntMvar,
+        "shunt MVAr seen by the Y-bus, fixed and switched combined")
+    .def("__repr__", [](const gpu::BusResult& b) {
+        return "<BusResult bus=" + std::to_string(b.busId)
+             + " V=" + repr_num(b.voltage)
+             + " pu, angle=" + repr_num(b.angle) + " deg>";
+      })
+    ;
+
+  py::class_<gpu::BranchResult>(pfm, "BranchResult",
+      "Solved flow on one branch circuit. PSS/E injection convention:\n"
+      "pFrom and pTo both flow into the branch, so losses are their sum.")
+    .def_readonly("fromBus", &gpu::BranchResult::fromBus, "original bus number")
+    .def_readonly("toBus", &gpu::BranchResult::toBus, "original bus number")
+    .def_readonly("circuitId", &gpu::BranchResult::circuitId, "circuit id")
+    .def_readonly("pFrom", &gpu::BranchResult::pFrom, "MW at the from-bus")
+    .def_readonly("qFrom", &gpu::BranchResult::qFrom, "MVAr at the from-bus")
+    .def_readonly("pTo", &gpu::BranchResult::pTo, "MW at the to-bus")
+    .def_readonly("qTo", &gpu::BranchResult::qTo, "MVAr at the to-bus")
+    .def_readonly("pLoss", &gpu::BranchResult::pLoss, "pFrom + pTo, MW")
+    .def_readonly("qLoss", &gpu::BranchResult::qLoss, "qFrom + qTo, MVAr")
+    .def_readonly("mvaFrom", &gpu::BranchResult::mvaFrom, "MVA")
+    .def_readonly("mvaTo", &gpu::BranchResult::mvaTo, "MVA")
+    .def_readonly("rateA", &gpu::BranchResult::rateA,
+        "rating A, MVA; zero when the source data gives no rating")
+    .def_readonly("loadingPercent", &gpu::BranchResult::loadingPercent,
+        "max(mvaFrom, mvaTo) / rateA * 100, or zero when rateA is zero")
+    .def("__repr__", [](const gpu::BranchResult& b) {
+        return "<BranchResult " + std::to_string(b.fromBus) + "-"
+             + std::to_string(b.toBus) + " ckt " + b.circuitId
+             + " P=" + repr_num(b.pFrom) + " MW, loading="
+             + repr_num(b.loadingPercent) + "%>";
+      })
+    ;
+
+  py::class_<gpu::GeneratorResult>(pfm, "GeneratorResult",
+      "Solved dispatch of one generator.")
+    .def_readonly("busId", &gpu::GeneratorResult::busId, "original bus number")
+    .def_readonly("genId", &gpu::GeneratorResult::genId, "generator id")
+    .def_readonly("pGen", &gpu::GeneratorResult::pGen, "MW")
+    .def_readonly("qGen", &gpu::GeneratorResult::qGen, "MVAr")
+    .def_readonly("qMax", &gpu::GeneratorResult::qMax, "upper Q limit, MVAr")
+    .def_readonly("qMin", &gpu::GeneratorResult::qMin, "lower Q limit, MVAr")
+    .def_readonly("voltageSetpoint", &gpu::GeneratorResult::voltageSetpoint,
+        "scheduled voltage, pu")
+    .def_readonly("status", &gpu::GeneratorResult::status, "1 in service, else 0")
+    .def("__repr__", [](const gpu::GeneratorResult& g) {
+        return "<GeneratorResult bus=" + std::to_string(g.busId)
+             + " id=" + g.genId + " P=" + repr_num(g.pGen)
+             + " MW, Q=" + repr_num(g.qGen) + " MVAr>";
+      })
+    ;
+
+  py::class_<gpu::PowerFlowResults>(pfm, "PowerFlowResults",
+      "Power flow solution from collectResults().\n\n"
+      "Omitted from the lists: synthetic star buses from 3-winding\n"
+      "transformers, their branches, and out-of-service circuits. Each\n"
+      "list access copies, so bind it to a local name before looping.")
+    .def_readonly("convergence", &gpu::PowerFlowResults::convergence,
+        "ConvergenceSummary for the solve that produced these results")
+    .def_readonly("buses", &gpu::PowerFlowResults::buses, "locally-owned buses")
+    .def_readonly("branches", &gpu::PowerFlowResults::branches,
+        "locally-owned, in-service branch circuits")
+    .def_readonly("generators", &gpu::PowerFlowResults::generators,
+        "generators on locally-owned buses")
+    .def("__repr__", [](const gpu::PowerFlowResults& r) {
+        return std::string("<PowerFlowResults ")
+             + (r.convergence.converged ? "converged" : "DIVERGED")
+             + " local: " + std::to_string(r.buses.size()) + " buses, "
+             + std::to_string(r.branches.size()) + " branches, "
+             + std::to_string(r.generators.size()) + " generators>";
+      })
+    ;
+
+  py::enum_<gpu::ResultsExporter::Format>(pfm, "ExportFormat",
+      "Output format for exportResults()")
+    .value("JSON", gpu::ResultsExporter::JSON, "one '<basename>.json'")
+    .value("CSV", gpu::ResultsExporter::CSV,
+        "'<basename>_buses.csv' and _branches / _generators / _convergence")
+    ;
+
   py::class_<gpf::PFAppModule> pfapp(pfm, "Powerflow");
   
   pfapp.doc() = ("Power flow application module");
@@ -35,18 +231,49 @@ init_gridpack_pf(py::module& gpm)
   pfapp
     .def(py::init<>())
     .def("readNetwork",
-         [](gpf::PFAppModule& self, gpu::Configuration& config, const int& idx) {
+         [](gpf::PFAppModule& self, gpu::Configuration& config, const int& idx,
+            gpp::Communicator *comm) {
 
-           gpp::Communicator world;
-           boost::shared_ptr<gpf::PFNetwork> pfnet( new gpf::PFNetwork(world) );
+           // Default to the world communicator.  Contingency analysis
+           // passes a task communicator instead so each task owns a
+           // private copy of the network -- distributing tasks over ranks
+           // that share one distributed network deadlocks in solve().
+           gpp::Communicator net_comm;
+           if (comm != NULL) net_comm = *comm;
+           boost::shared_ptr<gpf::PFNetwork> pfnet( new gpf::PFNetwork(net_comm) );
 
            self.readNetwork(pfnet, &config, idx);
-         }, R"eof(
-Read the network specified in the configuration.  
+
+           // BUS_NAME lives in the parser's DataCollection, and the
+           // network is private to the app module once this returns, so
+           // capture the names here.  Rank-local, like the BusResult
+           // rows they get joined onto.  Read from the DataCollection,
+           // not PFBus::getBusName(): PFBus::load() has not run yet, so
+           // its p_data is still NULL.
+           py::dict names;
+           int nbus = pfnet->numBuses();
+           for (int i = 0; i < nbus; i++) {
+             if (!pfnet->getActiveBus(i)) continue;
+             gridpack::component::DataCollection *data =
+               pfnet->getBusData(i).get();
+             std::string name;
+             if (data == NULL || !data->getValue(BUS_NAME, &name)) continue;
+             names[py::int_(pfnet->getOriginalBusIndex(i))] = py::str(name);
+           }
+           return names;
+         }, py::arg("config"), py::arg("idx"), py::arg("comm") = nullptr,
+         R"eof(
+Read the network specified in the configuration.
+
+Returns a dict mapping original bus number to the parser's bus name,
+for the buses on this rank.
 
 Parameters:
     config (gridpack.Configuration): power flow problem configuration usually read from an XML file
     idx (int): The index of the power flow problem in the configuration
+    comm (gridpack.Communicator, optional): communicator to build the network
+        on.  Defaults to the world communicator.  Pass a task communicator
+        from :func:`Communicator.divide` to give each task its own copy.
 )eof")
     .def("initialize", &gpf::PFAppModule::initialize,
          R"eof(
@@ -119,8 +346,19 @@ called before this.
          "Print an arbitrary string to output" )
     ;
 
-  // Not implemented in Python, 
-  // "writeBusString", "writeBranchString"
+  // Strings come back on rank 0 of the network's communicator only.
+  pfapp
+    .def("writeBusString",
+         [](gpf::PFAppModule& self, const std::string& signal) {
+           return self.writeBusString(signal.c_str());
+         },
+         "Bus serialWrite output for signal, one string per bus")
+    .def("writeBranchString",
+         [](gpf::PFAppModule& self, const std::string& signal) {
+           return self.writeBranchString(signal.c_str());
+         },
+         "Branch serialWrite output for signal, one string per branch")
+    ;
 
   pfapp
     .def("setVoltageLimits", &gpf::PFAppModule::setVoltageLimits,
@@ -314,7 +552,39 @@ Parameters:
          "Write real time path rating diagnostics")
     .def("useRateB", &gpf::PFAppModule::useRateB,
          "Use rate B parameter for line overload violations")
-         
+
+    // Contingency analysis methods
+    .def("setContingency", &gpf::PFAppModule::setContingency,
+         R"eof(
+Apply a contingency to the network (trip lines or generators).
+
+Parameters:
+    event (Contingency): contingency definition
+
+Returns:
+    True if contingency elements were found in network
+)eof")
+    .def("unSetContingency", &gpf::PFAppModule::unSetContingency,
+         R"eof(
+Restore network to pre-contingency state.
+
+Parameters:
+    event (Contingency): contingency to undo
+
+Returns:
+    True if restoration was successful
+)eof")
+    .def("writeCABus", &gpf::PFAppModule::writeCABus,
+         "Write bus results for contingency analysis output")
+    .def("writeCABranch", &gpf::PFAppModule::writeCABranch,
+         "Write branch results for contingency analysis output")
+    .def("checkSlackCapacity", &gpf::PFAppModule::checkSlackCapacity,
+         "Check if slack bus generator is within capacity limits")
+    .def("getIslandCount", &gpf::PFAppModule::getIslandCount,
+         "Get number of islands in the network after contingency")
+    .def("hasLoneBus", &gpf::PFAppModule::hasLoneBus,
+         "Check if network has any isolated (lone) buses")
+
     ;
 
   // These query and modify the network's data collection objects
@@ -541,6 +811,33 @@ Parameters:
            }
          },
          "Get (integer) load parameters in data collection for specified bus")
+
+    .def("getConvergence", &gpf::PFAppModule::getConvergence,
+         "ConvergenceSummary for the most recent solve(). nl_solve() does not\n"
+       "populate it -- there it reads converged=false, iterations=0.")
+
+    .def("collectResults", &gpf::PFAppModule::collectResults,
+         R"eof(
+Structured solution: buses, branches, generators, and convergence.
+
+Values are read from the live network, so call it after solve(); modifying
+data and re-solving, then calling again, returns the new solution.
+)eof")
+
+    .def("exportResults",
+         [](gpf::PFAppModule& self, const std::string& basename,
+            gpu::ResultsExporter::Format format) {
+           self.exportResults(basename, format);
+         },
+         py::arg("basename"),
+         py::arg("format") = gpu::ResultsExporter::JSON,
+         R"eof(
+Write the structured solution to JSON or CSV. `basename` is a stem, so
+"run1.json" yields run1.json.json.
+
+Only rank 0 writes, and only its own share, so on several ranks the file
+is incomplete. Use it serially, or gather collectResults() yourself.
+)eof")
     
     ;
     

@@ -4,6 +4,13 @@ Base
 
 The base ``gridpack`` Python module contains several utility classes.
 
+.. note::
+
+   This and the following pages document the pybind11 layer.  For
+   everyday use start with :doc:`getting_started`: ``gridpack.Session``
+   and the high-level wrappers handle the environment and teardown that
+   the examples below do by hand.
+
 
 Parallel Environment
 ====================

@@ -45,11 +45,20 @@ Run a Specific Command
 Python Scripts
 ~~~~~~~~~~~~~~
 
+The image includes the ``gridpack`` Python package and command:
+
 .. code-block:: bash
 
-   # Execute a Python script using GridPACK Python bindings
+   # Run any application from the command line
+   docker run --rm -v $(pwd):/app/workspace pnnl/gridpack:latest \
+     gridpack powerflow input.xml
+
+   # Execute a Python script that uses the gridpack package
    docker run --rm -v $(pwd):/app/workspace pnnl/gridpack:latest \
      python3 my_gridpack_script.py
+
+See :doc:`python/getting_started` for the Python API, and
+:doc:`python/cli/docker` for running both in Docker.
 
 Run Tests
 ~~~~~~~~~

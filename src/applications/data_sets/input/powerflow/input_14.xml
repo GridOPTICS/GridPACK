@@ -4,7 +4,7 @@
     <networkConfiguration> IEEE14.raw </networkConfiguration>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
-    <qlim>true</qlime>
+    <qlim>true</qlim>
     <outputFormat>csv</outputFormat> <!-- Another option: json -->
     <outputFile>pf_IEEE14</outputFile>
     <!--
