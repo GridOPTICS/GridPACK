@@ -186,5 +186,4 @@ claude mcp add gridpack -- gridpack-mcp                                  # nativ
 claude mcp add gridpack -- docker run -i --rm pygridpack gridpack-mcp    # Docker image
 ```
 Tools, case naming, rank limits and options are described in
-`docs/user_manual/sphinx/python/mcp.rst`; the Claude skill in
-`.claude/skills/gridpack-study` carries the study workflow.
+`docs/user_manual/sphinx/python/mcp.rst`.

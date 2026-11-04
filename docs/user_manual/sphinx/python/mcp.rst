@@ -324,14 +324,32 @@ the ``--output`` directory:
 Names are given with ``name`` or taken from the job; a file is never
 overwritten unless ``overwrite`` is true.
 
-Prompts and the Claude skill
-----------------------------
+Prompts and study workflow
+--------------------------
 
 The server offers three prompt templates, ``stability_study``,
 ``n1_screen`` and ``voltage_study``, that lead a client through a study in
-the right order.  For Claude Code the same workflow is a skill in the
-repository, ``.claude/skills/gridpack-study/SKILL.md``, which loads when a
-conversation turns to GridPACK studies.
+the right order.  The same workflow, for any client:
+
+* Start with ``list_cases`` and ``describe_case``: note ``max_ranks``, the
+  solver settings (time step and end time) and what a dynamic case watches
+  and observes.
+* Event times must be multiples of the case's time step and inside its
+  length.  When the base case already has a fault, pass ``replace_events``
+  so only the new events run.  To clear a fault by opening the line, add a
+  ``trip_branch`` at ``start + duration``.
+* If a run tool returns ``running``, poll ``job_status``; do not resubmit.
+  ``channels`` 0 on a dynamic job means the case watches nothing.
+* Read ``job_report`` first, then ``plot_job`` for figures in the chat,
+  ``job_series`` with a channel list and ``max_points`` to quote values, and
+  ``compare_jobs`` for a base against a derived run.
+* For a paper, ``save_figure`` with the ``paper`` style and the column
+  ``width``, captioned from ``job_report``'s numbers; start the server with
+  ``--output DIR`` so the files outlive it.
+* In a ``dynamic_n1`` table, outages that island a generator (its step-up
+  branch) rank worst, and rightly so.
+* Reports judge voltages against 0.9 to 1.1 p.u. and overloads against
+  rate A; a case without ratings cannot be judged for overloads.
 
 .. autoclass:: gridpack.mcp.tools.Tools
    :members: list_cases, describe_case, create_case, create_dyr,
