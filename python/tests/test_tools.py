@@ -453,7 +453,7 @@ def test_raw_version_tag_and_generators(raw, tag, gens):
 
 
 def test_unlabelled_v33_generator_block(tmp_path):
-    """PSS/E 33 labels its block ends; hand-made files may not."""
+    """Version 33 RAW files label their block ends; hand-made ones may not."""
     from gridpack.mcp.templates import raw_generators, raw_version
     raw = tmp_path / "plain33.raw"
     raw.write_text("0, 100.00, 33, 0, 1, 60.00\ntitle\ntitle\n"

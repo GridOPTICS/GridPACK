@@ -1,7 +1,7 @@
 # -------------------------------------------------------------
 # file: python/tests/test_rawedit.py
 # -------------------------------------------------------------
-# gridpack.rawedit: typed edits to PSS/E RAW records, every version.
+# gridpack.rawedit: typed edits to RAW records, every version.
 # -------------------------------------------------------------
 
 import shutil

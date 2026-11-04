@@ -197,7 +197,7 @@ class Tools:
         mw}; set_shunt_in_service {bus, in_service}; set_branch_in_service
         {from, to, ckt, in_service}; scale_all_loads {factor};
         scale_all_generation {factor}; set_param {kind, bus or from+to+ckt,
-        id, field, value} with a PSS/E RAW column name.  Event ops (seconds,
+        id, field, value} with a RAW column name.  Event ops (seconds,
         on a time step): add_fault {from, to, start, duration} (solid
         fault at the from bus); add_bus_fault {bus, start, duration, g_pu,
         b_pu}; trip_branch {from, to, ckt, time}; trip_generator {bus, id,
@@ -1074,7 +1074,7 @@ def _scan(base, subdirs, label, petscrc):
 
 
 def _count_buses(raw):
-    """Records in a PSS/E RAW bus section (v23 to v36)."""
+    """Records in a RAW bus section (v23 to v36)."""
     lines = Path(raw).read_text(errors="replace").splitlines()
     # v35+ put system-wide data first; older versions have 3 header lines.
     start = next((i + 1 for i, l in enumerate(lines)

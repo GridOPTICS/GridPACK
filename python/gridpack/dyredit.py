@@ -1,7 +1,7 @@
 # -------------------------------------------------------------
 # file: gridpack/dyredit.py
 # -------------------------------------------------------------
-# Read, synthesize and edit PSS/E DYR dynamic model records.
+# Read, synthesize and edit DYR dynamic model records.
 # -------------------------------------------------------------
 
 """DYR records: ``bus, 'MODEL', 'id', p1, p2, ... /``.

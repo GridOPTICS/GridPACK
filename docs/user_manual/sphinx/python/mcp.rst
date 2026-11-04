@@ -220,7 +220,7 @@ bus; circuit ids must match the RAW):
   ``scale_all_generation {factor}``
 * ``set_shunt {bus, mvar, mw}``, ``set_shunt_in_service {bus, in_service}``
 * ``set_branch_in_service {from, to, ckt, in_service}``
-* ``set_param {kind, bus | from, to, ckt, id, field, value}`` with a PSS/E
+* ``set_param {kind, bus | from, to, ckt, id, field, value}`` with a
   RAW column name, for anything else.
 
 Event edits, times in seconds on the case's time step:

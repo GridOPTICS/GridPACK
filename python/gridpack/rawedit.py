@@ -1,7 +1,7 @@
 # -------------------------------------------------------------
 # file: gridpack/rawedit.py
 # -------------------------------------------------------------
-# Typed edits to the records of a PSS/E RAW file.
+# Typed edits to the records of a RAW file.
 # -------------------------------------------------------------
 
 """Change load, generator, shunt and branch records in a RAW file.
