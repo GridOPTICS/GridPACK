@@ -129,6 +129,29 @@ def test_qlim_false_lets_q_exceed_the_limit(tests_data_dir, tmp_path):
 
 
 @pytest.mark.integration
+def test_qg_at_qmax_with_v_above_vs_is_reported(tests_data_dir, tmp_path):
+    # Bus 8 saved at V 1.10 > VS 1.09 with QG at QMAX: pinned at QMIN.
+    raw = (tests_data_dir / "IEEE14.raw").read_text()
+    bus8 = "   1,1.09000, -13.3600,'BUS-8"
+    assert bus8 in raw and _GEN8 in raw
+    raw = raw.replace(bus8, "   1,1.10000, -13.3600,'BUS-8").replace(
+        _GEN8, "     8,'1 ',     0.000,    24.000,    24.000,    -6.000,")
+    (tmp_path / "IEEE14.raw").write_text(raw)
+    (tmp_path / "q8_14.xml").write_text((tests_data_dir / "input_14.xml").read_text())
+    r = run_inline(
+        """
+        from gridpack import Session, PowerFlow
+        with Session() as s:
+            PowerFlow(s, "q8_14.xml", suppress_output=True).solve(strict=False)
+        """,
+        cwd=tmp_path,
+    )
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert r.stdout.count("Bus 8 model inconsistency") == 1, r.stdout
+    assert "starts as PQ at QMIN" in r.stdout
+
+
+@pytest.mark.integration
 def test_qlim_with_ireg_set_to_own_bus(tmp_path):
     # 240-bus WECC: every IREG names its own bus; 3731 is scheduled at
     # -142.653 Mvar, below its -121 Mvar Qmin.
@@ -150,6 +173,8 @@ def test_qlim_with_ireg_set_to_own_bus(tmp_path):
     assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
     assert abs(_parse_float(r.stdout, "Q3731=") + 121.0) < 1e-3
     assert _parse_float(r.stdout, "V3731=") > 1.0 + 1e-3
+    # The inconsistent record is reported once.
+    assert r.stdout.count("Bus 3731 model inconsistency") == 1, r.stdout
 
 
 # -------------------------------------------------------------

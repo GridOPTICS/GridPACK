@@ -401,6 +401,7 @@ void gridpack::powerflow::PFAppModule::initialize()
   p_factory->setupIREGPointers();
   // Sync PV status changes to ghost buses across processes
   p_network->updateBuses();
+  p_factory->reportLoadWarnings();
 
   timer->stop(t_total);
 }

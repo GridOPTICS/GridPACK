@@ -1152,6 +1152,21 @@ void gridpack::powerflow::PFFactoryModule::setupIREGPointers()
   }
 }
 
+void gridpack::powerflow::PFFactoryModule::reportLoadWarnings()
+{
+  int numBus = p_network->numBuses();
+  for (int i = 0; i < numBus; i++) {
+    // Active buses only, so each bus is reported once across ranks.
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+    const std::string &w = bus->getLoadWarning();
+    if (w.empty()) continue;
+    printf("%s", w.c_str());
+    gridpack::powerflow::PFBus::getQlimWarnings().push_back(w);
+  }
+}
+
 /**
  * Clear changes that were made for Q limit violations and reset
  * system to its original state
