@@ -1139,6 +1139,28 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
+  // Warm start holds the saved VM; flag regulating buses where it is far from VS.
+  if (p_initStartMode != INIT_START_FLAT && p_qlim && p_ireg_remote_bus == 0
+      && (p_isPV || p_type == 3)) {
+    double vset = 0.0, total_qg = 0.0, total_qmax = 0.0, total_qmin = 0.0;
+    int nv = 0;
+    for (i = 0; i < p_ngen; i++) {
+      if (p_gstatus[i] == 1) {
+        vset += p_vs[i]; nv++;
+        total_qg += p_qg[i]; total_qmax += p_qmax[i]; total_qmin += p_qmin[i];
+      }
+    }
+    if (nv > 0 && fabs(p_voltage - vset / nv) > 1.0e-3) {
+      int bus = -1;
+      data->getValue(BUS_NUMBER, &bus);
+      char buf[256];
+      snprintf(buf, sizeof(buf),
+               "Warning: Bus %d holds saved VM %.5f, not VS %.5f; QG %.3f Mvar"
+               " inside [%.3f, %.3f]\n",
+               bus, p_voltage, vset / nv, total_qg, total_qmin, total_qmax);
+      p_load_warning += buf;
+    }
+  }
 
   p_saveisPV = p_isPV;
   p_save2isPV = p_isPV;  // Initialize for Q limit handling - ensures valid value if chkQlim() never called

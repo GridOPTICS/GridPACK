@@ -152,6 +152,30 @@ def test_qg_at_qmax_with_v_above_vs_is_reported(tests_data_dir, tmp_path):
 
 
 @pytest.mark.integration
+def test_warm_start_keeps_saved_vm_and_reports_it(tests_data_dir, tmp_path):
+    # Bus 8 saved at V 1.08, VS 1.09, QG inside its limits: holds 1.08, warns once.
+    raw = (tests_data_dir / "IEEE14.raw").read_text()
+    bus8 = "   1,1.09000, -13.3600,'BUS-8"
+    assert bus8 in raw
+    (tmp_path / "IEEE14.raw").write_text(
+        raw.replace(bus8, "   1,1.08000, -13.3600,'BUS-8"))
+    (tmp_path / "q8_14.xml").write_text(
+        (tests_data_dir / "input_14.xml").read_text())
+    r = run_inline(
+        """
+        from gridpack import Session, PowerFlow
+        with Session() as s:
+            result = PowerFlow(s, "q8_14.xml", suppress_output=True).solve()
+            print(f"V8={result.get_bus_solution(8)[0]}")
+        """,
+        cwd=tmp_path,
+    )
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert abs(_parse_float(r.stdout, "V8=") - 1.08) < 1e-5
+    assert r.stdout.count("Bus 8 holds saved VM 1.08000, not VS 1.09000") == 1, r.stdout
+
+
+@pytest.mark.integration
 def test_qlim_with_ireg_set_to_own_bus(tmp_path):
     # 240-bus WECC: every IREG names its own bus; 3731 is scheduled at
     # -142.653 Mvar, below its -121 Mvar Qmin.
