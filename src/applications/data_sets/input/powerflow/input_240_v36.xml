@@ -12,6 +12,8 @@
     <!-- Direct LU (needs SuperLU_Dist in PETSc); GMRES capped at 50
          iterations fails once Q limits bind. -->
     <LinearSolver>
+      <!-- Below the PF tolerance, so LU never skips a small Newton step. -->
+      <SolutionTolerance>1.0E-12</SolutionTolerance>
       <PETScPrefix>nrs</PETScPrefix>
       <PETScOptions>
         -ksp_type richardson
