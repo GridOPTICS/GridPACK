@@ -128,6 +128,30 @@ def test_qlim_false_lets_q_exceed_the_limit(tests_data_dir, tmp_path):
     assert abs(v8 - 1.09) < 1e-4, "V8 = %g held at its setpoint" % v8
 
 
+@pytest.mark.integration
+def test_qlim_with_ireg_set_to_own_bus(tmp_path):
+    # 240-bus WECC: every IREG names its own bus; 3731 is scheduled at
+    # -142.653 Mvar, below its -121 Mvar Qmin.
+    from .conftest import _data_sets, _stage
+    d = _data_sets()
+    _stage(tmp_path, d / "input/powerflow/input_240_v36.xml",
+           d / "raw/240busWECC_2018_PSS_PQLoad_fixedshunt_noremotebus_yuan_v36.raw")
+    r = run_inline(
+        """
+        from gridpack import Session, PowerFlow
+        with Session() as s:
+            result = PowerFlow(s, "input_240_v36.xml", suppress_output=True).solve()
+            g = [x for x in result.generators() if x["busId"] == 3731][0]
+            print(f"Q3731={g['qGen']}")
+            print(f"V3731={result.get_bus_solution(3731)[0]}")
+        """,
+        cwd=tmp_path,
+    )
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert abs(_parse_float(r.stdout, "Q3731=") + 121.0) < 1e-3
+    assert _parse_float(r.stdout, "V3731=") > 1.0 + 1e-3
+
+
 # -------------------------------------------------------------
 # Convergence reporting
 # -------------------------------------------------------------

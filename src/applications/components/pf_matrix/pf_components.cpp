@@ -1019,7 +1019,9 @@ void gridpack::powerflow::PFBus::load(
       bool all_remote = true;
       int ireg_bus_found = 0;
       double ireg_vs_found = 0.0;
+      // getOriginalIndex() is not set yet during load; use the RAW bus number.
       int orig_idx = getOriginalIndex();
+      data->getValue(BUS_NUMBER, &orig_idx);
       for (int ig = 0; ig < p_ngen; ig++) {
         if (p_gstatus[ig] == 1) {
           int ireg = p_ireg[ig];
