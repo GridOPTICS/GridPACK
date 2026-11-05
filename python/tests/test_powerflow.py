@@ -152,21 +152,6 @@ def test_qg_at_qmax_with_v_above_vs_is_reported(tests_data_dir, tmp_path):
 
 
 @pytest.mark.integration
-def test_warm_start_holds_vs_not_the_saved_vm(tests_data_dir, tmp_path):
-    # Bus 8 saved at V 1.08, VS 1.09, QG inside its limits: solves to VS.
-    raw = (tests_data_dir / "IEEE14.raw").read_text()
-    bus8 = "   1,1.09000, -13.3600,'BUS-8"
-    assert bus8 in raw
-    (tmp_path / "IEEE14.raw").write_text(
-        raw.replace(bus8, "   1,1.08000, -13.3600,'BUS-8"))
-    (tmp_path / "q8_14.xml").write_text(
-        (tests_data_dir / "input_14.xml").read_text())
-    q8, v8 = _solve_q8(tmp_path)
-    assert abs(v8 - 1.09) < 1e-5, "V8 = %g, VS 1.09" % v8
-    assert -6.0 < q8 < 24.0
-
-
-@pytest.mark.integration
 def test_qlim_with_ireg_set_to_own_bus(tmp_path):
     # 240-bus WECC: every IREG names its own bus; 3731 is scheduled at
     # -142.653 Mvar, below its -121 Mvar Qmin.

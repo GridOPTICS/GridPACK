@@ -1139,14 +1139,6 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
-  // Warm start: locally regulated PV and slack buses hold VS; VM is only the start.
-  if (p_initStartMode != INIT_START_FLAT && p_qlim && p_ireg_remote_bus == 0
-      && (p_isPV || p_type == 3)) {
-    double vset = 0.0; int nv = 0;
-    for (i = 0; i < p_ngen; i++)
-      if (p_gstatus[i] == 1) { vset += p_vs[i]; nv++; }
-    if (nv > 0) { p_v = vset / nv; p_voltage = p_v; }
-  }
 
   p_saveisPV = p_isPV;
   p_save2isPV = p_isPV;  // Initialize for Q limit handling - ensures valid value if chkQlim() never called
