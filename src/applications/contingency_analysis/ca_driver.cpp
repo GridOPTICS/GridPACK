@@ -526,6 +526,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // processors in the task communicator. This will read in power flow
   // parameters from the Powerflow block in the input
   pf_app.readNetwork(pf_network,config);
+  // Keep the Contingency_analysis qlim over the Powerflow one.
+  gridpack::powerflow::PFBus::setQlim(check_Qlim);
+  gridpack::powerflow::PFBus::setQlimDeadband(qlim_deadband);
   // Finish initializing the network
   pf_app.initialize();
 

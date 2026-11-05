@@ -216,6 +216,13 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_max_controller_iterations = cursor->get("maxControllerIterations",10);
   p_qlim_deadband = cursor->get("qlimDeadband",0.1);
   p_dampingFactor = cursor->get("dampingFactor",1.0);
+  // Apply to PFBus too, so every caller honors the XML.
+  std::string initStart = "warm";
+  cursor->get("initStart", &initStart);
+  PFBus::setInitStartMode(initStart == "flat" ? INIT_START_FLAT
+                                              : INIT_START_WARM);
+  PFBus::setQlim(p_qlim);
+  PFBus::setQlimDeadband(p_qlim_deadband);
   ComplexType tol;
   // Phase shift sign
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);

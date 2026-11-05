@@ -76,6 +76,59 @@ def _parse_float(text: str, prefix: str) -> float:
 
 
 # -------------------------------------------------------------
+# Q limits: bus 8 Qmax cut from 24 to 10 Mvar so the limit binds.
+# -------------------------------------------------------------
+
+_GEN8 = ("     8,'1 ',     0.000,    17.400,    24.000,    -6.000,")
+_QMAX8 = 10.0
+
+
+def _qmax8_case(tests_data_dir, tmp_path, qlim):
+    raw = (tests_data_dir / "IEEE14.raw").read_text()
+    assert _GEN8 in raw, "IEEE14.raw bus 8 generator changed; update the test"
+    (tmp_path / "IEEE14.raw").write_text(raw.replace(
+        _GEN8, "     8,'1 ',     0.000,    17.400,    %.3f,    -6.000," % _QMAX8))
+    xml = (tests_data_dir / "input_14.xml").read_text()
+    xml = xml.replace("<maxIteration>",
+                      "<qlim>%s</qlim>\n    <maxIteration>" % str(qlim).lower(), 1)
+    (tmp_path / "q8_14.xml").write_text(xml)
+    return tmp_path
+
+
+def _solve_q8(cwd):
+    r = run_inline(
+        """
+        from gridpack import Session, PowerFlow
+        with Session() as s:
+            pf = PowerFlow(s, "q8_14.xml", suppress_output=True)
+            result = pf.solve()
+            g8 = [g for g in result.generators() if g["busId"] == 8][0]
+            print(f"CONVERGED={result.converged}")
+            print(f"Q8={g8['qGen']}")
+            print(f"V8={result.get_bus_solution(8)[0]}")
+        """,
+        cwd=cwd,
+    )
+    assert r.returncode == 0, f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+    assert "CONVERGED=True" in r.stdout
+    return _parse_float(r.stdout, "Q8="), _parse_float(r.stdout, "V8=")
+
+
+@pytest.mark.integration
+def test_qlim_holds_a_generator_at_its_limit(tests_data_dir, tmp_path):
+    q8, v8 = _solve_q8(_qmax8_case(tests_data_dir, tmp_path, qlim=True))
+    assert abs(q8 - _QMAX8) < 1e-3, "Q8 = %g Mvar, Qmax %g" % (q8, _QMAX8)
+    assert v8 < 1.09 - 1e-3, "V8 = %g should fall below its 1.09 setpoint" % v8
+
+
+@pytest.mark.integration
+def test_qlim_false_lets_q_exceed_the_limit(tests_data_dir, tmp_path):
+    q8, v8 = _solve_q8(_qmax8_case(tests_data_dir, tmp_path, qlim=False))
+    assert q8 > _QMAX8 + 1.0, "Q8 = %g Mvar with qlim off" % q8
+    assert abs(v8 - 1.09) < 1e-4, "V8 = %g held at its setpoint" % v8
+
+
+# -------------------------------------------------------------
 # Convergence reporting
 # -------------------------------------------------------------
 # Divergence is manufactured by capping maxIteration rather than shipping

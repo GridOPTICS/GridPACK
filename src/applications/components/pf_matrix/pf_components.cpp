@@ -1108,6 +1108,11 @@ void gridpack::powerflow::PFBus::load(
           for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmin[i];
         } else if (p_voltage < vset - V_init_tol) {
           for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmax[i];
+        } else {
+          // V at setpoint: pin QG to the limit it violates.
+          const bool high = total_qg >= total_qmax - p_qlim_deadband;
+          for (i = 0; i < p_ngen; i++)
+            if (p_gstatus[i] == 1) p_qg[i] = high ? p_qmax[i] : p_qmin[i];
         }
       }
     }
