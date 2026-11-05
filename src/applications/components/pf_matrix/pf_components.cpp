@@ -1856,7 +1856,12 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     Q += p_v*p_v*(-p_ybusi);
     p_Pinj = P;
     p_Qinj = Q;
-    if (!isIsolated() && !p_isStarBus) {
+    if (p_isStarBus) return false;  // Internal 3-winding node: no row.
+    if (isIsolated()) {
+      // De-energized: zeros in the same format, so the table keeps every bus.
+      sprintf(string, "     %6d      %12.6f         %12.6f         %12.6f         %12.6f\n",
+            getOriginalIndex(),0.0,0.0,0.0,0.0);
+    } else {
       sprintf(string, "     %6d      %12.6f         %12.6f         %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v,p_Pinj,p_Qinj);
     }
@@ -1871,6 +1876,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       return false;
     } */
   } else if (!strcmp(signal,"vr_str")) {
+    // Isolated: zero V and angle; field 4 still says whether the bus has a vmag row.
+    if (isIsolated()) {
+      int has_row = (p_saveisPV || p_original_isolated) ? 0 : 1;
+      sprintf(string, "%6d %20.12e %20.12e %d %d\n",
+          getOriginalIndex(),0.0,0.0,has_row,0);
+      return true;
+    }
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
     int use_vmag = 1;
@@ -2084,6 +2096,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
 	  qval = 0.0;
 	}
       }
+      if (isIsolated()) pval = qval = 0.0;  // De-energized: no output.
       if (!strcmp(signal,"power")) {
         sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
             getOriginalIndex(),p_gid[i].c_str(),pval,qval);
