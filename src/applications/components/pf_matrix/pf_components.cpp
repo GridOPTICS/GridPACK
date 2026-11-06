@@ -1019,7 +1019,9 @@ void gridpack::powerflow::PFBus::load(
       bool all_remote = true;
       int ireg_bus_found = 0;
       double ireg_vs_found = 0.0;
+      // getOriginalIndex() is not set yet during load; use the RAW bus number.
       int orig_idx = getOriginalIndex();
+      data->getValue(BUS_NUMBER, &orig_idx);
       for (int ig = 0; ig < p_ngen; ig++) {
         if (p_gstatus[ig] == 1) {
           int ireg = p_ireg[ig];
@@ -1084,6 +1086,7 @@ void gridpack::powerflow::PFBus::load(
     }
   }
   // Warm-start Q-limit pre-saturation: scheduled QG at QMAX/QMIN -> start as PQ.
+  p_load_warning.clear();
   if (p_isPV && p_qlim && p_initStartMode != INIT_START_FLAT) {
     double total_qg = 0.0, total_qmax = 0.0, total_qmin = 0.0;
     for (i = 0; i < p_ngen; i++) {
@@ -1096,20 +1099,66 @@ void gridpack::powerflow::PFBus::load(
     if (total_qg >= total_qmax - p_qlim_deadband
         || total_qg <= total_qmin + p_qlim_deadband) {
       p_isPV = false;
+      const bool qg_high = total_qg >= total_qmax - p_qlim_deadband;
+      double vset = 0.0; int nv = 0;
+      for (i = 0; i < p_ngen; i++)
+        if (p_gstatus[i] == 1) { vset += p_vs[i]; nv++; }
+      if (nv > 0) vset /= nv;
+      int picked = 0;  // +1 QMAX, -1 QMIN, 0 scheduled QG kept
       // Pick the saturated limit from V vs VS (V>VS => QMIN, V<VS => QMAX), not
       // scheduled QG which can be inconsistent. Local regulation only.
       if (p_ireg_remote_bus == 0) {
-        double vset = 0.0; int nv = 0;
-        for (i = 0; i < p_ngen; i++)
-          if (p_gstatus[i] == 1) { vset += p_vs[i]; nv++; }
-        if (nv > 0) vset /= nv;
         const double V_init_tol = 1.0e-4;
         if (p_voltage > vset + V_init_tol) {
-          for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmin[i];
+          picked = -1;
         } else if (p_voltage < vset - V_init_tol) {
-          for (i = 0; i < p_ngen; i++) if (p_gstatus[i] == 1) p_qg[i] = p_qmax[i];
+          picked = 1;
+        } else {
+          // V at setpoint: pin QG to the limit it violates.
+          picked = qg_high ? 1 : -1;
         }
+        for (i = 0; i < p_ngen; i++)
+          if (p_gstatus[i] == 1) p_qg[i] = picked > 0 ? p_qmax[i] : p_qmin[i];
       }
+      // Report inconsistent data: QG outside its limits, or V vs VS
+      // moving QG to the other limit.
+      const bool outside = total_qg > total_qmax + p_qlim_deadband
+                           || total_qg < total_qmin - p_qlim_deadband;
+      const double pinned = picked > 0 ? total_qmax : total_qmin;
+      if (outside || (picked != 0 && (picked > 0) != qg_high
+                      && fabs(pinned - total_qg) > p_qlim_deadband)) {
+        int bus = -1;
+        data->getValue(BUS_NUMBER, &bus);
+        char buf[256];
+        snprintf(buf, sizeof(buf),
+                 "Warning: Bus %d model inconsistency: scheduled QG %.3f Mvar,"
+                 " limits [%.3f, %.3f], VM %.5f, VS %.5f; starts as PQ at %s\n",
+                 bus, total_qg, total_qmin, total_qmax, p_voltage, vset,
+                 picked > 0 ? "QMAX" : picked < 0 ? "QMIN" : "scheduled QG");
+        p_load_warning = buf;
+      }
+    }
+  }
+  // Warm start holds the saved VM; flag regulating buses where it is far from VS.
+  if (p_initStartMode != INIT_START_FLAT && p_qlim && p_ireg_remote_bus == 0
+      && (p_isPV || p_type == 3)) {
+    double vset = 0.0, total_qg = 0.0, total_qmax = 0.0, total_qmin = 0.0;
+    int nv = 0;
+    for (i = 0; i < p_ngen; i++) {
+      if (p_gstatus[i] == 1) {
+        vset += p_vs[i]; nv++;
+        total_qg += p_qg[i]; total_qmax += p_qmax[i]; total_qmin += p_qmin[i];
+      }
+    }
+    if (nv > 0 && fabs(p_voltage - vset / nv) > 1.0e-3) {
+      int bus = -1;
+      data->getValue(BUS_NUMBER, &bus);
+      char buf[256];
+      snprintf(buf, sizeof(buf),
+               "Warning: Bus %d holds saved VM %.5f, not VS %.5f; QG %.3f Mvar"
+               " inside [%.3f, %.3f]\n",
+               bus, p_voltage, vset / nv, total_qg, total_qmin, total_qmax);
+      p_load_warning += buf;
     }
   }
 

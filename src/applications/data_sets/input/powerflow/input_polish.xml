@@ -31,6 +31,8 @@
     </LinearSolver>
     -->
     <LinearSolver>
+      <!-- Below the PF tolerance, so LU never skips a small Newton step. -->
+      <SolutionTolerance>1.0E-12</SolutionTolerance>
       <PETScOptions>
         -ksp_view
         -ksp_type richardson

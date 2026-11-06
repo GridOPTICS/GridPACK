@@ -206,6 +206,12 @@ class PFFactoryModule
     void setupIREGPointers();
 
     /**
+     * Print model inconsistencies found while loading, once per bus, and
+     * add them to the Q limit warnings.
+     */
+    void reportLoadWarnings();
+
+    /**
      * Clear changes that were made for Q limit violations and reset
      * system to its original state
      */

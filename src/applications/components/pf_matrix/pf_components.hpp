@@ -642,6 +642,11 @@ class PFBus
     static std::vector<std::string>& getQlimWarnings();
 
     /**
+     * Model inconsistency found while loading (empty if none)
+     */
+    const std::string& getLoadWarning() const { return p_load_warning; }
+
+    /**
      * Get number of generators on this bus
      * @return number of generators
      */
@@ -767,6 +772,7 @@ class PFBus
     bool p_isIREG_PV;            // true if PV bus with all gens remote-regulating
     double p_ireg_vs;            // VS target for the remote bus
     int p_ireg_remote_bus;       // remote bus number (for factory to set up pointer)
+    std::string p_load_warning;  // model inconsistency found in load()
     double *p_ireg_remote_v_ptr; // pointer to remote bus voltage magnitude
 
     // Switched shunt control variables
