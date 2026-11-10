@@ -579,7 +579,7 @@ Input options
 +----------------------------+--------+--------------------------------------------------------------+
 | ``maxVoltage``             | 1.1    | Upper voltage limit (pu) for violation checks.               |
 +----------------------------+--------+--------------------------------------------------------------+
-| ``qlim``                   | false  | Enable PV→PQ Q-limit enforcement during the contingency      |
+| ``qlim``                   | true   | Enable PV→PQ Q-limit enforcement during the contingency      |
 |                            |        | solve. Honors ``qlimDeadband`` from the ``Powerflow`` block. |
 +----------------------------+--------+--------------------------------------------------------------+
 | ``printCalcFiles``         | true   | Write per-contingency text output (``<name>.out``).          |

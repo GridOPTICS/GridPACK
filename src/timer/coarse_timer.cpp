@@ -100,8 +100,13 @@ void gridpack::utility::CoarseTimer::dump(void) const
     if (me == 0) {
       printf ("Different numbers of timing catagories on\n");
       printf ("different processors min: %d max: %d\n",size_min,size_max);
-      return;
     }
+    // All ranks return, or the others block in the reductions below.
+    delete [] scheck;
+    delete [] rcheck;
+    delete [] stime;
+    delete [] rtime;
+    return;
   }
   for (i = 0; i<size; i++) {
     // statistics over all processors

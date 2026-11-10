@@ -1103,6 +1103,15 @@ gridpack::powerflow::PFAppModule::collectResults()
       bus->getShuntValues(&bl, &gl);
       br.shuntMvar = bl * bus->getSBase();
 
+      // Isolated bus: type 4, de-energized (no stale voltage or power).
+      const bool isolated = bus->isIsolated();
+      if (isolated) {
+        br.type = 4;
+        br.voltage = br.angle = 0.0;
+        br.pLoad = br.qLoad = br.pGen = br.qGen = 0.0;
+        br.pInjection = br.qInjection = br.shuntMvar = 0.0;
+      }
+
       results.buses.push_back(br);
 
       // Generator results
@@ -1111,8 +1120,8 @@ gridpack::powerflow::PFAppModule::collectResults()
         gridpack::utility::GeneratorResult gr;
         gr.busId = br.busId;
         gr.genId = gids[g];
-        gr.pGen = bus->getGenPOutput(gids[g]);
-        gr.qGen = bus->getGenQOutput(gids[g]);
+        gr.pGen = isolated ? 0.0 : bus->getGenPOutput(gids[g]);
+        gr.qGen = isolated ? 0.0 : bus->getGenQOutput(gids[g]);
         gr.qMax = bus->getGenQMax(gids[g]);
         gr.qMin = bus->getGenQMin(gids[g]);
         gr.voltageSetpoint = bus->getGenVSetpoint(gids[g]);

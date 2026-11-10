@@ -1771,7 +1771,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       ids.push_back(atoi(tokens[0].c_str()));
       tags.push_back("1 ");
       vang.push_back(atof(tokens[1].c_str()));
-      mask.push_back(1);
+      mask.push_back(atof(tokens[2].c_str()) <= 0.0 ? 0 : 1);  // Isolated: skip.
     }
     int nmags = vmag.size();
     int nangs = vang.size();
@@ -2249,16 +2249,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
           if (!busMonitored(atoi(tokens[0].c_str()))) continue;
           int not_isolated = atoi(tokens[3].c_str());
+          // V = 0: bus isolated by this contingency; keep its row, skip it in stats.
+          const bool dead = atof(tokens[2].c_str()) <= 0.0;
           if (not_isolated == 1) {
             vmag.push_back(atof(tokens[2].c_str()));
-            if (atoi(tokens[4].c_str()) != 0) {
+            if (dead) {
+              mag_mask.push_back(0);
+            } else if (atoi(tokens[4].c_str()) != 0) {
               mag_mask.push_back(2);
             } else {
               mag_mask.push_back(1);
             }
           }
           vang.push_back(atof(tokens[1].c_str()));
-          mask.push_back(1);
+          mask.push_back(dead ? 0 : 1);
         }
         if (task_comm.rank() == 0) {
           if (vmag_stats) vmag_stats->addColumnValues(task_id+1,vmag,mag_mask);
