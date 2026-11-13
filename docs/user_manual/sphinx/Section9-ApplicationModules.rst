@@ -417,7 +417,18 @@ can be validated using
    bool checkSlackCapacity()
 
 This returns ``false`` if the slack bus generator output exceeds its
-``Pmax`` limit, indicating insufficient generation capacity.
+``Pmax`` limit, indicating insufficient generation capacity.  The output
+and limit themselves come from
+
+::
+
+   bool getSlackGeneration(double &pgen, double &pmax, int &busId)
+
+which returns the same values on every process.  The contingency
+analysis application flags a contingency ``SLACK_OVERLOAD`` when the
+slack output exceeds ``max(Pmax, base-case slack output)`` plus
+``slackTolerance`` (MW, default ``max(1 MW, 1% of Pmax)``), and still
+checks its violations.
 
 The remaining calls in ``PFAppModule`` can be used to determine the
 status of a network after solving a configuration with a contingency.
@@ -711,10 +722,15 @@ base_kv, area, zone, owner, area_name, zone_name, owner_name``.
 ``<outputFile>_convergence.csv`` (every ``outputFormat``) — one row per
 contingency. Columns: ``event_idx, contingency, type, converged,
 iterations, final_tolerance, max_p_bus, max_p_mismatch, max_q_bus,
-max_q_mismatch, status_code``. ``converged`` is ``true`` iff
-``status_code == "OK"``; ``status_code`` is one of ``OK`` / ``ISLANDED``
-/ ``NO_SLACK`` / ``DIVERGED`` / ``SLACK_OVERLOAD``. Failed rows appear
-here even when omitted from ``_delta.csv`` / ``_flat.csv``.
+max_q_mismatch, status_code, slack_p_mw, slack_limit_mw``.
+``converged`` is ``true`` when the power flow solved (``OK`` or
+``SLACK_OVERLOAD``); ``status_code`` is one of ``OK`` / ``ISLANDED`` /
+``NO_SLACK`` / ``DIVERGED`` / ``SLACK_OVERLOAD``.  ``slack_p_mw`` and
+``slack_limit_mw`` are the slack output and the output above which it is
+flagged (empty when not solved); ``ISLANDED`` and ``NO_SLACK`` rows,
+never solved, carry zeros in the iteration, tolerance and mismatch
+columns.  Failed rows appear here even when
+omitted from ``_delta.csv`` / ``_flat.csv``.
 
 ``<outputFile>_violations.csv`` (every ``outputFormat``) — streamed row
 per branch/voltage violation. Columns: ``event_idx, contingency, type,
@@ -728,8 +744,10 @@ severity``. Emitted when ``loading_percent > violationSeverityThreshold
 ``<outputFile>_summary.json`` (every ``outputFormat``) — end-of-run
 aggregate: ``total_contingencies``, ``converged``, ``diverged =
 total − converged``, plus the per-status split ``islanded``,
-``no_slack``, ``solver_diverged``, ``slack_overload`` (sum to
-``diverged``). Also ``with_branch_violation`` / ``with_voltage_violation``
+``no_slack``, ``solver_diverged`` (sum to ``diverged``), and
+``slack_overload`` (solved contingencies that raised the slack past its
+limit); ``base_slack`` gives the base case's slack bus, output, Pmax and
+tolerance. Also ``with_branch_violation`` / ``with_voltage_violation``
 / ``violation_rows``; single-element extremes ``worst_loading`` /
 ``worst_voltage_low`` / ``worst_voltage_high`` (``null`` if none);
 name arrays ``contingencies_with_branch_violation`` and

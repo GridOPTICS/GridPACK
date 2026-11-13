@@ -1544,6 +1544,19 @@ bool gridpack::powerflow::PFAppModule::checkSlackCapacity()
 }
 
 /**
+ * Slack generation after a solve, the same on every rank
+ * @param pgen slack bus output (MW)
+ * @param pmax slack bus online capacity (MW)
+ * @param busId slack bus number
+ * @return false if there is no slack bus
+ */
+bool gridpack::powerflow::PFAppModule::getSlackGeneration(double &pgen,
+    double &pmax, int &busId)
+{
+  return p_factory->getSlackGeneration(pgen, pmax, busId);
+}
+
+/**
  * Return system to the state before the contingency
  * @param event data describing location and type of contingency
  * @return false if location of contingency is not found in network

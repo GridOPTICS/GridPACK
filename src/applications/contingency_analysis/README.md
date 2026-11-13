@@ -158,7 +158,11 @@ After the contingency analysis completes, the slack bus is restored to its origi
 
 ### Slack Capacity Check
 
-After the power flow solves, the application checks if the slack bus generator output exceeds its Pmax rating. If the required generation exceeds capacity, the contingency is marked as failed with a warning message:
+After each power flow solves, the application compares the slack bus's generator output with its Pmax. A contingency is flagged `SLACK_OVERLOAD` when the slack output exceeds `max(Pmax, base-case slack output) + slackTolerance`, so a base case whose slack is already above Pmax does not flag every contingency, only those that raise it further. The solution still stands: violations are checked and written as for any solved contingency, and the convergence file reports the slack output and the limit it was compared with.
+
+`slackTolerance` (MW, in `<Contingency_analysis>`) defaults to `max(1 MW, 1% of Pmax)`. When the base case's slack is already above Pmax, a warning says so once, and `_summary.json` reports it under `base_slack`.
+
+With a single slack bus, a generator outage's lost output all lands on the slack, so generator outages are the usual cause of a flag.
 
 ### Island Detection
 
@@ -228,10 +232,15 @@ owner_name`.
 **`<outputFile>_convergence.csv`** *(every `outputFormat`)* — one row per
 contingency. Columns: `event_idx, contingency, type, converged,
 iterations, final_tolerance, max_p_bus, max_p_mismatch, max_q_bus,
-max_q_mismatch, status_code`. `converged` is `true` iff `status_code ==
-"OK"`; `status_code` is one of `OK` / `ISLANDED` / `NO_SLACK` /
-`DIVERGED` / `SLACK_OVERLOAD`. Failed rows appear here even though
-they're omitted from `_delta.csv` / `_flat.csv`.
+max_q_mismatch, status_code, slack_p_mw, slack_limit_mw`. `converged` is
+`true` when the power flow solved (`OK` or `SLACK_OVERLOAD`);
+`status_code` is one of `OK` / `ISLANDED` / `NO_SLACK` / `DIVERGED` /
+`SLACK_OVERLOAD`. `slack_p_mw` and `slack_limit_mw` are the slack output
+and the output above which it is flagged (empty when not solved);
+`ISLANDED` and `NO_SLACK` rows, never solved, carry zeros in the
+iteration, tolerance and mismatch columns. Failed
+rows appear here even though they're omitted from `_delta.csv` /
+`_flat.csv`.
 
 When monitor filters are active, the data-row count of `_delta.csv` /
 `_flat.csv` equals `|monitored branches| × |converged contingencies|`.
