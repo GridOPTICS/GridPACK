@@ -94,6 +94,11 @@ gridpack_set_lu_solver(
 )
 
 gridpack_set_lu_solver(
+  "${GRIDPACK_DATA_DIR}/input/ds/input_9b3g_busfault.xml"
+  "${CMAKE_CURRENT_BINARY_DIR}/input_9b3g_busfault.xml"
+)
+
+gridpack_set_lu_solver(
   "${GRIDPACK_DATA_DIR}/input/ds/input_240bus.xml"
   "${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml"
 )
@@ -131,6 +136,7 @@ add_custom_target(dsf.x.input
 
   DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g_busfault.xml
   ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
   ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml
@@ -156,6 +162,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g_busfault.xml
   ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
   ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_240bus.xml
@@ -178,4 +185,24 @@ install(TARGETS dsf2.x DESTINATION bin)
 gridpack_add_run_test("dynamic_simulation_full_y_9b3g" dsf2.x input_9b3g.xml)
 gridpack_add_run_test("dynamic_simulation_full_y_240_bus" dsf2.x input_240bus.xml)
 gridpack_add_run_test("dynamic_simulation_full_y_two_area" dsf2.x input_twoarea.xml)
+
+# dsf.x must give the dsf2.x result for a BusFault event
+if (NOT USE_PROGRESS_RANKS)
+  add_test(NAME dynamic_simulation_full_y_dsf_events_serial
+    COMMAND ${CMAKE_COMMAND}
+    -D DSF=$<TARGET_FILE:dsf.x>
+    -D DSF2=$<TARGET_FILE:dsf2.x>
+    -D DIR=${CMAKE_CURRENT_BINARY_DIR}
+    -D INPUT=input_9b3g_busfault.xml
+    -D RAW=9b3g.raw
+    -D DYR=9b3g.dyr
+    -D WATCH=gen_watch_9b3g_busfault.csv
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/dsf_event_test.cmake
+  )
+  set_tests_properties(dynamic_simulation_full_y_dsf_events_serial
+    PROPERTIES
+    TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
+  )
+  set_tests_ldpath(dynamic_simulation_full_y_dsf_events_serial)
+endif()
 
