@@ -605,8 +605,8 @@ Input options
 |                            |        | skip the per-case StatBlock work when CSV is sufficient.     |
 +----------------------------+--------+--------------------------------------------------------------+
 | ``contingencyRating``      | A      | Loading% denominator across every CA output. ``A``, ``B``,   |
-|                            |        | or ``C`` with A→B→C fallback. Default ``A`` matches PW /     |
-|                            |        | PSS/E ACCC. ``base_rate_mva`` always uses rate-A.            |
+|                            |        | or ``C`` with A→B→C fallback. ``base_rate_mva`` always uses  |
+|                            |        | rate-A.                                                      |
 +----------------------------+--------+--------------------------------------------------------------+
 | ``monitorBranchesFile``    | (none) | Path to a CSV allowlist (``from_bus,to_bus,ckt`` rows).      |
 |                            |        | When set, area/kV gates are ignored.                         |
@@ -633,8 +633,8 @@ Violation / ranking options driving ``_violations.csv`` and
 Monitor filter precedence: When ``monitorBranchesFile`` is set, area/kV 
 options are ignored and a warning is logged. Otherwise ``monitorAreas`` 
 AND the kV bounds combine.  With no filter set every branch is monitored. 
-Circuit IDs are matched with whitespace trimmed on both sides so PSS/E ckt
-strings with leading or trailing spaces compare equal to the unpadded form.
+Circuit IDs are matched with whitespace trimmed on both sides so IDs
+with leading or trailing spaces compare equal to the unpadded form.
 
 A complete annotated example is shipped at
 ``src/applications/data_sets/input/ca/input_14_filters_example.xml``
@@ -671,10 +671,10 @@ is self-contained.
 | 7–8 | ``base_kv_from``,          | Endpoint base kV.                                        |
 |     | ``base_kv_to``             |                                                          |
 +-----+----------------------------+----------------------------------------------------------+
-| 9–10| ``area_from``,             | PSS/E area numbers.                                      |
+| 9–10| ``area_from``,             | Area numbers from the RAW file.                          |
 |     | ``area_to``                |                                                          |
 +-----+----------------------------+----------------------------------------------------------+
-| 11  | ``base_rate_mva``          | Always rate-A (PSS/E "normal" rating).                   |
+| 11  | ``base_rate_mva``          | Always rate-A (the normal rating).                       |
 +-----+----------------------------+----------------------------------------------------------+
 | 12  | ``cont_rate_mva``          | Rating selected by ``contingencyRating``.                |
 +-----+----------------------------+----------------------------------------------------------+
@@ -791,15 +791,15 @@ sufficient.
 Contingency XML aliases
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The element names in a contingency XML accept PSS/E-aligned aliases:
+The element names in a contingency XML accept aliases named after the RAW file fields:
 
 +----------------------------+------------+-------------------------------+
 | Element                    | Alias      | Holds                         |
 +============================+============+===============================+
-| ``contingencyLineNames``   | ``CKT``    | Branch circuit ID (PSS/E      |
+| ``contingencyLineNames``   | ``CKT``    | Branch circuit ID (RAW        |
 |                            |            | ``CKT`` field).               |
 +----------------------------+------------+-------------------------------+
-| ``contingencyGenerators``  | ``GenID``  | Generator ID (PSS/E ``ID``    |
+| ``contingencyGenerators``  | ``GenID``  | Generator ID (RAW ``ID``      |
 |                            |            | field).                       |
 +----------------------------+------------+-------------------------------+
 

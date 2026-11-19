@@ -43,9 +43,9 @@ When combined, duplicates from the file are automatically skipped.
 | `outputFormat` | `text` / `json` / `csv` / `csv_flat` / `csv_delta` | `text` |
 | `outputFile` | Base name for output files | `ca_results` |
 | `writeStats` | Emit StatBlock summary files (vmag.txt etc.). Set false to skip and avoid the per-case StatBlock work | true |
-| `contingencyRating` | Loading% denominator across every CA output: `A`, `B`, or `C` with A→B→C fallback. Default `A` matches PW / PSS/E ACCC. `base_rate_mva` always uses rate-A | `A` |
-| `monitorBranchesFile` | Path to a CSV allowlist (`from_bus,to_bus,ckt`). When set, overrides the area/kV gates (TARA / PSS/E convention). Applies to every output format | (unset) |
-| `monitorAreas` | PSS/E area numbers, space- or comma-separated (`2 3` or `2,3`). A branch is monitored if **either endpoint** is in the set; a bus if its own area is. Applies to every output format | (unset) |
+| `contingencyRating` | Loading% denominator across every CA output: `A`, `B`, or `C` with A→B→C fallback. `base_rate_mva` always uses rate-A | `A` |
+| `monitorBranchesFile` | Path to a CSV allowlist (`from_bus,to_bus,ckt`). When set, overrides the area/kV gates. Applies to every output format | (unset) |
+| `monitorAreas` | Area numbers from the RAW file, space- or comma-separated (`2 3` or `2,3`). A branch is monitored if **either endpoint** is in the set; a bus if its own area is. Applies to every output format | (unset) |
 | `monitorKvMin` | Lower kV threshold; branch passes if `max(kv_from, kv_to) >= monitorKvMin`, bus if its base kV does. Applies to every output format | 0 (unbounded) |
 | `monitorKvMax` | Upper kV threshold; branch passes if `max(kv_from, kv_to) <= monitorKvMax`, bus if its base kV does. Applies to every output format | 0 (unbounded) |
 
@@ -106,8 +106,7 @@ tie-lines). `monitorKvMin/Max` gate on `max(kv_from, kv_to)` so a 138/13.8
 step-down counts as 138.
 
 `contingencyRating` (`A` | `B` | `C`, default `A`) sets the loading%
-denominator for every CA output. Default `A` matches PowerWorld / PSS/E
-ACCC. `base_rate_mva` always uses rate-A. A→B→C fallback if the picked
+denominator for every CA output. `base_rate_mva` always uses rate-A. A→B→C fallback if the picked
 tier is zero/missing.
 
 A complete annotated example is in
@@ -131,15 +130,15 @@ preserves input-deck order — sort downstream if needed:
 
 See `contingencies_nk_example.xml` for examples of N-1, N-2, and N-3 contingency definitions.
 
-The line-tag and generator-id elements accept PSS/E-aligned aliases for clarity:
+The line-tag and generator-id elements accept aliases named after the RAW file fields:
 
 | Element | Alias | Holds |
 |---|---|---|
-| `<contingencyLineNames>` | `<CKT>` | Branch circuit ID (PSS/E `CKT` field) |
-| `<contingencyGenerators>` | `<GenID>` | Generator ID (PSS/E `ID` field) |
+| `<contingencyLineNames>` | `<CKT>` | Branch circuit ID (RAW `CKT` field) |
+| `<contingencyGenerators>` | `<GenID>` | Generator ID (RAW `ID` field) |
 
 Either name works; mix-and-match within the same file is fine. Both legacy
-files and new files using the PSS/E names continue to parse without changes.
+files and new files using the alias names continue to parse without changes.
 
 ---
 
@@ -147,7 +146,7 @@ files and new files using the PSS/E names continue to parse without changes.
 
 ### Automatic Slack Bus Transfer
 
-When a generator contingency trips the slack bus generator, the application automatically transfers the slack bus role to the largest remaining online generator. This mimics commercial power flow tools (PSS/E, PowerWorld) behavior.
+When a generator contingency trips the slack bus generator, the application automatically transfers the slack bus role to the largest remaining online generator.
 
 **Example output:**
 ```
@@ -203,8 +202,8 @@ each row is self-contained (no separate base-case join needed).
 | 3 | `type` | `branch` or `generator` — what kind of contingency was tripped |
 | 4–6 | `from_bus`, `to_bus`, `ckt` | Identity of the **monitored branch** in the row (not the tripped element) |
 | 7–8 | `base_kv_from`, `base_kv_to` | Endpoint base kV |
-| 9–10 | `area_from`, `area_to` | PSS/E area numbers |
-| 11 | `base_rate_mva` | Always rate-A (PSS/E "normal" rating) |
+| 9–10 | `area_from`, `area_to` | Area numbers from the RAW file |
+| 11 | `base_rate_mva` | Always rate-A (the normal rating) |
 | 12 | `cont_rate_mva` | Rating selected by `contingencyRating` (default A, with A→B→C fallback if zero/missing) |
 | 13–14 | `base_p_mw`, `cont_p_mw` | Real-power flow before / after contingency |
 | 15–16 | `base_q_mvar`, `cont_q_mvar` | Reactive-power flow before / after |

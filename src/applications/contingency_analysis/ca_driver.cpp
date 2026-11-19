@@ -484,7 +484,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                            monitorKvMin > 0.0 || monitorKvMax > 0.0 ||
                            !monitorBranchesFile.empty();
   // Loading% denominator for all CA outputs (.out, _violations.csv, JSON,
-  // csv_flat, csv_delta). A|B|C, default A to match PW/PSSE convention.
+  // csv_flat, csv_delta). A|B|C, default A.
   // A->B->C fallback if the requested tier is zero/missing.
   std::string contingencyRating = "A";
   cursor->get("contingencyRating", &contingencyRating);
@@ -537,7 +537,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   pf_app.initialize();
 
   // Build (number -> name) lookup tables for area, zone, owner.
-  // Keyed on the PSS/E-assigned number (not contiguous), used when
+  // Keyed on the RAW file number (not contiguous), used when
   // emitting per-(branch,contingency) CSV rows so each row carries
   // human-readable area/zone/owner names alongside the numbers.
   std::map<int, std::string> area_name_by_num;
@@ -638,7 +638,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
 
-  // Strip surrounding single quotes (PSS/E style) and outer whitespace.
+  // Strip surrounding single quotes and outer whitespace.
   auto trim_quoted = [](const std::string &in) -> std::string {
     std::string s = in;
     size_t a = s.find_first_not_of(" \t");
@@ -862,7 +862,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       for (int k = 0; k < nelems; k++) {
         std::string ckt;
         if (!bd->getValue(BRANCH_CKT, &ckt, k)) continue;
-        // Trim leading/trailing whitespace and PSS/E surrounding quotes.
+        // Trim leading/trailing whitespace and surrounding quotes.
         size_t a = ckt.find_first_not_of(" \t");
         size_t b = ckt.find_last_not_of(" \t");
         ckt = (a == std::string::npos) ? std::string()
@@ -885,7 +885,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
     }
   }
-  // Base case always uses rate-A (PSS/E "normal" rating). Contingency rows
+  // Base case always uses rate-A (the normal rating). Contingency rows
   // use whichever the user picked, with A->B->C fallback if zero/missing.
   auto pickContRate = [&](const BranchRates &r) -> double {
     if (contingencyRating == "A") {
