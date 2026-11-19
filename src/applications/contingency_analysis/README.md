@@ -158,7 +158,7 @@ After the contingency analysis completes, the slack bus is restored to its origi
 
 ### Slack Capacity Check
 
-After each power flow solves, the application compares the slack bus's generator output with its Pmax. A contingency is flagged `SLACK_OVERLOAD` when the slack output exceeds `max(Pmax, base-case slack output) + slackTolerance`, so a base case whose slack is already above Pmax does not flag every contingency, only those that raise it further. The solution still stands: violations are checked and written as for any solved contingency, and the convergence file reports the slack output and the limit it was compared with.
+After each power flow solves, the application compares the slack bus's generator output with its Pmax. A contingency is flagged `SLACK_OVERLOAD` when the slack output exceeds `max(Pmax, base-case slack output) + slackTolerance`, so a base case whose slack is already above Pmax does not flag every contingency, only those that raise it further. The solution still stands: violations are checked and written as for any solved contingency, and the convergence file reports the slack output and the limit it was compared with. With `printCalcFiles=true`, the contingency's `.out` file carries a `Slack overload for contingency ...` line ahead of the violation listings.
 
 `slackTolerance` (MW, in `<Contingency_analysis>`) defaults to `max(1 MW, 1% of Pmax)`. When the base case's slack is already above Pmax, a warning says so once, and `_summary.json` reports it under `base_slack`.
 

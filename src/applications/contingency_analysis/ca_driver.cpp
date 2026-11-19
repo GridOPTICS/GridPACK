@@ -2237,6 +2237,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         }
         recordConv(task_id, slackCapacityOk ? "OK" : "SLACK_OVERLOAD",
                    std::string(), true, slackP, slackLimit);
+      // The slack flag goes into the contingency's output file as well
+      if (!slackCapacityOk && print_calcs) {
+        sprintf(sbuf,"\nSlack overload for contingency %s: bus %d generator "
+            "output %.1f MW exceeds capacity %.1f MW\n",
+            events[task_id].p_name.c_str(), slackBus, slackP, slackPmax);
+        pf_app.print(sbuf);
+      }
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",

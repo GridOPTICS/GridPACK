@@ -428,7 +428,8 @@ which returns the same values on every process.  The contingency
 analysis application flags a contingency ``SLACK_OVERLOAD`` when the
 slack output exceeds ``max(Pmax, base-case slack output)`` plus
 ``slackTolerance`` (MW, default ``max(1 MW, 1% of Pmax)``), and still
-checks its violations.
+checks its violations.  The flag is also written to the contingency's
+``.out`` file when ``printCalcFiles`` is on.
 
 The remaining calls in ``PFAppModule`` can be used to determine the
 status of a network after solving a configuration with a contingency.
