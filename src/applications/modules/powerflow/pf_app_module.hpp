@@ -265,6 +265,15 @@ class PFAppModule
     bool checkSlackCapacity();
 
     /**
+     * Slack generation after a solve, the same on every rank
+     * @param pgen slack bus output (MW)
+     * @param pmax slack bus online capacity (MW)
+     * @param busId slack bus number
+     * @return false if there is no slack bus
+     */
+    bool getSlackGeneration(double &pgen, double &pmax, int &busId);
+
+    /**
      * Set voltage limits on all buses
      * @param Vmin lower bound on voltages
      * @param Vmax upper bound on voltages

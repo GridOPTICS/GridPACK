@@ -554,6 +554,39 @@ bool gridpack::powerflow::PFFactoryModule::checkSlackCapacity()
 }
 
 /**
+ * Slack generation after a solve, the same on every rank
+ * @param pgen total output of the slack bus's online generators (MW)
+ * @param pmax their total capacity (MW)
+ * @param busId the slack bus's original number
+ * @return false if there is no slack bus
+ */
+bool gridpack::powerflow::PFFactoryModule::getSlackGeneration(double &pgen,
+    double &pmax, int &busId)
+{
+  // Only the rank owning the active slack bus contributes.
+  double v[3] = {0.0, 0.0, 0.0};
+  int numBus = p_network->numBuses();
+  for (int i = 0; i < numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+    if (bus->getReferenceBus()) {
+      v[0] = bus->getTotalGenOutput();
+      v[1] = bus->getOnlineGenCapacity();
+      v[2] = static_cast<double>(bus->getOriginalIndex());
+      break;
+    }
+  }
+  int found = (v[2] != 0.0) ? 1 : 0;
+  p_network->communicator().sum(v, 3);
+  p_network->communicator().sum(&found, 1);
+  pgen = v[0];
+  pmax = v[1];
+  busId = static_cast<int>(v[2]);
+  return found > 0;
+}
+
+/**
  * Clear island detection state and restore isolated status of buses
  * that were marked as isolated due to islanding
  */

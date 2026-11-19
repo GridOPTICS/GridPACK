@@ -447,6 +447,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   cursor->get("monitorKvMin", &monitorKvMin);
   double monitorKvMax = 0.0;
   cursor->get("monitorKvMax", &monitorKvMax);
+  // MW a contingency may raise the slack above max(Pmax, base output)
+  // before it is flagged; negative means max(1 MW, 1% of Pmax).
+  double slackTolerance = -1.0;
+  cursor->get("slackTolerance", &slackTolerance);
   // Split on blanks, tabs, newlines, commas or semicolons; skip bad tokens.
   std::set<int> monitorAreas;
   {
@@ -480,7 +484,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                            monitorKvMin > 0.0 || monitorKvMax > 0.0 ||
                            !monitorBranchesFile.empty();
   // Loading% denominator for all CA outputs (.out, _violations.csv, JSON,
-  // csv_flat, csv_delta). A|B|C, default A to match PW/PSSE convention.
+  // csv_flat, csv_delta). A|B|C, default A.
   // A->B->C fallback if the requested tier is zero/missing.
   std::string contingencyRating = "A";
   cursor->get("contingencyRating", &contingencyRating);
@@ -533,7 +537,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   pf_app.initialize();
 
   // Build (number -> name) lookup tables for area, zone, owner.
-  // Keyed on the PSS/E-assigned number (not contiguous), used when
+  // Keyed on the RAW file number (not contiguous), used when
   // emitting per-(branch,contingency) CSV rows so each row carries
   // human-readable area/zone/owner names alongside the numbers.
   std::map<int, std::string> area_name_by_num;
@@ -634,7 +638,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
 
-  // Strip surrounding single quotes (PSS/E style) and outer whitespace.
+  // Strip surrounding single quotes and outer whitespace.
   auto trim_quoted = [](const std::string &in) -> std::string {
     std::string s = in;
     size_t a = s.find_first_not_of(" \t");
@@ -858,7 +862,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       for (int k = 0; k < nelems; k++) {
         std::string ckt;
         if (!bd->getValue(BRANCH_CKT, &ckt, k)) continue;
-        // Trim leading/trailing whitespace and PSS/E surrounding quotes.
+        // Trim leading/trailing whitespace and surrounding quotes.
         size_t a = ckt.find_first_not_of(" \t");
         size_t b = ckt.find_last_not_of(" \t");
         ckt = (a == std::string::npos) ? std::string()
@@ -881,7 +885,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
     }
   }
-  // Base case always uses rate-A (PSS/E "normal" rating). Contingency rows
+  // Base case always uses rate-A (the normal rating). Contingency rows
   // use whichever the user picked, with A->B->C fallback if zero/missing.
   auto pickContRate = [&](const BranchRates &r) -> double {
     if (contingencyRating == "A") {
@@ -1095,6 +1099,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     std::string type;
     gridpack::utility::ConvergenceSummary cs;
     std::string status;
+    bool   solved;       // the power flow converged
+    double slackP;       // slack output (MW); NaN when not solved
+    double slackLimit;   // output above which it is flagged (MW)
   };
   std::vector<ConvRow> localConvRows;
   // _convergence.csv: written for every outputFormat.
@@ -1447,6 +1454,23 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
     world.barrier();
     MPI_Abort(static_cast<MPI_Comm>(world), 1);
+  }
+  // The base case's slack: a contingency is flagged only when it raises the
+  // slack above max(Pmax, this output) by more than the tolerance.
+  double baseSlackP = 0.0, baseSlackPmax = 0.0;
+  int baseSlackBus = 0;
+  bool haveBaseSlack = pf_app.getSlackGeneration(baseSlackP, baseSlackPmax,
+                                                 baseSlackBus);
+  auto slackTol = [&](double pmax) {
+    return slackTolerance >= 0.0 ? slackTolerance
+                                 : std::max(1.0, 0.01 * pmax);
+  };
+  if (haveBaseSlack && baseSlackP > baseSlackPmax + slackTol(baseSlackPmax) &&
+      world.rank() == 0) {
+    printf("WARNING: Slack bus %d generator output (%.1f MW) exceeds capacity "
+           "(%.1f MW) in the base case; contingencies are flagged only when "
+           "they raise it by more than %.1f MW\n", baseSlackBus, baseSlackP,
+           baseSlackPmax, slackTol(baseSlackPmax));
   }
   // Suppress voltage violations already present at base.
   pf_app.ignoreVoltageViolations();
@@ -2058,15 +2082,29 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   // Convergence row recorder; indexes events[task_id].
   auto recordConv = [&](int task_id, const char *status,
-                        const std::string &) {
+                        const std::string &, bool solved = false,
+                        double slackP = std::nan(""),
+                        double slackLimit = std::nan("")) {
     if (!emitConv) return;
     if (task_comm.rank() != 0) return;
     ConvRow r;
-    r.event_idx = task_id + 1;
-    r.name      = events[task_id].p_name;
-    r.type      = (events[task_id].p_type == Branch) ? "branch" : "generator";
-    r.cs        = pf_app.getConvergence();
-    r.status    = status;
+    r.event_idx  = task_id + 1;
+    r.name       = events[task_id].p_name;
+    r.type       = (events[task_id].p_type == Branch) ? "branch" : "generator";
+    r.cs         = pf_app.getConvergence();
+    // Not solved at all: zeros, not the previous contingency's values.
+    if (!solved && std::string(status) != "DIVERGED") {
+      r.cs.iterations = 0;
+      r.cs.finalTolerance = 0.0;
+      r.cs.finalMismatch.maxPBus = 0;
+      r.cs.finalMismatch.maxPMismatch = 0.0;
+      r.cs.finalMismatch.maxQBus = 0;
+      r.cs.finalMismatch.maxQMismatch = 0.0;
+    }
+    r.status     = status;
+    r.solved     = solved;
+    r.slackP     = slackP;
+    r.slackLimit = slackLimit;
     localConvRows.push_back(r);
   };
 
@@ -2155,28 +2193,23 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           pf_app.print(warnings[w].c_str());
         }
       }
-      // Check if slack bus generator exceeds capacity
-      slackCapacityOk = pf_app.checkSlackCapacity();
-      if (!slackCapacityOk) {
-        // Slack generator exceeds Pmax - insufficient generation capacity
-        // This is treated as a failure, similar to divergence
-        if (outputFormat == "json" || outputFormat == "csv") {
-          gridpack::utility::ContingencyResult ctResult;
-          ctResult.name = events[task_id].p_name;
-          ctResult.type = (events[task_id].p_type == Branch) ? "branch" : "generator";
-          ctResult.hasVoltageViolation = false;
-          ctResult.hasBranchViolation = false;
-          ctResult.solution.convergence = pf_app.getConvergence();
-          ctResult.solution.convergence.converged = false;
-          localContingencies.push_back(ctResult);
-        }
-        recordConv(task_id, "SLACK_OVERLOAD", std::string());
-        sprintf(sbuf,"\nInsufficient generation capacity for contingency %s\n",
-            events[task_id].p_name.c_str());
-        if (print_calcs) pf_app.print(sbuf);
-        addFailedStatColumns(task_id);
-      } else {
-        // Power flow solved and slack within capacity
+      // Flag the slack above max(Pmax, its base-case output) + tolerance;
+      // the solution still stands, so violations are checked as usual.
+      double slackP = std::nan(""), slackPmax = 0.0, slackLimit = std::nan("");
+      int slackBus = 0;
+      if (pf_app.getSlackGeneration(slackP, slackPmax, slackBus)) {
+        double ref = (haveBaseSlack && slackBus == baseSlackBus)
+                       ? std::max(slackPmax, baseSlackP) : slackPmax;
+        slackLimit = ref + slackTol(slackPmax);
+        slackCapacityOk = !(slackP > slackLimit);
+      }
+      if (!slackCapacityOk && task_comm.rank() == 0) {
+        printf("WARNING: Slack bus %d generator output (%.1f MW) exceeds "
+               "capacity (%.1f MW) for contingency %s\n", slackBus, slackP,
+               slackPmax, events[task_id].p_name.c_str());
+      }
+      {
+        // Power flow solved
         // If power flow solution is successful, write out voltages and currents
         if (print_calcs) pf_app.write();
         // Check for violations
@@ -2202,7 +2235,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         if (outputFormat == "csv_delta") {
           captureDeltaRows(task_id + 1, events[task_id], true);
         }
-        recordConv(task_id, "OK", std::string());
+        recordConv(task_id, slackCapacityOk ? "OK" : "SLACK_OVERLOAD",
+                   std::string(), true, slackP, slackLimit);
+      // The slack flag goes into the contingency's output file as well
+      if (!slackCapacityOk && print_calcs) {
+        sprintf(sbuf,"\nSlack overload for contingency %s: bus %d generator "
+            "output %.1f MW exceeds capacity %.1f MW\n",
+            events[task_id].p_name.c_str(), slackBus, slackP, slackPmax);
+        pf_app.print(sbuf);
+      }
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
@@ -2328,7 +2369,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         timer->stop(t_store);
       }
         // Note: clearQlimViolations() moved after unSetContingency() below
-      }  // end slackCapacityOk block
+      }  // end solved block
     } else {
       if (outputFormat == "json" || outputFormat == "csv") {
         gridpack::utility::ContingencyResult ctResult;
@@ -2540,7 +2581,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       localCounters[0] = static_cast<long>(localConvRows.size());
       long conv = 0;
       for (size_t i = 0; i < localConvRows.size(); i++) {
-        if (localConvRows[i].status == "OK") conv++;
+        if (localConvRows[i].solved) conv++;
       }
       localCounters[1] = conv;
     }
@@ -2722,11 +2763,18 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       sout << "  \"total_contingencies\": "     << totalCounters[0] << ",\n";
       sout << "  \"converged\": "               << totalCounters[1] << ",\n";
       sout << "  \"diverged\": "                << (totalCounters[0] - totalCounters[1]) << ",\n";
-      // Per-status breakdown of the diverged bucket. Sum equals `diverged`.
+      // islanded + no_slack + solver_diverged = diverged; slack_overload
+      // counts solved contingencies that raised the slack past its limit.
       sout << "  \"islanded\": "                << totalCounters[4] << ",\n";
       sout << "  \"no_slack\": "                << totalCounters[5] << ",\n";
       sout << "  \"solver_diverged\": "         << totalCounters[6] << ",\n";
       sout << "  \"slack_overload\": "          << totalCounters[7] << ",\n";
+      if (haveBaseSlack) {
+        sout << "  \"base_slack\": {\"bus\": " << baseSlackBus
+             << ", \"p_mw\": " << std::setprecision(3) << baseSlackP
+             << ", \"pmax_mw\": " << baseSlackPmax
+             << ", \"tolerance_mw\": " << slackTol(baseSlackPmax) << "},\n";
+      }
       sout << "  \"with_branch_violation\": "   << totalCounters[2] << ",\n";
       sout << "  \"with_voltage_violation\": "  << totalCounters[3] << ",\n";
       sout << "  \"worst_loading\": ";
@@ -3058,22 +3106,24 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Universal convergence sidecar: gather, sort by event_idx, write.
   if (emitConv) {
     auto formatRow = [](std::ostringstream &os, const ConvRow &r) {
-      // Derive converged from status so ISLANDED/NO_SLACK cases -- where solve()
-      // was never entered and pf_app.getConvergence() returns the previous
-      // case's stale value -- read as false, matching _summary.json's
-      // diverged=total-converged accounting.
+      // converged = solved (OK or SLACK_OVERLOAD), matching _summary.json;
+      // unsolved rows carry zeros (recordConv), and every number has a
+      // fixed precision so the file does not depend on the rank count.
       os << r.event_idx << ","
          << r.name << ","
          << r.type << ","
-         << ((r.status == "OK") ? "true" : "false") << ","
+         << (r.solved ? "true" : "false") << ","
          << r.cs.iterations << ","
-         << std::scientific << r.cs.finalTolerance << ","
+         << std::scientific << std::setprecision(4) << r.cs.finalTolerance << ","
          << std::fixed
          << r.cs.finalMismatch.maxPBus << ","
          << std::setprecision(4) << r.cs.finalMismatch.maxPMismatch << ","
          << r.cs.finalMismatch.maxQBus << ","
          << std::setprecision(4) << r.cs.finalMismatch.maxQMismatch << ","
-         << r.status << "\n";
+         << r.status << ",";
+      if (std::isnan(r.slackP)) os << ",";
+      else os << std::setprecision(3) << r.slackP << "," << r.slackLimit;
+      os << "\n";
     };
 
     std::vector<int> idx;
@@ -3123,7 +3173,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
                          std::ios::out | std::ios::trunc);
       cout << "event_idx,contingency,type,converged,iterations,"
               "final_tolerance,max_p_bus,max_p_mismatch,max_q_bus,"
-              "max_q_mismatch,status_code\n";
+              "max_q_mismatch,status_code,slack_p_mw,slack_limit_mw\n";
       for (size_t i = 0; i < all.size(); i++) cout << all[i].second;
       cout.close();
       printf("[convergence] wrote %zu rows to %s\n",

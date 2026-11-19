@@ -156,6 +156,15 @@ class PFFactoryModule
     bool checkSlackCapacity();
 
     /**
+     * Slack generation after a solve, the same on every rank
+     * @param pgen total output of the slack bus's online generators (MW)
+     * @param pmax their total capacity (MW)
+     * @param busId the slack bus's original number
+     * @return false if there is no slack bus
+     */
+    bool getSlackGeneration(double &pgen, double &pmax, int &busId);
+
+    /**
      * Clear island detection state and restore isolated status of buses
      * that were marked as isolated due to islanding
      */
