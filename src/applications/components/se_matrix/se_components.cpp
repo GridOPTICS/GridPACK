@@ -3157,6 +3157,7 @@ void gridpack::state_estimation::SEBranch::vectorGetElementValues(ComplexType *v
     } 
     }
   } else if (p_mode == Residual) {
+    vectorGetElementIndices(idx);
     gridpack::state_estimation::SEBus *bus1 = 
       dynamic_cast<gridpack::state_estimation::SEBus*>(this->getBus1().get());
     gridpack::state_estimation::SEBus *bus2 = 
