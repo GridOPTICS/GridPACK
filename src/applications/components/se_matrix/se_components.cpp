@@ -2006,7 +2006,7 @@ gridpack::state_estimation::SEBranch::getShunt(gridpack::state_estimation::SEBus
 bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
-  gridpack::ComplexType v1, v2, y, s;
+  gridpack::ComplexType s;
   gridpack::state_estimation::SEBus *bus1 = 
     dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
   gridpack::state_estimation::SEBus *bus2 =
@@ -2014,10 +2014,7 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
   bool ok = !bus1->isIsolated();
   ok = ok && !bus2->isIsolated();
   if (ok) {
-    v1 = bus1->getComplexVoltage();
-    v2 = bus2->getComplexVoltage();
-    y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-    s = -v1*conj(y*(v1-v2));
+    s = getBranchFlow();
     double p = real(s);
     double q = imag(s);
   //  double pi = 4.0*atan(1.0);
@@ -3304,6 +3301,20 @@ gridpack::ComplexType gridpack::state_estimation::SEBranch::getComplexPower(
 }
 
 
+/**
+ * Return total complex power at the from end over in-service lines
+ * @return complex power in per unit
+ */
+gridpack::ComplexType gridpack::state_estimation::SEBranch::getBranchFlow(void)
+{
+  gridpack::ComplexType s(0.0,0.0);
+  std::vector<std::string> tags = getLineTags();
+  std::vector<bool> status = getLineStatus();
+  for (size_t i=0; i<tags.size(); i++) {
+    if (status[i]) s += getComplexPower(tags[i]);
+  }
+  return s/p_sbase;
+}
 
 /**
  * Return reverse complex current for line element (IJI)

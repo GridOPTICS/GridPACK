@@ -1106,7 +1106,9 @@ void gridpack::state_estimation::SEAppModule::write(void)
           // Use circuit ID as branch ID (fromBus and toBus are already in separate columns)
           snprintf(brd.branchID, sizeof(brd.branchID), "%s", ckt.c_str());
 
-          branch->getPQ(bus1, &brd.P, &brd.Q);
+          gridpack::ComplexType s = branch->getBranchFlow();
+          brd.P = real(s);
+          brd.Q = imag(s);
           localBranches.push_back(brd);
         }
       }

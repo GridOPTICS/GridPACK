@@ -618,6 +618,12 @@ class SEBranch
     gridpack::ComplexType getRvrsComplexPower(std::string tag);
 
     /**
+     ** Return total complex power at the from end over in-service lines
+     ** @return complex power in per unit
+     **/
+    gridpack::ComplexType getBranchFlow(void);
+
+    /**
      ** Return complex current for line element
      ** @param tag describing line element on branch
      ** @return complex current
