@@ -14,6 +14,7 @@
  * 
  */
 
+#include <cmath>
 #include <vector>
 #include <iostream>
 #include <stdio.h>
@@ -176,7 +177,7 @@ void gridpack::dynamic_simulation::IeelLoad::init(double mag,
 
   // check the data to make sure a1+a2+a3 = 1 
   if (a1 + a2 + a3  > 0.0) {
-    if (abs(a1 + a2 + a3 -1.0) >1.0E-6) {
+    if (std::abs(a1 + a2 + a3 -1.0) >1.0E-6) {
       a1 = a1/ (a1 + a2 + a3);
       a2 = a2/ (a1 + a2 + a3);
       a3 = a3/ (a1 + a2 + a3);
@@ -185,7 +186,7 @@ void gridpack::dynamic_simulation::IeelLoad::init(double mag,
 
   // check the data to make sure a4+a5+a6 = 1
   if (a4 + a5 + a6  > 0.0) {
-    if (abs(a4 + a5 + a6 - 1.0) >1.0E-6) {
+    if (std::abs(a4 + a5 + a6 - 1.0) >1.0E-6) {
       a4 = a4/ (a4 + a5 + a6);
       a5 = a5/ (a4 + a5 + a6);
       a6 = a6/ (a4 + a5 + a6);
