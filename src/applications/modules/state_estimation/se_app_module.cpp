@@ -1988,125 +1988,21 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     // Store normalized residual in map
     localNormResValues[i] = normRes;
 
-    // Check if this measurement was flagged in previous iterations
-    bool previouslyFlagged = false;
-    int appearanceCount = 0;
-    
-    for (const auto& iterInfo : p_badDataIterationInfo) {
-      for (int prevIdx : iterInfo.badIndices) {
-        if (i == prevIdx) {
-          previouslyFlagged = true;
-          appearanceCount++;
-        }
-      }
-    }
-    
-    // For debugging - print details of measurements with high normalized residuals
+    // Print measurements with a high normalized residual
     if (std::abs(normRes) > 0.5 * p_bad_data_threshold && debugCounter < 10) {
       std::string details;
       if (p_factory->reportMeasurement(i, details)) {
         snprintf(buf, sizeof(buf), "  Measurement with high residual: Index %d: %s\n", i, details.c_str());
         p_busIO->header(buf);
-        snprintf(buf, sizeof(buf), "    NormRes=%.6f, Previously flagged=%s (%d times)\n", 
-                normRes, previouslyFlagged ? "YES" : "NO", appearanceCount);
+        snprintf(buf, sizeof(buf), "    NormRes=%.6f\n", normRes);
         p_busIO->header(buf);
         debugCounter++;
       }
     }
-    
-    // Get measurement details to determine its type
-    std::string details;
-    bool isVoltageMagnitude = false;
-    if (p_factory->reportMeasurement(i, details)) {
-      // Check if this is a voltage magnitude measurement (VM)
-      if (details.find("VM") != std::string::npos) {
-        isVoltageMagnitude = true;
-      }
-    }
-    
-    // Determine if this measurement should be flagged as bad
-    // Apply progressively higher thresholds for measurements that have been flagged multiple times
-    double effectiveThreshold = p_bad_data_threshold;
-    
-    // Apply special handling for different measurement types
-    bool isVoltageAngle = false;
-    bool isSlackAngleMeasurement = false;
-    bool isActivePower = false;    // PI or PIJ measurements
-    bool isReactivePower = false;  // QI or QIJ measurements
-    
-    // Check if this is a voltage magnitude measurement (VM)
-    if (isVoltageMagnitude) {
-      // For voltage magnitude measurements, use triple the threshold
-      effectiveThreshold = p_bad_data_threshold * 3.0;
-      
-      // Add diagnostic information
-      if (std::abs(normRes) > p_bad_data_threshold) {
-        snprintf(buf, sizeof(buf), "  VM measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
-                i, normRes, effectiveThreshold);
-        p_busIO->header(buf);
-      }
-    } 
-    // Check if this is a voltage angle measurement (VA)
-    else if (details.find("VA") != std::string::npos) {
-      isVoltageAngle = true;
-      
-      int busNum = -1;
-      if (sscanf(details.c_str(), "VA %d", &busNum) == 1) {
-        // Check if this is a slack bus angle measurement
-        for (const auto& constraint : p_pvBusConstraints) {
-          if (constraint.isSlackBus && constraint.busIndex == busNum) {
-            isSlackAngleMeasurement = true;
-            break;
-          }
-        }
-      }
-      
-      if (isSlackAngleMeasurement) {
-        // For slack bus angle measurements, use a very high threshold
-        // since these should be treated as fixed references
-        effectiveThreshold = p_bad_data_threshold * 50.0;  // Even higher threshold
-        
-        snprintf(buf, sizeof(buf), "  Slack bus VA measurement (index %d) has normalized residual %.2f (using very high threshold %.2f)\n",
-                i, normRes, effectiveThreshold);
-        p_busIO->header(buf);
-      } else {
-        // For non-slack VA measurements, use a higher threshold due to angle conversions
-        effectiveThreshold = p_bad_data_threshold * 5.0; 
-        
-        if (std::abs(normRes) > p_bad_data_threshold) {
-          snprintf(buf, sizeof(buf), "  VA measurement (index %d) has normalized residual %.2f (using higher threshold %.2f)\n",
-                  i, normRes, effectiveThreshold);
-          p_busIO->header(buf);
-        }
-      }
-    }
-    // Check for reactive power measurements (QI/QIJ)
-    else if (details.find("QI") != std::string::npos) {
-      isReactivePower = true;
-      
-      // No special threshold for reactive power measurements
-      if (std::abs(normRes) > p_bad_data_threshold * 0.8) {
-        snprintf(buf, sizeof(buf), "  QI measurement (index %d) has normalized residual %.2f\n",
-                i, normRes);
-        p_busIO->header(buf);
-      }
-    }
-    
-    // Apply increased threshold for previously flagged measurements
-    if (previouslyFlagged) {
-      // Increase threshold for previously flagged measurements - they need higher residuals to be flagged again
-      effectiveThreshold = effectiveThreshold * pow(2.0, appearanceCount);
-    }
-    
-    if (std::abs(normRes) > effectiveThreshold) {
-      // If it exceeds even the higher threshold, add it to local bad indices
-      localBadIndices.push_back(i);
 
-      if (previouslyFlagged) {
-        snprintf(buf, sizeof(buf), "  Measurement at index %d exceeds higher threshold (%.2f) - flagged again!\n",
-                i, effectiveThreshold);
-        p_busIO->header(buf);
-      }
+    // One threshold for all measurement types
+    if (std::abs(normRes) > p_bad_data_threshold) {
+      localBadIndices.push_back(i);
     }
   }
 
@@ -2215,14 +2111,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
           double value = 0.0;
           
           double thisThreshold = p_bad_data_threshold;
-          
-          if (details.find("Type: VM") != std::string::npos) {
-              thisThreshold = p_bad_data_threshold * 3.0;
-          }
-          else if (details.find("Type: VA") != std::string::npos) {
-              thisThreshold = p_bad_data_threshold * 5.0;
-          }
-          
+
           std::string status = (res > thisThreshold) ? "BAD" : "OK";
           
           if (sscanf(details.c_str(), "Bus %d, Type: %3s, Value: %lf", 
