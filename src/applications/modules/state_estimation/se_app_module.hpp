@@ -228,6 +228,13 @@ class SEAppModule
     // void detectBadData(void);
     BadDataResult detectBadData(void);
 
+    // Description of a measurement from the process that owns it
+    bool reportMeasurementGlobal(int idx, std::string &details);
+
+    // Description of a flagged measurement, saved when it was flagged
+    bool flaggedDetails(int idx, std::string &details);
+    std::map<int, std::string> p_flaggedDetails;
+
     // Diagonal of the residual sensitivity matrix for local rows lo to hi-1
     std::vector<double> residualSensitivity(
         const gridpack::math::Matrix &Rinv, int lo, int hi);

@@ -254,6 +254,8 @@ bool SEFactoryModule::reportMeasurement(int idx, std::string& details)
   int numBus = p_network->numBuses();
   // Check all buses for the measurement
   for (int i = 0; i < numBus && !found; i++) {
+    // Indices are valid on the owning process only
+    if (!p_network->getActiveBus(i)) continue;
     SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
     if (bus->getResidualDetails(idx, buf)) {
       details = buf;
@@ -264,6 +266,7 @@ bool SEFactoryModule::reportMeasurement(int idx, std::string& details)
   if (!found) {
     int numBranch = p_network->numBranches();
     for (int i = 0; i < numBranch && !found; i++) {
+      if (!p_network->getActiveBranch(i)) continue;
       SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
       if (branch->getResidualDetails(idx, buf)) {
         details = buf;

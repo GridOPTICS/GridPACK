@@ -1285,7 +1285,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
       
       for (int idx : p_badMeasurementIndices) {
         std::string details;
-        if (p_factory->reportMeasurement(idx, details)) {
+        if (flaggedDetails(idx, details)) {
           // Parse the details string to extract components
           std::stringstream ss(details);
           std::string type, busInfo, valueStr, deviationStr;
@@ -1571,7 +1571,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
                 }
             }
             
-            if (p_factory->reportMeasurement(idx, details)) {
+            if (flaggedDetails(idx, details)) {
                 int busNum = -1;
                 int toBusNum = -1;
                 std::string type = "Unknown";
@@ -1833,7 +1833,7 @@ void gridpack::state_estimation::SEAppModule::write(void)
                 
                 for (int idx : info.badIndices) {
                     std::string details;
-                    if (p_factory->reportMeasurement(idx, details)) {
+                    if (flaggedDetails(idx, details)) {
                         // Get normalized residual for this measurement
                         double normResidual = 0.0;
                         auto it = info.normalizedResiduals.find(idx);
@@ -2065,17 +2065,15 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   }
 
   // Report maximum residual information
-  if (p_network->communicator().rank() == 0) {
-    snprintf(buf, sizeof(buf), "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n",
-            maxNormRes, maxIdx, p_bad_data_threshold);
-    p_busIO->header(buf);
+  snprintf(buf, sizeof(buf), "Maximum normalized residual: %12.6f at index %d (threshold: %12.6f)\n",
+          maxNormRes, maxIdx, p_bad_data_threshold);
+  p_busIO->header(buf);
 
-    // Get and print details about the measurement with the highest residual
-    std::string maxDetails;
-    if (p_factory->reportMeasurement(maxIdx, maxDetails)) {
-        snprintf(buf, sizeof(buf), "Maximum residual measurement: %s\n", maxDetails.c_str());
-        p_busIO->header(buf);
-    }
+  // Get and print details about the measurement with the highest residual
+  std::string maxDetails;
+  if (reportMeasurementGlobal(maxIdx, maxDetails)) {
+    snprintf(buf, sizeof(buf), "Maximum residual measurement: %s\n", maxDetails.c_str());
+    p_busIO->header(buf);
   }
   
   // Print information about the top 10 normalized residuals to help debugging
@@ -2104,7 +2102,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       int idx = residPairs[i].first;
       double res = residPairs[i].second;
       std::string details;
-      if (p_factory->reportMeasurement(idx, details)) {
+      if (reportMeasurementGlobal(idx, details)) {
           int busNum = -1;
           int toBusNum = -1;
           std::string type = "Unknown";
@@ -2239,7 +2237,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
       p_busIO->header("Measurements above the threshold:\n");
       for (const auto& pair : indexResidualPairs) {
         std::string details;
-        if (p_factory->reportMeasurement(pair.first, details)) {
+        if (reportMeasurementGlobal(pair.first, details)) {
           snprintf(buf, sizeof(buf), "  Index %d: %s, normRes=%.6f\n", pair.first, details.c_str(), normResValues[pair.first]);
           p_busIO->header(buf);
         }
@@ -2252,7 +2250,8 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     p_busIO->header("Bad measurements detected:\n");
     for (int idx : badIndices) {
       std::string details;
-      if (p_factory->reportMeasurement(idx, details)) {
+      if (reportMeasurementGlobal(idx, details)) {
+        p_flaggedDetails[idx] = details;
         snprintf(buf, sizeof(buf), "  Index %d: %s, normRes=%.6f\n", idx, details.c_str(), normResValues[idx]);
         p_busIO->header(buf);
       }
@@ -2285,6 +2284,41 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   return result;
 }
 
+
+/**
+ * Description of a measurement from the process that owns it
+ */
+bool gridpack::state_estimation::SEAppModule::reportMeasurementGlobal(
+    int idx, std::string &details)
+{
+  std::string local;
+  p_factory->reportMeasurement(idx, local);
+  boost::mpi::communicator comm = static_cast<boost::mpi::communicator>(p_network->communicator());
+  std::vector<std::string> all;
+  boost::mpi::all_gather(comm, local, all);
+  details.clear();
+  for (size_t p = 0; p < all.size(); p++) {
+    if (!all[p].empty()) {
+      details = all[p];
+      break;
+    }
+  }
+  return !details.empty();
+}
+
+/**
+ * Description of a flagged measurement, saved when it was flagged
+ */
+bool gridpack::state_estimation::SEAppModule::flaggedDetails(
+    int idx, std::string &details)
+{
+  std::map<int, std::string>::iterator it = p_flaggedDetails.find(idx);
+  if (it != p_flaggedDetails.end()) {
+    details = it->second;
+    return true;
+  }
+  return p_factory->reportMeasurement(idx, details);
+}
 
 /**
  * Diagonal of the residual sensitivity matrix for the local measurements
@@ -2539,90 +2573,59 @@ void gridpack::state_estimation::SEAppModule::adjustWeights(const std::vector<in
                 adjustmentFactor, timesAdjusted);
         p_busIO->header(buf);
         
-        // Find and adjust the measurement on buses
+        // Adjust the measurement on the process that owns it
         bool found = false;
-        std::string details;
         double oldDeviation = 0.0;
         double newDeviation = 0.0;
-        
-        // Bus measurements
+        bool isBus = false;
+
         for (int i = 0; i < numBus && !found; i++) {
+            if (!p_network->getActiveBus(i)) continue;
             SEBus* bus = dynamic_cast<SEBus*>(p_network->getBus(i).get());
             if (bus->adjustMeasurementWeight(idx, adjustmentFactor, oldDeviation, newDeviation)) {
-                std::string measDetails;
-                if (p_factory->reportMeasurement(idx, measDetails)) {
-                    // Log successful adjustment
-                    snprintf(buf, sizeof(buf), "  Adjusted bus measurement (index %d): %s\n", 
-                            idx, measDetails.c_str());
-                    p_busIO->header(buf);
-                    snprintf(buf, sizeof(buf), "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
-                            oldDeviation, newDeviation, adjustmentFactor);
-                    p_busIO->header(buf);
-                    
-                    if (diagFile) {
-                    int busNum = -1;
-                    std::string type = "Unknown";
-                    double value = 0.0;
-                    
-                    if (sscanf(measDetails.c_str(), "Bus %d, Type: %3s, Value: %lf", 
-                              &busNum, type.data(), &value) >= 3) {
-                        // Bus measurement
-                        fprintf(diagFile, "%-6d %-4s  %-8d  -       %-12.6f  %-12.6f  %-12.6f  %-8.1f\n",
-                                idx, type.c_str(), busNum, value, oldDeviation, newDeviation, adjustmentFactor);
-                    } 
-                    else {
-                        fprintf(diagFile, "%-6d %s\t%.6f\t%.6f\t%.1f\n",
-                                idx, measDetails.c_str(), oldDeviation, newDeviation, adjustmentFactor);
-                    }
-                    }
-                }
                 found = true;
-                adjustedCount++;
-                break;
+                isBus = true;
             }
         }
-        
-        // If not found on buses, check branches
-        if (!found) {
-            for (int i = 0; i < numBranch && !found; i++) {
-                SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
-                if (branch->adjustMeasurementWeight(idx, adjustmentFactor, oldDeviation, newDeviation)) {
-                    std::string measDetails;
-                    if (p_factory->reportMeasurement(idx, measDetails)) {
-                        // Log successful adjustment
-                        snprintf(buf, sizeof(buf), "  Adjusted branch measurement (index %d): %s\n", 
-                                idx, measDetails.c_str());
-                        p_busIO->header(buf);
-                        snprintf(buf, sizeof(buf), "    Deviation: %.6f -> %.6f (factor: %.1f)\n", 
-                                oldDeviation, newDeviation, adjustmentFactor);
-                        p_busIO->header(buf);
-                        
-                        if (diagFile) {
-                            int fromBus = -1;
-                            int toBus = -1;
-                            std::string type = "Unknown";
-                            double value = 0.0;
-                            
-                            if (sscanf(measDetails.c_str(), "FromBus %d, ToBus %d, Type: %3s, Value: %lf", 
-                                      &fromBus, &toBus, type.data(), &value) >= 4) {
-                                // Branch measurement
-                                fprintf(diagFile, "%-6d %-4s  %-8d  %-7d  %-12.6f  %-12.6f  %-12.6f  %-8.1f\n",
-                                        idx, type.c_str(), fromBus, toBus, value, oldDeviation, newDeviation, adjustmentFactor);
-                            } 
-                            else {
-                                fprintf(diagFile, "%-6d %s\t%.6f\t%.6f\t%.1f\n",
-                                        idx, measDetails.c_str(), oldDeviation, newDeviation, adjustmentFactor);
-                            }
-                        }
-                    }
-                    found = true;
-                    adjustedCount++;
-                    break;
+        for (int i = 0; i < numBranch && !found; i++) {
+            if (!p_network->getActiveBranch(i)) continue;
+            SEBranch* branch = dynamic_cast<SEBranch*>(p_network->getBranch(i).get());
+            if (branch->adjustMeasurementWeight(idx, adjustmentFactor, oldDeviation, newDeviation)) {
+                found = true;
+            }
+        }
+
+        // Collect the result from the owning process
+        int counts[2] = {found ? 1 : 0, isBus ? 1 : 0};
+        double devs[2] = {oldDeviation, newDeviation};
+        p_network->communicator().sum(counts, 2);
+        p_network->communicator().sum(devs, 2);
+        std::string measDetails;
+        reportMeasurementGlobal(idx, measDetails);
+
+        if (counts[0] > 0) {
+            adjustedCount++;
+            snprintf(buf, sizeof(buf), "  Adjusted %s measurement (index %d): ",
+                    counts[1] > 0 ? "bus" : "branch", idx);
+            p_busIO->header(buf);
+            p_busIO->header(measDetails.c_str());
+            snprintf(buf, sizeof(buf), "\n    Deviation: %.6f -> %.6f (factor: %.1f)\n",
+                    devs[0], devs[1], adjustmentFactor);
+            p_busIO->header(buf);
+            if (diagFile) {
+                int busNum = -1;
+                char type[8] = "";
+                double value = 0.0;
+                if (sscanf(measDetails.c_str(), "Bus %d, Type: %3s, Value: %lf",
+                          &busNum, type, &value) >= 3) {
+                    fprintf(diagFile, "%-6d %-4s  %-8d  -       %-12.6f  %-12.6f  %-12.6f  %-8.1f\n",
+                            idx, type, busNum, value, devs[0], devs[1], adjustmentFactor);
+                } else {
+                    fprintf(diagFile, "%-6d %s\t%.6f\t%.6f\t%.1f\n",
+                            idx, measDetails.c_str(), devs[0], devs[1], adjustmentFactor);
                 }
             }
-        }
-        
-        if (!found) {
+        } else {
             snprintf(buf, sizeof(buf), "  WARNING: Could not find measurement with index %d to adjust!\n", idx);
             p_busIO->header(buf);
         }
