@@ -41,8 +41,8 @@ void gridpack::dynamic_simulation::DBIntClass::Initialize(double theDb1, double 
 {
   InitialValue = theInit;
   State = 0;
-  Db1 = abs(theDb1); // Negatives not allowed
-  Eps = abs(theEps);
+  Db1 = std::abs(theDb1); // Negatives not allowed
+  Eps = std::abs(theEps);
   if (Eps > Db1) Eps = Db1; // Don't allow it to be larger
   //printf("theDb1 = %f, theEps = %f, theInit = %f\n", theDb1, theEps, theInit);
   //printf("Db1 = %f, Eps = %f, InitialValue = %f\n", Db1, Eps, InitialValue);
@@ -56,7 +56,7 @@ double gridpack::dynamic_simulation::DBIntClass::Output(double anInput)
   double Result;
   anInput = anInput - InitialValue; // InitialValue almost always zero
   // Most common situation when deadband resulting in no output
-  if (abs(anInput) <= Db1 && ((Eps == 0) || (State == 0))) 
+  if (std::abs(anInput) <= Db1 && ((Eps == 0) || (State == 0))) 
     Result = 0;
   // No Hysteresis
   else if (Eps == 0) { // Must be eitehr > Db1 or < -Db1
@@ -96,7 +96,7 @@ double gridpack::dynamic_simulation::DBIntClass::Output(double anInput)
       Result = anInput + Db1 - Eps;
       State = 2;
     } else { // Cover case of close to zero
-      if (abs(anInput) <= Db1 - Eps) {
+      if (std::abs(anInput) <= Db1 - Eps) {
         Result = 0;
         State = 0;
       } else if (anInput > 0) { // Between Db1-Eps and Db1

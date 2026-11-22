@@ -1,3 +1,4 @@
+#include <cmath>
 #include <gencls.hpp>
 #include <gridpack/include/gridpack.hpp>
 #include <constants.hpp>
@@ -226,7 +227,7 @@ void Gencls::vectorGetValues(gridpack::RealType *values)
     Pe = p_vdq0[0]*p_idq0[0] + p_vdq0[1]*p_idq0[1] + p_vdq0[2]*p_idq0[2];
     
     // Generator equations
-    if(abs(p_L) > 1e-6) {
+    if(std::abs(p_L) > 1e-6) {
       // f = di_dt - idot => L^-1*(e - R*i - v) - idot
       f[0] = (e[0] - p_Rs*p_iabc[0] - p_va)/p_L - p_idot[0];
       f[1] = (e[1] - p_Rs*p_iabc[1] - p_vb)/p_L - p_idot[1];
@@ -316,7 +317,7 @@ void Gencls::matrixGetValues(int *nvals, gridpack::RealType *values, int *rows, 
   int vc_idx = p_glocvoltage+2;
 
   // partial derivatives w.r.t. f[0]-f[2]
-  if(abs(p_L) > 1e-6) {
+  if(std::abs(p_L) > 1e-6) {
     // f[0] partial derivative w.r.t. delta
     if(integrationtype == IMPLICIT) {
       rows[ctr]   = ia_idx;

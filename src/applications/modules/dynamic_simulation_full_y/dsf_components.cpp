@@ -3,6 +3,7 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
+#include <cmath>
 #include <vector>
 #include <iostream>
 
@@ -1586,7 +1587,7 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   // calculate the mva base if CMPLDW.loadMVABase <= 0.0
           
   if (loadMVABase < 0.0) {
-	  loadFactor =abs(loadMVABase);
+	  loadFactor =std::abs(loadMVABase);
 	  loadMVABase = Pload_MW/loadFactor;
   }else if (loadMVABase == 0.0) {
 	  loadFactor =0.8;

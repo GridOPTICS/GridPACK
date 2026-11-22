@@ -15,6 +15,7 @@
  *         watch file output.
  */
 
+#include <cmath>
 #include "dsf_app_module.hpp"
 #include <iostream>
 #include <string>
@@ -118,7 +119,7 @@ bool gridpack::dynamic_simulation::DSFullApp::solveNetwork(int predcorrflag)
       INorton_full_chk->add(*INorton_full, -1.0);
       
       /* Norm of current change */
-      max_INorton_full=abs(INorton_full_chk->normInfinity());
+      max_INorton_full=std::abs(INorton_full_chk->normInfinity());
       
       /* Convergence check */
       if (max_INorton_full < ITER_TOL) {
@@ -311,7 +312,7 @@ void gridpack::dynamic_simulation::DSFullApp::setup()
       // Check convergence (voltage change between iterations)
       if (eqiter > 0) {
         INorton_full_chk->add(*volt_full, -1.0);
-        double dv_norm = abs(INorton_full_chk->normInfinity());
+        double dv_norm = std::abs(INorton_full_chk->normInfinity());
         if (eqiter <= 5 || eqiter % 10 == 0 || dv_norm < EQUIL_TOL) {
           printf("Equilibrium init iteration %d: dV_inf = %.2e\n",
                  eqiter, dv_norm);
