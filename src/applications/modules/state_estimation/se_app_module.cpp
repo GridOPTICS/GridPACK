@@ -94,6 +94,7 @@ gridpack::state_estimation::SEAppModule::SEAppModule(void)
   p_badDataIterationInfo.clear();
   p_diagnosticLevel = "basic"; // Default level
   p_max_bad_data_iterations = 5; // Default value
+  p_min_sensitivity = 1.0e-6;
   p_use_sparse_matrices = true; // Default to sparse for better performance
 }
 
@@ -1944,6 +1945,9 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     p_busIO->header(buf);
   }
 
+  // Residual sensitivity diagonal, S_ii = 1 - (H G^-1 H^T R^-1)_ii
+  std::vector<double> sdiag = residualSensitivity(*Rinv, lo, hi);
+
   // Use map to store normalized residuals (allows sparse storage and easy gathering)
   std::map<int, double> localNormResValues;
   double localMaxNormRes = 0.0;
@@ -1968,7 +1972,9 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
 
     // Calculate normalized residual - handle division by zero safely
     double sigma = (w > 0.0) ? 1.0/sqrt(w) : 1.0;
-    double normRes = r/sigma;
+    // No test for a measurement with no redundancy
+    double sii = sdiag[i-lo];
+    double normRes = (sii > p_min_sensitivity) ? r/(sigma*sqrt(sii)) : 0.0;
 
     // Update local maximum if needed
     if (std::abs(normRes) > std::abs(localMaxNormRes)) {
@@ -2328,50 +2334,38 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     p_busIO->header("Chi-square test passed - measurement set is consistent.\n");
   }
   
-  // Report all identified bad measurements
+  // Flag the largest normalized residual only, the rest are tested again in the next pass
   if (!badIndices.empty()) {
+    std::vector<std::pair<int, double>> indexResidualPairs;
+    for (int idx : badIndices) {
+      indexResidualPairs.push_back(std::make_pair(idx, std::abs(normResValues[idx])));
+    }
+    std::sort(indexResidualPairs.begin(), indexResidualPairs.end(),
+              [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
+                if (a.second != b.second) return a.second > b.second;
+                return a.first < b.first;
+              });
+
+    if (indexResidualPairs.size() > 1) {
+      p_busIO->header("Measurements above the threshold:\n");
+      for (const auto& pair : indexResidualPairs) {
+        std::string details;
+        if (p_factory->reportMeasurement(pair.first, details)) {
+          snprintf(buf, sizeof(buf), "  Index %d: %s, normRes=%.6f\n", pair.first, details.c_str(), normResValues[pair.first]);
+          p_busIO->header(buf);
+        }
+      }
+    }
+
+    badIndices.clear();
+    badIndices.push_back(indexResidualPairs[0].first);
+
     p_busIO->header("Bad measurements detected:\n");
     for (int idx : badIndices) {
       std::string details;
       if (p_factory->reportMeasurement(idx, details)) {
         snprintf(buf, sizeof(buf), "  Index %d: %s, normRes=%.6f\n", idx, details.c_str(), normResValues[idx]);
         p_busIO->header(buf);
-      }
-    }
-    
-    // Sort normalized residuals (largest first)
-    std::vector<std::pair<int, double>> indexResidualPairs;
-    for (int idx : badIndices) {
-      indexResidualPairs.push_back(std::make_pair(idx, std::abs(normResValues[idx])));
-    }
-    
-    // Sort in descending order of normalized residual magnitude
-    std::sort(indexResidualPairs.begin(), indexResidualPairs.end(),
-              [](const std::pair<int, double>& a, const std::pair<int, double>& b) {
-                return a.second > b.second;
-              });
-    
-    // If handling top 5 worst measurements
-    const int MAX_BAD_MEASUREMENTS = 5; // Set to 5 for now
-    if (indexResidualPairs.size() > MAX_BAD_MEASUREMENTS) {
-      p_busIO->header("Limiting bad measurement handling to the worst offenders.\n");
-      
-      // Debug output for TAMU500 issue
-      snprintf(buf, sizeof(buf), "DEBUG: Total bad measurements found: %d, limiting to %d\n", 
-              (int)indexResidualPairs.size(), MAX_BAD_MEASUREMENTS);
-      p_busIO->header(buf);
-      
-      badIndices.clear();
-      for (int i = 0; i < MAX_BAD_MEASUREMENTS; i++) {
-        int measIdx = indexResidualPairs[i].first;
-        snprintf(buf, sizeof(buf), "DEBUG: Adding bad measurement index %d (rank %d) to list\n", measIdx, i+1);
-        p_busIO->header(buf);
-        badIndices.push_back(measIdx);
-      }
-    } else {
-      badIndices.clear();
-      for (const auto& pair : indexResidualPairs) {
-        badIndices.push_back(pair.first);
       }
     }
   } else {
@@ -2402,6 +2396,51 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   return result;
 }
 
+
+/**
+ * Diagonal of the residual sensitivity matrix for the local measurements
+ */
+std::vector<double> gridpack::state_estimation::SEAppModule::residualSensitivity(
+    const gridpack::math::Matrix &Rinv, int lo, int hi)
+{
+  // Jacobian and gain matrix at the converged state
+  p_factory->setMode(Jacobian_H);
+  gridpack::mapper::GenMatrixMap<SENetwork> HMap(p_network);
+  boost::shared_ptr<gridpack::math::Matrix> H = HMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Matrix> Ht(transpose(*H));
+  boost::shared_ptr<gridpack::math::Matrix> HtR(multiply(*Ht, Rinv));
+  boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*HtR, *H));
+
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.State_estimation");
+  gridpack::math::LinearSolver solver(*Gain);
+  solver.configure(cursor);
+
+  gridpack::mapper::GenVectorMap<SENetwork> vMap(p_network);
+  boost::shared_ptr<gridpack::math::Vector> e = vMap.mapToVector();
+  int size = e->size();
+  std::vector<double> sdiag(hi-lo, 1.0);
+
+  // One solve per measurement: k_ii = (H G^-1 H^T R^-1)_ii
+  boost::shared_ptr<gridpack::math::Vector> b(multiply(*HtR, *e));
+  boost::shared_ptr<gridpack::math::Vector> x(b->clone());
+  boost::shared_ptr<gridpack::math::Vector> y(e->clone());
+  for (int i = 0; i < size; i++) {
+    e->zero();
+    if (i >= lo && i < hi) e->setElement(i, 1.0);
+    e->ready();
+    multiply(*HtR, *e, *b);
+    x->zero();
+    solver.solve(*b, *x);
+    multiply(*H, *x, *y);
+    if (i >= lo && i < hi) {
+      gridpack::ComplexType kii;
+      y->getElement(i, kii);
+      sdiag[i-lo] = 1.0 - std::real(kii);
+    }
+  }
+  return sdiag;
+}
 
 /**
  * Get Chi-square threshold value

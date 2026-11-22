@@ -228,6 +228,13 @@ class SEAppModule
     // void detectBadData(void);
     BadDataResult detectBadData(void);
 
+    // Diagonal of the residual sensitivity matrix for local rows lo to hi-1
+    std::vector<double> residualSensitivity(
+        const gridpack::math::Matrix &Rinv, int lo, int hi);
+
+    // Below this sensitivity a measurement has no redundancy to test
+    double p_min_sensitivity;
+
     double p_bad_data_threshold;
     double p_lastChiSquareValue; // Store last chi-square value for reporting
     
