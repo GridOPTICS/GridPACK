@@ -235,9 +235,17 @@ class SEAppModule
     bool flaggedDetails(int idx, std::string &details);
     std::map<int, std::string> p_flaggedDetails;
 
-    // Diagonal of the residual sensitivity matrix for local rows lo to hi-1
+    // Diagonal of the residual sensitivity matrix, computed for the listed rows
     std::vector<double> residualSensitivity(
-        const gridpack::math::Matrix &Rinv, int lo, int hi);
+        const gridpack::math::Matrix &Rinv,
+        const gridpack::math::Vector &residual, int lo, int hi,
+        const std::vector<int> &rows);
+
+    // Coupling above which a neighbour of the largest residual is also tested
+    double p_coupling_cut;
+
+    // Weighted residual above which a measurement gets the normalized test
+    double p_residual_screen;
 
     // Below this sensitivity a measurement has no redundancy to test
     double p_min_sensitivity;

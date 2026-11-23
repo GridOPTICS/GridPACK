@@ -95,6 +95,8 @@ gridpack::state_estimation::SEAppModule::SEAppModule(void)
   p_diagnosticLevel = "basic"; // Default level
   p_max_bad_data_iterations = 5; // Default value
   p_min_sensitivity = 1.0e-6;
+  p_residual_screen = 1.0;
+  p_coupling_cut = 0.01;
   p_use_sparse_matrices = true; // Default to sparse for better performance
 }
 
@@ -216,6 +218,7 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   p_tolerance = secursor->get("tolerance",1.0e-3);
   p_max_iteration = secursor->get("maxIteration",20);
   p_max_bad_data_iterations = secursor->get("maxBadDataIterations", 5);
+  p_residual_screen = secursor->get("badDataResidualScreen", p_residual_screen);
   p_damping_factor = secursor->get("dampingFactor", 1.0);
 
   // Diagnostic output level control
@@ -310,6 +313,7 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   p_tolerance = secursor->get("tolerance",1.0e-3);
   p_max_iteration = secursor->get("maxIteration",20);
   p_max_bad_data_iterations = secursor->get("maxBadDataIterations", 5);
+  p_residual_screen = secursor->get("badDataResidualScreen", p_residual_screen);
   p_damping_factor = secursor->get("dampingFactor", 1.0);
 
   // Diagnostic output level control
@@ -1945,8 +1949,38 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     p_busIO->header(buf);
   }
 
+  // Only measurements with a weighted residual above the screen are tested
+  double screen = std::min(p_residual_screen, p_bad_data_threshold);
+  std::vector<int> localRows;
+  double normResBound = 0.0;
+  for (int i = lo; i < hi; i++) {
+    gridpack::ComplexType rvalue, rinvvalue;
+    Residual->getElement(i, rvalue);
+    Rinv->getElement(i, i, rinvvalue);
+    double r = std::real(rvalue);
+    double w = std::real(rinvvalue);
+    normResBound += r*r*w;
+    if (w > 0.0 && std::abs(r)*sqrt(w) > screen) localRows.push_back(i);
+  }
+  p_network->communicator().sum(&normResBound, 1);
+  // No normalized residual exceeds the square root of the chi-square value
+  normResBound = sqrt(normResBound);
+  if (normResBound <= p_bad_data_threshold) localRows.clear();
+  std::vector<std::vector<int> > allRows;
+  boost::mpi::all_gather(
+      static_cast<boost::mpi::communicator>(p_network->communicator()),
+      localRows, allRows);
+  std::vector<int> rows;
+  for (size_t p = 0; p < allRows.size(); p++) {
+    rows.insert(rows.end(), allRows[p].begin(), allRows[p].end());
+  }
+  std::sort(rows.begin(), rows.end());
+  snprintf(buf, sizeof(buf), "Normalized residual test on %d of %d measurements\n",
+      static_cast<int>(rows.size()), size);
+  p_busIO->header(buf);
+
   // Residual sensitivity diagonal, S_ii = 1 - (H G^-1 H^T R^-1)_ii
-  std::vector<double> sdiag = residualSensitivity(*Rinv, lo, hi);
+  std::vector<double> sdiag = residualSensitivity(*Rinv, *Residual, lo, hi, rows);
 
   // Use map to store normalized residuals (allows sparse storage and easy gathering)
   std::map<int, double> localNormResValues;
@@ -1975,6 +2009,8 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     // No test for a measurement with no redundancy
     double sii = sdiag[i-lo];
     double normRes = (sii > p_min_sensitivity) ? r/(sigma*sqrt(sii)) : 0.0;
+    // Keep within the chi-square bound
+    if (std::abs(normRes) > normResBound) normRes = (normRes > 0.0) ? normResBound : -normResBound;
 
     // Update local maximum if needed
     if (std::abs(normRes) > std::abs(localMaxNormRes)) {
@@ -2321,11 +2357,18 @@ bool gridpack::state_estimation::SEAppModule::flaggedDetails(
 }
 
 /**
- * Diagonal of the residual sensitivity matrix for the local measurements
+ * Diagonal of the residual sensitivity matrix for the listed measurements
+ * and for the measurements coupled to the one with the largest residual
  */
 std::vector<double> gridpack::state_estimation::SEAppModule::residualSensitivity(
-    const gridpack::math::Matrix &Rinv, int lo, int hi)
+    const gridpack::math::Matrix &Rinv, const gridpack::math::Vector &residual,
+    int lo, int hi, const std::vector<int> &rows)
 {
+  std::vector<double> sdiag(hi-lo, 1.0);
+  if (rows.empty()) return sdiag;
+  boost::mpi::communicator comm =
+    static_cast<boost::mpi::communicator>(p_network->communicator());
+
   // Jacobian and gain matrix at the converged state
   p_factory->setMode(Jacobian_H);
   gridpack::mapper::GenMatrixMap<SENetwork> HMap(p_network);
@@ -2341,26 +2384,96 @@ std::vector<double> gridpack::state_estimation::SEAppModule::residualSensitivity
 
   gridpack::mapper::GenVectorMap<SENetwork> vMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> e = vMap.mapToVector();
-  int size = e->size();
-  std::vector<double> sdiag(hi-lo, 1.0);
-
-  // One solve per measurement: k_ii = (H G^-1 H^T R^-1)_ii
   boost::shared_ptr<gridpack::math::Vector> b(multiply(*HtR, *e));
   boost::shared_ptr<gridpack::math::Vector> x(b->clone());
   boost::shared_ptr<gridpack::math::Vector> y(e->clone());
-  for (int i = 0; i < size; i++) {
+
+  // Local weighted residuals and deviations
+  std::vector<double> rw(hi-lo, 0.0), sig(hi-lo, 1.0);
+  for (int i = lo; i < hi; i++) {
+    gridpack::ComplexType rvalue, rinvvalue;
+    residual.getElement(i, rvalue);
+    Rinv.getElement(i, i, rinvvalue);
+    double w = std::real(rinvvalue);
+    if (w > 0.0) sig[i-lo] = 1.0/sqrt(w);
+    rw[i-lo] = std::real(rvalue)/sig[i-lo];
+  }
+
+  std::set<int> tested;
+  std::vector<int> pending(rows);
+  int best = -1;
+  while (true) {
+    // One solve per measurement: k_ii = (H G^-1 H^T R^-1)_ii
+    for (size_t k = 0; k < pending.size(); k++) {
+      int i = pending[k];
+      tested.insert(i);
+      e->zero();
+      if (i >= lo && i < hi) e->setElement(i, 1.0);
+      e->ready();
+      multiply(*HtR, *e, *b);
+      x->zero();
+      solver.solve(*b, *x);
+      multiply(*H, *x, *y);
+      if (i >= lo && i < hi) {
+        gridpack::ComplexType kii;
+        y->getElement(i, kii);
+        sdiag[i-lo] = 1.0 - std::real(kii);
+      }
+    }
+
+    // Tested measurement with the largest normalized residual
+    double localMax = 0.0;
+    int localIdx = -1;
+    for (std::set<int>::iterator it = tested.begin(); it != tested.end(); ++it) {
+      int i = *it;
+      if (i < lo || i >= hi || sdiag[i-lo] <= p_min_sensitivity) continue;
+      double rn = std::abs(rw[i-lo])/sqrt(sdiag[i-lo]);
+      if (rn > localMax) {
+        localMax = rn;
+        localIdx = i;
+      }
+    }
+    std::vector<double> allMax;
+    std::vector<int> allIdx;
+    boost::mpi::all_gather(comm, localMax, allMax);
+    boost::mpi::all_gather(comm, localIdx, allIdx);
+    int newBest = -1;
+    double bestVal = 0.0;
+    for (size_t p = 0; p < allMax.size(); p++) {
+      if (allIdx[p] >= 0 && allMax[p] > bestVal) {
+        bestVal = allMax[p];
+        newBest = allIdx[p];
+      }
+    }
+    if (newBest < 0 || newBest == best) break;
+    best = newBest;
+
+    // Add the untested measurements coupled to it
+    double sigBest = (best >= lo && best < hi) ? sig[best-lo] : 0.0;
+    p_network->communicator().sum(&sigBest, 1);
     e->zero();
-    if (i >= lo && i < hi) e->setElement(i, 1.0);
+    if (best >= lo && best < hi) e->setElement(best, 1.0);
     e->ready();
     multiply(*HtR, *e, *b);
     x->zero();
     solver.solve(*b, *x);
     multiply(*H, *x, *y);
-    if (i >= lo && i < hi) {
-      gridpack::ComplexType kii;
-      y->getElement(i, kii);
-      sdiag[i-lo] = 1.0 - std::real(kii);
+    std::vector<int> localNew;
+    for (int i = lo; i < hi; i++) {
+      if (tested.count(i)) continue;
+      gridpack::ComplexType kib;
+      y->getElement(i, kib);
+      if (std::abs(std::real(kib))*sigBest/sig[i-lo] > p_coupling_cut) {
+        localNew.push_back(i);
+      }
     }
+    std::vector<std::vector<int> > allNew;
+    boost::mpi::all_gather(comm, localNew, allNew);
+    pending.clear();
+    for (size_t p = 0; p < allNew.size(); p++) {
+      pending.insert(pending.end(), allNew[p].begin(), allNew[p].end());
+    }
+    if (pending.empty()) break;
   }
   return sdiag;
 }
