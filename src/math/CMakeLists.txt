@@ -60,6 +60,7 @@ set(gridpack_math_headers
   vector_interface.hpp
   value_transfer.hpp
   numeric_type_check.hpp
+  hat_matrix_diagonal.hpp
   )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -89,6 +90,7 @@ if (PETSC_FOUND)
     petsc/petsc_nonlinear_solver_implementation.cpp
     petsc/petsc_nonlinear_solver.cpp
     petsc/petsc_dae_solver.cpp
+    petsc/petsc_hat_matrix_diagonal.cpp
     )  
 
 if (NOT USE_OLD_PETSC)
@@ -168,6 +170,21 @@ else()
     gridpack_parallel
     ${PETSC_LIBRARIES}
   )
+endif()
+
+# KLU from SuiteSparse (optional): selected inverse for the hat matrix diagonal
+find_path(KLU_INCLUDE_DIR klu.h
+  HINTS ${PETSC_DIR}/include ${PETSC_DIR}/${PETSC_ARCH}/include
+  PATH_SUFFIXES suitesparse)
+find_library(KLU_LIBRARY klu
+  HINTS ${PETSC_DIR}/lib ${PETSC_DIR}/${PETSC_ARCH}/lib)
+if (KLU_INCLUDE_DIR AND KLU_LIBRARY)
+  message(STATUS "KLU found: ${KLU_LIBRARY}")
+  target_compile_definitions(gridpack_math PRIVATE GRIDPACK_HAVE_KLU)
+  target_include_directories(gridpack_math PRIVATE ${KLU_INCLUDE_DIR})
+  target_link_libraries(gridpack_math PUBLIC ${KLU_LIBRARY})
+else()
+  message(STATUS "KLU not found: the hat matrix diagonal uses blocked solves")
 endif()
 
 # -------------------------------------------------------------
@@ -293,6 +310,13 @@ set_target_properties(real_dense_transpose_test
   )
 target_link_libraries(real_dense_transpose_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(real_dense_matrix_transpose real_dense_transpose_test)
+
+# -------------------------------------------------------------
+# hat matrix diagonal test
+# -------------------------------------------------------------
+add_executable(hat_matrix_diagonal_test test/hat_matrix_diagonal_test.cpp)
+target_link_libraries(hat_matrix_diagonal_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(hat_matrix_diagonal hat_matrix_diagonal_test)
 
 
 # -------------------------------------------------------------
