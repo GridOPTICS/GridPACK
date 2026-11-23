@@ -29,6 +29,7 @@ set(target_libraries
     ${PETSC_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(AFTER ${PETSC_INCLUDES} ${CMAKE_SOURCE_DIR}/math)
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()

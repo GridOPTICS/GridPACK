@@ -243,6 +243,10 @@ class SEAppModule
         const gridpack::math::Vector &residual, int lo, int hi,
         const std::vector<int> &rows);
 
+    // Spike: full diagonal from a serial factorization on process 0
+    std::vector<double> residualSensitivitySerial(
+        const gridpack::math::Matrix &Rinv, int lo, int hi);
+
     // Coupling above which a neighbour of the largest residual is also tested
     double p_coupling_cut;
 
