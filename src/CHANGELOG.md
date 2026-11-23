@@ -11,6 +11,11 @@ model](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workf
 The Unreleased section will be empty for tagged releases. Unreleased
 functionality appears in the develop branch.
 
+- Fixed
+  - Dynamic Simulation
+    - `dsf.x` runs `BusFault`, `LineStatus` and `GenStatus` events and
+      inputs without events
+
 ## [3.7.0]
 - Added
   - Power Flow

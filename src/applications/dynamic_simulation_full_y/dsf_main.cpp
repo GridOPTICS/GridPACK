@@ -71,16 +71,35 @@ main(int argc, char **argv)
     ds_app.initialize();
     ds_app.setGeneratorWatch();
 
-    // read in faults from input file
+    // read in events from input file
     gridpack::utility::Configuration::CursorPtr cursor;
     cursor = config->getCursor("Configuration.Dynamic_simulation");
     std::vector<gridpack::dynamic_simulation::Event> faults;
     faults = ds_app.getEvents(cursor);
 
-    ds_app.solvePreInitialize(faults[0]);
+    // Legacy stepping applies only to a list of faultEvent blocks
+    bool legacy = !faults.empty();
+    for (size_t i = 0; i < faults.size(); i++) {
+      if (!faults[i].isLine) legacy = false;
+    }
 
-    while(!ds_app.isDynSimuDone()){
-      ds_app.executeOneSimuStep( );
+    if (legacy) {
+      if (faults.size() > 1 && world.rank() == 0) {
+        std::cout << "dsf.x: " << faults.size() << " faultEvent blocks,"
+          << " only the first is simulated" << std::endl;
+      }
+      ds_app.solvePreInitialize(faults[0]);
+
+      while(!ds_app.isDynSimuDone()){
+        ds_app.executeOneSimuStep( );
+      }
+    } else {
+      // Other events, or none: event-list driver, same as dsf2.x
+      if (world.rank() == 0) {
+        std::cout << "dsf.x: using the event-list driver" << std::endl;
+      }
+      ds_app.setup();
+      ds_app.run();
     }
 
     //ds_app.write();
