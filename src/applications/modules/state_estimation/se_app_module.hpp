@@ -237,15 +237,18 @@ class SEAppModule
     bool flaggedDetails(int idx, std::string &details);
     std::map<int, std::string> p_flaggedDetails;
 
-    // Diagonal of the residual sensitivity matrix, computed for the listed rows
+    // Fallback: residual sensitivity diagonal for the listed rows
     std::vector<double> residualSensitivity(
+        const gridpack::math::Matrix &Hmat,
         const gridpack::math::Matrix &Rinv,
         const gridpack::math::Vector &residual, int lo, int hi,
         const std::vector<int> &rows);
 
-    // Spike: full diagonal from a serial factorization on process 0
-    std::vector<double> residualSensitivitySerial(
-        const gridpack::math::Matrix &Rinv, int lo, int hi);
+    // Diagonal method: auto, exact or screen
+    std::string p_bad_data_method;
+
+    // States above which auto uses the screened test
+    int p_exact_max_states;
 
     // Coupling above which a neighbour of the largest residual is also tested
     double p_coupling_cut;

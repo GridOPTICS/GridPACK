@@ -49,8 +49,7 @@
 #include "gridpack/math/math.hpp"
 #include "timer/coarse_timer.hpp"
 #include "se_app_module.hpp"
-#include <petscmat.h>
-#include "gridpack/math/petsc/petsc_matrix_extractor.hpp"
+#include "gridpack/math/hat_matrix_diagonal.hpp"
 double p_bad_data_threshold;
 
 // Anonymous namespace for boost serialization support
@@ -98,6 +97,8 @@ gridpack::state_estimation::SEAppModule::SEAppModule(void)
   p_max_bad_data_iterations = 5; // Default value
   p_min_sensitivity = 1.0e-6;
   p_residual_screen = 1.0;
+  p_bad_data_method = "auto";
+  p_exact_max_states = 200000;
   p_coupling_cut = 0.01;
   p_use_sparse_matrices = true; // Default to sparse for better performance
 }
@@ -221,6 +222,8 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   p_max_iteration = secursor->get("maxIteration",20);
   p_max_bad_data_iterations = secursor->get("maxBadDataIterations", 5);
   p_residual_screen = secursor->get("badDataResidualScreen", p_residual_screen);
+  p_bad_data_method = secursor->get("badDataMethod", p_bad_data_method);
+  p_exact_max_states = secursor->get("badDataExactMaxStates", p_exact_max_states);
   p_damping_factor = secursor->get("dampingFactor", 1.0);
 
   // Diagnostic output level control
@@ -316,6 +319,8 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   p_max_iteration = secursor->get("maxIteration",20);
   p_max_bad_data_iterations = secursor->get("maxBadDataIterations", 5);
   p_residual_screen = secursor->get("badDataResidualScreen", p_residual_screen);
+  p_bad_data_method = secursor->get("badDataMethod", p_bad_data_method);
+  p_exact_max_states = secursor->get("badDataExactMaxStates", p_exact_max_states);
   p_damping_factor = secursor->get("dampingFactor", 1.0);
 
   // Diagnostic output level control
@@ -1965,10 +1970,9 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     p_busIO->header(buf);
   }
 
-  // Only measurements with a weighted residual above the screen are tested
-  double screen = std::min(p_residual_screen, p_bad_data_threshold);
-  std::vector<int> localRows;
+  // No normalized residual exceeds the square root of the chi-square value
   double normResBound = 0.0;
+  std::vector<double> localWeights;
   for (int i = lo; i < hi; i++) {
     gridpack::ComplexType rvalue, rinvvalue;
     Residual->getElement(i, rvalue);
@@ -1976,48 +1980,66 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
     double r = std::real(rvalue);
     double w = std::real(rinvvalue);
     normResBound += r*r*w;
-    if (w > 0.0 && std::abs(r)*sqrt(w) > screen) localRows.push_back(i);
+    localWeights.push_back(w);
   }
   p_network->communicator().sum(&normResBound, 1);
-  // No normalized residual exceeds the square root of the chi-square value
   normResBound = sqrt(normResBound);
-  if (normResBound <= p_bad_data_threshold) localRows.clear();
-  std::vector<std::vector<int> > allRows;
-  boost::mpi::all_gather(
-      static_cast<boost::mpi::communicator>(p_network->communicator()),
-      localRows, allRows);
-  std::vector<int> rows;
-  for (size_t p = 0; p < allRows.size(); p++) {
-    rows.insert(rows.end(), allRows[p].begin(), allRows[p].end());
-  }
-  std::sort(rows.begin(), rows.end());
-  snprintf(buf, sizeof(buf), "Normalized residual test on %d of %d measurements\n",
-      static_cast<int>(rows.size()), size);
-  p_busIO->header(buf);
 
   // Residual sensitivity diagonal, S_ii = 1 - (H G^-1 H^T R^-1)_ii
-  std::vector<double> sdiag;
-  // Spike: SE_EXACT_DIAG=1 serial exact diagonal, 2 also compares with the solves
-  int exactMode = getenv("SE_EXACT_DIAG") ? atoi(getenv("SE_EXACT_DIAG")) : 0;
-  if (exactMode > 0 && normResBound > p_bad_data_threshold) {
-    double t0 = MPI_Wtime();
-    sdiag = residualSensitivitySerial(*Rinv, lo, hi);
-    double t1 = MPI_Wtime();
-    snprintf(buf, sizeof(buf), "Serial exact diagonal: %.4f s\n", t1-t0);
-    p_busIO->header(buf);
-    if (exactMode > 1) {
-      std::vector<int> all(size);
-      for (int i = 0; i < size; i++) all[i] = i;
-      std::vector<double> ref = residualSensitivity(*Rinv, *Residual, lo, hi, all);
-      double dmax = 0.0;
-      for (int i = 0; i < hi-lo; i++) dmax = std::max(dmax, std::abs(ref[i]-sdiag[i]));
-      p_network->communicator().max(&dmax, 1);
-      snprintf(buf, sizeof(buf), "Serial exact diagonal: max difference %.3e, reference %.4f s\n",
-          dmax, MPI_Wtime()-t1);
-      p_busIO->header(buf);
-    }
+  std::vector<double> sdiag(hi-lo, 1.0);
+  if (normResBound <= p_bad_data_threshold) {
+    p_busIO->header("Normalized residual test skipped: the chi-square value rules out a flag\n");
   } else {
-    sdiag = residualSensitivity(*Rinv, *Residual, lo, hi, rows);
+    p_factory->setMode(Jacobian_H);
+    gridpack::mapper::GenMatrixMap<SENetwork> HMap(p_network);
+    boost::shared_ptr<gridpack::math::Matrix> H = HMap.mapToMatrix();
+    int nstates = H->cols();
+    bool exact = (p_bad_data_method != "screen");
+    if (p_bad_data_method == "screen") {
+      snprintf(buf, sizeof(buf), "badDataMethod is screen");
+    } else if (p_bad_data_method != "exact" && nstates > p_exact_max_states) {
+      exact = false;
+      snprintf(buf, sizeof(buf), "%d states are above badDataExactMaxStates = %d",
+          nstates, p_exact_max_states);
+    }
+    if (exact) {
+      // Exact diagonal for every measurement
+      std::vector<double> kdiag;
+      gridpack::math::HatMatrixDiagonalInfo info;
+      gridpack::math::hatMatrixDiagonal(*H, localWeights, kdiag, info);
+      for (int i = 0; i < hi-lo; i++) sdiag[i] = 1.0 - kdiag[i];
+      snprintf(buf, sizeof(buf),
+          "Normalized residual test: exact, all %d measurements (%s%s%s)\n"
+          "  Sensitivity diagonal: gather %.4f s, factorization %.4f s, diagonal %.4f s\n",
+          size, info.method.c_str(), info.note.empty() ? "" : "; ", info.note.c_str(),
+          info.gatherTime, info.factorTime, info.diagonalTime);
+      p_busIO->header(buf);
+    } else {
+      // Fallback: only measurements with a weighted residual above the screen
+      std::string reason(buf);
+      double screen = std::min(p_residual_screen, p_bad_data_threshold);
+      std::vector<int> localRows;
+      for (int i = lo; i < hi; i++) {
+        gridpack::ComplexType rvalue;
+        Residual->getElement(i, rvalue);
+        double w = localWeights[i-lo];
+        if (w > 0.0 && std::abs(std::real(rvalue))*sqrt(w) > screen) localRows.push_back(i);
+      }
+      std::vector<std::vector<int> > allRows;
+      boost::mpi::all_gather(
+          static_cast<boost::mpi::communicator>(p_network->communicator()),
+          localRows, allRows);
+      std::vector<int> rows;
+      for (size_t p = 0; p < allRows.size(); p++) {
+        rows.insert(rows.end(), allRows[p].begin(), allRows[p].end());
+      }
+      std::sort(rows.begin(), rows.end());
+      snprintf(buf, sizeof(buf),
+          "Normalized residual test: screened (heuristic), %d of %d measurements (%s)\n",
+          static_cast<int>(rows.size()), size, reason.c_str());
+      p_busIO->header(buf);
+      sdiag = residualSensitivity(*H, *Rinv, *Residual, lo, hi, rows);
+    }
   }
 
   // Use map to store normalized residuals (allows sparse storage and easy gathering)
@@ -2396,22 +2418,21 @@ bool gridpack::state_estimation::SEAppModule::flaggedDetails(
 }
 
 /**
- * Diagonal of the residual sensitivity matrix for the listed measurements
- * and for the measurements coupled to the one with the largest residual
+ * Fallback: diagonal of the residual sensitivity matrix for the listed
+ * measurements and those coupled to the one with the largest residual
  */
 std::vector<double> gridpack::state_estimation::SEAppModule::residualSensitivity(
-    const gridpack::math::Matrix &Rinv, const gridpack::math::Vector &residual,
-    int lo, int hi, const std::vector<int> &rows)
+    const gridpack::math::Matrix &Hmat, const gridpack::math::Matrix &Rinv,
+    const gridpack::math::Vector &residual, int lo, int hi,
+    const std::vector<int> &rows)
 {
   std::vector<double> sdiag(hi-lo, 1.0);
   if (rows.empty()) return sdiag;
   boost::mpi::communicator comm =
     static_cast<boost::mpi::communicator>(p_network->communicator());
 
-  // Jacobian and gain matrix at the converged state
-  p_factory->setMode(Jacobian_H);
-  gridpack::mapper::GenMatrixMap<SENetwork> HMap(p_network);
-  boost::shared_ptr<gridpack::math::Matrix> H = HMap.mapToMatrix();
+  // Gain matrix at the converged state
+  const gridpack::math::Matrix *H = &Hmat;
   boost::shared_ptr<gridpack::math::Matrix> Ht(transpose(*H));
   boost::shared_ptr<gridpack::math::Matrix> HtR(multiply(*Ht, Rinv));
   boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*HtR, *H));
@@ -2515,139 +2536,6 @@ std::vector<double> gridpack::state_estimation::SEAppModule::residualSensitivity
     if (pending.empty()) break;
   }
   return sdiag;
-}
-
-/**
- * Spike: full diagonal of the residual sensitivity matrix from a serial
- * factorization of the gain matrix on process 0
- */
-#define SE_CHK(x) do { PetscErrorCode e_ = (x); CHKERRABORT(PETSC_COMM_SELF, e_); } while (0)
-std::vector<double> gridpack::state_estimation::SEAppModule::residualSensitivitySerial(
-    const gridpack::math::Matrix &Rinv, int lo, int hi)
-{
-  boost::mpi::communicator comm =
-    static_cast<boost::mpi::communicator>(p_network->communicator());
-  double t0 = MPI_Wtime();
-  p_factory->setMode(Jacobian_H);
-  gridpack::mapper::GenMatrixMap<SENetwork> HMap(p_network);
-  boost::shared_ptr<gridpack::math::Matrix> H = HMap.mapToMatrix();
-  int m = H->rows();
-  int n = H->cols();
-
-  // Local rows of H as triplets; complex entries are stored as real blocks
-  const Mat *A = gridpack::math::PETScMatrix(*H);
-  PetscInt pm, pn, plo, phi;
-  SE_CHK(MatGetSize(*A, &pm, &pn));
-  SE_CHK(MatGetOwnershipRange(*A, &plo, &phi));
-  int es = pm/m;
-  std::vector<int> lrow, lcol;
-  std::vector<double> lval, lw;
-  for (PetscInt r = plo; r < phi; r += es) {
-    PetscInt nc;
-    const PetscInt *cols;
-    const PetscScalar *vals;
-    SE_CHK(MatGetRow(*A, r, &nc, &cols, &vals));
-    for (PetscInt k = 0; k < nc; k++) {
-      if (cols[k]%es == 0 && PetscRealPart(vals[k]) != 0.0) {
-        lrow.push_back(r/es);
-        lcol.push_back(cols[k]/es);
-        lval.push_back(PetscRealPart(vals[k]));
-      }
-    }
-    SE_CHK(MatRestoreRow(*A, r, &nc, &cols, &vals));
-  }
-  for (int i = lo; i < hi; i++) {
-    gridpack::ComplexType rinvvalue;
-    Rinv.getElement(i, i, rinvvalue);
-    lw.push_back(std::real(rinvvalue));
-  }
-  std::vector<std::vector<int> > grow, gcol;
-  std::vector<std::vector<double> > gval, gw;
-  boost::mpi::gather(comm, lrow, grow, 0);
-  boost::mpi::gather(comm, lcol, gcol, 0);
-  boost::mpi::gather(comm, lval, gval, 0);
-  boost::mpi::gather(comm, lw, gw, 0);
-  double t1 = MPI_Wtime();
-  double t2 = t1, t3 = t1;
-
-  std::vector<double> sall(m, 1.0);
-  if (comm.rank() == 0) {
-    // Rows arrive in order, so the triplets are already in row storage
-    std::vector<PetscInt> ia(m+1, 0), ja;
-    std::vector<PetscScalar> va, wva;
-    std::vector<double> w;
-    for (size_t p = 0; p < grow.size(); p++) {
-      w.insert(w.end(), gw[p].begin(), gw[p].end());
-      for (size_t k = 0; k < grow[p].size(); k++) {
-        ia[grow[p][k]+1]++;
-        ja.push_back(gcol[p][k]);
-        va.push_back(gval[p][k]);
-      }
-    }
-    for (int i = 0; i < m; i++) ia[i+1] += ia[i];
-    wva.resize(va.size());
-    for (int i = 0; i < m; i++) {
-      for (PetscInt k = ia[i]; k < ia[i+1]; k++) wva[k] = w[i]*va[k];
-    }
-    Mat Hs, WH, G, F, B, X;
-    SE_CHK(MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, m, n, &ia[0], &ja[0], &va[0], &Hs));
-    SE_CHK(MatCreateSeqAIJWithArrays(PETSC_COMM_SELF, m, n, &ia[0], &ja[0], &wva[0], &WH));
-    SE_CHK(MatTransposeMatMult(Hs, WH, MAT_INITIAL_MATRIX, PETSC_DETERMINE, &G));
-
-    const char *stype = getenv("SE_EXACT_SOLVER") ? getenv("SE_EXACT_SOLVER") : MATSOLVERPETSC;
-    IS rperm, cperm;
-    MatFactorInfo info;
-    SE_CHK(MatGetFactor(G, stype, MAT_FACTOR_LU, &F));
-    SE_CHK(MatGetOrdering(G, MATORDERINGND, &rperm, &cperm));
-    SE_CHK(MatFactorInfoInitialize(&info));
-    SE_CHK(MatLUFactorSymbolic(F, G, rperm, cperm, &info));
-    SE_CHK(MatLUFactorNumeric(F, G, &info));
-    t2 = MPI_Wtime();
-
-    // Blocks of right-hand sides: columns are rows of H
-    int nb = getenv("SE_EXACT_BLOCK") ? atoi(getenv("SE_EXACT_BLOCK")) : 128;
-    SE_CHK(MatCreateSeqDense(PETSC_COMM_SELF, n, nb, NULL, &B));
-    SE_CHK(MatCreateSeqDense(PETSC_COMM_SELF, n, nb, NULL, &X));
-    for (int start = 0; start < m; start += nb) {
-      int width = std::min(nb, m-start);
-      PetscScalar *b;
-      SE_CHK(MatDenseGetArray(B, &b));
-      std::fill(b, b+static_cast<size_t>(n)*nb, 0.0);
-      for (int c = 0; c < width; c++) {
-        int i = start+c;
-        for (PetscInt k = ia[i]; k < ia[i+1]; k++) b[static_cast<size_t>(c)*n+ja[k]] = va[k];
-      }
-      SE_CHK(MatDenseRestoreArray(B, &b));
-      SE_CHK(MatMatSolve(F, B, X));
-      const PetscScalar *x;
-      SE_CHK(MatDenseGetArrayRead(X, &x));
-      for (int c = 0; c < width; c++) {
-        int i = start+c;
-        double kii = 0.0;
-        for (PetscInt k = ia[i]; k < ia[i+1]; k++) {
-          kii += PetscRealPart(wva[k]*x[static_cast<size_t>(c)*n+ja[k]]);
-        }
-        sall[i] = 1.0 - kii;
-      }
-      SE_CHK(MatDenseRestoreArrayRead(X, &x));
-    }
-    t3 = MPI_Wtime();
-    SE_CHK(ISDestroy(&rperm));
-    SE_CHK(ISDestroy(&cperm));
-    SE_CHK(MatDestroy(&B));
-    SE_CHK(MatDestroy(&X));
-    SE_CHK(MatDestroy(&F));
-    SE_CHK(MatDestroy(&G));
-    SE_CHK(MatDestroy(&WH));
-    SE_CHK(MatDestroy(&Hs));
-  }
-  boost::mpi::broadcast(comm, sall, 0);
-  char buf[256];
-  snprintf(buf, sizeof(buf),
-      "Serial exact diagonal: gather %.4f s, factor %.4f s, solves %.4f s\n",
-      t1-t0, t2-t1, t3-t2);
-  p_busIO->header(buf);
-  return std::vector<double>(sall.begin()+lo, sall.begin()+hi);
 }
 
 /**
