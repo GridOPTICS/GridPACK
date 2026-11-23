@@ -576,6 +576,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   bool converged = false;
   p_converged = false;
   int badDataIter = 0;
+  int lastAboveThreshold = 0;
   bool badDataExists = true;
   double previousChiSquare = std::numeric_limits<double>::max(); // Track chi-square progress
 
@@ -681,6 +682,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     
     // Call detectBadData and handle the return issue
     BadDataResult badDataResult = detectBadData();
+    lastAboveThreshold = badDataResult.numAboveThreshold;
 
 
     // Extract bad indices from the result
@@ -883,6 +885,16 @@ void gridpack::state_estimation::SEAppModule::solve(void)
 
   badDataIter++;
 }
+
+  // Detection ended at the pass limit, not because nothing was left
+  if (badDataExists && badDataIter >= p_max_bad_data_iterations) {
+    char capBuf[256];
+    snprintf(capBuf, sizeof(capBuf),
+        "\nWARNING: Bad data detection stopped at the limit of %d passes; "
+        "%d tested measurement(s) were above the threshold in the last pass.\n",
+        p_max_bad_data_iterations, lastAboveThreshold);
+    p_busIO->header(capBuf);
+  }
 
   // Ensure all processes are synchronized before output
   p_network->communicator().sync();
@@ -1918,6 +1930,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   if (Residual->size() == 0) {
     p_busIO->header("ERROR: Residual vector is empty!\n");
     BadDataResult emptyResult;
+    emptyResult.numAboveThreshold = 0;
     emptyResult.chiSquareValue = 0.0;
     return emptyResult;
   }
@@ -1934,6 +1947,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   if (size == 0) {
     p_busIO->header("\nWARNING: No measurement residuals found!\n");
     BadDataResult emptyResult;
+    emptyResult.numAboveThreshold = 0;
     emptyResult.chiSquareValue = 0.0;
     return emptyResult;
   }
@@ -2232,6 +2246,7 @@ gridpack::state_estimation::SEAppModule::BadDataResult gridpack::state_estimatio
   
   // Create result structure to store normalized residuals for ALL measurements
   BadDataResult result;
+  result.numAboveThreshold = static_cast<int>(badIndices.size());
   result.chiSquareValue = chiSquare;
   result.chiSquareThreshold = chiSquareThreshold;
   

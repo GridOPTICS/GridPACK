@@ -223,6 +223,8 @@ class SEAppModule
         double chiSquareValue;
         double chiSquareThreshold;
         int degreesOfFreedom;
+        // Tested measurements above the threshold before one is selected
+        int numAboveThreshold;
     };
     
     // void detectBadData(void);
